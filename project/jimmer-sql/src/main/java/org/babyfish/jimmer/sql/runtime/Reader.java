@@ -15,6 +15,8 @@ public interface Reader<T> {
 
     T read(ResultSet rs, Context ctx) throws SQLException;
 
+    void skip(Context ctx);
+
     final class Context {
 
         private DraftContext draftContext;
@@ -51,15 +53,15 @@ public interface Reader<T> {
         public int col() {
             return ++col;
         }
-        
+
         public void addCol(int delta) {
             col += delta;
         }
-        
+
         public void resetCol() {
             col = 0;
         }
-        
+
         public Object resolve(DraftSpi spi) {
             return draftContext().resolveObject(spi);
         }
@@ -67,6 +69,12 @@ public interface Reader<T> {
 
     static <T1, T2> Reader<Tuple2<T1, T2>> tuple(Reader<T1> reader1, Reader<T2> reader2) {
         return new Reader<Tuple2<T1, T2>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+            }
+
             @Override
             public Tuple2<T1, T2> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple2<>(
@@ -83,6 +91,13 @@ public interface Reader<T> {
             Reader<T3> reader3
     ) {
         return new Reader<Tuple3<T1, T2, T3>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+            }
+
             @Override
             public Tuple3<T1, T2, T3> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple3<>(
@@ -101,6 +116,14 @@ public interface Reader<T> {
             Reader<T4> reader4
     ) {
         return new Reader<Tuple4<T1, T2, T3, T4>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+                reader4.skip(ctx);
+            }
+
             @Override
             public Tuple4<T1, T2, T3, T4> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple4<>(
@@ -121,6 +144,15 @@ public interface Reader<T> {
             Reader<T5> reader5
     ) {
         return new Reader<Tuple5<T1, T2, T3, T4, T5>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+                reader4.skip(ctx);
+                reader5.skip(ctx);
+            }
+
             @Override
             public Tuple5<T1, T2, T3, T4, T5> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple5<>(
@@ -143,6 +175,16 @@ public interface Reader<T> {
             Reader<T6> reader6
     ) {
         return new Reader<Tuple6<T1, T2, T3, T4, T5, T6>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+                reader4.skip(ctx);
+                reader5.skip(ctx);
+                reader6.skip(ctx);
+            }
+
             @Override
             public Tuple6<T1, T2, T3, T4, T5, T6> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple6<>(
@@ -167,6 +209,17 @@ public interface Reader<T> {
             Reader<T7> reader7
     ) {
         return new Reader<Tuple7<T1, T2, T3, T4, T5, T6, T7>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+                reader4.skip(ctx);
+                reader5.skip(ctx);
+                reader6.skip(ctx);
+                reader7.skip(ctx);
+            }
+
             @Override
             public Tuple7<T1, T2, T3, T4, T5, T6, T7> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple7<>(
@@ -193,6 +246,18 @@ public interface Reader<T> {
             Reader<T8> reader8
     ) {
         return new Reader<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+                reader4.skip(ctx);
+                reader5.skip(ctx);
+                reader6.skip(ctx);
+                reader7.skip(ctx);
+                reader8.skip(ctx);
+            }
+
             @Override
             public Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple8<>(
@@ -221,6 +286,19 @@ public interface Reader<T> {
             Reader<T9> reader9
     ) {
         return new Reader<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>() {
+            @Override
+            public void skip(Context ctx) {
+                reader1.skip(ctx);
+                reader2.skip(ctx);
+                reader3.skip(ctx);
+                reader4.skip(ctx);
+                reader5.skip(ctx);
+                reader6.skip(ctx);
+                reader7.skip(ctx);
+                reader8.skip(ctx);
+                reader9.skip(ctx);
+            }
+
             @Override
             public Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> read(ResultSet rs, Context ctx) throws SQLException {
                 return new Tuple9<>(
