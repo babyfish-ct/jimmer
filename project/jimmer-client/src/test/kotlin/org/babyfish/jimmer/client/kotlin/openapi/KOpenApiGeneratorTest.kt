@@ -884,4 +884,32 @@ class KOpenApiGeneratorTest {
             writer.toString()
         )
     }
+
+    @Test
+    fun testSuspendFunInKBookService() {
+        val metadata = Metadata
+            .newBuilder()
+            .setOperationParser(OperationParserImpl())
+            .setParameterParser(ParameterParserImpl())
+            .setGroups(setOf("kBookService"))
+            .build()
+        val generator = object: OpenApiGenerator(
+            metadata,
+            OpenApiProperties.newBuilder()
+                .setInfo(
+                    OpenApiProperties.newInfoBuilder()
+                        .setTitle("Book System")
+                        .setDescription("Test suspend fun support")
+                        .setVersion("2.0.0")
+                        .build()
+                )
+                .build()
+        ) {}
+        val writer = StringWriter()
+        generator.generate(writer)
+        val openapi = writer.toString()
+        // 验证 suspend fun 的接口被生成
+        Assertions.assertTrue(openapi.contains("/books/suspend"), "openapi 应包含 /books/suspend 路径")
+        Assertions.assertTrue(openapi.contains("findBooksSuspend"), "openapi 应包含 findBooksSuspend operationId")
+    }
 }
