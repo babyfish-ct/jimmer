@@ -215,9 +215,23 @@ public class MetadataBuilder implements Metadata.Builder {
         Map<String, Operation> endpointMap = new LinkedHashMap<>();
         Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {
-            ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameters());
+            boolean isSuspendFun = false;
+            Parameter[] parameters = method.getParameters();
+            if (parameters.length > 0) {
+                Class<?> lastParamType = parameters[parameters.length - 1].getType();
+                if ("kotlin.coroutines.Continuation".equals(lastParamType.getName())) {
+                    isSuspendFun = true;
+                }
+            }
+            ApiOperation apiOperation = null;
+            if (isSuspendFun) {
+                Parameter[] realParams = Arrays.copyOf(parameters, parameters.length - 1);
+                apiOperation = apiService.findOperation(method.getName(), realParams);
+            } else {
+                apiOperation = apiService.findOperation(method.getName(), parameters);
+            }
             if (apiOperation != null) {
-                OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx);
+                OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx, isSuspendFun);
                 operationMap.put(apiOperation, operation);
                 for (Operation.HttpMethod httpMethod : operation.getHttpMethods()) {
                     String endpoint = httpMethod.name() + ':' + operation.getUri();
@@ -247,13 +261,16 @@ public class MetadataBuilder implements Metadata.Builder {
         return service;
     }
 
-    private OperationImpl operation(Service service, ApiOperation apiOperation, Method method, String baseUri, TypeContext ctx) {
+    private OperationImpl operation(Service service, ApiOperation apiOperation, Method method, String baseUri, TypeContext ctx, boolean isSuspendFun) {
         OperationImpl operation = new OperationImpl(service, method);
         String uri = operationParser.uri(method);
         operation.setUri(concatUri(baseUri, uri));
         operation.setDoc(apiOperation.getDoc());
         operation.setHttpMethods(operationParser.http(method));
         Parameter[] javaParameters = method.getParameters();
+        if (isSuspendFun && javaParameters.length > 0) {
+            javaParameters = Arrays.copyOf(javaParameters, javaParameters.length - 1);
+        }
         List<org.babyfish.jimmer.client.runtime.Parameter> parameters = new ArrayList<>();
         for (ApiParameter apiParameter : apiOperation.getParameters()) {
             if (!ignoredParameterTypes.contains(javaParameters[apiParameter.getOriginalIndex()].getType()) &&
@@ -295,7 +312,23 @@ public class MetadataBuilder implements Metadata.Builder {
                                 "\", please change the return type or add `@ApiIgnore` to the current operation"
                 );
             }
-            operation.setReturnType(ctx.parseType(apiOperation.getReturnType()));
+            if (isSuspendFun) {
+                java.lang.reflect.Type[] genericTypes = method.getGenericParameterTypes();
+                if (genericTypes.length > 0) {
+                    java.lang.reflect.Type lastType = genericTypes[genericTypes.length - 1];
+                    String typeName = lastType.getTypeName();
+                    if (typeName.startsWith("kotlin.coroutines.Continuation<") && typeName.endsWith(">")) {
+                        String realType = typeName.substring(typeName.indexOf('<') + 1, typeName.length() - 1);
+                        operation.setReturnType(ctx.parseType(apiOperation.getReturnType()));
+                    } else {
+                        operation.setReturnType(ctx.parseType(apiOperation.getReturnType()));
+                    }
+                } else {
+                    operation.setReturnType(ctx.parseType(apiOperation.getReturnType()));
+                }
+            } else {
+                operation.setReturnType(ctx.parseType(apiOperation.getReturnType()));
+            }
         }
         operation.setExceptionTypes(
                 apiOperation
