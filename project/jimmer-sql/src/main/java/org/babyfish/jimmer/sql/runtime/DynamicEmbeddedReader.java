@@ -9,7 +9,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 class DynamicEmbeddedReader implements Reader<Object> {
@@ -38,6 +37,11 @@ class DynamicEmbeddedReader implements Reader<Object> {
         this.readers = readers;
         this.shownPropIds = shownPropIds;
         this.hiddenPropIds = hiddenPropIds;
+    }
+
+    @Override
+    public void skip(Context ctx) {
+        readers.forEach(reader -> reader.skip(ctx));
     }
 
     @Override

@@ -23,6 +23,11 @@ public class PostgresDialect extends DefaultDialect {
         public PGobject read(ResultSet rs, Context ctx) throws SQLException {
             return rs.getObject(ctx.col(), PGobject.class);
         }
+
+        @Override
+        public void skip(Context ctx) {
+            ctx.col();
+        }
     };
 
     @Override
@@ -145,9 +150,17 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     public Reader<String> jsonReader() {
-        return (rs, col) -> {
-            PGobject pgObject = rs.getObject(col.col(), PGobject.class);
-            return pgObject == null ? null : pgObject.getValue();
+        return new Reader<String>() {
+            @Override
+            public String read(ResultSet rs, Context ctx) throws SQLException {
+                PGobject pgObject = rs.getObject(ctx.col(), PGobject.class);
+                return pgObject == null ? null : pgObject.getValue();
+            }
+
+            @Override
+            public void skip(Context ctx) {
+                ctx.col();
+            }
         };
     }
 
