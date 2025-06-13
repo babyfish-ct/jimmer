@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.table.base;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -11,5 +12,16 @@ public interface BaseTable1<S1 extends Selection<?>> extends BaseTable {
     @NotNull
     S1 get_1();
 
-    <TT extends TableLike<?>, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(Class<WJ> weakJoinType);
+    default <TT extends BaseTable, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(
+            TT targetBaseTable,
+            Class<WJ> weakJoinType
+    ) {
+        return weakJoin(targetBaseTable, weakJoinType, JoinType.INNER);
+    }
+
+    <TT extends BaseTable, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(
+            TT targetBaseTable,
+            Class<WJ> weakJoinType,
+            JoinType joinType
+    );
 }

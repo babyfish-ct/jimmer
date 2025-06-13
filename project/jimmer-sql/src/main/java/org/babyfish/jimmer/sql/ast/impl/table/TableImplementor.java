@@ -21,6 +21,10 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     @Override
     TableImplementor<?> getParent();
 
+    JoinType getJoinType();
+
+    ImmutableProp getJoinProp();
+
     boolean isInverse();
 
     boolean isEmpty(Predicate<TableImplementor<?>> filter);

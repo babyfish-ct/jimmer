@@ -1,20 +1,21 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.AbstractBaseTable;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class BaseTables {
+public class BaseTableSymbols {
 
-    private BaseTables() {}
+    private BaseTableSymbols() {}
 
-    public static BaseTableImplementor of(
+    public static BaseTableSymbol of(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections
     ) {
@@ -42,12 +43,30 @@ public class BaseTables {
         }
     }
 
-    private static class Table1<S1 extends Selection<?>>
-            extends AbstractBaseTable
-            implements BaseTable1<S1>, BaseTableImplementor {
+    public static BaseTableSymbol of(
+            BaseTableSymbol base,
+            BaseTableSymbol parent,
+            WeakJoinHandle handle,
+            JoinType joinType
+    ) {
+        switch (base.getSelections().size()) {
+            case 1:
+                return new Table1<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            default:
+                throw new IllegalArgumentException("Illegal selection count: " + base.getSelections().size());
+        }
+    }
 
-        protected Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+    private static class Table1<S1 extends Selection<?>>
+            extends AbstractBaseTableSymbol
+            implements BaseTable1<S1> {
+
+        Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table1(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -57,9 +76,15 @@ public class BaseTables {
             return (S1) selections.get(0);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public <TT extends TableLike<?>, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(Class<WJ> weakJoinType) {
-            return null;
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
         }
 
         @Override
@@ -71,8 +96,8 @@ public class BaseTables {
     }
 
     private static class Table2<S1 extends Selection<?>, S2 extends Selection<?>>
-            extends AbstractBaseTable
-            implements BaseTable2<S1, S2>, BaseTableImplementor {
+            extends AbstractBaseTableSymbol
+            implements BaseTable2<S1, S2> {
 
         protected Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -102,8 +127,8 @@ public class BaseTables {
     }
 
     private static class Table3<S1 extends Selection<?>, S2 extends Selection<?>, S3 extends Selection<?>>
-            extends AbstractBaseTable
-            implements BaseTable3<S1, S2, S3>, BaseTableImplementor {
+            extends AbstractBaseTableSymbol
+            implements BaseTable3<S1, S2, S3> {
 
         protected Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -145,8 +170,8 @@ public class BaseTables {
             S2 extends Selection<?>,
             S3 extends Selection<?>,
             S4 extends Selection<?>
-    > extends AbstractBaseTable
-            implements BaseTable4<S1, S2, S3, S4>, BaseTableImplementor {
+    > extends AbstractBaseTableSymbol
+            implements BaseTable4<S1, S2, S3, S4> {
 
         protected Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -196,8 +221,8 @@ public class BaseTables {
             S3 extends Selection<?>,
             S4 extends Selection<?>,
             S5 extends Selection<?>
-    > extends AbstractBaseTable
-            implements BaseTable5<S1, S2, S3, S4, S5>, BaseTableImplementor {
+    > extends AbstractBaseTableSymbol
+            implements BaseTable5<S1, S2, S3, S4, S5> {
 
         protected Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -255,8 +280,8 @@ public class BaseTables {
             S4 extends Selection<?>,
             S5 extends Selection<?>,
             S6 extends Selection<?>
-    > extends AbstractBaseTable
-            implements BaseTable6<S1, S2, S3, S4, S5, S6>, BaseTableImplementor {
+    > extends AbstractBaseTableSymbol
+            implements BaseTable6<S1, S2, S3, S4, S5, S6> {
 
         protected Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -322,8 +347,8 @@ public class BaseTables {
             S5 extends Selection<?>,
             S6 extends Selection<?>,
             S7 extends Selection<?>
-    > extends AbstractBaseTable
-            implements BaseTable7<S1, S2, S3, S4, S5, S6, S7>, BaseTableImplementor {
+    > extends AbstractBaseTableSymbol
+            implements BaseTable7<S1, S2, S3, S4, S5, S6, S7> {
 
         protected Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -397,8 +422,8 @@ public class BaseTables {
             S6 extends Selection<?>,
             S7 extends Selection<?>,
             S8 extends Selection<?>
-    > extends AbstractBaseTable
-            implements BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>, BaseTableImplementor {
+    > extends AbstractBaseTableSymbol
+            implements BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
         protected Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
@@ -480,8 +505,8 @@ public class BaseTables {
             S7 extends Selection<?>,
             S8 extends Selection<?>,
             S9 extends Selection<?>
-    > extends AbstractBaseTable
-            implements BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, BaseTableImplementor {
+    > extends AbstractBaseTableSymbol
+            implements BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
         protected Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);

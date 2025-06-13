@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTables;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -35,7 +35,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
                 new TypedQueryData(selections),
                 mutableQuery
         );
-        this.baseTable = (T) BaseTables.of(this, selections);
+        this.baseTable = (T) BaseTableSymbols.of(this, selections);
     }
 
     private ConfigurableBaseQueryImpl(T baseTable, TypedQueryData data, AbstractMutableQueryImpl baseQuery) {

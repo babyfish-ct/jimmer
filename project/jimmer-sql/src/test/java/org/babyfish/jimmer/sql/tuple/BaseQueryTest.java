@@ -2,13 +2,13 @@ package org.babyfish.jimmer.sql.tuple;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.embedded.PointFetcher;
 import org.babyfish.jimmer.sql.model.embedded.RectFetcher;
 import org.babyfish.jimmer.sql.model.embedded.TransformFetcher;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
@@ -760,5 +760,47 @@ public class BaseQueryTest extends AbstractQueryTest {
                     );
                 }
         );
+    }
+
+    @Test
+    public void testWeakJoinBaseTable() {
+        BookTable book = BookTable.$;
+        BaseTable1<BookTable> baseBook = TypedBaseQuery.unionAll(
+                getSqlClient().createBaseQuery(book)
+                        .where(book.id().eq(Constants.graphQLInActionId1))
+                        .addSelect(book),
+                getSqlClient().createBaseQuery(book)
+                        .where(book.id().eq(Constants.graphQLInActionId2))
+                        .addSelect(book)
+        ).asBaseTable();
+        AuthorTable author = AuthorTable.$;
+        BaseTable1<AuthorTable> baseAuthor = TypedBaseQuery.unionAll(
+                getSqlClient().createBaseQuery(author)
+                        .where(author.id().eq(Constants.danId))
+                        .addSelect(author),
+                getSqlClient().createBaseQuery(author)
+                        .where(author.id().eq(Constants.alexId))
+                        .addSelect(author)
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient().createQuery(baseBook)
+                        .select(
+                                baseBook.get_1(),
+                                baseBook.weakJoin(baseAuthor, BaseBookAuthorJoin.class).get_1()
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            ""
+                    );
+                }
+        );
+    }
+
+    private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
+
+        @Override
+        public Predicate on(BaseTable1<BookTable> source, BaseTable1<AuthorTable> target) {
+            return null;
+        }
     }
 }

@@ -229,6 +229,6 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     @Override
     public String toString() {
-        return "MutableBaseQueryImpl{}";
+        return "MutableBaseQueryImpl{queryType = " + getTable() + "}";
     }
 }

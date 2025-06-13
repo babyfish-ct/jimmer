@@ -12,16 +12,16 @@ import java.util.Objects;
 
 public final class BaseTableOwner {
 
-    final BaseTableImplementor baseTable;
+    final BaseTableSymbol baseTable;
 
     final int index;
 
-    public BaseTableOwner(BaseTableImplementor baseTable, int index) {
+    public BaseTableOwner(BaseTableSymbol baseTable, int index) {
         this.baseTable = Objects.requireNonNull(baseTable, "baseTable cannot be null");
         this.index = index;
     }
 
-    public BaseTableImplementor getBaseTable() {
+    public BaseTableSymbol getBaseTable() {
         return baseTable;
     }
 

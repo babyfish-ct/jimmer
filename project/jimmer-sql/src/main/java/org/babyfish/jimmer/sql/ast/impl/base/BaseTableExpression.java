@@ -15,6 +15,9 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     private final BaseTableOwner baseTableOwner;
 
     BaseTableExpression(ExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+        if (raw instanceof BaseTableExpression<?>) {
+            raw = ((BaseTableExpression<T>)raw).raw;
+        }
         this.raw = raw;
         this.baseTableOwner = baseTableOwner;
     }

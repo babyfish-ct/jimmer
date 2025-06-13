@@ -80,8 +80,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             AbstractMutableStatementImpl statement = frame.statement;
             TableLike<?> stmtTable = statement.getTable();
             if (stmtTable instanceof BaseTable) {
-                TypedBaseQueryImplementor<?> baseQuery = ((BaseTableImplementor)stmtTable).getQuery();
-                TableImplementor<?> resolved = baseQuery.resolveRootTable(table);
+                TableImplementor<?> resolved = resolveTableOfBaseQuery((BaseTableImplementor) stmtTable, table);
                 if (resolved != null) {
                     resolved.setBaseTableOwner(BaseTableOwner.of(table));
                     return (TableImplementor<E>) resolved;
@@ -92,7 +91,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 return tableImplementor;
             }
         }
-        if (((TableProxy<E>) table).__parent() != null) {
+        TableProxy<E> tableProxy = (TableProxy<E>) table;
+        if (tableProxy.__parent() != null) {
             throw new IllegalArgumentException(
                     "\"" +
                             AstContext.class.getName() +
@@ -102,6 +102,31 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             );
         }
         throw new IllegalArgumentException("Cannot resolve the root table " + table);
+    }
+
+    private static TableImplementor<?> resolveTableOfBaseQuery(BaseTableImplementor stmtTable, Table<?> table) {
+        TypedBaseQueryImplementor<?> baseQuery = stmtTable.getQuery();
+        TableImplementor<?> resolved = baseQuery.resolveRootTable(table);
+        if (resolved != null) {
+            return resolved;
+        }
+        if (!(table instanceof TableProxy<?>)) {
+            return null;
+        }
+        BaseTableOwner baseTableOwner = ((TableProxy<?>) table).__baseTableOwner();
+        if (baseTableOwner == null) {
+            return null;
+        }
+        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
+        BaseTableSymbol parentBaseTable = baseTable.getParent();
+        TableImplementor<?> parentTableImplementor = resolveTableOfBaseQuery(
+                parentBaseTable,
+                parentBaseTable.getStatement().getTable()
+        );
+        if (parentTableImplementor == null) {
+            return null;
+        }
+        return (TableImplementor<?>) stmtTable.getStatement().getTableLikeImplementor();
     }
 
     public AbstractMutableStatementImpl getStatement() {
@@ -149,7 +174,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return expression;
     }
 
-    @SuppressWarnings("unchecked")
     public <T> List<T> resolveVirtualPredicates(List<T> expressions) {
         boolean changed = false;
         for (T expression : expressions) {

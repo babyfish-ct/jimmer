@@ -679,7 +679,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             if (prop != null) {
                 return prop.getTargetType();
             }
-            return weakJoinHandle.getTargetType();
+            return ((WeakJoinHandle.EntityTableHandle)weakJoinHandle).getTargetType();
         }
 
         @Override

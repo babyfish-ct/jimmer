@@ -10,19 +10,9 @@ import org.jetbrains.annotations.NotNull;
 
 public interface TableLikeImplementor<E> extends TableLike<E> {
 
-    default TableLikeImplementor<?> getParent() {
-        return null;
-    }
+    TableLikeImplementor<?> getParent();
 
-    default WeakJoinHandle getWeakJoinHandle() {
-        return null;
-    }
-
-    default JoinType getJoinType() {
-        return JoinType.INNER;
-    }
-
-    ImmutableProp getJoinProp();
+    WeakJoinHandle getWeakJoinHandle();
 
     RealTable realTable(JoinTypeMergeScope scope);
 

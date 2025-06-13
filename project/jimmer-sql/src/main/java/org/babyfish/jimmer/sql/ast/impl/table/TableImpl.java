@@ -517,7 +517,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
         return new TableImpl<>(
                 statement,
-                handle.getTargetType(),
+                ((WeakJoinHandle.EntityTableHandle)handle).getTargetType(),
                 this,
                 isInverse,
                 null,

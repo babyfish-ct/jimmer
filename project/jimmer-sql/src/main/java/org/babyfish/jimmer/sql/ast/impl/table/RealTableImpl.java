@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -163,6 +164,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (child.joinType != owner.getJoinType()) {
                 child.joinType = JoinType.INNER;
             }
+            return child;
+        }
+        child = new RealTableImpl(key, owner, this);
+        putValue(key, child);
+        return child;
+    }
+
+    public RealTableImpl child(JoinTypeMergeScope scope, BaseTableImplementor owner) {
+        Key key = new Key(scope, false, null, owner.getWeakJoinHandle());
+        RealTableImpl child = (RealTableImpl) getValue(key);
+        if (child != null) {
             return child;
         }
         child = new RealTableImpl(key, owner, this);
@@ -644,7 +656,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (alias == null) {
             AbstractMutableStatementImpl statement = owner.getStatement();
             StatementContext ctx = statement.getContext();
-            ImmutableProp joinProp = owner.getJoinProp();
+            ImmutableProp joinProp = owner instanceof TableImplementor<?> ?
+                    ((TableImplementor<?>)owner).getJoinProp() :
+                    null;
             if (joinProp != null) {
                 if (joinProp.isMiddleTableDefinition()) {
                     middleTableAlias = statement.getContext().allocateTableAlias();
