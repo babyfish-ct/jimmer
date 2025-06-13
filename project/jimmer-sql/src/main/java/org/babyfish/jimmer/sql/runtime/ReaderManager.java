@@ -15,10 +15,8 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;
@@ -217,7 +215,14 @@ public class ReaderManager {
         return reader;
     }
 
-    private static class ByteArrayReader implements Reader<byte[]> {
+    private static abstract class SingleColumnReader<T> implements Reader<T> {
+        @Override
+        public void skip(Context ctx) {
+            ctx.col();
+        }
+    }
+
+    private static class ByteArrayReader extends SingleColumnReader<byte[]> {
 
         @Override
         public byte[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -225,7 +230,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BoxedByteArrayReader implements Reader<Byte[]> {
+    private static class BoxedByteArrayReader extends SingleColumnReader<Byte[]> {
 
         @Override
         public Byte[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -233,7 +238,7 @@ public class ReaderManager {
         }
     }
 
-    private static class ByteListReader implements Reader<List<Byte>> {
+    private static class ByteListReader extends SingleColumnReader<List<Byte>> {
 
         @Override
         public List<Byte> read(ResultSet rs, Context ctx) throws SQLException {
@@ -241,7 +246,7 @@ public class ReaderManager {
         }
     }
 
-    private static class ShortArrayReader implements Reader<short[]> {
+    private static class ShortArrayReader extends SingleColumnReader<short[]> {
 
         @Override
         public short[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -249,7 +254,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BoxedShortArrayReader implements Reader<Short[]> {
+    private static class BoxedShortArrayReader extends SingleColumnReader<Short[]> {
 
         @Override
         public Short[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -257,7 +262,7 @@ public class ReaderManager {
         }
     }
 
-    private static class ShortListReader implements Reader<List<Short>> {
+    private static class ShortListReader extends SingleColumnReader<List<Short>> {
 
         @Override
         public List<Short> read(ResultSet rs, Context ctx) throws SQLException {
@@ -265,7 +270,7 @@ public class ReaderManager {
         }
     }
 
-    private static class IntArrayReader implements Reader<int[]> {
+    private static class IntArrayReader extends SingleColumnReader<int[]> {
 
         @Override
         public int[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -273,7 +278,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BoxedIntArrayReader implements Reader<Integer[]> {
+    private static class BoxedIntArrayReader extends SingleColumnReader<Integer[]> {
 
         @Override
         public Integer[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -281,7 +286,7 @@ public class ReaderManager {
         }
     }
 
-    private static class IntListReader implements Reader<List<Integer>> {
+    private static class IntListReader extends SingleColumnReader<List<Integer>> {
 
         @Override
         public List<Integer> read(ResultSet rs, Context ctx) throws SQLException {
@@ -289,7 +294,7 @@ public class ReaderManager {
         }
     }
 
-    private static class LongArrayReader implements Reader<long[]> {
+    private static class LongArrayReader extends SingleColumnReader<long[]> {
 
         @Override
         public long[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -297,7 +302,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BoxedLongArrayReader implements Reader<Long[]> {
+    private static class BoxedLongArrayReader extends SingleColumnReader<Long[]> {
 
         @Override
         public Long[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -305,7 +310,7 @@ public class ReaderManager {
         }
     }
 
-    private static class LongListReader implements Reader<List<Long>> {
+    private static class LongListReader extends SingleColumnReader<List<Long>> {
 
         @Override
         public List<Long> read(ResultSet rs, Context ctx) throws SQLException {
@@ -313,7 +318,7 @@ public class ReaderManager {
         }
     }
 
-    private static class FloatArrayReader implements Reader<float[]> {
+    private static class FloatArrayReader extends SingleColumnReader<float[]> {
 
         @Override
         public float[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -321,7 +326,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BoxedFloatArrayReader implements Reader<Float[]> {
+    private static class BoxedFloatArrayReader extends SingleColumnReader<Float[]> {
 
         @Override
         public Float[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -329,7 +334,7 @@ public class ReaderManager {
         }
     }
 
-    private static class FloatListReader implements Reader<List<Float>> {
+    private static class FloatListReader extends SingleColumnReader<List<Float>> {
 
         @Override
         public List<Float> read(ResultSet rs, Context ctx) throws SQLException {
@@ -337,7 +342,7 @@ public class ReaderManager {
         }
     }
 
-    private static class DoubleArrayReader implements Reader<double[]> {
+    private static class DoubleArrayReader extends SingleColumnReader<double[]> {
 
         @Override
         public double[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -345,7 +350,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BoxedDoubleArrayReader implements Reader<Double[]> {
+    private static class BoxedDoubleArrayReader extends SingleColumnReader<Double[]> {
 
         @Override
         public Double[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -353,7 +358,7 @@ public class ReaderManager {
         }
     }
 
-    private static class DoubleListReader implements Reader<List<Double>> {
+    private static class DoubleListReader extends SingleColumnReader<List<Double>> {
 
         @Override
         public List<Double> read(ResultSet rs, Context ctx) throws SQLException {
@@ -361,7 +366,7 @@ public class ReaderManager {
         }
     }
 
-    private static class StringArrayReader implements Reader<String[]> {
+    private static class StringArrayReader extends SingleColumnReader<String[]> {
 
         @Override
         public String[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -369,7 +374,7 @@ public class ReaderManager {
         }
     }
 
-    private static class StringListReader implements Reader<List<String>> {
+    private static class StringListReader extends SingleColumnReader<List<String>> {
 
         @Override
         public List<String> read(ResultSet rs, Context ctx) throws SQLException {
@@ -377,7 +382,7 @@ public class ReaderManager {
         }
     }
 
-    private static class UUIDArrayReader implements Reader<UUID[]> {
+    private static class UUIDArrayReader extends SingleColumnReader<UUID[]> {
 
         @Override
         public UUID[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -385,7 +390,7 @@ public class ReaderManager {
         }
     }
 
-    private static class UUIDListReader implements Reader<List<UUID>> {
+    private static class UUIDListReader extends SingleColumnReader<List<UUID>> {
 
         @Override
         public List<UUID> read(ResultSet rs, Context ctx) throws SQLException {
@@ -393,7 +398,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BooleanReader implements Reader<Boolean> {
+    private static class BooleanReader extends SingleColumnReader<Boolean> {
 
         @Override
         public Boolean read(ResultSet rs, Context ctx) throws SQLException {
@@ -405,7 +410,7 @@ public class ReaderManager {
         }
     }
 
-    private static class CharReader implements Reader<Character> {
+    private static class CharReader extends SingleColumnReader<Character> {
 
         @Override
         public Character read(ResultSet rs, Context ctx) throws SQLException {
@@ -414,7 +419,7 @@ public class ReaderManager {
         }
     }
 
-    private static class ByteReader implements Reader<Byte> {
+    private static class ByteReader extends SingleColumnReader<Byte> {
 
         @Override
         public Byte read(ResultSet rs, Context ctx) throws SQLException {
@@ -426,7 +431,7 @@ public class ReaderManager {
         }
     }
 
-    private static class ShortReader implements Reader<Short> {
+    private static class ShortReader extends SingleColumnReader<Short> {
 
         @Override
         public Short read(ResultSet rs, Context ctx) throws SQLException {
@@ -438,7 +443,7 @@ public class ReaderManager {
         }
     }
 
-    private static class IntReader implements Reader<Integer> {
+    private static class IntReader extends SingleColumnReader<Integer> {
 
         @Override
         public Integer read(ResultSet rs, Context ctx) throws SQLException {
@@ -450,7 +455,7 @@ public class ReaderManager {
         }
     }
 
-    private static class LongReader implements Reader<Long> {
+    private static class LongReader extends SingleColumnReader<Long> {
 
         @Override
         public Long read(ResultSet rs, Context ctx) throws SQLException {
@@ -462,7 +467,7 @@ public class ReaderManager {
         }
     }
 
-    private static class FloatReader implements Reader<Float> {
+    private static class FloatReader extends SingleColumnReader<Float> {
 
         @Override
         public Float read(ResultSet rs, Context ctx) throws SQLException {
@@ -474,7 +479,7 @@ public class ReaderManager {
         }
     }
 
-    private static class DoubleReader implements Reader<Double> {
+    private static class DoubleReader extends SingleColumnReader<Double> {
 
         @Override
         public Double read(ResultSet rs, Context ctx) throws SQLException {
@@ -486,7 +491,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BigIntegerReader implements Reader<BigInteger> {
+    private static class BigIntegerReader extends SingleColumnReader<BigInteger> {
 
         @Override
         public BigInteger read(ResultSet rs, Context ctx) throws SQLException {
@@ -495,7 +500,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BigDecimalReader implements Reader<BigDecimal> {
+    private static class BigDecimalReader extends SingleColumnReader<BigDecimal> {
 
         @Override
         public BigDecimal read(ResultSet rs, Context ctx) throws SQLException {
@@ -503,7 +508,7 @@ public class ReaderManager {
         }
     }
 
-    private static class StringReader implements Reader<String> {
+    private static class StringReader extends SingleColumnReader<String> {
 
         @Override
         public String read(ResultSet rs, Context ctx) throws SQLException {
@@ -511,7 +516,7 @@ public class ReaderManager {
         }
     }
 
-    private static class UUIDReader implements Reader<UUID> {
+    private static class UUIDReader extends SingleColumnReader<UUID> {
 
         @Override
         public UUID read(ResultSet rs, Context ctx) throws SQLException {
@@ -529,7 +534,7 @@ public class ReaderManager {
         }
     }
 
-    private static class BlobReader implements Reader<Blob> {
+    private static class BlobReader extends SingleColumnReader<Blob> {
 
         @Override
         public Blob read(ResultSet rs, Context ctx) throws SQLException {
@@ -537,7 +542,7 @@ public class ReaderManager {
         }
     }
 
-    private static class SqlDateReader implements Reader<java.sql.Date> {
+    private static class SqlDateReader extends SingleColumnReader<java.sql.Date> {
 
         @Override
         public java.sql.Date read(ResultSet rs, Context ctx) throws SQLException {
@@ -545,7 +550,7 @@ public class ReaderManager {
         }
     }
 
-    private static class SqlTimeReader implements Reader<java.sql.Time> {
+    private static class SqlTimeReader extends SingleColumnReader<java.sql.Time> {
 
         @Override
         public java.sql.Time read(ResultSet rs, Context ctx) throws SQLException {
@@ -553,7 +558,7 @@ public class ReaderManager {
         }
     }
 
-    private static class SqlTimestampReader implements Reader<java.sql.Timestamp> {
+    private static class SqlTimestampReader extends SingleColumnReader<java.sql.Timestamp> {
 
         @Override
         public Timestamp read(ResultSet rs, Context ctx) throws SQLException {
@@ -561,7 +566,7 @@ public class ReaderManager {
         }
     }
 
-    private static class DateReader implements Reader<java.util.Date> {
+    private static class DateReader extends SingleColumnReader<java.util.Date> {
         @Override
         public java.util.Date read(ResultSet rs, Context ctx) throws SQLException {
             Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
@@ -571,7 +576,7 @@ public class ReaderManager {
         }
     }
 
-    private static class LocalDateReader implements Reader<LocalDate> {
+    private static class LocalDateReader extends SingleColumnReader<LocalDate> {
 
         @Override
         public LocalDate read(ResultSet rs, Context ctx) throws SQLException {
@@ -582,7 +587,7 @@ public class ReaderManager {
         }
     }
 
-    private static class LocalTimeReader implements Reader<LocalTime> {
+    private static class LocalTimeReader extends SingleColumnReader<LocalTime> {
 
         @Override
         public LocalTime read(ResultSet rs, Context ctx) throws SQLException {
@@ -593,7 +598,7 @@ public class ReaderManager {
         }
     }
 
-    private static class LocalDateTimeReader implements Reader<LocalDateTime> {
+    private static class LocalDateTimeReader extends SingleColumnReader<LocalDateTime> {
 
         @Override
         public LocalDateTime read(ResultSet rs, Context ctx) throws SQLException {
@@ -604,7 +609,7 @@ public class ReaderManager {
         }
     }
 
-    private static class OffsetDateTimeReader implements Reader<OffsetDateTime> {
+    private static class OffsetDateTimeReader extends SingleColumnReader<OffsetDateTime> {
 
         @Override
         public OffsetDateTime read(ResultSet rs, Context ctx) throws SQLException {
@@ -615,7 +620,7 @@ public class ReaderManager {
         }
     }
 
-    private static class ZonedDateTimeReader implements Reader<ZonedDateTime> {
+    private static class ZonedDateTimeReader extends SingleColumnReader<ZonedDateTime> {
 
         @Override
         public ZonedDateTime read(ResultSet rs, Context ctx) throws SQLException {
@@ -626,7 +631,7 @@ public class ReaderManager {
         }
     }
 
-    private static class InstantReader implements Reader<Instant> {
+    private static class InstantReader extends SingleColumnReader<Instant> {
 
         @Override
         public Instant read(ResultSet rs, Context ctx) throws SQLException {
@@ -635,7 +640,7 @@ public class ReaderManager {
         }
     }
 
-    private static class JsonReader implements Reader<String> {
+    private static class JsonReader extends SingleColumnReader<String> {
 
         private final Dialect dialect;
 
@@ -678,6 +683,11 @@ public class ReaderManager {
                 );
             }
         }
+
+        @Override
+        public void skip(Context ctx) {
+            sqlReader.skip(ctx);
+        }
     }
 
     private static class ReferenceReader implements Reader<Object> {
@@ -705,6 +715,11 @@ public class ReaderManager {
             }
             return ctx.resolve(spi);
         }
+
+        @Override
+        public void skip(Context ctx) {
+            foreignKeyReader.skip(ctx);
+        }
     }
 
     private static class ReferenceIdViewReader implements Reader<Object> {
@@ -720,6 +735,11 @@ public class ReaderManager {
         @Override
         public Object read(ResultSet rs, Context ctx) throws SQLException {
             return foreignKeyReader.read(rs, ctx);
+        }
+
+        @Override
+        public void skip(Context ctx) {
+            foreignKeyReader.skip(ctx);
         }
     }
 
@@ -739,6 +759,12 @@ public class ReaderManager {
             Object source = sourceReader.read(rs, ctx);
             Object target = targetReader.read(rs, ctx);
             return new Association<>(source, target);
+        }
+
+        @Override
+        public void skip(Context ctx) {
+            sourceReader.skip(ctx);
+            targetReader.skip(ctx);
         }
     }
 
@@ -797,6 +823,13 @@ public class ReaderManager {
                 return DraftConsumerUncheckedException.rethrow(ex);
             }
             return hasNoNull && !hasRequiredNull ? ctx.resolve(spi) : null;
+        }
+
+        @Override
+        public void skip(Context ctx) {
+            for (Reader<?> reader : readers) {
+                reader.skip(ctx);
+            }
         }
     }
 

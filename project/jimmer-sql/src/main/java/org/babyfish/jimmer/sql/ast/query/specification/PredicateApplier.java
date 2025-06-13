@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.runtime.Reader;
 
 import java.util.Collection;
 

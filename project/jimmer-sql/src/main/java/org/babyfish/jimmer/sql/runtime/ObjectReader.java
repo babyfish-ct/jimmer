@@ -65,10 +65,20 @@ class ObjectReader implements Reader<Object> {
     }
 
     @Override
+    public void skip(Context ctx) {
+        idReader.skip(ctx);
+        for (Reader<?> reader : nonIdReaders) {
+            reader.skip(ctx);
+        }
+    }
+
+    @Override
     public Object read(ResultSet rs, Context ctx) throws SQLException {
         Object id = idReader.read(rs, ctx);
         if (id == null) {
-            ctx.addCol(nonIdReaders.length);
+            for (Reader<?> reader : nonIdReaders) {
+                reader.skip(ctx);
+            }
             return null;
         }
         DraftSpi spi = (DraftSpi) type.getDraftFactory().apply(ctx.draftContext(), null);
