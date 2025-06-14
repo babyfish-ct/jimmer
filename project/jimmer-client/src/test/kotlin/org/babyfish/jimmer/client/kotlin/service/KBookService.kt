@@ -73,6 +73,10 @@ interface KBookService {
     @DeleteMapping("/book/{id}")
     fun deleteBook(@PathVariable("id") id: Long): Int
 
+    @Api
+    @GetMapping("/books/suspend")
+    suspend fun findBooksSuspend(@RequestParam("name", required = false) name: String?): List<@FetchBy("SIMPLE_FETCHER") KBook>
+
     companion object {
 
         /**

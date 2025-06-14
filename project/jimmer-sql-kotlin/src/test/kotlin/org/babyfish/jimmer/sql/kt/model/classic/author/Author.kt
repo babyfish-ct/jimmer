@@ -16,6 +16,7 @@ interface Author {
      * The id property
      */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
     /**

@@ -357,6 +357,22 @@ public enum QueryReason {
     GET_ID_FOR_KEY_BASE_UPDATE,
 
     /**
+     * <p>Saving some objects without Ids using the
+     * INSERT_IF_ABSENT/APPEND_IF_ABSENT mode,
+     * may result in some objects still lacking an
+     * id property after being saved. However, the
+     * subsequent saving of associated objects
+     * relies on these ids, which can prevent the
+     * save command from completing successfully.</p>
+     *
+     * <p>To address this issue, Jimmer will query
+     * the ids for these objects when necessary to
+     * ensure that subsequent save operations can
+     * proceed.</p>
+     */
+    GET_ID_FOR_PRE_SAVED_ENTITIES,
+
+    /**
      * After executing SQL insert or update, an exception
      * occurred that violates database constraints.
      * Investigate whether the cause is one of the following:
@@ -383,5 +399,5 @@ public enum QueryReason {
      * is specified and Jimmer cannot optimize
      * it without query database again.
      */
-    FETCHER
+    FETCHER,
 }

@@ -27,7 +27,7 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
 
     fun forEach(
         con: Connection? = null,
-        batchSize: Int = 0,
+        batchSize: Int = -1,
         block: (R) -> Unit
     )
 }

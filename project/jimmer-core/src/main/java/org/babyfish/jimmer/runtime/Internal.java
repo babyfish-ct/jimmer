@@ -172,7 +172,7 @@ public class Internal {
             try {
                 ((DraftConsumer<Object>) block).accept(draft);
             } catch (Throwable ex) {
-                DraftConsumerUncheckedException.rethrow(ex);
+                throw DraftConsumerUncheckedException.rethrow(ex);
             }
         }
     }

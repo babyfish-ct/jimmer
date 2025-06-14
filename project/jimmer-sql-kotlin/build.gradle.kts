@@ -23,6 +23,7 @@ dependencies {
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.jackson.module.kotlin)
     testImplementation(libs.hibernate.validation)
+    testImplementation(libs.caffeine)
 }
 
 ksp {

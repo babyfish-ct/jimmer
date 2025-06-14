@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.addBy
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
@@ -638,6 +639,174 @@ class SaveCommandTest : AbstractMutationTest() {
                         |--->on tb_1_.GROUP_ID = tb_2_.GROUP_ID and tb_1_.ARTIFACT_ID = tb_2_.ARTIFACT_ID 
                         |when not matched then insert(GROUP_ID, ARTIFACT_ID, SCOPE) 
                         |--->values(tb_2_.GROUP_ID, tb_2_.ARTIFACT_ID, tb_2_.SCOPE)""".trimMargin()
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testIssue1071ByOneAssociation() {
+        resetIdentity(null, "AUTHOR")
+        resetIdentity(null, "BOOK")
+        val author = Author {
+            firstName = "Michael"
+            lastName = "Simpson"
+            gender = Gender.MALE
+            books().addBy {
+                name = "Learning GraphQL"
+                edition = 1
+                price = BigDecimal.valueOf(1.0)
+            }
+        }
+        executeAndExpectResult({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+                setIdGenerator(IdentityIdGenerator.INSTANCE)
+            }.entities.forConnection(con).save(author) {
+                setAssociatedMode(Author::books, AssociatedSaveMode.APPEND_IF_ABSENT)
+            }
+        }) {
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+                        |from AUTHOR tb_1_ 
+                        |where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into AUTHOR(FIRST_NAME, LAST_NAME, GENDER) 
+                        |values(?, ?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """merge into BOOK tb_1_ 
+                        |using(values(?, ?, ?)) tb_2_(NAME, EDITION, PRICE) 
+                        |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
+                        |when not matched then 
+                        |--->insert(NAME, EDITION, PRICE) values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE)""".trimMargin()
+                )
+            }
+            statement {
+                queryReason(QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES)
+                sql(
+                    """select tb_1_.ID 
+                        |from BOOK tb_1_ 
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) 
+                        |values(?, ?)""".trimMargin()
+                )
+            }
+            entity {
+                modified(
+                    """{
+                        |--->"id":100,
+                        |--->"firstName":"Michael",
+                        |--->"lastName":"Simpson",
+                        |--->"gender":"MALE",
+                        |--->"books":[
+                        |--->--->{
+                        |--->--->--->"id":1,
+                        |--->--->--->"name":"Learning GraphQL",
+                        |--->--->--->"edition":1,
+                        |--->--->--->"price":1.0
+                        |--->--->}
+                        |--->]
+                        |}""".trimMargin()
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testIssue1071ByTwoAssociations() {
+        resetIdentity(null, "AUTHOR")
+        resetIdentity(null, "BOOK")
+        val author = Author {
+            firstName = "Michael"
+            lastName = "Simpson"
+            gender = Gender.MALE
+            books().addBy {
+                name = "Learning GraphQL"
+                edition = 3
+                price = BigDecimal.valueOf(1.0)
+            }
+            books().addBy {
+                name = "Learning GraphQL"
+                edition = 4
+                price = BigDecimal.valueOf(1.0)
+            }
+        }
+        executeAndExpectResult({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+                setIdGenerator(IdentityIdGenerator.INSTANCE)
+            }.entities.forConnection(con).save(author) {
+                setAssociatedMode(Author::books, AssociatedSaveMode.APPEND_IF_ABSENT)
+            }
+        }) {
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+                        |from AUTHOR tb_1_ 
+                        |where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into AUTHOR(FIRST_NAME, LAST_NAME, GENDER) 
+                        |values(?, ?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """merge into BOOK tb_1_ 
+                        |using(values(?, ?, ?)) tb_2_(NAME, EDITION, PRICE) 
+                        |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
+                        |when not matched then 
+                        |--->insert(NAME, EDITION, PRICE) values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE)""".trimMargin()
+                )
+            }
+            statement {
+                queryReason(QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES)
+                sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
+                        |from BOOK tb_1_ 
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) 
+                        |values(?, ?)""".trimMargin()
+                )
+            }
+            entity {
+                modified(
+                    """{
+                        |--->"id":100,
+                        |--->"firstName":"Michael",
+                        |--->"lastName":"Simpson",
+                        |--->"gender":"MALE",
+                        |--->"books":[
+                        |--->--->{
+                        |--->--->--->"id":3,
+                        |--->--->--->"name":"Learning GraphQL",
+                        |--->--->--->"edition":3,
+                        |--->--->--->"price":1.0
+                        |--->--->},{
+                        |--->--->--->"id":100,
+                        |--->--->--->"name":"Learning GraphQL",
+                        |--->--->--->"edition":4,
+                        |--->--->--->"price":1.0
+                        |--->--->}
+                        |--->]
+                        |}""".trimMargin()
                 )
             }
         }

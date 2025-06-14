@@ -47,11 +47,11 @@ class KOpenApiGeneratorTest {
                         .setSecuritySchemes(
                             mapOf(
                                 "tenantHeader" to
-                                OpenApiProperties.newSecuritySchemeBuilder()
-                                    .setType("apiKey")
-                                    .setName("tenant")
-                                    .setIn(OpenApiProperties.In.HEADER)
-                                    .build()
+                                        OpenApiProperties.newSecuritySchemeBuilder()
+                                            .setType("apiKey")
+                                            .setName("tenant")
+                                            .setIn(OpenApiProperties.In.HEADER)
+                                            .build()
                             )
                         )
                         .build()
@@ -248,6 +248,25 @@ class KOpenApiGeneratorTest {
                     "      responses:\n" +
                     "        200:\n" +
                     "          description: A list contains simple DTOs\n" +
+                    "          content:\n" +
+                    "            application/json:\n" +
+                    "              schema:\n" +
+                    "                type: array\n" +
+                    "                items:\n" +
+                    "                  \$ref: '#/components/schemas/KBook_KBookService_SIMPLE_FETCHER'\n" +
+                    "  /books/suspend:\n" +
+                    "    get:\n" +
+                    "      tags:\n" +
+                    "        - KBookService\n" +
+                    "      operationId: findBooksSuspend\n" +
+                    "      parameters:\n" +
+                    "        - name: name\n" +
+                    "          in: query\n" +
+                    "          schema:\n" +
+                    "            type: string\n" +
+                    "      responses:\n" +
+                    "        200:\n" +
+                    "          description: OK\n" +
                     "          content:\n" +
                     "            application/json:\n" +
                     "              schema:\n" +
@@ -712,11 +731,11 @@ class KOpenApiGeneratorTest {
                         .setSecuritySchemes(
                             mapOf(
                                 "tenantHeader" to
-                                    OpenApiProperties.newSecuritySchemeBuilder()
-                                        .setType("apiKey")
-                                        .setName("tenant")
-                                        .setIn(OpenApiProperties.In.HEADER)
-                                        .build()
+                                        OpenApiProperties.newSecuritySchemeBuilder()
+                                            .setType("apiKey")
+                                            .setName("tenant")
+                                            .setIn(OpenApiProperties.In.HEADER)
+                                            .build()
                             )
                         )
                         .build()
@@ -883,5 +902,33 @@ class KOpenApiGeneratorTest {
                     "      in: header\n",
             writer.toString()
         )
+    }
+
+    @Test
+    fun testSuspendFunInKBookService() {
+        val metadata = Metadata
+            .newBuilder()
+            .setOperationParser(OperationParserImpl())
+            .setParameterParser(ParameterParserImpl())
+            .setGroups(setOf("kBookService"))
+            .build()
+        val generator = object: OpenApiGenerator(
+            metadata,
+            OpenApiProperties.newBuilder()
+                .setInfo(
+                    OpenApiProperties.newInfoBuilder()
+                        .setTitle("Book System")
+                        .setDescription("Test suspend fun support")
+                        .setVersion("2.0.0")
+                        .build()
+                )
+                .build()
+        ) {}
+        val writer = StringWriter()
+        generator.generate(writer)
+        val openapi = writer.toString()
+        // 验证 suspend fun 的接口被生成
+        Assertions.assertTrue(openapi.contains("/books/suspend"), "openapi 应包含 /books/suspend 路径")
+        Assertions.assertTrue(openapi.contains("findBooksSuspend"), "openapi 应包含 findBooksSuspend operationId")
     }
 }
