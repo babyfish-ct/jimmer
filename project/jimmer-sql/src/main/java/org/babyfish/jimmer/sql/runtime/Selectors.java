@@ -85,6 +85,7 @@ public class Selectors {
                     return Internal.usingSqlDraftContext((draftContext) -> {
                         Reader.Context ctx = new Reader.Context(draftContext, sqlClient);
                         List<R> results = new ArrayList<>();
+                        stmt.setFetchSize(batchSize);
                         try (ResultSet resultSet = stmt.executeQuery()) {
                             while (resultSet.next()) {
                                 results.add((R) reader.read(resultSet, ctx));
