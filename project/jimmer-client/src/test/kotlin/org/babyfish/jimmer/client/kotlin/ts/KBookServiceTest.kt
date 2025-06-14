@@ -44,6 +44,22 @@ class KBookServiceTest {
                     "        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<number>;\n" +
                     "    }\n" +
                     "    \n" +
+                    "    readonly findBooksSuspend: (options: KBookServiceOptions['findBooksSuspend']) => Promise<\n" +
+                    "        ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
+                    "    > = async(options) => {\n" +
+                    "        let _uri = '/books/suspend';\n" +
+                    "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                    "        let _value: any = undefined;\n" +
+                    "        _value = options.name;\n" +
+                    "        if (_value !== undefined && _value !== null) {\n" +
+                    "            _uri += _separator\n" +
+                    "            _uri += 'name='\n" +
+                    "            _uri += encodeURIComponent(_value);\n" +
+                    "            _separator = '&';\n" +
+                    "        }\n" +
+                    "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>>;\n" +
+                    "    }\n" +
+                    "    \n" +
                     "    /**\n" +
                     "     * @return A list contains complex DTOs\n" +
                     "     */\n" +
@@ -194,6 +210,9 @@ class KBookServiceTest {
                     "    }, \n" +
                     "    'deleteBook': {\n" +
                     "        readonly id: number\n" +
+                    "    }, \n" +
+                    "    'findBooksSuspend': {\n" +
+                    "        readonly name?: string | undefined\n" +
                     "    }\n" +
                     "}\n",
             writer.toString()

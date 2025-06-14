@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
@@ -234,26 +235,56 @@ public class Saver {
         updateAssociations(batch, prop, detachOtherSiblings);
     }
 
-    @SuppressWarnings("unchecked")
     private void fetch(List<DraftSpi> drafts, Iterable<Batch<DraftSpi>> batches) {
         if (ctx.path.getParent() != null) {
+            fetchIdIfNecessary(drafts, batches);
             return;
         }
         Fetcher<?> fetcher = ctx.fetcher;
         if (fetcher == null) {
+            fetchIdIfNecessary(drafts, batches);
             return;
         }
+        fetchImpl(drafts, batches, false);
+    }
 
+    private void fetchIdIfNecessary(List<DraftSpi> drafts, Iterable<Batch<DraftSpi>> batches) {
+        if (ctx.options.getMode() != SaveMode.INSERT_IF_ABSENT) {
+            return;
+        }
+        if (ctx.path.getBackProp() == null || ctx.path.getBackProp().isColumnDefinition()) {
+            return;
+        }
+        boolean needFetch = false;
+        for (Batch<DraftSpi> batch : batches) {
+            if (batch.shape().getIdGetters().isEmpty()) {
+                needFetch = true;
+                break;
+            }
+        }
+        if (!needFetch) {
+            return;
+        }
+        fetchImpl(drafts, batches, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void fetchImpl(
+            List<DraftSpi> drafts,
+            Iterable<Batch<DraftSpi>> batches,
+            boolean fillIdIfNecessary
+    ) {
         DraftSpi[] arr = new DraftSpi[drafts.size()];
         int index = 0;
         List<Object> unmatchedIds = new ArrayList<>();
-        List<DraftSpi> nonIdObjects = new ArrayList<DraftSpi>();
-        PropId idPropId = fetcher.getImmutableType().getIdProp().getId();
+        List<DraftSpi> nonIdObjects = new ArrayList<>();
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
         ShapeMatchContext shapeMatchContext = new ShapeMatchContext();
+        Fetcher<?> fetcher = ctx.fetcher;
         for (DraftSpi draft : drafts) {
             if (!draft.__isLoaded(idPropId)) {
                 nonIdObjects.add(draft);
-            } else if (!isShapeMatched(draft, fetcher, shapeMatchContext)) {
+            } else if (fetcher != null && !isShapeMatched(draft, fetcher, shapeMatchContext)) {
                 arr[index] = draft;
                 unmatchedIds.add(draft.__get(idPropId));
             }
@@ -262,9 +293,14 @@ public class Saver {
         if (!unmatchedIds.isEmpty()) {
             JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
             Map<Object, Object> map = ((EntitiesImpl) sqlClient.getEntities())
-                    .forSaveCommandFetch(QueryReason.FETCHER)
+                    .forSaveCommandFetch(fillIdIfNecessary ? QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES : QueryReason.FETCHER)
                     .forConnection(ctx.con)
-                    .findMapByIds((Fetcher<Object>) fetcher, unmatchedIds);
+                    .findMapByIds(
+                            fillIdIfNecessary ?
+                                    new FetcherImpl<>((Class<Object>) ctx.path.getType().getJavaClass()) :
+                                    (Fetcher<Object>) fetcher,
+                            unmatchedIds
+                    );
             index = 0;
             ListIterator<DraftSpi> itr = drafts.listIterator();
             while (itr.hasNext()) {
@@ -283,35 +319,54 @@ public class Saver {
             if (drafts.size() == 1) {
                 Map<KeyMatcher.Group, List<ImmutableSpi>> rowMap = Rows.findByKeys(
                         ctx,
-                        QueryReason.FETCHER,
-                        (Fetcher<ImmutableSpi>) fetcher,
+                        fillIdIfNecessary ? QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES : QueryReason.FETCHER,
+                        fillIdIfNecessary ?
+                                new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass()) :
+                                (Fetcher<ImmutableSpi>) fetcher,
                         nonIdObjects,
                         null
                 );
                 if (!rowMap.isEmpty()) {
                     ImmutableSpi row = rowMap.values().iterator().next().iterator().next();
-                    DraftSpi replaceDraft = replaceDraft(drafts.get(0), row);
-                    if (replaceDraft != null) {
+                    if (fillIdIfNecessary) {
+                        drafts.get(0).__set(idPropId, row.__get(idPropId));
+                    } else {
                         ListIterator<DraftSpi> itr = drafts.listIterator();
-                        itr.next();
-                        itr.set(replaceDraft);
+                        DraftSpi draft = itr.next();
+                        DraftSpi replaceDraft = replaceDraft(draft, row);
+                        if (replaceDraft != null) {
+                            itr.set(replaceDraft);
+                        }
                     }
                 }
             } else {
-                KeyMatcher keyMatcher = ctx.options.getKeyMatcher(fetcher.getImmutableType());
+                KeyMatcher keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
                 for (Batch<DraftSpi> batch : batches) {
                     Set<ImmutableProp> keyProps = batch.shape().keyProps(keyMatcher);
-                    List<PropId> unloadPropIds = new ArrayList<>();
-                    for (ImmutableProp keyProp : keyProps) {
-                        if (!((FetcherImplementor<?>)fetcher).__contains(keyProp.getName())) {
-                            fetcher = fetcher.add(keyProp.getName());
-                            unloadPropIds.add(keyProp.getId());
+                    List<PropId> unloadPropIds = null;
+                    if (!fillIdIfNecessary) {
+                        assert fetcher != null;
+                        unloadPropIds = new ArrayList<>();
+                        for (ImmutableProp keyProp : keyProps) {
+                            if (!((FetcherImplementor<?>) fetcher).__contains(keyProp.getName())) {
+                                fetcher = fetcher.add(keyProp.getName());
+                                unloadPropIds.add(keyProp.getId());
+                            }
                         }
+                    }
+                    Fetcher<ImmutableSpi> actualFetcher;
+                    if (fillIdIfNecessary) {
+                        actualFetcher = new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass());
+                        for (ImmutableProp keyProp : keyProps) {
+                            actualFetcher = actualFetcher.add(keyProp.getName());
+                        }
+                    } else {
+                        actualFetcher = (Fetcher<ImmutableSpi>) fetcher;
                     }
                     Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> map = Rows.findMapByKeys(
                             ctx,
-                            QueryReason.FETCHER,
-                            (Fetcher<ImmutableSpi>) fetcher,
+                            fillIdIfNecessary ? QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES : QueryReason.FETCHER,
+                            actualFetcher,
                             nonIdObjects
                     );
                     if (map.isEmpty()) {
@@ -326,14 +381,18 @@ public class Saver {
                         Map<Object, ImmutableSpi> subMap = map.values().iterator().next();
                         Object key = Keys.keyOf(draft, keyProps);
                         ImmutableSpi fetched = subMap.get(key);
-                        DraftSpi newDraft = replaceDraft(draft, fetched);
-                        if (newDraft != null) {
-                            itr.set(newDraft);
+                        if (unloadPropIds == null) {
+                            draft.__set(idPropId, fetched.__get(idPropId));
                         } else {
-                            newDraft = draft;
-                        }
-                        for (PropId unloadedPropId : unloadPropIds) {
-                            newDraft.__unload(unloadedPropId);
+                            DraftSpi newDraft = replaceDraft(draft, fetched);
+                            if (newDraft != null) {
+                                itr.set(newDraft);
+                            } else {
+                                newDraft = draft;
+                            }
+                            for (PropId unloadedPropId : unloadPropIds) {
+                                newDraft.__unload(unloadedPropId);
+                            }
                         }
                     }
                 }

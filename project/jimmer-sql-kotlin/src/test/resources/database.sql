@@ -77,7 +77,7 @@ alter table book
 ;
 
 create table author(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     first_name varchar(25) not null,
     last_name varchar(25) not null,
     gender varchar(6) not null
