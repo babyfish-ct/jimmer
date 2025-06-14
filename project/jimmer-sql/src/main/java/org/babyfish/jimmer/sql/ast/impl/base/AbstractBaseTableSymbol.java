@@ -62,7 +62,7 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
     }
 
     @Override
-    public TypedBaseQueryImplementor<?> getQuery() {
+    public ConfigurableBaseQueryImpl<?> getQuery() {
         return query;
     }
 

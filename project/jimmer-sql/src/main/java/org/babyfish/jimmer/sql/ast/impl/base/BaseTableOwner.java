@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.jetbrains.annotations.Nullable;
@@ -16,8 +17,13 @@ public final class BaseTableOwner {
 
     final int index;
 
-    public BaseTableOwner(BaseTableSymbol baseTable, int index) {
-        this.baseTable = Objects.requireNonNull(baseTable, "baseTable cannot be null");
+    public BaseTableOwner(BaseTable baseTable, int index) {
+        Objects.requireNonNull(baseTable, "baseTable cannot be null");
+        if (baseTable instanceof BaseTableSymbol) {
+            this.baseTable = (BaseTableSymbol) baseTable;
+        } else {
+            this.baseTable = ((BaseTableImplementor) baseTable).toSymbol();
+        }
         this.index = index;
     }
 

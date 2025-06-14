@@ -3,8 +3,10 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
@@ -103,16 +105,16 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         this.expandedQueries = expandedQueries.toArray(EMPTY_QUERIES);
 
-        Set<BaseTableImplementor> baseTables = new LinkedHashSet<>();
+        Set<BaseTableSymbol> baseTables = new LinkedHashSet<>();
         for (TypedBaseQueryImplementor<?> query : queryArr) {
-            BaseTableImplementor baseTable = (BaseTableImplementor) query.asBaseTable();
-            if (baseTable instanceof MergedBaseTableImplementor) {
-                baseTables.addAll(((MergedBaseTableImplementor)baseTable).getBaseTables());
+            BaseTableSymbol baseTable = (BaseTableSymbol) query.asBaseTable();
+            if (baseTable instanceof MergedBaseTableSymbol) {
+                baseTables.addAll(((MergedBaseTableSymbol)baseTable).getBaseTables());
             } else {
                 baseTables.add(baseTable);
             }
         }
-        this.baseTable = newBaseTableProxy(baseTables, selections);
+        this.baseTable = newBaseTableProxy(baseTables);
     }
 
     private static void validateSelections(
@@ -157,12 +159,12 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY).enter('?' + operator + '?');
+        builder.enter('?' + operator + '?');
         for (TypedQueryImplementor query : queries) {
             builder.separator();
             query.renderTo(builder);
         }
-        builder.leave().leave();
+        builder.leave();
     }
 
     @Override
@@ -270,11 +272,11 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @SuppressWarnings("unchecked")
-    private T newBaseTableProxy(Set<BaseTableImplementor> baseTables, List<Selection<?>> selections) {
-        List<BaseTableImplementor> baseTableList = new ArrayList<>(baseTables);
-        BaseTableImplementor firstBaseTable = baseTables.iterator().next();
+    private T newBaseTableProxy(Set<BaseTableSymbol> baseTables) {
+        List<BaseTableSymbol> baseTableList = new ArrayList<>(baseTables);
+        BaseTableSymbol firstBaseTable = baseTables.iterator().next();
         Set<Class<?>> interfaces = new LinkedHashSet<>(Arrays.asList(firstBaseTable.getClass().getInterfaces()));
-        interfaces.add(MergedBaseTableImplementor.class);
+        interfaces.add(MergedBaseTableSymbol.class);
         return (T) Proxy.newProxyInstance(
                 firstBaseTable.getClass().getClassLoader(),
                 interfaces.toArray(EMPTY_CLASSES),

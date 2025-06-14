@@ -35,7 +35,7 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        return (T) table.__baseTableOwner(new BaseTableOwner((BaseTableImplementor) baseTable, index));
+        return (T) table.__baseTableOwner(new BaseTableOwner(baseTable, index));
     }
 
     @SuppressWarnings("unchecked")
@@ -50,7 +50,7 @@ public class BaseTableSelections {
         if (expr instanceof ComparableExpression<?>) {
             return (Expression<T>) of((ComparableExpression<?>)expr, baseTable, index);
         }
-        return new BaseTableExpression<>((ExpressionImplementor<T>) expr, new BaseTableOwner((BaseTableImplementor) baseTable, index));
+        return new BaseTableExpression<>((ExpressionImplementor<T>) expr, new BaseTableOwner(baseTable, index));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -62,7 +62,7 @@ public class BaseTableSelections {
 //        if (expr instanceof PropExpression<?>) {
 //            return of((PropExpression.Cmp<T>) expr, baseTable, index);
 //        }
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
         if (expr instanceof StringExpression) {
             return (ComparableExpression<T>) new BaseTableExpression.Str((StringExpressionImplementor) expr, owner);
         }
@@ -84,7 +84,7 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
 //        if (expr instanceof PropExpression.Str) {
 //            return new BaseTablePropExpression.Str((PropExpressionImplementor<String>) expr, owner);
 //        }
@@ -97,7 +97,7 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
 //        if (expr instanceof PropExpression.Num<?>) {
 //            return new BaseTablePropExpression.Num<>((PropExpressionImplementor<N>) expr, owner);
 //        }
@@ -110,7 +110,7 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
 //        if (expr instanceof PropExpression.Dt<?>) {
 //            return new BaseTablePropExpression.Dt<>((PropExpressionImplementor<T>) expr, owner);
 //        }
@@ -123,7 +123,7 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
 //        if (expr instanceof PropExpression.Tp<?>) {
 //            return new BaseTablePropExpression.Tp<>((PropExpressionImplementor<T>) expr, owner);
 //        }
@@ -138,14 +138,14 @@ public class BaseTableSelections {
 //    ) {
 //        if (expr instanceof AbstractTypedEmbeddedPropExpression<?>) {
 //            return (PropExpression<T>) ((AbstractTypedEmbeddedPropExpression<?>)expr)
-//                    .__baseTableOwner(new BaseTableOwner((BaseTableImplementor) baseTable, index));
+//                    .__baseTableOwner(new BaseTableOwner(baseTable, index));
 //        }
 //        if (expr instanceof PropExpression.Cmp<?>) {
 //            return (PropExpression<T>) of((PropExpression.Cmp<?>)expr, baseTable, index);
 //        }
 //        return new BaseTablePropExpression<>(
 //                (PropExpressionImplementor<T>) expr,
-//                new BaseTableOwner((BaseTableImplementor) baseTable, index)
+//                new BaseTableOwner(baseTable, index)
 //        );
 //    }
 //
@@ -155,7 +155,7 @@ public class BaseTableSelections {
 //            BaseTable baseTable,
 //            int index
 //    ) {
-//        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
+//        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
 //        if (expr instanceof PropExpression.Str) {
 //            return (PropExpression.Cmp<T>) new BaseTablePropExpression.Str((PropExpressionImplementor<String>) expr, owner);
 //        }
@@ -179,7 +179,7 @@ public class BaseTableSelections {
 //    ) {
 //        return new BaseTablePropExpression.Str(
 //                (PropExpressionImplementor<String>) expr,
-//                new BaseTableOwner((BaseTableImplementor) baseTable, index)
+//                new BaseTableOwner(baseTable, index)
 //        );
 //    }
 //
@@ -191,7 +191,7 @@ public class BaseTableSelections {
 //    ) {
 //        return new BaseTablePropExpression.Num<>(
 //                (PropExpressionImplementor<N>) expr,
-//                new BaseTableOwner((BaseTableImplementor) baseTable, index)
+//                new BaseTableOwner(baseTable, index)
 //        );
 //    }
 //
@@ -201,10 +201,10 @@ public class BaseTableSelections {
 //            BaseTable baseTable,
 //            int index
 //    ) {
-//        new BaseTableOwner((BaseTableImplementor) baseTable, index);
+//        new BaseTableOwner(baseTable, index);
 //        return new BaseTablePropExpression.Dt<>(
 //                (PropExpressionImplementor<T>) expr,
-//                new BaseTableOwner((BaseTableImplementor) baseTable, index)
+//                new BaseTableOwner(baseTable, index)
 //        );
 //    }
 //
@@ -216,7 +216,7 @@ public class BaseTableSelections {
 //    ) {
 //        return new BaseTablePropExpression.Tp<>(
 //                (PropExpressionImplementor<T>) expr,
-//                new BaseTableOwner((BaseTableImplementor) baseTable, index)
+//                new BaseTableOwner(baseTable, index)
 //        );
 //    }
 }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
@@ -107,7 +108,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 "sqlClient cannot be null"
         );
         this.table = table;
-        this.tableLikeImplementor = (TableLikeImplementor<?>) table;
+        this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null);
         this.type = null;
     }
 
@@ -127,8 +128,12 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     public TableLikeImplementor<?> getTableLikeImplementor() {
         TableLikeImplementor<?> tableLikeImplementor = this.tableLikeImplementor;
         if (tableLikeImplementor == null) {
-            this.tableLikeImplementor = tableLikeImplementor =
-                    TableImplementor.create(this, type);
+            if (table instanceof BaseTable) {
+                this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null);
+            } else {
+                this.tableLikeImplementor = tableLikeImplementor =
+                        TableImplementor.create(this, type);
+            }
         }
         return tableLikeImplementor;
     }
