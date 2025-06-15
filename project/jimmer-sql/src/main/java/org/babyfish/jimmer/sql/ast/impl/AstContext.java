@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
-import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
@@ -119,6 +118,15 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
         BaseTableImplementor baseTableImplementor = resolveBaseTable(statement, baseTableOwner.getBaseTable());
         return baseTableImplementor.getQuery().resolveRootTable(table);
+    }
+
+    public BaseTableImplementor resolveBaseTable(BaseTableSymbol baseTable) {
+        for (StatementFrame frame = statementFrame; frame != null; frame = frame.parent) {
+            if (frame.statement.getTable() instanceof BaseTableSymbol) {
+                return resolveBaseTable(frame.statement, baseTable);
+            }
+        }
+        return null;
     }
 
     private static BaseTableImplementor resolveBaseTable(AbstractMutableStatementImpl statement, BaseTableSymbol baseTable) {

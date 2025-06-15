@@ -29,15 +29,6 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     private StatementContext ctx;
 
-    private final Filter<?> filterOwner = FilterManager.currentFilter();
-
-    public MutableBaseQueryImpl(
-            JSqlClientImplementor sqlClient,
-            ImmutableType immutableType
-    ) {
-        super(sqlClient, immutableType);
-    }
-
     public MutableBaseQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table
@@ -181,10 +172,6 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     public void resolveVirtualPredicate(AstContext ctx) {
         setParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
-    }
-
-    public Filter<?> filterOwner() {
-        return filterOwner;
     }
 
     @Override

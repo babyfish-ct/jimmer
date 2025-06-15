@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
@@ -62,7 +61,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         this.key = key;
         this.owner = owner;
         this.parent = parent;
-        if (owner instanceof TableImpl<?>) {
+        if (owner instanceof BaseTableImplementor) {
+            this.joinType = JoinType.INNER;
+            this.joinPredicate = null;
+        } else {
             TableImpl<?> tableImpl = (TableImpl<?>) owner;
             this.joinType = tableImpl.getJoinType();
             if (tableImpl.weakJoinHandle != null) {
@@ -74,9 +76,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             } else {
                 joinPredicate = null;
             }
-        } else {
-            this.joinType = JoinType.INNER;
-            this.joinPredicate = null;
         }
     }
 
@@ -237,7 +236,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (owner instanceof BaseTableImplementor) {
             BaseTableImpl baseTableImplementor =
                     (BaseTableImpl) owner;
+            if (parent != null) {
+                builder.sql(" ").sql(joinType.name().toLowerCase()).sql(" join ");
+            }
+            builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             baseTableImplementor.renderBaseQuery(builder);
+            builder.leave().sql(" ").sql(alias);
         } else if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
             AbstractMutableStatementImpl statement = tableImplementor.getStatement();
@@ -665,7 +669,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     null;
             if (joinProp != null) {
                 if (joinProp.isMiddleTableDefinition()) {
-                    middleTableAlias = statement.getContext().allocateTableAlias();
+                    middleTableAlias = ctx.allocateTableAlias();
                 } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
                     //throw new AssertionError("Internal bug: Join property has not storage");
                     middleTableAlias = null;

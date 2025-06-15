@@ -23,6 +23,8 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     private final BaseTableImpl parent;
 
+    private BaseTableSymbol rootSymbol;
+
     // Only uses when parent is null
     private RealTable rootRealTable;
 
@@ -74,6 +76,14 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
         return symbol;
     }
 
+    private RealTable realTableAll(JoinTypeMergeScope scope) {
+        RealTable realTable = realTable(scope);
+        for (BaseTableImpl child : this) {
+            child.realTableAll(scope);
+        }
+        return realTable;
+    }
+
     @Override
     public RealTable realTable(JoinTypeMergeScope scope) {
         if (parent == null) {
@@ -90,17 +100,12 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     @Override
     public void accept(AstVisitor visitor) {
         actualQuery(symbol).accept(visitor);
-        for (BaseTableImpl subTable : this) {
-            actualQuery(subTable.symbol).accept(visitor);
-        }
-        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.sql(" from ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-        realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
-        builder.leave().sql(" ").sql(realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).getAlias());
+        builder.sql(" from ");
+        realTableAll(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
     }
 
     void renderBaseQuery(AbstractSqlBuilder<?> builder) {
@@ -115,7 +120,53 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     @Override
     public AbstractMutableStatementImpl getStatement() {
-        return symbol.getQuery().getMutableQuery();
+        return getRootSymbol().getQuery().getMutableQuery();
+    }
+
+    private BaseTableSymbol getRootSymbol() {
+        BaseTableSymbol rs = rootSymbol;
+        if (rs == null) {
+            rootSymbol = rs = createRootSymbol();
+        }
+        return rs;
+    }
+
+    private BaseTableSymbol createRootSymbol() {
+        if (parent == null) {
+            return symbol;
+        }
+        return parent.createRootSymbol();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("BaseTableImpl");
+        toString(true, true, builder);
+        return builder.toString();
+    }
+
+    private void toString(boolean up, boolean down, StringBuilder builder) {
+        builder.append("{");
+        builder.append("symbol=").append(symbol);
+        if (up && parent != null) {
+            builder.append(",parent=");
+            parent.toString(true, false, builder);
+        }
+        if (down && !isEmpty()) {
+            builder.append(",children=[");
+            boolean addComma = false;
+            for (BaseTableImpl child : this) {
+                if (addComma) {
+                    builder.append(",");
+                } else {
+                    addComma = true;
+                }
+                child.toString(false, true, builder);
+            }
+            builder.append(']');
+        }
+        builder.append("}");
     }
 
     public static class Key {
