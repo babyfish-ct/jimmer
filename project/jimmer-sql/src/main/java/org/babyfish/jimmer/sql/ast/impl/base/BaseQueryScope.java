@@ -93,4 +93,36 @@ public class BaseQueryScope {
         }
         return table;
     }
+
+    private static final class Key {
+        final RealTable realTable;
+        final int selectionIndex;
+
+        private Key(RealTable realTable, int selectionIndex) {
+            this.realTable = realTable;
+            this.selectionIndex = selectionIndex;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = System.identityHashCode(realTable);
+            result = 31 * result + selectionIndex;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Key)) return false;
+            Key key = (Key) o;
+            return realTable == key.realTable && selectionIndex == key.selectionIndex;
+        }
+
+        @Override
+        public String toString() {
+            return "Key{" +
+                    "realTable=" + realTable +
+                    ", selectionIndex=" + selectionIndex +
+                    '}';
+        }
+    }
 }
