@@ -3,11 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
@@ -108,7 +106,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
         realTableAll(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
     }
 
-    void renderBaseQuery(AbstractSqlBuilder<?> builder) {
+    void renderBaseQueryCore(AbstractSqlBuilder<?> builder) {
         actualQuery(symbol).renderTo(builder);
     }
 

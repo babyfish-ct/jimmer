@@ -237,7 +237,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
         for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
-            if (MergedBaseTableSymbol.contains(frame.statement.getTable(), baseTable)) {
+            if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
                 BaseQueryScope scope = frame.baseQueryScope();
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
                 if (mergedBy != null) {

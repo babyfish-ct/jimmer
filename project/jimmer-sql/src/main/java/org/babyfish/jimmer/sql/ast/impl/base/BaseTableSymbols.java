@@ -7,13 +7,34 @@ import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
 public class BaseTableSymbols {
 
     private BaseTableSymbols() {}
+
+    public static boolean contains(TableLike<?> table1, BaseTableSymbol table2) {
+        BaseTableSymbol parentTable2 = table2.getParent();
+        if (parentTable2 != null) {
+            return contains(table1, parentTable2);
+        }
+        return contains0(table1, table2);
+    }
+
+    private static boolean contains0(TableLike<?> table1, BaseTableSymbol table2) {
+        if (table1 == table2) {
+            return true;
+        }
+        if (table1 instanceof MergedBaseTableSymbol) {
+            Set<BaseTableSymbol> baseTables = ((MergedBaseTableSymbol)table1).getBaseTables();
+            return baseTables.contains(table2);
+        }
+        return false;
+    }
 
     public static BaseTableSymbol of(
             TypedBaseQueryImplementor<?> query,

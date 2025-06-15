@@ -23,6 +23,9 @@ import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implements RealTable {
@@ -44,6 +47,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private String alias;
 
     private String middleTableAlias;
+
+    private Path path;
 
     RealTableImpl(TableLikeImplementor<?> owner) {
         this(
@@ -92,6 +97,34 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     @Override
     public Key getKey() {
         return key;
+    }
+
+    @Override
+    public Path getPath() {
+        Path p = path;
+        if (p == null) {
+            if (key == null) {
+                p = new Path(Collections.emptyList());
+            } else {
+                List<Key> keys = new ArrayList<>();
+                collectKeys(keys);
+                p = new Path(keys);
+            }
+            path = p;
+        }
+        return p;
+    }
+
+    private void collectKeys(List<Key> keys) {
+        Key k = key;
+        if (k == null) {
+            return;
+        }
+        keys.add(0, k);
+        RealTableImpl p = parent;
+        if (p != null) {
+            p.collectKeys(keys);
+        }
     }
 
     @Override
@@ -240,7 +273,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder.sql(" ").sql(joinType.name().toLowerCase()).sql(" join ");
             }
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-            baseTableImplementor.renderBaseQuery(builder);
+            baseTableImplementor.renderBaseQueryCore(builder);
             builder.leave().sql(" ").sql(alias);
         } else if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
