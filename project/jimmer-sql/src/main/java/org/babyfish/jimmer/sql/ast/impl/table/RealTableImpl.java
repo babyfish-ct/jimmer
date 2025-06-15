@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
@@ -233,7 +234,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private void renderSelf(SqlBuilder builder, TableImplementor.RenderMode mode) {
         TableLikeImplementor<?> owner = this.owner;
-        if (owner instanceof TableImplementor<?>) {
+        if (owner instanceof BaseTableImplementor) {
+            BaseTableImpl baseTableImplementor =
+                    (BaseTableImpl) owner;
+            baseTableImplementor.renderBaseQuery(builder);
+        } else if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
             AbstractMutableStatementImpl statement = tableImplementor.getStatement();
             Predicate filterPredicate;
@@ -650,7 +655,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 '}';
     }
 
-    @Override
     public final void allocateAliases() {
         TableLikeImplementor<?> owner = this.owner;
         if (alias == null) {

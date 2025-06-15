@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;

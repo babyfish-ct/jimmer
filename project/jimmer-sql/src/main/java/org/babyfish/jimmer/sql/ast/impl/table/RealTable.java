@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
-import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

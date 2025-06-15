@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
@@ -92,46 +93,29 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
         for (BaseTableImpl subTable : this) {
             actualQuery(subTable.symbol).accept(visitor);
         }
+        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.sql(" from ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-        actualQuery(symbol).renderTo(builder);
+        realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
         builder.leave().sql(" ").sql(realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).getAlias());
-        renderJoins(builder);
     }
 
-    private void renderJoins(AbstractSqlBuilder<?> builder) {
-        for (BaseTableImpl subTable : this) {
-            switch (subTable.getJoinType()) {
-                case LEFT:
-                    builder.sql(" left join ");
-                    break;
-                case RIGHT:
-                    builder.sql(" right join ");
-                    break;
-                case FULL:
-                    builder.sql(" full join ");
-                default:
-                    builder.sql(" inner join ");
-            }
-            builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-            actualQuery(subTable.symbol).renderTo(builder);
-            builder.leave();
-            //subTable.getWeakJoinHandle().createPredicate(this, subTable, builder);
-        }
-    }
-
-    @Override
-    public AbstractMutableStatementImpl getStatement() {
-        return symbol.getQuery().getMutableQuery();
+    void renderBaseQuery(AbstractSqlBuilder<?> builder) {
+        actualQuery(symbol).renderTo(builder);
     }
 
     private static TypedBaseQueryImplementor<?> actualQuery(BaseTableSymbol symbol) {
         ConfigurableBaseQueryImpl<?> query = symbol.getQuery();
         MergedBaseQueryImpl<?> mergedBy = query.getMergedBy();
         return mergedBy != null ? mergedBy : query;
+    }
+
+    @Override
+    public AbstractMutableStatementImpl getStatement() {
+        return symbol.getQuery().getMutableQuery();
     }
 
     public static class Key {
