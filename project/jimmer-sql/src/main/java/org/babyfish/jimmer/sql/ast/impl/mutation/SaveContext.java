@@ -206,4 +206,13 @@ class SaveContext extends MutationContext {
                 Investigators.toInvestigatorSqlClient(ctx.sqlClient(), ctx)
         );
     }
+
+    public boolean isIdRetrievingRequired() {
+        MutationPath path = this.path;
+        if (path.getParent() == null) {
+            return false;
+        }
+        ImmutableProp backProp = path.getBackProp();
+        return backProp == null || !backProp.isColumnDefinition();
+    }
 }

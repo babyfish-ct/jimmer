@@ -252,7 +252,7 @@ public class Saver {
         if (ctx.options.getMode() != SaveMode.INSERT_IF_ABSENT) {
             return;
         }
-        if (ctx.path.getBackProp() == null || ctx.path.getBackProp().isColumnDefinition()) {
+        if (!ctx.isIdRetrievingRequired()) {
             return;
         }
         fetchImpl(drafts, batches, true);
@@ -525,7 +525,6 @@ public class Saver {
             if (detach) {
                 switch (ctx.options.getAssociatedMode(prop)) {
                     case APPEND:
-                    case APPEND_IF_ABSENT:
                     case VIOLENTLY_REPLACE:
                         middleTableOperator.append(retainedIdPairs);
                         break;
@@ -533,7 +532,7 @@ public class Saver {
                     case MERGE:
                         middleTableOperator.merge(retainedIdPairs);
                         break;
-                    case REPLACE:
+                    default:
                         middleTableOperator.replace(retainedIdPairs);
                         break;
                 }

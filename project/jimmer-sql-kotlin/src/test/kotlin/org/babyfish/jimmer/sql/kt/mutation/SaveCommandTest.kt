@@ -903,15 +903,53 @@ class SaveCommandTest : AbstractMutationTest() {
             }
         }
         executeAndExpectResult({ con ->
-            sqlClient {
-                setDialect(object: H2Dialect() {
+            val sqlClient = sqlClient {
+                setDialect(object : H2Dialect() {
                     override fun isUpsertSupported(): Boolean = false
                 })
                 setIdGenerator(IdentityIdGenerator.INSTANCE)
-            }.entities.forConnection(con).save(author) {
+            }
+            sqlClient.entities.forConnection(con).save(author) {
+                setAssociatedMode(Author::books, AssociatedSaveMode.APPEND_IF_ABSENT)
+            }
+            sqlClient.entities.forConnection(con).save(author) {
                 setAssociatedMode(Author::books, AssociatedSaveMode.APPEND_IF_ABSENT)
             }
         }) {
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+                    |from AUTHOR tb_1_ 
+                    |where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)""".trimMargin()
+                )
+                variables("Michael", "Simpson")
+            }
+            statement {
+                sql(
+                    """insert into AUTHOR(FIRST_NAME, LAST_NAME, GENDER) 
+                    |values(?, ?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
+                    |from BOOK tb_1_ 
+                    |where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into BOOK(NAME, EDITION, PRICE) 
+                    |values(?, ?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) 
+                    |values(?, ?)""".trimMargin()
+                )
+                batchVariables(0, 100L, 3L)
+            }
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
@@ -921,8 +959,7 @@ class SaveCommandTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """insert into AUTHOR(FIRST_NAME, LAST_NAME, GENDER) 
-                        |values(?, ?, ?)""".trimMargin()
+                    """update AUTHOR set GENDER = ? where ID = ?"""
                 )
             }
             statement {
@@ -934,14 +971,9 @@ class SaveCommandTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """insert into BOOK(NAME, EDITION, PRICE) 
-                        |values(?, ?, ?)""".trimMargin()
-                )
-            }
-            statement {
-                sql(
-                    """insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) 
-                        |values(?, ?)""".trimMargin()
+                    """select BOOK_ID 
+                        |from BOOK_AUTHOR_MAPPING 
+                        |where AUTHOR_ID = ?""".trimMargin()
                 )
             }
             entity {

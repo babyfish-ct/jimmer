@@ -984,7 +984,7 @@ class UpsertPreHandler extends AbstractPreHandler {
                             updatedWithoutKeyList.add(draft);
                             items.add(newItem(draft, original));
                         }
-                        if (!ignoreUpdate || ctx.path.getBackProp() != null && !ctx.path.getBackProp().isColumnDefinition()) {
+                        if (!ignoreUpdate || ctx.isIdRetrievingRequired()) {
                             draft.__set(idPropId, original.__get(idPropId));
                         }
                     }
