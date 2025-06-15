@@ -255,16 +255,6 @@ public class Saver {
         if (ctx.path.getBackProp() == null || ctx.path.getBackProp().isColumnDefinition()) {
             return;
         }
-        boolean needFetch = false;
-        for (Batch<DraftSpi> batch : batches) {
-            if (batch.shape().getIdGetters().isEmpty()) {
-                needFetch = true;
-                break;
-            }
-        }
-        if (!needFetch) {
-            return;
-        }
         fetchImpl(drafts, batches, true);
     }
 

@@ -979,10 +979,14 @@ class UpsertPreHandler extends AbstractPreHandler {
                         insertedList.add(draft);
                         itr.remove();
                         items.add(newItem(draft, null));
-                    } else if (!ignoreUpdate) {
-                        updatedWithoutKeyList.add(draft);
-                        items.add(newItem(draft, original));
-                        draft.__set(idPropId, original.__get(idPropId));
+                    } else {
+                        if (!ignoreUpdate) {
+                            updatedWithoutKeyList.add(draft);
+                            items.add(newItem(draft, original));
+                        }
+                        if (!ignoreUpdate || ctx.path.getBackProp() != null && !ctx.path.getBackProp().isColumnDefinition()) {
+                            draft.__set(idPropId, original.__get(idPropId));
+                        }
                     }
                 }
             }
