@@ -49,7 +49,7 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
         BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
         assert mapper != null;
-        builder.sql(mapper.getAlias(builder.assertSimple().getAstContext())).sql(".c").sql(Integer.toString(mapper.expressionIndex()));
+        builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(mapper.expressionIndex()));
         ctx.popStatement();
     }
 

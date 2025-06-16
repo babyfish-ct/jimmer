@@ -40,7 +40,7 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
             WeakJoinHandle handle,
             JoinType joinType
     ) {
-        this.query = (ConfigurableBaseQueryImpl<?>) base.getQuery();
+        this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");

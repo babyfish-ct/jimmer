@@ -68,9 +68,22 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 for (Selection<?> selection : data.selections) {
                     Ast.from(selection, visitor.getAstContext()).accept(visitor);
                 }
+                if (mutableQuery.getTableLikeImplementor() instanceof BaseTableImplementor) {
+                    RealTable realBaseTable = mutableQuery
+                            .getTableLikeImplementor()
+                            .realTable(visitor.getAstContext().getJoinTypeMergeScope());
+                    visitBaseTable(realBaseTable, visitor);
+                }
             }
         } finally {
             astContext.popStatement();
+        }
+    }
+
+    private void visitBaseTable(RealTable realBaseTable, AstVisitor visitor) {
+        realBaseTable.getTableLikeImplementor().accept(visitor);
+        for (RealTable childBaseTable : realBaseTable) {
+            visitBaseTable(childBaseTable, visitor);
         }
     }
 

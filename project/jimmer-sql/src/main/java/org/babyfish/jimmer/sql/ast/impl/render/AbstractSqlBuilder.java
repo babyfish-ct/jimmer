@@ -306,9 +306,9 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (definition instanceof SingleColumn) {
             String columnName = ((SingleColumn)definition).getName();
             if (mapper != null) {
-                builder.append(mapper.getAlias(assertSimple().getAstContext()))
+                builder.append(mapper.getAlias())
                         .append(".c")
-                        .append(mapper.columnIndex(tableAlias, columnName, assertSimple().getAstContext()));
+                        .append(mapper.columnIndex(tableAlias, columnName));
             } else {
                 builder.append(tableAlias).append('.').append(columnName);
                 if (asBlock != null) {
@@ -323,9 +323,9 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 }
                 String columnName = definition.name(i);
                 if (mapper != null) {
-                    builder.append(mapper.getAlias(assertSimple().getAstContext()))
+                    builder.append(mapper.getAlias())
                             .append(".c")
-                            .append(mapper.columnIndex(tableAlias, columnName, assertSimple().getAstContext()));
+                            .append(mapper.columnIndex(tableAlias, columnName));
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {

@@ -231,7 +231,9 @@ public abstract class AbstractMutableQueryImpl
             boolean withoutSortingAndPaging
     ) {
         visitor.visitStatement(this);
-        this.getTableLikeImplementor().accept(visitor);
+
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        tableLikeImplementor.accept(visitor);
 
         List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {

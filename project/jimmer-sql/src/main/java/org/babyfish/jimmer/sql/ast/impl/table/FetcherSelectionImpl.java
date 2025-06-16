@@ -218,9 +218,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         if (mapper != null) {
-                            builder.sql(mapper.getAlias(ctx))
+                            builder.sql(mapper.getAlias())
                                     .sql(".c")
-                                    .sql(Integer.toString(mapper.formulaIndex(alias, (FormulaTemplate) template, ctx)));
+                                    .sql(Integer.toString(mapper.formulaIndex(alias, (FormulaTemplate) template)));
                         } else {
                             builder.sql(((FormulaTemplate) template).toSql(alias));
                         }
@@ -268,9 +268,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 builder.separator();
                 if (mapper != null) {
                     builder
-                            .sql(mapper.getAlias(builder.getAstContext()))
+                            .sql(mapper.getAlias())
                             .sql(".c")
-                            .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName, builder.getAstContext())));
+                            .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName)));
                 } else {
                     builder
                             .sql(realTable.getAlias()).sql(".")
