@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -56,6 +58,13 @@ public final class BaseTableOwner {
                 "table=" + baseTable +
                 ", index=" + index +
                 '}';
+    }
+
+    public static BaseTableOwner ofSelection(Selection<?> selection) {
+        if (selection instanceof TableLike<?>) {
+            return of((TableLike<?>) selection);
+        }
+        return of((Expression<?>) selection);
     }
 
     public static BaseTableOwner of(TableLike<?> table) {

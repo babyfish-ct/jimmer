@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -16,24 +17,24 @@ import java.util.*;
 
 public class BaseQueryScope {
 
-    private final BaseTableImplementor table;
+    private final AstContext astContext;
 
-    private final Map<Integer, BaseSelectionMapper> mapperMap =
+    private final Map<Key, BaseSelectionMapper> mapperMap =
             new LinkedHashMap<>();
 
     private int colNoSequence;
 
-    public BaseQueryScope(BaseTableImplementor table) {
-        this.table = table;
-    }
-
-    public BaseTableImplementor table() {
-        return table;
+    public BaseQueryScope(AstContext astContext) {
+        this.astContext = astContext;
     }
 
     public BaseSelectionMapper mapper(BaseTableOwner baseTableOwner) {
+        BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
+        RealTable realBaseTable = baseTable.realTable(astContext.getJoinTypeMergeScope());
         return mapperMap
-                .computeIfAbsent(baseTableOwner.index, it -> new BaseSelectionMapper(this, it));
+                .computeIfAbsent(
+                        new Key(realBaseTable, baseTableOwner.index),
+                        it -> new BaseSelectionMapper(this, it.realTable, it.selectionIndex));
     }
 
     int colNo() {
@@ -41,23 +42,24 @@ public class BaseQueryScope {
     }
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        return new BaseSelectionAliasRenderImpl(mapperMap, query);
+        BaseTableImplementor baseTableImplementor = astContext.resolveBaseTable((BaseTableSymbol) query.asBaseTable());
+        return new BaseSelectionAliasRenderImpl(mapperMap, baseTableImplementor.realTable(astContext.getJoinTypeMergeScope()));
     }
 
     private static class BaseSelectionAliasRenderImpl implements BaseSelectionAliasRender {
 
-        private final Map<Integer, BaseSelectionMapper> map;
+        private final Map<Key, BaseSelectionMapper> mapperMap;
 
-        private final ConfigurableBaseQuery<?> query;
+        private final RealTable realBaseTable;
 
-        private BaseSelectionAliasRenderImpl(Map<Integer, BaseSelectionMapper> map, ConfigurableBaseQuery<?> query) {
-            this.map = map;
-            this.query = query;
+        private BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, RealTable realBaseTable) {
+            this.mapperMap = mapperMap;
+            this.realBaseTable = realBaseTable;
         }
 
         @Override
         public void render(int index, Selection<?> selection, SqlBuilder builder) {
-            BaseSelectionMapper mapper = map.get(index);
+            BaseSelectionMapper mapper = mapperMap.get(new Key(realBaseTable, index));
             if (mapper == null) {
                 return;
             }
@@ -72,7 +74,7 @@ public class BaseQueryScope {
                     .realTable(builder.getAstContext().getJoinTypeMergeScope());
             for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
                 BaseSelectionMapper.QualifiedColumn qualifiedColumn = e.getKey();
-                String alias = table(realTable, qualifiedColumn.keys).getAlias();
+                String alias = childTableByKeys(realTable, qualifiedColumn.keys).getAlias();
                 builder.separator();
                 if (qualifiedColumn.formula != null) {
                     builder.sql(qualifiedColumn.formula.toSql(alias));
@@ -87,7 +89,7 @@ public class BaseQueryScope {
         }
     }
 
-    private static RealTable table(RealTable table, List<RealTable.Key> keys) {
+    private static RealTable childTableByKeys(RealTable table, List<RealTable.Key> keys) {
         for (RealTable.Key key : keys) {
             table = table.getChild(key);
         }

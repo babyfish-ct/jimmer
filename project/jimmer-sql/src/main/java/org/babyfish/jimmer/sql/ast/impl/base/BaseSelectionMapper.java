@@ -13,23 +13,26 @@ public class BaseSelectionMapper {
 
     private final BaseQueryScope scope;
 
+    private final RealTable realBaseTable;
+
     private final int selectionIndex;
 
     final Map<QualifiedColumn, Integer> columnIndexMap = new LinkedHashMap<>();
 
     int expressionIndex;
 
-    public BaseSelectionMapper(BaseQueryScope scope, int selectionIndex) {
+    public BaseSelectionMapper(BaseQueryScope scope, RealTable realBaseTable, int selectionIndex) {
         this.scope = scope;
+        this.realBaseTable = realBaseTable;
         this.selectionIndex = selectionIndex;
     }
 
     public String getAlias(AstContext ctx) {
-        return scope.table().realTable(ctx.getJoinTypeMergeScope()).getAlias();
+        return realBaseTable.getAlias();
     }
 
     public int columnIndex(String alias, String columnName, AstContext ctx) {
-        Selection<?> selection = scope.table().getSelections().get(selectionIndex);
+        Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx.getJoinTypeMergeScope());
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
@@ -39,7 +42,7 @@ public class BaseSelectionMapper {
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula, AstContext ctx) {
-        Selection<?> selection = scope.table().getSelections().get(selectionIndex);
+        Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx.getJoinTypeMergeScope());
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
@@ -104,7 +107,9 @@ public class BaseSelectionMapper {
             if (o == null || getClass() != o.getClass()) return false;
 
             QualifiedColumn that = (QualifiedColumn) o;
-            return keys.equals(that.keys) && Objects.equals(name, that.name) && Objects.equals(formula, that.formula);
+            return keys.equals(that.keys) &&
+                    Objects.equals(name, that.name) &&
+                    Objects.equals(formula, that.formula);
         }
 
         @Override
@@ -112,6 +117,7 @@ public class BaseSelectionMapper {
             return "QualifiedColumn{" +
                     "keys=" + keys +
                     ", name='" + name + '\'' +
+                    ", formula=" + formula +
                     '}';
         }
     }

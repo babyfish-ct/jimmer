@@ -347,7 +347,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             }
             TableLikeImplementor<?> table = statement.getTableLikeImplementor();
             if (table instanceof BaseTable) {
-                return new BaseQueryScope((BaseTableImplementor) table);
+                return new BaseQueryScope(AstContext.this);
             }
             return null;
         }
