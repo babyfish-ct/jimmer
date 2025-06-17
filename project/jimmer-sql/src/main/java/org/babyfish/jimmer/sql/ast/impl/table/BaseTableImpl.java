@@ -89,6 +89,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     @Override
     public void accept(AstVisitor visitor) {
+        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
         actualQuery(symbol).accept(visitor);
     }
 

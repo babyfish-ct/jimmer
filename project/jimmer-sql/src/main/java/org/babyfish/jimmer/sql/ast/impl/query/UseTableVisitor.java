@@ -76,11 +76,6 @@ public class UseTableVisitor extends AstVisitor {
         table.use(this);
     }
 
-    @Override
-    public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
-        return true;
-    }
-
     private void use(RealTable table) {
         if (table != null) {
             getAstContext().useTable(table);

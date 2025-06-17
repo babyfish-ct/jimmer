@@ -630,14 +630,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                                 withPrefix ? middleTableAlias : null,
                                 middleTable.getColumnDefinition(),
                                 asBlock,
-                                mapper
+                                null
                         );
                     } else {
                         builder.definition(
                                 withPrefix ? middleTableAlias : null,
                                 middleTable.getTargetColumnDefinition(),
                                 asBlock,
-                                mapper
+                                null
                         );
                     }
                 } else {
