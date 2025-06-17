@@ -14,13 +14,9 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Proxy;
 import java.util.*;
 
 public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<T>, TypedBaseQueryImplementor<T> {
-
-    private static final Class<?>[] EMPTY_CLASSES = new Class[0];
 
     private static final ConfigurableBaseQueryImpl<?>[] EMPTY_QUERIES = new ConfigurableBaseQueryImpl[0];
 
