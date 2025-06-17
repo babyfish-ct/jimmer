@@ -9,9 +9,11 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
@@ -257,7 +259,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         SqlBuilder sqlBuilder = builder.assertSimple();
         TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
         if (owner.getParent() == null || usedState != TableUsedState.NONE) {
-            renderSelf(sqlBuilder, TableImplementor.RenderMode.NORMAL);
+            if (owner instanceof BaseTableImplementor) {
+                AstContext astContext = builder.assertSimple().getAstContext();
+                astContext.pushRenderedBaseTable(((BaseTableImplementor) owner).toSymbol(), this);
+                renderSelf(sqlBuilder, TableImplementor.RenderMode.NORMAL);
+                astContext.popRenderedBaseTable();
+            } else {
+                renderSelf(sqlBuilder, TableImplementor.RenderMode.NORMAL);
+            }
             for (RealTable childTable : this) {
                 childTable.renderTo(sqlBuilder);
             }

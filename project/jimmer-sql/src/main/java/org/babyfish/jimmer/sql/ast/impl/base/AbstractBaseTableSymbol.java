@@ -17,7 +17,7 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final List<Selection<?>> selections;
 
-    private final BaseTableSymbol parent;
+    protected final BaseTableSymbol parent;
 
     private final WeakJoinHandle handle;
 

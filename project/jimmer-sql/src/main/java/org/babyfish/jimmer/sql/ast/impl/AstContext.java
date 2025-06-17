@@ -30,6 +30,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private JoinTypeMergeFrame joinTypeMergeFrame;
 
+    private BaseTableRenderFrame baseTableRenderFrame;
+
     private int modCount;
 
     public AstContext(JSqlClientImplementor sqlClient) {
@@ -64,6 +66,17 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public void popStatement() {
         this.statementFrame = this.statementFrame.parent;
+    }
+
+    public void pushRenderedBaseTable(BaseTableSymbol symbol, RealTable realBaseTable) {
+        this.baseTableRenderFrame = new BaseTableRenderFrame(
+                baseTableRenderFrame,
+                realBaseTable
+        );
+    }
+
+    public void popRenderedBaseTable() {
+        this.baseTableRenderFrame = baseTableRenderFrame.parent;
     }
 
     @SuppressWarnings("unchecked")
@@ -261,6 +274,14 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return null;
     }
 
+    public RealTable getRenderedRealBaseTable() {
+        BaseTableRenderFrame frame = baseTableRenderFrame;
+        if (frame != null) {
+            return frame.realTable;
+        }
+        throw new IllegalStateException("No rendered real base table");
+    }
+
     private static class Unwrapped<T> {
 
         final T value;
@@ -414,5 +435,23 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             builder.append(frame.statement);
         }
         return builder.toString();
+    }
+
+    private static class BaseTableRenderFrame {
+        final BaseTableRenderFrame parent;
+        final RealTable realTable;
+
+        BaseTableRenderFrame(BaseTableRenderFrame parent, RealTable realTable) {
+            this.parent = parent;
+            this.realTable = realTable;
+        }
+
+        @Override
+        public String toString() {
+            return "BaseTableRenderFrame{" +
+                    "parent=" + parent +
+                    ", realTable=" + realTable +
+                    '}';
+        }
     }
 }

@@ -39,23 +39,23 @@ public class BaseQueryScope {
     }
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        BaseTableImplementor baseTableImplementor = astContext.resolveBaseTable((BaseTableSymbol) query.asBaseTable());
-        return new BaseSelectionAliasRenderImpl(mapperMap, baseTableImplementor.realTable(astContext.getJoinTypeMergeScope()));
+        return new BaseSelectionAliasRenderImpl(mapperMap, (BaseTableSymbol) query.asBaseTable());
     }
 
     private static class BaseSelectionAliasRenderImpl implements BaseSelectionAliasRender {
 
         private final Map<Key, BaseSelectionMapper> mapperMap;
 
-        private final RealTable realBaseTable;
+        private final BaseTableSymbol baseTableSymbol;
 
-        private BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, RealTable realBaseTable) {
+        private BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, BaseTableSymbol baseTableSymbol) {
             this.mapperMap = mapperMap;
-            this.realBaseTable = realBaseTable;
+            this.baseTableSymbol = baseTableSymbol;
         }
 
         @Override
         public void render(int index, Selection<?> selection, SqlBuilder builder) {
+            RealTable realBaseTable = builder.getAstContext().getRenderedRealBaseTable();
             BaseSelectionMapper mapper = mapperMap.get(new Key(realBaseTable, index));
             if (mapper == null) {
                 return;

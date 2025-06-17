@@ -22,18 +22,7 @@ public class BaseTableSymbols {
         if (parentTable2 != null) {
             return contains(table1, parentTable2);
         }
-        return contains0(table1, table2);
-    }
-
-    private static boolean contains0(TableLike<?> table1, BaseTableSymbol table2) {
-        if (table1 == table2) {
-            return true;
-        }
-        if (table1 instanceof MergedBaseTableSymbol) {
-            Set<BaseTableSymbol> baseTables = ((MergedBaseTableSymbol)table1).getBaseTables();
-            return baseTables.contains(table2);
-        }
-        return false;
+        return table1 == table2;
     }
 
     public static BaseTableSymbol of(
@@ -112,6 +101,7 @@ public class BaseTableSymbols {
         public String toString() {
             return "BaseTable1{" +
                     "_1=" + selections.get(0) +
+                    (parent != null ? ",parent=" + parent : "") +
                     '}';
         }
     }

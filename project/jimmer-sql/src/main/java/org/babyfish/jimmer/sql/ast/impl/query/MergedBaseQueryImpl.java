@@ -2,11 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
@@ -105,16 +101,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         this.expandedQueries = expandedQueries.toArray(EMPTY_QUERIES);
 
-        Set<BaseTableSymbol> baseTables = new LinkedHashSet<>();
-        for (TypedBaseQueryImplementor<?> query : queryArr) {
-            BaseTableSymbol baseTable = (BaseTableSymbol) query.asBaseTable();
-            if (baseTable instanceof MergedBaseTableSymbol) {
-                baseTables.addAll(((MergedBaseTableSymbol)baseTable).getBaseTables());
-            } else {
-                baseTables.add(baseTable);
-            }
-        }
-        this.baseTable = newBaseTableProxy(baseTables);
+        this.baseTable = (T) expandedQueries.get(0).asBaseTable();
     }
 
     private static void validateSelections(
@@ -269,57 +256,5 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             return prevMergedBy;
         }
         return from0(mergedBy, mergedBy);
-    }
-
-    @SuppressWarnings("unchecked")
-    private T newBaseTableProxy(Set<BaseTableSymbol> baseTables) {
-        List<BaseTableSymbol> baseTableList = new ArrayList<>(baseTables);
-        BaseTableSymbol firstBaseTable = baseTables.iterator().next();
-        Set<Class<?>> interfaces = new LinkedHashSet<>(Arrays.asList(firstBaseTable.getClass().getInterfaces()));
-        interfaces.add(MergedBaseTableSymbol.class);
-        return (T) Proxy.newProxyInstance(
-                firstBaseTable.getClass().getClassLoader(),
-                interfaces.toArray(EMPTY_CLASSES),
-                ((proxy, method, args) -> {
-                    switch (method.getName()) {
-                        case "getBaseTables":
-                            return baseTables;
-//                        case "getSelections":
-//                            return selections;
-//                        case "get_1":
-//                            return selections.get(0);
-//                        case "get_2":
-//                            return selections.get(1);
-//                        case "get_3":
-//                            return selections.get(2);
-//
-//                        case "getQuery":
-//                            return this;
-//                        case "getStatement":
-//                            return new IllegalStateException("Merged Base Table does not support \"getStatement\"");
-                        case "accept":
-                            accept((AstVisitor) args[0]);
-                            return null;
-                        case "renderTo":
-                            AbstractSqlBuilder<?> builder = (AbstractSqlBuilder<?>) args[0];
-                            builder.sql(" from ");
-                            renderTo(builder);
-                            builder
-                                    .sql(" ")
-                                    .sql(
-                                            ((BaseTableImplementor)proxy)
-                                                    .realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope())
-                                                    .getAlias()
-                                    );
-                            return null;
-                        default:
-                            try {
-                                return method.invoke(baseTableList.get(0), args);
-                            } catch (InvocationTargetException ex) {
-                                throw ex.getTargetException();
-                            }
-                    }
-                })
-        );
     }
 }
