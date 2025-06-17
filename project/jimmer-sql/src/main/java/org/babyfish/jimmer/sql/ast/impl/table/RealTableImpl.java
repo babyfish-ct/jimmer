@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
@@ -69,16 +68,25 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         this.owner = owner;
         this.parent = parent;
         if (owner instanceof BaseTableImplementor) {
-            this.joinType = JoinType.INNER;
-            this.joinPredicate = null;
+            BaseTableImplementor baseTableImpl = (BaseTableImplementor) owner;
+            this.joinType = baseTableImpl.getJoinType();
+            if (owner.getWeakJoinHandle() != null) {
+                joinPredicate = owner.getWeakJoinHandle().createPredicate(
+                        baseTableImpl.getParent().toSymbol(),
+                        baseTableImpl.toSymbol(),
+                        owner.getStatement()
+                );
+            } else {
+                joinPredicate = null;
+            }
         } else {
             TableImpl<?> tableImpl = (TableImpl<?>) owner;
             this.joinType = tableImpl.getJoinType();
-            if (tableImpl.weakJoinHandle != null) {
-                joinPredicate = tableImpl.weakJoinHandle.createPredicate(
-                        tableImpl.parent,
-                        tableImpl,
-                        tableImpl.statement
+            if (owner.getWeakJoinHandle() != null) {
+                joinPredicate = owner.getWeakJoinHandle().createPredicate(
+                        owner.getParent(),
+                        owner,
+                        owner.getStatement()
                 );
             } else {
                 joinPredicate = null;
@@ -279,11 +287,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             BaseTableImpl baseTableImplementor =
                     (BaseTableImpl) owner;
             if (parent != null) {
-                builder.sql(" ").sql(joinType.name().toLowerCase()).sql(" join ");
+                builder.join(joinType);
             }
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             baseTableImplementor.renderBaseQueryCore(builder);
             builder.leave().sql(" ").sql(alias);
+            renderBaseTableJoin(builder);
         } else if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
             AbstractMutableStatementImpl statement = tableImplementor.getStatement();
@@ -309,7 +318,18 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
     }
 
-    @SuppressWarnings("unchecked")
+    private void renderBaseTableJoin(SqlBuilder builder) {
+        if (owner.getParent() == null || !(owner instanceof BaseTableImplementor)) {
+            return;
+        }
+        builder.on();
+        if (joinPredicate == null) {
+            builder.sql("1 = 1");
+        } else {
+            ((Ast)joinPredicate).renderTo(builder);
+        }
+    }
+
     private void renderJoin(SqlBuilder builder, TableImplementor.RenderMode mode) {
 
         if (!(owner instanceof TableImplementor<?>)) {

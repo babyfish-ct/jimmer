@@ -74,14 +74,6 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
         return symbol;
     }
 
-    private RealTable realTableAll(JoinTypeMergeScope scope) {
-        RealTable realTable = realTable(scope);
-        for (BaseTableImpl child : this) {
-            child.realTableAll(scope);
-        }
-        return realTable;
-    }
-
     @Override
     public RealTable realTable(JoinTypeMergeScope scope) {
         if (parent == null) {
@@ -103,7 +95,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.sql(" from ");
-        realTableAll(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
+        realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
     }
 
     void renderBaseQueryCore(AbstractSqlBuilder<?> builder) {
@@ -181,7 +173,6 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
         @Override
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
-
             Key key = (Key) o;
             return handle.equals(key.handle) && joinType == key.joinType;
         }

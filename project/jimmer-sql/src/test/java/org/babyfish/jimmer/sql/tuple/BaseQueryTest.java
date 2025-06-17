@@ -800,7 +800,7 @@ public class BaseQueryTest extends AbstractQueryTest {
 
         @Override
         public Predicate on(BaseTable1<BookTable> source, BaseTable1<AuthorTable> target) {
-            return null;
+            return source.get_1().asTableEx().authors().eq(target.get_1());
         }
     }
 }

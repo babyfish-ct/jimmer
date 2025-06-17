@@ -637,23 +637,6 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         } else {
             scope = null;
         }
-//        List<TableImplementor<?>> otherTableImplementors = null;
-//        if (baseTableOwner != null) {
-//            MergedBaseQueryImpl<?> mergedBy = baseTableOwner.getBaseTable().getQuery().getMergedBy();
-//            if (mergedBy != null) {
-//                otherTableImplementors = new ArrayList<>();
-//                int index = baseTableOwner.getIndex();
-//                for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-//                    Selection<?> selection = itemQuery.getSelections().get(index);
-//                    if (selection instanceof Table<?>) {
-//                        TableImplementor<?> tableImplementor = ((TableProxy<?>) selection).__resolve(builder.assertSimple().getAstContext());
-//                        if (tableImplementor != this) {
-//                            otherTableImplementors.add(tableImplementor);
-//                        }
-//                    }
-//                }
-//            }
-//        }
         realTable(scope).renderSelection(
                 prop,
                 rawId,
