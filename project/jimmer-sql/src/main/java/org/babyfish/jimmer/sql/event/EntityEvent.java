@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.event;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
@@ -68,11 +69,21 @@ public class EntityEvent<E> implements DatabaseEvent {
         if (oldEntity == null && newEntity == null) {
             throw new IllegalArgumentException("Both `oldEntity` and `newEntity` are null");
         }
-        if (oldEntity != null && !(oldEntity instanceof ImmutableSpi)) {
-            throw new IllegalArgumentException("oldEntity is not immutable object");
+        if (oldEntity != null) {
+            if (!(oldEntity instanceof ImmutableSpi)) {
+                throw new IllegalArgumentException("oldEntity is not immutable object");
+            }
+            if (oldEntity instanceof Draft) {
+                throw new IllegalArgumentException("oldEntity cannot be draft");
+            }
         }
-        if (newEntity != null && !(newEntity instanceof ImmutableSpi)) {
-            throw new IllegalArgumentException("newEntity is not immutable object");
+        if (newEntity != null) {
+            if (!(newEntity instanceof ImmutableSpi)) {
+                throw new IllegalArgumentException("newEntity is not immutable object");
+            }
+            if (newEntity instanceof Draft) {
+                throw new IllegalArgumentException("newEntity cannot be draft");
+            }
         }
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
         ImmutableSpi ne = (ImmutableSpi) newEntity;

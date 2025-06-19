@@ -201,6 +201,15 @@ class ProducerGenerator(
                         .defaultValue("null")
                         .build()
                 )
+                .addParameter(
+                    ParameterSpec
+                        .builder(
+                            "resolveImmediately",
+                            BOOLEAN
+                        )
+                        .defaultValue("false")
+                        .build()
+                )
                 .apply {
                     if (withBlock) {
                         addParameter(
@@ -228,7 +237,7 @@ class ProducerGenerator(
                     )
                 }
                 .addStatement(
-                    "return %T.produce(type, base, consumer) as %T",
+                    "return %T.produce(type, base, resolveImmediately, consumer) as %T",
                     INTERNAL_TYPE_CLASS_NAME,
                     type.className
                 )

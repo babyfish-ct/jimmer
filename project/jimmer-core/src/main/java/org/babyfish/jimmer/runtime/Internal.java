@@ -33,6 +33,26 @@ public class Internal {
     public static Object produce(
             ImmutableType type,
             Object base,
+            boolean resolveImmediately,
+            DraftConsumer<?> block
+    ) {
+        if (resolveImmediately) {
+            return usingDraftContext((ctx, isRoot) -> {
+                Object draft = createDraft(ctx, type, base);
+                modifyDraft(draft, block);
+                return ctx.resolveObject(draft);
+            });
+        }
+        return usingDraftContext((ctx, isRoot) -> {
+            Object draft = createDraft(ctx, type, base);
+            modifyDraft(draft, block);
+            return isRoot ? ctx.resolveObject(draft) : draft;
+        });
+    }
+
+    public static Object produce(
+            ImmutableType type,
+            Object base,
             DraftConsumer<?> block,
             Consumer<DraftContext> disposer
     ) {

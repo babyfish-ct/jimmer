@@ -43,8 +43,10 @@ public class ProducerGenerator {
         addType();
         addConstructor();
         if (!type.isMappedSuperClass()) {
-            addProduce(false);
-            addProduce(true);
+            addProduce(false, false);
+            addProduce(true, false);
+            addProduce(false, true);
+            addProduce(true, true);
             new ImplementorGenerator(type).generate(typeBuilder);
             new ImplGenerator(ctx, type).generate(typeBuilder);
             new DraftImplGenerator(type).generate(typeBuilder);
@@ -52,13 +54,16 @@ public class ProducerGenerator {
         parentBuilder.addType(typeBuilder.build());
     }
 
-    private void addProduce(Boolean base) {
+    private void addProduce(boolean base, boolean resolveImmediately) {
         TypeName baseType = type.getClassName();
         TypeName draftType = type.getDraftClassName();
         MethodSpec.Builder builder = MethodSpec.methodBuilder("produce");
         builder.addModifiers(Modifier.PUBLIC);
         if (base) {
             builder.addParameter(baseType, "base");
+        }
+        if (resolveImmediately) {
+            builder.addParameter(TypeName.BOOLEAN, "resolveImmediately");
         }
         builder.addParameter(
                 ParameterizedTypeName.get(
@@ -68,14 +73,34 @@ public class ProducerGenerator {
                 "block"
         );
         builder.returns(baseType);
-        if (base) {
-            builder.addCode(
-                    "return ($T)$T.produce(TYPE, base, block);",
-                    baseType,
-                    Internal.class
-            );
+        if (resolveImmediately) {
+            if (base) {
+                builder.addCode(
+                        "return ($T)$T.produce(TYPE, base, resolveImmediately, block);",
+                        baseType,
+                        Internal.class
+                );
+            } else {
+                builder.addCode(
+                        "return ($T)$T.produce(TYPE, null, resolveImmediately, block);",
+                        baseType,
+                        Internal.class
+                );
+            }
         } else {
-            builder.addCode("return produce(null, block);");
+            if (base) {
+                builder.addCode(
+                        "return ($T)$T.produce(TYPE, base, block);",
+                        baseType,
+                        Internal.class
+                );
+            } else {
+                builder.addCode(
+                        "return ($T)$T.produce(TYPE, null, block);",
+                        baseType,
+                        Internal.class
+                );
+            }
         }
         typeBuilder.addMethod(builder.build());
     }

@@ -883,7 +883,7 @@ class DtoGenerator private constructor(
                 .returns(dtoType.baseType.className)
                 .apply {
                     addStatement(
-                        "return %M(%T::class).by(null, this@%L::%L)",
+                        "return %M(%T::class).by(null, false, this@%L::%L)",
                         NEW,
                         dtoType.baseType.className,
                         innerClassName ?: dtoType.name!!,
