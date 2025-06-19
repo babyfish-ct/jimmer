@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
@@ -52,7 +53,7 @@ public class CaffeineValueBinder<K, V> extends AbstractTrackingConsumerBinder<K>
                         new CacheLoader<K, Ref<V>>() {
 
                             @Override
-                            public Ref<V> load(K key) {
+                            public Ref<V> load(@NotNull K key) {
                                 Map<K, V> map = chain.loadAll(Collections.singleton(key));
                                 V value = map.get(key);
                                 if (value != null || map.containsKey(key)) {
@@ -62,9 +63,30 @@ public class CaffeineValueBinder<K, V> extends AbstractTrackingConsumerBinder<K>
                             }
 
                             @SuppressWarnings("unchecked")
-                            @Override
-                            public Map<K, Ref<V>> loadAll(Iterable<? extends K> keys) {
-                                Map<K, V> map = chain.loadAll((Collection<K>) keys);
+                            @NotNull
+                            // For Caffeine 2.X
+                            public Map<K, Ref<V>> loadAll(@NotNull Iterable<? extends K> keys) {
+                                Collection<K> keyCollection;
+                                if (keys instanceof Collection<?>) {
+                                    keyCollection = (Collection<K>) keys;
+                                } else {
+                                    keyCollection = new LinkedHashSet<>();
+                                    for (K k : keys) {
+                                        keyCollection.add(k);
+                                    }
+                                }
+                                return loadAllImpl(keyCollection);
+                            }
+
+                            @SuppressWarnings("unchecked")
+                            @NotNull
+                            // For Caffeine 3.X
+                            public Map<? extends K, ? extends Ref<V>> loadAll(@NotNull Set<? extends K> keys) throws Exception {
+                                return loadAll((Collection<K>)keys);
+                            }
+
+                            private Map<K, Ref<V>> loadAllImpl(Collection<K> keys) {
+                                Map<K, V> map = chain.loadAll(keys);
                                 return map
                                         .entrySet()
                                         .stream()
