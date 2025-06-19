@@ -193,8 +193,8 @@ public class JimmerProperties {
                 3;
         if (databaseValidationMode != null && databaseValidation != null) {
             throw new IllegalArgumentException(
-                    "Conflict configuration properties: \"jimmer.database-validation.mode\" and " +
-                            "\"jimmer.database-validation-mode(deprecated)\""
+                    "Conflict configuration properties: \"jimmer.database-validation-mode\" and " +
+                            "\"jimmer.database-validation.mode(deprecated)\""
             );
         }
         if (databaseValidationMode != null) {
