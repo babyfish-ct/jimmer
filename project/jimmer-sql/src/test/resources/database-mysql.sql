@@ -298,3 +298,11 @@ insert into post_2_category_2_mapping(post_id, category_id, deleted_uuid) values
     (3, 4, 0x00000000000000000000000000000000), (3, 5, 0x00000000000000000000000000000000),
     (4, 5, 0x00000000000000000000000000000000), (4, 1, 0x00000000000000000000000000000000),
     (5, 1, 0x00000000000000000000000000000000), (5, 2, 0x00000000000000000000000000000000);
+
+
+
+create table document_storage (
+    id bigint primary key,
+    file_name varchar(100) NOT NULL,
+    file_content longblob
+);

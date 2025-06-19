@@ -74,7 +74,16 @@ public class Storages {
                                 prop +
                                 "\", the \"sqlElementType\" of \"@" +
                                 Column.class.getName() +
-                                "\" cannot be set because is neither array nor collection"
+                                "\" cannot be set because it is neither array nor collection"
+                );
+            }
+            if (prop.getReturnClass() == byte[].class) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the \"sqlElementType\" of \"@" +
+                                Column.class.getName() +
+                                "\" cannot be set because byte[] array is considered as binary data, not array"
                 );
             }
             return new SqlTypeResult(
@@ -87,7 +96,7 @@ public class Storages {
         Class<?> overriddenSqlClass = scalarTypeStrategy.getOverriddenSqlType(prop);
         if (overriddenSqlClass != null) {
             elementType = overriddenSqlClass;
-        } else if (prop.getReturnClass().isArray()) {
+        } else if (prop.getReturnClass().isArray() && prop.getReturnClass() != byte[].class) {
             elementType = prop.getReturnClass().getComponentType();
             isArray = true;
         } else if (Collection.class.isAssignableFrom(prop.getReturnClass())) {
