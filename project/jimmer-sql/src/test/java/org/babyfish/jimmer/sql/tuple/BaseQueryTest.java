@@ -800,11 +800,12 @@ public class BaseQueryTest extends AbstractQueryTest {
 
         @Override
         public Predicate on(BaseTable1<BookTable> source, BaseTable1<AuthorTable> target) {
-            return Predicate.sql(
-                    "exists(select * from BOOK_AUTHOR_MAPPING where BOOK_id = %e and AUTHOR_ID = %e)",
-                    source.get_1().id(),
-                    target.get_1().id()
-            );
+            return source.get_1().asTableEx().authors().eq(target.get_1());
+//            return Predicate.sql(
+//                    "exists(select * from BOOK_AUTHOR_MAPPING where BOOK_id = %e and AUTHOR_ID = %e)",
+//                    source.get_1().id(),
+//                    target.get_1().id()
+//            );
         }
     }
 }

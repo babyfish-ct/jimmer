@@ -34,7 +34,7 @@ public class BaseSelectionMapper {
     public int columnIndex(String alias, String columnName) {
         AstContext ctx = scope.astContext;
         Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
-        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx.getJoinTypeMergeScope());
+        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, columnName),
@@ -45,7 +45,7 @@ public class BaseSelectionMapper {
     public int formulaIndex(String alias, FormulaTemplate formula) {
         AstContext ctx = scope.astContext;
         Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
-        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx.getJoinTypeMergeScope());
+        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, formula),

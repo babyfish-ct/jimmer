@@ -71,7 +71,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 if (mutableQuery.getTableLikeImplementor() instanceof BaseTableImplementor) {
                     RealTable realBaseTable = mutableQuery
                             .getTableLikeImplementor()
-                            .realTable(visitor.getAstContext().getJoinTypeMergeScope());
+                            .realTable(visitor.getAstContext());
                     visitBaseTable(realBaseTable, visitor);
                 }
             }

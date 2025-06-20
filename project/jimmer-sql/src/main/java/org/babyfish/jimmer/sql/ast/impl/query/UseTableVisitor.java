@@ -36,7 +36,7 @@ public class UseTableVisitor extends AstVisitor {
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (implementor instanceof BaseTableImplementor) {
             BaseTableImplementor baseTableImplementor = (BaseTableImplementor) implementor;
-            baseTableImplementor.realTable(getAstContext().getJoinTypeMergeScope()).use(this);
+            baseTableImplementor.realTable(getAstContext()).use(this);
         } else if (implementor instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
             if (prop == null) {
@@ -54,7 +54,7 @@ public class UseTableVisitor extends AstVisitor {
             BaseTableOwner owner = tableImplementor.getBaseTableOwner();
             if (owner != null) {
                 BaseTableImplementor baseTableImplementor = getAstContext().resolveBaseTable(owner.getBaseTable());
-                use(baseTableImplementor.realTable(getAstContext().getJoinTypeMergeScope()));
+                use(baseTableImplementor.realTable(getAstContext()));
             }
         }
     }
@@ -71,7 +71,7 @@ public class UseTableVisitor extends AstVisitor {
     @Override
     public void visitStatement(AbstractMutableStatementImpl statement) {
         AstContext ctx = getAstContext();
-        RealTable table = ctx.getStatement().getTableLikeImplementor().realTable(ctx.getJoinTypeMergeScope());
+        RealTable table = ctx.getStatement().getTableLikeImplementor().realTable(ctx);
         rootTables.add(table);
         table.use(this);
     }
@@ -99,7 +99,7 @@ public class UseTableVisitor extends AstVisitor {
         protected Object enter(Field field) {
             TableImplementor<?> oldTableImplementor = this.tableImplementor;
             TableImplementor<?> newTableImplementor = oldTableImplementor.joinFetchImplementor(field.getProp());
-            ctx.useTable(newTableImplementor.realTable(ctx.getJoinTypeMergeScope()));
+            ctx.useTable(newTableImplementor.realTable(ctx));
             this.tableImplementor = newTableImplementor;
             return oldTableImplementor;
         }

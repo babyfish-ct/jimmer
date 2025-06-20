@@ -57,7 +57,7 @@ public class MutableUpdateImpl
     }
 
     private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
-        for (RealTable childTable : tableImplementor.realTable(astContext.getJoinTypeMergeScope())) {
+        for (RealTable childTable : tableImplementor.realTable(astContext)) {
             if (astContext.getTableUsedState(childTable) == TableUsedState.USED) {
                 return true;
             }
@@ -282,12 +282,12 @@ public class MutableUpdateImpl
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
 
             if (getSqlClient().getDialect().isUpdateAliasSupported()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
             }
 
             UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
-                for (RealTable child : table.realTable(astContext.getJoinTypeMergeScope())) {
+                for (RealTable child : table.realTable(astContext)) {
                     child.renderTo(builder);
                 }
             }
@@ -317,7 +317,7 @@ public class MutableUpdateImpl
             builder.enter(SqlBuilder.ScopeType.SELECT);
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
                 builder.separator().definition(
-                        table.realTable(astContext.getJoinTypeMergeScope()).getAlias(),
+                        table.realTable(astContext).getAlias(),
                         prop.getStorage(strategy),
                         null
                 );
@@ -330,13 +330,13 @@ public class MutableUpdateImpl
                         .sql(" ");
 
                 if (getSqlClient().getDialect().isUpdateAliasSupported()) {
-                    builder.sql(table.realTable(astContext.getJoinTypeMergeScope()).getAlias());
+                    builder.sql(table.realTable(astContext).getAlias());
                 }
 
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 NativePredicates.renderPredicates(
                         false,
-                        table.realTable(astContext.getJoinTypeMergeScope()).getAlias(),
+                        table.realTable(astContext).getAlias(),
                         table.getImmutableType().getIdProp().getStorage(strategy),
                         ids,
                         builder
@@ -411,7 +411,7 @@ public class MutableUpdateImpl
                     break;
                 case AS_JOIN:
                     builder.from().enter(",");
-                    for (RealTable child : table.realTable(builder.getAstContext().getJoinTypeMergeScope())) {
+                    for (RealTable child : table.realTable(builder.getAstContext())) {
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
                     }
                     builder.leave();
@@ -426,7 +426,7 @@ public class MutableUpdateImpl
             updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
             hasUsedChild(table, builder.getAstContext())
         ) {
-            for (RealTable child : table.realTable(builder.getAstContext().getJoinTypeMergeScope())) {
+            for (RealTable child : table.realTable(builder.getAstContext())) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
             }
         }
@@ -451,7 +451,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             NativePredicates.renderPredicates(
                     false,
-                    table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias(),
+                    table.realTable(builder.getAstContext()).getAlias(),
                     table.getImmutableType().getIdProp().getStorage(getSqlClient().getMetadataStrategy()),
                     ids,
                     builder
@@ -459,7 +459,7 @@ public class MutableUpdateImpl
         }
 
         if (hasTableCondition) {
-            for (RealTable child : table.realTable(builder.getAstContext().getJoinTypeMergeScope())) {
+            for (RealTable child : table.realTable(builder.getAstContext())) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }

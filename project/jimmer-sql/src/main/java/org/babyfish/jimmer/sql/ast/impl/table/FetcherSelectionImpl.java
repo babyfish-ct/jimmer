@@ -136,7 +136,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             visitor.visitTableReference(
                     TableProxies
                             .resolve(TableUtils.parent(table), visitor.getAstContext())
-                            .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
+                            .realTable(visitor.getAstContext()),
                     embeddedRawReferenceProp,
                     true
             );
@@ -144,7 +144,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         }
         RealTable realTable = TableProxies
                 .resolve(table, visitor.getAstContext())
-                .realTable(visitor.getAstContext().getJoinTypeMergeScope());
+                .realTable(visitor.getAstContext());
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() ||
@@ -165,7 +165,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(builder.sqlClient());
         RealTable realTable = TableProxies
                 .resolve(table, builder.getAstContext())
-                .realTable(builder.getAstContext().getJoinTypeMergeScope());
+                .realTable(builder.getAstContext());
         new JoinFetchFieldVisitor(builder.sqlClient()) {
 
             private RealTable table = realTable;
@@ -178,7 +178,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
                     this.table = tableImplementor
                             .joinFetchImplementor(field.getProp())
-                            .realTable(ctx.getJoinTypeMergeScope());
+                            .realTable(ctx);
                 }
                 return oldTable;
             }
@@ -249,11 +249,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
             realTable = TableProxies
                     .resolve(parent, builder.getAstContext())
-                    .realTable(builder.getAstContext().getJoinTypeMergeScope());
+                    .realTable(builder.getAstContext());
         } else {
             realTable = TableProxies
                     .resolve(table, builder.getAstContext())
-                    .realTable(builder.getAstContext().getJoinTypeMergeScope());
+                    .realTable(builder.getAstContext());
         }
         MultipleJoinColumns joinColumns =
                 embeddedRawReferenceProp != null ?

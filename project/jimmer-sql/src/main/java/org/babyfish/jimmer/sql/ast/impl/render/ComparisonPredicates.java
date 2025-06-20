@@ -43,7 +43,7 @@ public class ComparisonPredicates {
                             propExpressionImplementor.getTable(),
                             ((SqlBuilder)builder).getAstContext()
                     ).realTable(
-                            ((SqlBuilder) builder).getAstContext().getJoinTypeMergeScope()
+                            ((SqlBuilder) builder).getAstContext()
                     ).getFinalAlias(
                             propExpressionImplementor.getProp(),
                             propExpressionImplementor.isRawId(),

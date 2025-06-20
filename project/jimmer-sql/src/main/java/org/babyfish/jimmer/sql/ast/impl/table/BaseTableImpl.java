@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
@@ -75,7 +76,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     }
 
     @Override
-    public RealTable realTable(JoinTypeMergeScope scope) {
+    public RealTable realTable(AstContext ctx) {
         if (parent == null) {
             RealTable rrt = this.rootRealTable;
             if (rrt == null) {
@@ -83,20 +84,20 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
             }
             return rrt;
         }
-        RealTableImpl parentRealTable = (RealTableImpl) parent.realTable(scope);
-        return parentRealTable.child(scope, this);
+        RealTableImpl parentRealTable = (RealTableImpl) parent.realTable(ctx);
+        return parentRealTable.child(ctx.getJoinTypeMergeScope(), this);
     }
 
     @Override
     public void accept(AstVisitor visitor) {
-        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
+        visitor.visitTableReference(realTable(visitor.getAstContext()), null, false);
         actualQuery(symbol).accept(visitor);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.sql(" from ");
-        realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope()).renderTo(builder);
+        realTable(builder.assertSimple().getAstContext()).renderTo(builder);
     }
 
     void renderBaseQueryCore(AbstractSqlBuilder<?> builder) {

@@ -27,7 +27,7 @@ public class BaseQueryScope {
 
     public BaseSelectionMapper mapper(BaseTableOwner baseTableOwner) {
         BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
-        RealTable realBaseTable = baseTable.realTable(astContext.getJoinTypeMergeScope());
+        RealTable realBaseTable = baseTable.realTable(astContext);
         return mapperMap
                 .computeIfAbsent(
                         new Key(realBaseTable, baseTableOwner.index),
@@ -68,7 +68,7 @@ public class BaseQueryScope {
                 return;
             }
             RealTable realTable = TableProxies.resolve((Table<?>) selection, builder.getAstContext())
-                    .realTable(builder.getAstContext().getJoinTypeMergeScope());
+                    .realTable(builder.getAstContext());
             for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
                 BaseSelectionMapper.QualifiedColumn qualifiedColumn = e.getKey();
                 String alias = childTableByKeys(realTable, qualifiedColumn.keys).getAlias();

@@ -189,7 +189,7 @@ public class PropExpressionImpl<T>
         visitor.visitTableReference(
                 TableProxies
                         .resolve(table, visitor.getAstContext())
-                        .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
+                        .realTable(visitor.getAstContext()),
                 prop,
                 rawId
         );

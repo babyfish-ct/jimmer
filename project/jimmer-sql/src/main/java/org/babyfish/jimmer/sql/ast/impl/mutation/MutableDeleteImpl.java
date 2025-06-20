@@ -164,7 +164,7 @@ public class MutableDeleteImpl
         DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
         boolean directly = table
                 .isEmpty(it -> astContext
-                        .getTableUsedState(it.realTable(astContext.getJoinTypeMergeScope())) == TableUsedState.USED
+                        .getTableUsedState(it.realTable(astContext)) == TableUsedState.USED
                 ) && binLogOnly && (
                         isDissociationDisabled ||
                                 info == null ||
@@ -252,11 +252,11 @@ public class MutableDeleteImpl
         } else {
             builder.sql("delete");
             if (getSqlClient().getDialect().isDeletedAliasRequired()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
             }
             builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
             if (getSqlClient().getDialect().isDeleteAliasSupported()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
             }
             if (predicate != null) {
                 builder.enter(SqlBuilder.ScopeType.WHERE);

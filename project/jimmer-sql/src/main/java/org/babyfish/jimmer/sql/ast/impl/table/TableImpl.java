@@ -139,13 +139,14 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     }
 
     @Override
-    public final RealTableImpl realTable(JoinTypeMergeScope scope) {
+    public final RealTableImpl realTable(@Nullable AstContext ctx) {
         RealTableImpl realTable = this.realTable;
         if (realTable == null) {
             if (parent == null) {
                 realTable = new RealTableImpl(this);
             } else {
-                realTable = parent.realTable(scope).child(scope, this);
+                JoinTypeMergeScope scope = ctx != null ? ctx.getJoinTypeMergeScope() : null;
+                realTable = parent.realTable(ctx).child(scope, this);
             }
             this.realTable = realTable;
         }
@@ -603,23 +604,23 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
+        visitor.visitTableReference(realTable(visitor.getAstContext()), null, false);
     }
 
     @Override
     public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
-        realTable(builder.getAstContext().getJoinTypeMergeScope()).renderJoinAsFrom(builder, mode);
+        realTable(builder.getAstContext()).renderJoinAsFrom(builder, mode);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        JoinTypeMergeScope scope;
+        AstContext astContext;
         if (builder instanceof SqlBuilder) {
-            scope = ((SqlBuilder)builder).getAstContext().getJoinTypeMergeScope();
+            astContext = ((SqlBuilder)builder).getAstContext();
         } else {
-            scope = null;
+            astContext = null;
         }
-        realTable(scope).renderTo(builder);
+        realTable(astContext).renderTo(builder);
     }
 
     @Override
@@ -631,13 +632,13 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
-        JoinTypeMergeScope scope;
+        AstContext astContext;
         if (builder instanceof SqlBuilder) {
-            scope = ((SqlBuilder)builder).getAstContext().getJoinTypeMergeScope();
+            astContext = ((SqlBuilder)builder).getAstContext();
         } else {
-            scope = null;
+            astContext = null;
         }
-        realTable(scope).renderSelection(
+        realTable(astContext).renderSelection(
                 prop,
                 rawId,
                 builder,
