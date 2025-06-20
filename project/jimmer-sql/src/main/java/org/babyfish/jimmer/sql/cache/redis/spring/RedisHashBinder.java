@@ -18,6 +18,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see org.babyfish.jimmer.spring.cache.RedisHashBinder
+ */
+@Deprecated
 public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     private final RedisOperations<String, byte[]> operations;

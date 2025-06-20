@@ -1,10 +1,10 @@
-package org.babyfish.jimmer.sql.cache.redis.spring;
+package org.babyfish.jimmer.spring.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
-import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteValueBinder;
+import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
@@ -13,21 +13,16 @@ import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * framework-related classes should not be included in the jimmer-sql module.<br>
- * <br>
- * Redis-related caching should be implemented through framework-specific extensions.
- * @see org.babyfish.jimmer.spring.cache.RedisHashBinder
- */
-@Deprecated
-public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
+public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     private final RedisOperations<String, byte[]> operations;
 
-    protected RedisValueBinder(
+    protected RedisHashBinder(
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
@@ -47,23 +42,35 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
         this.operations = operations;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected List<byte[]> read(Collection<String> keys) {
-        return operations.opsForValue().multiGet(keys);
+    protected List<byte[]> read(Collection<String> keys, String hashKey) {
+        return (List<byte[]>)(List<?>)operations.executePipelined(
+                new SessionCallback<Void>() {
+                    @Override
+                    public <XK, XV> Void execute(RedisOperations<XK, XV> pops) throws DataAccessException {
+                        RedisOperations<String, byte[]> pipelinedOps = (RedisOperations<String, byte[]>)pops;
+                        for (String key : keys) {
+                            pipelinedOps.opsForHash().get(key, hashKey);
+                        }
+                        return null;
+                    }
+                }
+        );
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void write(Map<String, byte[]> map) {
+    protected void write(Map<String, byte[]> map, String hashKey) {
         operations.executePipelined(
                 new SessionCallback<Void>() {
                     @Override
                     public <XK, XV> Void execute(RedisOperations<XK, XV> pops) throws DataAccessException {
                         RedisOperations<String, byte[]> pipelinedOps = (RedisOperations<String, byte[]>)pops;
-                        pipelinedOps.opsForValue().multiSet(map);
-                        for (String key : map.keySet()) {
+                        for (Map.Entry<String, byte[]> e : map.entrySet()) {
+                            pipelinedOps.opsForHash().put(e.getKey(), hashKey, e.getValue());
                             pipelinedOps.expire(
-                                    key,
+                                    e.getKey(),
                                     nextExpireMillis(),
                                     TimeUnit.MILLISECONDS
                             );
@@ -82,11 +89,6 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
     @Override
     protected boolean matched(@Nullable Object reason) {
         return "redis".equals(reason);
-    }
-
-    @NotNull
-    public static <K, V> Builder<K, V> forObject(ImmutableType type) {
-        return new Builder<>(type, null);
     }
 
     @NotNull
@@ -112,13 +114,13 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
             return this;
         }
 
-        public RedisValueBinder<K, V> build() {
+        public RedisHashBinder<K, V> build() {
             if (operations == null) {
                 throw new IllegalStateException(
                         "Redis operations or redis connection factory has not been specified"
                 );
             }
-            return new RedisValueBinder<>(
+            return new RedisHashBinder<>(
                     type,
                     prop,
                     tracker,
