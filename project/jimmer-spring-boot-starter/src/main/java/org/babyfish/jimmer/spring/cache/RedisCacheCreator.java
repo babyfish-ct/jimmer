@@ -1,7 +1,7 @@
-package org.babyfish.jimmer.sql.cache.redis.quarkus;
+package org.babyfish.jimmer.spring.cache;
 
-import java.util.Objects;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -13,27 +13,23 @@ import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheCreator;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.util.Objects;
 
-import io.quarkus.redis.datasource.RedisDataSource;
-
-/**
- * framework-related classes should not be included in the jimmer-sql module.<br>
- * <br>
- * Redis-related caching should be implemented through framework-specific extensions.
- * @see io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator
- */
-@Deprecated
 public class RedisCacheCreator extends AbstractCacheCreator {
 
-    public RedisCacheCreator(RedisDataSource redisDataSource) {
-        this(redisDataSource, null);
+    public RedisCacheCreator(
+            RedisConnectionFactory connectionFactory
+    ) {
+        this(connectionFactory, null);
     }
 
-    public RedisCacheCreator(RedisDataSource redisDataSource, ObjectMapper objectMapper) {
-        super(new Root(redisDataSource, objectMapper));
+    public RedisCacheCreator(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper
+    ) {
+        super(new Root(connectionFactory, objectMapper));
     }
 
     protected RedisCacheCreator(Cfg cfg) {
@@ -78,7 +74,7 @@ public class RedisCacheCreator extends AbstractCacheCreator {
             return null;
         }
         return CaffeineValueBinder
-                .<K, V> forObject(type)
+                .<K, V>forObject(type)
                 .subscribe(args.tracker)
                 .maximumSize(args.localCacheMaximumSize)
                 .duration(args.localCacheDuration)
@@ -91,7 +87,7 @@ public class RedisCacheCreator extends AbstractCacheCreator {
             return null;
         }
         return CaffeineValueBinder
-                .<K, V> forProp(prop)
+                .<K, V>forProp(prop)
                 .subscribe(args.tracker)
                 .maximumSize(args.localCacheMaximumSize)
                 .duration(args.localCacheDuration)
@@ -104,7 +100,7 @@ public class RedisCacheCreator extends AbstractCacheCreator {
             return null;
         }
         return CaffeineHashBinder
-                .<K, V> forProp(prop)
+                .<K, V>forProp(prop)
                 .subscribe(args.tracker)
                 .maximumSize(args.multiViewLocalCacheMaximumSize)
                 .duration(args.multiViewLocalCacheDuration)
@@ -114,74 +110,89 @@ public class RedisCacheCreator extends AbstractCacheCreator {
     private <K, V> SimpleBinder<K, V> redisValueBinder(ImmutableType type) {
         Args args = args();
         return RedisValueBinder
-                .<K, V> forObject(type)
+                .<K, V>forObject(type)
                 .publish(args.tracker)
                 .duration(args.duration)
                 .objectMapper(args.objectMapper)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
-                .redis(args.redisDataSource)
+                .redis(args.connectionFactory)
                 .build()
-                .lock(args.locker, args.lockWaitDuration, args.lockLeaseDuration);
+                .lock(
+                        args.locker,
+                        args.lockWaitDuration,
+                        args.lockLeaseDuration
+                );
     }
 
     private <K, V> SimpleBinder<K, V> redisValueBinder(ImmutableProp prop) {
         Args args = args();
         return RedisValueBinder
-                .<K, V> forProp(prop)
+                .<K, V>forProp(prop)
                 .publish(args.tracker)
                 .duration(args.duration)
                 .objectMapper(args.objectMapper)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
-                .redis(args.redisDataSource)
+                .redis(args.connectionFactory)
                 .build()
-                .lock(args.locker, args.lockWaitDuration, args.lockLeaseDuration);
+                .lock(
+                        args.locker,
+                        args.lockWaitDuration,
+                        args.lockLeaseDuration
+                );
     }
 
     private <K, V> SimpleBinder.Parameterized<K, V> redisHashBinder(ImmutableProp prop) {
         Args args = args();
         return RedisHashBinder
-                .<K, V> forProp(prop)
+                .<K, V>forProp(prop)
                 .publish(args.tracker)
                 .duration(args.duration)
                 .objectMapper(args.objectMapper)
                 .duration(args.multiVewDuration)
                 .randomPercent(args.randomDurationPercent)
-                .redis(args.redisDataSource)
+                .redis(args.connectionFactory)
                 .build()
-                .lock(args.locker, args.lockWaitDuration, args.lockLeaseDuration);
+                .lock(
+                        args.locker,
+                        args.lockWaitDuration,
+                        args.lockLeaseDuration
+                );
     }
 
     private static class Root extends Cfg {
 
-        final RedisDataSource redisDataSource;
+        final RedisConnectionFactory connectionFactory;
 
         final ObjectMapper objectMapper;
 
-        private Root(RedisDataSource redisDataSource, ObjectMapper objectMapper) {
+        private Root(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
             super(null);
-            this.redisDataSource = Objects.requireNonNull(redisDataSource, "redisDataSource cannot be null");
+            this.connectionFactory = Objects.requireNonNull(connectionFactory, "connectionFactory cannot be null");
             this.objectMapper = objectMapper;
         }
     }
 
     static class Args extends AbstractCacheCreator.Args {
 
-        final RedisDataSource redisDataSource;
-
+        final RedisConnectionFactory connectionFactory;
         final ObjectMapper objectMapper;
 
         Args(Cfg cfg) {
             super(cfg);
+
             Root root = cfg.as(Root.class);
-            this.redisDataSource = root.redisDataSource;
+
+            this.connectionFactory = root.connectionFactory;
             ObjectMapper mapper = root.objectMapper;
-            ObjectMapper clonedMapper = mapper != null ? new ObjectMapper(mapper) {
-            } : new ObjectMapper();
+            ObjectMapper clonedMapper = mapper != null ?
+                    new ObjectMapper(mapper) {} :
+                    new ObjectMapper();
             clonedMapper.registerModule(new JavaTimeModule());
             clonedMapper.registerModule(new ImmutableModule());
             this.objectMapper = clonedMapper;
         }
     }
 }
+
