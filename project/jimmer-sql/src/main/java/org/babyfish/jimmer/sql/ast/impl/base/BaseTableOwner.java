@@ -42,12 +42,12 @@ public final class BaseTableOwner {
         if (o == null || getClass() != o.getClass()) return false;
 
         BaseTableOwner that = (BaseTableOwner) o;
-        return index == that.index && baseTable.equals(that.baseTable);
+        return index == that.index && baseTable == that.baseTable;
     }
 
     @Override
     public int hashCode() {
-        int result = baseTable.hashCode();
+        int result = System.identityHashCode(baseTable);
         result = 31 * result + Integer.hashCode(index);
         return result;
     }

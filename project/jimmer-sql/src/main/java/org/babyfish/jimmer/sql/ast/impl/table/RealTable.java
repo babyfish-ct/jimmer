@@ -9,8 +9,6 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 public interface RealTable extends Iterable<RealTable> {
 
     TableLikeImplementor<?> getTableLikeImplementor();
@@ -19,9 +17,7 @@ public interface RealTable extends Iterable<RealTable> {
 
     Key getKey();
 
-    Path getPath();
-
-    RealTable getChild(Key key);
+    RealTable child(Key key);
 
     String getAlias();
 
@@ -111,35 +107,6 @@ public interface RealTable extends Iterable<RealTable> {
                     ", joinName=" + joinName +
                     ", weakJoinHandle=" + weakJoinHandle +
                     "}";
-        }
-    }
-
-    final class Path {
-
-        private final List<Key> keys;
-
-        Path(List<Key> keys) {
-            this.keys = keys;
-        }
-
-        @Override
-        public int hashCode() {
-            return keys.hashCode();
-        }
-
-        @Override
-        public final boolean equals(Object o) {
-            if (!(o instanceof Path)) return false;
-
-            Path path = (Path) o;
-            return keys.equals(path.keys);
-        }
-
-        @Override
-        public String toString() {
-            return "Path{" +
-                    "keys=" + keys +
-                    '}';
         }
     }
 }

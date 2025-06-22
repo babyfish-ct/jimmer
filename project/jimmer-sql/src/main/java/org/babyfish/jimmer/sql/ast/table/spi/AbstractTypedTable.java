@@ -88,7 +88,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             AbstractTypedTable<E> base,
             @NotNull BaseTableOwner baseTableOwner) {
         this.immutableType = base.immutableType;
-        this.raw = base.raw;
+        this.raw = base.raw != null ? base.raw.baseTableOwner(baseTableOwner) : null;
         if (base.delayedOperation != null) {
             this.delayedOperation = base.delayedOperation.baseTableOwner(baseTableOwner);
         } else {
@@ -97,9 +97,6 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.joinDisabledReason = base.joinDisabledReason;
         this.identifier = base.identifier;
         this.baseTableOwner = baseTableOwner;
-        if (base.raw != null) {
-            base.raw.setBaseTableOwner(baseTableOwner);
-        }
     }
 
     @Override
@@ -690,8 +687,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             } else {
                 tableImplementor = parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType);
             }
-            tableImplementor.setBaseTableOwner(parent.__baseTableOwner());
-            return tableImplementor;
+            return tableImplementor.baseTableOwner(parent.__baseTableOwner());
         }
 
         @Override
@@ -769,8 +765,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         public TableImplementor<E> resolve(RootTableResolver ctx) {
             TableImplementor<E> tableImplementor =
                     parent.__resolve(ctx).inverseJoinImplementor(prop, joinType);
-            tableImplementor.setBaseTableOwner(parent.__baseTableOwner());
-            return tableImplementor;
+            return tableImplementor.baseTableOwner(parent.__baseTableOwner());
         }
 
         @Override

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -20,8 +21,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     @Override
     TableImplementor<?> getParent();
-
-    JoinType getJoinType();
 
     ImmutableProp getJoinProp();
 
@@ -66,7 +65,9 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     @Nullable
     BaseTableOwner getBaseTableOwner();
 
-    void setBaseTableOwner(@Nullable BaseTableOwner owner);
+    TableImplementor<E> baseTableOwner(
+            @Nullable BaseTableOwner baseTableOwner
+    );
 
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,
@@ -85,7 +86,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                 false,
                 null,
                 null,
-                JoinType.INNER
+                JoinType.INNER,
+                false
         );
     }
 

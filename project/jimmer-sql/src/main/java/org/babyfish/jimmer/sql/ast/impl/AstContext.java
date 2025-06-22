@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -68,7 +69,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         this.statementFrame = this.statementFrame.parent;
     }
 
-    public void pushRenderedBaseTable(BaseTableSymbol symbol, RealTable realBaseTable) {
+    public void pushRenderedBaseTable(RealTable realBaseTable) {
         this.baseTableRenderFrame = new BaseTableRenderFrame(
                 baseTableRenderFrame,
                 realBaseTable
@@ -95,13 +96,13 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             if (stmtTable instanceof BaseTableSymbol) {
                 TableImplementor<?> resolved = resolve(statement, (BaseTableSymbol) stmtTable, table);
                 if (resolved != null) {
-                    resolved.setBaseTableOwner(BaseTableOwner.of(table));
-                    return (TableImplementor<E>) resolved;
+                    BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+                    return (TableImplementor<E>) resolved.baseTableOwner(baseTableOwner);
                 }
             } else if (AbstractTypedTable.__refEquals(stmtTable, table)) {
                 tableImplementor = (TableImplementor<E>) statement.getTableLikeImplementor();
-                tableImplementor.setBaseTableOwner(BaseTableOwner.of(table));
-                return tableImplementor;
+                BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+                return tableImplementor.baseTableOwner(baseTableOwner);
             }
         }
         TableProxy<E> tableProxy = (TableProxy<E>) table;
@@ -248,8 +249,11 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         if (baseTableOwner == null) {
             return null;
         }
+        if (baseTableRenderFrame != null) {
+            return null;
+        }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
+        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
             if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
                 BaseQueryScope scope = frame.baseQueryScope();
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
@@ -266,7 +270,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     @Nullable
     public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
+        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
             if (frame.statement.getTable() instanceof BaseTable) {
                 return frame.baseQueryScope().toBaseSelectionRender(query);
             }
@@ -318,7 +322,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         final StatementFrame parent;
 
-        final boolean underBaseQuery;
+        final boolean usingBaseQuery;
 
         private VirtualPredicateFrame vpFrame;
 
@@ -329,13 +333,13 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         private StatementFrame(AbstractMutableStatementImpl statement, StatementFrame parent) {
             this.statement = statement;
             this.parent = parent;
-            boolean underBaseQuery;
-            if (parent != null && parent.underBaseQuery) {
-                underBaseQuery = true;
+            boolean usingBaseQuery;
+            if (parent != null && parent.usingBaseQuery) {
+                usingBaseQuery = true;
             } else {
-                underBaseQuery = statement.getTable() instanceof BaseTable;
+                usingBaseQuery = statement.getTable() instanceof BaseTable;
             }
-            this.underBaseQuery = underBaseQuery;
+            this.usingBaseQuery = usingBaseQuery;
         }
 
         public VirtualPredicateFrame peekVpf() {
@@ -363,7 +367,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
 
         private BaseQueryScope createBaseQueryScope() {
-            if (!underBaseQuery) {
+            if (!usingBaseQuery) {
                 return null;
             }
             TableLikeImplementor<?> table = statement.getTableLikeImplementor();

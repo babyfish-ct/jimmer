@@ -88,7 +88,7 @@ public class BaseQueryScope {
 
     private static RealTable childTableByKeys(RealTable table, List<RealTable.Key> keys) {
         for (RealTable.Key key : keys) {
-            table = table.getChild(key);
+            table = table.child(key);
         }
         return table;
     }

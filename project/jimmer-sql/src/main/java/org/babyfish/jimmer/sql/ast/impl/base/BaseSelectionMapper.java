@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
@@ -60,17 +61,21 @@ public class BaseSelectionMapper {
         return expressionIndex;
     }
 
-    private static List<RealTable.Key> keys(RealTable table, String alias) {
+    private List<RealTable.Key> keys(RealTable table, String alias) {
         List<RealTable.Key> keys = new ArrayList<>();
         keys0(table, alias, keys);
         return keys;
     }
 
-    private static void keys0(RealTable table, String alias, List<RealTable.Key> keys) {
+    private void keys0(RealTable table, String alias, List<RealTable.Key> keys) {
         if (table.getAlias().equals(alias)) {
             return;
         }
-        for (RealTable childTable : table) {
+        RealTable redirectedTable =
+                ((TableImplementor<?>)table.getTableLikeImplementor())
+                        .baseTableOwner(null)
+                        .realTable(scope.astContext.getJoinTypeMergeScope());
+        for (RealTable childTable : redirectedTable) {
             keys.add(childTable.getKey());
             keys0(childTable, alias, keys);
         }

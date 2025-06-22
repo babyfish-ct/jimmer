@@ -76,7 +76,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     }
 
     @Override
-    public RealTable realTable(AstContext ctx) {
+    public RealTable realTable(JoinTypeMergeScope scope) {
         if (parent == null) {
             RealTable rrt = this.rootRealTable;
             if (rrt == null) {
@@ -84,8 +84,8 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
             }
             return rrt;
         }
-        RealTableImpl parentRealTable = (RealTableImpl) parent.realTable(ctx);
-        return parentRealTable.child(ctx.getJoinTypeMergeScope(), this);
+        RealTableImpl parentRealTable = (RealTableImpl) parent.realTable(scope);
+        return parentRealTable.child(scope, this);
     }
 
     @Override

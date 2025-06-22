@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
@@ -13,7 +14,13 @@ public interface TableLikeImplementor<E> extends TableLike<E> {
 
     WeakJoinHandle getWeakJoinHandle();
 
-    RealTable realTable(AstContext ctx);
+    JoinType getJoinType();
+
+    default RealTable realTable(AstContext ctx) {
+        return realTable(ctx.getJoinTypeMergeScope());
+    }
+
+    RealTable realTable(JoinTypeMergeScope scope);
 
     void accept(AstVisitor visitor);
 
