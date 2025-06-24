@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
-import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -249,7 +248,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         if (baseTableOwner == null) {
             return null;
         }
-        if (baseTableRenderFrame != null) {
+        if (baseTableRenderFrame != null && baseTableRenderFrame.realTable != null) {
             return null;
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
@@ -280,7 +279,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public RealTable getRenderedRealBaseTable() {
         BaseTableRenderFrame frame = baseTableRenderFrame;
-        if (frame != null) {
+        if (frame != null && frame.realTable != null) {
             return frame.realTable;
         }
         throw new IllegalStateException("No rendered real base table");
@@ -442,7 +441,9 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     }
 
     private static class BaseTableRenderFrame {
+
         final BaseTableRenderFrame parent;
+
         final RealTable realTable;
 
         BaseTableRenderFrame(BaseTableRenderFrame parent, RealTable realTable) {

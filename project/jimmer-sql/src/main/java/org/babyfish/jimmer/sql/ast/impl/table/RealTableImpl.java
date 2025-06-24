@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -219,22 +220,18 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (owner == null) {
             throw new IllegalStateException("Internal bug: renderJoinAsFrom can only be called base on joined tables");
         }
-        if (!(owner instanceof TableImpl<?>)) {
-
-        } else {
-            if (mode == TableImplementor.RenderMode.NORMAL) {
-                throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
+        if (mode == TableImplementor.RenderMode.NORMAL) {
+            throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
+        }
+        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
+        if (usedState != TableUsedState.NONE) {
+            if (mode == TableImplementor.RenderMode.FROM_ONLY || mode == TableImplementor.RenderMode.WHERE_ONLY) {
+                builder.separator();
             }
-            TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
-            if (usedState != TableUsedState.NONE) {
-                if (mode == TableImplementor.RenderMode.FROM_ONLY || mode == TableImplementor.RenderMode.WHERE_ONLY) {
-                    builder.separator();
-                }
-                renderSelf(builder, mode);
-                if (mode == TableImplementor.RenderMode.DEEPER_JOIN_ONLY) {
-                    for (RealTable childTable : this) {
-                        childTable.renderTo(builder);
-                    }
+            renderSelf(builder, mode);
+            if (mode == TableImplementor.RenderMode.DEEPER_JOIN_ONLY) {
+                for (RealTable childTable : this) {
+                    childTable.renderTo(builder);
                 }
             }
         }
@@ -305,7 +302,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (joinPredicate == null) {
             builder.sql("1 = 1");
         } else {
+            AstContext ctx = builder.getAstContext();
+            ctx.pushRenderedBaseTable(null);
             ((Ast)joinPredicate).renderTo(builder);
+            ctx.popRenderedBaseTable();
         }
     }
 

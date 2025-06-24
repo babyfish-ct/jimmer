@@ -548,7 +548,12 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (delayedOperation != null) {
             return delayedOperation.toString();
         }
-        return immutableType.toString();
+        StringBuilder builder = new StringBuilder();
+        builder.append(immutableType.getJavaClass().getSimpleName());
+        if (baseTableOwner != null) {
+            builder.append(":withBaseTableOwner");
+        }
+        return builder.toString();
     }
 
     protected <X> DelayedOperation<X> joinOperation(String prop) {
