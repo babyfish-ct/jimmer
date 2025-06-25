@@ -41,9 +41,6 @@ public class BaseSelectionMapper {
                 new QualifiedColumn(keys, columnName),
                 it -> scope.colNo()
         );
-        if (index == 10) {
-            System.out.println("columnIndex " + alias + ", " + columnName);
-        }
         return index;
     }
 

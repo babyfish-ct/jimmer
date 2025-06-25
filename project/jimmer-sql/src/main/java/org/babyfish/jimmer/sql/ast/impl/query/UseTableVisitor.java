@@ -31,13 +31,6 @@ public class UseTableVisitor extends AstVisitor {
 
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
-        if (table.getTableLikeImplementor() instanceof TableImplementor<?>) {
-            TableImplementor<?> tableImplementor = (TableImplementor<?>) table.getTableLikeImplementor();
-            if (tableImplementor.getJoinProp() != null && tableImplementor.getJoinProp().getName().equals("authors")) {
-                System.out.println("Use " + table);
-                System.out.println("\t> " + table.getParent());
-            }
-        }
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (implementor instanceof BaseTableImplementor) {
             BaseTableImplementor baseTableImplementor = (BaseTableImplementor) implementor;

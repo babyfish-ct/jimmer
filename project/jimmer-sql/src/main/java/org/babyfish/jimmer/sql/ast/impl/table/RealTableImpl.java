@@ -190,7 +190,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (this.borrowedBy != null && !this.borrowedBy.equals(borrowedBy)) {
             throw new IllegalStateException("The real table can only be borrowed once");
         }
-        System.out.println("###borrow###");
         this.borrowedBy = borrowedBy;
     }
 
