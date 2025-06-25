@@ -1,16 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
@@ -35,6 +31,13 @@ public class UseTableVisitor extends AstVisitor {
 
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
+        if (table.getTableLikeImplementor() instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) table.getTableLikeImplementor();
+            if (tableImplementor.getJoinProp() != null && tableImplementor.getJoinProp().getName().equals("authors")) {
+                System.out.println("Use " + table);
+                System.out.println("\t> " + table.getParent());
+            }
+        }
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (implementor instanceof BaseTableImplementor) {
             BaseTableImplementor baseTableImplementor = (BaseTableImplementor) implementor;

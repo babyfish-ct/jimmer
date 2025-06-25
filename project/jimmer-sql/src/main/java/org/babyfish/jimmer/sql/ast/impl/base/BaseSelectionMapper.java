@@ -37,10 +37,14 @@ public class BaseSelectionMapper {
         Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
-        return columnIndexMap.computeIfAbsent(
+        int index = columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, columnName),
                 it -> scope.colNo()
         );
+        if (index == 10) {
+            System.out.println("columnIndex " + alias + ", " + columnName);
+        }
+        return index;
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula) {

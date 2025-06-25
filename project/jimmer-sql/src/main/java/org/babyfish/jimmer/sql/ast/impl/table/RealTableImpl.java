@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -189,6 +190,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (this.borrowedBy != null && !this.borrowedBy.equals(borrowedBy)) {
             throw new IllegalStateException("The real table can only be borrowed once");
         }
+        System.out.println("###borrow###");
         this.borrowedBy = borrowedBy;
     }
 
@@ -295,18 +297,38 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     private void renderBaseTableJoin(SqlBuilder builder) {
-        if (owner.getParent() == null || !(owner instanceof BaseTableImplementor)) {
+        if (!(owner instanceof BaseTableImplementor)) {
             return;
         }
+        AstContext ctx = builder.getAstContext();
+        BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
+        for (Selection<?> selection : baseTableImplementor.getSelections()) {
+            if (!(selection instanceof Table<?>)) {
+                continue;
+            }
+            TableImplementor<?> tableImplementor = TableProxies.resolve((Table<?>) selection, ctx);
+            BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
+            if (baseTableOwner == null || baseTableOwner.getBaseTable() !=baseTableImplementor.toSymbol()) {
+                continue;
+            }
+            RealTable realTable = tableImplementor.realTable(ctx);
+            ctx.pushRenderedBaseTable(null);
+            for (RealTable childTable : realTable) {
+                childTable.renderTo(builder);
+            }
+            ctx.popRenderedBaseTable();
+        }
+        if (owner.getParent() == null) {
+            return;
+        }
+        ctx.pushRenderedBaseTable(null);
         builder.on();
         if (joinPredicate == null) {
             builder.sql("1 = 1");
         } else {
-            AstContext ctx = builder.getAstContext();
-            ctx.pushRenderedBaseTable(null);
             ((Ast)joinPredicate).renderTo(builder);
-            ctx.popRenderedBaseTable();
         }
+        ctx.popRenderedBaseTable();
     }
 
     private void renderJoin(SqlBuilder builder, TableImplementor.RenderMode mode) {
@@ -539,21 +561,41 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 break;
         }
         if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
+            BaseSelectionMapper mapper = null;
+            String baseAlias = null;
+            if (owner instanceof TableImplementor<?>) {
+                TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
+                BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
+                if (baseTableOwner != null) {
+                    mapper = builder.getAstContext().getBaseSelectionMapper(baseTableOwner);
+                    baseAlias = builder.getAstContext().resolveBaseTable(
+                            baseTableOwner.getBaseTable()
+                    ).realTable(builder.getAstContext()).getAlias();
+                }
+            }
             int size = previousDefinition.size();
             builder.enter(SqlBuilder.ScopeType.AND);
             for (int i = 0; i < size; i++) {
                 builder.separator();
+                if (mapper != null) {
+                    int index = mapper.columnIndex(previousAlias, previousDefinition.name(i));
+                    builder
+                            .sql(baseAlias)
+                            .sql(".c")
+                            .sql(Integer.toString(index));
+                } else {
+                    builder
+                            .sql(previousAlias)
+                            .sql(".")
+                            .sql(previousDefinition.name(i));
+                }
                 builder
-                        .sql(previousAlias)
-                        .sql(".")
-                        .sql(previousDefinition.name(i))
                         .sql(" = ")
                         .sql(newAlias)
                         .sql(".")
                         .sql(newDefinition.name(i));
             }
             builder.leave();
-
         }
     }
 
@@ -694,7 +736,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("RealTable{owner=").append(owner);
+        builder.append("RealTable{")
+                .append("identity=").append(System.identityHashCode(this))
+                .append(", owner=").append(owner);
         if (!"".equals(key.joinName) && key.weakJoinHandle != null) {
             builder.append(", key=").append(key);
         }
