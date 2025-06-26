@@ -299,7 +299,7 @@ class ImmutableProp(
         isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
 
     val targetClassName: ClassName =
-        targetDeclaration.className()
+        targetDeclaration.nestedClassName()
 
     fun targetTypeName(
         draft: Boolean = false,
