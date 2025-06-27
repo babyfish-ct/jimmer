@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
@@ -256,6 +257,47 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
                 BaseQueryScope scope = frame.baseQueryScope();
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
+                if (mergedBy != null) {
+                    for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
+                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(), baseTableOwner.getIndex()));
+                    }
+                }
+                return scope.mapper(baseTableOwner);
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public BaseSelectionMapper getBaseSelectionMapper(TableImplementor<?> table) {
+        BaseTableOwner baseTableOwner = table.getBaseTableOwner();
+        if (baseTableOwner == null) {
+            return null;
+        }
+        if (baseTableRenderFrame != null && baseTableRenderFrame.realTable != null) {
+            return null;
+        }
+        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
+        int index = baseTableOwner.getIndex();
+        ConfigurableBaseQueryImpl<?> query = baseTableOwner.getBaseTable().getQuery();
+        MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(query);
+        boolean isInnerTable = false;
+        if (mergedBy == null) {
+            isInnerTable = TableProxies.resolve((Table<?>)query.getSelections().get(index), this) == table;
+        } else {
+            for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
+                if (TableProxies.resolve((Table<?>)itemQuery.getSelections().get(index), this) == table) {
+                    isInnerTable = true;
+                    break;
+                }
+            }
+        }
+        if (!isInnerTable) {
+            return null;
+        }
+        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
+            if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
+                BaseQueryScope scope = frame.baseQueryScope();
                 if (mergedBy != null) {
                     for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
                         scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(), baseTableOwner.getIndex()));

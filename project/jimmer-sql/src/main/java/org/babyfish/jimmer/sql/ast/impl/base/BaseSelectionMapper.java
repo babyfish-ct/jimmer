@@ -37,11 +37,10 @@ public class BaseSelectionMapper {
         Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
-        int index = columnIndexMap.computeIfAbsent(
+        return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, columnName),
                 it -> scope.colNo()
         );
-        return index;
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula) {
@@ -72,11 +71,10 @@ public class BaseSelectionMapper {
         if (table.getAlias().equals(alias)) {
             return;
         }
-        RealTable redirectedTable =
-                ((TableImplementor<?>)table.getTableLikeImplementor())
-                        .baseTableOwner(null)
+        RealTable realTable =
+                (table.getTableLikeImplementor())
                         .realTable(scope.astContext.getJoinTypeMergeScope());
-        for (RealTable childTable : redirectedTable) {
+        for (RealTable childTable : realTable) {
             keys.add(childTable.getKey());
             keys0(childTable, alias, keys);
         }

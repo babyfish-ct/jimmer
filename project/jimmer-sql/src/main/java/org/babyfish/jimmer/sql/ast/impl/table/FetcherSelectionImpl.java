@@ -121,7 +121,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 int index = baseTableOwner.getIndex();
                 for (TypedBaseQueryImplementor<?> q : mergedBy.getExpandedQueries()) {
                     visitor.getAstContext().pushStatement(((ConfigurableBaseQueryImpl<?>)q).getMutableQuery());
-                    accept((Table<?>) q.getSelections().get(index), visitor);
+                    accept((Table<?>) mergedBy.getSelections().get(index), visitor);
                     visitor.getAstContext().popStatement();
                 }
                 return;
@@ -177,7 +177,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 if (implementor instanceof TableImplementor<?>) {
                     TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
                     this.table = tableImplementor
-                            .joinFetchImplementor(field.getProp())
+                            .joinFetchImplementor(field.getProp(), oldTable.getBaseTableOwner())
                             .realTable(ctx);
                 }
                 return oldTable;
@@ -189,7 +189,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
 
             @Override
-            protected void visit(Field field) {
+            protected void visit(Field field, int depth) {
                 if (field.getProp().isFormula() && field.getProp().getSqlTemplate() == null) {
                     return;
                 }
@@ -204,15 +204,18 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                     ((PropExpressionImplementor<?>) embeddedPropExpression).getProp().getStorage(strategy),
                             field.getChildFetcher(),
                             path != null ? path + '.' + field.getProp().getName() : field.getProp().getName(),
+                            depth,
                             builder
                     );
                 } else {
                     Storage storage = prop.getStorage(strategy);
                     SqlTemplate template = prop.getSqlTemplate();
                     BaseSelectionMapper mapper =
-                            builder.getAstContext().getBaseSelectionMapper(table.getBaseTableOwner());
+                            depth == 0 ?
+                            builder.getAstContext().getBaseSelectionMapper(table.getBaseTableOwner()) :
+                            null;
                     if (storage instanceof EmbeddedColumns) {
-                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
+                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", depth, builder);
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator().definition(alias, (ColumnDefinition) storage, mapper);
                     } else if (template instanceof FormulaTemplate) {
@@ -235,6 +238,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             EmbeddedColumns columns,
             Fetcher<?> childFetcher,
             String path,
+            int depth,
             @NotNull SqlBuilder builder
     ) {
         RealTable realTable;
@@ -260,7 +264,10 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         embeddedRawReferenceProp.getStorage(builder.sqlClient().getMetadataStrategy()) :
                         null;
         if (childFetcher == null) {
-            BaseSelectionMapper mapper = builder.getAstContext().getBaseSelectionMapper(realTable.getBaseTableOwner());
+            BaseSelectionMapper mapper =
+                    depth == 0 ?
+                            builder.getAstContext().getBaseSelectionMapper(realTable.getBaseTableOwner()) :
+                            null;
             for (String columnName : columns.partial(path)) {
                 if (joinColumns != null) {
                     columnName = joinColumns.name(joinColumns.referencedIndex(columnName));
@@ -289,6 +296,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         columns,
                         field.getChildFetcher(),
                         path.isEmpty() ? propName : path + '.' + propName,
+                        depth,
                         builder
                 );
             }

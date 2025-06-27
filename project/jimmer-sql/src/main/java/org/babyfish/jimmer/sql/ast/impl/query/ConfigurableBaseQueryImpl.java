@@ -26,17 +26,15 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
 extends AbstractConfigurableTypedQueryImpl
 implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
-    private final T baseTable;
+    private T baseTable;
 
     private MergedBaseQueryImpl<T> mergedBy;
 
-    @SuppressWarnings("unchecked")
     ConfigurableBaseQueryImpl(List<Selection<?>> selections, MutableBaseQueryImpl mutableQuery) {
         super(
                 new TypedQueryData(selections),
                 mutableQuery
         );
-        this.baseTable = (T) BaseTableSymbols.of(this, selections);
     }
 
     private ConfigurableBaseQueryImpl(T baseTable, TypedQueryData data, AbstractMutableQueryImpl baseQuery) {
@@ -122,8 +120,16 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T asBaseTable() {
+        T baseTable = this.baseTable;
+        if (baseTable == null) {
+            this.baseTable = baseTable =
+                    mergedBy != null ?
+                            mergedBy.asBaseTable() :
+                            (T) BaseTableSymbols.of(this, getData().selections);
+        }
         return baseTable;
     }
 
@@ -154,6 +160,11 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @Override
     public void setMergedBy(MergedBaseQueryImpl<T> mergedBy) {
+        if (this.baseTable != null) {
+            throw new IllegalStateException(
+                    "The base query cannot be merged after its `asBaseTable()` is called"
+            );
+        }
         if (this.mergedBy != null && this.mergedBy != mergedBy) {
             throw new IllegalArgumentException(
                     "This current base-query has been merged by another merged base query"

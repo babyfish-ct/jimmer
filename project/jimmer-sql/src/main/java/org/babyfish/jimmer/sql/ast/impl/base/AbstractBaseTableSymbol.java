@@ -3,17 +3,19 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class AbstractBaseTableSymbol implements BaseTableSymbol {
+public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
-    private final ConfigurableBaseQueryImpl<?> query;
+    private final TypedBaseQueryImplementor<?> query;
 
     protected final List<Selection<?>> selections;
 
@@ -23,11 +25,8 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     private final JoinType joinType;
 
-    // Only not null when parent is null
-    private RealTable rootRealTable;
-
     protected AbstractBaseTableSymbol(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
-        this.query = (ConfigurableBaseQueryImpl<?>)query;
+        this.query = query;
         this.selections = wrapSelections(selections);
         this.parent = null;
         this.handle = null;
@@ -48,12 +47,16 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
     }
 
     private List<Selection<?>> wrapSelections(List<Selection<?>> selections) {
+        return wrapSelections(selections, this);
+    }
+
+    public static List<Selection<?>> wrapSelections(List<Selection<?>> selections, BaseTable baseTable) {
         int size = selections.size();
         List<Selection<?>> wrappedSelections = new ArrayList<>(selections.size());
         for (int i = 0; i < size; i++) {
             Selection<?> wrappedSelection = BaseTableSelections.of(
                     selections.get(i),
-                    this,
+                    baseTable,
                     i
             );
             wrappedSelections.add(wrappedSelection);
@@ -63,7 +66,10 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     @Override
     public ConfigurableBaseQueryImpl<?> getQuery() {
-        return query;
+        if (query instanceof MergedBaseQueryImpl<?>) {
+            return ((MergedBaseQueryImpl<?>) query).getExpandedQueries()[0];
+        }
+        return (ConfigurableBaseQueryImpl<?>) query;
     }
 
     @Override
@@ -85,4 +91,6 @@ public class AbstractBaseTableSymbol implements BaseTableSymbol {
     public JoinType getJoinType() {
         return joinType;
     }
+
+    public abstract AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query);
 }

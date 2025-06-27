@@ -90,7 +90,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         this.weakJoinHandle = weakJoinHandle;
         this.joinType = joinType;
         this.fetch = fetch;
-        this.baseTableOwner = null;
+        this.baseTableOwner = parent != null ? parent.baseTableOwner : null;
     }
 
     private TableImpl(
@@ -168,21 +168,11 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @Override
     public final RealTableImpl realTable(JoinTypeMergeScope scope) {
-        return realTable0(scope, fetch);
+        return realTable0(scope, parent);
     }
 
-    private RealTableImpl realTable0(JoinTypeMergeScope scope, boolean fetch) {
-        if (!fetch || baseTableOwner == null) {
-            return realTable1(scope, fetch, parent);
-        }
-        RealTableImpl impl = baseTableOwner(null).realTable1(scope, true, parent);
-        impl.borrowedBy(baseTableOwner);
-        return impl;
-    }
-
-    private RealTableImpl realTable1(
+    private RealTableImpl realTable0(
             JoinTypeMergeScope scope,
-            boolean fetch,
             TableImpl<?> parent
     ) {
         RealTableImpl realTable = this.realTable;
@@ -190,7 +180,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             if (parent == null) {
                 realTable = new RealTableImpl(this);
             } else {
-                realTable = parent.realTable0(scope, fetch).child(scope, this);
+                realTable = parent.realTable(scope).child(scope, this);
             }
             this.realTable = realTable;
         }
@@ -577,7 +567,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     }
 
     @Override
-    public TableImplementor<?> joinFetchImplementor(ImmutableProp prop) {
+    public TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner) {
         if (!prop.isAssociation(TargetLevel.PERSISTENT) || prop.isReferenceList(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "Cannot join fetch \"" +
@@ -606,7 +596,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
                 null,
                 joinType,
                 true
-        ).baseTableOwner(baseTableOwner);
+        );
         putValue(key, joinedTable);
         return joinedTable;
     }

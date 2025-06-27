@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Set;
 
 public class BaseTableSymbols {
 
@@ -86,6 +85,11 @@ public class BaseTableSymbols {
             return (S1) selections.get(0);
         }
 
+        @Override
+        public Table1<S1> query(TypedBaseQueryImplementor<?> query) {
+            return new Table1<>(query, wrapSelections(selections, query.asBaseTable()));
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         public <TT extends BaseTable, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(
@@ -129,6 +133,11 @@ public class BaseTableSymbols {
         }
 
         @Override
+        public Table2<S1, S2> query(TypedBaseQueryImplementor<?> query) {
+            return new Table2<>(query, wrapSelections(selections, query.asBaseTable()));
+        }
+
+        @Override
         public String toString() {
             return "BaseTable2{" +
                     "_1=" + selections.get(0) +
@@ -164,6 +173,11 @@ public class BaseTableSymbols {
         @Override
         public S3 get_3() {
             return (S3) selections.get(2);
+        }
+
+        @Override
+        public Table3<S1, S2, S3> query(TypedBaseQueryImplementor<?> query) {
+            return new Table3<>(query, selections);
         }
 
         @Override
@@ -213,6 +227,11 @@ public class BaseTableSymbols {
         @Override
         public @NotNull S4 get_4() {
             return (S4) selections.get(3);
+        }
+
+        @Override
+        public Table4<S1, S2, S3, S4> query(TypedBaseQueryImplementor<?> query) {
+            return new Table4<>(query, selections);
         }
 
         @Override
@@ -270,6 +289,11 @@ public class BaseTableSymbols {
         @Override
         public @NotNull S5 get_5() {
             return (S5) selections.get(4);
+        }
+
+        @Override
+        public Table5<S1, S2, S3, S4, S5> query(TypedBaseQueryImplementor<?> query) {
+            return new Table5<>(query, selections);
         }
 
         @Override
@@ -335,6 +359,11 @@ public class BaseTableSymbols {
         @Override
         public @NotNull S6 get_6() {
             return (S6) selections.get(5);
+        }
+
+        @Override
+        public Table6<S1, S2, S3, S4, S5, S6> query(TypedBaseQueryImplementor<?> query) {
+            return new Table6<>(query, selections);
         }
 
         @Override
@@ -408,6 +437,11 @@ public class BaseTableSymbols {
         @Override
         public @NotNull S7 get_7() {
             return (S7) selections.get(6);
+        }
+
+        @Override
+        public Table7<S1, S2, S3, S4, S5, S6, S7> query(TypedBaseQueryImplementor<?> query) {
+            return new Table7<>(query, selections);
         }
 
         @Override
@@ -489,6 +523,11 @@ public class BaseTableSymbols {
         @Override
         public @NotNull S8 get_8() {
             return (S8) selections.get(7);
+        }
+
+        @Override
+        public Table8<S1, S2, S3, S4, S5, S6, S7, S8> query(TypedBaseQueryImplementor<?> query) {
+            return new Table8<>(query, selections);
         }
 
         @Override
@@ -578,6 +617,11 @@ public class BaseTableSymbols {
         @Override
         public @NotNull S9 get_9() {
             return (S9) selections.get(8);
+        }
+
+        @Override
+        public Table9<S1, S2, S3, S4, S5, S6, S7, S8, S9> query(TypedBaseQueryImplementor<?> query) {
+            return new Table9<>(query, selections);
         }
 
         @Override

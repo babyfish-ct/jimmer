@@ -97,7 +97,7 @@ public class UseTableVisitor extends AstVisitor {
         protected Object enter(Field field) {
             TableImplementor<?> oldTableImplementor = this.tableImplementor;
             TableImplementor<?> newTableImplementor =
-                    oldTableImplementor.joinFetchImplementor(field.getProp());
+                    oldTableImplementor.joinFetchImplementor(field.getProp(), oldTableImplementor.getBaseTableOwner());
             ctx.useTable(newTableImplementor.realTable(ctx));
             this.tableImplementor = newTableImplementor;
             return oldTableImplementor;

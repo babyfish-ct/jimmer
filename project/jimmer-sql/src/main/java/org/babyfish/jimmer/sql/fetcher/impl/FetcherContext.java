@@ -84,7 +84,7 @@ class FetcherContext {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected void visit(Field field) {
+        protected void visit(Field field, int depth) {
             if (!isFetchRequired(field)) {
                 return;
             }

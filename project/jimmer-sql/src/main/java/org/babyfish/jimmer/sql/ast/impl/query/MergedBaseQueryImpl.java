@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
@@ -24,13 +26,11 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     private final String operator;
 
-    private final TypedBaseQueryImplementor<?>[] queries;
+    private final TypedBaseQueryImplementor<T>[] queries;
 
-    private final ConfigurableBaseQueryImpl<?>[] expandedQueries;
+    private final ConfigurableBaseQueryImpl<T>[] expandedQueries;
 
-    private final List<Selection<?>> selections;
-
-    private final T baseTable;
+    private T baseTable;
 
     private MergedBaseQueryImpl<T> mergedBy;
 
@@ -67,15 +67,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         if (queries.length < 2) {
             throw new IllegalArgumentException("`queries.length` must not be less than 2");
         }
-        TypedBaseQueryImplementor<?>[] queryArr = new TypedBaseQueryImplementor<?>[queries.length];
-        queryArr[0] = (TypedBaseQueryImplementor<?>) queries[0];
+        TypedBaseQueryImplementor<T>[] queryArr = new TypedBaseQueryImplementor[queries.length];
+        queryArr[0] = (TypedBaseQueryImplementor<T>) queries[0];
         for (int i = 1; i < queryArr.length; i++) {
-            queryArr[i] = (TypedBaseQueryImplementor<?>) queries[i];
-            if (queries[0].asBaseTable().getClass() != queries[i].asBaseTable().getClass()) {
-                throw new IllegalArgumentException(
-                        "Cannot merged sub queries with different base table type"
-                );
-            }
+            queryArr[i] = (TypedBaseQueryImplementor<T>) queries[i];
             validateSelections(
                     queryArr[0].getSelections(),
                     queryArr[i].getSelections()
@@ -85,7 +80,6 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
         List<TypedBaseQueryImplementor<?>> realQueries = new ArrayList<>();
         collectRealQueries(this, realQueries);
-        this.selections = realQueries.get(0).getSelections();
 
         List<ConfigurableBaseQueryImpl<?>> expandedQueries = new ArrayList<>();
         for (TypedBaseQueryImplementor<?> query : queryArr) {
@@ -95,9 +89,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                 expandedQueries.add((ConfigurableBaseQueryImpl<?>) query);
             }
         }
-        this.expandedQueries = expandedQueries.toArray(EMPTY_QUERIES);
-
-        this.baseTable = (T) expandedQueries.get(0).asBaseTable();
+        this.expandedQueries = (ConfigurableBaseQueryImpl<T>[]) expandedQueries.toArray(EMPTY_QUERIES);
     }
 
     private static void validateSelections(
@@ -170,7 +162,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public List<Selection<?>> getSelections() {
-        return selections;
+        return ((BaseTableSymbol) asBaseTable()).getSelections();
     }
 
     @Override
@@ -182,7 +174,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         return queries;
     }
 
-    public TypedBaseQueryImplementor<?>[] getExpandedQueries() {
+    public ConfigurableBaseQueryImpl<?>[] getExpandedQueries() {
         return expandedQueries;
     }
 
@@ -212,6 +204,11 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public void setMergedBy(MergedBaseQueryImpl<T> mergedBy) {
+        if (this.baseTable != null) {
+            throw new IllegalStateException(
+                    "The base query cannot be merged after its `asBaseTable` is called"
+            );
+        }
         if (this.mergedBy != null && this.mergedBy != mergedBy) {
             throw new IllegalArgumentException(
                     "This current base-query has been merged by another merged base query"
@@ -221,7 +218,15 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T asBaseTable() {
+        T baseTable = this.baseTable;
+        if (baseTable == null) {
+            this.baseTable = baseTable =
+                    mergedBy != null ?
+                            mergedBy.asBaseTable() :
+                            (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections());
+        }
         return baseTable;
     }
 

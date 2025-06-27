@@ -60,7 +60,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
 
-    TableImplementor<?> joinFetchImplementor(ImmutableProp prop);
+    TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner);
 
     @Nullable
     BaseTableOwner getBaseTableOwner();

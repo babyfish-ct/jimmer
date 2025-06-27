@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
@@ -33,16 +34,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private final Key key;
 
     private final TableLikeImplementor<?> owner;
-    
+
     private final RealTableImpl parent;
 
     private final Predicate joinPredicate;
-    
+
     private JoinType joinType;
 
     private Aliases aliases;
-
-    private BaseTableOwner borrowedBy;
 
     RealTableImpl(TableLikeImplementor<?> owner) {
         this(
@@ -106,15 +105,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     public RealTable child(Key key) {
         RealTableImpl child = (RealTableImpl) getValue(key);
         if (child != null) {
+            if (child.joinType != owner.getJoinType()) {
+                child.joinType = JoinType.INNER;
+            }
             return child;
         }
-        throw new IllegalArgumentException(
-                "There is no child with key \"" +
-                        key +
-                        "\" in the real table \"" +
-                        this +
-                        "\""
-        );
+        child = new RealTableImpl(key, owner, this);
+        putValue(key, child);
+        return child;
     }
 
     public RealTableImpl child(JoinTypeMergeScope scope, TableImpl<?> owner) {
@@ -186,19 +184,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         return aliases().value;
     }
 
-    final void borrowedBy(BaseTableOwner borrowedBy) {
-        if (this.borrowedBy != null && !this.borrowedBy.equals(borrowedBy)) {
-            throw new IllegalStateException("The real table can only be borrowed once");
-        }
-        this.borrowedBy = borrowedBy;
-    }
-
     @Override
     @Nullable
     public BaseTableOwner getBaseTableOwner() {
-        if (borrowedBy != null) {
-            return borrowedBy;
-        }
         if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
             return tableImplementor.getBaseTableOwner();
@@ -307,7 +295,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             }
             TableImplementor<?> tableImplementor = TableProxies.resolve((Table<?>) selection, ctx);
             BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-            if (baseTableOwner == null || baseTableOwner.getBaseTable() !=baseTableImplementor.toSymbol()) {
+            if (baseTableOwner == null || baseTableOwner.getBaseTable() != baseTableImplementor.toSymbol()) {
                 continue;
             }
             RealTable realTable = tableImplementor.realTable(ctx);
@@ -561,16 +549,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
         if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
             BaseSelectionMapper mapper = null;
-            String baseAlias = null;
             if (owner instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
                 BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-                if (baseTableOwner != null) {
-                    mapper = builder.getAstContext().getBaseSelectionMapper(baseTableOwner);
-                    baseAlias = builder.getAstContext().resolveBaseTable(
-                            baseTableOwner.getBaseTable()
-                    ).realTable(builder.getAstContext()).getAlias();
-                }
+                mapper = builder.getAstContext().getBaseSelectionMapper(baseTableOwner);
             }
             int size = previousDefinition.size();
             builder.enter(SqlBuilder.ScopeType.AND);
@@ -579,7 +561,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 if (mapper != null) {
                     int index = mapper.columnIndex(previousAlias, previousDefinition.name(i));
                     builder
-                            .sql(baseAlias)
+                            .sql(mapper.getAlias())
                             .sql(".c")
                             .sql(Integer.toString(index));
                 } else {
@@ -630,8 +612,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         BaseSelectionMapper mapper =
                 builder instanceof SqlBuilder ?
-                        ((SqlBuilder)builder).getAstContext().getBaseSelectionMapper(getBaseTableOwner()) :
-                null;
+                        ((SqlBuilder)builder).getAstContext().getBaseSelectionMapper(owner.getBaseTableOwner()) :
+                        null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&

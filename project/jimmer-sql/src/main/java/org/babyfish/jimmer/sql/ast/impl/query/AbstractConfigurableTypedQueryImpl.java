@@ -173,29 +173,78 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     OffsetOptimizationWriter::idAlias
             );
         } else {
-            for (Selection<?> selection : data.selections) {
-                builder.separator();
-                if (selection instanceof TableSelection) {
-                    TableSelection tableSelection = (TableSelection) selection;
-                    renderAllProps(tableSelection, builder);
-                } else if (selection instanceof Table<?>) {
-                    TableSelection tableSelection = TableProxies.resolve(
-                            (Table<?>) selection,
-                            builder.getAstContext()
-                    );
-                    renderAllProps(tableSelection, builder);
+            renderSelections(builder);
+            fakeRenderExportedForeignKeys(builder);
+        }
+        builder.leave();
+            mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
+    }
+
+    private void renderSelections(SqlBuilder builder) {
+        for (Selection<?> selection : data.selections) {
+            builder.separator();
+            if (selection instanceof TableSelection) {
+                TableSelection tableSelection = (TableSelection) selection;
+                renderAllProps(tableSelection, builder);
+            } else if (selection instanceof Table<?>) {
+                TableSelection tableSelection = TableProxies.resolve(
+                        (Table<?>) selection,
+                        builder.getAstContext()
+                );
+                renderAllProps(tableSelection, builder);
+            } else {
+                Ast ast = Ast.from(selection, builder.getAstContext());
+                if (ast instanceof PropExpressionImplementor<?>) {
+                    ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
                 } else {
-                    Ast ast = Ast.from(selection, builder.getAstContext());
-                    if (ast instanceof PropExpressionImplementor<?>) {
-                        ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
-                    } else {
-                        ast.renderTo(builder);
+                    ast.renderTo(builder);
+                }
+            }
+        }
+    }
+
+    private void fakeRenderExportedForeignKeys(SqlBuilder builder) {
+        TableLikeImplementor<?> tableLikeImplementor = mutableQuery.getTableLikeImplementor();
+        if (!(tableLikeImplementor instanceof BaseTableImplementor)) {
+            return;
+        }
+        AstContext ctx = builder.getAstContext();
+        BaseTableImplementor baseTableImplementor = (BaseTableImplementor) tableLikeImplementor;
+        for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
+            if (selection instanceof Table<?>) {
+                Table<?> table = (Table<?>) selection;
+                TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
+                BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(tableImplementor.getBaseTableOwner());
+                assert mapper != null;
+                RealTable realTable = tableImplementor.realTable(ctx);
+                for (RealTable childTable : realTable) {
+                    if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+                        continue;
+                    }
+                    TableImplementor<?> childTableImplementor =
+                            (TableImplementor<?>) childTable.getTableLikeImplementor();
+                    ImmutableProp prop = childTableImplementor.getJoinProp();
+                    if (prop == null) {
+                        break;
+                    }
+                    if (childTableImplementor.isInverse()) {
+                        prop = prop.getOpposite();
+                        if (prop == null) {
+                            continue;
+                        }
+                    }
+                    if (!prop.isColumnDefinition()) {
+                        continue;
+                    }
+                    ColumnDefinition definition = prop.getStorage(builder.sqlClient().getMetadataStrategy());
+                    int size = definition.size();
+                    for (int i = 0; i < size; i++) {
+                        // Fake render, only call `columnIndex`, not render it
+                        mapper.columnIndex(realTable.getAlias(), definition.name(i));
                     }
                 }
             }
         }
-        builder.leave();
-        mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
     }
 
     private PropExpressionImplementor<?> idOnlyPropExprByOffset() {
