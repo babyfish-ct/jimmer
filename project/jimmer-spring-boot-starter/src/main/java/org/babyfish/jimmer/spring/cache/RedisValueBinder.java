@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.cache.redis.spring;
+package org.babyfish.jimmer.spring.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -13,16 +13,11 @@ import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * framework-related classes should not be included in the jimmer-sql module.<br>
- * <br>
- * Redis-related caching should be implemented through framework-specific extensions.
- * @see org.babyfish.jimmer.spring.cache.RedisHashBinder
- */
-@Deprecated
 public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
 
     private final RedisOperations<String, byte[]> operations;
