@@ -6,6 +6,7 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.babyfish.jimmer.sql.cache.chain.LockableBinder;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,8 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
 
     final ObjectMapper objectMapper;
 
+    final RemoteKeyPrefixProvider keyPrefixProvider;
+
     private final String keyPrefix;
 
     private final long minMills;
@@ -33,6 +36,7 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
             @Nullable ObjectMapper objectMapper,
+            @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             Duration duration,
             int randomPercent
     ) {
@@ -47,6 +51,7 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
                     .registerModule(new JavaTimeModule());
         }
         this.objectMapper = objectMapper;
+        this.keyPrefixProvider = keyPrefixProvider != null ? keyPrefixProvider : RemoteKeyPrefixProvider.DEFAULT;
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop cannot be same");
         }
@@ -81,11 +86,11 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
     }
 
     protected String getKeyPrefix(ImmutableType type) {
-        return type.getJavaClass().getSimpleName() + '-';
+        return keyPrefixProvider.typeKeyPrefix(type);
     }
 
     protected String getKeyPrefix(ImmutableProp prop) {
-        return prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
+        return keyPrefixProvider.propKeyPrefix(prop);
     }
 
     protected long nextExpireMillis() {
@@ -109,6 +114,7 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
         protected final ImmutableProp prop;
         protected CacheTracker tracker;
         protected ObjectMapper objectMapper;
+        protected RemoteKeyPrefixProvider keyPrefixProvider;
         protected Duration duration = Duration.ofMinutes(30);
         protected int randomPercent = 30;
 
@@ -126,6 +132,12 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
         @SuppressWarnings("unchecked")
         public B objectMapper(ObjectMapper objectMapper) {
             this.objectMapper = objectMapper;
+            return (B)this;
+        }
+
+        @SuppressWarnings("unchecked")
+        public B keyPrefixProvider(RemoteKeyPrefixProvider keyPrefixProvider) {
+            this.keyPrefixProvider = keyPrefixProvider;
             return (B)this;
         }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteValueBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +28,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
             @Nullable ObjectMapper objectMapper,
+            @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
             @NotNull RedisOperations<String, byte[]> operations
@@ -36,6 +38,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
                 prop,
                 tracker,
                 objectMapper,
+                keyPrefixProvider,
                 duration,
                 randomPercent
         );
@@ -118,6 +121,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
                     prop,
                     tracker,
                     objectMapper,
+                    keyPrefixProvider,
                     duration,
                     randomPercent,
                     operations
