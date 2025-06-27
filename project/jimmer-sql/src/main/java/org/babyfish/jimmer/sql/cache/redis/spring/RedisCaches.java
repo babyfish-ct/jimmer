@@ -10,7 +10,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * framework-related classes should not be included in the jimmer-sql module.<br>
  * <br>
  * Redis-related caching should be implemented through framework-specific extensions.
- * @see org.babyfish.jimmer.spring.cache.RedisCaches
+ * @see "org.babyfish.jimmer.spring.cache.RedisCaches(Provided by jimmer-spring-boot-starter)"
  */
 @Deprecated
 public class RedisCaches {

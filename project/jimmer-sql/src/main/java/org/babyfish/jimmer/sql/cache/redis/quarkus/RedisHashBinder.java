@@ -26,7 +26,7 @@ import io.quarkus.redis.datasource.value.ValueCommands;
  * framework-related classes should not be included in the jimmer-sql module.<br>
  * <br>
  * Redis-related caching should be implemented through framework-specific extensions.
- * @see io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator
+ * @see "io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator(Provided by https://github.com/flynndi/quarkus-jimmer-extension)"
  */
 @Deprecated
 public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
