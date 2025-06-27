@@ -86,6 +86,18 @@ fun KSClassDeclaration.nestedClassName(nullable: Boolean = false, simpleNameList
         }
     }
 
+fun KSClassDeclaration.nestedClassName(nullable: Boolean = false): ClassName =
+    ClassName(
+        packageName.asString(),
+        (qualifiedName?.asString()?.substring(packageName.asString().length) ?: simpleName.asString())
+    ).let {
+        if (nullable) {
+            it.copy(nullable = true) as ClassName
+        } else {
+            it
+        }
+    }
+
 val KSAnnotation.fullName: String
     get() = annotationType.fastResolve().declaration.fullName
 
