@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 
@@ -16,8 +17,9 @@ public class PredicateApplier {
 
     private Context context;
 
-    public PredicateApplier(AbstractMutableStatementImpl query) {
-        this.context = new Context(null, query, null);
+    public PredicateApplier(MutableQuery query) {
+        AbstractMutableStatementImpl statement = (AbstractMutableStatementImpl) query;
+        this.context = new Context(null, statement, null);
     }
 
     public void push(ImmutableProp prop) {

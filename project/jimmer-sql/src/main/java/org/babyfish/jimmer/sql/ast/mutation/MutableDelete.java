@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -12,9 +11,6 @@ public interface MutableDelete extends Filterable, Executable<Integer> {
 
     @OldChain
     MutableDelete where(Predicate... predicates);
-
-    @OldChain
-    MutableDelete where(Specification<?> specification);
 
     /**
      * This method is deprecated, using {@code Dynamic Predicates}
