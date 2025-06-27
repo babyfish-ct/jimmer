@@ -18,6 +18,13 @@ import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.value.GetExArgs;
 import io.quarkus.redis.datasource.value.ValueCommands;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator
+ */
+@Deprecated
 public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisValueBinder.class);

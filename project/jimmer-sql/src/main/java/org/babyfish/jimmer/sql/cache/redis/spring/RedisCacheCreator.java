@@ -7,8 +7,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheCreator;
-import org.babyfish.jimmer.sql.cache.CacheLocker;
-import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.caffeine.CaffeineHashBinder;
 import org.babyfish.jimmer.sql.cache.caffeine.CaffeineValueBinder;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
@@ -17,9 +15,15 @@ import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheCreator;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-import java.time.Duration;
 import java.util.Objects;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see org.babyfish.jimmer.spring.cache.RedisCacheCreator
+ */
+@Deprecated
 public class RedisCacheCreator extends AbstractCacheCreator {
 
     public RedisCacheCreator(
