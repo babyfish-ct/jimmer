@@ -119,8 +119,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
         return RedisValueBinder
                 .<K, V>forObject(type)
                 .publish(args.tracker)
-                .duration(args.duration)
                 .objectMapper(args.objectMapper)
+                .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.connectionFactory)
@@ -137,9 +137,9 @@ public class RedisCacheCreator extends AbstractCacheCreator {
         return RedisValueBinder
                 .<K, V>forProp(prop)
                 .publish(args.tracker)
-                .duration(args.duration)
                 .objectMapper(args.objectMapper)
                 .duration(args.duration)
+                .keyPrefixProvider(args.keyPrefixProvider)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.connectionFactory)
                 .build()
@@ -155,8 +155,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
         return RedisHashBinder
                 .<K, V>forProp(prop)
                 .publish(args.tracker)
-                .duration(args.duration)
                 .objectMapper(args.objectMapper)
+                .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.multiVewDuration)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.connectionFactory)
