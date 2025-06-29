@@ -584,6 +584,14 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, weakJoinType, joinType);
     }
 
+    protected <X> DelayedOperation<X> joinOperation(
+            Class<? extends Table<?>> targetTableType,
+            JoinType joinType,
+            WeakJoin<?, ?> weakJoinLambda
+    ) {
+        return new DelayJoin<>(this, targetTableType, joinType, weakJoinLambda);
+    }
+
     public static boolean __refEquals(TableLike<?> a, TableLike<?> b) {
         if (a == b) {
             return true;
@@ -646,7 +654,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.weakJoinHandle = null;
         }
 
-        private DelayJoin(
+        DelayJoin(
                 AbstractTypedTable<?> parent,
                 Class<? extends WeakJoin<?, ?>> weakJoinType,
                 JoinType joinType
@@ -656,6 +664,25 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.treatedAs = null;
             this.prop = null;
             this.weakJoinHandle = WeakJoinHandle.of(weakJoinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        DelayJoin(
+                AbstractTypedTable<?> parent,
+                @SuppressWarnings("unused") Class<? extends Table<?>> targetTableType,
+                JoinType joinType,
+                WeakJoin<?, ?> weakJoinLambda
+        ) {
+            this.parent = parent;
+            this.joinType = joinType;
+            this.treatedAs = null;
+            this.prop = null;
+            this.weakJoinHandle = WeakJoinHandle.of(
+                    JWeakJoinLambdaFactory.get(weakJoinLambda),
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) weakJoinLambda
+            );
         }
 
         @Override

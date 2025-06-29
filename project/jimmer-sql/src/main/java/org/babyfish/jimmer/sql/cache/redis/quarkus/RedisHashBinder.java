@@ -9,6 +9,7 @@ import java.util.Map;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +23,13 @@ import io.quarkus.redis.datasource.hash.HashCommands;
 import io.quarkus.redis.datasource.value.GetExArgs;
 import io.quarkus.redis.datasource.value.ValueCommands;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see "io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator(Provided by https://github.com/flynndi/quarkus-jimmer-extension)"
+ */
+@Deprecated
 public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisHashBinder.class);
@@ -35,10 +43,11 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
             @Nullable ObjectMapper objectMapper,
+            @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
             @NotNull RedisDataSource redisDataSource) {
-        super(type, prop, tracker, objectMapper, duration, randomPercent);
+        super(type, prop, tracker, objectMapper, keyPrefixProvider, duration, randomPercent);
         this.hashCommands = redisDataSource.hash(byte[].class);
         this.valueCommands = redisDataSource.value(byte[].class);
     }
@@ -101,7 +110,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
             if (null == redisDataSource) {
                 throw new IllegalStateException("RedisDataSource has not been specified");
             }
-            return new RedisHashBinder<>(type, prop, tracker, objectMapper, duration, randomPercent, redisDataSource);
+            return new RedisHashBinder<>(type, prop, tracker, objectMapper, keyPrefixProvider, duration, randomPercent, redisDataSource);
         }
     }
 }

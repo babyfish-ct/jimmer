@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
@@ -12,6 +13,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DMLTest extends AbstractMutationTest {
@@ -282,5 +284,18 @@ public class DMLTest extends AbstractMutationTest {
                     });
                 }
         );
+    }
+
+    @Test
+    public void testIssue1086() {
+        BookTable table = BookTable.$;
+        IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> {
+            getSqlClient()
+                    .createUpdate(table)
+                    .set(table.name(), "Unknown Name")
+                    .set(table.name(), "Unknown Name")
+                    .where(table.id().eq(graphQLInActionId1));
+        });
+        Assertions.assertEquals("Cannot update same column twice", ex.getMessage());
     }
 }

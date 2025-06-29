@@ -5,6 +5,7 @@ import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.cache.CacheCreator;
 import org.babyfish.jimmer.sql.cache.CacheLocker;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -165,6 +166,16 @@ public abstract class AbstractCacheCreator implements CacheCreator {
         }
     }
 
+    private static class RemoteKeyPrefixProvider_ extends Cfg {
+
+        final RemoteKeyPrefixProvider keyPrefixProvider;
+
+        RemoteKeyPrefixProvider_(Cfg prev, RemoteKeyPrefixProvider keyPrefixProvider) {
+            super(prev);
+            this.keyPrefixProvider = keyPrefixProvider;
+        }
+    }
+
     private static class Lock extends Cfg {
 
         final CacheLocker locker;
@@ -230,6 +241,7 @@ public abstract class AbstractCacheCreator implements CacheCreator {
         public final boolean useLocalCache;
         public final int localCacheMaximumSize;
         public final Duration localCacheDuration;
+        public final RemoteKeyPrefixProvider keyPrefixProvider;
 
         public final CacheLocker locker;
         public final Duration lockWaitDuration;
@@ -265,6 +277,9 @@ public abstract class AbstractCacheCreator implements CacheCreator {
                 this.localCacheMaximumSize = localCache.maximumSize;
                 this.localCacheDuration = localCache.duration;
             }
+
+            RemoteKeyPrefixProvider_ keyPrefixProvider_ = cfg.as(RemoteKeyPrefixProvider_.class);
+            this.keyPrefixProvider = keyPrefixProvider_ != null ? keyPrefixProvider_.keyPrefixProvider : null;
 
             Lock lock = cfg.as(Lock.class);
             if (lock == null || lock.locker == null) {

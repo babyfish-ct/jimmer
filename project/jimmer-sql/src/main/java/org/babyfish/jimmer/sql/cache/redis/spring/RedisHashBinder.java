@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see "org.babyfish.jimmer.spring.cache.RedisHashBinder(Provided by jimmer-spring-boot-starter)"
+ */
+@Deprecated
 public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     private final RedisOperations<String, byte[]> operations;
@@ -27,6 +35,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
             @Nullable ObjectMapper objectMapper,
+            @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
             @NotNull RedisOperations<String, byte[]> operations
@@ -36,6 +45,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
                 prop,
                 tracker,
                 objectMapper,
+                keyPrefixProvider,
                 duration,
                 randomPercent
         );
@@ -125,6 +135,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
                     prop,
                     tracker,
                     objectMapper,
+                    keyPrefixProvider,
                     duration,
                     randomPercent,
                     operations

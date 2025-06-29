@@ -13,9 +13,13 @@ import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.model.issue1084.DocumentStorage;
+import org.babyfish.jimmer.sql.model.issue1084.DocumentStorageDraft;
 import org.babyfish.jimmer.sql.model.wild.Task;
 import org.babyfish.jimmer.sql.model.wild.TaskDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
@@ -1402,6 +1406,29 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.entity(it -> {
                         it.modified("{\"id\":101,\"taskName\":\"Setup K8S\",\"owner\":{\"id\":1}}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1084() {
+        NativeDatabases.assumeNativeDatabase();
+        DocumentStorage storage = DocumentStorageDraft.$.produce(draft -> {
+           draft.setId(1L);
+           draft.setFileName("uid.bat");
+           draft.setFileContent(new byte[] {9, 8, 7});
+        });
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getLambdaClient(it -> it.setDialect(new MySqlDialect()))
+                        .getEntities().saveCommand(storage).setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into DOCUMENT_STORAGE(ID, FILE_NAME, FILE_CONTENT) values(?, ?, ?)");
+                    });
+                    ctx.entity(it -> {
+                        it.modified("{\"id\":1,\"fileName\":\"uid.bat\",\"fileContent\":\"CQgH\"}");
                     });
                 }
         );

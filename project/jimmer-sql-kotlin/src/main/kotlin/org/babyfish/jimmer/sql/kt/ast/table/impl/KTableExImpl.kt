@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.TableEx
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinPredicateWrapper
@@ -50,7 +51,17 @@ internal abstract class KTableExImpl<E: Any>(
             javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.LEFT)
         )
 
-    override fun <X : Any> weakOuterJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNullableTableEx<X> =
+    override fun <X : Any> weakOuterJoin(
+        targetType: KClass<X>,
+        weakJoinFun: KWeakJoinFun<E, X>
+    ): KNullableTableEx<X> =
+        KNullableTableExImpl(
+            createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.LEFT)
+        )
+
+    override fun <X : Any> weakOuterJoin(
+        weakJoinType: KClass<out KWeakJoin<E, X>>
+    ): KNullableTableEx<X> =
         KNullableTableExImpl(
             javaTable.weakJoinImplementor(weakJoinType.java, JoinType.LEFT)
         )

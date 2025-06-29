@@ -35,8 +35,8 @@ public open class GisRegionView(
         base.right,
         base.bottom)
 
-    override fun toImmutable(): GisRegion = new(GisRegion::class).by(null,
-        this@GisRegionView::toImmutableImpl)
+    override fun toImmutable(): GisRegion = new(GisRegion::class)
+        .by(null, false, this@GisRegionView::toImmutableImpl)
 
     public fun toImmutable(block: GisRegionDraft.() -> Unit): GisRegion = new(GisRegion::class).by {
         toImmutableImpl(this)

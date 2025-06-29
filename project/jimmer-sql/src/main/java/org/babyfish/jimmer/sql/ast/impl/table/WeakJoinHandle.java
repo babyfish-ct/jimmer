@@ -20,6 +20,20 @@ public interface WeakJoinHandle {
         return WeakJoinHandleImpl.get(weakJoinType);
     }
 
+    static WeakJoinHandle of(
+            WeakJoinLambda lambda,
+            boolean hasSourceWrapper,
+            boolean hasTargetWrapper,
+            WeakJoin<TableLike<?>, TableLike<?>> weakJoin
+    ) {
+        return new WeakJoinHandleImpl.EntityTableHandleImpl(
+                lambda,
+                hasSourceWrapper,
+                hasTargetWrapper,
+                weakJoin
+        );
+    }
+
     interface EntityTableHandle extends WeakJoinHandle {
 
         ImmutableType getSourceType();

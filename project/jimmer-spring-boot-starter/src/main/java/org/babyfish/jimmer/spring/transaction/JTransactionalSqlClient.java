@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.di.AbstractJSqlClientDelegate;
 import org.babyfish.jimmer.sql.runtime.*;
 
-class JTransactionalSqlClient extends AbstractJSqlClientDelegate {
+class JTransactionalSqlClient extends AbstractJSqlClientDelegate implements TransactionalSqlClientImplementor{
 
     private static final EntityManager EMPTY_ENTITY_MANAGER = new EntityManager();
 

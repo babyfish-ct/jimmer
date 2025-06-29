@@ -6,6 +6,7 @@ import java.util.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteValueBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +19,13 @@ import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.value.GetExArgs;
 import io.quarkus.redis.datasource.value.ValueCommands;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see "io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator(Provided by https://github.com/flynndi/quarkus-jimmer-extension)"
+ */
+@Deprecated
 public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisValueBinder.class);
@@ -29,10 +37,11 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
             @Nullable ObjectMapper objectMapper,
+            @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
             @NotNull RedisDataSource redisDataSource) {
-        super(type, prop, tracker, objectMapper, duration, randomPercent);
+        super(type, prop, tracker, objectMapper, keyPrefixProvider, duration, randomPercent);
         this.operations = redisDataSource.value(byte[].class);
     }
 
@@ -98,7 +107,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
             if (null == redisDataSource) {
                 throw new IllegalStateException("RedisDataSource has not been specified");
             }
-            return new RedisValueBinder<>(type, prop, tracker, objectMapper, duration, randomPercent, redisDataSource);
+            return new RedisValueBinder<>(type, prop, tracker, objectMapper, keyPrefixProvider, duration, randomPercent, redisDataSource);
         }
     }
 }

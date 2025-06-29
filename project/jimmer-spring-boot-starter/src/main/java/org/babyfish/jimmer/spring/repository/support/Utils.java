@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.repository.support;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
 import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
+import org.babyfish.jimmer.spring.transaction.TransactionalSqlClientImplementor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -42,6 +43,9 @@ public class Utils {
 
     public static JSqlClientImplementor validateSqlClient(JSqlClient sqlClient) {
         JSqlClientImplementor implementor = (JSqlClientImplementor) sqlClient;
+        if (sqlClient instanceof TransactionalSqlClientImplementor) {
+            return implementor;
+        }
         if (!(implementor.getConnectionManager() instanceof SpringConnectionManager)) {
             throw new IllegalArgumentException(
                     "The connection manager of sql client must be instance of \"" +
@@ -52,7 +56,7 @@ public class Utils {
         if (!(implementor.getTransientResolverProvider() instanceof SpringTransientResolverProvider)) {
             throw new IllegalArgumentException(
                     "The transient resolver provider of sql client must be instance of \"" +
-                            SpringConnectionManager.class.getName() +
+                            SpringTransientResolverProvider.class.getName() +
                             "\""
             );
         }

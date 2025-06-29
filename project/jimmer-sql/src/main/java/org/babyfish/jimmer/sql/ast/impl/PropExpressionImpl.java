@@ -263,7 +263,7 @@ public class PropExpressionImpl<T>
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PropExpressionImpl<?> that = (PropExpressionImpl<?>) o;
-        return table.equals(that.table) && prop.equals(that.prop) && path.equals(that.path);
+        return table.equals(that.table) && prop.equals(that.prop) && Objects.equals(path, that.path);
     }
 
     @Override

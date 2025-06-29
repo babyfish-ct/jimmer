@@ -13,7 +13,7 @@ public class ChainCacheBuilder<K, V> {
 
     private boolean hasLockableBinder = false;
 
-    private Binder.TrackingMode trackingMode = Binder.TrackingMode.NONE;
+    private final Binder.TrackingMode trackingMode = Binder.TrackingMode.NONE;
 
     public ChainCacheBuilder<K, V> add(LoadingBinder<K, V> binder) {
         if (binder != null) {

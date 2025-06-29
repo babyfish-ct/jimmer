@@ -197,6 +197,76 @@ class JoinTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testMergeLambdaWeakJoin() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    table.asTableEx()
+                        .weakJoin(Author::class) {
+                            sql(
+                                Boolean::class,
+                                "exists(select * from book_author_mapping " +
+                                    "where book_id = %e and author_id = %e)"
+                            ) {
+                                expression(source.id)
+                                expression(target.id)
+                            }
+                        }
+                        .firstName eq "Alex"
+                )
+                where(
+                    table.asTableEx()
+                        .weakJoin(Author::class) {
+                            sql(
+                                Boolean::class,
+                                "exists(select * from book_author_mapping " +
+                                    "where book_id = %e and author_id = %e)"
+                            ) {
+                                expression(source.id)
+                                expression(target.id)
+                            }
+                        }
+                        .lastName eq "Banks"
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |inner join AUTHOR tb_2_ on exists(
+                    |--->select * from book_author_mapping 
+                    |--->where book_id = tb_1_.ID and author_id = tb_2_.ID
+                    |) 
+                    |where tb_2_.FIRST_NAME = ? and tb_2_.LAST_NAME = ?""".trimMargin()
+            ).variables("Alex", "Banks")
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":1,
+                    |--->--->"price":50.00,
+                    |--->--->"storeId":1
+                    |--->},{
+                    |--->--->"id":2,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":2,
+                    |--->--->"price":55.00,
+                    |--->--->"storeId":1
+                    |--->},{
+                    |--->--->"id":3,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":3,
+                    |--->--->"price":51.00,
+                    |--->--->"storeId":1
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
     fun testMergeWeakJoin2() {
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
@@ -208,6 +278,72 @@ class JoinTest : AbstractQueryTest() {
                 where(
                     table.asTableEx()
                         .weakJoin(BookAuthorWeakJoin2::class)
+                        .lastName eq "Banks"
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |inner join AUTHOR tb_2_ on exists(
+                    |--->select 1 from BOOK_AUTHOR_MAPPING tb_3_ 
+                    |--->where tb_3_.BOOK_ID = tb_1_.ID and tb_3_.AUTHOR_ID = tb_2_.ID
+                    |) 
+                    |where tb_2_.FIRST_NAME = ? and tb_2_.LAST_NAME = ?""".trimMargin()
+            ).variables("Alex", "Banks")
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":1,
+                    |--->--->"price":50.00,
+                    |--->--->"storeId":1
+                    |--->},{
+                    |--->--->"id":2,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":2,
+                    |--->--->"price":55.00,
+                    |--->--->"storeId":1
+                    |--->},{
+                    |--->--->"id":3,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":3,
+                    |--->--->"price":51.00,
+                    |--->--->"storeId":1
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testMergeLambdaWeakJoin2() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    table.asTableEx()
+                        .weakJoin(Author::class) {
+                            exists(
+                                sourceWildSubQueries.forList(Book::authors) {
+                                    where += table.source eq parentTable
+                                    where += table.target eq target
+                                }
+                            )
+                        }
+                        .firstName eq "Alex"
+                )
+                where(
+                    table.asTableEx()
+                        .weakJoin(Author::class) {
+                            exists(
+                                sourceWildSubQueries.forList(Book::authors) {
+                                    where += table.source eq parentTable
+                                    where += table.target eq target
+                                }
+                            )
+                        }
                         .lastName eq "Banks"
                 )
                 select(table)

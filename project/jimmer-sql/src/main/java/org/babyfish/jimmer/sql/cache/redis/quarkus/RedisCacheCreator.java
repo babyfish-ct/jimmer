@@ -19,6 +19,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.quarkus.redis.datasource.RedisDataSource;
 
+/**
+ * framework-related classes should not be included in the jimmer-sql module.<br>
+ * <br>
+ * Redis-related caching should be implemented through framework-specific extensions.
+ * @see "io.quarkiverse.jimmer.runtime.cache.RedisCacheCreator(Provided by https://github.com/flynndi/quarkus-jimmer-extension)"
+ */
+@Deprecated
 public class RedisCacheCreator extends AbstractCacheCreator {
 
     public RedisCacheCreator(RedisDataSource redisDataSource) {
@@ -109,8 +116,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
         return RedisValueBinder
                 .<K, V> forObject(type)
                 .publish(args.tracker)
-                .duration(args.duration)
                 .objectMapper(args.objectMapper)
+                .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.redisDataSource)
@@ -123,8 +130,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
         return RedisValueBinder
                 .<K, V> forProp(prop)
                 .publish(args.tracker)
-                .duration(args.duration)
                 .objectMapper(args.objectMapper)
+                .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.redisDataSource)
@@ -137,8 +144,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
         return RedisHashBinder
                 .<K, V> forProp(prop)
                 .publish(args.tracker)
-                .duration(args.duration)
                 .objectMapper(args.objectMapper)
+                .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.multiVewDuration)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.redisDataSource)

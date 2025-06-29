@@ -20,11 +20,6 @@ import java.util.Map;
 
 abstract class WeakJoinHandleImpl implements WeakJoinHandle {
 
-    private static final String JOIN_ERROR_REASON =
-            "it is forbidden in the implementation of \"" +
-                    WeakJoin.class.getName() +
-                    "\"";
-
     private static final ClassCache<WeakJoinHandle> CACHE =
             new ClassCache<>(WeakJoinHandleImpl::create, false);
 
@@ -44,7 +39,6 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
         return (Class<? extends WeakJoin<?, ?>>) weakJoin.getClass();
     }
 
-    @SuppressWarnings("unchecked")
     private static WeakJoinHandle create(Class<?> weakJoinType) {
         Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
         if (typeArguments == null || typeArguments.isEmpty()) {
@@ -132,7 +126,17 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
         return BaseTable.class.isAssignableFrom((Class<?>) parameterizedType.getRawType());
     }
 
-    private static final class EntityTableHandleImpl extends WeakJoinHandleImpl implements WeakJoinHandle.EntityTableHandle {
+    static final class EntityTableHandleImpl extends WeakJoinHandleImpl implements WeakJoinHandle.EntityTableHandle {
+
+        private static final String JOIN_ERROR_REASON =
+                "it is forbidden in the implementation of \"" +
+                        WeakJoin.class.getName() +
+                        "\"";
+
+        private static final ClassCache<WeakJoinHandle> CACHE =
+                new ClassCache<>(EntityTableHandleImpl::create, false);
+
+        private final WeakJoinLambda weakJoinLambda;
 
         private final ImmutableType sourceType;
 
@@ -150,8 +154,23 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 WeakJoin<TableLike<?>, TableLike<?>> weakJoin
         ) {
             super(weakJoin);
+            this.weakJoinLambda = null;
             this.sourceType = sourceType;
             this.targetType = targetType;
+            this.hasSourceWrapper = hasSourceWrapper;
+            this.hasTargetWrapper = hasTargetWrapper;
+        }
+
+        public EntityTableHandleImpl(
+                WeakJoinLambda weakJoinLambda,
+                boolean hasSourceWrapper,
+                boolean hasTargetWrapper,
+                WeakJoin<TableLike<?>, TableLike<?>> weakJoin
+        ) {
+            super(weakJoin);
+            this.weakJoinLambda = weakJoinLambda;
+            this.sourceType = ImmutableType.get(weakJoinLambda.getSourceType());
+            this.targetType = ImmutableType.get(weakJoinLambda.getTargetType());
             this.hasSourceWrapper = hasSourceWrapper;
             this.hasTargetWrapper = hasTargetWrapper;
         }
@@ -167,8 +186,37 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
         }
 
         @Override
+        public int hashCode() {
+            return weakJoinLambda != null ?
+                    weakJoinLambda.hashCode() :
+                    getWeakJoinType().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof WeakJoinHandle)) {
+                return false;
+            }
+            EntityTableHandleImpl that = (EntityTableHandleImpl) obj;
+            if (weakJoinLambda != null) {
+                return weakJoinLambda.equals(that.weakJoinLambda);
+            }
+            return getWeakJoinType() == that.getWeakJoinType();
+        }
+
+        @Override
+        public String toString() {
+            return "WeakJoinHandle.EntityTable{" +
+                    "weakJoin=" + weakJoin +
+                    '}';
+        }
+
+        @Override
         @SuppressWarnings("unchecked")
-        public Predicate createPredicate(
+        public final Predicate createPredicate(
                 TableLike<?> source,
                 TableLike<?> target,
                 AbstractMutableStatementImpl statement
@@ -179,10 +227,10 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 return implementor.on(
                         source instanceof TableProxy<?> ?
                                 (Table<Object>)((TableProxy<?>)source).__unwrap() :
-                                (TableLike<Object>)source,
+                                (Table<Object>)source,
                         target instanceof TableProxy<?> ?
                                 (Table<Object>)((TableProxy<?>)target).__unwrap() :
-                                (TableLike<Object>)target,
+                                (Table<Object>)target,
                         statement
                 );
             }
@@ -196,11 +244,80 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
             );
         }
 
-        @Override
-        public String toString() {
-            return "WeakEntityTableJoinHandle{" +
-                    "weakJoin=" + weakJoin +
-                    '}';
+        public static WeakJoinHandle of(Class<? extends WeakJoin<?, ?>> weakJoinType) {
+            return CACHE.get(weakJoinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static WeakJoinHandle create(Class<?> weakJoinType) {
+            Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
+            if (typeArguments == null || typeArguments.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Illegal class \"" + weakJoinType.getName() + "\", generic arguments are missing"
+                );
+            }
+            Type sourceTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[0]);
+            Type targetTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[1]);
+            Type sourceType = TypeUtils.getTypeArguments(sourceTableType, Table.class).values().iterator().next();
+            Type targetType = TypeUtils.getTypeArguments(targetTableType, Table.class).values().iterator().next();
+            if (sourceType instanceof TypeVariable<?>) {
+                sourceType = typeArguments.get((TypeVariable<?>) sourceType);
+            }
+            if (targetType instanceof TypeVariable<?>) {
+                targetType = typeArguments.get((TypeVariable<?>) targetType);
+            }
+            if (!(sourceType instanceof Class<?>) || !((Class<?>)sourceType).isAnnotationPresent(Entity.class)) {
+                throw new IllegalArgumentException(
+                        "Illegal class \"" +
+                                weakJoinType.getName() +
+                                "\", the source type is not entity"
+                );
+            }
+            if (!(targetType instanceof Class<?>) || !((Class<?>)targetType).isAnnotationPresent(Entity.class)) {
+                throw new IllegalArgumentException(
+                        "Illegal class \"" +
+                                weakJoinType.getName() +
+                                "\", the target type is not entity"
+                );
+            }
+            boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>)sourceType) != null;
+            boolean hasTargetWrapper = TableProxies.tableWrapperClass((Class<?>)targetType) != null;
+            Constructor<WeakJoin<TableLike<?>, TableLike<?>>> constructor;
+            try {
+                constructor = (Constructor<WeakJoin<TableLike<?>, TableLike<?>>>) weakJoinType.getDeclaredConstructor();
+            } catch (NoSuchMethodException ex) {
+                throw new IllegalArgumentException(
+                        "No default constructor can be found in \"" +
+                                weakJoinType.getName() +
+                                "\""
+                );
+            }
+            constructor.setAccessible(true);
+            WeakJoin<TableLike<?>, TableLike<?>> weakJoin;
+            try {
+                weakJoin = constructor.newInstance();
+            } catch (InstantiationException | IllegalAccessException ex) {
+                throw new IllegalArgumentException(
+                        "Cannot create instance of \"" +
+                                weakJoinType.getName() +
+                                "\"",
+                        ex
+                );
+            } catch (InvocationTargetException ex) {
+                throw new IllegalArgumentException(
+                        "Cannot create instance of \"" +
+                                weakJoinType.getName() +
+                                "\"",
+                        ex.getTargetException()
+                );
+            }
+            return new EntityTableHandleImpl(
+                    ImmutableType.get((Class<?>) sourceType),
+                    ImmutableType.get((Class<?>) targetType),
+                    hasSourceWrapper,
+                    hasTargetWrapper,
+                    weakJoin
+            );
         }
     }
 

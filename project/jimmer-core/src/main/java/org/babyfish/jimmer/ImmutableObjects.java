@@ -479,6 +479,69 @@ public class ImmutableObjects {
         return info.isDeleted(spi.__get(propId));
     }
 
+    public static <T> Set<T> emptyStringToNull(Set<T> s) {
+        Set<T> newSet = new LinkedHashSet<>((s.size() * 4 + 2) / 3);
+        for (T e : s) {
+            newSet.add(emptyStringToNullImpl(e));
+        }
+        return newSet;
+    }
+
+    public static <T> List<T> emptyStringToNull(Collection<T> c) {
+        List<T> newList = new ArrayList<>(c.size());
+        for (T e : c) {
+            newList.add(emptyStringToNullImpl(e));
+        }
+        return newList;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T emptyStringToNull(T o) {
+        if (o instanceof Set<?>) {
+            return (T) emptyStringToNull((Set<?>) o);
+        }
+        if (o instanceof Collection<?>) {
+            return (T) emptyStringToNull((List<?>) o);
+        }
+        return emptyStringToNullImpl(o);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T emptyStringToNullImpl(T o) {
+        if (!(o instanceof ImmutableSpi)) {
+            return o;
+        }
+        ImmutableSpi spi = (ImmutableSpi) o;
+        return (T) Internal.produce(spi.__type(), o, draft -> {
+            DraftSpi draftSpi = (DraftSpi) draft;
+            for (ImmutableProp prop : spi.__type().getProps().values()) {
+                if (!prop.isNullable()) {
+                    continue;
+                }
+                PropId propId = prop.getId();
+                if (!spi.__isLoaded(propId)) {
+                    continue;
+                }
+                if (prop.getReturnClass() == String.class) {
+                    Object value = spi.__get(propId);
+                    if ("".equals(value)) {
+                        draftSpi.__set(propId, null);
+                    }
+                } else if (prop.isAssociation(TargetLevel.OBJECT)) {
+                    Object value = spi.__get(propId);
+                    if (value == null) {
+                        continue;
+                    }
+                    if (value instanceof Collection<?>) {
+                        draftSpi.__set(propId, emptyStringToNull((Collection<?>)value));
+                    } else {
+                        draftSpi.__set(propId, emptyStringToNullImpl(value));
+                    }
+                }
+            }
+        });
+    }
+
     static {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public interface RealTable extends Iterable<RealTable> {
 
     TableLikeImplementor<?> getTableLikeImplementor();
@@ -76,7 +78,7 @@ public interface RealTable extends Iterable<RealTable> {
         public int hashCode() {
             int result = System.identityHashCode(scope);
             result = 31 * result + joinName.hashCode();
-            result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
+            result = 31 * result + Objects.hashCode(weakJoinHandle);
             return result;
         }
 
@@ -96,8 +98,7 @@ public interface RealTable extends Iterable<RealTable> {
             if (!joinName.equals(other.joinName)) {
                 return false;
             }
-            return (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType() : null) ==
-                    (other.weakJoinHandle != null ? other.weakJoinHandle.getWeakJoinType() : null);
+            return Objects.equals(weakJoinHandle, other.weakJoinHandle);
         }
 
         @Override

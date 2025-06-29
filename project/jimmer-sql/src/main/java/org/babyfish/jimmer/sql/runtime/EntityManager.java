@@ -191,6 +191,9 @@ public class EntityManager {
     ) {
         if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
+            if (classLoader == null) {
+                classLoader = EntityManager.class.getClassLoader();
+            }
         }
 
         Set<Class<?>> classes = new LinkedHashSet<>();

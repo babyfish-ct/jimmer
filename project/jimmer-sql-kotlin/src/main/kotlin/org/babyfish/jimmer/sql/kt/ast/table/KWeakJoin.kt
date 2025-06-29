@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.KWeakJoinImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.WeakJoin
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -18,8 +19,8 @@ abstract class KWeakJoin<S: Any, T: Any> : WeakJoin<Table<S>, Table<T>>,
     KWeakJoinImplementor<S, T> {
 
     final override fun on(
-        source: Table<S>,
-        target: Table<T>,
+        source: TableLike<S>,
+        target: TableLike<T>,
         statement: AbstractMutableStatementImpl
     ): Predicate? {
         val st = KNonNullTableExImpl(source as TableImplementor<S>, JOIN_ERROR_REASON)

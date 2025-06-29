@@ -176,6 +176,12 @@ class DraftGenerator(
                                 .build()
                         )
                     }
+                    addParameter(
+                        ParameterSpec
+                            .builder("resolveImmediately", BOOLEAN)
+                            .defaultValue("false")
+                            .build()
+                    )
                     if (withBlock) {
                         addParameter(
                             ParameterSpec
@@ -223,6 +229,12 @@ class DraftGenerator(
                                 .build()
                         )
                     }
+                    addParameter(
+                        ParameterSpec
+                            .builder("resolveImmediately", BOOLEAN)
+                            .defaultValue("false")
+                            .build()
+                    )
                     if (withBlock) {
                         addParameter(
                             ParameterSpec
@@ -254,6 +266,12 @@ class DraftGenerator(
                 .addAnnotation(generatedAnnotation(type))
                 .receiver(type.className)
                 .addParameter(
+                    ParameterSpec
+                        .builder("resolveImmediately", BOOLEAN)
+                        .defaultValue("false")
+                        .build()
+                )
+                .addParameter(
                     "block",
                     LambdaTypeName.get(
                         type.draftClassName,
@@ -262,13 +280,14 @@ class DraftGenerator(
                     )
                 )
                 .returns(type.className)
-                .addCode("return %T.`$`.produce(this, block)", type.draftClassName)
+                .addCode("return %T.`$`.produce(this, resolveImmediately, block)", type.draftClassName)
                 .build()
         )
     }
 
     private fun produceParams(withBase: Boolean, withBlock: Boolean) = buildString {
         append(if (withBase) "base" else "null")
+        append(", resolveImmediately")
         if (withBlock) append(", block")
     }
 }

@@ -14,7 +14,9 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
+import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoinFun
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -88,6 +90,15 @@ internal open class KNonNullTableExImpl<E: Any>(
         } else {
             KNonNullTableExImpl(
                 javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
+            )
+        }
+
+    override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X> =
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(
+                createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.INNER)
             )
         }
 
