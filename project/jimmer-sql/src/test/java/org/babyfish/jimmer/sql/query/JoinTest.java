@@ -383,13 +383,79 @@ public class JoinTest extends AbstractQueryTest {
         );
     }
 
+    @Test
+    public void testMergeLambdaWeakJoin() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
+                    q.where(
+                            book.asTableEx().weakJoin(AuthorTable.class, (b, a) ->
+                                    Predicate.sql(
+                                            "exists(select * from book_author_mapping where book_id = %e and author_id = %e)",
+                                            ctx -> {
+                                                ctx.expression(b.id());
+                                                ctx.expression(a.id());
+                                            }
+                                    )
+                            ).firstName().eq("Alex")
+                    );
+                    q.where(
+                            book.asTableEx().weakJoin(AuthorTable.class, (b2, a2) ->
+                                    Predicate.sql(
+                                            "exists(select * from book_author_mapping where book_id = %e and author_id = %e)",
+                                            ctx -> {
+                                                ctx.expression(b2.id());
+                                                ctx.expression(a2.id());
+                                            }
+                                    )
+                            ).lastName().eq("Banks")
+                    );
+                    return q.select(book);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join AUTHOR tb_2_ on exists(" +
+                                    "--->select * from book_author_mapping " +
+                                    "--->where book_id = tb_1_.ID and author_id = tb_2_.ID" +
+                                    ") " +
+                                    "where tb_2_.FIRST_NAME = ? and tb_2_.LAST_NAME = ?"
+                    ).variables("Alex", "Banks");
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"price\":50.00," +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                    "--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->\"edition\":2," +
+                                    "--->--->\"price\":55.00," +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->\"edition\":3," +
+                                    "--->--->\"price\":51.00," +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
     private static class BookAuthorWeakJoin implements WeakJoin<BookTable, AuthorTable> {
 
         @Override
         public Predicate on(BookTable source, AuthorTable target) {
             return Predicate.sql(
                     "exists(select * from book_author_mapping where book_id = %e and author_id = %e)",
-                    new Expression[]{ source.id(), target.id() }
+                    source.id(),
+                    target.id()
             );
         }
     }

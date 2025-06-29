@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -62,7 +63,16 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
 
     <X> TableImplementor<X> inverseJoinImplementor(TypedProp.Association<?, ?> prop, JoinType joinType);
 
-    <X> TableImplementor<X> weakJoinImplementor(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType);
+    <X> TableImplementor<X> weakJoinImplementor(
+            Class<? extends WeakJoin<?, ?>> weakJoinType,
+            JoinType joinType
+    );
+
+    <X> TableImplementor<X> weakJoinImplementor(
+            Class<? extends Table<?>> targetTableType,
+            JoinType joinType,
+            WeakJoin<?, ?> weakJoinLambda
+    );
 
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
 

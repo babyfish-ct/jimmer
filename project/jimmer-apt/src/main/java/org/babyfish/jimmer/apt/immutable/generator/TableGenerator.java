@@ -105,6 +105,8 @@ public class TableGenerator {
             addDisableJoin();
             addWeakJoin(false);
             addWeakJoin(true);
+            addLambdaWeakJoin(false);
+            addLambdaWeakJoin(true);
             addRemote();
             return typeBuilder.build();
         } finally {
@@ -303,6 +305,73 @@ public class TableGenerator {
                     );
         } else {
             builder.addStatement("return weakJoin(weakJoinType, JoinType.INNER)");
+        }
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addLambdaWeakJoin(boolean withJoinType) {
+        if (!isTableEx) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("weakJoin")
+                .addModifiers(Modifier.PUBLIC)
+                .addTypeVariable(
+                        TypeVariableName.get(
+                                "TT",
+                                ParameterizedTypeName.get(
+                                        Constants.TABLE_CLASS_NAME,
+                                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                                )
+                        )
+                )
+                .returns(TypeVariableName.get("TT"))
+                .addParameter(
+                        ParameterSpec
+                                .builder(
+                                        ParameterizedTypeName.get(
+                                                Constants.CLASS_CLASS_NAME,
+                                                TypeVariableName.get("TT")
+                                        ),
+                                        "targetTableType"
+                                )
+                                .build()
+                );
+        if (withJoinType) {
+            builder.addParameter(
+                    ParameterSpec
+                            .builder(Constants.JOIN_TYPE_CLASS_NAME, "joinType")
+                            .build()
+            );
+            builder.addAnnotation(suppressAllAnnotation());
+        }
+        builder.addParameter(
+                ParameterSpec
+                        .builder(
+                                ParameterizedTypeName.get(
+                                        Constants.WEAK_JOIN_CLASS_NAME,
+                                        type.getTableClassName(),
+                                        TypeVariableName.get("TT")
+                                ),
+                                "weakJoinLambda"
+                        )
+                        .build()
+        );
+        if (withJoinType) {
+            builder
+                    .addStatement("__beforeJoin()")
+                    .beginControlFlow("if (raw != null)")
+                    .addStatement(
+                            "return (TT)$T.wrap(raw.weakJoinImplementor(targetTableType, joinType, weakJoinLambda))",
+                            Constants.TABLE_PROXIES_CLASS_NAME
+                    )
+                    .endControlFlow()
+                    .addStatement(
+                            "return (TT)$T.fluent(joinOperation(targetTableType, joinType, weakJoinLambda))",
+                            Constants.TABLE_PROXIES_CLASS_NAME
+                    );
+        } else {
+            builder.addStatement("return weakJoin(targetTableType, JoinType.INNER, weakJoinLambda)");
         }
         typeBuilder.addMethod(builder.build());
     }

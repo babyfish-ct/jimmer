@@ -702,6 +702,25 @@ public final class Type {
     }
   }
 
+  public static int getArgumentCount(final String methodDescriptor) {
+    int argumentCount = 0;
+    // Skip the first character, which is always a '('.
+    int currentOffset = 1;
+    // Parse the argument types, one at a each loop iteration.
+    while (methodDescriptor.charAt(currentOffset) != ')') {
+      while (methodDescriptor.charAt(currentOffset) == '[') {
+        currentOffset++;
+      }
+      if (methodDescriptor.charAt(currentOffset++) == 'L') {
+        // Skip the argument descriptor content.
+        int semiColumnOffset = methodDescriptor.indexOf(';', currentOffset);
+        currentOffset = Math.max(currentOffset, semiColumnOffset + 1);
+      }
+      ++argumentCount;
+    }
+    return argumentCount;
+  }
+
   /**
    * Returns the size of the arguments and of the return value of methods of this type. This method
    * should only be used for method types.

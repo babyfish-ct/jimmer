@@ -62,6 +62,11 @@ internal class KNullableTableExImpl<E: Any>(
             javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
         )
 
+    override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNullableTableEx<X> =
+        KNullableTableExImpl(
+            createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.INNER)
+        )
+
     override fun <X : Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNullableTableEx<X> =
         KNullableTableExImpl(
             javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)

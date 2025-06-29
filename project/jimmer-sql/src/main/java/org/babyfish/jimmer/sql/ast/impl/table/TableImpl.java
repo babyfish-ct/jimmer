@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>implements TableImplementor<E> {
@@ -509,6 +510,23 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @SuppressWarnings("unchecked")
     @Override
+    public <X> TableImplementor<X> weakJoinImplementor(
+            Class<? extends Table<?>> targetTableType,
+            JoinType joinType,
+            WeakJoin<?, ?> weakJoinLambda
+    ) {
+        return weakJoinImplementor(
+                new WeakJoinHandle(
+                        JWeakJoinLambdaFactory.get(weakJoinLambda),
+                        true,
+                        true,
+                        (WeakJoin<Table<?>, Table<?>>) weakJoinLambda
+                ),
+                joinType
+        );
+    }
+
+    @Override
     public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
         return new TableImpl<>(
                 statement,
@@ -743,8 +761,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         public int hashCode() {
             int result = joinName.hashCode();
             result = 31 * result + joinType.hashCode();
-            result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
             result = 32 * result + Boolean.hashCode(fetch);
+            result = 31 * result + Objects.hashCode(weakJoinHandle);
             return result;
         }
 
@@ -768,8 +786,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             if (joinType != other.joinType) {
                 return false;
             }
-            return (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType() : null) ==
-                    (other.weakJoinHandle != null ? other.weakJoinHandle.getWeakJoinType() : null);
+            return Objects.equals(weakJoinHandle, other.weakJoinHandle);
         }
 
         @Override

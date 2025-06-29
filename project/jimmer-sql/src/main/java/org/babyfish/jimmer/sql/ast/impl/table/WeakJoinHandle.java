@@ -27,6 +27,8 @@ public class WeakJoinHandle {
     private static final ClassCache<WeakJoinHandle> CACHE =
             new ClassCache<>(WeakJoinHandle::create, false);
 
+    private final WeakJoinLambda weakJoinLambda;
+
     private final ImmutableType sourceType;
 
     private final ImmutableType targetType;
@@ -44,8 +46,23 @@ public class WeakJoinHandle {
             boolean hasTargetWrapper,
             WeakJoin<Table<?>, Table<?>> weakJoin
     ) {
+        this.weakJoinLambda = null;
         this.sourceType = sourceType;
         this.targetType = targetType;
+        this.hasSourceWrapper = hasSourceWrapper;
+        this.hasTargetWrapper = hasTargetWrapper;
+        this.weakJoin = weakJoin;
+    }
+
+    public WeakJoinHandle(
+            WeakJoinLambda weakJoinLambda,
+            boolean hasSourceWrapper,
+            boolean hasTargetWrapper,
+            WeakJoin<Table<?>, Table<?>> weakJoin
+    ) {
+        this.weakJoinLambda = weakJoinLambda;
+        this.sourceType = ImmutableType.get(weakJoinLambda.getSourceType());
+        this.targetType = ImmutableType.get(weakJoinLambda.getTargetType());
         this.hasSourceWrapper = hasSourceWrapper;
         this.hasTargetWrapper = hasTargetWrapper;
         this.weakJoin = weakJoin;
@@ -62,6 +79,28 @@ public class WeakJoinHandle {
     @SuppressWarnings("unchecked")
     public Class<? extends WeakJoin<?, ?>> getWeakJoinType() {
         return (Class<? extends WeakJoin<?, ?>>) weakJoin.getClass();
+    }
+
+    @Override
+    public int hashCode() {
+        return weakJoinLambda != null ?
+                weakJoinLambda.hashCode() :
+                getWeakJoinType().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof WeakJoinHandle)) {
+            return false;
+        }
+        WeakJoinHandle that = (WeakJoinHandle) obj;
+        if (weakJoinLambda != null) {
+            return weakJoinLambda.equals(that.weakJoinLambda);
+        }
+        return getWeakJoinType() == that.getWeakJoinType();
     }
 
     @Override

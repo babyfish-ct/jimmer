@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> implements RealTable {
@@ -593,7 +594,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
         public int hashCode() {
             int result = System.identityHashCode(scope);
             result = 31 * result + joinName.hashCode();
-            result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
+            result = 31 * result + Objects.hashCode(weakJoinHandle);
             return result;
         }
 
@@ -613,8 +614,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             if (!joinName.equals(other.joinName)) {
                 return false;
             }
-            return (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType() : null) ==
-                    (other.weakJoinHandle != null ? other.weakJoinHandle.getWeakJoinType() : null);
+            return Objects.equals(weakJoinHandle, other.weakJoinHandle);
         }
 
         @Override
