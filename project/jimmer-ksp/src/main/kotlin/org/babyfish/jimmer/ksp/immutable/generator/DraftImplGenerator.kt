@@ -622,7 +622,7 @@ class DraftImplGenerator(
                                         )
                                         add("if (oldValue !== newValue)")
                                         beginControlFlow("")
-                                        addStatement("%L = newValue", prop.name)
+                                        addStatement("this@%L.%L = newValue", DRAFT_IMPL, prop.name)
                                         endControlFlow()
                                         endControlFlow()
                                     }
