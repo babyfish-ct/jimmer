@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
@@ -26,6 +27,9 @@ public interface WeakJoinHandle {
             boolean hasTargetWrapper,
             WeakJoin<TableLike<?>, TableLike<?>> weakJoin
     ) {
+        if (BaseTable.class.isAssignableFrom(lambda.getSourceType())) {
+            return new WeakJoinHandleImpl.BaseTableHandleImpl(lambda, weakJoin);
+        }
         return new WeakJoinHandleImpl.EntityTableHandleImpl(
                 lambda,
                 hasSourceWrapper,

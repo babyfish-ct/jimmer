@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
@@ -88,6 +90,23 @@ public class BaseTableSymbols {
         @Override
         public Table1<S1> query(TypedBaseQueryImplementor<?> query) {
             return new Table1<>(query, wrapSelections(selections, query.asBaseTable()));
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable1<S1>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")

@@ -24,8 +24,6 @@ public abstract class AbstractWeakJoinLambdaFactory {
     private static final WeakJoinLambda NIL =
             new WeakJoinLambda(new InsnList(), void.class, void.class);
 
-    private static final Method INTERFACE_METHOD;
-
     private final ReadWriteLock cacheRwl = new ReentrantReadWriteLock();
 
     private final Map<Class<?>, WeakJoinLambda> cacheMap = new WeakHashMap<>();
@@ -124,14 +122,6 @@ public abstract class AbstractWeakJoinLambdaFactory {
                 return this.methodNode = new MethodNode();
             }
             return null;
-        }
-    }
-
-    static {
-        try {
-            INTERFACE_METHOD = WeakJoin.class.getMethod("on", TableLike.class, TableLike.class);
-        } catch (NoSuchMethodException ex) {
-            throw new AssertionError("Internal bug", ex);
         }
     }
 }

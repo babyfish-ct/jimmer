@@ -49,7 +49,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
         Type sourceTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[0]);
         Type targetTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[1]);
         if (isBaseTable(sourceTableType) && isBaseTable(targetTableType)) {
-            return new BaseTableHandleImpl(createWeakJoin(weakJoinType));
+            return new BaseTableHandleImpl(null, createWeakJoin(weakJoinType));
         }
         Type sourceType = TypeUtils.getTypeArguments(sourceTableType, TableLike.class).values().iterator().next();
         Type targetType = TypeUtils.getTypeArguments(targetTableType, TableLike.class).values().iterator().next();
@@ -197,7 +197,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof WeakJoinHandle)) {
+            if (!(obj instanceof EntityTableHandleImpl)) {
                 return false;
             }
             EntityTableHandleImpl that = (EntityTableHandleImpl) obj;
@@ -216,7 +216,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
 
         @Override
         @SuppressWarnings("unchecked")
-        public final Predicate createPredicate(
+        public Predicate createPredicate(
                 TableLike<?> source,
                 TableLike<?> target,
                 AbstractMutableStatementImpl statement
@@ -242,10 +242,6 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                             ((TableProxy<?>)TableProxies.wrap((Table<?>) target)).__disableJoin(JOIN_ERROR_REASON) :
                             new UntypedJoinDisabledTableProxy<>((TableImplementor<?>) target, JOIN_ERROR_REASON)
             );
-        }
-
-        public static WeakJoinHandle of(Class<? extends WeakJoin<?, ?>> weakJoinType) {
-            return CACHE.get(weakJoinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -321,17 +317,43 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
         }
     }
 
-    private static class BaseTableHandleImpl extends WeakJoinHandleImpl implements WeakJoinHandle.BaseTableHandle {
+    public static class BaseTableHandleImpl extends WeakJoinHandleImpl implements WeakJoinHandle.BaseTableHandle {
+
+        private final WeakJoinLambda weakJoinLambda;
 
         BaseTableHandleImpl(
+                WeakJoinLambda weakJoinLambda,
                 WeakJoin<TableLike<?>, TableLike<?>> weakJoin
         ) {
             super(weakJoin);
+            this.weakJoinLambda = weakJoinLambda;
         }
 
         @Override
         public Predicate createPredicate(TableLike<?> source, TableLike<?> target, AbstractMutableStatementImpl statement) {
             return weakJoin.on(source, target);
+        }
+
+        @Override
+        public int hashCode() {
+            return weakJoinLambda != null ?
+                    weakJoinLambda.hashCode() :
+                    getWeakJoinType().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof BaseTableHandleImpl)) {
+                return false;
+            }
+            BaseTableHandleImpl that = (BaseTableHandleImpl) obj;
+            if (weakJoinLambda != null) {
+                return weakJoinLambda.equals(that.weakJoinLambda);
+            }
+            return getWeakJoinType() == that.getWeakJoinType();
         }
 
         @Override
