@@ -12,9 +12,9 @@ publishing {
             }
             name = "MavenCentral"
             url = if (project.version.toString().endsWith("-SNAPSHOT")) {
-                uri("https://oss.sonatype.org/content/repositories/snapshots")
+                uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots")
             } else {
-                uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+                uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
             }
         }
     }
