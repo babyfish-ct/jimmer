@@ -6,7 +6,6 @@ plugins {
 extensions.configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
-    withJavadocJar()
 }
 
 tasks.test {
