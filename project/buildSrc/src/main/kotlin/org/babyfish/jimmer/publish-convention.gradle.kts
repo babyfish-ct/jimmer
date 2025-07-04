@@ -12,10 +12,7 @@ afterEvaluate {
 
 mavenPublishing {
 
-    publishToMavenCentral(
-        automaticRelease = true,
-        
-    )
+    publishToMavenCentral(automaticRelease = true)
 
     signAllPublications()
 }
