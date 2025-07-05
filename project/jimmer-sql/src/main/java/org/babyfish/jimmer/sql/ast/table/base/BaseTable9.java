@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.ast.table.base;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.jetbrains.annotations.NotNull;
 
 public interface BaseTable9<
@@ -42,4 +44,30 @@ public interface BaseTable9<
 
     @NotNull
     S9 get_9();
+
+    default <TT extends BaseTable> TT weakJoin(
+            TT targetBaseTable,
+            WeakJoin<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, TT> weakJoinLambda
+    ) {
+        return weakJoin(targetBaseTable, JoinType.INNER, weakJoinLambda);
+    }
+
+    <TT extends BaseTable> TT weakJoin(
+            TT targetBaseTable,
+            JoinType joinType,
+            WeakJoin<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, TT> weakJoinLambda
+    );
+
+    default <TT extends BaseTable, WJ extends WeakJoin<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, TT>> TT weakJoin(
+            TT targetBaseTable,
+            Class<WJ> weakJoinType
+    ) {
+        return weakJoin(targetBaseTable, weakJoinType, JoinType.INNER);
+    }
+
+    <TT extends BaseTable, WJ extends WeakJoin<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, TT>> TT weakJoin(
+            TT targetBaseTable,
+            Class<WJ> weakJoinType,
+            JoinType joinType
+    );
 }

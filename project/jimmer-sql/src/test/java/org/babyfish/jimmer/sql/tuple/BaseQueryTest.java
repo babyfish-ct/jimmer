@@ -14,6 +14,8 @@ import org.babyfish.jimmer.sql.model.embedded.TransformFetcher;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 public class BaseQueryTest extends AbstractQueryTest {
 
     @Test
@@ -830,6 +832,90 @@ public class BaseQueryTest extends AbstractQueryTest {
                                         (source, target) ->
                                                 source.get_1().asTableEx().authors().eq(target.get_1())
                                 ).get_1()
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_1_.c5, tb_2_.c6, tb_2_.c7, tb_2_.c8, " +
+                                    "--->tb_2_.c9 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, " +
+                                    "--->--->tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.ID = ? " +
+                                    "--->union all " +
+                                    "--->select " +
+                                    "--->--->tb_4_.ID c1, tb_4_.NAME c2, tb_4_.EDITION c3, " +
+                                    "--->--->tb_4_.PRICE c4, tb_4_.STORE_ID c5 " +
+                                    "--->from BOOK tb_4_ " +
+                                    "--->where tb_4_.ID = ?" +
+                                    ") tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
+                                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
+                                    "inner join (" +
+                                    "--->select " +
+                                    "--->--->tb_5_.ID c6, tb_5_.FIRST_NAME c7, tb_5_.LAST_NAME c8, tb_5_.GENDER c9 " +
+                                    "--->from AUTHOR tb_5_ " +
+                                    "--->where tb_5_.ID = ? " +
+                                    "--->union all " +
+                                    "--->select " +
+                                    "--->--->tb_6_.ID c6, tb_6_.FIRST_NAME c7, tb_6_.LAST_NAME c8, tb_6_.GENDER c9 " +
+                                    "--->from AUTHOR tb_6_ " +
+                                    "--->where tb_6_.ID = ?" +
+                                    ") tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c6 " +
+                                    "where tb_2_.c7 is not null"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testLambdaWeakJoinBaseTable2() {
+        BookTable book = BookTable.$;
+        BaseTable2<NumericExpression<BigDecimal>, BookTable> baseBook = TypedBaseQuery.unionAll(
+                getSqlClient().createBaseQuery(book)
+                        .where(book.id().eq(Constants.graphQLInActionId1))
+                        .addSelect(book.price())
+                        .addSelect(book),
+                getSqlClient().createBaseQuery(book)
+                        .where(book.id().eq(Constants.graphQLInActionId2))
+                        .addSelect(book.price())
+                        .addSelect(book)
+        ).asBaseTable();
+        AuthorTable author = AuthorTable.$;
+        BaseTable2<ComparableExpression<Gender>, AuthorTable> baseAuthor = TypedBaseQuery.unionAll(
+                getSqlClient().createBaseQuery(author)
+                        .where(author.id().eq(Constants.danId))
+                        .addSelect(author.gender())
+                        .addSelect(author),
+                getSqlClient().createBaseQuery(author)
+                        .where(author.id().eq(Constants.alexId))
+                        .addSelect(author.gender())
+                        .addSelect(author)
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient().createQuery(baseBook)
+                        .where(baseBook.get_1().gt(BigDecimal.ZERO))
+                        .where(
+                                baseBook.weakJoin(
+                                        baseAuthor,
+                                        (source, target) ->
+                                                source.get_2().asTableEx().authors().eq(target.get_2())
+                                ).get_1().eq(Gender.MALE)
+                        )
+                        .select(
+                                baseBook.get_2().fetch(
+                                        BookFetcher.$.name()
+                                ),
+                                baseBook.weakJoin(
+                                        baseAuthor,
+                                        (source, target) ->
+                                                source.get_2().asTableEx().authors().eq(target.get_2())
+                                ).get_2().fetch(
+                                        AuthorFetcher.$.fullName2()
+                                )
                         ),
                 ctx -> {
                     ctx.sql(

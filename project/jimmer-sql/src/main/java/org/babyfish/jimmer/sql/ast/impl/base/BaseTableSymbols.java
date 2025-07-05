@@ -63,6 +63,22 @@ public class BaseTableSymbols {
         switch (base.getSelections().size()) {
             case 1:
                 return new Table1<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 2:
+                return new Table2<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 3:
+                return new Table3<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 4:
+                return new Table4<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 5:
+                return new Table5<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 6:
+                return new Table6<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 7:
+                return new Table7<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 8:
+                return new Table8<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+            case 9:
+                return new Table9<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
             default:
                 throw new IllegalArgumentException("Illegal selection count: " + base.getSelections().size());
         }
@@ -133,8 +149,12 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable2<S1, S2> {
 
-        protected Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table2(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -156,6 +176,34 @@ public class BaseTableSymbols {
             return new Table2<>(query, wrapSelections(selections, query.asBaseTable()));
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable2<S1, S2>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable2<S1, S2>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable2{" +
@@ -169,8 +217,12 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable3<S1, S2, S3> {
 
-        protected Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table3(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -199,6 +251,34 @@ public class BaseTableSymbols {
             return new Table3<>(query, selections);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable3<S1, S2, S3>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable3<S1, S2, S3>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable3{" +
@@ -217,8 +297,12 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable4<S1, S2, S3, S4> {
 
-        protected Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table4(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -253,6 +337,34 @@ public class BaseTableSymbols {
             return new Table4<>(query, selections);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable4<S1, S2, S3, S4>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable4<S1, S2, S3, S4>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable4{" +
@@ -273,8 +385,12 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable5<S1, S2, S3, S4, S5> {
 
-        protected Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table5(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -315,6 +431,34 @@ public class BaseTableSymbols {
             return new Table5<>(query, selections);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable5<S1, S2, S3, S4, S5>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable5<S1, S2, S3, S4, S5>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable4{" +
@@ -337,8 +481,12 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable6<S1, S2, S3, S4, S5, S6> {
 
-        protected Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table6(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -385,6 +533,34 @@ public class BaseTableSymbols {
             return new Table6<>(query, selections);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable6<S1, S2, S3, S4, S5, S6>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable6<S1, S2, S3, S4, S5, S6>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable4{" +
@@ -409,8 +585,12 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable7<S1, S2, S3, S4, S5, S6, S7> {
 
-        protected Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table7(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -463,6 +643,34 @@ public class BaseTableSymbols {
             return new Table7<>(query, selections);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable7<S1, S2, S3, S4, S5, S6, S7>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable7<S1, S2, S3, S4, S5, S6, S7>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable4{" +
@@ -489,8 +697,12 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
-        protected Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table8(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -549,6 +761,34 @@ public class BaseTableSymbols {
             return new Table8<>(query, selections);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
         @Override
         public String toString() {
             return "BaseTable4{" +
@@ -577,8 +817,12 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
-        protected Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+        Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
             super(query, selections);
+        }
+
+        Table9(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+            super(base, parent, handle, joinType);
         }
 
         @SuppressWarnings("unchecked")
@@ -641,6 +885,34 @@ public class BaseTableSymbols {
         @Override
         public Table9<S1, S2, S3, S4, S5, S6, S7, S8, S9> query(TypedBaseQueryImplementor<?> query) {
             return new Table9<>(query, selections);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable> TT weakJoin(
+                TT targetBaseTable,
+                JoinType joinType,
+                WeakJoin<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, TT> weakJoinLambda
+        ) {
+            WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+            WeakJoinHandle handle = WeakJoinHandle.of(
+                    lambda,
+                    true,
+                    true,
+                    (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
+            );
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <TT extends BaseTable, WJ extends WeakJoin<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>, TT>> TT weakJoin(
+                TT targetBaseTable,
+                Class<WJ> weakJoinType,
+                JoinType joinType
+        ) {
+            WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
         }
 
         @Override
