@@ -872,7 +872,7 @@ public class BaseQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testLambdaWeakJoinOfTwoColumnBaseTable() {
+    public void testLambdaWeakJoinOfTwoColumnBaseTableWithFetcher() {
         BookTable book = BookTable.$;
         BaseTable2<NumericExpression<BigDecimal>, BookTable> baseBook = getSqlClient().createBaseQuery(book)
                 .where(book.id().eq(Constants.graphQLInActionId1))
@@ -935,7 +935,7 @@ public class BaseQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testLambdaWeakJoinOfUnionedTwoColumnBaseTable() {
+    public void testLambdaWeakJoinOfTwoColumnUnionAllBaseTableWithFetcher() {
         BookTable book = BookTable.$;
         BaseTable2<NumericExpression<BigDecimal>, BookTable> baseBook = TypedBaseQuery.unionAll(
                 getSqlClient().createBaseQuery(book)
