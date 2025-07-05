@@ -113,21 +113,20 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+        accept(table, visitor);
         BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
         if (baseTableOwner != null) {
+            int index = baseTableOwner.getIndex();
             TypedBaseQueryImplementor<?> query = baseTableOwner.getBaseTable().getQuery();
             MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(query);
             if (mergedBy != null) {
-                int index = baseTableOwner.getIndex();
                 for (TypedBaseQueryImplementor<?> q : mergedBy.getExpandedQueries()) {
                     visitor.getAstContext().pushStatement(((ConfigurableBaseQueryImpl<?>)q).getMutableQuery());
                     accept((Table<?>) mergedBy.getSelections().get(index), visitor);
                     visitor.getAstContext().popStatement();
                 }
-                return;
             }
         }
-        accept(table, visitor);
     }
 
     private void accept(Table<?> table, AstVisitor visitor) {

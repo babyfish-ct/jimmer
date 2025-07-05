@@ -920,19 +920,16 @@ public class BaseQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_1_.c5, tb_2_.c6, tb_2_.c7, tb_2_.c8, " +
-                                    "--->tb_2_.c9 " +
+                                    "tb_1_.c1, tb_1_.c2, " +
+                                    "tb_2_.c3, tb_2_.c4 " +
                                     "from (" +
                                     "--->select " +
-                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, " +
-                                    "--->--->tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
+                                    "--->--->tb_3_.PRICE c5, tb_3_.ID c1, tb_3_.NAME c2 " +
                                     "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_4_.ID c1, tb_4_.NAME c2, tb_4_.EDITION c3, " +
-                                    "--->--->tb_4_.PRICE c4, tb_4_.STORE_ID c5 " +
+                                    "--->--->tb_4_.PRICE c5, tb_4_.ID c1, tb_4_.NAME c2 " +
                                     "--->from BOOK tb_4_ " +
                                     "--->where tb_4_.ID = ?" +
                                     ") tb_1_ " +
@@ -940,16 +937,20 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
                                     "inner join (" +
                                     "--->select " +
-                                    "--->--->tb_5_.ID c6, tb_5_.FIRST_NAME c7, tb_5_.LAST_NAME c8, tb_5_.GENDER c9 " +
+                                    "--->--->tb_5_.GENDER c6, tb_5_.ID c3, " +
+                                    "--->--->concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) c4 " +
                                     "--->from AUTHOR tb_5_ " +
                                     "--->where tb_5_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_6_.ID c6, tb_6_.FIRST_NAME c7, tb_6_.LAST_NAME c8, tb_6_.GENDER c9 " +
+                                    "--->--->tb_6_.GENDER c6, tb_6_.ID c3, " +
+                                    "--->--->concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) c4 " +
                                     "--->from AUTHOR tb_6_ " +
                                     "--->where tb_6_.ID = ?" +
-                                    ") tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c6 " +
-                                    "where tb_2_.c7 is not null"
+                                    ") tb_2_ " +
+                                    "--->on tb_7_.AUTHOR_ID = tb_2_.c3 " +
+                                    "where tb_1_.c5 > ? " +
+                                    "and tb_2_.c6 = ?"
                     );
                 }
         );
