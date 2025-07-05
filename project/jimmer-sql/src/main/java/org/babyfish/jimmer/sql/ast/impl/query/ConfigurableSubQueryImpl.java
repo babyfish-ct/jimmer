@@ -215,50 +215,10 @@ public class ConfigurableSubQueryImpl<R>
         return this;
     }
 
-    @Override
-    public TypedSubQuery<R> union(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getMutableQuery().getSqlClient(), "union", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> unionAll(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getMutableQuery().getSqlClient(), "union all", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> minus(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getMutableQuery().getSqlClient(), "minus", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> intersect(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getMutableQuery().getSqlClient(), "intersect", this, other);
-    }
-
     private static class Str extends ConfigurableSubQueryImpl<String> implements ConfigurableSubQuery.Str, StringExpressionImplementor {
 
         Str(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
-        }
-
-        @Override
-        public TypedSubQuery.Str union(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str unionAll(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str minus(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str intersect(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.intersect(other);
         }
     }
 
@@ -267,52 +227,12 @@ public class ConfigurableSubQueryImpl<R>
         Num(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
         }
-
-        @Override
-        public TypedSubQuery.Num<N> union(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> unionAll(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> minus(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> intersect(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.intersect(other);
-        }
     }
 
     private static class Cmp<T extends Comparable<?>> extends ConfigurableSubQueryImpl<T> implements ConfigurableSubQuery.Cmp<T>, ComparableExpressionImplementor<T> {
 
         Cmp(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
-        }
-
-        @Override
-        public TypedSubQuery.Cmp<T> union(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Cmp<T> unionAll(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Cmp<T> minus(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Cmp<T> intersect(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.intersect(other);
         }
     }
 
@@ -321,52 +241,12 @@ public class ConfigurableSubQueryImpl<R>
         Dt(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
         }
-
-        @Override
-        public TypedSubQuery.Dt<T> union(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Dt<T>) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Dt<T> unionAll(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Dt<T>) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Dt<T> minus(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Dt<T>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Dt<T> intersect(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Dt<T>) super.intersect(other);
-        }
     }
 
     private static class Tp<T extends Temporal & Comparable<?>> extends ConfigurableSubQueryImpl<T> implements ConfigurableSubQuery.Tp<T>, TemporalExpressionImplementor<T> {
 
         Tp(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
-        }
-
-        @Override
-        public TypedSubQuery.Tp<T> union(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Tp<T>) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Tp<T> unionAll(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Tp<T>) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Tp<T> minus(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Tp<T>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Tp<T> intersect(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Tp<T>) super.intersect(other);
         }
     }
 }

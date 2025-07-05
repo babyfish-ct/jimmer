@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
 import java.util.List;
 
 public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements TypedSubQuery<R>, TypedQueryImplementor  {
@@ -17,107 +19,138 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
 
     private final String operator;
 
-    private final TypedQueryImplementor left;
-
-    private final TypedQueryImplementor right;
+    private final TypedQueryImplementor[] queries;
 
     private final List<Selection<?>> selections;
 
     private MergedTypedSubQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
-            TypedSubQuery<R> left,
-            TypedSubQuery<R> right) {
+            TypedSubQuery<R>[] queries
+    ) {
         this.sqlClient = sqlClient;
         this.operator = operator;
-        this.left = (TypedQueryImplementor) left;
-        this.right = (TypedQueryImplementor) right;
-        selections = mergedSelections(
-                this.left.getSelections(),
-                this.right.getSelections()
-        );
+        TypedQueryImplementor[] arr = new TypedQueryImplementor[queries.length];
+        for (int i = 0; i < queries.length; i++) {
+            arr[i] = (TypedQueryImplementor) queries[i];
+        }
+        this.queries = arr;
+        selections = mergedSelections(this.queries);
     }
 
+    @SafeVarargs
     public static <R> TypedSubQuery<R> of(
             String operator,
-            TypedSubQuery<R> left,
-            TypedSubQuery<R> right
+            TypedSubQuery<R> ... queries
     ) {
-        JSqlClientImplementor sqlClient = ((TypedQueryImplementor)left).getSqlClient();
-        return of(sqlClient, operator, left, right);
+        if (queries.length == 0) {
+            throw new IllegalArgumentException("No queries are specified");
+        }
+        JSqlClientImplementor sqlClient = ((TypedQueryImplementor)queries[0]).getSqlClient();
+        return of(sqlClient, operator, queries);
     }
 
+    @SafeVarargs
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <R> TypedSubQuery<R> of(
             JSqlClientImplementor sqlClient,
             String operator,
-            TypedSubQuery<R> left,
-            TypedSubQuery<R> right
+            TypedSubQuery<R>... queries
     ) {
-        Class<?> leftType = ((ExpressionImplementor<?>)left).getType();
-        if (leftType == String.class) {
-            return (TypedSubQuery<R>) new AbstractStr.Impl(
-                    sqlClient,
-                    operator,
-                    (TypedSubQuery<String>) left,
-                    (TypedSubQuery<String>) right
-            );
+        switch (queries.length) {
+            case 0:
+                throw new IllegalArgumentException("No queries are specified");
+            case 1:
+                return queries[0];
+            default:
+                Class<?> type = ((ExpressionImplementor<?>)queries[0]).getType();
+                if (type == String.class) {
+                    return (TypedSubQuery<R>) new Str(
+                            sqlClient,
+                            operator,
+                            (TypedSubQuery<String>[]) queries
+                    );
+                }
+                if (Number.class.isAssignableFrom(type)) {
+                    return new Num<>(
+                            sqlClient,
+                            operator,
+                            (TypedSubQuery[]) queries
+                    );
+                }
+                if (Date.class.isAssignableFrom(type)) {
+                    return new Dt<>(
+                            sqlClient,
+                            operator,
+                            (TypedSubQuery[]) queries
+                    );
+                }
+                if (Temporal.class.isAssignableFrom(type)) {
+                    return new Tp<>(
+                            sqlClient,
+                            operator,
+                            (TypedSubQuery[]) queries
+                    );
+                }
+                if (Comparable.class.isAssignableFrom(type)) {
+                    return new Cmp<>(
+                            sqlClient,
+                            operator,
+                            (TypedSubQuery[]) queries
+                    );
+                }
+                return new MergedTypedSubQueryImpl<>(
+                        sqlClient,
+                        operator,
+                        queries
+                );
         }
-        if (Number.class.isAssignableFrom(leftType)) {
-            return new AbstractNum.Impl<>(
-                    sqlClient,
-                    operator,
-                    (TypedSubQuery) left,
-                    (TypedSubQuery) right
-            );
-        }
-        if (Comparable.class.isAssignableFrom(leftType)) {
-            return new AbstractCmp.Impl<>(
-                    sqlClient,
-                    operator,
-                    (TypedSubQuery) left,
-                    (TypedSubQuery) right
-            );
-        }
-        return new MergedTypedSubQueryImpl<>(
-                sqlClient,
-                operator,
-                left,
-                right
-        );
     }
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        left.accept(visitor);
-        right.accept(visitor);
+        for (TypedQueryImplementor query : queries) {
+            query.accept(visitor);
+        }
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
-        left.renderTo(builder);
-        builder.space('?').sql(operator).space('?');
-        right.renderTo(builder);
+        boolean addOperator = false;
+        for (TypedQueryImplementor query : queries) {
+            if (addOperator) {
+                builder.space('?').sql(operator).space('?');
+            } else {
+                addOperator = true;
+            }
+            query.renderTo(builder);
+        }
         builder.leave();
     }
 
     @Override
     protected boolean determineHasVirtualPredicate() {
-        return hasVirtualPredicate(left) || hasVirtualPredicate(right);
+        for (TypedQueryImplementor query : queries) {
+            if (hasVirtualPredicate(query)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
-        ctx.resolveVirtualPredicate(left);
-        ctx.resolveVirtualPredicate(right);
+        for (TypedQueryImplementor query : queries) {
+            ctx.resolveVirtualPredicate(query);
+        }
         return this;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Class<R> getType() {
-        return ((ExpressionImplementor<R>)left).getType();
+        return ((ExpressionImplementor<R>)queries[0]).getType();
     }
 
     @Override
@@ -155,44 +188,25 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
         return ExistsPredicate.of(this, true);
     }
 
-    @Override
-    public TypedSubQuery<R> union(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(sqlClient, "union", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> unionAll(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(sqlClient, "union all", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> minus(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(sqlClient, "minus", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> intersect(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(sqlClient, "intersect", this, other);
-    }
-
-    private static List<Selection<?>> mergedSelections(
-            List<Selection<?>> list1,
-            List<Selection<?>> list2
-    ) {
-        if (list1.size() != list2.size()) {
-            throw new IllegalArgumentException(
-                    "Cannot merged sub queries with different selections"
-            );
-        }
-        int size = list1.size();
-        for (int index = 0; index < size; index++) {
-            if (!isSameType(list1.get(index), list2.get(index))) {
+    private static List<Selection<?>> mergedSelections(TypedQueryImplementor[] queries) {
+        List<Selection<?>> selections = queries[0].getSelections();
+        int size = selections.size();
+        for (int i = 0; i < queries.length; i++) {
+            List<Selection<?>> otherSelections = queries[i].getSelections();
+            if (size != otherSelections.size()) {
                 throw new IllegalArgumentException(
                         "Cannot merged sub queries with different selections"
                 );
             }
+            for (int index = 0; index < size; index++) {
+                if (!isSameType(selections.get(index), otherSelections.get(index))) {
+                    throw new IllegalArgumentException(
+                            "Cannot merged sub queries with different selections"
+                    );
+                }
+            }
         }
-        return list1;
+        return selections;
     }
 
     private static boolean isSameType(Selection<?> a, Selection<?> b) {
@@ -206,105 +220,38 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
         return false;
     }
 
-    static abstract class AbstractStr extends MergedTypedSubQueryImpl<String> implements TypedSubQuery.Str, StringExpressionImplementor {
+    static class Str extends MergedTypedSubQueryImpl<String> implements TypedSubQuery.Str, StringExpressionImplementor {
 
-        AbstractStr(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<String> left, TypedSubQuery<String> right) {
-            super(sqlClient, operator, left, right);
-        }
-
-        @Override
-        public TypedSubQuery.Str union(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str unionAll(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str minus(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str intersect(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.intersect(other);
-        }
-
-        static class Impl extends AbstractStr implements StringExpressionImplementor {
-
-            Impl(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<String> left, TypedSubQuery<String> right) {
-                super(sqlClient, operator, left, right);
-            }
+        Str(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<String>[] queries) {
+            super(sqlClient, operator, queries);
         }
     }
 
-    private static abstract class AbstractNum<N extends Number & Comparable<N>> extends MergedTypedSubQueryImpl<N> implements TypedSubQuery.Num<N>, NumericExpressionImplementor<N> {
+    private static class Num<N extends Number & Comparable<N>> extends MergedTypedSubQueryImpl<N> implements TypedSubQuery.Num<N>, NumericExpressionImplementor<N> {
 
-        AbstractNum(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<N> left, TypedSubQuery<N> right) {
-            super(sqlClient, operator, left, right);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> union(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> unionAll(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> minus(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> intersect(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.intersect(other);
-        }
-
-        static class Impl<N extends Number & Comparable<N>> extends AbstractNum<N> implements NumericExpressionImplementor<N> {
-
-            Impl(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<N> left, TypedSubQuery<N> right) {
-                super(sqlClient, operator, left, right);
-            }
+        Num(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<N>[] queries) {
+            super(sqlClient, operator, queries);
         }
     }
 
-    private static abstract class AbstractCmp<T extends Comparable<?>> extends MergedTypedSubQueryImpl<T> implements TypedSubQuery.Cmp<T>, ComparableExpressionImplementor<T> {
+    private static class Cmp<T extends Comparable<?>> extends MergedTypedSubQueryImpl<T> implements TypedSubQuery.Cmp<T>, ComparableExpressionImplementor<T> {
 
-        AbstractCmp(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<T> left, TypedSubQuery<T> right) {
-            super(sqlClient, operator, left, right);
+        Cmp(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<T>[] queries) {
+            super(sqlClient, operator, queries);
         }
+    }
 
-        @Override
-        public TypedSubQuery.Cmp<T> union(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.union(other);
+    private static class Dt<T extends Date> extends MergedTypedSubQueryImpl<T> implements TypedSubQuery.Dt<T>, DateExpressionImplementor<T> {
+
+        Dt(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<T>[] queries) {
+            super(sqlClient, operator, queries);
         }
+    }
 
-        @Override
-        public TypedSubQuery.Cmp<T> unionAll(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.unionAll(other);
-        }
+    private static class Tp<T extends Temporal & Comparable<?>> extends MergedTypedSubQueryImpl<T> implements TypedSubQuery.Tp<T>, TemporalExpressionImplementor<T> {
 
-        @Override
-        public TypedSubQuery.Cmp<T> minus(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Cmp<T> intersect(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.intersect(other);
-        }
-
-        static class Impl<T extends Comparable<?>> extends AbstractCmp<T> implements ComparableExpressionImplementor<T> {
-
-            Impl(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<T> left, TypedSubQuery<T> right) {
-                super(sqlClient, operator, left, right);
-            }
+        Tp(JSqlClientImplementor sqlClient, String operator, TypedSubQuery<T>[] queries) {
+            super(sqlClient, operator, queries);
         }
     }
 }

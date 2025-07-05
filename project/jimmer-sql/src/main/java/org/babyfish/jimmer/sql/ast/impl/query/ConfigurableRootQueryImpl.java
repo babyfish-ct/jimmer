@@ -362,26 +362,6 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     }
 
     @Override
-    public TypedRootQuery<R> union(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getMutableQuery().getSqlClient(), "union", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> unionAll(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getMutableQuery().getSqlClient(), "union all", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> minus(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getMutableQuery().getSqlClient(), "minus", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getMutableQuery().getSqlClient(), "intersect", this, other);
-    }
-
-    @Override
     public boolean isForUpdate() {
         return getData().forUpdate;
     }

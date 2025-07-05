@@ -38,7 +38,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T> ... queries) {
         switch (queries.length) {
             case 0:
-                return null;
+                throw new IllegalArgumentException("No queries are specified");
             case 1:
                 return queries[0];
             default:
@@ -52,7 +52,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @SafeVarargs
     @SuppressWarnings("unchecked")
-    MergedBaseQueryImpl(
+    private MergedBaseQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
             TypedBaseQuery<T>... queries

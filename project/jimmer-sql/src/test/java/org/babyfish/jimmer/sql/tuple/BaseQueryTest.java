@@ -872,7 +872,70 @@ public class BaseQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testLambdaWeakJoinBaseTable2() {
+    public void testLambdaWeakJoinOfTwoColumnBaseTable() {
+        BookTable book = BookTable.$;
+        BaseTable2<NumericExpression<BigDecimal>, BookTable> baseBook = getSqlClient().createBaseQuery(book)
+                .where(book.id().eq(Constants.graphQLInActionId1))
+                .addSelect(book.price())
+                .addSelect(book)
+                .asBaseTable();
+        AuthorTable author = AuthorTable.$;
+        BaseTable2<ComparableExpression<Gender>, AuthorTable> baseAuthor = getSqlClient().createBaseQuery(author)
+                .where(author.id().eq(Constants.danId))
+                .addSelect(author.gender())
+                .addSelect(author).asBaseTable();
+        executeAndExpect(
+                getSqlClient().createQuery(baseBook)
+                        .where(baseBook.get_1().gt(BigDecimal.ZERO))
+                        .where(
+                                baseBook.weakJoin(
+                                        baseAuthor,
+                                        (source, target) ->
+                                                source.get_2().asTableEx().authors().eq(target.get_2())
+                                ).get_1().eq(Gender.MALE)
+                        )
+                        .select(
+                                baseBook.get_2().fetch(
+                                        BookFetcher.$.name()
+                                ),
+                                baseBook.weakJoin(
+                                        baseAuthor,
+                                        (source, target) ->
+                                                source.get_2().asTableEx().authors().eq(target.get_2())
+                                ).get_2().fetch(
+                                        AuthorFetcher.$.fullName2()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, " +
+                                    "--->tb_2_.c3, tb_2_.c4 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_3_.PRICE " +
+                                    "--->--->c5, tb_3_.ID c1, tb_3_.NAME c2 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.ID = ?" +
+                                    ") tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->on tb_1_.c1 = tb_5_.BOOK_ID " +
+                                    "inner join (" +
+                                    "--->select " +
+                                    "--->--->tb_4_.GENDER c6, " +
+                                    "--->--->tb_4_.ID c3, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) c4 " +
+                                    "--->from AUTHOR tb_4_ " +
+                                    "--->where tb_4_.ID = ?" +
+                                    ") tb_2_ " +
+                                    "--->on tb_5_.AUTHOR_ID = tb_2_.c3 " +
+                                    "where tb_1_.c5 > ? and tb_2_.c6 = ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testLambdaWeakJoinOfUnionedTwoColumnBaseTable() {
         BookTable book = BookTable.$;
         BaseTable2<NumericExpression<BigDecimal>, BookTable> baseBook = TypedBaseQuery.unionAll(
                 getSqlClient().createBaseQuery(book)

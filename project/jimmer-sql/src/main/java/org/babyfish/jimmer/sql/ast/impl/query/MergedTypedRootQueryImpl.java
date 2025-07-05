@@ -33,10 +33,25 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     protected final TypedRootQueryImplementor<?>[] queries;
 
     @SafeVarargs
-    public MergedTypedRootQueryImpl(
+    public static <R> TypedRootQuery<R> of(String operator, TypedRootQuery<R>... queries) {
+        switch (queries.length) {
+            case 0:
+                throw new IllegalArgumentException("No queries are specified");
+            case 1:
+                return queries[0];
+            default:
+                return new MergedTypedRootQueryImpl<>(
+                        ((TypedQueryImplementor)queries[0]).getSqlClient(),
+                        operator,
+                        queries
+                );
+        }
+    }
+
+    private MergedTypedRootQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
-            TypedRootQuery<R>... queries) {
+            TypedRootQuery<R>[] queries) {
         this.sqlClient = sqlClient;
         this.operator = operator;
         if (queries.length < 2) {
@@ -200,26 +215,6 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public JSqlClientImplementor getSqlClient() {
         return sqlClient;
-    }
-
-    @Override
-    public TypedRootQuery<R> union(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(sqlClient, "union", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> unionAll(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(sqlClient, "union all", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> minus(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(sqlClient, "minus", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(sqlClient, "intersect", this, other);
     }
 
     @Override
