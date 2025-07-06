@@ -68,6 +68,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setExpandedInListPaddingEnabled(enabled)
     }
 
+    fun setInListToAnyEqualityEnabled(enabled: Boolean) {
+        javaBuilder.setInListToAnyEqualityEnabled(enabled)
+    }
+
     fun setMaxCommandJoinCount(maxMutationSubQueryDepth: Int) {
         javaBuilder.setMaxCommandJoinCount(maxMutationSubQueryDepth)
     }

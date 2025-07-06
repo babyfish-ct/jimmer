@@ -326,7 +326,7 @@ public class ComparisonPredicates {
             builder.leave();
             return;
         }
-        if (getters.size() == 1 && dialect.isAnyEqualityOfArraySupported()) {
+        if (getters.size() == 1 && dialect.isAnyEqualityOfArraySupported() && sqlClient.isInListToAnyEqualityEnabled()) {
             ValueGetter getter = getters.get(0);
             String sqlType = getter.metadata().getSqlTypeName();
             Object[] arr = new Object[values.size()];

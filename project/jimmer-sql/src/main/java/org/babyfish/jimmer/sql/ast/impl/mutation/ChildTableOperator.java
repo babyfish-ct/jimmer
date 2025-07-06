@@ -234,7 +234,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
             builder.leave();
             int rowCount = execute(builder);
             AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
-        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported() && sqlClient.isInListToAnyEqualityEnabled()) {
             disconnectExceptByBatch(args);
         } else {
             disconnectExceptByInPredicate(args);

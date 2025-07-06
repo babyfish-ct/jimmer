@@ -534,8 +534,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             }
             return;
         }
-        if (this.targetGetters.size() == 1 &&
-                sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+        if (this.targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported() && sqlClient.isInListToAnyEqualityEnabled()) {
             BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
             addOperation(builder, false);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
