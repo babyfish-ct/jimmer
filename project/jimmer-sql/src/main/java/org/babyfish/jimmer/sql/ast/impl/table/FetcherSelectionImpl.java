@@ -194,6 +194,10 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 }
                 ImmutableProp prop = field.getProp();
                 String alias = table.getAlias();
+                BaseSelectionMapper mapper =
+                        depth == 0 ?
+                                builder.getAstContext().getBaseSelectionMapper(table.getBaseTableOwner()) :
+                                null;
                 if (embeddedPropExpression != null) {
                     String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
                     renderEmbedded(
@@ -203,18 +207,14 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                     ((PropExpressionImplementor<?>) embeddedPropExpression).getProp().getStorage(strategy),
                             field.getChildFetcher(),
                             path != null ? path + '.' + field.getProp().getName() : field.getProp().getName(),
-                            depth,
+                            mapper,
                             builder
                     );
                 } else {
                     Storage storage = prop.getStorage(strategy);
                     SqlTemplate template = prop.getSqlTemplate();
-                    BaseSelectionMapper mapper =
-                            depth == 0 ?
-                            builder.getAstContext().getBaseSelectionMapper(table.getBaseTableOwner()) :
-                            null;
                     if (storage instanceof EmbeddedColumns) {
-                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", depth, builder);
+                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", mapper, builder);
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator().definition(alias, (ColumnDefinition) storage, mapper);
                     } else if (template instanceof FormulaTemplate) {
@@ -229,77 +229,61 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     }
                 }
             }
-        }.visit(fetcher);
-    }
 
-    private void renderEmbedded(
-            ImmutableProp embeddedRawReferenceProp,
-            EmbeddedColumns columns,
-            Fetcher<?> childFetcher,
-            String path,
-            int depth,
-            @NotNull SqlBuilder builder
-    ) {
-        RealTable realTable;
-        if (embeddedRawReferenceProp != null) {
-            Table<?> parent;
-            if (table instanceof TableProxy<?>) {
-                TableProxy<?> tableProxy = (TableProxy<?>) table;
-                parent = tableProxy.__parent();
-            } else {
-                TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
-                parent = tableImplementor.getParent();
-            }
-            realTable = TableProxies
-                    .resolve(parent, builder.getAstContext())
-                    .realTable(builder.getAstContext());
-        } else {
-            realTable = TableProxies
-                    .resolve(table, builder.getAstContext())
-                    .realTable(builder.getAstContext());
-        }
-        MultipleJoinColumns joinColumns =
-                embeddedRawReferenceProp != null ?
-                        embeddedRawReferenceProp.getStorage(builder.sqlClient().getMetadataStrategy()) :
-                        null;
-        if (childFetcher == null) {
-            BaseSelectionMapper mapper =
-                    depth == 0 ?
-                            builder.getAstContext().getBaseSelectionMapper(realTable.getBaseTableOwner()) :
-                            null;
-            for (String columnName : columns.partial(path)) {
-                if (joinColumns != null) {
-                    columnName = joinColumns.name(joinColumns.referencedIndex(columnName));
-                }
-                builder.separator();
-                if (mapper != null) {
-                    builder
-                            .sql(mapper.getAlias())
-                            .sql(".c")
-                            .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName)));
+            private void renderEmbedded(
+                    ImmutableProp embeddedRawReferenceProp,
+                    EmbeddedColumns columns,
+                    Fetcher<?> childFetcher,
+                    String path,
+                    BaseSelectionMapper mapper,
+                    SqlBuilder builder
+            ) {
+                RealTable realTable;
+                if (embeddedRawReferenceProp != null) {
+                    realTable = table.getParent();
                 } else {
-                    builder
-                            .sql(realTable.getAlias()).sql(".")
-                            .sql(columnName);
+                    realTable = table;
+                }
+                MultipleJoinColumns joinColumns =
+                        embeddedRawReferenceProp != null ?
+                                embeddedRawReferenceProp.getStorage(builder.sqlClient().getMetadataStrategy()) :
+                                null;
+                if (childFetcher == null) {
+                    for (String columnName : columns.partial(path)) {
+                        if (joinColumns != null) {
+                            columnName = joinColumns.name(joinColumns.referencedIndex(columnName));
+                        }
+                        builder.separator();
+                        if (mapper != null) {
+                            builder
+                                    .sql(mapper.getAlias())
+                                    .sql(".c")
+                                    .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName)));
+                        } else {
+                            builder
+                                    .sql(realTable.getAlias()).sql(".")
+                                    .sql(columnName);
+                        }
+                    }
+                } else {
+                    for (Field field : childFetcher.getFieldMap().values()) {
+                        ImmutableProp prop = field.getProp();
+                        if (prop.isFormula() && prop.getSqlTemplate() == null) {
+                            continue;
+                        }
+                        String propName = field.getProp().getName();
+                        renderEmbedded(
+                                embeddedRawReferenceProp,
+                                columns,
+                                field.getChildFetcher(),
+                                path.isEmpty() ? propName : path + '.' + propName,
+                                mapper,
+                                builder
+                        );
+                    }
                 }
             }
-        } else {
-            for (Field field : childFetcher.getFieldMap().values()) {
-                ImmutableProp prop = field.getProp();
-                if (prop.isFormula() && prop.getSqlTemplate() == null) {
-                    continue;
-                }
-                String propName = field.getProp().getName();
-                renderEmbedded(
-                        embeddedRawReferenceProp,
-                        columns,
-                        field.getChildFetcher(),
-                        path.isEmpty() ? propName : path + '.' + propName,
-                        depth,
-                        builder
-                );
-            }
-        }
+        }.visit(fetcher);
     }
 
     private ImmutableProp getEmbeddedRawReferenceProp(JSqlClientImplementor sqlClient) {

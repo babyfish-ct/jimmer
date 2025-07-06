@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.tuple;
 
+import com.sun.org.apache.xpath.internal.operations.Or;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
@@ -9,9 +11,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.embedded.RectFetcher;
-import org.babyfish.jimmer.sql.model.embedded.TransformFetcher;
-import org.babyfish.jimmer.sql.model.embedded.TransformTable;
+import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -725,6 +725,126 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->\"id\":2," +
                                     "--->\"source\":{\"leftTop\":{\"x\":150,\"y\":170}}," +
                                     "--->\"target\":null" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testJoinByEmbeddedForeignKey() {
+        OrderItemTable table = OrderItemTable.$;
+        BaseTable2<OrderItemTable, StringExpression> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .addSelect(table.name())
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(Predicate.not(baseTable.get_2().ilike("x")))
+                        .where(baseTable.get_1().order().name().eq("order-2"))
+                        .select(
+                                baseTable.get_1().fetch(
+                                        OrderItemFetcher.$.name()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ORDER_ITEM_A c1, tb_2_.ORDER_ITEM_B c2, tb_2_.ORDER_ITEM_C c3, " +
+                                    "--->--->tb_2_.NAME c4, " +
+                                    "--->--->tb_2_.FK_ORDER_X c5, tb_2_.FK_ORDER_Y c6, " +
+                                    "--->--->tb_2_.NAME c7 " +
+                                    "--->from ORDER_ITEM tb_2_" +
+                                    ") tb_1_ " +
+                                    "inner join ORDER_ tb_3_ on " +
+                                    "--->tb_1_.c5 = tb_3_.ORDER_X and tb_1_.c6 = tb_3_.ORDER_Y " +
+                                    "where tb_1_.c7 not ilike ? and tb_3_.NAME = ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":{\"a\":1,\"b\":2,\"c\":1}," +
+                                    "--->\"name\":\"order-item-2-1\"" +
+                                    "},{" +
+                                    "--->\"id\":{\"a\":2,\"b\":1,\"c\":1}," +
+                                    "--->\"name\":\"order-item-2-2\"" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testJoinFetchByEmbeddedForeignKey() {
+        OrderItemTable table = OrderItemTable.$;
+        BaseTable2<OrderItemTable, StringExpression> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .addSelect(table.name())
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(Predicate.not(baseTable.get_2().ilike("x")))
+                        .select(
+                                baseTable.get_1().fetch(
+                                        OrderItemFetcher.$
+                                                .name()
+                                                .order(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        OrderFetcher.$.name()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_3_.ORDER_X, tb_3_.ORDER_Y, tb_3_.NAME " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ORDER_ITEM_A c1, tb_2_.ORDER_ITEM_B c2, tb_2_.ORDER_ITEM_C c3, " +
+                                    "--->--->tb_2_.NAME c4, " +
+                                    "--->--->tb_2_.FK_ORDER_X c5, tb_2_.FK_ORDER_Y c6, " +
+                                    "--->--->tb_2_.NAME c7 " +
+                                    "--->from ORDER_ITEM tb_2_" +
+                                    ") tb_1_ " +
+                                    "left join ORDER_ tb_3_ " +
+                                    "--->on tb_1_.c5 = tb_3_.ORDER_X and tb_1_.c6 = tb_3_.ORDER_Y " +
+                                    "where tb_1_.c7 not ilike ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
+                                    "--->\"name\":\"order-item-1-1\"," +
+                                    "--->\"order\":{" +
+                                    "--->--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
+                                    "--->--->\"name\":\"order-1\"}" +
+                                    "},{" +
+                                    "--->\"id\":{\"a\":1,\"b\":1,\"c\":2}," +
+                                    "--->\"name\":\"order-item-1-2\"," +
+                                    "--->\"order\":{" +
+                                    "--->--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
+                                    "--->--->\"name\":\"order-1\"" +
+                                    "--->}" +
+                                    "},{" +
+                                    "--->\"id\":{\"a\":1,\"b\":2,\"c\":1}," +
+                                    "--->\"name\":\"order-item-2-1\"," +
+                                    "--->\"order\":{" +
+                                    "--->--->\"id\":{\"x\":\"001\",\"y\":\"002\"}," +
+                                    "--->--->\"name\":\"order-2\"" +
+                                    "--->}" +
+                                    "},{" +
+                                    "--->\"id\":{\"a\":2,\"b\":1,\"c\":1}," +
+                                    "--->\"name\":\"order-item-2-2\"," +
+                                    "--->\"order\":{" +
+                                    "--->--->\"id\":{\"x\":\"001\",\"y\":\"002\"}," +
+                                    "--->--->\"name\":\"order-2\"" +
+                                    "--->}" +
                                     "}]"
                     );
                 }
