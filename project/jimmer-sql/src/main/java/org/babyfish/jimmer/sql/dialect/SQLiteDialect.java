@@ -320,21 +320,4 @@ public class SQLiteDialect extends DefaultDialect {
                 break;
         }
     }
-
-    @Override
-    public Timestamp getTimestamp(ResultSet rs, int col) throws SQLException {
-        String text = rs.getString(col);
-        if (text == null) {
-            return null;
-        }
-        if (text.length() > 6) {
-            char c = text.charAt(text.length() - 6);
-            if (c == '+' || c == '-') {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
-                OffsetDateTime offsetDateTime = OffsetDateTime.parse(text, formatter);
-                return Timestamp.from(offsetDateTime.toInstant());
-            }
-        }
-        return Timestamp.valueOf(text);
-    }
 }
