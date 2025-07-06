@@ -786,29 +786,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private Aliases aliases() {
         Aliases aliases = this.aliases;
         if (aliases == null) {
-            RealTableImpl neighborTable = neighborTable();
-            if (neighborTable != null) {
-                this.aliases = aliases = neighborTable.aliases();
-            } else {
-                this.aliases = aliases =
-                        ((RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope))
-                                .allocateAliasesIfNecessary();
-            }
+            this.aliases = aliases =
+                    ((RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope))
+                            .allocateAliasesIfNecessary();
         }
         return aliases;
-    }
-
-    private RealTableImpl neighborTable() {
-        RealTableImpl neighborTable = null;
-        if (owner instanceof TableImplementor<?>) {
-            TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
-            BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-            if (baseTableOwner != null) {
-                TableImpl<?> neighborOwner = (TableImpl<?>) tableImplementor.baseTableOwner(null);
-                neighborTable = neighborOwner.tryGetRealTable();
-            }
-        }
-        return neighborTable;
     }
 
     private static class Aliases {
