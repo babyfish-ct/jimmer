@@ -380,7 +380,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
         for (ValueGetter getter : referenceGetters) {
-            builder.separator().sql(getter);
+            builder.separator().sql("tb_1_.").sql(getter);
         }
         builder.leave();
         builder.sql(" from ").sql(middleTable.getTableName()).sql(" tb_1_");

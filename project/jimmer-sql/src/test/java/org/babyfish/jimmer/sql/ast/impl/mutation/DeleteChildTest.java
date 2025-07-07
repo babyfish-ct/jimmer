@@ -235,7 +235,7 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select BOOK_ID, AUTHOR_ID " +
+                                "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
                                         "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                         "inner join BOOK tb_2_ on tb_1_.BOOK_ID = tb_2_.ID " +
                                         "where " +
