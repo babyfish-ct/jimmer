@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.table.base.recursive.RecursiveRef1;
 import java.time.temporal.Temporal;
 import java.util.Date;
 
-public interface RecursiveRef<T extends BaseTable> {
+public interface RecursiveRef<B extends BaseTable> {
 
     static <T extends Table<?>> RecursiveRef1<T> table(Class<?> tableType) {
         throw new UnsupportedOperationException();
