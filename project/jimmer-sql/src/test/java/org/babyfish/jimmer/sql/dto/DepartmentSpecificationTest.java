@@ -47,11 +47,21 @@ public class DepartmentSpecificationTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_MILLIS " +
                                     "from DEPARTMENT tb_1_ " +
-                                    "inner join EMPLOYEE tb_2_ on tb_1_.ID = tb_2_.DEPARTMENT_ID " +
-                                    "where tb_1_.ID = ? " +
-                                    "and tb_2_.ID in (?, ?) " +
+                                    "where " +
+                                    "--->tb_1_.ID = ? " +
+                                    "and " +
+                                    "--->exists(" +
+                                    "--->--->select 1 " +
+                                    "--->--->from EMPLOYEE tb_2_ " +
+                                    "--->--->where " +
+                                    "--->--->--->tb_2_.DEPARTMENT_ID = tb_1_.ID " +
+                                    "--->--->and " +
+                                    "--->--->--->tb_2_.ID in (?, ?) " +
+                                    "--->--->and " +
+                                    "--->--->--->tb_2_.DELETED_MILLIS = ?" +
+                                    "--->) " +
                                     "and tb_1_.DELETED_MILLIS = ?"
-                    ).variables(3L, 4L, 5L, 0L);
+                    ).variables(3L, 4L, 5L, 0L, 0L);
                 }
         );
     }

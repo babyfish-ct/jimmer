@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -220,7 +221,6 @@ public class PredicateApplier {
         ctx.statement().where(ctx.get(prop).notIn((Collection<Object>) values));
     }
 
-    @SuppressWarnings("unchecked")
     public void associatedIdEq(ImmutableProp[] props, Object associatedId) {
         if (associatedId == null) {
             return;
@@ -228,18 +228,38 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.table().getAssociatedId(props[i]).eq(associatedId);
+            ImmutableProp prop = props[i];
+            if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                predicates[i] = ctx.table().exists(
+                        prop,
+                        target -> target.getId().eq(associatedId)
+                );
+            } else {
+                predicates[i] = ctx.table().getAssociatedId(props[i]).eq(associatedId);
+            }
         }
         ctx.statement().where(Predicate.or(predicates));
     }
 
-    @SuppressWarnings("unchecked")
     public void associatedIdNe(ImmutableProp prop, Object associatedId) {
         if (associatedId == null) {
             return;
         }
         Context ctx = this.context;
-        ctx.statement().where(ctx.table().getAssociatedId(prop).ne(associatedId));
+        Table<?> parentTable = ctx.statement().getTable();
+        Table<?> table;
+        MutableSubQueryImpl subQuery;
+        if (parentTable instanceof TableImplementor<?>) {
+            subQuery = new MutableSubQueryImpl(ctx.statement(), prop.getTargetType());
+            table = subQuery.getTable();
+        } else {
+            TableProxy<?> proxy = TableProxies.fluent(prop.getTargetType().getJavaClass());
+            subQuery = new MutableSubQueryImpl(ctx.statement(), proxy);
+            table = proxy;
+        }
+        subQuery.where(table.inverseGetAssociatedId(prop).eq(parentTable.getId()));
+        subQuery.where(table.getId().eq(associatedId));
+        ctx.statement().where(subQuery.notExists());
     }
 
     @SuppressWarnings("unchecked")
@@ -252,10 +272,9 @@ public class PredicateApplier {
         for (int i = predicates.length - 1; i >= 0; --i) {
             ImmutableProp prop = props[i];
             if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
                 predicates[i] = ctx.table().exists(
                         prop,
-                        target -> target.get(targetIdProp).in((Collection<Object>) associatedIds)
+                        target -> target.getId().in((Collection<Object>) associatedIds)
                 );
             } else {
                 predicates[i] = ctx.table().getAssociatedId(prop).in((Collection<Object>) associatedIds);
@@ -270,7 +289,20 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ctx.statement().where(ctx.table().getAssociatedId(prop).notIn((Collection<Object>) associatedIds));
+        Table<?> parentTable = ctx.statement().getTable();
+        Table<?> table;
+        MutableSubQueryImpl subQuery;
+        if (parentTable instanceof TableImplementor<?>) {
+            subQuery = new MutableSubQueryImpl(ctx.statement(), prop.getTargetType());
+            table = subQuery.getTable();
+        } else {
+            TableProxy<?> proxy = TableProxies.fluent(prop.getTargetType().getJavaClass());
+            subQuery = new MutableSubQueryImpl(ctx.statement(), proxy);
+            table = proxy;
+        }
+        subQuery.where(table.inverseGetAssociatedId(prop).eq(parentTable.getId()));
+        subQuery.where(table.getId().in((Collection<Object>) associatedIds));
+        ctx.statement().where(subQuery.notExists());
     }
 
     private static class Context {
