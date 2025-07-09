@@ -130,7 +130,7 @@ private fun KSAnnotation.toAnnotationSpecWithoutSiteTarget(): AnnotationSpec =
     toAnnotationSpec().toBuilder().useSiteTarget(null).build()
 
 private fun KSDeclaration.forFun(): Boolean =
-    this.qualifiedName!!.asString().let { annoTypeName ->
+    this.qualifiedName?.asString()?.let { annoTypeName ->
         annotations
             .firstOrNull { it.fullName == Target::class.qualifiedName }
             ?.getEnumListArgument(Target::allowedTargets)
@@ -146,5 +146,4 @@ private fun KSDeclaration.forFun(): Boolean =
                 }
                 ?.contains(ElementType.METHOD)
                 ?.takeIf { it }
-            ?: false
-    }
+    } ?: false

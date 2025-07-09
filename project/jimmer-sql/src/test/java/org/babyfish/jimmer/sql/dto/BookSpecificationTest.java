@@ -92,10 +92,9 @@ public class BookSpecificationTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                            "select " +
+                                    "--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                     "from BOOK tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING tb_3_ " +
-                                    "--->on tb_1_.ID = tb_3_.BOOK_ID " +
                                     "where " +
                                     "--->tb_1_.NAME = ? " +
                                     "and " +
@@ -109,11 +108,26 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "and " +
                                     "--->tb_1_.STORE_ID in (?, ?) " +
                                     "and " +
-                                    "--->tb_1_.STORE_ID not in (?, ?) " +
+                                    "--->not exists(" +
+                                    "--->--->select 1 " +
+                                    "--->--->from BOOK_STORE tb_3_ " +
+                                    "--->--->inner join BOOK tb_4_ on tb_3_.ID = tb_4_.STORE_ID " +
+                                    "--->--->where tb_4_.ID = tb_1_.ID and tb_3_.ID in (?, ?)" +
+                                    "--->) " +
                                     "and " +
-                                    "--->tb_3_.AUTHOR_ID in (?, ?, ?) " +
+                                    "--->exists(" +
+                                    "--->--->select 1 " +
+                                    "--->--->from AUTHOR tb_5_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.AUTHOR_ID " +
+                                    "--->--->where tb_6_.BOOK_ID = tb_1_.ID and tb_5_.ID in (?, ?, ?)" +
+                                    "--->) " +
                                     "and " +
-                                    "--->tb_3_.AUTHOR_ID not in (?, ?) " +
+                                    "--->not exists(" +
+                                    "--->--->select 1 " +
+                                    "--->--->from AUTHOR tb_8_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID " +
+                                    "--->--->where tb_9_.BOOK_ID = tb_1_.ID and tb_8_.ID in (?, ?)" +
+                                    "--->) " +
                                     "order by tb_1_.ID asc"
                     ).variables(
                             "GraphQL in Action",
@@ -511,6 +525,48 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "--->--->{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\",\"firstName\":\"Alex\"}," +
                                     "--->--->{\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\",\"firstName\":\"Eve\"}" +
                                     "--->]" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1108() {
+        BookSpecificationForIssue1108 spec = new BookSpecificationForIssue1108();
+        spec.setAuthorIds(Arrays.asList(Constants.alexId, Constants.borisId));
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(spec)
+                        .where(table.edition().eq(3))
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where exists(" +
+                                    "--->select 1 " +
+                                    "--->from AUTHOR tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on " +
+                                    "--->--->tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "--->where tb_3_.BOOK_ID = tb_1_.ID and tb_2_.ID in (?, ?)" +
+                                    ") and tb_1_.EDITION = ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->\"name\":\"Learning GraphQL\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":51.00," +
+                                    "--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "},{" +
+                                    "--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                                    "--->\"name\":\"Programming TypeScript\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":48.00," +
+                                    "--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "}]"
                     );
                 }

@@ -24,21 +24,6 @@ class ValidationGenerator(
         prop.validationAnnotationMirrorMultiMap
 
     fun generate() {
-        val nullityAnnotations = prop.annotations {
-            val shortName = it.shortName.asString()
-            shortName == "NotNull" || shortName == "NonNull" ||
-                shortName == "Nullable" || shortName == "Null" ||
-                it.fullName == TNullable::class.qualifiedName
-        }
-        if (nullityAnnotations.isNotEmpty()) {
-            throw MetaException(
-                prop.propDeclaration,
-                null,
-                "it cannot be decorated by that annotation " +
-                    "'@${nullityAnnotations[0].fullName}', " +
-                    "kotlin decides the nullity of property by language, not by annotation"
-            )
-        }
         generateNotEmpty()
         generateNotBlank()
         generateSize()

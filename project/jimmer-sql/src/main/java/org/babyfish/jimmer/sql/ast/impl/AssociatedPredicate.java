@@ -27,18 +27,18 @@ public class AssociatedPredicate extends AbstractPredicate implements VirtualPre
 
     private final Function<Table<?>, Predicate> block;
 
-    public AssociatedPredicate(Table<?> parenTable, ImmutableProp prop, Function<Table<?>, Predicate> block) {
-        if (prop.getDeclaringType() != parenTable.getImmutableType()) {
-            if (!prop.getDeclaringType().isAssignableFrom(parenTable.getImmutableType())) {
+    public AssociatedPredicate(Table<?> parentTable, ImmutableProp prop, Function<Table<?>, Predicate> block) {
+        if (prop.getDeclaringType() != parentTable.getImmutableType()) {
+            if (!prop.getDeclaringType().isAssignableFrom(parentTable.getImmutableType())) {
                 throw new IllegalArgumentException(
                         "The property \"" +
                                 prop +
                                 "\" does not belong to the current type \"" +
-                                parenTable.getImmutableType() +
+                                parentTable.getImmutableType() +
                                 "\""
                 );
             }
-            prop = parenTable.getImmutableType().getProp(prop.getName());
+            prop = parentTable.getImmutableType().getProp(prop.getName());
         }
         if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
             if (prop.isTransient()) {
@@ -55,11 +55,11 @@ public class AssociatedPredicate extends AbstractPredicate implements VirtualPre
                     "\"" +
                             prop +
                             "\" is not association property of \"" +
-                            parenTable.getImmutableType() +
+                            parentTable.getImmutableType() +
                             "\""
             );
         }
-        this.parenTable = parenTable;
+        this.parenTable = parentTable;
         this.prop = prop;
         this.block = block;
     }

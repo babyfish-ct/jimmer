@@ -41,7 +41,7 @@ class DeleteTest : AbstractMutationTest() {
                 }
                 statement {
                     sql(
-                        """select FILE_ID, USER_ID 
+                        """select tb_1_.FILE_ID, tb_1_.USER_ID 
                             |from FILE_USER_MAPPING tb_1_ 
                             |inner join FILE tb_2_ on tb_1_.FILE_ID = tb_2_.ID 
                             |where exists(
@@ -65,7 +65,7 @@ class DeleteTest : AbstractMutationTest() {
                 }
                 statement {
                     sql(
-                        "select FILE_ID, USER_ID " +
+                        "select tb_1_.FILE_ID, tb_1_.USER_ID " +
                             "from FILE_USER_MAPPING tb_1_ " +
                             "inner join FILE tb_2_ on tb_1_.FILE_ID = tb_2_.ID " +
                             "where tb_2_.PARENT_ID = ?"

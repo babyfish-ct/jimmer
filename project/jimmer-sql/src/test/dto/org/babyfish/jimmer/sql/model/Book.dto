@@ -292,3 +292,7 @@ BookViewWithConfiguration2 {
         lastName
     }
 }
+
+specification BookSpecificationForIssue1108 {
+    associatedIdIn(authors) as authorIds
+}
