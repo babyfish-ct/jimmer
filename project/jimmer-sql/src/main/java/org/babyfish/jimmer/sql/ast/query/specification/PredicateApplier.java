@@ -250,7 +250,16 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.table().getAssociatedId(props[i]).in((Collection<Object>) associatedIds);
+            ImmutableProp prop = props[i];
+            if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
+                predicates[i] = ctx.table().exists(
+                        prop,
+                        target -> target.get(targetIdProp).in((Collection<Object>) associatedIds)
+                );
+            } else {
+                predicates[i] = ctx.table().getAssociatedId(prop).in((Collection<Object>) associatedIds);
+            }
         }
         ctx.statement().where(Predicate.or(predicates));
     }

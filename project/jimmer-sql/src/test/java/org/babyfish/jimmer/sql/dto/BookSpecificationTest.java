@@ -516,4 +516,46 @@ public class BookSpecificationTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testIssue1108() {
+        BookSpecificationForIssue1108 spec = new BookSpecificationForIssue1108();
+        spec.setAuthorIds(Arrays.asList(Constants.alexId, Constants.borisId));
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(spec)
+                        .where(table.edition().eq(3))
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where exists(" +
+                                    "--->select 1 " +
+                                    "--->from AUTHOR tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on " +
+                                    "--->--->tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "--->where tb_3_.BOOK_ID = tb_1_.ID and tb_2_.ID in (?, ?)" +
+                                    ") and tb_1_.EDITION = ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->\"name\":\"Learning GraphQL\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":51.00," +
+                                    "--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "},{" +
+                                    "--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                                    "--->\"name\":\"Programming TypeScript\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":48.00," +
+                                    "--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "}]"
+                    );
+                }
+        );
+    }
 }
