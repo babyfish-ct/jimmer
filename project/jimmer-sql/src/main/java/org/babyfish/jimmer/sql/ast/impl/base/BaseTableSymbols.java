@@ -56,7 +56,7 @@ public class BaseTableSymbols {
 
     public static BaseTableSymbol of(
             BaseTableSymbol base,
-            BaseTableSymbol parent,
+            TableLike<?> parent,
             WeakJoinHandle handle,
             JoinType joinType
     ) {

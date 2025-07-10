@@ -10,11 +10,13 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
@@ -32,7 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>implements TableImplementor<E> {
+class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplementor<?>>implements TableImplementor<E> {
 
     final AbstractMutableStatementImpl statement;
 
@@ -132,14 +134,14 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     }
 
     @Override
-    public final boolean isEmpty(java.util.function.Predicate<TableImplementor<?>> filter) {
+    public final boolean isEmpty(java.util.function.Predicate<TableLikeImplementor<?>> filter) {
         if (isEmpty()) {
             return true;
         }
         if (filter == null) {
             return false;
         }
-        for (TableImpl<?> childTable : this) {
+        for (TableLikeImplementor<?> childTable : this) {
             if (filter.test(childTable)) {
                 return false;
             }
@@ -530,7 +532,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             JoinType joinType
     ) {
         Key key = new Key(joinName, joinType, null, false);
-        TableImpl<?> joinedTable = getValue(key);
+        TableImpl<?> joinedTable = (TableImpl<?>) getValue(key);
         if (joinedTable != null) {
             return joinedTable;
         }
@@ -585,6 +587,12 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         );
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X extends BaseTable> X weakJoinImplementor(X targetBaseTable, WeakJoinHandle handle, JoinType joinType) {
+        return (X) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+    }
+
     @Override
     public TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner) {
         if (!prop.isAssociation(TargetLevel.PERSISTENT) || prop.isReferenceList(TargetLevel.PERSISTENT)) {
@@ -601,7 +609,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         JoinType joinType = prop.isNullable() ? JoinType.LEFT : JoinType.INNER;
 
         Key key = new Key(prop.getName(), joinType, null, true);
-        TableImpl<?> joinedTable = getValue(key);
+        TableImpl<?> joinedTable = (TableImpl<?>) getValue(key);
         if (joinedTable != null) {
             return joinedTable;
         }

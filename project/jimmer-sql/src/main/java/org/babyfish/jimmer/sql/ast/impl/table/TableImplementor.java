@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -26,7 +27,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     boolean isInverse();
 
-    boolean isEmpty(Predicate<TableImplementor<?>> filter);
+    boolean isEmpty(Predicate<TableLikeImplementor<?>> filter);
 
     boolean isRemote();
 
@@ -68,6 +69,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     );
 
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
+
+    <X extends BaseTable> X weakJoinImplementor(X targetBaseTable, WeakJoinHandle handle, JoinType joinType);
 
     TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner);
 
