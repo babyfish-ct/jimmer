@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -20,33 +21,43 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     private final BaseTableSymbol symbol;
 
-    private final BaseTableImpl parent;
+    private final TableLikeImplementor<?> parent;
 
     private BaseTableSymbol rootSymbol;
 
     // Only uses when parent is null
     private RealTable rootRealTable;
 
-    public static BaseTableImplementor of(BaseTableSymbol symbol, BaseTableImpl parent) {
+    public static BaseTableImplementor of(BaseTableSymbol symbol, TableLikeImplementor<?> parent) {
         if (parent == null) {
             return new BaseTableImpl(symbol, null);
         }
-        Key key = new Key(symbol.getWeakJoinHandle(), symbol.getJoinType());
-        BaseTableImpl child = parent.getValue(key);
-        if (child == null) {
-            child = new BaseTableImpl(symbol, parent);
-            parent.putValue(key, child);
+        BaseTableImpl child;
+        if (parent instanceof BaseTableImplementor) {
+            BaseTableImpl parentImpl = (BaseTableImpl) parent;
+            Key key = new Key(symbol.getWeakJoinHandle(), symbol.getJoinType());
+            child = parentImpl.getValue(key);
+            if (child == null) {
+                child = new BaseTableImpl(symbol, parentImpl);
+                parentImpl.putValue(key, child);
+            }
+        } else {
+            TableImpl<?> parentImpl = (TableImpl<?>) parent;
+            child = parentImpl.computedIfAbsent(
+                    new TableImpl.Key("", symbol.getJoinType(), symbol.getWeakJoinHandle(), false),
+                    () -> new BaseTableImpl(symbol, parent)
+            );
         }
         return child;
     }
 
-    private BaseTableImpl(BaseTableSymbol symbol, BaseTableImpl parent) {
+    private BaseTableImpl(BaseTableSymbol symbol, TableLikeImplementor<?> parent) {
         this.symbol = symbol;
         this.parent = parent;
     }
 
     @Override
-    public BaseTableImplementor getParent() {
+    public TableLikeImplementor<?> getParent() {
         return parent;
     }
 
@@ -124,10 +135,10 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     }
 
     private BaseTableSymbol createRootSymbol() {
-        if (parent == null) {
-            return symbol;
+        if (parent instanceof BaseTableImpl) {
+            return ((BaseTableImpl) parent).createRootSymbol();
         }
-        return parent.createRootSymbol();
+        return symbol;
     }
 
     @Override
@@ -143,7 +154,11 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
         builder.append("symbol=").append(symbol);
         if (up && parent != null) {
             builder.append(",parent=");
-            parent.toString(true, false, builder);
+            if (parent instanceof BaseTableImpl) {
+                ((BaseTableImpl)parent).toString(true, false, builder);
+            } else {
+                builder.append(parent);
+            }
         }
         if (down && !isEmpty()) {
             builder.append(",children=[");

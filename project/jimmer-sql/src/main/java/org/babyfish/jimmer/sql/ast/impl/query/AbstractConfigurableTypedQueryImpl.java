@@ -68,22 +68,35 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 for (Selection<?> selection : data.selections) {
                     Ast.from(selection, visitor.getAstContext()).accept(visitor);
                 }
-                if (mutableQuery.getTableLikeImplementor() instanceof BaseTableImplementor) {
-                    RealTable realBaseTable = mutableQuery
-                            .getTableLikeImplementor()
-                            .realTable(visitor.getAstContext());
-                    visitBaseTable(realBaseTable, visitor);
-                }
+                visitBaseTable(mutableQuery.getTableLikeImplementor(), visitor);
             }
         } finally {
             astContext.popStatement();
         }
     }
 
-    private void visitBaseTable(RealTable realBaseTable, AstVisitor visitor) {
+    @SuppressWarnings("unchecked")
+    private void visitBaseTable(TableLikeImplementor<?> tableLikeImplementor, AstVisitor visitor) {
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            RealTable realBaseTable =
+                    tableLikeImplementor.realTable(visitor.getAstContext());
+            visitBaseTableImpl(realBaseTable, visitor);
+        } else {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
+            if (tableImplementor.hasBaseTable()) {
+                Iterable<TableLikeImplementor<?>> children =
+                        (Iterable<TableLikeImplementor<?>>) tableImplementor;
+                for (TableLikeImplementor<?> child : children) {
+                    visitBaseTable(child, visitor);
+                }
+            }
+        }
+    }
+
+    private void visitBaseTableImpl(RealTable realBaseTable, AstVisitor visitor) {
         realBaseTable.getTableLikeImplementor().accept(visitor);
         for (RealTable childBaseTable : realBaseTable) {
-            visitBaseTable(childBaseTable, visitor);
+            visitBaseTableImpl(childBaseTable, visitor);
         }
     }
 
@@ -174,7 +187,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             );
         } else {
             renderSelections(builder);
-            fakeRenderExportedForeignKeys(builder);
+            fakeRenderExportedForeignKeys(mutableQuery.getTableLikeImplementor(),builder);
         }
         builder.leave();
             mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
@@ -203,13 +216,30 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         }
     }
 
-    private void fakeRenderExportedForeignKeys(SqlBuilder builder) {
-        TableLikeImplementor<?> tableLikeImplementor = mutableQuery.getTableLikeImplementor();
-        if (!(tableLikeImplementor instanceof BaseTableImplementor)) {
-            return;
+    @SuppressWarnings("unchecked")
+    private void fakeRenderExportedForeignKeys(
+            TableLikeImplementor<?> tableLikeImplementor,
+            SqlBuilder builder
+    ) {
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            fakeRenderExportedForeignKeysImpl((BaseTableImplementor) tableLikeImplementor, builder);
+        } else {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
+            if (tableImplementor.hasBaseTable()) {
+                Iterable<TableLikeImplementor<?>> children =
+                        (Iterable<TableLikeImplementor<?>>) tableImplementor;
+                for (TableLikeImplementor<?> child : children) {
+                    fakeRenderExportedForeignKeys(child, builder);
+                }
+            }
         }
+    }
+
+    private void fakeRenderExportedForeignKeysImpl(
+            BaseTableImplementor baseTableImplementor,
+            SqlBuilder builder
+    ) {
         AstContext ctx = builder.getAstContext();
-        BaseTableImplementor baseTableImplementor = (BaseTableImplementor) tableLikeImplementor;
         for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
             if (selection instanceof Table<?>) {
                 Table<?> table = (Table<?>) selection;

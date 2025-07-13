@@ -369,6 +369,11 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         );
     }
 
+    @Override
+    public String toString() {
+        return builder.toString();
+    }
+
     public enum ScopeType {
         NULL(null, null, null),
         BLANK(null, null, null),

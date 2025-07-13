@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +20,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final List<Selection<?>> selections;
 
-    protected final BaseTableSymbol parent;
+    protected final TableLike<?> parent;
 
     private final WeakJoinHandle handle;
 
@@ -35,7 +36,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected AbstractBaseTableSymbol(
             BaseTableSymbol base,
-            BaseTableSymbol parent,
+            TableLike<?> parent,
             WeakJoinHandle handle,
             JoinType joinType
     ) {
@@ -78,7 +79,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     }
 
     @Override
-    public BaseTableSymbol getParent() {
+    public TableLike<?> getParent() {
         return parent;
     }
 

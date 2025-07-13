@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplementor<?>>implements TableImplementor<E> {
 
@@ -58,6 +60,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     private Map<BaseTableOwner, TableImpl<E>> neighborMap;
 
     private RealTableImpl realTable;
+
+    private boolean hasBaseTable;
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -629,6 +633,11 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     }
 
     @Override
+    public boolean hasBaseTable() {
+        return hasBaseTable;
+    }
+
+    @Override
     public Selection<E> fetch(Fetcher<E> fetcher) {
         if (fetcher == null) {
             return this;
@@ -834,6 +843,33 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         neighbor = new TableImpl<>(this, neighborParent, baseTableOwner);
         neighborMap.put(baseTableOwner, neighbor);
         return neighbor;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends TableLikeImplementor<?>> T computedIfAbsent(Key key, Supplier<T> tableLikeSupplier) {
+        T child = (T) getValue(key);
+        if (child == null) {
+            child = tableLikeSupplier.get();
+            putValue(key, child);
+        }
+        return child;
+    }
+
+    @Override
+    protected void putValue(Key key, TableLikeImplementor<?> value) {
+        if (value instanceof BaseTableImplementor) {
+            setHasBaseTable();
+        }
+        super.putValue(key, value);
+    }
+
+    private void setHasBaseTable() {
+        if (!hasBaseTable) {
+            hasBaseTable = true;
+            if (parent != null) {
+                parent.setHasBaseTable();
+            }
+        }
     }
 
     static class Key {

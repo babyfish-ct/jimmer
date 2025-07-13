@@ -209,6 +209,12 @@ public class Constants {
                     "Table"
             );
 
+    public static final ClassName TABLE_LIKE_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "TableLike"
+            );
+
     public static final ClassName TABLE_EX_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
@@ -387,6 +393,36 @@ public class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
                     "WeakJoin"
+            );
+
+    public static final ClassName WEAK_JOIN_HANDLE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "WeakJoinHandle"
+            );
+
+    public static final ClassName WEAK_JOIN_LAMBDA_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "WeakJoinLambda"
+            );
+
+    public static final ClassName J_WEAK_JOIN_LAMBDA_FACTORY_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "JWeakJoinLambdaFactory"
+            );
+
+    public static final ClassName BASE_TABLE_SYMBOL_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableSymbol"
+            );
+
+    public static final ClassName BASE_TABLE_SYMBOLS_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableSymbols"
             );
 
     public static final ClassName TABLE_PROXIES_CLASS_NAME =

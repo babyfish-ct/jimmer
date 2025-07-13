@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -581,7 +582,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, prop, joinType, treatedAs);
     }
 
-    protected <X> DelayedOperation<X> joinOperation(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType) {
+    protected <X> DelayedOperation<X> joinOperation(
+            Class<? extends WeakJoin<?, ?>> weakJoinType,
+            JoinType joinType
+    ) {
         return new DelayJoin<>(this, weakJoinType, joinType);
     }
 
@@ -598,7 +602,15 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             return true;
         }
         if (a instanceof AbstractTypedTable<?> && b instanceof AbstractTypedTable<?>) {
-            return ((AbstractTypedTable<?>)a).identifier == ((AbstractTypedTable<?>)b).identifier;
+            AbstractTypedTable<?> ta = (AbstractTypedTable<?>)a;
+            AbstractTypedTable<?> tb = (AbstractTypedTable<?>)b;
+            ta = (AbstractTypedTable<?>) ta.__baseTableOwner(null);
+            tb = (AbstractTypedTable<?>) tb.__baseTableOwner(null);
+            return ta.identifier == tb.identifier;
+        }
+        if (a instanceof TableImplementor<?> && b instanceof TableImplementor<?>) {
+            return ((TableImplementor<?>) a).baseTableOwner(null) ==
+                    ((TableImplementor<?>) b).baseTableOwner(null);
         }
         return false;
     }

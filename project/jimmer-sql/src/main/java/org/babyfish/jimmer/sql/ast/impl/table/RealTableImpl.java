@@ -62,8 +62,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             BaseTableImplementor baseTableImpl = (BaseTableImplementor) owner;
             this.joinType = baseTableImpl.getJoinType();
             if (owner.getWeakJoinHandle() != null) {
+                TableLikeImplementor<?> exportedTable = baseTableImpl.getParent();
                 joinPredicate = owner.getWeakJoinHandle().createPredicate(
-                        baseTableImpl.getParent().toSymbol(),
+                        exportedTable instanceof BaseTableImplementor ?
+                                ((BaseTableImplementor) exportedTable).toSymbol() :
+                                TableProxies.wrap((Table<?>) exportedTable),
                         baseTableImpl.toSymbol(),
                         owner.getStatement()
                 );

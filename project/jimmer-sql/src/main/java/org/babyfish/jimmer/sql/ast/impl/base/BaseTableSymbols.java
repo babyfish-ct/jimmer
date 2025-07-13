@@ -3,13 +3,14 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
-import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
-import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
+import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -19,11 +20,21 @@ public class BaseTableSymbols {
     private BaseTableSymbols() {}
 
     public static boolean contains(TableLike<?> table1, BaseTableSymbol table2) {
-        BaseTableSymbol parentTable2 = table2.getParent();
-        if (parentTable2 != null) {
-            return contains(table1, parentTable2);
+        return contains0(table1, table2);
+    }
+
+    private static boolean contains0(TableLike<?> table1, TableLike<?> table2) {
+        if (table1 == table2) {
+            return true;
         }
-        return table1 == table2;
+        if (table1 instanceof Table<?> && table2 instanceof Table<?>) {
+            return AbstractTypedTable.__refEquals(table1, table2);
+        }
+        TableLike<?> parentTable2 = TableUtils.parent(table2);
+        if (parentTable2 != null) {
+            return contains0(table1, parentTable2);
+        }
+        return false;
     }
 
     public static BaseTableSymbol of(
@@ -62,23 +73,23 @@ public class BaseTableSymbols {
     ) {
         switch (base.getSelections().size()) {
             case 1:
-                return new Table1<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table1<>(base, parent, handle, joinType);
             case 2:
-                return new Table2<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table2<>(base, parent, handle, joinType);
             case 3:
-                return new Table3<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table3<>(base, parent, handle, joinType);
             case 4:
-                return new Table4<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table4<>(base, parent, handle, joinType);
             case 5:
-                return new Table5<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table5<>(base, parent, handle, joinType);
             case 6:
-                return new Table6<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table6<>(base, parent, handle, joinType);
             case 7:
-                return new Table7<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table7<>(base, parent, handle, joinType);
             case 8:
-                return new Table8<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table8<>(base, parent, handle, joinType);
             case 9:
-                return new Table9<>(base, (AbstractBaseTableSymbol) parent, handle, joinType);
+                return new Table9<>(base, parent, handle, joinType);
             default:
                 throw new IllegalArgumentException("Illegal selection count: " + base.getSelections().size());
         }
@@ -92,7 +103,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table1(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table1(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -153,7 +164,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table2(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table2(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -221,7 +232,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table3(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table3(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -301,7 +312,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table4(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table4(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -389,7 +400,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table5(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table5(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -485,7 +496,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table6(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table6(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -589,7 +600,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table7(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table7(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -701,7 +712,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table8(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table8(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 
@@ -821,7 +832,7 @@ public class BaseTableSymbols {
             super(query, selections);
         }
 
-        Table9(BaseTableSymbol base, AbstractBaseTableSymbol parent, WeakJoinHandle handle, JoinType joinType) {
+        Table9(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
             super(base, parent, handle, joinType);
         }
 

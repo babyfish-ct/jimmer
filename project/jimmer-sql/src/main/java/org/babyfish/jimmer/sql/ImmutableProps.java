@@ -41,7 +41,6 @@ public class ImmutableProps {
         return propExpr.getProp();
     }
 
-    @SuppressWarnings("unchecked")
     public static <ST extends Table<?>> ImmutableProp join(
             Class<ST> sourceTableType,
             Function<ST, ? extends Table<?>> block

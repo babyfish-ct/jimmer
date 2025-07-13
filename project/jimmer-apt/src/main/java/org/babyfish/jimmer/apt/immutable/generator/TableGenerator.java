@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
+import jdk.internal.classfile.CodeBuilder;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -109,6 +110,8 @@ public class TableGenerator {
             addWeakJoin(true);
             addLambdaWeakJoin(false);
             addLambdaWeakJoin(true);
+            addBaseTableLambdaWeakJoin(false);
+            addBaseTableLambdaWeakJoin(true);
             addRemote();
             return typeBuilder.build();
         } finally {
@@ -402,6 +405,77 @@ public class TableGenerator {
                     );
         } else {
             builder.addStatement("return weakJoin(targetTableType, JoinType.INNER, weakJoinLambda)");
+        }
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addBaseTableLambdaWeakJoin(boolean withJoinType) {
+        if (!isTableEx) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("weakJoin")
+                .addModifiers(Modifier.PUBLIC)
+                .addTypeVariable(TypeVariableName.get("TT", Constants.BASE_TABLE_CLASS_NAME))
+                .returns(TypeVariableName.get("TT"))
+                .addParameter(TypeVariableName.get("TT"), "targetBaseTable");
+        if (withJoinType) {
+            builder.addParameter(Constants.JOIN_TYPE_CLASS_NAME, "joinType");
+        }
+        builder.addParameter(
+                ParameterizedTypeName.get(
+                        Constants.WEAK_JOIN_CLASS_NAME,
+                        type.getTableClassName(),
+                        TypeVariableName.get("TT")
+                ),
+                "weakJoinLambda"
+        );
+        if (!withJoinType) {
+            builder.addStatement(
+                    "return weakJoin(targetBaseTable, $T.INNER, weakJoinLambda)",
+                    Constants.JOIN_TYPE_CLASS_NAME
+            );
+        } else {
+            CodeBlock.Builder cb = CodeBlock.builder();
+            cb.addStatement(
+                    "$T lambda = $T.get(weakJoinLambda)",
+                    Constants.WEAK_JOIN_LAMBDA_CLASS_NAME,
+                    Constants.J_WEAK_JOIN_LAMBDA_FACTORY_CLASS_NAME
+            );
+            cb.add(
+                    "$T handle = $T.of($>\n",
+                    Constants.WEAK_JOIN_HANDLE_CLASS_NAME,
+                    Constants.WEAK_JOIN_HANDLE_CLASS_NAME
+            );
+            cb.add("lambda,\n");
+            cb.add("true,\n");
+            cb.add("true,\n");
+            cb.add(
+                    "($T)($T) weakJoinLambda\n$<",
+                    ParameterizedTypeName.get(
+                            Constants.WEAK_JOIN_CLASS_NAME,
+                            ParameterizedTypeName.get(
+                                    Constants.TABLE_LIKE_NAME,
+                                    WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                            ),
+                            ParameterizedTypeName.get(
+                                    Constants.TABLE_LIKE_NAME,
+                                    WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                            )
+                    ),
+                    ParameterizedTypeName.get(
+                            Constants.WEAK_JOIN_CLASS_NAME,
+                            WildcardTypeName.subtypeOf(TypeName.OBJECT),
+                            WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                    )
+            );
+            cb.addStatement(")");
+            cb.addStatement(
+                    "return ($T) $T.of(($T) targetBaseTable, this, handle, joinType)",
+                    TypeVariableName.get("TT"),
+                    Constants.BASE_TABLE_SYMBOLS_CLASS_NAME,
+                    Constants.BASE_TABLE_SYMBOL_CLASS_NAME
+            );
+            builder.addCode(cb.build());
         }
         typeBuilder.addMethod(builder.build());
     }

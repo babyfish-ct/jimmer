@@ -10,7 +10,7 @@ import java.util.List;
 public interface BaseTableImplementor extends BaseTable, TableLikeImplementor<Object> {
 
     @Override
-    BaseTableImplementor getParent();
+    TableLikeImplementor<?> getParent();
 
     List<Selection<?>> getSelections();
 

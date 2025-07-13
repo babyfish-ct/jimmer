@@ -93,15 +93,19 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         for (StatementFrame frame = this.statementFrame; frame != null; frame = frame.parent) {
             AbstractMutableStatementImpl statement = frame.statement;
             TableLike<?> stmtTable = statement.getTable();
+            BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
             if (stmtTable instanceof BaseTableSymbol) {
                 TableImplementor<?> resolved = resolve(statement, (BaseTableSymbol) stmtTable, table);
                 if (resolved != null) {
-                    BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+                    return (TableImplementor<E>) resolved.baseTableOwner(baseTableOwner);
+                }
+            } else if (baseTableOwner != null && baseTableOwner.getBaseTable().getParent() != null) {
+                TableImplementor<?> resolved = resolve(statement, baseTableOwner.getBaseTable(), table);
+                if (resolved != null) {
                     return (TableImplementor<E>) resolved.baseTableOwner(baseTableOwner);
                 }
             } else if (AbstractTypedTable.__refEquals(stmtTable, table)) {
                 tableImplementor = (TableImplementor<E>) statement.getTableLikeImplementor();
-                BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
                 return tableImplementor.baseTableOwner(baseTableOwner);
             }
         }
@@ -118,7 +122,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         throw new IllegalArgumentException("Cannot resolve the root table " + table);
     }
 
-    private static TableImplementor<?> resolve(AbstractMutableStatementImpl statement, BaseTableSymbol rootBaseTableSymbol, Table<?> table) {
+    private TableImplementor<?> resolve(AbstractMutableStatementImpl statement, BaseTableSymbol rootBaseTableSymbol, Table<?> table) {
         TableImplementor<?> resolved = rootBaseTableSymbol.getQuery().resolveRootTable(table);
         if (resolved != null) {
             return resolved;
@@ -136,19 +140,31 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public BaseTableImplementor resolveBaseTable(BaseTableSymbol baseTable) {
         for (StatementFrame frame = statementFrame; frame != null; frame = frame.parent) {
-            if (frame.statement.getTable() instanceof BaseTableSymbol) {
-                return resolveBaseTable(frame.statement, baseTable);
+            BaseTableImplementor baseTableImplementor = resolveBaseTable(frame.statement, baseTable);
+            if (baseTableImplementor != null) {
+                return baseTableImplementor;
             }
         }
         return null;
     }
 
-    private static BaseTableImplementor resolveBaseTable(AbstractMutableStatementImpl statement, BaseTableSymbol baseTable) {
-        BaseTableSymbol parent = baseTable.getParent();
+    private BaseTableImplementor resolveBaseTable(AbstractMutableStatementImpl statement, BaseTableSymbol baseTable) {
+        TableLike<?> parent = baseTable.getParent();
         if (parent == null) {
-            return (BaseTableImplementor) statement.getTableLikeImplementor();
+            TableLikeImplementor<?> implementor = statement.getTableLikeImplementor();
+            if (implementor instanceof BaseTableImplementor) {
+                return (BaseTableImplementor) implementor;
+            }
+            return null;
         }
-        return BaseTableImpl.of(baseTable, (BaseTableImpl) resolveBaseTable(statement, parent));
+        TableLikeImplementor<?> parentImplementor =
+                parent instanceof BaseTableSymbol ?
+                        resolveBaseTable(statement, (BaseTableSymbol) parent) :
+                        TableProxies.resolve((Table<?>) parent, this);
+        if (parentImplementor == null) {
+            return null;
+        }
+        return BaseTableImpl.of(baseTable, parentImplementor);
     }
 
     public AbstractMutableStatementImpl getStatement() {
@@ -312,7 +328,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     @Nullable
     public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
         for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
-            if (frame.statement.getTable() instanceof BaseTable) {
+            if (TableUtils.hasBaseTable(frame.statement.getTableLikeImplementor())) {
                 return frame.baseQueryScope().toBaseSelectionRender(query);
             }
         }
@@ -378,7 +394,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             if (parent != null && parent.usingBaseQuery) {
                 usingBaseQuery = true;
             } else {
-                usingBaseQuery = statement.getTable() instanceof BaseTable;
+                TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
+                usingBaseQuery = TableUtils.hasBaseTable(tableLikeImplementor);
             }
             this.usingBaseQuery = usingBaseQuery;
         }
@@ -411,8 +428,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             if (!usingBaseQuery) {
                 return null;
             }
-            TableLikeImplementor<?> table = statement.getTableLikeImplementor();
-            if (table instanceof BaseTable) {
+            TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
+            if (TableUtils.hasBaseTable(tableLikeImplementor)) {
                 return new BaseQueryScope(AstContext.this);
             }
             return null;

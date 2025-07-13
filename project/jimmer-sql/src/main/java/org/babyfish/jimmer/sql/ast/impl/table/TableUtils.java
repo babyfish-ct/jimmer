@@ -1,7 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
@@ -11,11 +15,25 @@ public class TableUtils {
 
     private TableUtils() {}
 
+    public static TableLike<?> parent(TableLike<?> tableLike) {
+        if (tableLike instanceof BaseTableSymbol) {
+            return ((BaseTableSymbol)tableLike).getParent();
+        }
+        return parent((Table<?>) tableLike);
+    }
+
     public static Table<?> parent(Table<?> table) {
         if (table instanceof TableProxy<?>) {
             return ((TableProxy<?>) table).__parent();
         }
         return ((TableImplementor<?>) table).getParent();
+    }
+
+    public static boolean hasBaseTable(TableLikeImplementor<?> tableLike) {
+        if (tableLike instanceof BaseTableImplementor) {
+            return true;
+        }
+        return ((TableImplementor<?>) tableLike).hasBaseTable();
     }
 
     public static boolean isInverse(Table<?> table) {

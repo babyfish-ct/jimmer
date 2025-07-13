@@ -27,7 +27,7 @@ public interface WeakJoinHandle {
             boolean hasTargetWrapper,
             WeakJoin<TableLike<?>, TableLike<?>> weakJoin
     ) {
-        if (BaseTable.class.isAssignableFrom(lambda.getSourceType())) {
+        if (BaseTable.class.isAssignableFrom(lambda.getTargetType())) {
             return new WeakJoinHandleImpl.BaseTableHandleImpl(lambda, weakJoin);
         }
         return new WeakJoinHandleImpl.EntityTableHandleImpl(

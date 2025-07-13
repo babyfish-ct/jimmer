@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.tuple;
 
-import com.sun.org.apache.xpath.internal.operations.Or;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
@@ -1135,6 +1133,31 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "where tb_1_.c5 > ? " +
                                     "and tb_2_.c6 = ?"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testTableWeakJoinBaseTable() {
+        BookTable table = BookTable.$;
+        AuthorTable author = AuthorTable.$;
+        BaseTable1<AuthorTable> baseAuthor = getSqlClient()
+                .createBaseQuery(author)
+                .where(author.gender().eq(Gender.MALE))
+                .addSelect(author)
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table,
+                                table.asTableEx().weakJoin(
+                                        baseAuthor,
+                                        (b, a) -> b.asTableEx().authors().eq(a.get_1())
+                                ).get_1()
+                        ),
+                ctx -> {
+                    ctx.sql("");
                 }
         );
     }
