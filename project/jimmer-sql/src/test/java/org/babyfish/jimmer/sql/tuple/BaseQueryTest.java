@@ -1153,11 +1153,25 @@ public class BaseQueryTest extends AbstractQueryTest {
                                 table,
                                 table.asTableEx().weakJoin(
                                         baseAuthor,
-                                        (b, a) -> b.asTableEx().authors().eq(a.get_1())
+                                        (b, a) -> b.eq(a.get_1().asTableEx().books())
                                 ).get_1()
                         ),
                 ctx -> {
-                    ctx.sql("");
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
+                                    "--->tb_2_.c1, tb_2_.c2, tb_2_.c3, tb_2_.c4 " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join (" +
+                                    "--->select " +
+                                    "--->--->tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4 " +
+                                    "--->from AUTHOR tb_3_ " +
+                                    "--->where tb_3_.GENDER = ?" +
+                                    ") tb_2_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_4_ " +
+                                    "--->on tb_2_.c1 = tb_4_.AUTHOR_ID " +
+                                    "--->on tb_1_.ID = tb_4_.BOOK_ID"
+                    );
                 }
         );
     }

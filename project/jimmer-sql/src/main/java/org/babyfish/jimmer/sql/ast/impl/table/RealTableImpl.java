@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -62,11 +63,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             BaseTableImplementor baseTableImpl = (BaseTableImplementor) owner;
             this.joinType = baseTableImpl.getJoinType();
             if (owner.getWeakJoinHandle() != null) {
-                TableLikeImplementor<?> exportedTable = baseTableImpl.getParent();
+                TableLikeImplementor<?> sourceImplementor = baseTableImpl.getParent();
+                TableLike<?> sourceLike = sourceImplementor instanceof BaseTableImplementor ?
+                        ((BaseTableImplementor) sourceImplementor).toSymbol() :
+                        TableUtils.disableJoin(
+                                TableProxies.wrap((Table<?>) sourceImplementor),
+                                "For the weak join operation from a " +
+                                        "regular table to a base table, the strong join " +
+                                        "is not allowed on the regular table side (source side)."
+                        );
                 joinPredicate = owner.getWeakJoinHandle().createPredicate(
-                        exportedTable instanceof BaseTableImplementor ?
-                                ((BaseTableImplementor) exportedTable).toSymbol() :
-                                TableProxies.wrap((Table<?>) exportedTable),
+                        sourceLike,
                         baseTableImpl.toSymbol(),
                         owner.getStatement()
                 );

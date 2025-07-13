@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -69,5 +70,12 @@ public class TableUtils {
         }
         Filter<?> filter = sqlClient.getFilters().getFilter(prop.getTargetType());
         return filter == null || filter instanceof LogicalDeletedFilterProvider.IgnoredFilter;
+    }
+
+    public static Table<?> disableJoin(Table<?> table, String reason) {
+        if (table instanceof TableImplementor<?>) {
+            return new UntypedJoinDisabledTableProxy<>((TableImplementor<?>) table, reason);
+        }
+        return ((TableProxy<?>) table).__disableJoin(reason);
     }
 }
