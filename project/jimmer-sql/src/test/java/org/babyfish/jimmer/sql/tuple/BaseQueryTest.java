@@ -1164,13 +1164,15 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->tb_2_.c1, tb_2_.c2, tb_2_.c3, tb_2_.c4 " +
                                     "from BOOK tb_1_ " +
                                     "inner join (" +
-                                    "--->select " +
-                                    "--->--->tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4 " +
-                                    "--->from AUTHOR tb_3_ " +
-                                    "--->where tb_3_.GENDER = ?" +
-                                    ") tb_2_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING tb_4_ " +
-                                    "--->on tb_2_.c1 = tb_4_.AUTHOR_ID " +
+                                    "--->(" +
+                                    "--->--->select " +
+                                    "--->--->--->tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4 " +
+                                    "--->--->from AUTHOR tb_3_ " +
+                                    "--->--->where tb_3_.GENDER = ?" +
+                                    "--->) tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ " +
+                                    "--->--->on tb_2_.c1 = tb_4_.AUTHOR_ID" +
+                                    "--->) " +
                                     "--->on tb_1_.ID = tb_4_.BOOK_ID"
                     );
                 }

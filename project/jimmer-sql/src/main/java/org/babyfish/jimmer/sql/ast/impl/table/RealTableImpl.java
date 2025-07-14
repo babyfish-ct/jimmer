@@ -258,15 +258,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private void renderSelf(SqlBuilder builder, TableImplementor.RenderMode mode) {
         TableLikeImplementor<?> owner = this.owner;
         if (owner instanceof BaseTableImplementor) {
-            BaseTableImpl baseTableImplementor =
-                    (BaseTableImpl) owner;
             if (parent != null) {
                 builder.join(joinType);
             }
-            builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-            baseTableImplementor.renderBaseQueryCore(builder);
-            builder.leave().sql(" ").sql(aliases().value);
-            renderBaseTableJoin(builder);
+            renderBaseTableCore(builder);
         } else if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
             AbstractMutableStatementImpl statement = tableImplementor.getStatement();
@@ -292,12 +287,16 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
     }
 
-    private void renderBaseTableJoin(SqlBuilder builder) {
-        if (!(owner instanceof BaseTableImplementor)) {
-            return;
-        }
+    private void renderBaseTableCore(SqlBuilder builder) {
         AstContext ctx = builder.getAstContext();
-        BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
+        BaseTableImpl baseTableImplementor = (BaseTableImpl) owner;
+        boolean withScope = parent != null && parent.owner instanceof TableImplementor<?>;
+        if (withScope) {
+            builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+        }
+        builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+        baseTableImplementor.renderBaseQueryCore(builder);
+        builder.leave().sql(" ").sql(aliases().value);
         for (Selection<?> selection : baseTableImplementor.getSelections()) {
             if (!(selection instanceof Table<?>)) {
                 continue;
@@ -318,6 +317,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return;
         }
         ctx.pushRenderedBaseTable(null);
+        if (withScope) {
+            builder.leave();
+        }
         builder.on();
         if (joinPredicate == null) {
             builder.sql("1 = 1");
