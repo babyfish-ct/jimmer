@@ -82,6 +82,11 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         return provider == null ? null : getSqlType(provider, dialect);
     }
 
+    @Override
+    public EnumType.Strategy getDefaultEnumStrategy() {
+        return defaultEnumStrategy;
+    }
+
     public ScalarProvider<?, ?> getProvider(ImmutableProp prop) {
         return propScalarProviderCache.get(prop.toOriginal());
     }
