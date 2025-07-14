@@ -538,7 +538,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     protected void __beforeJoin() {
         if (joinDisabledReason != null) {
-            throw new IllegalStateException("Table join is disabled because " + joinDisabledReason);
+            throw new IllegalStateException("Table join is disabled. " + joinDisabledReason);
         }
     }
 

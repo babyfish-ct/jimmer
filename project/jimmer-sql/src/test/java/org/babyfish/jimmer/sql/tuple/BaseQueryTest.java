@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -1173,6 +1174,37 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->on tb_1_.ID = tb_4_.BOOK_ID"
                     );
                 }
+        );
+    }
+
+    @Test
+    public void testIllegalTableWeakJoinBaseTable() {
+        BookTable table = BookTable.$;
+        AuthorTable author = AuthorTable.$;
+        BaseTable1<AuthorTable> baseAuthor = getSqlClient()
+                .createBaseQuery(author)
+                .where(author.gender().eq(Gender.MALE))
+                .addSelect(author)
+                .asBaseTable();
+        IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> {
+            executeAndExpect(
+                    getSqlClient()
+                            .createQuery(table)
+                            .select(
+                                    table,
+                                    table.asTableEx().weakJoin(
+                                            baseAuthor,
+                                            (b, a) -> b.asTableEx().authors().eq(a.get_1())
+                                    ).get_1()
+                            ),
+                    ctx -> {}
+            );
+        });
+        Assertions.assertEquals(
+                "Table join is disabled. " +
+                        "For the weak join operation from a regular table to a base table, " +
+                        "the strong join is not allowed on the regular table side (source side).",
+                ex.getMessage()
         );
     }
 

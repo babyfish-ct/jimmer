@@ -26,7 +26,7 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
 
     public UntypedJoinDisabledTableProxy(TableImplementor<E> table, String joinDisabledReason) {
         this.table = table;
-        this.joinDisabledReason = "Table join is disabled because " + joinDisabledReason;
+        this.joinDisabledReason = "Table join is disabled. " + joinDisabledReason;
     }
 
     @Override
