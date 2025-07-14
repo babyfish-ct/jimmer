@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 
 public interface TypedBaseQuery<T extends BaseTable> {
 
@@ -26,4 +27,8 @@ public interface TypedBaseQuery<T extends BaseTable> {
     }
 
     T asBaseTable();
+
+    T asCteBaseTable();
+
+    T asRecursiveBaseTable(RecursiveRef<T> recursiveRef);
 }

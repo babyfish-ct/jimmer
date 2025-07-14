@@ -20,15 +20,22 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final List<Selection<?>> selections;
 
+    protected final Object ref;
+
     protected final TableLike<?> parent;
 
     private final WeakJoinHandle handle;
 
     private final JoinType joinType;
 
-    protected AbstractBaseTableSymbol(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
+    protected AbstractBaseTableSymbol(
+            TypedBaseQueryImplementor<?> query,
+            List<Selection<?>> selections,
+            Object ref
+    ) {
         this.query = query;
         this.selections = wrapSelections(selections);
+        this.ref = ref;
         this.parent = null;
         this.handle = null;
         this.joinType = JoinType.INNER;
@@ -42,6 +49,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     ) {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
+        this.ref = ((AbstractBaseTableSymbol) base).ref;
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");
         this.joinType = joinType;
@@ -94,4 +102,25 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     }
 
     public abstract AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query);
+
+    protected final String suffix() {
+        if (ref == null) {
+            return "";
+        }
+        if (Boolean.TRUE.equals(ref)) {
+            return "(CTE)";
+        }
+        return "(RecursiveCTE)";
+    }
+
+    public static <T extends BaseTable> T validateRef(T baseTable, Object ref) {
+        if (!Objects.equals(((AbstractBaseTableSymbol) baseTable).ref, ref)) {
+            throw new IllegalStateException(
+                    "BaseQuery does not support calling " +
+                            "`asBaseTable`/`asCteBaseTable`/`asRecursiveBaseTable` " +
+                            "multiple times with different parameters."
+            );
+        }
+        return baseTable;
+    }
 }

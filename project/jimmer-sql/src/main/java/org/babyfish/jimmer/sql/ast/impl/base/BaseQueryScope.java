@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
@@ -39,7 +40,10 @@ public class BaseQueryScope {
     }
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        return new BaseSelectionAliasRenderImpl(mapperMap, (BaseTableSymbol) query.asBaseTable());
+        return new BaseSelectionAliasRenderImpl(
+                mapperMap,
+                (BaseTableSymbol) ((ConfigurableBaseQueryImpl<?>)query).getBaseTable()
+        );
     }
 
     private static class BaseSelectionAliasRenderImpl implements BaseSelectionAliasRender {

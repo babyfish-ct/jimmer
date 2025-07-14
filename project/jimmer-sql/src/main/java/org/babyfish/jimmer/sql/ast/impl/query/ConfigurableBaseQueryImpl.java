@@ -3,12 +3,14 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -17,10 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.temporal.Temporal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class ConfigurableBaseQueryImpl<T extends BaseTable>
 extends AbstractConfigurableTypedQueryImpl
@@ -120,16 +119,40 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T asBaseTable() {
-        T baseTable = this.baseTable;
+        return asBaseTableImpl(null);
+    }
+
+    @Override
+    public T asCteBaseTable() {
+        return asBaseTableImpl(Boolean.TRUE);
+    }
+
+    @Override
+    public T asRecursiveBaseTable(RecursiveRef<T> recursiveRef) {
+        return asBaseTableImpl(recursiveRef);
+    }
+
+    public T getBaseTable() {
         if (baseTable == null) {
-            this.baseTable = baseTable =
-                    mergedBy != null ?
-                            mergedBy.asBaseTable() :
-                            (T) BaseTableSymbols.of(this, getData().selections);
+            throw new IllegalArgumentException(
+                    "`asBaseTable`/`asCteBaseTable`/`asRecursiveBaseTable` has not been invoked"
+            );
         }
+        return baseTable;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T asBaseTableImpl(Object ref) {
+        T baseTable = this.baseTable;
+        if (baseTable != null) {
+            return AbstractBaseTableSymbol.validateRef(baseTable, ref);
+        }
+        this.baseTable = baseTable =
+            mergedBy != null ?
+                    mergedBy.asBaseTableImpl(ref) :
+                    (T) BaseTableSymbols.of(this, getData().selections, ref);
         return baseTable;
     }
 

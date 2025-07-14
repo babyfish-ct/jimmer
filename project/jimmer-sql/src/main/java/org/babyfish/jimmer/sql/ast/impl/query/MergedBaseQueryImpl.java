@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -10,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -29,6 +31,8 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     private final TypedBaseQueryImplementor<T>[] queries;
 
     private final ConfigurableBaseQueryImpl<T>[] expandedQueries;
+
+    private Object baseTableKey;
 
     private T baseTable;
 
@@ -218,15 +222,30 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T asBaseTable() {
+        return asBaseTableImpl(null);
+    }
+
+    @Override
+    public T asCteBaseTable() {
+        return asBaseTableImpl(Boolean.TRUE);
+    }
+
+    @Override
+    public T asRecursiveBaseTable(RecursiveRef<T> recursiveRef) {
+        return asBaseTableImpl(recursiveRef);
+    }
+
+    @SuppressWarnings("unchecked")
+    T asBaseTableImpl(Object ref) {
         T baseTable = this.baseTable;
-        if (baseTable == null) {
-            this.baseTable = baseTable =
-                    mergedBy != null ?
-                            mergedBy.asBaseTable() :
-                            (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections());
+        if (baseTable != null) {
+            return AbstractBaseTableSymbol.validateRef(baseTable, ref);
         }
+        this.baseTable = baseTable =
+                mergedBy != null ?
+                        mergedBy.asBaseTableImpl(ref) :
+                        (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections(), ref);
         return baseTable;
     }
 
