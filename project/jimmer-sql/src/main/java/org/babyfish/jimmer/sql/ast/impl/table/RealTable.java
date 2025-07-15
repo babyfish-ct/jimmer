@@ -38,7 +38,7 @@ public interface RealTable extends Iterable<RealTable> {
 
     void use(UseTableVisitor visitor);
 
-    void renderTo(@NotNull AbstractSqlBuilder<?> builder);
+    void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean cte);
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
 

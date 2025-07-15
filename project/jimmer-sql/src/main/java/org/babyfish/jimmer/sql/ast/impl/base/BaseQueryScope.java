@@ -50,11 +50,11 @@ public class BaseQueryScope {
 
         private final Map<Key, BaseSelectionMapper> mapperMap;
 
-        private final BaseTableSymbol baseTableSymbol;
+        private final boolean cte;
 
         private BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, BaseTableSymbol baseTableSymbol) {
             this.mapperMap = mapperMap;
-            this.baseTableSymbol = baseTableSymbol;
+            this.cte = ((AbstractBaseTableSymbol)baseTableSymbol).ref != null;
         }
 
         @Override
@@ -68,7 +68,9 @@ public class BaseQueryScope {
             if (selection instanceof Expression<?>) {
                 builder.separator();
                 ((Ast) selection).renderTo(builder);
-                builder.sql(" c").sql(Integer.toString(mapper.expressionIndex));
+                if (!cte) {
+                    builder.sql(" c").sql(Integer.toString(mapper.expressionIndex));
+                }
                 return;
             }
             RealTable realTable = TableProxies.resolve((Table<?>) selection, builder.getAstContext())
@@ -85,8 +87,19 @@ public class BaseQueryScope {
                             .sql(".")
                             .sql(qualifiedColumn.name);
                 }
-                builder.sql(" c").sql(Integer.toString(e.getValue()));
+                if (!cte) {
+                    builder.sql(" c").sql(Integer.toString(e.getValue()));
+                }
             }
+        }
+
+        @Override
+        public int cteSpan() {
+            int span = 0;
+            for (BaseSelectionMapper mapper : mapperMap.values()) {
+                span += mapper.span();
+            }
+            return span;
         }
     }
 

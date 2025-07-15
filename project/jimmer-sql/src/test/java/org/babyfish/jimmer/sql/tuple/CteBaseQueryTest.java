@@ -1,7 +1,8 @@
 package org.babyfish.jimmer.sql.tuple;
 
 import org.babyfish.jimmer.sql.ast.*;
-import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-public class BaseQueryTest extends AbstractQueryTest {
+public class CteBaseQueryTest extends AbstractQueryTest {
 
     @Test
     public void testBaseQueryWithFetch() {
@@ -34,7 +35,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                                         .selectCount()
                         )
                 )
-                .asBaseTable();
+                .asCteBaseTable();
         TypedRootQuery<BookStore> q = getSqlClient()
                 .createQuery(baseTable)
                 .where(baseTable.get_2().le(2))
@@ -51,15 +52,16 @@ public class BaseQueryTest extends AbstractQueryTest {
         executeAndExpect(
                 q,
                 ctx -> {
-                    ctx.sql( // aggregate-root
-                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
-                                    "from (" +
-                                    "--->select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.WEBSITE c3, tb_2_.VERSION c4, " +
+                    ctx.sql(
+                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
+                                    "--->select tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION, " +
                                     "--->dense_rank() over(" +
                                     "--->--->order by (select count(1) from BOOK tb_3_ where tb_3_.STORE_ID = tb_2_.ID) desc" +
-                                    "--->) c5 " +
+                                    "--->) " +
                                     "--->from BOOK_STORE tb_2_" +
-                                    ") tb_1_ " +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
+                                    "from tb_1_ " +
                                     "where tb_1_.c5 <= ? and tb_1_.c2 like ?"
                     );
                     ctx.statement(1).sql( // associated objects
@@ -108,7 +110,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                                 .where(author.books().id().eq(table.id()))
                                 .select(Expression.rowCount())
                 )
-                .asBaseTable();
+                .asCteBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseTable)
                         .where(baseTable.get_2().gt(1L))
@@ -123,17 +125,21 @@ public class BaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_6_.ID, tb_6_.NAME, tb_6_.WEBSITE, tb_6_.VERSION " +
-                                    "--->from (" +
-                                    "--->--->select " +
-                                    "--->--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, " +
-                                    "--->--->--->(select count(1) from AUTHOR tb_3_ inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID where tb_4_.BOOK_ID = tb_2_.ID) c6 " +
-                                    "--->--->from BOOK tb_2_" +
-                                    "--->) tb_1_ " +
-                                    "--->left join BOOK_STORE tb_6_ on tb_1_.c5 = tb_6_.ID " +
-                                    "--->where tb_1_.c6 > ?"
+                            "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
+                                    "--->select tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, " +
+                                    "--->(" +
+                                    "--->--->select count(1) from AUTHOR tb_3_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
+                                    "--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
+                                    "--->) " +
+                                    "--->from BOOK tb_2_" +
+                                    ") " +
+                                    "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_6_.ID, " +
+                                    "--->tb_6_.NAME, tb_6_.WEBSITE, tb_6_.VERSION " +
+                                    "from tb_1_ " +
+                                    "left join BOOK_STORE tb_6_ on tb_1_.c5 = tb_6_.ID " +
+                                    "where tb_1_.c6 > ?"
                     );
                     ctx.rows(
                             "[{" +
@@ -1178,38 +1184,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
-
-    @Test
-    public void testIllegalTableWeakJoinBaseTable() {
-        BookTable table = BookTable.$;
-        AuthorTable author = AuthorTable.$;
-        BaseTable1<AuthorTable> baseAuthor = getSqlClient()
-                .createBaseQuery(author)
-                .where(author.gender().eq(Gender.MALE))
-                .addSelect(author)
-                .asBaseTable();
-        IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> {
-            executeAndExpect(
-                    getSqlClient()
-                            .createQuery(table)
-                            .select(
-                                    table,
-                                    table.asTableEx().weakJoin(
-                                            baseAuthor,
-                                            (b, a) -> b.asTableEx().authors().eq(a.get_1())
-                                    ).get_1()
-                            ),
-                    ctx -> {}
-            );
-        });
-        Assertions.assertEquals(
-                "Table join is disabled. " +
-                        "For the weak join operation from a regular table to a base table, " +
-                        "the strong join is not allowed on the regular table side (source side).",
-                ex.getMessage()
-        );
-    }
-
+    
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 
         @Override

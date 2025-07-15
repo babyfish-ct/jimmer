@@ -696,7 +696,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         } else {
             astContext = null;
         }
-        realTable(astContext).renderTo(builder);
+        realTable(astContext).renderTo(builder, false);
     }
 
     @Override
@@ -863,7 +863,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         super.putValue(key, value);
     }
 
-    private void setHasBaseTable() {
+    @Override
+    public void setHasBaseTable() {
         if (!hasBaseTable) {
             hasBaseTable = true;
             if (parent != null) {

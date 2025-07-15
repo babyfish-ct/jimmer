@@ -17,4 +17,6 @@ public interface BaseTableImplementor extends BaseTable, TableLikeImplementor<Ob
     TypedBaseQueryImplementor<?> getQuery();
 
     BaseTableSymbol toSymbol();
+
+    Object getRef();
 }

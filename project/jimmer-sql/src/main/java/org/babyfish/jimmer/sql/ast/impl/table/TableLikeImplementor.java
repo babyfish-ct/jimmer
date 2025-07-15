@@ -27,4 +27,6 @@ public interface TableLikeImplementor<E> extends TableLike<E> {
     void renderTo(@NotNull AbstractSqlBuilder<?> builder);
 
     AbstractMutableStatementImpl getStatement();
+
+    boolean hasBaseTable();
 }

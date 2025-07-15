@@ -6,4 +6,6 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 public interface BaseSelectionAliasRender {
 
     void render(int index, Selection<?> selection, SqlBuilder builder);
+
+    int cteSpan();
 }

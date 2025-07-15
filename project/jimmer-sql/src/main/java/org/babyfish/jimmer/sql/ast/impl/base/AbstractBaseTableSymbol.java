@@ -103,6 +103,10 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     public abstract AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query);
 
+    public Object getRef() {
+        return ref;
+    }
+
     protected final String suffix() {
         if (ref == null) {
             return "";

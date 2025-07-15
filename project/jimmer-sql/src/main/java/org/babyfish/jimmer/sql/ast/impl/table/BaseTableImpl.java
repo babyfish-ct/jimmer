@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
@@ -31,6 +32,9 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     public static BaseTableImplementor of(BaseTableSymbol symbol, TableLikeImplementor<?> parent) {
         if (parent == null) {
             return new BaseTableImpl(symbol, null);
+        }
+        if (parent instanceof TableImplementor<?>) {
+            ((TableImplementor<?>) parent).setHasBaseTable();
         }
         BaseTableImpl child;
         if (parent instanceof BaseTableImplementor) {
@@ -87,6 +91,11 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     }
 
     @Override
+    public Object getRef() {
+        return ((AbstractBaseTableSymbol)toSymbol()).getRef();
+    }
+
+    @Override
     public RealTable realTable(JoinTypeMergeScope scope) {
         if (parent == null) {
             RealTable rrt = this.rootRealTable;
@@ -108,7 +117,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.sql(" from ");
-        realTable(builder.assertSimple().getAstContext()).renderTo(builder);
+        realTable(builder.assertSimple().getAstContext()).renderTo(builder, false);
     }
 
     void renderBaseQueryCore(AbstractSqlBuilder<?> builder) {
@@ -208,5 +217,10 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
                     ", joinType=" + joinType +
                     '}';
         }
+    }
+
+    @Override
+    public boolean hasBaseTable() {
+        return true;
     }
 }

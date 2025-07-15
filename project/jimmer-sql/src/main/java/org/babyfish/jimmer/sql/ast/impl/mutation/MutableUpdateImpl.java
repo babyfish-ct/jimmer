@@ -288,7 +288,7 @@ public class MutableUpdateImpl
             UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
                 for (RealTable child : table.realTable(astContext)) {
-                    child.renderTo(builder);
+                    child.renderTo(builder, false);
                 }
             }
 

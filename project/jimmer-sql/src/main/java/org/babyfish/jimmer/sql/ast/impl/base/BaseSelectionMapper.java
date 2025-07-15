@@ -80,6 +80,13 @@ public class BaseSelectionMapper {
         }
     }
 
+    int span() {
+        if (expressionIndex != 0) {
+            return 1;
+        }
+        return columnIndexMap.size();
+    }
+
     static class QualifiedColumn {
 
         final List<RealTable.Key> keys;

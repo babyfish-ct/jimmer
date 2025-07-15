@@ -74,14 +74,14 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner);
 
-    boolean hasBaseTable();
-
     @Nullable
     BaseTableOwner getBaseTableOwner();
 
     TableImplementor<E> baseTableOwner(
             @Nullable BaseTableOwner baseTableOwner
     );
+
+    void setHasBaseTable();
 
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,

@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -157,6 +158,61 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private void renderWithoutPaging(
+            SqlBuilder builder,
+            PropExpressionImplementor<?> idPropExpr,
+            BaseSelectionAliasRender render
+    ) {
+        List<RealTable> cteTables = getCteTables(builder.getAstContext());
+        if (cteTables.isEmpty()) {
+            renderWithoutPagingImpl(builder, idPropExpr, render);
+        } else {
+            SqlBuilder tmpBuilder = builder.createTempBuilder();
+            renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
+            for (RealTable cteTable : cteTables) {
+                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
+                BaseSelectionAliasRender cteRender = builder.getAstContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
+                assert cteRender != null;
+                int cteSpan = cteRender.cteSpan();
+                builder.sql("with ");
+                builder.sql(cteTable.getAlias());
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
+                for (int i = 1; i <= cteSpan; i++) {
+                    builder.separator().sql("c").sql(Integer.toString(i));
+                }
+                builder.leave();
+                builder.sql(" as ");
+                cteTable.renderTo(builder, true);
+                builder.sql(" ");
+            }
+            builder.appendTempBuilder(tmpBuilder);
+        }
+    }
+
+    private List<RealTable> getCteTables(AstContext ctx) {
+        TableLikeImplementor<?> tableLikeImplementor = getMutableQuery().getTableLikeImplementor();
+        if (!tableLikeImplementor.hasBaseTable()) {
+            return Collections.emptyList();
+        }
+        RealTable realTable = tableLikeImplementor.realTable(ctx);
+        List<RealTable> cteTables = new ArrayList<>();
+        collectionCteTables(realTable, cteTables);
+        return cteTables;
+    }
+
+    private void collectionCteTables(RealTable realTable, List<RealTable> cteTables) {
+        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor) {
+            BaseTableImplementor baseTableImplementor =
+                    (BaseTableImplementor) realTable.getTableLikeImplementor();
+            if (baseTableImplementor.getRef() != null) {
+                cteTables.add(realTable);
+            }
+        }
+        for (RealTable child : realTable) {
+            collectionCteTables(child, cteTables);
+        }
+    }
+
+    private void renderWithoutPagingImpl(
             SqlBuilder builder,
             PropExpressionImplementor<?> idPropExpr,
             BaseSelectionAliasRender render
