@@ -166,7 +166,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public List<Selection<?>> getSelections() {
-        return ((BaseTableSymbol) asBaseTable()).getSelections();
+        return ((BaseTableSymbol) baseTable).getSelections();
     }
 
     @Override
@@ -237,7 +237,8 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @SuppressWarnings("unchecked")
-    T asBaseTableImpl(Object ref) {
+    @Override
+    public T asBaseTableImpl(Object ref) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateRef(baseTable, ref);

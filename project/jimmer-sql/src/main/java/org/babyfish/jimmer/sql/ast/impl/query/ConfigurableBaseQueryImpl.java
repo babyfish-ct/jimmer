@@ -144,7 +144,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private T asBaseTableImpl(Object ref) {
+    @Override
+    public T asBaseTableImpl(Object ref) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateRef(baseTable, ref);
