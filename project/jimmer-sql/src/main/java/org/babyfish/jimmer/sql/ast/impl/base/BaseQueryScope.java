@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
@@ -52,7 +53,7 @@ public class BaseQueryScope {
 
         private final boolean cte;
 
-        private BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, BaseTableSymbol baseTableSymbol) {
+        BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, BaseTableSymbol baseTableSymbol) {
             this.mapperMap = mapperMap;
             this.cte = ((AbstractBaseTableSymbol)baseTableSymbol).ref != null;
         }
@@ -94,12 +95,20 @@ public class BaseQueryScope {
         }
 
         @Override
-        public int cteSpan() {
-            int span = 0;
-            for (BaseSelectionMapper mapper : mapperMap.values()) {
-                span += mapper.span();
+        public void renderCteColumns(RealTable realTable, SqlBuilder builder) {
+            int minNo = Integer.MAX_VALUE;
+            int maxNo = Integer.MIN_VALUE;
+            for (Map.Entry<BaseQueryScope.Key, BaseSelectionMapper> e : mapperMap.entrySet()) {
+                if (e.getKey().realTable == realTable) {
+                    minNo = Math.min(minNo, e.getValue().minNo());
+                    maxNo = Math.max(maxNo, e.getValue().maxNo());
+                }
             }
-            return span;
+            builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
+            for (int no = minNo; no <= maxNo; no++) {
+                builder.separator().sql("c").sql(Integer.toString(no));
+            }
+            builder.leave();
         }
     }
 

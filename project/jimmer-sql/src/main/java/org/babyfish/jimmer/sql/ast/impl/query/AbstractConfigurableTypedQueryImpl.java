@@ -168,22 +168,18 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         } else {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
+            builder.sql("with ").enter(AbstractSqlBuilder.ScopeType.COMMA);
             for (RealTable cteTable : cteTables) {
+                builder.separator();
                 BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
                 BaseSelectionAliasRender cteRender = builder.getAstContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
                 assert cteRender != null;
-                int cteSpan = cteRender.cteSpan();
-                builder.sql("with ");
                 builder.sql(cteTable.getAlias());
-                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
-                for (int i = 1; i <= cteSpan; i++) {
-                    builder.separator().sql("c").sql(Integer.toString(i));
-                }
-                builder.leave();
+                cteRender.renderCteColumns(cteTable, builder);
                 builder.sql(" as ");
                 cteTable.renderTo(builder, true);
-                builder.sql(" ");
             }
+            builder.leave().sql(" ");
             builder.appendTempBuilder(tmpBuilder);
         }
     }

@@ -242,7 +242,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
         if (owner.getParent() == null || usedState != TableUsedState.NONE) {
             if (owner instanceof BaseTableImplementor) {
-                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
                 AstContext astContext = builder.assertSimple().getAstContext();
                 astContext.pushRenderedBaseTable(this);
                 renderSelf(sqlBuilder, TableImplementor.RenderMode.NORMAL, cte);
@@ -261,7 +260,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private void renderSelf(SqlBuilder builder, TableImplementor.RenderMode mode, boolean cte) {
         TableLikeImplementor<?> owner = this.owner;
         if (owner instanceof BaseTableImplementor) {
-            if (parent != null) {
+            if (!cte && parent != null) {
                 builder.join(joinType);
             }
             renderBaseTableCore(builder, cte);
@@ -326,7 +325,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 ctx.popRenderedBaseTable();
             }
         }
-        if (owner.getParent() == null) {
+        if (owner.getParent() == null || cte) {
             return;
         }
         ctx.pushRenderedBaseTable(null);
