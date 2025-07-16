@@ -129,7 +129,12 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->from (" +
                                     "--->--->select " +
                                     "--->--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, " +
-                                    "--->--->--->(select count(1) from AUTHOR tb_3_ inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID where tb_4_.BOOK_ID = tb_2_.ID) c6 " +
+                                    "--->--->--->(" +
+                                    "--->--->--->--->select count(1) " +
+                                    "--->--->--->--->from AUTHOR tb_3_ " +
+                                    "--->--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
+                                    "--->--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
+                                    "--->--->--->) c6 " +
                                     "--->--->from BOOK tb_2_" +
                                     "--->) tb_1_ " +
                                     "--->left join BOOK_STORE tb_6_ on tb_1_.c5 = tb_6_.ID " +
@@ -258,7 +263,25 @@ public class BaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_8_.ID, tb_8_.NAME, tb_8_.WEBSITE, tb_8_.VERSION from (select tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, tb_3_.PRICE c4, tb_3_.STORE_ID c5, (select count(1) from AUTHOR tb_4_ inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID where tb_5_.BOOK_ID = tb_3_.ID) c6 from BOOK_STORE tb_2_ inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID where tb_2_.NAME = ? and tb_3_.EDITION = ?) tb_1_ left join BOOK_STORE tb_8_ on tb_1_.c5 = tb_8_.ID where tb_1_.c6 > ?"
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_8_.ID, tb_8_.NAME, tb_8_.WEBSITE, tb_8_.VERSION " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, " +
+                                    "--->--->tb_3_.PRICE c4, tb_3_.STORE_ID c5, " +
+                                    "--->--->(" +
+                                    "--->--->--->select count(1) " +
+                                    "--->--->--->from AUTHOR tb_4_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->--->where tb_5_.BOOK_ID = tb_3_.ID" +
+                                    "--->--->) c6 " +
+                                    "--->from BOOK_STORE tb_2_ " +
+                                    "--->inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID " +
+                                    "--->where tb_2_.NAME = ? and tb_3_.EDITION = ?" +
+                                    ") tb_1_ " +
+                                    "left join BOOK_STORE tb_8_ on tb_1_.c5 = tb_8_.ID " +
+                                    "where tb_1_.c6 > ?"
                     );
                     ctx.rows(
                             "[{" +
@@ -1032,8 +1055,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->tb_2_.c3, tb_2_.c4 " +
                                     "from (" +
                                     "--->select " +
-                                    "--->--->tb_3_.PRICE " +
-                                    "--->--->c5, tb_3_.ID c1, tb_3_.NAME c2 " +
+                                    "--->--->tb_3_.PRICE c5, tb_3_.ID c1, tb_3_.NAME c2 " +
                                     "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.ID = ?" +
                                     ") tb_1_ " +
