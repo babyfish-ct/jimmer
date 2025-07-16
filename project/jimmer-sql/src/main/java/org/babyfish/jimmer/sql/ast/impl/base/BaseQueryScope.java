@@ -95,18 +95,22 @@ public class BaseQueryScope {
         }
 
         @Override
-        public void renderCteColumns(RealTable realTable, SqlBuilder builder) {
-            int minNo = Integer.MAX_VALUE;
-            int maxNo = Integer.MIN_VALUE;
-            for (Map.Entry<BaseQueryScope.Key, BaseSelectionMapper> e : mapperMap.entrySet()) {
-                if (e.getKey().realTable == realTable) {
-                    minNo = Math.min(minNo, e.getValue().minNo());
-                    maxNo = Math.max(maxNo, e.getValue().maxNo());
-                }
-            }
+        public void renderCteColumns(RealTable realBaseTable, SqlBuilder builder) {
+            BaseTableImplementor baseTableImplementor = (BaseTableImplementor) realBaseTable.getTableLikeImplementor();
+            ConfigurableBaseQueryImpl<?> query = baseTableImplementor.toSymbol().getQuery();
+            List<Selection<?>> selections = query.getSelections();
+            int size = selections.size();
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
-            for (int no = minNo; no <= maxNo; no++) {
-                builder.separator().sql("c").sql(Integer.toString(no));
+            for (int i = 0; i < size; i++) {
+                BaseSelectionMapper mapper = mapperMap.get(new Key(realBaseTable, i));
+                Selection<?> selection = selections.get(i);;
+                if (selection instanceof Expression<?>) {
+                    builder.separator().sql("c").sql(Integer.toString(mapper.expressionIndex));
+                } else {
+                    for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
+                        builder.separator().sql("c").sql(Integer.toString(e.getValue()));
+                    }
+                }
             }
             builder.leave();
         }

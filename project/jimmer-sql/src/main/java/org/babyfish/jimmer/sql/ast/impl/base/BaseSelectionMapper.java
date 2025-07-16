@@ -22,10 +22,6 @@ public class BaseSelectionMapper {
 
     int expressionIndex;
 
-    private int minNo = Integer.MAX_VALUE;
-
-    private int maxNo = Integer.MIN_VALUE;
-
     public BaseSelectionMapper(BaseQueryScope scope, RealTable realBaseTable, int selectionIndex) {
         this.scope = scope;
         this.realBaseTable = realBaseTable;
@@ -43,7 +39,7 @@ public class BaseSelectionMapper {
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, columnName),
-                it -> allocateNo()
+                it -> scope.colNo()
         );
     }
 
@@ -54,22 +50,15 @@ public class BaseSelectionMapper {
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, formula),
-                it -> allocateNo()
+                it -> scope.colNo()
         );
     }
 
     public int expressionIndex() {
         if (expressionIndex == 0) {
-            expressionIndex = allocateNo();
+            expressionIndex = scope.colNo();
         }
         return expressionIndex;
-    }
-
-    private int allocateNo() {
-        int no = scope.colNo();
-        minNo = Math.min(minNo, no);
-        maxNo = Math.max(maxNo, no);
-        return no;
     }
 
     private List<RealTable.Key> keys(RealTable table, String alias) {
@@ -89,14 +78,6 @@ public class BaseSelectionMapper {
             keys.add(childTable.getKey());
             keys0(childTable, alias, keys);
         }
-    }
-
-    int minNo() {
-        return minNo;
-    }
-
-    int maxNo() {
-        return maxNo;
     }
 
     static class QualifiedColumn {
