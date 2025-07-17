@@ -76,7 +76,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     @Override
     public ConfigurableBaseQueryImpl<?> getQuery() {
         if (query instanceof MergedBaseQueryImpl<?>) {
-            return ((MergedBaseQueryImpl<?>) query).getExpandedQueries()[0];
+            return ((MergedBaseQueryImpl<?>) query).firstQuery();
         }
         return (ConfigurableBaseQueryImpl<?>) query;
     }

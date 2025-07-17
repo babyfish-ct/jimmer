@@ -4,13 +4,11 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
-import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -121,18 +119,18 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @Override
     public T asBaseTable() {
-        return asBaseTableImpl(false);
+        return asBaseTable(false);
     }
 
     @Override
     public T asCteBaseTable() {
-        return asBaseTableImpl(true);
+        return asBaseTable(true);
     }
 
     public T getBaseTable() {
         if (baseTable == null) {
             throw new IllegalArgumentException(
-                    "`asBaseTable`/`asCteBaseTable`/`asRecursiveBaseTable` has not been invoked"
+                    "`asBaseTable`/`asCteBaseTable` has not been invoked"
             );
         }
         return baseTable;
@@ -140,14 +138,14 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTableImpl(boolean cte) {
+    public T asBaseTable(boolean cte) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         this.baseTable = baseTable =
             mergedBy != null ?
-                    mergedBy.asBaseTableImpl(cte) :
+                    mergedBy.asBaseTable(cte) :
                     (T) BaseTableSymbols.of(this, getData().selections, cte);
         return baseTable;
     }

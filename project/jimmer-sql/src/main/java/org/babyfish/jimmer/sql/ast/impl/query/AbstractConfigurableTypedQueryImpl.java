@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
@@ -191,12 +192,12 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         }
         RealTable realTable = tableLikeImplementor.realTable(ctx);
         List<RealTable> cteTables = new ArrayList<>();
-        collectionCteTables(realTable, cteTables);
+        collectCteTables(realTable, cteTables);
         return cteTables;
     }
 
-    private void collectionCteTables(RealTable realTable, List<RealTable> cteTables) {
-        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor) {
+    private void collectCteTables(RealTable realTable, List<RealTable> cteTables) {
+        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor && !(this instanceof TypedBaseQuery<?>)) {
             BaseTableImplementor baseTableImplementor =
                     (BaseTableImplementor) realTable.getTableLikeImplementor();
             if (baseTableImplementor.isCte()) {
@@ -204,7 +205,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             }
         }
         for (RealTable child : realTable) {
-            collectionCteTables(child, cteTables);
+            collectCteTables(child, cteTables);
         }
     }
 

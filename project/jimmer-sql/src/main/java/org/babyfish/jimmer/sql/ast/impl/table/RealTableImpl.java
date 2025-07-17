@@ -810,9 +810,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private Aliases aliases() {
         Aliases aliases = this.aliases;
         if (aliases == null) {
-            this.aliases = aliases =
-                    ((RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope))
-                            .allocateAliasesIfNecessary();
+            RealTableImpl realTableImpl;
+            if (owner instanceof TableImplementor) {
+                realTableImpl = (RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope);
+            } else {
+                realTableImpl = (RealTableImpl) (owner).realTable(key.scope);
+            }
+            this.aliases = aliases = realTableImpl.allocateAliasesIfNecessary();
         }
         return aliases;
     }

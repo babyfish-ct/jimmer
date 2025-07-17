@@ -34,7 +34,7 @@ public class TableUtils {
         if (tableLike instanceof BaseTableImplementor) {
             return true;
         }
-        return ((TableImplementor<?>) tableLike).hasBaseTable();
+        return tableLike.hasBaseTable();
     }
 
     public static boolean isInverse(Table<?> table) {

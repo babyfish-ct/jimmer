@@ -103,7 +103,7 @@ public class BaseQueryScope {
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (int i = 0; i < size; i++) {
                 BaseSelectionMapper mapper = mapperMap.get(new Key(realBaseTable, i));
-                Selection<?> selection = selections.get(i);;
+                Selection<?> selection = selections.get(i);
                 if (selection instanceof Expression<?>) {
                     builder.separator().sql("c").sql(Integer.toString(mapper.expressionIndex));
                 } else {

@@ -856,14 +856,6 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     }
 
     @Override
-    protected void putValue(Key key, TableLikeImplementor<?> value) {
-        if (value instanceof BaseTableImplementor) {
-            setHasBaseTable();
-        }
-        super.putValue(key, value);
-    }
-
-    @Override
     public void setHasBaseTable() {
         if (!hasBaseTable) {
             hasBaseTable = true;

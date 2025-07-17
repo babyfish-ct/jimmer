@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
@@ -34,6 +33,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     private BaseTableRenderFrame baseTableRenderFrame;
 
     private int modCount;
+
+    private Set<MergedBaseQueryImpl<?>> visitingRecursiveMergedQueries;
 
     public AstContext(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
@@ -265,9 +266,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         if (baseTableOwner == null) {
             return null;
         }
-        if (baseTableRenderFrame != null && baseTableRenderFrame.realTable != null) {
-            return null;
-        }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
         boolean cte = baseTable.isCte();
         for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
@@ -276,48 +274,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
                 if (mergedBy != null) {
                     for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTableImpl(cte), baseTableOwner.getIndex()));
-                    }
-                }
-                return scope.mapper(baseTableOwner);
-            }
-        }
-        return null;
-    }
-
-    @Nullable
-    public BaseSelectionMapper getBaseSelectionMapper(TableImplementor<?> table) {
-        BaseTableOwner baseTableOwner = table.getBaseTableOwner();
-        if (baseTableOwner == null) {
-            return null;
-        }
-        if (baseTableRenderFrame != null && baseTableRenderFrame.realTable != null) {
-            return null;
-        }
-        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        int index = baseTableOwner.getIndex();
-        ConfigurableBaseQueryImpl<?> query = baseTableOwner.getBaseTable().getQuery();
-        MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(query);
-        boolean isInnerTable = false;
-        if (mergedBy == null) {
-            isInnerTable = TableProxies.resolve((Table<?>)query.getSelections().get(index), this) == table;
-        } else {
-            for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                if (TableProxies.resolve((Table<?>)itemQuery.getSelections().get(index), this) == table) {
-                    isInnerTable = true;
-                    break;
-                }
-            }
-        }
-        if (!isInnerTable) {
-            return null;
-        }
-        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
-            if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
-                BaseQueryScope scope = frame.baseQueryScope();
-                if (mergedBy != null) {
-                    for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(), baseTableOwner.getIndex()));
+                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(cte), baseTableOwner.getIndex()));
                     }
                 }
                 return scope.mapper(baseTableOwner);
@@ -342,6 +299,24 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             return frame.realTable;
         }
         throw new IllegalStateException("No rendered real base table");
+    }
+
+    public void visitRecursiveQuery(MergedBaseQueryImpl<?> query, Runnable runnable) {
+        if (!query.isRecursive()) {
+            runnable.run();
+            return;
+        }
+        Set<MergedBaseQueryImpl<?>> set = visitingRecursiveMergedQueries;
+        if (set == null) {
+            visitingRecursiveMergedQueries = set = new HashSet<>();
+        }
+        if (set.add(query)) {
+            try {
+                runnable.run();
+            } finally {
+                set.remove(query);
+            }
+        }
     }
 
     private static class Unwrapped<T> {
@@ -429,11 +404,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             if (!usingBaseQuery) {
                 return null;
             }
-            TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
-            if (TableUtils.hasBaseTable(tableLikeImplementor)) {
-                return new BaseQueryScope(AstContext.this);
-            }
-            return null;
+            return new BaseQueryScope(AstContext.this);
         }
     }
 

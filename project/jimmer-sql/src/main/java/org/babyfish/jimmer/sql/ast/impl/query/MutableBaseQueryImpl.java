@@ -161,9 +161,15 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
         if (this.parent == null) {
             this.parent = parent;
             ctx = parent.getContext();
+        } else if (parent instanceof MutableBaseQueryImpl) {
+            if (ctx != parent.getContext()) {
+                throw new IllegalStateException(
+                        "The recursive base query cannot be added to statement context"
+                );
+            }
         } else if (!MutableDeleteImpl.isCompatible(this.parent, parent)) {
             throw new IllegalStateException(
-                    "The sub query cannot be added to parent query because it is belong to another parent query"
+                    "The base query cannot be added to parent query because it is belong to another parent query"
             );
         }
     }

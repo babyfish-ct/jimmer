@@ -47,6 +47,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
             }
         } else {
             TableImpl<?> parentImpl = (TableImpl<?>) parent;
+            parentImpl.setHasBaseTable();
             child = parentImpl.computedIfAbsent(
                     new TableImpl.Key("", symbol.getJoinType(), symbol.getWeakJoinHandle(), false),
                     () -> new BaseTableImpl(symbol, parent)

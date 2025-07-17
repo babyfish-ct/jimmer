@@ -22,8 +22,7 @@ public interface TypedBaseQuery<T extends BaseTable> {
             TypedBaseQuery<T> query,
             RecursiveBaseQueryCreator<T>... recursiveBaseQueryCreators
     ) {
-        // TODO
-        throw new UnsupportedOperationException();
+        return MergedBaseQueryImpl.of(query, recursiveBaseQueryCreators);
     }
 
     @SafeVarargs
