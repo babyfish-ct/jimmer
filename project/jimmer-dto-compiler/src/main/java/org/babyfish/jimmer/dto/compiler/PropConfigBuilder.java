@@ -236,7 +236,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         }
 
         this.limit = limitValue;
-        this.offset = limitValue;
+        this.offset = offsetValue;
         this.modified = true;
     }
 
