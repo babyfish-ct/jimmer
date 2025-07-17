@@ -874,6 +874,49 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testZeroOffsetConfig() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+            "BookView {\n" +
+                "    #allScalars\n" +
+                "    -tenant\n" +
+                "    !fetchType(JOIN_ALWAYS)\n" +
+                "    store {\n" +
+                "        #allScalars\n" +
+                "    }\n" +
+                "    !limit(2, 0)\n" +
+                "    !batch(10)\n" +
+                "    !orderBy(firstName asc, lastName asc)\n" +
+                "    authors {\n" +
+                "        firstName\n" +
+                "        lastName\n" +
+                "    }\n" +
+                "}\n"
+        );
+        assertContentEquals(
+            "[BookView {" +
+                "--->id, " +
+                "--->name, " +
+                "--->edition, " +
+                "--->price, " +
+                "--->!fetchType(JOIN_ALWAYS) " +
+                "--->store: {" +
+                "--->--->id, " +
+                "--->--->name, " +
+                "--->--->website" +
+                "--->}, " +
+                "--->!orderBy(firstName asc, lastName asc) " +
+                "--->!limit(2) " +
+                "--->!batch(10) " +
+                "--->authors: {" +
+                "--->--->firstName, " +
+                "--->--->lastName" +
+                "--->}" +
+                "}]",
+            dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testRecursiveConfig() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "TreeNode {\n" +
