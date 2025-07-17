@@ -199,7 +199,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor) {
             BaseTableImplementor baseTableImplementor =
                     (BaseTableImplementor) realTable.getTableLikeImplementor();
-            if (baseTableImplementor.getRef() != null) {
+            if (baseTableImplementor.isCte()) {
                 cteTables.add(realTable);
             }
         }

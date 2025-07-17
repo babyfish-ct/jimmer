@@ -20,7 +20,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final List<Selection<?>> selections;
 
-    protected final Object ref;
+    protected final boolean cte;
 
     protected final TableLike<?> parent;
 
@@ -31,11 +31,11 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     protected AbstractBaseTableSymbol(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
-            Object ref
+            boolean cte
     ) {
         this.query = query;
         this.selections = wrapSelections(selections);
-        this.ref = ref;
+        this.cte = cte;
         this.parent = null;
         this.handle = null;
         this.joinType = JoinType.INNER;
@@ -49,7 +49,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     ) {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
-        this.ref = ((AbstractBaseTableSymbol) base).ref;
+        this.cte = ((AbstractBaseTableSymbol) base).cte;
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");
         this.joinType = joinType;
@@ -101,27 +101,22 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         return joinType;
     }
 
+    @Override
+    public boolean isCte() {
+        return cte;
+    }
+
     public abstract AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query);
 
-    public Object getRef() {
-        return ref;
-    }
-
     protected final String suffix() {
-        if (ref == null) {
-            return "";
-        }
-        if (Boolean.TRUE.equals(ref)) {
-            return "(CTE)";
-        }
-        return "(RecursiveCTE)";
+        return cte ? "(CTE)" : "";
     }
 
-    public static <T extends BaseTable> T validateRef(T baseTable, Object ref) {
-        if (!Objects.equals(((AbstractBaseTableSymbol) baseTable).ref, ref)) {
+    public static <T extends BaseTable> T validateCte(T baseTable, boolean cte) {
+        if (((AbstractBaseTableSymbol) baseTable).cte != cte) {
             throw new IllegalStateException(
                     "BaseQuery does not support calling " +
-                            "`asBaseTable`/`asCteBaseTable`/`asRecursiveBaseTable` " +
+                            "`asBaseTable`/`asCteBaseTable` " +
                             "multiple times with different parameters."
             );
         }

@@ -18,5 +18,5 @@ public interface BaseTableImplementor extends BaseTable, TableLikeImplementor<Ob
 
     BaseTableSymbol toSymbol();
 
-    Object getRef();
+    boolean isCte();
 }

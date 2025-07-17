@@ -269,14 +269,14 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             return null;
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        Object ref = ((AbstractBaseTableSymbol) baseTable).getRef();
+        boolean cte = baseTable.isCte();
         for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
             if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
                 BaseQueryScope scope = frame.baseQueryScope();
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
                 if (mergedBy != null) {
                     for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTableImpl(ref), baseTableOwner.getIndex()));
+                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTableImpl(cte), baseTableOwner.getIndex()));
                     }
                 }
                 return scope.mapper(baseTableOwner);

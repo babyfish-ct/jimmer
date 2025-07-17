@@ -292,7 +292,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     private void renderBaseTableCore(SqlBuilder builder, boolean cte) {
         AstContext ctx = builder.getAstContext();
         BaseTableImpl baseTableImpl = (BaseTableImpl) owner;
-        boolean aliasOnly = !cte && ((BaseTableImplementor) owner).getRef() != null;
+        boolean aliasOnly = !cte && ((BaseTableImplementor) owner).isCte();
         boolean withScope = !cte && parent != null && parent.owner instanceof TableImplementor<?>;
         if (withScope) {
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
@@ -303,7 +303,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             baseTableImpl.renderBaseQueryCore(builder);
             builder.leave();
-            if (baseTableImpl.getRef() == null) {
+            if (!baseTableImpl.isCte()) {
                 builder.sql(" ").sql(aliases().value);
             }
         }

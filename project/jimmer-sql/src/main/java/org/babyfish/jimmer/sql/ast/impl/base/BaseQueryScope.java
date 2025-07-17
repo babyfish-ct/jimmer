@@ -55,7 +55,7 @@ public class BaseQueryScope {
 
         BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, BaseTableSymbol baseTableSymbol) {
             this.mapperMap = mapperMap;
-            this.cte = ((AbstractBaseTableSymbol)baseTableSymbol).ref != null;
+            this.cte = baseTableSymbol.isCte();
         }
 
         @Override

@@ -15,5 +15,5 @@ public interface TypedBaseQueryImplementor<T extends BaseTable>
 
     void setMergedBy(MergedBaseQueryImpl<T> mergedBaseQuery);
 
-    T asBaseTableImpl(Object ref);
+    T asBaseTableImpl(boolean cte);
 }

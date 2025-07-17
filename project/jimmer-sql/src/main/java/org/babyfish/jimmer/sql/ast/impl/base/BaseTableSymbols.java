@@ -39,27 +39,27 @@ public class BaseTableSymbols {
     public static BaseTableSymbol of(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
-            Object ref
+            boolean cte
     ) {
         switch (selections.size()) {
             case 1:
-                return new Table1<>(query, selections, ref);
+                return new Table1<>(query, selections, cte);
             case 2:
-                return new Table2<>(query, selections, ref);
+                return new Table2<>(query, selections, cte);
             case 3:
-                return new Table3<>(query, selections, ref);
+                return new Table3<>(query, selections, cte);
             case 4:
-                return new Table4<>(query, selections, ref);
+                return new Table4<>(query, selections, cte);
             case 5:
-                return new Table5<>(query, selections, ref);
+                return new Table5<>(query, selections, cte);
             case 6:
-                return new Table6<>(query, selections, ref);
+                return new Table6<>(query, selections, cte);
             case 7:
-                return new Table7<>(query, selections, ref);
+                return new Table7<>(query, selections, cte);
             case 8:
-                return new Table8<>(query, selections, ref);
+                return new Table8<>(query, selections, cte);
             case 9:
-                return new Table9<>(query, selections, ref);
+                return new Table9<>(query, selections, cte);
             default:
                 throw new IllegalArgumentException("Illegal selection count: " + selections.size());
         }
@@ -99,8 +99,8 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable1<S1> {
 
-        Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table1(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -116,7 +116,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table1<S1> query(TypedBaseQueryImplementor<?> query) {
-            return new Table1<>(query, wrapSelections(selections, query.asBaseTable()), ref);
+            return new Table1<>(query, wrapSelections(selections, query.asBaseTable()), cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -160,8 +160,8 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable2<S1, S2> {
 
-        Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table2(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -184,7 +184,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table2<S1, S2> query(TypedBaseQueryImplementor<?> query) {
-            return new Table2<>(query, wrapSelections(selections, query.asBaseTable()), ref);
+            return new Table2<>(query, wrapSelections(selections, query.asBaseTable()), cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -228,8 +228,8 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable3<S1, S2, S3> {
 
-        Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table3(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -259,7 +259,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table3<S1, S2, S3> query(TypedBaseQueryImplementor<?> query) {
-            return new Table3<>(query, selections, ref);
+            return new Table3<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -308,8 +308,8 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable4<S1, S2, S3, S4> {
 
-        Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table4(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -345,7 +345,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table4<S1, S2, S3, S4> query(TypedBaseQueryImplementor<?> query) {
-            return new Table4<>(query, selections, ref);
+            return new Table4<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -396,8 +396,8 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable5<S1, S2, S3, S4, S5> {
 
-        Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table5(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -439,7 +439,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table5<S1, S2, S3, S4, S5> query(TypedBaseQueryImplementor<?> query) {
-            return new Table5<>(query, selections, ref);
+            return new Table5<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -492,8 +492,8 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable6<S1, S2, S3, S4, S5, S6> {
 
-        Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table6(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -541,7 +541,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table6<S1, S2, S3, S4, S5, S6> query(TypedBaseQueryImplementor<?> query) {
-            return new Table6<>(query, selections, ref);
+            return new Table6<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -596,8 +596,8 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable7<S1, S2, S3, S4, S5, S6, S7> {
 
-        Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table7(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -651,7 +651,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table7<S1, S2, S3, S4, S5, S6, S7> query(TypedBaseQueryImplementor<?> query) {
-            return new Table7<>(query, selections, ref);
+            return new Table7<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -708,8 +708,8 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
-        Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table8(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -769,7 +769,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table8<S1, S2, S3, S4, S5, S6, S7, S8> query(TypedBaseQueryImplementor<?> query) {
-            return new Table8<>(query, selections, ref);
+            return new Table8<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")
@@ -828,8 +828,8 @@ public class BaseTableSymbols {
     > extends AbstractBaseTableSymbol
             implements BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
-        Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, Object ref) {
-            super(query, selections, ref);
+        Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, boolean cte) {
+            super(query, selections, cte);
         }
 
         Table9(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
@@ -895,7 +895,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table9<S1, S2, S3, S4, S5, S6, S7, S8, S9> query(TypedBaseQueryImplementor<?> query) {
-            return new Table9<>(query, selections, ref);
+            return new Table9<>(query, selections, cte);
         }
 
         @SuppressWarnings("unchecked")

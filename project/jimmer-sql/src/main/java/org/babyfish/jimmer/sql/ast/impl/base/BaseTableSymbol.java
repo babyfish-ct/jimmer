@@ -20,4 +20,6 @@ public interface BaseTableSymbol extends BaseTable {
     WeakJoinHandle getWeakJoinHandle();
 
     JoinType getJoinType();
+
+    boolean isCte();
 }

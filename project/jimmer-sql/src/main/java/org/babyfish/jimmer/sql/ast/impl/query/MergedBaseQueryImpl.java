@@ -28,15 +28,15 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     private final String operator;
 
-    private final TypedBaseQueryImplementor<T>[] queries;
+    private TypedBaseQueryImplementor<T>[] queries;
 
-    private final ConfigurableBaseQueryImpl<T>[] expandedQueries;
-
-    private Object baseTableKey;
+    private ConfigurableBaseQueryImpl<T>[] expandedQueries;
 
     private T baseTable;
 
     private MergedBaseQueryImpl<T> mergedBy;
+
+    private RecursiveBaseQueryCreator<T>[] recursiveBaseQueryCreators;
 
     @SafeVarargs
     public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T> ... queries) {
@@ -52,6 +52,25 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                         queries
                 );
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @SafeVarargs
+    public static <T extends BaseTable> TypedBaseQuery<T> of(
+            String operator,
+            TypedBaseQuery<T> query,
+            RecursiveBaseQueryCreator<T> ... recursiveBaseQueryCreators
+    ) {
+        if (recursiveBaseQueryCreators.length == 0) {
+            return query;
+        }
+        MergedBaseQueryImpl<T> mergedBaseQuery = new MergedBaseQueryImpl<>(
+                ((TypedBaseQueryImplementor<?>) query).getSqlClient(),
+                operator,
+                (TypedBaseQuery<T>[]) new TypedBaseQuery<?>[] {query}
+        );
+        mergedBaseQuery.recursiveBaseQueryCreators = recursiveBaseQueryCreators;
+        return mergedBaseQuery;
     }
 
     @SafeVarargs
@@ -82,18 +101,33 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         this.queries = queryArr;
 
-        List<TypedBaseQueryImplementor<?>> realQueries = new ArrayList<>();
+        List<ConfigurableBaseQueryImpl<?>> realQueries = new ArrayList<>();
         collectRealQueries(this, realQueries);
+        this.expandedQueries = (ConfigurableBaseQueryImpl<T>[]) realQueries.toArray(EMPTY_QUERIES);
+    }
 
-        List<ConfigurableBaseQueryImpl<?>> expandedQueries = new ArrayList<>();
-        for (TypedBaseQueryImplementor<?> query : queryArr) {
-            if (query instanceof MergedBaseQueryImpl<?>) {
-                expandedQueries.addAll(Arrays.asList(((MergedBaseQueryImpl<?>) query).expandedQueries));
-            } else {
-                expandedQueries.add((ConfigurableBaseQueryImpl<?>) query);
-            }
+    @SuppressWarnings("unchecked")
+    private void upgrade() {
+        if (recursiveBaseQueryCreators == null) {
+            return;
         }
-        this.expandedQueries = (ConfigurableBaseQueryImpl<T>[]) expandedQueries.toArray(EMPTY_QUERIES);
+        T baseTable = asBaseTableImpl(true);
+        int size = queries.length;
+        TypedBaseQueryImplementor<T>[] newQueryArr = new TypedBaseQueryImplementor[size + recursiveBaseQueryCreators.length];
+        System.arraycopy(queries, 0, newQueryArr, 0, size);
+        for (RecursiveBaseQueryCreator<T> creator : recursiveBaseQueryCreators) {
+            TypedBaseQueryImplementor<T> query = (TypedBaseQueryImplementor<T>) creator.create(baseTable);
+            validateSelections(
+                    queries[0].getSelections(),
+                    query.getSelections()
+            );
+            newQueryArr[size++] = query;
+        }
+        this.recursiveBaseQueryCreators = null;
+        this.queries = newQueryArr;
+        List<ConfigurableBaseQueryImpl<?>> realQueries = new ArrayList<>();
+        collectRealQueries(this, realQueries);
+        this.expandedQueries = (ConfigurableBaseQueryImpl<T>[]) realQueries.toArray(EMPTY_QUERIES);
     }
 
     private static void validateSelections(
@@ -139,7 +173,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter('?' + operator + '?');
-        for (TypedQueryImplementor query : queries) {
+        for (TypedQueryImplementor query : getQueries()) {
             builder.separator();
             query.renderTo(builder);
         }
@@ -148,7 +182,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public boolean hasVirtualPredicate() {
-        for (TypedQueryImplementor query : queries) {
+        for (TypedQueryImplementor query : getQueries()) {
             if (query.hasVirtualPredicate()) {
                 return true;
             }
@@ -158,6 +192,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
+        TypedBaseQueryImplementor<T>[] queries = getQueries();
         for (int i = 0; i < queries.length; i++) {
             queries[i] = ctx.resolveVirtualPredicate(queries[i]);
         }
@@ -174,7 +209,8 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         return sqlClient;
     }
 
-    public TypedBaseQueryImplementor<?>[] getQueries() {
+    public TypedBaseQueryImplementor<T>[] getQueries() {
+        upgrade();
         return queries;
     }
 
@@ -184,10 +220,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public TableImplementor<?> resolveRootTable(Table<?> table) {
-        for (TypedBaseQueryImplementor<?> query : this.queries) {
+        for (TypedBaseQueryImplementor<?> query : this.getQueries()) {
             TableImplementor<?> tableImplementor;
             if (query instanceof MergedBaseQueryImpl<?>) {
-                tableImplementor = ((MergedBaseQueryImpl<?>)query).queries[0].resolveRootTable(table);
+                tableImplementor = ((MergedBaseQueryImpl<?>)query).getQueries()[0].resolveRootTable(table);
             } else {
                 MutableBaseQueryImpl mutableQuery = ((ConfigurableBaseQueryImpl<?>) query).getMutableQuery();
                 tableImplementor = AbstractTypedTable.__refEquals(mutableQuery.getTable(), table) ?
@@ -223,39 +259,34 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public T asBaseTable() {
-        return asBaseTableImpl(null);
+        return asBaseTableImpl(false);
     }
 
     @Override
     public T asCteBaseTable() {
-        return asBaseTableImpl(Boolean.TRUE);
-    }
-
-    @Override
-    public T asRecursiveBaseTable(RecursiveRef<T> recursiveRef) {
-        return asBaseTableImpl(recursiveRef);
+        return asBaseTableImpl(true);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTableImpl(Object ref) {
+    public T asBaseTableImpl(boolean cte) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
-            return AbstractBaseTableSymbol.validateRef(baseTable, ref);
+            return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         this.baseTable = baseTable =
                 mergedBy != null ?
-                        mergedBy.asBaseTableImpl(ref) :
-                        (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections(), ref);
+                        mergedBy.asBaseTableImpl(cte) :
+                        (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections(), cte);
         return baseTable;
     }
 
     private static void collectRealQueries(
             TypedBaseQueryImplementor<?> query,
-            List<TypedBaseQueryImplementor<?>> results
+            List<ConfigurableBaseQueryImpl<?>> results
     ) {
         if (query instanceof ConfigurableBaseQuery<?>) {
-            results.add(query);
+            results.add((ConfigurableBaseQueryImpl<?>) query);
         } else {
             MergedBaseQueryImpl<?> mq = (MergedBaseQueryImpl<?>)query;
             for (TypedBaseQueryImplementor<?> sq : mq.getQueries()) {

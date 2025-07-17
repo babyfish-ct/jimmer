@@ -15,15 +15,15 @@ public interface RecursiveRef4<
         S4 extends Selection<?>
 > extends RecursiveRef<BaseTable4<S1, S2, S3, S4>> {
 
-    <T extends Table<?>> RecursiveRef5<S1, S2, S3, S4, T> table(Class<?> tableType);
+    <T extends Table<?>> RecursiveRef5<S1, S2, S3, S4, T> table(Class<T> tableType);
 
     RecursiveRef5<S1, S2, S3, S4, StringExpression> string();
 
     <N extends Number & Comparable<N>> RecursiveRef5<S1, S2, S3, S4, NumericExpression<N>> numeric(Class<N> numberType);
 
-    <T extends Date> RecursiveRef5<S1, S2, S3, S4, DateExpression<T>> date(Class<T> comparableType);
+    <T extends Date> RecursiveRef5<S1, S2, S3, S4, DateExpression<T>> date(Class<T> dateType);
 
-    <T extends Temporal & Comparable<T>> RecursiveRef5<S1, S2, S3, S4, TemporalExpression<T>> temporal(Class<T> comparableType);
+    <T extends Temporal & Comparable<T>> RecursiveRef5<S1, S2, S3, S4, TemporalExpression<T>> temporal(Class<T> temporalType);
 
     <T extends Comparable<?>> RecursiveRef5<S1, S2, S3, S4, ComparableExpression<T>> comparable(Class<T> comparableType);
 

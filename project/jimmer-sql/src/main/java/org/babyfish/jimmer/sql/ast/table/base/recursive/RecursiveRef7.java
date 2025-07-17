@@ -18,15 +18,15 @@ public interface RecursiveRef7<
         S7 extends Selection<?>
 > extends RecursiveRef<BaseTable7<S1, S2, S3, S4, S5, S6, S7>> {
 
-    <T extends Table<?>> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, T> table(Class<?> tableType);
+    <T extends Table<?>> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, T> table(Class<T> tableType);
 
     RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, StringExpression> string();
 
     <N extends Number & Comparable<N>> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, NumericExpression<N>> numeric(Class<N> numberType);
 
-    <T extends Date> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, DateExpression<T>> date(Class<T> comparableType);
+    <T extends Date> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, DateExpression<T>> date(Class<T> dateType);
 
-    <T extends Temporal & Comparable<T>> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, TemporalExpression<T>> temporal(Class<T> comparableType);
+    <T extends Temporal & Comparable<T>> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, TemporalExpression<T>> temporal(Class<T> temporalType);
 
     <T extends Comparable<?>> RecursiveRef8<S1, S2, S3, S4, S5, S6, S7, ComparableExpression<T>> comparable(Class<T> comparableType);
 

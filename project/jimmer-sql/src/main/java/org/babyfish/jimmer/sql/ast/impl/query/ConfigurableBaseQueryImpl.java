@@ -121,17 +121,12 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @Override
     public T asBaseTable() {
-        return asBaseTableImpl(null);
+        return asBaseTableImpl(false);
     }
 
     @Override
     public T asCteBaseTable() {
-        return asBaseTableImpl(Boolean.TRUE);
-    }
-
-    @Override
-    public T asRecursiveBaseTable(RecursiveRef<T> recursiveRef) {
-        return asBaseTableImpl(recursiveRef);
+        return asBaseTableImpl(true);
     }
 
     public T getBaseTable() {
@@ -145,15 +140,15 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTableImpl(Object ref) {
+    public T asBaseTableImpl(boolean cte) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
-            return AbstractBaseTableSymbol.validateRef(baseTable, ref);
+            return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         this.baseTable = baseTable =
             mergedBy != null ?
-                    mergedBy.asBaseTableImpl(ref) :
-                    (T) BaseTableSymbols.of(this, getData().selections, ref);
+                    mergedBy.asBaseTableImpl(cte) :
+                    (T) BaseTableSymbols.of(this, getData().selections, cte);
         return baseTable;
     }
 

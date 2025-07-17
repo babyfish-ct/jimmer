@@ -91,8 +91,8 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     }
 
     @Override
-    public Object getRef() {
-        return ((AbstractBaseTableSymbol)toSymbol()).getRef();
+    public boolean isCte() {
+        return toSymbol().isCte();
     }
 
     @Override

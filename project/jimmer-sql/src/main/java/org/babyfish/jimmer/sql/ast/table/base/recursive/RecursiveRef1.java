@@ -10,15 +10,15 @@ import java.util.Date;
 
 public interface RecursiveRef1<S1 extends Selection<?>> extends RecursiveRef<BaseTable1<S1>> {
 
-    <T extends Table<?>> RecursiveRef2<S1, T> table(Class<?> tableType);
+    <T extends Table<?>> RecursiveRef2<S1, T> table(Class<T> tableType);
 
     RecursiveRef2<S1, StringExpression> string();
 
     <N extends Number & Comparable<N>> RecursiveRef2<S1, NumericExpression<N>> numeric(Class<N> numberType);
 
-    <T extends Date> RecursiveRef2<S1, DateExpression<T>> date(Class<T> comparableType);
+    <T extends Date> RecursiveRef2<S1, DateExpression<T>> date(Class<T> dateType);
 
-    <T extends Temporal & Comparable<T>> RecursiveRef2<S1, TemporalExpression<T>> temporal(Class<T> comparableType);
+    <T extends Temporal & Comparable<T>> RecursiveRef2<S1, TemporalExpression<T>> temporal(Class<T> temporalType);
 
     <T extends Comparable<?>> RecursiveRef2<S1, ComparableExpression<T>> comparable(Class<T> comparableType);
 
