@@ -22,12 +22,12 @@ public class RecursiveBaseQueryTest extends AbstractQueryTest {
                                 .where(table.parentId().isNull())
                                 .addSelect(table)
                                 .addSelect(Expression.constant(1)),
-                        recursive -> {
+                        recursiveRef -> {
                             MutableRecursiveBaseQuery<BaseTable2<TreeNodeTable, NumericExpression<Integer>>> q =
                                     getSqlClient()
                                             .createBaseQuery(
                                                     table,
-                                                    recursive,
+                                                    recursiveRef,
                                                     (t, r) -> t.parentId().eq(r.get_1().id())
                                             );
                             return q
