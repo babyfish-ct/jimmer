@@ -2,9 +2,11 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
@@ -75,6 +77,16 @@ public class BaseTableSymbols {
     }
 
     public static BaseTableSymbol of(
+            RecursiveRef<?> recursiveRef,
+            TableLike<?> parent,
+            WeakJoinHandle handle,
+            JoinType joinType
+    ) {
+        BaseTableSymbol recursive = (BaseTableSymbol) baseTableOf(recursiveRef);
+        return of(recursive, parent, handle, joinType, recursive);
+    }
+
+    public static BaseTableSymbol of(
             BaseTableSymbol base,
             TableLike<?> parent,
             WeakJoinHandle handle,
@@ -102,6 +114,26 @@ public class BaseTableSymbols {
                 return new Table9<>(base, parent, handle, joinType, recursive);
             default:
                 throw new IllegalArgumentException("Illegal selection count: " + base.getSelections().size());
+        }
+    }
+
+    public static <B extends BaseTable> RecursiveRef<B> recursive(B baseTable) {
+        return new RecursiveRefImpl<>(baseTable);
+    }
+
+    private static <B extends BaseTable> B baseTableOf(RecursiveRef<B> recursiveRef) {
+        if (!(recursiveRef instanceof RecursiveRefImpl<?>)) {
+            throw new IllegalArgumentException("Unexpected " + RecursiveRef.class.getName());
+        }
+        return ((RecursiveRefImpl<B>)recursiveRef).baseTable;
+    }
+
+    private static class RecursiveRefImpl<B extends BaseTable> implements RecursiveRef<B> {
+
+        private final B baseTable;
+
+        RecursiveRefImpl(B baseTable) {
+            this.baseTable = baseTable;
         }
     }
 

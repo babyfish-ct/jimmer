@@ -8,12 +8,11 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRecursiveBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
@@ -82,6 +81,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
         return sqlClient().createBaseQuery(table);
+    }
+
+    @Override
+    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(T table, RecursiveRef<R> recursiveRef, JoinType joinType, WeakJoin<T, R> weakJoinLambda) {
+        return sqlClient().createBaseQuery(table, recursiveRef, joinType, weakJoinLambda);
     }
 
     @Override

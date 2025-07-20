@@ -8,9 +8,8 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.ast.table.*;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.di.*;
@@ -25,7 +24,6 @@ import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -59,15 +57,15 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
 
     default <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
-            R recursive,
+            RecursiveRef<R> recursiveRef,
             WeakJoin<T, R> weakJoinLambda
     ) {
-        return createBaseQuery(table, recursive, JoinType.INNER, weakJoinLambda);
+        return createBaseQuery(table, recursiveRef, JoinType.INNER, weakJoinLambda);
     }
 
     <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
-            R recursive,
+            RecursiveRef<R> recursiveRef,
             JoinType joinType,
             WeakJoin<T, R> weakJoinLambda
     );

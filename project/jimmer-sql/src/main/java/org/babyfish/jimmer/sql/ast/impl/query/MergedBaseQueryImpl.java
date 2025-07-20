@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -126,7 +127,9 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         TypedBaseQueryImplementor<T>[] newQueryArr = new TypedBaseQueryImplementor[size + recursiveBaseQueryCreators.length];
         System.arraycopy(queries, 0, newQueryArr, 0, size);
         for (RecursiveBaseQueryCreator<T> creator : recursiveBaseQueryCreators) {
-            TypedBaseQueryImplementor<T> query = (TypedBaseQueryImplementor<T>) creator.create(baseTable);
+            TypedBaseQueryImplementor<T> query = (TypedBaseQueryImplementor<T>) creator.create(
+                    BaseTableSymbols.recursive(baseTable)
+            );
             validateSelections(
                     queries[0].getSelections(),
                     query.getSelections()
