@@ -22,4 +22,6 @@ public interface BaseTableSymbol extends BaseTable {
     JoinType getJoinType();
 
     boolean isCte();
+
+    BaseTableSymbol getRecursive();
 }

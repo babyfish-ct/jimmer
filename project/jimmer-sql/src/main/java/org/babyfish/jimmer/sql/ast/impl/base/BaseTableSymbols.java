@@ -71,25 +71,35 @@ public class BaseTableSymbols {
             WeakJoinHandle handle,
             JoinType joinType
     ) {
+        return of(base, parent, handle, joinType, null);
+    }
+
+    public static BaseTableSymbol of(
+            BaseTableSymbol base,
+            TableLike<?> parent,
+            WeakJoinHandle handle,
+            JoinType joinType,
+            BaseTableSymbol recursive
+    ) {
         switch (base.getSelections().size()) {
             case 1:
-                return new Table1<>(base, parent, handle, joinType);
+                return new Table1<>(base, parent, handle, joinType, recursive);
             case 2:
-                return new Table2<>(base, parent, handle, joinType);
+                return new Table2<>(base, parent, handle, joinType, recursive);
             case 3:
-                return new Table3<>(base, parent, handle, joinType);
+                return new Table3<>(base, parent, handle, joinType, recursive);
             case 4:
-                return new Table4<>(base, parent, handle, joinType);
+                return new Table4<>(base, parent, handle, joinType, recursive);
             case 5:
-                return new Table5<>(base, parent, handle, joinType);
+                return new Table5<>(base, parent, handle, joinType, recursive);
             case 6:
-                return new Table6<>(base, parent, handle, joinType);
+                return new Table6<>(base, parent, handle, joinType, recursive);
             case 7:
-                return new Table7<>(base, parent, handle, joinType);
+                return new Table7<>(base, parent, handle, joinType, recursive);
             case 8:
-                return new Table8<>(base, parent, handle, joinType);
+                return new Table8<>(base, parent, handle, joinType, recursive);
             case 9:
-                return new Table9<>(base, parent, handle, joinType);
+                return new Table9<>(base, parent, handle, joinType, recursive);
             default:
                 throw new IllegalArgumentException("Illegal selection count: " + base.getSelections().size());
         }
@@ -103,8 +113,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table1(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table1(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -133,7 +143,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -144,7 +154,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -164,8 +174,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table2(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table2(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -201,7 +211,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -212,7 +222,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -232,8 +242,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table3(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table3(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -276,7 +286,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -287,7 +297,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -312,8 +322,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table4(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table4(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -362,7 +372,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -373,7 +383,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -400,8 +410,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table5(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table5(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -456,7 +466,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -467,7 +477,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -496,8 +506,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table6(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table6(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -558,7 +568,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -569,7 +579,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -600,8 +610,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table7(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table7(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -668,7 +678,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -679,7 +689,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -712,8 +722,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table8(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table8(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -786,7 +796,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -797,7 +807,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override
@@ -832,8 +842,8 @@ public class BaseTableSymbols {
             super(query, selections, cte);
         }
 
-        Table9(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType) {
-            super(base, parent, handle, joinType);
+        Table9(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
+            super(base, parent, handle, joinType, recursive);
         }
 
         @SuppressWarnings("unchecked")
@@ -912,7 +922,7 @@ public class BaseTableSymbols {
                     true,
                     (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
             );
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @SuppressWarnings("unchecked")
@@ -923,7 +933,7 @@ public class BaseTableSymbols {
                 JoinType joinType
         ) {
             WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+            return (TT) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
         }
 
         @Override

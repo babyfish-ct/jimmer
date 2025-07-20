@@ -293,7 +293,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         AstContext ctx = builder.getAstContext();
         BaseTableImpl baseTableImpl = (BaseTableImpl) owner;
         boolean aliasOnly = !cte && ((BaseTableImplementor) owner).isCte();
-        boolean withScope = !cte && parent != null && parent.owner instanceof TableImplementor<?>;
+        boolean withScope = !cte && parent != null &&
+                parent.owner instanceof TableImplementor<?> &&
+                ((BaseTableImplementor)owner).getRecursive() == null;
         if (withScope) {
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         }
@@ -767,6 +769,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return;
         }
         TableLikeImplementor<?> owner = this.owner;
+        if (owner instanceof BaseTableImplementor) {
+            BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
+            BaseTableImplementor recursive = baseTableImplementor.getRecursive();
+            if (recursive != null) {
+                return;
+            }
+        }
         AbstractMutableStatementImpl statement = owner.getStatement();
         StatementContext stmtCtx = statement.getContext();
         ImmutableProp joinProp = owner instanceof TableImplementor<?> ?
@@ -777,7 +786,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (joinProp.isMiddleTableDefinition()) {
                 middleAlias = stmtCtx.allocateTableAlias();
             } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
-                //throw new AssertionError("Internal bug: Join property has not storage");
                 middleAlias = null;
             } else {
                 middleAlias = null;
@@ -811,10 +819,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         Aliases aliases = this.aliases;
         if (aliases == null) {
             RealTableImpl realTableImpl;
-            if (owner instanceof TableImplementor) {
-                realTableImpl = (RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope);
+            if (owner instanceof BaseTableImplementor) {
+                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
+                BaseTableImplementor recursive = baseTableImplementor.getRecursive();
+                realTableImpl = (RealTableImpl) (recursive != null ? recursive : baseTableImplementor).realTable(key.scope);
             } else {
-                realTableImpl = (RealTableImpl) (owner).realTable(key.scope);
+                realTableImpl = (RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope);
             }
             this.aliases = aliases = realTableImpl.allocateAliasesIfNecessary();
         }

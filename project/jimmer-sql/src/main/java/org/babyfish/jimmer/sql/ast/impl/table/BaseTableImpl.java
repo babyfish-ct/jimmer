@@ -24,14 +24,20 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     private final TableLikeImplementor<?> parent;
 
+    private final BaseTableImplementor recursive;
+
     private BaseTableSymbol rootSymbol;
 
     // Only uses when parent is null
     private RealTable rootRealTable;
 
-    public static BaseTableImplementor of(BaseTableSymbol symbol, TableLikeImplementor<?> parent) {
+    public static BaseTableImplementor of(
+            BaseTableSymbol symbol,
+            TableLikeImplementor<?> parent,
+            BaseTableImplementor recursive
+    ) {
         if (parent == null) {
-            return new BaseTableImpl(symbol, null);
+            return new BaseTableImpl(symbol, null, null);
         }
         if (parent instanceof TableImplementor<?>) {
             ((TableImplementor<?>) parent).setHasBaseTable();
@@ -42,7 +48,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
             Key key = new Key(symbol.getWeakJoinHandle(), symbol.getJoinType());
             child = parentImpl.getValue(key);
             if (child == null) {
-                child = new BaseTableImpl(symbol, parentImpl);
+                child = new BaseTableImpl(symbol, parentImpl, recursive);
                 parentImpl.putValue(key, child);
             }
         } else {
@@ -50,15 +56,16 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
             parentImpl.setHasBaseTable();
             child = parentImpl.computedIfAbsent(
                     new TableImpl.Key("", symbol.getJoinType(), symbol.getWeakJoinHandle(), false),
-                    () -> new BaseTableImpl(symbol, parent)
+                    () -> new BaseTableImpl(symbol, parent, recursive)
             );
         }
         return child;
     }
 
-    private BaseTableImpl(BaseTableSymbol symbol, TableLikeImplementor<?> parent) {
+    private BaseTableImpl(BaseTableSymbol symbol, TableLikeImplementor<?> parent, BaseTableImplementor recursive) {
         this.symbol = symbol;
         this.parent = parent;
+        this.recursive = recursive;
     }
 
     @Override
@@ -89,6 +96,11 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     @Override
     public BaseTableSymbol toSymbol() {
         return symbol;
+    }
+
+    @Override
+    public BaseTableImplementor getRecursive() {
+        return recursive;
     }
 
     @Override

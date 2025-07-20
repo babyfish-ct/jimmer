@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.di.*;
@@ -55,6 +56,21 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
     <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable);
 
     MutableBaseQuery createBaseQuery(TableProxy<?> table);
+
+    default <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+            T table,
+            R recursive,
+            WeakJoin<T, R> weakJoinLambda
+    ) {
+        return createBaseQuery(table, recursive, JoinType.INNER, weakJoinLambda);
+    }
+
+    <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+            T table,
+            R recursive,
+            JoinType joinType,
+            WeakJoin<T, R> weakJoinLambda
+    );
 
     MutableUpdate createUpdate(TableProxy<?> table);
 

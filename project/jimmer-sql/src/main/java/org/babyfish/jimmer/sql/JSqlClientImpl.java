@@ -7,23 +7,27 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.*;
+import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRecursiveBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.di.*;
@@ -465,6 +469,25 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 this,
                 table
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+            T table,
+            R recursive,
+            JoinType joinType,
+            WeakJoin<T, R> weakJoinLambda
+    ) {
+        WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
+        WeakJoinHandle handle = WeakJoinHandle.of(
+                lambda,
+                true,
+                true,
+                (WeakJoin<TableLike<?>, TableLike<?>>)(WeakJoin<?, ?>) weakJoinLambda
+        );
+        R recursiveTable = (R) BaseTableSymbols.of((BaseTableSymbol) recursive, table, handle, joinType, (BaseTableSymbol) recursive);
+        return new MutableRecursiveBaseQueryImpl<>(this, table, recursiveTable);
     }
 
     @Override

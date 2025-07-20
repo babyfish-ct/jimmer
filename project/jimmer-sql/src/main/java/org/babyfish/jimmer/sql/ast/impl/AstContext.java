@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
@@ -165,7 +166,11 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         if (parentImplementor == null) {
             return null;
         }
-        return BaseTableImpl.of(baseTable, parentImplementor);
+        BaseTableSymbol recursive = baseTable.getRecursive();
+        BaseTableImplementor recursiveImplementor = recursive != null ?
+                resolveBaseTable(recursive) :
+                null;
+        return BaseTableImpl.of(baseTable, parentImplementor, recursiveImplementor);
     }
 
     public AbstractMutableStatementImpl getStatement() {
@@ -265,6 +270,10 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     public BaseSelectionMapper getBaseSelectionMapper(BaseTableOwner baseTableOwner) {
         if (baseTableOwner == null) {
             return null;
+        }
+        BaseTableSymbol recursive = baseTableOwner.getBaseTable().getRecursive();
+        if (recursive != null) {
+            baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
         boolean cte = baseTable.isCte();

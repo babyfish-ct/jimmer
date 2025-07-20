@@ -108,7 +108,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 "sqlClient cannot be null"
         );
         this.table = table;
-        this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null);
+        this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null, null);
         this.type = null;
     }
 
@@ -129,7 +129,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         TableLikeImplementor<?> tableLikeImplementor = this.tableLikeImplementor;
         if (tableLikeImplementor == null) {
             if (table instanceof BaseTable) {
-                this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null);
+                this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null, null);
             } else {
                 this.tableLikeImplementor = tableLikeImplementor =
                         TableImplementor.create(this, type);

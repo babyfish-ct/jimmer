@@ -22,6 +22,8 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final boolean cte;
 
+    protected final BaseTableSymbol recursive;
+
     protected final TableLike<?> parent;
 
     private final WeakJoinHandle handle;
@@ -39,13 +41,15 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         this.parent = null;
         this.handle = null;
         this.joinType = JoinType.INNER;
+        this.recursive = null;
     }
 
     protected AbstractBaseTableSymbol(
             BaseTableSymbol base,
             TableLike<?> parent,
             WeakJoinHandle handle,
-            JoinType joinType
+            JoinType joinType,
+            BaseTableSymbol recursive
     ) {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
@@ -53,6 +57,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");
         this.joinType = joinType;
+        this.recursive = recursive;
     }
 
     private List<Selection<?>> wrapSelections(List<Selection<?>> selections) {
@@ -106,10 +111,17 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         return cte;
     }
 
+    @Override
+    public BaseTableSymbol getRecursive() {
+        return recursive;
+    }
+
     public abstract AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query);
 
     protected final String suffix() {
-        return cte ? "(CTE)" : "";
+        return recursive != null ?
+                "(RecursiveCTE)" :
+                cte ? "(CTE)" : "";
     }
 
     public static <T extends BaseTable> T validateCte(T baseTable, boolean cte) {

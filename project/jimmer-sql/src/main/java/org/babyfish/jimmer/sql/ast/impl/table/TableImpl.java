@@ -594,7 +594,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     @SuppressWarnings("unchecked")
     @Override
     public <X extends BaseTable> X weakJoinImplementor(X targetBaseTable, WeakJoinHandle handle, JoinType joinType) {
-        return (X) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType);
+        return (X) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
     }
 
     @Override
