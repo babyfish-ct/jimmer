@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -23,6 +24,9 @@ public class BaseTableSelections {
         if (selection instanceof TableProxy<?>) {
             return (T) of((TableProxy<?>) selection, baseTable, index);
         }
+        if (selection instanceof TableImplementor<?>) {
+            return (T) of((TableImplementor<?>) selection, baseTable, index);
+        }
         if (selection instanceof Expression<?>) {
             return (T) of((Expression<?>) selection, baseTable, index);
         }
@@ -36,6 +40,14 @@ public class BaseTableSelections {
             int index
     ) {
         return (T) table.__baseTableOwner(new BaseTableOwner(baseTable, index));
+    }
+
+    public static TableImplementor<?> of(
+            TableImplementor<?> table,
+            BaseTable baseTable,
+            int index
+    ) {
+        return table.baseTableOwner(new BaseTableOwner(baseTable, index));
     }
 
     @SuppressWarnings("unchecked")
