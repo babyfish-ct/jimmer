@@ -134,24 +134,24 @@ public interface MutableBaseQuery extends MutableQuery {
     @Override
     MutableBaseQuery having(Predicate... predicates);
 
-    <T extends Table<?>> ConfigurableBaseQuery.Simple1<T> addSelect(T table);
+    <T extends Table<?>> ConfigurableBaseQuery.Query1<T> addSelect(T table);
 
     @SuppressWarnings("unchecked")
-    default <T extends Table<?>, TEX extends TableExProxy<?, T>> ConfigurableBaseQuery.Simple1<T> addSelect(TEX table) {
+    default <T extends Table<?>, TEX extends TableExProxy<?, T>> ConfigurableBaseQuery.Query1<T> addSelect(TEX table) {
         return addSelect((T)table);
     }
 
-    <T extends AbstractTypedEmbeddedPropExpression<?>> ConfigurableBaseQuery.Simple1<T> addSelect(T expr);
+    <T extends AbstractTypedEmbeddedPropExpression<?>> ConfigurableBaseQuery.Query1<T> addSelect(T expr);
 
-    <V> ConfigurableBaseQuery.Simple1<Expression<V>> addSelect(Expression<V> expr);
+    <V> ConfigurableBaseQuery.Query1<Expression<V>> addSelect(Expression<V> expr);
 
-    ConfigurableBaseQuery.Simple1<StringExpression> addSelect(StringExpression expr);
+    ConfigurableBaseQuery.Query1<StringExpression> addSelect(StringExpression expr);
 
-    <V extends Number & Comparable<V>> ConfigurableBaseQuery.Simple1<NumericExpression<V>> addSelect(NumericExpression<V> expr);
+    <V extends Number & Comparable<V>> ConfigurableBaseQuery.Query1<NumericExpression<V>> addSelect(NumericExpression<V> expr);
 
-    <V extends Comparable<?>> ConfigurableBaseQuery.Simple1<ComparableExpression<V>> addSelect(ComparableExpression<V> expr);
+    <V extends Comparable<?>> ConfigurableBaseQuery.Query1<ComparableExpression<V>> addSelect(ComparableExpression<V> expr);
 
-    <V extends Date> ConfigurableBaseQuery.Simple1<DateExpression<V>> addSelect(DateExpression<V> expr);
+    <V extends Date> ConfigurableBaseQuery.Query1<DateExpression<V>> addSelect(DateExpression<V> expr);
 
-    <V extends Temporal & Comparable<?>> ConfigurableBaseQuery.Simple1<TemporalExpression<V>> addSelect(TemporalExpression<V> expr);
+    <V extends Temporal & Comparable<?>> ConfigurableBaseQuery.Query1<TemporalExpression<V>> addSelect(TemporalExpression<V> expr);
 }

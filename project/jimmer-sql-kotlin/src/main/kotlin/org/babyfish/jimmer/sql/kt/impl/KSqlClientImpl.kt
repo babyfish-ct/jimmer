@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
+import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.binlog.BinLog
@@ -15,9 +16,13 @@ import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.filter.impl.KFiltersImpl
@@ -50,6 +55,17 @@ internal class KSqlClientImpl(
         return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
         ).block()
+    }
+
+    override fun <E : Any, B : KBaseTable> createBaseQuery(
+        entityType: KClass<E>,
+        block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> {
+        val query = MutableBaseQueryImpl(
+            javaClient,
+            ImmutableType.get(entityType.java)
+        )
+        return KMutableBaseQueryImpl<E>(query).block()
     }
 
     override fun <E : Any> createUpdate(

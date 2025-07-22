@@ -36,6 +36,13 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
         super(sqlClient, table);
     }
 
+    public MutableBaseQueryImpl(
+            JSqlClientImplementor sqlClient,
+            ImmutableType immutableType
+    ) {
+        super(sqlClient, immutableType);
+    }
+
     @Override
     public AbstractMutableStatementImpl getParent() {
         return parent;
@@ -181,43 +188,43 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     }
 
     @Override
-    public <T extends Table<?>> ConfigurableBaseQuery.Simple1<T> addSelect(T table) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(table, this);
+    public <T extends Table<?>> ConfigurableBaseQuery.Query1<T> addSelect(T table) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(table, this);
     }
 
     @Override
-    public <T extends AbstractTypedEmbeddedPropExpression<?>> ConfigurableBaseQuery.Simple1<T> addSelect(T expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public <T extends AbstractTypedEmbeddedPropExpression<?>> ConfigurableBaseQuery.Query1<T> addSelect(T expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override
-    public <V> ConfigurableBaseQuery.Simple1<Expression<V>> addSelect(Expression<V> expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public <V> ConfigurableBaseQuery.Query1<Expression<V>> addSelect(Expression<V> expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override
-    public ConfigurableBaseQuery.Simple1<StringExpression> addSelect(StringExpression expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public ConfigurableBaseQuery.Query1<StringExpression> addSelect(StringExpression expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override
-    public <V extends Number & Comparable<V>> ConfigurableBaseQuery.Simple1<NumericExpression<V>> addSelect(NumericExpression<V> expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public <V extends Number & Comparable<V>> ConfigurableBaseQuery.Query1<NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override
-    public <V extends Comparable<?>> ConfigurableBaseQuery.Simple1<ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public <V extends Comparable<?>> ConfigurableBaseQuery.Query1<ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override
-    public <V extends Date> ConfigurableBaseQuery.Simple1<DateExpression<V>> addSelect(DateExpression<V> expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public <V extends Date> ConfigurableBaseQuery.Query1<DateExpression<V>> addSelect(DateExpression<V> expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override
-    public <V extends Temporal & Comparable<?>> ConfigurableBaseQuery.Simple1<TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
-        return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
+    public <V extends Temporal & Comparable<?>> ConfigurableBaseQuery.Query1<TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+        return new ConfigurableBaseQueryImpl.Query1Impl<>(expr, this);
     }
 
     @Override

@@ -12,8 +12,11 @@ import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
@@ -35,6 +38,11 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
     ): KConfigurableRootQuery<E, R> =
         queries.forEntity(entityType, block)
+
+    fun <E: Any, B: KBaseTable> createBaseQuery(
+        entityType: KClass<E>,
+        block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B>
 
     fun <E : Any> createUpdate(
         entityType: KClass<E>,
