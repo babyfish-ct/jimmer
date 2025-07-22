@@ -28,5 +28,6 @@ class BaseQueryTest : AbstractQueryTest() {
                     }
                 )
         }.asBaseTable()
+        println(baseTable)
     }
 }

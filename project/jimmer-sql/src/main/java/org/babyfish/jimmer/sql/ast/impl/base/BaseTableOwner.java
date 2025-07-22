@@ -55,16 +55,8 @@ public final class BaseTableOwner {
     @Override
     public String toString() {
         return "BaseTableOwner{" +
-                "table=" + baseTable +
-                ", index=" + index +
+                "index=" + index +
                 '}';
-    }
-
-    public static BaseTableOwner ofSelection(Selection<?> selection) {
-        if (selection instanceof TableLike<?>) {
-            return of((TableLike<?>) selection);
-        }
-        return of((Expression<?>) selection);
     }
 
     public static BaseTableOwner of(TableLike<?> table) {

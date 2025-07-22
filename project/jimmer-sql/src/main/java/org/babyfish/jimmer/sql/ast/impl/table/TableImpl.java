@@ -730,7 +730,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         if (parent == null) {
             builder.append(immutableType.getJavaClass().getSimpleName());
         } else {
-            builder.append(parent.toString());
+            builder.append(parent);
             if (isInverse) {
                 ImmutableProp opposite = joinProp.getOpposite();
                 if (opposite != null) {
