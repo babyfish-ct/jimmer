@@ -43,7 +43,8 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     fun <E: Any, B: KBaseTable> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
-    ): KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        TODO()
 
     fun <E : Any> createUpdate(
         entityType: KClass<E>,

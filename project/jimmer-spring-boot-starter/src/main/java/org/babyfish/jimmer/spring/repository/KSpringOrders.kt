@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableQuery
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.springframework.data.domain.Sort
 
@@ -19,7 +20,7 @@ fun <E: Any> KMutableQuery<*>.orderBy(block: (SortDsl<E>.() -> Unit)?) {
         val orders = mutableListOf<SortDsl.Order>()
         block(SortDsl(orders))
         for (order in orders) {
-            val expr: KPropExpression<Any> = table.get(order.prop.name)
+            val expr: KPropExpression<Any> = (table as KNonNullTable<*>).get(order.prop.name)
             val astOrder = if (order.mode == OrderMode.DESC) {
                 expr.desc()
             } else {
