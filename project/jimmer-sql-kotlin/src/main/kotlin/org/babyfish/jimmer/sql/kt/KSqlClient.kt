@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
@@ -35,8 +36,8 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
 
     fun <E : Any, R> createQuery(
         entityType: KClass<E>,
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
-    ): KConfigurableRootQuery<E, R> =
+        block: KMutableRootQuery.ForEntity<E>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
+    ): KConfigurableRootQuery<KNonNullTable<E>, R> =
         queries.forEntity(entityType, block)
 
     fun <E: Any, B: KBaseTable> createBaseQuery(
@@ -58,7 +59,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
         entityType: KClass<E>,
         limit: Int? = null,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
     ): List<R> = queries
         .forEntity(entityType, block)
         .let { q ->
@@ -167,7 +168,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
         fetcher: Fetcher<E>,
         limit: Int? = null,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> Unit = {}
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit = {}
     ): List<E> = executeQuery(fetcher.javaClass.kotlin, limit, con) {
         block()
         select(table.fetch(fetcher))
@@ -176,7 +177,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     fun <E : Any> findOne(
         fetcher: Fetcher<E>,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> Unit
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit
     ): E = findAll(fetcher, 2, null, block).let {
         when (it.size) {
             0 -> throw EmptyResultException()
@@ -188,7 +189,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     fun <E : Any> findOneOrNull(
         fetcher: Fetcher<E>,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> Unit
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit
     ): E? = findAll(fetcher, 2, con, block).let {
         when (it.size) {
             0 -> null
@@ -201,7 +202,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
         viewType: KClass<V>,
         limit: Int? = null,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> Unit = {}
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit = {}
     ): List<V> {
         val metadata = DtoMetadata.of(viewType.java)
         return findAll(metadata.fetcher, limit, con, block).map(metadata.converter::apply)
@@ -210,7 +211,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     fun <E : Any, V : View<E>> findOne(
         viewType: KClass<V>,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> Unit
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit
     ): V {
         val metadata = DtoMetadata.of(viewType.java)
         return findOne(metadata.fetcher, con, block).let(metadata.converter::apply)
@@ -219,7 +220,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     fun <E : Any, V : View<E>> findOneOrNull(
         viewType: KClass<V>,
         con: Connection? = null,
-        block: KMutableRootQuery<E>.() -> Unit
+        block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit
     ): V? {
         val metadata = DtoMetadata.of(viewType.java)
         return findOneOrNull(metadata.fetcher, con, block)?.let(metadata.converter::apply)

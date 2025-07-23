@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.table
 
 import org.babyfish.jimmer.sql.ast.Selection
 
-interface KBaseTable
+interface KBaseTable : KPropsLike
 
 interface KNonNullBaseTable : KBaseTable
 

@@ -45,10 +45,10 @@ abstract class KWeakJoin<S: Any, T: Any> : WeakJoin<Table<S>, Table<T>>,
         on(source, target)
 
     interface Context<S: Any, T: Any> {
-        val sourceSubQueries: KSubQueries<S>
-        val sourceWildSubQueries: KWildSubQueries<S>
-        val targetSubQueries: KSubQueries<T>
-        val targetWildSubQueries: KWildSubQueries<T>
+        val sourceSubQueries: KSubQueries<KNonNullTableEx<S>>
+        val sourceWildSubQueries: KWildSubQueries<KNonNullTableEx<S>>
+        val targetSubQueries: KSubQueries<KNonNullTableEx<T>>
+        val targetWildSubQueries: KWildSubQueries<KNonNullTableEx<T>>
     }
 
     final override fun on(source: Table<S>, target: Table<T>): Predicate {
@@ -62,13 +62,13 @@ abstract class KWeakJoin<S: Any, T: Any> : WeakJoin<Table<S>, Table<T>>,
         source: KNonNullTableEx<S>,
         target: KNonNullTableEx<T>
     ) : Context<S, T> {
-        override val sourceSubQueries: KSubQueries<S> =
+        override val sourceSubQueries: KSubQueries<KNonNullTableEx<S>> =
             KSubQueriesImpl(statement, source)
-        override val sourceWildSubQueries: KWildSubQueries<S> =
+        override val sourceWildSubQueries: KWildSubQueries<KNonNullTableEx<S>> =
             KWildSubQueriesImpl(statement, source)
-        override val targetSubQueries: KSubQueries<T> =
+        override val targetSubQueries: KSubQueries<KNonNullTableEx<T>> =
             KSubQueriesImpl(statement, target)
-        override val targetWildSubQueries: KWildSubQueries<T> =
+        override val targetWildSubQueries: KWildSubQueries<KNonNullTableEx<T>> =
             KWildSubQueriesImpl(statement, target)
     }
 

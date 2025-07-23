@@ -34,21 +34,21 @@ class KSpecificationArgs<E: Any>(
 
     fun <X: Any, R, SQ: KConfigurableSubQuery<R>> subQuery(
         entityType: KClass<X>,
-        block: KMutableSubQuery<E, X>.() -> SQ
+        block: KMutableSubQuery<KNonNullTable<E>, KNonNullTableEx<X>>.() -> SQ
     ): SQ =
         subQueries.forEntity(entityType, block)
 
     fun <X: Any> wildSubQuery(
         entityType: KClass<X>,
-        block: KMutableSubQuery<E, X>.() -> Unit
-    ): KMutableSubQuery<E, X> =
+        block: KMutableSubQuery<KNonNullTable<E>, KNonNullTableEx<X>>.() -> Unit
+    ): KMutableSubQuery<KNonNullTable<E>, KNonNullTableEx<X>> =
         wildSubQueries.forEntity(entityType, block)
 
-    val subQueries: KSubQueries<E> by lazy {
+    val subQueries: KSubQueries<KNonNullTable<E>> by lazy {
         KSubQueriesImpl(query, _table)
     }
 
-    val wildSubQueries: KWildSubQueries<E> by lazy {
+    val wildSubQueries: KWildSubQueries<KNonNullTable<E>> by lazy {
         KWildSubQueriesImpl(query, _table)
     }
 

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.*
 
-interface KMutableBaseQuery<E: Any> : KMutableQuery<E> {
+interface KMutableBaseQuery<E: Any> : KMutableQuery<KNonNullTable<E>> {
 
     fun selector(): Selector
 

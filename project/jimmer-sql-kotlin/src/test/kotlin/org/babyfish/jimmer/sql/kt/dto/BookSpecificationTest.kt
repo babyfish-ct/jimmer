@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification2
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification3
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification4
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
-import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreSpecificationForIssue562
 import org.junit.Test
 import java.math.BigDecimal

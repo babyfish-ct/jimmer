@@ -41,9 +41,9 @@ internal class KMutableDeleteImpl<E: Any>(
         javaDelete.setMode(mode)
     }
 
-    override val subQueries: KSubQueries<E> =
+    override val subQueries: KSubQueries<KNonNullTableEx<E>> =
         KSubQueriesImpl(javaDelete)
 
-    override val wildSubQueries: KWildSubQueries<E> =
+    override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
         KWildSubQueriesImpl(javaDelete)
 }

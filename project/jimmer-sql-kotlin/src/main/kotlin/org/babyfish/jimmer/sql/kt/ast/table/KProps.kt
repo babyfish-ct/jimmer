@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-interface KProps<E: Any> {
+interface KProps<E: Any> : KPropsLike {
 
     fun <X: Any> get(prop: String): KPropExpression<X>
     fun <X: Any> get(prop: ImmutableProp): KPropExpression<X>

@@ -18,7 +18,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.Where
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
@@ -68,11 +67,11 @@ internal class KMutableBaseQueryImpl<E: Any>(
         javaBaseQuery.resolveVirtualPredicate(ctx)
     }
 
-    override val subQueries: KSubQueries<E> =
-        KSubQueriesImpl(javaBaseQuery, table as KNonNullTableEx<E>)
+    override val subQueries: KSubQueries<KNonNullTable<E>> =
+        KSubQueriesImpl(javaBaseQuery, table)
 
-    override val wildSubQueries: KWildSubQueries<E> =
-        KWildSubQueriesImpl(javaBaseQuery, table as KNonNullTableEx<E>)
+    override val wildSubQueries: KWildSubQueries<KNonNullTable<E>> =
+        KWildSubQueriesImpl(javaBaseQuery, table)
 
     override val where: Where =
         Where(this)

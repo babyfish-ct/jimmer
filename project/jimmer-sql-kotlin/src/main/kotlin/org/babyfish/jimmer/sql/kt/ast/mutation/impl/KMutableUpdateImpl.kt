@@ -45,7 +45,7 @@ internal class KMutableUpdateImpl<E: Any>(
     override fun <X : Any> set(path: KNonNullPropExpression<X>, value: X) {
         javaUpdate.set(
             (path as NonNullPropExpressionImpl<X>).javaPropExpression,
-            Expression.any().value(value)
+            Expression.value(value)
         )
     }
 
@@ -69,9 +69,9 @@ internal class KMutableUpdateImpl<E: Any>(
         )
     }
 
-    override val subQueries: KSubQueries<E> =
+    override val subQueries: KSubQueries<KNonNullTableEx<E>> =
         KSubQueriesImpl(javaUpdate)
 
-    override val wildSubQueries: KWildSubQueries<E> =
+    override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
         KWildSubQueriesImpl(javaUpdate)
 }
