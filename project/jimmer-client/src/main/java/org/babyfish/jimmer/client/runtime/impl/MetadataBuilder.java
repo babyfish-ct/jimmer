@@ -173,7 +173,15 @@ public class MetadataBuilder implements Metadata.Builder {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
                     Schema schema = Schemas.readFrom(reader, groups);
                     for (ApiService service : schema.getApiServiceMap().values()) {
-                        serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
+                        if (groups == null || groups.isEmpty()) {
+                            // 没有分组查询的情况 全部放入
+                            serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
+                        }else {
+                            // 有分组查询的时候 需要判断service的groups不为null 且 需要包含在groups里
+                            if(service.getGroups()!=null && groups.containsAll(service.getGroups())) {
+                                serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
+                            }
+                        }
                     }
                     for (TypeDefinition definition : schema.getTypeDefinitionMap().values()) {
                         definitionMap.putIfAbsent(definition.getTypeName(), (TypeDefinitionImpl<Void>) definition);
