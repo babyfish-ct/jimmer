@@ -101,7 +101,7 @@ public class MetadataBuilder implements Metadata.Builder {
     }
 
     @Override
-    public Metadata.Builder addIgnoredParameterTypes(Class<?> ... types) {
+    public Metadata.Builder addIgnoredParameterTypes(Class<?>... types) {
         ignoredParameterTypes.addAll(Arrays.asList(types));
         return this;
     }
@@ -113,13 +113,13 @@ public class MetadataBuilder implements Metadata.Builder {
     }
 
     @Override
-    public Metadata.Builder addIgnoredParameterTypeNames(String ... typeNames) {
+    public Metadata.Builder addIgnoredParameterTypeNames(String... typeNames) {
         ignoredParameterTypeNames.addAll(Arrays.asList(typeNames));
         return this;
     }
 
     @Override
-    public Metadata.Builder addIllegalReturnTypeNames(String ... typeNames) {
+    public Metadata.Builder addIllegalReturnTypeNames(String... typeNames) {
         illegalReturnTypeNames.addAll(Arrays.asList(typeNames));
         return this;
     }
@@ -176,9 +176,9 @@ public class MetadataBuilder implements Metadata.Builder {
                         if (groups == null || groups.isEmpty()) {
                             // 没有分组查询的情况 全部放入
                             serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
-                        }else {
+                        } else {
                             // 有分组查询的时候 需要判断service的groups不为null 且 需要包含在groups里
-                            if(service.getGroups()!=null && groups.containsAll(service.getGroups())) {
+                            if (service.getGroups() != null && groups.containsAll(service.getGroups())) {
                                 serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
                             }
                         }
