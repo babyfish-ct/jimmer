@@ -1,3 +1,30 @@
+
+drop table if exists book_store cascade;
+drop table if exists book cascade;
+drop table if exists author cascade;
+drop table if exists book_author_mapping cascade;
+drop table if exists tree_node cascade;
+drop sequence if exists tree_node_id_seq;
+drop table if exists pg_json_wrapper cascade;
+drop table if exists department cascade;
+drop table if exists employee cascade;
+drop table if exists sys_user cascade;
+drop table if exists administrator cascade;
+drop table if exists administrator_metadata cascade;
+drop table if exists role cascade;
+drop table if exists administrator_role_mapping cascade;
+drop table if exists permission cascade;
+drop table if exists time_row cascade;
+drop table if exists pg_type_row cascade;
+drop table if exists machine cascade;
+drop table if exists shop_customer_mapping cascade;
+drop table if exists shop cascade;
+drop table if exists customer cascade;
+drop table if exists pg_array_model cascade;
+drop table if exists pg_date_time cascade;
+drop table if exists container cascade;
+drop table if exists nullable_bool cascade;
+
 create table book_store(
     id uuid not null,
     name text not null,
@@ -246,124 +273,6 @@ insert into sys_user(id, account, email, area, nick_name, description) values
     (4, 'sysusr_004', 'jessica.thomas@gmail.com', 'north', 'Jessica', 'description_004');
 
 
-
-
-create table administrator(
-    id bigint auto_increment(100) not null,
-    name varchar(50) not null,
-    deleted boolean not null,
-    created_time timestamp not null,
-    modified_time timestamp not null,
-    __deleted_constraint_part int as (
-        case deleted when false then 1 else null end
-    )
-);
-alter table administrator
-    add constraint pk_administrator
-        primary key(id);
-alter table administrator
-    add constraint uq_administrator
-        unique(name, __deleted_constraint_part);
-
-create table administrator_metadata(
-    id bigint auto_increment(100) not null,
-    name varchar(50) not null,
-    email varchar(50) not null,
-    website varchar(50) not null,
-    administrator_id bigint not null,
-    deleted boolean not null,
-    created_time timestamp not null,
-    modified_time timestamp not null
-);
-alter table administrator_metadata
-    add constraint pk_administrator_metadata
-        primary key(id);
-alter table administrator_metadata
-    add constraint fk_administrator_metadata_administrator
-        foreign key(administrator_id)
-            references administrator(id);
-
-create table role(
-    id bigint not null,
-    name varchar(50) not null,
-    deleted boolean not null,
-    created_time timestamp not null,
-    modified_time timestamp not null
-);
-alter table role
-    add constraint pk_role
-        primary key(id);
-
-create table administrator_role_mapping(
-    administrator_id bigint not null,
-    role_id bigint not null
-);
-alter table administrator_role_mapping
-    add constraint pk_administrator_role_mapping
-        primary key(administrator_id, role_id);
-alter table administrator_role_mapping
-    add constraint fk_administrator_role_mapping_administrator
-        foreign key(administrator_id)
-            references administrator(id);
-alter table administrator_role_mapping
-    add constraint fk_administrator_role_mapping_role
-        foreign key(role_id)
-            references role(id);
-
-create table permission(
-    id bigint not null,
-    name varchar(50) not null,
-    role_id bigint,
-    deleted boolean not null,
-    created_time timestamp not null,
-    modified_time timestamp not null
-);
-alter table permission
-    add constraint pk_permission
-        primary key(id);
-alter table permission
-    add constraint fk_permission
-        foreign key(role_id)
-            references role(id);
-
-insert into administrator(id, name, deleted, created_time, modified_time)
-    values
-    (-1, 'a_-1', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (1, 'a_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (2, 'a_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (3, 'a_3', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (4, 'a_4', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-
-insert into administrator_metadata(id, name, email, website, administrator_id, deleted, created_time, modified_time)
-    values
-    (10, 'am_1', 'email_1', 'website_1', 1, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (20, 'am_2', 'email_2', 'website_2', 2, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (30, 'am_3', 'email_3', 'website_3', 3, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (40, 'am_4', 'email_4', 'website_4', 4, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-
-insert into role(id, name, deleted, created_time, modified_time)
-    values
-    (100, 'r_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (200, 'r_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-
-insert into administrator_role_mapping(administrator_id, role_id)
-    values
-    (1, 100),
-    (2, 100),
-    (3, 100),
-    (2, 200),
-    (3, 200),
-    (4, 200);
-
-insert into permission(id, name, role_id, deleted, created_time, modified_time)
-    values
-    (1000, 'p_1', 100, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (2000, 'p_2', 100, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (3000, 'p_3', 200, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (4000, 'p_4', 200, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-
-
-
 create table administrator(
     id bigint not null generated by default as identity(start with 1 increment by 1),
     name varchar(50) not null,
@@ -523,3 +432,163 @@ insert into time_row(
    '2025-04-13 18:32:28+08:00',
    '2025-04-13 18:32:29+08:00'
 );
+
+
+create table machine(
+    id bigint not null generated by default as identity(start with 100 increment by 1),
+    host varchar(20) not null,
+    port int not null,
+    secondary_host varchar(20),
+    secondary_port int,
+    cpu_frequency int not null,
+    memory_size int not null,
+    disk_size int not null,
+    factory_map jsonb,
+    patent_map jsonb
+);
+
+alter table machine
+    add constraint pk_machine
+        primary key(id);
+
+alter table machine
+    add constraint uq_machine
+        unique(host, port);
+
+insert into machine(id, host, port, cpu_frequency, memory_size, disk_size, factory_map, patent_map)
+values(
+    1,
+    'localhost',
+    8080,
+    2,
+    8,
+    256,
+    '{"f-1": "factory-1", "f-2": "factory-2"}'::jsonb,
+    '{"p-1": "patent-1", "p-2": "patent-2"}'::jsonb
+);
+
+create table shop(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table shop
+    add constraint pk_shop
+        primary key(id);
+alter table shop
+    add constraint uq_shop
+        unique(name);
+
+insert into shop(id, name) values(1, 'Starbucks');
+insert into shop(id, name) values(2, 'Dunkin');
+
+create table customer(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table customer
+    add constraint pk_customer
+        primary key(id);
+alter table customer
+    add constraint uq_customer
+        unique(name);
+
+insert into customer(id, name) values
+(1, 'Alex'),
+(2, 'Tim'),
+(3, 'Jessica'),
+(4, 'Linda'),
+(5, 'Mary'),
+(6, 'Bob');
+
+create table shop_customer_mapping(
+    shop_id bigint not null,
+    customer_id bigint not null,
+    deleted_millis bigint not null,
+    type varchar(8) not null
+);
+alter table shop_customer_mapping
+    add constraint pk_shop_customer_mapping
+        primary key(shop_id, customer_id, deleted_millis, type);
+alter table shop_customer_mapping
+    add constraint fk_shop_customer_mapping__shop
+        foreign key(shop_id)
+            references shop(id);
+alter table shop_customer_mapping
+    add constraint fk_shop_customer_mapping__customer
+        foreign key(customer_id)
+            references customer(id);
+
+insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) values
+(1, 1, 0, 'VIP'),
+(1, 2, 0, 'ORDINARY'),
+(1, 3, 0, 'ORDINARY'),
+(1, 4, -1, 'ORDINARY'),
+(2, 3, 0, 'VIP'),
+(2, 4, 0, 'ORDINARY'),
+(2, 5, 0, 'ORDINARY'),
+(2, 6, -1, 'ORDINARY');
+
+create table pg_array_model(
+    id bigint not null,
+    int_arr integer[] not null,
+    integer_arr integer[] not null,
+    text_arr text[] not null,
+    text_list text[] not null,
+    varchar_arr varchar[] not null,
+    varchar_list varchar[] not null
+);
+alter table pg_array_model
+    add constraint pk_arrays
+        primary key(id)
+;
+
+insert into pg_array_model(id, int_arr, integer_arr, text_arr, text_list, varchar_arr, varchar_list) values
+('1',
+ array[1, 2, 3],
+ array[4, 5, 6],
+ array['a', 'b', 'c'],
+ array['d', 'e', 'f'],
+ array['g', 'h', 'i'],
+ array['j', 'k', 'l']
+);
+
+create table pg_date_time(
+    id int not null,
+    dt date not null,
+    ts timestamptz not null
+);
+alter table pg_date_time
+    add constraint pk_pg_date_time
+        primary key(id);
+
+create table dependency(
+    group_id varchar(50) not null,
+    artifact_id varchar(50) not null,
+    version varchar(50) not null,
+    scope varchar(20) not null default 'C'
+);
+alter table dependency
+    add constraint pk_dependency
+        primary key(group_id, artifact_id);
+
+insert into dependency(group_id, artifact_id, version) values
+    ('org.babyfish.jimmer', 'jimmer-sql-kotlin', '0.8.177');
+
+create table container(
+    id bigint not null,
+    address inet not null
+);
+alter table container
+    add constraint pk_container
+        primary key(id);
+
+insert into container(id, address) values
+(1, '127.0.0.1'), (2, '192.168.1.1');
+
+create table nullable_bool(
+    id bigint not null,
+    value boolean
+);
+alter table nullable_bool
+    add constraint pk_nullable_bool
+        primary key(id);
