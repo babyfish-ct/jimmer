@@ -1,10 +1,15 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable1
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable2
@@ -77,8 +82,12 @@ internal abstract class AbstractKBaseTableImpl(
                     KNonNullTableExImpl(javaSelection as TableImplementor) as T
                 SELECTION_TYPE_NULLABLE_TABLE ->
                     KNonNullTableExImpl(javaSelection as TableImplementor) as T
+                SELECTION_TYPE_NON_NULL_EXPRESSION ->
+                    JavaToKotlinNonNullExpression(javaSelection as ExpressionImplementor<T>) as T
+                SELECTION_TYPE_NULLABLE_EXPRESSION ->
+                    JavaToKotlinNullableExpression(javaSelection as ExpressionImplementor<T>) as T
                 else ->
-                    javaSelection as T
+                    throw IllegalArgumentException("Illegal mask $mask")
             }
         }
     }
