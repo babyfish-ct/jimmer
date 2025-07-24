@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
 
-internal open abstract class KConfigurableSubQueryImpl<R>(
+internal abstract class KConfigurableSubQueryImpl<R>(
     internal val javaSubQuery: ConfigurableSubQuery<R>
 ) : KConfigurableSubQuery<R>,
     Ast by(javaSubQuery as ConfigurableSubQueryImpl<R>),

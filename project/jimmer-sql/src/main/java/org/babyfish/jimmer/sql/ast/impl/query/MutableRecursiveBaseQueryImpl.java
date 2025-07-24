@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -7,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableRecursiveBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
@@ -14,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class MutableRecursiveBaseQueryImpl<R extends BaseTable>
@@ -24,6 +27,14 @@ public class MutableRecursiveBaseQueryImpl<R extends BaseTable>
     public MutableRecursiveBaseQueryImpl(JSqlClientImplementor sqlClient, TableProxy<?> table, R recursive) {
         super(sqlClient, table);
         this.recursive = recursive;
+    }
+
+    public MutableRecursiveBaseQueryImpl(
+            JSqlClientImplementor sqlClient,
+            ImmutableType type,
+            Function<TableImplementor<?>, R> recursiveCreator) {
+        super(sqlClient, type);
+        this.recursive = recursiveCreator.apply((TableImplementor<?>) getTableLikeImplementor());
     }
 
     @Override

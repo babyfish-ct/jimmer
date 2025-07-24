@@ -121,7 +121,7 @@ public class BaseTableSymbols {
         return new RecursiveRefImpl<>(baseTable);
     }
 
-    private static <B extends BaseTable> B baseTableOf(RecursiveRef<B> recursiveRef) {
+    public static <B extends BaseTable> B baseTableOf(RecursiveRef<B> recursiveRef) {
         if (!(recursiveRef instanceof RecursiveRefImpl<?>)) {
             throw new IllegalArgumentException("Unexpected " + RecursiveRef.class.getName());
         }

@@ -41,7 +41,6 @@ public abstract class AbstractMutableQueryImpl
 
     private int acceptedByPriority = ORDER_BY_PRIORITY_STATEMENT;
 
-    @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType

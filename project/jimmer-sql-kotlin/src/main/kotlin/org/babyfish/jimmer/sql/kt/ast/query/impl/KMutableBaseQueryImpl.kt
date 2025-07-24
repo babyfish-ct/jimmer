@@ -25,7 +25,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
-internal class KMutableBaseQueryImpl<E: Any>(
+internal open class KMutableBaseQueryImpl<E: Any>(
     private val javaBaseQuery: MutableBaseQueryImpl
 ) : KMutableBaseQuery<E>, MutableStatementImplementor {
 

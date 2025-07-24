@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.JSqlClient
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
@@ -12,13 +13,8 @@ import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.query.*
+import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
@@ -49,6 +45,28 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     fun <E: Any, B: KBaseTable> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B>
+
+    fun <E: Any, B: KBaseTable> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        createBaseQuery(
+            entityType,
+            recursiveRef,
+            JoinType.INNER,
+            joinBlock,
+            block
+        )
+
+    fun <E: Any, B: KBaseTable> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        joinType: JoinType,
+        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
     fun <E : Any> createUpdate(

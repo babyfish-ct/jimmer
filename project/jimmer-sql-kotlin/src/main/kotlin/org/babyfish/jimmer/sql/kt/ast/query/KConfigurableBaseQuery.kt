@@ -10,7 +10,7 @@ interface KConfigurableBaseQuery<T: KBaseTable> : KTypedBaseQuery<T> {
     interface Query1<
         T1: Selection<*>,
         T1Nullable: Selection<*>
-        > : KConfigurableBaseQuery<KNonNullBaseTable1<T1, T1Nullable>> {
+    > : KConfigurableBaseQuery<KNonNullBaseTable1<T1, T1Nullable>> {
 
         fun <T: Any> add(
             table: KNonNullTable<T>
