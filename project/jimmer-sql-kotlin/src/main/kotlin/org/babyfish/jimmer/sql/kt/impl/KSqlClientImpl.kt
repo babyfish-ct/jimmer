@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.event.binlog.BinLog
@@ -24,7 +25,9 @@ import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.filter.impl.KFiltersImpl
@@ -56,6 +59,23 @@ internal class KSqlClientImpl(
         )
         return KMutableRootQueryImpl.ForEntityImpl<E>(
             query as MutableRootQueryImpl<TableLike<*>>
+        ).block()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <B : KBaseTable, R> createQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
+    ): KConfigurableRootQuery<B, R> {
+        val query = MutableRootQueryImpl<BaseTable>(
+            javaClient,
+            (symbol.baseTable as AbstractKBaseTableImpl).javaTable,
+            ExecutionPurpose.QUERY,
+            FilterLevel.DEFAULT
+        )
+        return KMutableRootQueryImpl.ForBaseTableImpl<B>(
+            query as MutableRootQueryImpl<TableLike<*>>,
+            symbol.baseTable
         ).block()
     }
 

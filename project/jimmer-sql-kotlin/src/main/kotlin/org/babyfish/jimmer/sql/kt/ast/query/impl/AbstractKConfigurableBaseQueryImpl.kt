@@ -17,12 +17,16 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T: KBaseTable>(
 ) : KConfigurableBaseQuery<T> {
 
     @Suppress("UNCHECKED_CAST")
-    override fun asBaseTable(): T =
-        AbstractKBaseTableImpl.of(javaQuery.asBaseTable(), selectionTypes) as T
+    override fun asBaseTable(): KBaseTableSymbol<T> =
+        KBaseTableSymbol(
+            AbstractKBaseTableImpl.of(javaQuery.asBaseTable(), selectionTypes) as T
+        )
 
     @Suppress("UNCHECKED_CAST")
-    override fun asCteBaseTable(): T =
-        AbstractKBaseTableImpl.of(javaQuery.asCteBaseTable(), selectionTypes) as T
+    override fun asCteBaseTable(): KBaseTableSymbol<T> =
+        KBaseTableSymbol(
+            AbstractKBaseTableImpl.of(javaQuery.asCteBaseTable(), selectionTypes) as T
+        )
 
     internal class Query1Impl<
         T1: Selection<*>,

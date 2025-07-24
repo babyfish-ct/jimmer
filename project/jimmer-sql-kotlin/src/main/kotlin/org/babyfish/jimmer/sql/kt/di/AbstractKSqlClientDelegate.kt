@@ -6,6 +6,12 @@ import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImplementor
@@ -23,6 +29,18 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
 
     override val loaders: KLoaders
         get() = sqlClient().loaders
+
+    override fun <B : KBaseTable, R> createQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
+    ): KConfigurableRootQuery<B, R> =
+        sqlClient().createQuery(symbol, block)
+
+    override fun <E : Any, B : KBaseTable> createBaseQuery(
+        entityType: KClass<E>,
+        block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sqlClient().createBaseQuery(entityType, block)
 
     override fun <E : Any> createUpdate(
         entityType: KClass<E>,

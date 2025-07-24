@@ -1,10 +1,11 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
 
 interface KTypedBaseQuery<T: KBaseTable> {
 
-    fun asBaseTable(): T
+    fun asBaseTable(): KBaseTableSymbol<T>
 
-    fun asCteBaseTable(): T
+    fun asCteBaseTable(): KBaseTableSymbol<T>
 }

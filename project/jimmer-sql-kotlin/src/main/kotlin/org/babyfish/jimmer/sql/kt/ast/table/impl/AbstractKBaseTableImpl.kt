@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable1
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable2
 
 internal abstract class AbstractKBaseTableImpl(
-    protected val javaTable: BaseTable,
+    internal val javaTable: BaseTable,
     protected val selectionTypes: ByteArray
 ) : KBaseTable {
 

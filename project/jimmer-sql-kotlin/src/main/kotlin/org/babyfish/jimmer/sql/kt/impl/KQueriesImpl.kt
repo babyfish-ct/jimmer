@@ -67,7 +67,7 @@ internal class KQueriesImpl(
                 ExecutionPurpose.QUERY,
                 FilterLevel.DEFAULT
             )
-        return KMutableRootQueryImpl<KNonNullTable<Association<S, T>>>(
+        return KMutableRootQueryImpl.ForAssociation<S, T>(
             query as MutableRootQueryImpl<TableLike<*>>
         ).block()
     }
