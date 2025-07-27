@@ -1,0 +1,32 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: jimmer-test-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: jimmer_test
+      MYSQL_ROOT_PASSWORD: 123456
+    command: --lower_case_table_names=1
+    volumes:
+      - ./database-mysql.sql:/docker-entrypoint-initdb.d/database-mysql.sql
+      - db-jimmer-test-mysql:/var/lib/mysql
+
+  postgres:
+    image: postgres:latest
+    container_name: jimmer-test-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: jimmer_test
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456
+    volumes:
+      - ./database-postgres.sql:/docker-entrypoint-initdb.d/database-postgres.sql
+      - db-jimmer-test-postgres:/var/lib/postgresql/data
+
+volumes:
+  db-jimmer-test-mysql:
+  db-jimmer-test-postgres:
