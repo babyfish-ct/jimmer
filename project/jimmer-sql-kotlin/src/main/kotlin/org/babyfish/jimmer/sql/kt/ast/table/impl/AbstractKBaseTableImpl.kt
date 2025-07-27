@@ -1,18 +1,19 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
-import org.babyfish.jimmer.sql.ast.Expression
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable1
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable2
+import org.babyfish.jimmer.sql.kt.ast.table.*
+import kotlin.reflect.KClass
 
 internal abstract class AbstractKBaseTableImpl(
     internal val javaTable: BaseTable,
@@ -104,6 +105,25 @@ internal abstract class AbstractKBaseTableImpl(
                 selectionTypes[0],
                 false
             )
+
+        override fun <TT : KBaseTable> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            joinType: JoinType,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1Nullable>, TT>
+        ): TT {
+            TODO("Not yet implemented")
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <TT : KBaseTable> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            joinType: JoinType,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
+        ): TT {
+            val handle = WeakJoinHandle.of(weakJoinType.java)
+            val javaJoinedTable = BaseTableSymbols.of(targetSymbol.baseTable as BaseTableSymbol?, javaTable, handle, joinType, null)
+            return of(javaJoinedTable, (targetSymbol.baseTable as AbstractKBaseTableImpl).selectionTypes) as TT
+        }
     }
 
     private class NonNullTable2<

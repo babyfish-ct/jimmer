@@ -31,6 +31,12 @@ interface KTypedBaseQuery<T: KBaseTable> {
             ) as MergedBaseQueryImpl<*>
         )
 
+    fun unionAllRecursively(
+        recursiveRef: (KRecursiveRef<T>) -> KConfigurableBaseQuery<T>
+    ): KTypedBaseQuery<T> {
+        TODO()
+    }
+
     infix fun minus(other: KTypedBaseQuery<T>): KTypedBaseQuery<T> =
         KMergedBaseQueryImpl(
             this,
@@ -50,13 +56,12 @@ interface KTypedBaseQuery<T: KBaseTable> {
         )
 }
 
-fun <T: KBaseTable> unionAllRecursively(
-    query: KTypedBaseQuery<T>,
-    recursiveRef: (KRecursiveRef<T>) -> KConfigurableBaseQuery<T>
-): KTypedBaseQuery<T> {
-    TODO()
-//    TypedBaseQuery.unionAllRecursively(
-//        KMergedBaseQueryImpl.javaBaseQuery(query),
-//
-//    )
-}
+inline fun <T: KBaseTable> baseTableSymbol(
+    queryCreator: () -> KTypedBaseQuery<T>
+): KBaseTableSymbol<T> =
+    queryCreator().asBaseTable()
+
+inline fun <T: KBaseTable> cteBaseTableSymbol(
+    queryCreator: () -> KTypedBaseQuery<T>
+): KBaseTableSymbol<T> =
+    queryCreator().asBaseTable()

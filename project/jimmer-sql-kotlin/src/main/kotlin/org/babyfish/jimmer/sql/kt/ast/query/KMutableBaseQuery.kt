@@ -6,9 +6,9 @@ import org.babyfish.jimmer.sql.kt.ast.table.*
 
 interface KMutableBaseQuery<E: Any> : KMutableQuery<KNonNullTable<E>> {
 
-    fun selector(): Selector
+    val selections: Selections
 
-    interface Selector {
+    interface Selections {
 
         fun <T: Any> add(
             table: KNonNullTable<T>

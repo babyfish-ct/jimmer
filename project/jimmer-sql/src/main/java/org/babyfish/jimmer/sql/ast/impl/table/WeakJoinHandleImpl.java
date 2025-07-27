@@ -23,6 +23,8 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
     private static final ClassCache<WeakJoinHandle> CACHE =
             new ClassCache<>(WeakJoinHandleImpl::create, false);
 
+    private static final Class<?> K_BASE_TABLE_TYPE;
+
     final WeakJoin<TableLike<?>, TableLike<?>> weakJoin;
 
     WeakJoinHandleImpl(WeakJoin<TableLike<?>, TableLike<?>> weakJoin) {
@@ -120,7 +122,12 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
 
     private static boolean isBaseTable(Type type) {
         if (type instanceof Class<?>) {
-            return BaseTable.class.isAssignableFrom((Class<?>) type);
+            if (BaseTable.class.isAssignableFrom((Class<?>) type)) {
+                return true;
+            }
+            if (K_BASE_TABLE_TYPE != null && K_BASE_TABLE_TYPE.isAssignableFrom((Class<?>) type)) {
+                return true;
+            }
         }
         ParameterizedType parameterizedType = (ParameterizedType) type;
         return BaseTable.class.isAssignableFrom((Class<?>) parameterizedType.getRawType());
@@ -362,5 +369,15 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                     "weakJoin=" + weakJoin +
                     '}';
         }
+    }
+
+    static {
+        Class<?> kotlinBaseTableType;
+        try {
+            kotlinBaseTableType = Class.forName("org.babyfish.jimmer.sql.kt.ast.table.KBaseTable");
+        } catch (ClassNotFoundException ex) {
+            kotlinBaseTableType = null;
+        }
+        K_BASE_TABLE_TYPE = kotlinBaseTableType;
     }
 }

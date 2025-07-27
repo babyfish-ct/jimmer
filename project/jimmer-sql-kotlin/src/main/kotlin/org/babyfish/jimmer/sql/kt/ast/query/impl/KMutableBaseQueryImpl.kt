@@ -76,10 +76,10 @@ internal open class KMutableBaseQueryImpl<E: Any>(
     override val where: Where =
         Where(this)
 
-    override fun selector(): KMutableBaseQuery.Selector =
-        SelectorImpl()
+    override val selections: KMutableBaseQuery.Selections
+        get() = SelectionsImpl()
 
-    private inner class SelectorImpl : KMutableBaseQuery.Selector {
+    private inner class SelectionsImpl : KMutableBaseQuery.Selections {
 
         @Suppress("UNCHECKED_CAST")
         override fun <T : Any> add(table: KNonNullTable<T>): KConfigurableBaseQuery.Query1<KNonNullTable<T>, KNullableTable<T>> {

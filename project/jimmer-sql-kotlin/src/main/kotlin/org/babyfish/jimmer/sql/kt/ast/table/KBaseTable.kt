@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.kt.ast.table
 
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
+import kotlin.reflect.KClass
 
 interface KBaseTable : KPropsLike
 
@@ -14,6 +16,24 @@ interface KNonNullBaseTable1<
 > : KNonNullBaseTable {
 
     val _1: T1
+
+    fun <TT: KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType = JoinType.INNER,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1Nullable>, TT>
+    ): TT
+
+    fun <TT: KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
+    ): TT =
+        weakJoin(targetSymbol, JoinType.INNER, weakJoinType)
+
+    fun <TT: KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
+    ): TT
 }
 
 interface KNullableBaseTable1<
