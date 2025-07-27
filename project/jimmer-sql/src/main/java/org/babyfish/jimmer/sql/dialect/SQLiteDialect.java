@@ -335,6 +335,6 @@ public class SQLiteDialect extends DefaultDialect {
                 return Timestamp.from(offsetDateTime.toInstant());
             }
         }
-        return Timestamp.valueOf(text);
+        return rs.getTimestamp(col);
     }
 }
