@@ -23,3 +23,16 @@ FlatTreeNode {
         id(parent) as grandParentId
     }
 }
+
+
+specification TreeNodeFlatSpecification {
+    flat(parent) {
+        flat(parent) {
+            flat(parent) {
+                flat(parent) {
+                    name as pppName
+                }
+            }
+        }
+    }
+}
