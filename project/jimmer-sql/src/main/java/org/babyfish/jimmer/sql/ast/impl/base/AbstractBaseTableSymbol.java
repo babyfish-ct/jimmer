@@ -8,17 +8,17 @@ import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     private final TypedBaseQueryImplementor<?> query;
 
     protected final List<Selection<?>> selections;
+
+    protected final byte[] kotlinSelectionTypes;
 
     protected final boolean cte;
 
@@ -33,10 +33,12 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     protected AbstractBaseTableSymbol(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
+            byte[] kotlinSelectionTypes,
             boolean cte
     ) {
         this.query = query;
         this.selections = wrapSelections(selections);
+        this.kotlinSelectionTypes = kotlinSelectionTypes;
         this.cte = cte;
         this.parent = null;
         this.handle = null;
@@ -53,6 +55,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     ) {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
+        this.kotlinSelectionTypes = ((AbstractBaseTableSymbol) base).kotlinSelectionTypes;
         this.cte = ((AbstractBaseTableSymbol) base).cte;
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");
@@ -62,6 +65,10 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     private List<Selection<?>> wrapSelections(List<Selection<?>> selections) {
         return wrapSelections(selections, this);
+    }
+
+    public byte[] getKotlinSelectionTypes() {
+        return kotlinSelectionTypes;
     }
 
     public static List<Selection<?>> wrapSelections(List<Selection<?>> selections, BaseTable baseTable) {

@@ -14,5 +14,5 @@ public interface TypedBaseQueryImplementor<T extends BaseTable>
 
     void setMergedBy(MergedBaseQueryImpl<T> mergedBaseQuery);
 
-    T asBaseTable(boolean cte);
+    T asBaseTable(byte[] kotlinSelectionTypes, boolean cte);
 }

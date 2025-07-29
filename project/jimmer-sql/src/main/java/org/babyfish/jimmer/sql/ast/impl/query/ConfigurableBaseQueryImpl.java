@@ -119,12 +119,12 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @Override
     public T asBaseTable() {
-        return asBaseTable(false);
+        return asBaseTable(null, false);
     }
 
     @Override
     public T asCteBaseTable() {
-        return asBaseTable(true);
+        return asBaseTable(null, true);
     }
 
     public T getBaseTable() {
@@ -138,15 +138,15 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTable(boolean cte) {
+    public T asBaseTable(byte[] kotlinSelectionTypes, boolean cte) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         this.baseTable = baseTable =
             mergedBy != null ?
-                    mergedBy.asBaseTable(cte) :
-                    (T) BaseTableSymbols.of(this, getData().selections, cte);
+                    mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
+                    (T) BaseTableSymbols.of(this, getData().selections, kotlinSelectionTypes, cte);
         return baseTable;
     }
 

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
+import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -19,13 +20,19 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T: KBaseTable>(
     @Suppress("UNCHECKED_CAST")
     override fun asBaseTable(): KBaseTableSymbol<T> =
         KBaseTableSymbol(
-            AbstractKBaseTableImpl.of(javaBaseQuery.asBaseTable(), selectionTypes) as T
+            AbstractKBaseTableImpl.of(
+                (javaBaseQuery as TypedBaseQueryImplementor<*>)
+                    .asBaseTable(selectionTypes, false)
+            ) as T
         )
 
     @Suppress("UNCHECKED_CAST")
     override fun asCteBaseTable(): KBaseTableSymbol<T> =
         KBaseTableSymbol(
-            AbstractKBaseTableImpl.of(javaBaseQuery.asCteBaseTable(), selectionTypes) as T
+            AbstractKBaseTableImpl.of(
+                (javaBaseQuery as TypedBaseQueryImplementor<*>)
+                    .asBaseTable(selectionTypes, true)
+            ) as T
         )
 
     internal class Query1Impl<

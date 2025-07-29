@@ -283,7 +283,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
                 if (mergedBy != null) {
                     for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(cte), baseTableOwner.getIndex()));
+                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
                     }
                 }
                 return scope.mapper(baseTableOwner);

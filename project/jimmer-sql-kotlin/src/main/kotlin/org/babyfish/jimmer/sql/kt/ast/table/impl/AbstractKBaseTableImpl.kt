@@ -3,21 +3,25 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
+import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.BaseTable
+import org.babyfish.jimmer.sql.ast.table.WeakJoin
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import kotlin.reflect.KClass
 
 internal abstract class AbstractKBaseTableImpl(
-    internal val javaTable: BaseTable,
-    protected val selectionTypes: ByteArray
+    internal val javaTable: BaseTable
 ) : KBaseTable {
 
     override fun hashCode(): Int {
@@ -45,18 +49,18 @@ internal abstract class AbstractKBaseTableImpl(
         val SELECTION_TYPE_NON_NULL_EXPRESSION: Byte = (0 or 1).toByte()
         val SELECTION_TYPE_NULLABLE_EXPRESSION: Byte = (2 or 1).toByte()
 
-        fun of(baseTable: BaseTable, selectionTypes: ByteArray) : AbstractKBaseTableImpl =
-            when (selectionTypes.size) {
+        fun of(baseTable: BaseTable) : AbstractKBaseTableImpl =
+            when ((baseTable as BaseTableSymbol).selections.size) {
                 1 -> NonNullTable1<
                     Selection<*>,
                     Selection<*>
-                >(baseTable, selectionTypes)
+                >(baseTable)
                 2 -> NonNullTable2<
                     Selection<*>,
                     Selection<*>,
                     Selection<*>,
                     Selection<*>
-                >(baseTable, selectionTypes)
+                >(baseTable)
                 else -> throw IllegalArgumentException()
             }
 
@@ -73,11 +77,12 @@ internal abstract class AbstractKBaseTableImpl(
             selectionType: Byte,
             nullable: Boolean
         ): T {
-            val mask = if (nullable) {
-                selectionType.toInt() or 2
-            } else {
-                selectionType
-            }.toByte()
+            val mask =
+                if (nullable) {
+                    (selectionType.toInt() or 2).toByte()
+                } else {
+                    selectionType
+                }
             return when (mask) {
                 SELECTION_TYPE_NON_NULL_TABLE ->
                     KNonNullTableExImpl(javaSelection as TableImplementor) as T
@@ -94,24 +99,32 @@ internal abstract class AbstractKBaseTableImpl(
     }
 
     private class NonNullTable1<T1: Selection<*>, T1Nullable: Selection<*>>(
-        javaTable: BaseTable,
-        selectionTypes: ByteArray
-    ) : AbstractKBaseTableImpl(javaTable, selectionTypes), KNonNullBaseTable1<T1, T1Nullable> {
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNonNullBaseTable1<T1, T1Nullable> {
 
         @Suppress("UNCHECKED_CAST")
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable1<T1>)._1,
-                selectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
                 false
             )
 
+        @Suppress("UNCHECKED_CAST")
         override fun <TT : KBaseTable> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             joinType: JoinType,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1Nullable>, TT>
         ): TT {
-            TODO("Not yet implemented")
+            val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
+            val javaJoinedTable = BaseTableSymbols.of(
+                (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+                javaTable,
+                handle,
+                joinType,
+                null
+            )
+            return of(javaJoinedTable) as TT
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -121,8 +134,14 @@ internal abstract class AbstractKBaseTableImpl(
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
         ): TT {
             val handle = WeakJoinHandle.of(weakJoinType.java)
-            val javaJoinedTable = BaseTableSymbols.of(targetSymbol.baseTable as BaseTableSymbol?, javaTable, handle, joinType, null)
-            return of(javaJoinedTable, (targetSymbol.baseTable as AbstractKBaseTableImpl).selectionTypes) as TT
+            val javaJoinedTable = BaseTableSymbols.of(
+                (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+                javaTable,
+                handle,
+                joinType,
+                null
+            )
+            return of(javaJoinedTable) as TT
         }
     }
 
@@ -132,9 +151,8 @@ internal abstract class AbstractKBaseTableImpl(
         T1Nullable: Selection<*>,
         T2Nullable: Selection<*>
     >(
-        javaTable: BaseTable,
-        selectionTypes: ByteArray
-    ) : AbstractKBaseTableImpl(javaTable, selectionTypes), KNonNullBaseTable2<
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNonNullBaseTable2<
         T1,
         T2,
         T1Nullable,
@@ -144,14 +162,14 @@ internal abstract class AbstractKBaseTableImpl(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._1,
-                selectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._2,
-                selectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
                 false
             )
     }

@@ -122,7 +122,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         if (recursiveBaseQueryCreators == null) {
             return;
         }
-        T baseTable = asBaseTable(true);
+        T baseTable = asBaseTable(null, true);
         int size = queries.length;
         TypedBaseQueryImplementor<T>[] newQueryArr = new TypedBaseQueryImplementor[size + recursiveBaseQueryCreators.length];
         System.arraycopy(queries, 0, newQueryArr, 0, size);
@@ -283,17 +283,17 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public T asBaseTable() {
-        return asBaseTable(false);
+        return asBaseTable(null, false);
     }
 
     @Override
     public T asCteBaseTable() {
-        return asBaseTable(true);
+        return asBaseTable(null, true);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTable(boolean cte) {
+    public T asBaseTable(byte[] kotlinSelectionTypes, boolean cte) {
         cte |= recursive;
         T baseTable = this.baseTable;
         if (baseTable != null) {
@@ -301,8 +301,8 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         this.baseTable = baseTable =
                 mergedBy != null ?
-                        mergedBy.asBaseTable(cte) :
-                        (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections(), cte);
+                        mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
+                        (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections(), kotlinSelectionTypes, cte);
         return baseTable;
     }
 

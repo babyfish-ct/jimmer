@@ -6,14 +6,10 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.*;
 
 import java.lang.reflect.*;
 import java.util.Map;
@@ -24,6 +20,8 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
             new ClassCache<>(WeakJoinHandleImpl::create, false);
 
     private static final Class<?> K_BASE_TABLE_TYPE;
+
+    public static final Class<?> K_BASE_TABLE_TYPE_SYMBOL;
 
     final WeakJoin<TableLike<?>, TableLike<?>> weakJoin;
 
@@ -42,6 +40,40 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
     }
 
     private static WeakJoinHandle create(Class<?> weakJoinType) {
+        UsingWeakJoinMetadataParser using = weakJoinType.getAnnotation(UsingWeakJoinMetadataParser.class);
+        if (using != null) {
+            WeakJoinMetadataParser parser;
+            try {
+                parser = using.value().getConstructor().newInstance();
+            } catch (InvocationTargetException ex) {
+                throw new IllegalArgumentException(
+                        "Cannot create instance of \"" +
+                                using.value() +
+                                "\"",
+                        ex.getTargetException()
+                );
+            } catch (Exception ex) {
+                throw new IllegalArgumentException(
+                        "Cannot create instance of \"" +
+                                using.value() +
+                                "\"",
+                        ex
+                );
+            }
+            WeakJoinMetadata metadata = parser.parse(weakJoinType);
+            if (metadata != null) {
+                if (metadata.isSourceBaseTable() && metadata.isTargetBaseTable()) {
+                    return new BaseTableHandleImpl(null, createWeakJoin(weakJoinType));
+                }
+                return new EntityTableHandleImpl(
+                        ImmutableType.get(metadata.getSourceEntityType()),
+                        ImmutableType.get(metadata.getTargetEntityType()),
+                        false,
+                        false,
+                        createWeakJoin(weakJoinType)
+                );
+            }
+        }
         Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
         if (typeArguments == null || typeArguments.isEmpty()) {
             throw new IllegalArgumentException(
@@ -336,9 +368,22 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
             this.weakJoinLambda = weakJoinLambda;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Predicate createPredicate(TableLike<?> source, TableLike<?> target, AbstractMutableStatementImpl statement) {
-            return weakJoin.on(source, target);
+            if (weakJoin instanceof KWeakJoinImplementor) {
+                KWeakJoinImplementor<Object, Object> implementor =
+                        (KWeakJoinImplementor<Object, Object>) weakJoin;
+                return implementor.on(
+                        (TableLike<Object>) source,
+                        (TableLike<Object>) target,
+                        statement
+                );
+            }
+            return weakJoin.on(
+                    source,
+                    target
+            );
         }
 
         @Override
@@ -379,5 +424,13 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
             kotlinBaseTableType = null;
         }
         K_BASE_TABLE_TYPE = kotlinBaseTableType;
+
+        Class<?> kotlinBaseTableSymbolType;
+        try {
+            kotlinBaseTableSymbolType = Class.forName("org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol");
+        } catch (ClassNotFoundException ex) {
+            kotlinBaseTableSymbolType = null;
+        }
+        K_BASE_TABLE_TYPE_SYMBOL = kotlinBaseTableSymbolType;
     }
 }

@@ -101,7 +101,7 @@ internal class KSqlClientImpl(
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> {
-        val handle = createPropsWeakJoinHandle(joinBlock)
+        val handle = createPropsWeakJoinHandle(entityType.java, recursiveRef::class.java, joinBlock)
         val javaQuery = MutableRecursiveBaseQueryImpl(
             javaClient,
             ImmutableType.get(entityType.java),
@@ -110,7 +110,7 @@ internal class KSqlClientImpl(
         }
         val query = KMutableRecursiveBaseQueryImpl<E, B>(
             javaQuery,
-            AbstractKBaseTableImpl.of(javaQuery.recursive(), recursiveRef.selectionTypes) as B
+            AbstractKBaseTableImpl.of(javaQuery.recursive()) as B
         )
         return query.block()
     }

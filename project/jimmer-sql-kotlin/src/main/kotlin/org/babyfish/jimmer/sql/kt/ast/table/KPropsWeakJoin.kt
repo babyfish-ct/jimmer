@@ -3,15 +3,22 @@ package org.babyfish.jimmer.sql.kt.ast.table
 import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl
 import org.babyfish.jimmer.sql.ast.impl.table.KWeakJoinImplementor
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.WeakJoin
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
+import org.babyfish.jimmer.sql.ast.table.spi.UsingWeakJoinMetadataParser
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
+import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
+import org.babyfish.jimmer.sql.kt.ast.table.impl.KPropsWeakJoinMetadataParser
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
+@UsingWeakJoinMetadataParser(KPropsWeakJoinMetadataParser::class)
 abstract class KPropsWeakJoin<SP: KPropsLike, TP: KPropsLike>:
     WeakJoin<TableLike<*>, TableLike<*>>,
     KWeakJoinImplementor<TableLike<*>, TableLike<*>> {
@@ -22,10 +29,21 @@ abstract class KPropsWeakJoin<SP: KPropsLike, TP: KPropsLike>:
         target: TableLike<TableLike<*>>,
         statement: AbstractMutableStatementImpl
     ): Predicate? {
+
+        val st = if (source is BaseTable) {
+            AbstractKBaseTableImpl.of(source)
+        } else {
+            KNonNullTableExImpl(source as TableImplementor<*>, JOIN_ERROR_REASON)
+        }
+        val tt = if (target is BaseTable)  {
+            AbstractKBaseTableImpl.of(target)
+        } else {
+            KNonNullTableExImpl(target as TableImplementor<*>, JOIN_ERROR_REASON)
+        }
         return on(
-            source as SP,
-            target as TP,
-            ContextImpl(statement, source as SP, target as TP)
+            st as SP,
+            tt as TP,
+            ContextImpl(statement, st, tt)
         )?.toJavaPredicate()
     }
 
@@ -67,5 +85,11 @@ abstract class KPropsWeakJoin<SP: KPropsLike, TP: KPropsLike>:
             KSubQueriesImpl(statement, target)
         override val targetWildSubQueries: KWildSubQueries<TP> =
             KWildSubQueriesImpl(statement, target)
+    }
+
+    companion object {
+        private val JOIN_ERROR_REASON = "it is forbidden in the implementation of \"" +
+            KPropsWeakJoin::class.java.name +
+            "\""
     }
 }

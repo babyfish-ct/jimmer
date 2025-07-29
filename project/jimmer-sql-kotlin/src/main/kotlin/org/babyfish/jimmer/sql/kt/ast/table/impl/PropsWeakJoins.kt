@@ -13,12 +13,15 @@ import org.babyfish.jimmer.sql.kt.ast.table.KPropsWeakJoinFunContextImpl
 @Suppress("UNCHECKED_CAST")
 fun <SP: KPropsLike, TP: KPropsLike> createPropsWeakJoinTable(
     sourceTable: SP,
+    targetTableType: Class<TP>,
     propsWeakJoinFun: KPropsWeakJoinFun<SP, TP>,
     joinType: JoinType
 ): TP =
     if (sourceTable is KTableImplementor<*>) {
         sourceTable.javaTable.weakJoinImplementor<Any>(
             createPropsWeakJoinHandle(
+                sourceTable::class.java,
+                targetTableType::class.java,
                 propsWeakJoinFun
             ),
             joinType
@@ -28,9 +31,11 @@ fun <SP: KPropsLike, TP: KPropsLike> createPropsWeakJoinTable(
     }
 
 fun <SP: KPropsLike, TP: KPropsLike> createPropsWeakJoinHandle(
+    sourceType: Class<*>,
+    targetType: Class<*>,
     propsWeakJoinFun: KPropsWeakJoinFun<SP, TP>
 ): WeakJoinHandle {
-    val lambda = KPropsWeakJoinLambdaFactory().get(propsWeakJoinFun)
+    val lambda = KPropsWeakJoinLambdaFactory(sourceType, targetType).get(propsWeakJoinFun)
         ?: throw IllegalArgumentException("The argument `weakJoinFun` must be lambda")
     val weakJoin: WeakJoin<TableLike<*>, TableLike<*>> = LambdaPropsWeakJoin(propsWeakJoinFun)
     return WeakJoinHandle.of(

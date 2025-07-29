@@ -30,6 +30,9 @@ public interface WeakJoinHandle {
         if (BaseTable.class.isAssignableFrom(lambda.getTargetType())) {
             return new WeakJoinHandleImpl.BaseTableHandleImpl(lambda, weakJoin);
         }
+        if (WeakJoinHandleImpl.K_BASE_TABLE_TYPE_SYMBOL.isAssignableFrom(lambda.getTargetType())) {
+            return new WeakJoinHandleImpl.BaseTableHandleImpl(lambda, weakJoin);
+        }
         return new WeakJoinHandleImpl.EntityTableHandleImpl(
                 lambda,
                 hasSourceWrapper,
