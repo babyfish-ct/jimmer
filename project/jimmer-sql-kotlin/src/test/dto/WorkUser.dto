@@ -1,0 +1,13 @@
+export org.babyfish.jimmer.sql.kt.model.bug1126.WorkUser
+
+specification UserSpec {
+    id
+
+    name
+
+    flat(teamRecords) {
+        flat(team) {
+            name as teamName
+        }
+    }
+}
