@@ -663,6 +663,7 @@ public final class LogicalDeletedInfo {
         map.put(LocalTime.class, LocalTime::now);
         map.put(OffsetDateTime.class, OffsetDateTime::now);
         map.put(ZonedDateTime.class, ZonedDateTime::now);
+        map.put(Instant.class, Instant::now);
         NOW_SUPPLIER_MAP = map;
     }
 }

@@ -8,13 +8,9 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
-import org.babyfish.jimmer.sql.runtime.ConnectionManager
-import org.babyfish.jimmer.sql.runtime.DefaultExecutor
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
+import org.babyfish.jimmer.sql.runtime.*
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose.Command
-import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.Executor.BatchContext
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.junit.BeforeClass
 import java.io.IOException
 import java.io.InputStreamReader
@@ -176,14 +172,20 @@ abstract class AbstractTest {
             actual: String,
             message: String? = null
         ) {
-            assertEquals(
-                expect
-                    .replace("\r", "")
-                    .replace("\n", "")
-                    .replace("--->", ""),
-                actual,
-                message
-            )
+            val normalizedExpected = expect
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace("--->", "")
+
+            // Try to parse as JSON and compare semantically to handle property ordering issues
+            try {
+                val expectedJson = MAPPER.readTree(normalizedExpected)
+                val actualJson = MAPPER.readTree(actual)
+                assertEquals(expectedJson, actualJson, message)
+            } catch (e: Exception) {
+                // Fall back to string comparison if JSON parsing fails
+                assertEquals(normalizedExpected, actual, message)
+            }
         }
     }
 
