@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery
@@ -47,5 +49,12 @@ internal class KMergedBaseQueryImpl<T : KBaseTable>(
             } else {
                 (query as AbstractKConfigurableBaseQueryImpl<*>).javaBaseQuery
             } as TypedBaseQuery<BaseTable>
+
+        fun javaClient(query: KTypedBaseQuery<*>): JSqlClient =
+            if (query is KMergedBaseQueryImpl<*>) {
+                query.javaBaseQuery.sqlClient
+            } else {
+                ((query as AbstractKConfigurableBaseQueryImpl<*>).javaBaseQuery as ConfigurableBaseQueryImpl<*>).sqlClient
+            }
     }
 }

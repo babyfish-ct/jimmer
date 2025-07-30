@@ -1,11 +1,15 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.query.RecursiveBaseQueryCreator
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery
+import org.babyfish.jimmer.sql.ast.table.BaseTable
+import org.babyfish.jimmer.sql.ast.table.RecursiveRef
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMergedBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.KRecursiveRef
+import org.babyfish.jimmer.sql.kt.ast.table.KRemoteRef
 
 interface KTypedBaseQuery<T: KBaseTable> {
 
@@ -32,9 +36,18 @@ interface KTypedBaseQuery<T: KBaseTable> {
         )
 
     fun unionAllRecursively(
-        recursiveRef: (KRecursiveRef<T>) -> KConfigurableBaseQuery<T>
+        recursiveBaseQueryCreator: (KRecursiveRef<T>) -> KConfigurableBaseQuery<T>
     ): KTypedBaseQuery<T> {
-        TODO()
+        val javaCreator = RecursiveBaseQueryCreator {
+            val kotlinRef = KRecursiveRef<T>(it)
+            val kotlinBaseQuery = recursiveBaseQueryCreator(kotlinRef)
+            KMergedBaseQueryImpl.javaBaseQuery(kotlinBaseQuery)
+        }
+        val mergedJavaQuery = TypedBaseQuery.unionAllRecursively(
+            KMergedBaseQueryImpl.javaBaseQuery(this),
+            javaCreator
+        ) as MergedBaseQueryImpl
+        return KMergedBaseQueryImpl(this, mergedJavaQuery)
     }
 
     infix fun minus(other: KTypedBaseQuery<T>): KTypedBaseQuery<T> =
