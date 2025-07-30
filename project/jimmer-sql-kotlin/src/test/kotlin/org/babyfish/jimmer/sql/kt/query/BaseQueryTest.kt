@@ -5,17 +5,15 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.query.baseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.classic.author.Author
-import org.babyfish.jimmer.sql.kt.model.classic.author.books
-import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
-import org.babyfish.jimmer.sql.kt.model.classic.author.id
+import org.babyfish.jimmer.sql.kt.model.classic.author.*
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.fetchBy
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
-import kotlin.reflect.KClass
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class BaseQueryTest : AbstractQueryTest() {
 
@@ -286,5 +284,68 @@ class BaseQueryTest : AbstractQueryTest() {
             target: KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>
         ): KNonNullExpression<Boolean> =
             source._1.asTableEx().authors.eq(target._1)
+    }
+
+    @Test
+    fun testTableWeakJoinBaseTable() {
+        val baseAuthor = baseTableSymbol {
+            sqlClient.createBaseQuery(Author::class) {
+                where(table.gender eq Gender.MALE)
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                select(
+                    table,
+                    table.asTableEx().weakJoin(baseAuthor) {
+                        source.id eq target._1.asTableEx().books.id
+                    }._1
+                )
+            }
+        ) {
+            sql(
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, 
+                    |--->tb_2_.c1, tb_2_.c2, tb_2_.c3, tb_2_.c4 
+                    |from BOOK tb_1_ 
+                    |inner join (
+                    |--->(
+                    |--->--->select tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4 
+                    |--->--->from AUTHOR tb_3_ 
+                    |--->--->where tb_3_.GENDER = ?
+                    |--->) tb_2_ 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ 
+                    |--->--->on tb_2_.c1 = tb_4_.AUTHOR_ID
+                    |) on tb_1_.ID = tb_4_.BOOK_ID""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIllegalTableWeakJoinBaseTable() {
+        val baseAuthor = baseTableSymbol {
+            sqlClient.createBaseQuery(Author::class) {
+                where(table.gender eq Gender.MALE)
+                selections.add(table)
+            }
+        }
+        assertFailsWith(
+            IllegalStateException::class,
+            "Table join is disabled. " +
+                "For the weak join operation from a regular table to a base table, " +
+                "the strong join is not allowed on the regular table side (source side)"
+        ) {
+            executeAndExpect(
+                sqlClient.createQuery(Book::class) {
+                    select(
+                        table,
+                        table.asTableEx().weakJoin(baseAuthor) {
+                            source.asTableEx().authors.id eq target._1.id
+                        }._1
+                    )
+                }
+            ) {}
+        }
     }
 }

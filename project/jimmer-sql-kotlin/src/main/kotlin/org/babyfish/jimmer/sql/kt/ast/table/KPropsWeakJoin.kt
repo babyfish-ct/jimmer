@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.WeakJoin
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
+import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy
 import org.babyfish.jimmer.sql.ast.table.spi.UsingWeakJoinMetadataParser
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
@@ -32,11 +33,15 @@ abstract class KPropsWeakJoin<SP: KPropsLike, TP: KPropsLike>:
 
         val st = if (source is BaseTable) {
             AbstractKBaseTableImpl.of(source)
+        } else if (source is UntypedJoinDisabledTableProxy<*>) {
+            KNonNullTableExImpl(source.__unwrap(), JOIN_ERROR_REASON)
         } else {
             KNonNullTableExImpl(source as TableImplementor<*>, JOIN_ERROR_REASON)
         }
         val tt = if (target is BaseTable)  {
             AbstractKBaseTableImpl.of(target)
+        } else if (target is UntypedJoinDisabledTableProxy<*>) {
+            KNonNullTableExImpl(target.__unwrap(), JOIN_ERROR_REASON)
         } else {
             KNonNullTableExImpl(target as TableImplementor<*>, JOIN_ERROR_REASON)
         }

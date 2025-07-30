@@ -6,16 +6,18 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
-import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
-import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoinFun
+import org.babyfish.jimmer.sql.kt.ast.table.*
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl.Companion.of
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -92,6 +94,40 @@ internal open class KNonNullTableExImpl<E: Any>(
             )
         }
 
+    @Suppress("UNCHECKED_CAST")
+    override fun <TT : KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
+    ): TT {
+        val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            joinType,
+            null
+        )
+        return of(javaJoinedTable) as TT
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <TT : KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
+    ): TT {
+        val handle = WeakJoinHandle.of(weakJoinType.java)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            joinType,
+            null
+        )
+        return of(javaJoinedTable) as TT
+    }
+
     override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X> =
         if (joinDisabledReason != null) {
             throw IllegalStateException("Table join is disabled because $joinDisabledReason")
@@ -117,7 +153,7 @@ internal open class KNonNullTableExImpl<E: Any>(
         javaTable.fetch(staticType.java)
 
     override fun asTableEx(): KNonNullTableEx<E> =
-        KNonNullTableExImpl(javaTable.asTableEx() as TableImplementor<E>)
+        KNonNullTableExImpl(javaTable.asTableEx() as TableImplementor<E>, joinDisabledReason)
 
     private fun <X: Any> kotlinExpr(javaExpr: PropExpressionImpl<X>): KPropExpression<X> {
         val isNullable = if (javaExpr.table !== javaTable) {
