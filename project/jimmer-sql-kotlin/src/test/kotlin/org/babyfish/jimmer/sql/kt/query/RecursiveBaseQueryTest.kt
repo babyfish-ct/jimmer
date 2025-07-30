@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.constant
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.isNull
 import org.babyfish.jimmer.sql.kt.ast.expression.plus
+import org.babyfish.jimmer.sql.kt.ast.query.cteBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
 import kotlin.test.Test
@@ -12,20 +13,22 @@ class RecursiveBaseQueryTest : AbstractQueryTest() {
 
     @Test
     fun test() {
-        val baseTable = sqlClient.createBaseQuery(TreeNode::class) {
-            where(table.parentId.isNull())
-            selections
-                .add(table)
-                .add(constant(1))
-        }.unionAllRecursively {
-            sqlClient.createBaseQuery(TreeNode::class, it, {
-                source.parentId eq target._1.id
-            }) {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(TreeNode::class) {
+                where(table.parentId.isNull())
                 selections
                     .add(table)
-                    .add(recursive._2 + 1)
+                    .add(constant(1))
+            }.unionAllRecursively {
+                sqlClient.createBaseQuery(TreeNode::class, it, {
+                    source.parentId eq target._1.id
+                }) {
+                    selections
+                        .add(table)
+                        .add(recursive._2 + 1)
+                }
             }
-        }.asCteBaseTable()
+        }
         executeAndExpect(
             sqlClient.createQuery(baseTable) {
                 orderBy(table._2, table._1.name)
