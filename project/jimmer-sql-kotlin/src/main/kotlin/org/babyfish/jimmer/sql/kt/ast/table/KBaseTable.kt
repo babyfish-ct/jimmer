@@ -54,6 +54,24 @@ interface KNonNullBaseTable2<
     val _1: T1
 
     val _2: T2
+
+    fun <TT: KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType = JoinType.INNER,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>
+    ): TT
+
+    fun <TT: KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>>
+    ): TT =
+        weakJoin(targetSymbol, JoinType.INNER, weakJoinType)
+
+    fun <TT: KBaseTable> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>>
+    ): TT
 }
 
 interface KNullableBaseTable2<

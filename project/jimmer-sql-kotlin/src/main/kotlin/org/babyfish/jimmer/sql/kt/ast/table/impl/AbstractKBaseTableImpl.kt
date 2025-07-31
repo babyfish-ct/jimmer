@@ -42,6 +42,40 @@ internal abstract class AbstractKBaseTableImpl(
         return "K$javaTable"
     }
 
+    @Suppress("UNCHECKED_CAST")
+    protected fun <ST: KBaseTable, TT : KBaseTable> weakJoinImpl(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType,
+        weakJoinLambda: KPropsWeakJoinFun<ST, TT>
+    ): TT {
+        val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            joinType,
+            null
+        )
+        return of(javaJoinedTable) as TT
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <ST: KBaseTable, TT : KBaseTable> weakJoinImpl(
+        targetSymbol: KBaseTableSymbol<TT>,
+        joinType: JoinType,
+        weakJoinType: KClass<out KPropsWeakJoin<ST, TT>>
+    ): TT {
+        val handle = WeakJoinHandle.of(weakJoinType.java)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            joinType,
+            null
+        )
+        return of(javaJoinedTable) as TT
+    }
+
     companion object {
 
         val SELECTION_TYPE_NON_NULL_TABLE: Byte = (0 or 0).toByte()
@@ -110,39 +144,17 @@ internal abstract class AbstractKBaseTableImpl(
                 false
             )
 
-        @Suppress("UNCHECKED_CAST")
         override fun <TT : KBaseTable> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             joinType: JoinType,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1Nullable>, TT>
-        ): TT {
-            val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
-            val javaJoinedTable = BaseTableSymbols.of(
-                (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
-                javaTable,
-                handle,
-                joinType,
-                null
-            )
-            return of(javaJoinedTable) as TT
-        }
+        ): TT = weakJoinImpl(targetSymbol, joinType, weakJoinLambda)
 
-        @Suppress("UNCHECKED_CAST")
         override fun <TT : KBaseTable> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             joinType: JoinType,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
-        ): TT {
-            val handle = WeakJoinHandle.of(weakJoinType.java)
-            val javaJoinedTable = BaseTableSymbols.of(
-                (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
-                javaTable,
-                handle,
-                joinType,
-                null
-            )
-            return of(javaJoinedTable) as TT
-        }
+        ): TT = weakJoinImpl(targetSymbol, joinType, weakJoinType)
     }
 
     private class NonNullTable2<
@@ -172,5 +184,19 @@ internal abstract class AbstractKBaseTableImpl(
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
                 false
             )
+
+        override fun <TT : KBaseTable> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            joinType: JoinType,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, joinType, weakJoinLambda)
+
+        override fun <TT : KBaseTable> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            joinType: JoinType,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, joinType, weakJoinType)
     }
 }
