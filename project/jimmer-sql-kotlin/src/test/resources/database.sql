@@ -35,6 +35,7 @@ drop table tree_node if exists;
 drop table primitive if exists;
 drop table personal if exists;
 drop table monster if exists;
+drop table work_user if exists;
 
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
@@ -849,11 +850,21 @@ insert into eyepiece(id, name, eye_relief, camera_id) values(1, 'eyepiece-1', 10
 insert into objective(id, name, working_distance, camera_id) values(1, 'objective-1', 2500, 1);
 
 create table monster(
-                         id int not null PRIMARY KEY,
-                         base_id int null
+     id int not null PRIMARY KEY,
+     base_id int null
 );
 
 alter table monster
     add constraint fk_monster_base
         foreign key(base_id)
             references monster(id);
+
+
+
+create table work_user(
+    id bigint not null,
+    name varchar(20) null
+);
+alter table work_user
+    add constraint pk_work_user
+        primary key(id);
