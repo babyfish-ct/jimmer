@@ -161,8 +161,14 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 return true;
             }
         }
-        ParameterizedType parameterizedType = (ParameterizedType) type;
-        return BaseTable.class.isAssignableFrom((Class<?>) parameterizedType.getRawType());
+        Class<?> tableType;
+        if (type instanceof Class<?>) {
+            tableType = (Class<?>) type;
+        } else {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            tableType = (Class<?>) parameterizedType.getRawType();
+        }
+        return BaseTable.class.isAssignableFrom(tableType);
     }
 
     static final class EntityTableHandleImpl extends WeakJoinHandleImpl implements WeakJoinHandle.EntityTableHandle {

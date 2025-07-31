@@ -74,7 +74,7 @@ public class OpenApiUiController {
         assert inputStream != null;
         try (Reader reader = new InputStreamReader(inputStream)) {
             int len;
-            if ((len = reader.read(buf)) != -1) {
+            while ((len = reader.read(buf)) != -1) {
                 builder.append(buf, 0, len);
             }
         } catch (IOException ex) {
@@ -82,7 +82,7 @@ public class OpenApiUiController {
         }
         boolean isTemplate = resource.endsWith(".template");
         if (!isTemplate) {
-            return builder.toString();
+            return builder.toString().replace("\r\n", "\n");  // Normalize line endings to LF
         }
         if (groups != null && !groups.isEmpty()) {
             try {
@@ -93,6 +93,7 @@ public class OpenApiUiController {
         }
         return builder
                 .toString()
+            .replace("\r\n", "\n")  // Normalize line endings to LF
                 .replace("${openapi.css}",
                         exists(CSS_RESOURCE) ?
                                 CSS_URL :

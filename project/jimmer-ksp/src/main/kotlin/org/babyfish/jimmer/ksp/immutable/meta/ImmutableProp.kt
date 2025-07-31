@@ -23,8 +23,8 @@ import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import org.babyfish.jimmer.ksp.util.converterMetadataOf
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.ksp.util.recursiveAnnotationOf
-import org.babyfish.jimmer.meta.impl.Utils
 import org.babyfish.jimmer.meta.impl.PropDescriptor
+import org.babyfish.jimmer.meta.impl.Utils
 import org.babyfish.jimmer.sql.*
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
@@ -90,11 +90,11 @@ class ImmutableProp(
                                 "if its type is boolean, int, or enum"
                         )
                     }
-                "kotlin.Long", "java.util.UUID", "java.time.LocalDateTime" -> {}
+                "kotlin.Long", "java.util.UUID", "java.time.LocalDateTime", "java.time.Instant" -> {}
                 else -> throw MetaException(
                     propDeclaration,
                     "the property decorated by \"@LogicalDeleted\" must be " +
-                        "boolean, int, enum, UUID or LocalDateTime"
+                        "boolean, int, enum, UUID, LocalDateTime or Instant"
                 )
             }
             if (propDeclaration.annotation(Default::class) !== null) {
