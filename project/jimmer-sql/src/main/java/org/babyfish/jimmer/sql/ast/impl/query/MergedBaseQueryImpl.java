@@ -294,7 +294,11 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     @SuppressWarnings("unchecked")
     @Override
     public T asBaseTable(byte[] kotlinSelectionTypes, boolean cte) {
-        cte |= recursive;
+        if (!cte && recursive) {
+            throw new IllegalArgumentException(
+                    "Recursive base query only be treated as cteBaseTable, not general baseTable"
+            );
+        }
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);

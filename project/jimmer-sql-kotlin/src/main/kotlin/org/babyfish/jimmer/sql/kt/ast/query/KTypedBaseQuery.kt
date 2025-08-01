@@ -77,4 +77,4 @@ inline fun <T: KBaseTable> baseTableSymbol(
 inline fun <T: KBaseTable> cteBaseTableSymbol(
     queryCreator: () -> KTypedBaseQuery<T>
 ): KBaseTableSymbol<T> =
-    queryCreator().asBaseTable()
+    queryCreator().asCteBaseTable()

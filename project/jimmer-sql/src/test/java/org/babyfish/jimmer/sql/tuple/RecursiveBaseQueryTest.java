@@ -36,7 +36,7 @@ public class RecursiveBaseQueryTest extends AbstractQueryTest {
                                             q.recursive().get_2().plus(Expression.constant(1))
                                     );
                         }
-                ).asBaseTable();
+                ).asCteBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
