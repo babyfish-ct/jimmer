@@ -1,5 +1,30 @@
 use jimmer_test;
 
+set foreign_key_checks = 0;
+
+drop table if exists book_author_mapping;
+drop table if exists book;
+drop table if exists book_store;
+drop table if exists author;
+drop table if exists tree_node;
+drop table if exists employee;
+drop table if exists department;
+drop table if exists time_row;
+drop table if exists post2_item;
+drop table if exists post_2_category_2_mapping;
+drop table if exists category_2;
+drop table if exists post_2;
+drop table if exists document_storage;
+drop table if exists machine;
+drop table if exists shop;
+drop table if exists customer;
+drop table if exists card;
+drop table if exists customer_card_mapping;
+drop table if exists shop_customer_mapping;
+drop table if exists shop_vendor_mapping;
+
+set foreign_key_checks = 1;
+
 create table book_store(
     id binary(16) not null primary key,
     name varchar(50) not null,
@@ -160,8 +185,7 @@ insert into tree_node(
 ;
 
 
-drop table employee;
-drop table department;
+
 create table department(
     name varchar(20) not null,
     deleted_millis bigint not null default 0,
@@ -306,3 +330,160 @@ create table document_storage (
     file_name varchar(100) NOT NULL,
     file_content longblob
 );
+
+create table machine(
+    id bigint not null auto_increment primary key,
+    host varchar(20) not null,
+    port int not null,
+    secondary_host varchar(20),
+    secondary_port int,
+    cpu_frequency int not null,
+    memory_size int not null,
+    disk_size int not null,
+    factory_map json,
+    patent_map json
+);
+alter table machine auto_increment = 100;
+alter table machine
+    add constraint uq_machine
+        unique(host, port);
+
+insert into machine(id, host, port, cpu_frequency, memory_size, disk_size, factory_map, patent_map)
+values(
+    1,
+    'localhost',
+    8080,
+    2,
+    8,
+    256,
+    '{"f-1": "factory-1", "f-2": "factory-2"}',
+    '{"p-1": "patent-1", "p-2": "patent-2"}'
+);
+
+create table shop(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table shop
+    add constraint pk_shop
+        primary key(id);
+alter table shop
+    add constraint uq_shop
+        unique(name);
+
+create table customer(
+     id bigint not null,
+     name varchar(20) not null
+);
+alter table customer
+    add constraint pk_customer
+        primary key(id);
+alter table customer
+    add constraint uq_customer
+        unique(name);
+
+
+create table card(
+     id bigint not null,
+     name varchar(20) not null
+);
+alter table card
+    add constraint pk_card
+        primary key(id);
+
+insert into card(id, name) values
+    (1, 'card-1'),
+    (2, 'card-2');
+
+create table vendor(
+    id bigint not null,
+    name varchar(20) not null,
+    deleted_millis bigint not null
+);
+alter table vendor
+    add constraint pk_vendor
+        primary key(id);
+alter table vendor
+    add constraint uq_vendor
+        unique(name, deleted_millis);
+
+insert into vendor(id, name, deleted_millis) values
+     (1, 'Vendor-1', 0),
+     (2, 'Vendor-2', 0),
+     (3, 'Vendor-3', 0);
+
+create table shop_customer_mapping(
+    shop_id bigint not null,
+    customer_id bigint not null,
+    deleted_millis bigint not null,
+    type varchar(8) not null
+);
+alter table shop_customer_mapping
+    add constraint pk_shop_customer_mapping
+        primary key(shop_id, customer_id, deleted_millis, type);
+alter table shop_customer_mapping
+    add constraint fk_shop_customer_mapping__shop
+        foreign key(shop_id)
+            references shop(id);
+alter table shop_customer_mapping
+    add constraint fk_shop_customer_mapping__customer
+        foreign key(customer_id)
+            references customer(id);
+
+
+insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) values
+    (1, 1, 0, 'VIP'),
+    (1, 2, 0, 'ORDINARY'),
+    (1, 3, 0, 'ORDINARY'),
+    (1, 4, -1, 'ORDINARY'),
+    (2, 3, 0, 'VIP'),
+    (2, 4, 0, 'ORDINARY'),
+    (2, 5, 0, 'ORDINARY'),
+    (2, 6, -1, 'ORDINARY');
+
+create table shop_vendor_mapping(
+    shop_id bigint not null,
+    vendor_id bigint not null,
+    deleted_millis bigint not null,
+    type varchar(8) not null
+);
+alter table shop_vendor_mapping
+    add constraint pk_shop_vendor_mapping
+        primary key(shop_id, vendor_id, deleted_millis, type);
+alter table shop_vendor_mapping
+    add constraint fk_shop_vendor_mapping__shop
+        foreign key(shop_id)
+            references shop(id);
+alter table shop_vendor_mapping
+    add constraint fk_shop_vendor_mapping__vendor
+        foreign key(vendor_id)
+            references vendor(id);
+
+insert into shop_vendor_mapping(shop_id, vendor_id, deleted_millis, type) values
+    (1, 1, 0, 'VIP'),
+    (1, 2, 0, 'ORDINARY'),
+    (2, 2, 0, 'VIP'),
+    (2, 3, 0, 'ORDINARY');
+
+
+create table customer_card_mapping(
+    customer_id bigint not null,
+    card_id bigint not null
+);
+alter table customer_card_mapping
+    add constraint pk_customer_card_mapping
+        primary key(customer_id, card_id);
+alter table customer_card_mapping
+    add constraint fk_customer_card_mapping__customer
+        foreign key(customer_id)
+            references customer(id);
+alter table customer_card_mapping
+    add constraint fk_customer_card_mapping__card
+        foreign key(card_id)
+            references card(id);
+alter table customer_card_mapping
+    add constraint uq_customer_card_mapping__card
+        unique(card_id);
+
+insert into customer_card_mapping(customer_id, card_id) values
+    (1, 1), (1, 2);

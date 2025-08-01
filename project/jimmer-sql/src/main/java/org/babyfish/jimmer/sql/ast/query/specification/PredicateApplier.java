@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 public class PredicateApplier {
 
@@ -28,7 +29,7 @@ public class PredicateApplier {
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.context = new Context(
                     ctx,
-                    prop.isReference(TargetLevel.PERSISTENT) ? ctx.statement() : null,
+                    prop.isReference(TargetLevel.PERSISTENT),
                     prop
             );
         } else if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
@@ -311,11 +312,13 @@ public class PredicateApplier {
 
         private AbstractMutableStatementImpl _statement;
 
+        private boolean borrowParentStatement;
+
         final ImmutableProp prop;
 
         private Table<?> _table;
 
-        private PropExpression.Embedded<?> _embedded;
+        private final PropExpression.Embedded<?> _embedded;
 
         Context(
                 Context parent,
@@ -328,6 +331,17 @@ public class PredicateApplier {
             if (parent == null) {
                 this._table = statement.getTable();
             }
+            this._embedded = null;
+        }
+
+        Context(
+                Context parent,
+                boolean borrowParentStatement,
+                ImmutableProp prop
+        ) {
+            this.parent = parent;
+            this.borrowParentStatement = borrowParentStatement;
+            this.prop = prop;
             this._embedded = null;
         }
 
@@ -347,24 +361,28 @@ public class PredicateApplier {
         AbstractMutableStatementImpl statement() {
             AbstractMutableStatementImpl statement = this._statement;
             if (statement == null) {
-                AbstractMutableStatementImpl parentStatement = parent.statement();
-                MutableSubQueryImpl subQuery = null;
-                if (parentStatement.getTable() instanceof TableProxy<?>) {
-                    TableProxy<?> proxy = TableProxies.fluent(prop.getTargetType().getJavaClass());
-                    if (proxy != null) {
-                        subQuery = new MutableSubQueryImpl(parentStatement.getSqlClient(), proxy);
+                if (borrowParentStatement) {
+                    this._statement = statement = parent.statement();
+                } else {
+                    AbstractMutableStatementImpl parentStatement = parent.statement();
+                    MutableSubQueryImpl subQuery = null;
+                    if (parentStatement.getTable() instanceof TableProxy<?>) {
+                        TableProxy<?> proxy = TableProxies.fluent(prop.getTargetType().getJavaClass());
+                        if (proxy != null) {
+                            subQuery = new MutableSubQueryImpl(parentStatement.getSqlClient(), proxy);
+                        }
                     }
+                    if (subQuery == null) {
+                        subQuery = new MutableSubQueryImpl(parentStatement, prop.getTargetType());
+                    }
+                    subQuery.where(
+                            parent.table().getId().eq(
+                                    subQuery.getTable().inverseGetAssociatedId(prop)
+                            )
+                    );
+                    parentStatement.where(subQuery.exists());
+                    this._statement = statement = subQuery;
                 }
-                if (subQuery == null) {
-                    subQuery = new MutableSubQueryImpl(parentStatement, prop.getTargetType());
-                }
-                subQuery.where(
-                        parent.table().getId().eq(
-                                subQuery.getTable().inverseGetAssociatedId(prop)
-                        )
-                );
-                parentStatement.where(subQuery.exists());
-                this._statement = statement = subQuery;
             }
             return statement;
         }

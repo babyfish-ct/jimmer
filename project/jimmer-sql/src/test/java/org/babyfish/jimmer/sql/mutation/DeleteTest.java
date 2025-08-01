@@ -7,7 +7,9 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.exception.CircularDeletionException;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
@@ -17,9 +19,12 @@ import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.exception.SaveException;
+import org.babyfish.jimmer.sql.model.issue1125.SysPerm;
 import org.babyfish.jimmer.sql.model.middle.Card;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
 import org.babyfish.jimmer.sql.model.cycle.Person;
+import org.babyfish.jimmer.sql.model.middle.Shop;
+import org.babyfish.jimmer.sql.model.middle.Vendor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -872,6 +877,29 @@ public class DeleteTest extends AbstractMutationTest {
                                         "at the path \"<root>.[←friend].[←friend].[←friend]" +
                                         ".[←friend].[←friend]\""
                         );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1125() {
+        NativeDatabases.assumeNativeDatabase();
+        connectAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                con -> {
+                    return getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                            .getEntities()
+                            .deleteAllCommand(SysPerm.class, Arrays.asList(1L, 2L))
+                            .setMaxCommandJoinCount(0)
+                            .execute(con);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update issue1125_mp_role_perm set deleted_at = ? where perm_id = ? and deleted_at is null");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update issue1125_sys_perm set deleted_at = ? where ID = any(?)");
                     });
                 }
         );

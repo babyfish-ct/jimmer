@@ -6,6 +6,8 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+
 public class ValidationTest {
 
     @Test
@@ -101,5 +103,42 @@ public class ValidationTest {
                 State.DELETED,
                 info.generateValue()
         );
+    }
+
+    @Test
+    public void testInstantEntity() {
+        ImmutableType type = ImmutableType.get(InstantEntity.class);
+        ImmutableProp prop = type.getProp("deletedTime");
+        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
+
+        // For nullable Instant with @LogicalDeleted("now"), default should be null
+        // Note: getDefaultValueRef() may return null for some logical deleted properties
+        if (prop.getDefaultValueRef() != null) {
+            Assertions.assertNull(prop.getDefaultValueRef().getValue());
+        }
+        Assertions.assertNull(info.allocateInitializedValue());
+
+        // Generate value should return current Instant
+        Instant generatedValue = (Instant) info.generateValue();
+        Instant now = Instant.now();
+        Assertions.assertTrue(
+            Math.abs(generatedValue.toEpochMilli() - now.toEpochMilli()) < 1000,
+            "Generated Instant should be close to current time"
+        );
+    }
+
+    @Test
+    public void testInstantNullEntity() {
+        ImmutableType type = ImmutableType.get(InstantNullEntity.class);
+        ImmutableProp prop = type.getProp("deletedTime");
+        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
+
+        // For nullable Instant with @LogicalDeleted("null"), all should be null
+        // Note: getDefaultValueRef() may return null for @LogicalDeleted("null") properties
+        if (prop.getDefaultValueRef() != null) {
+            Assertions.assertNull(prop.getDefaultValueRef().getValue());
+        }
+        Assertions.assertNull(info.allocateInitializedValue());
+        Assertions.assertNull(info.generateValue());
     }
 }

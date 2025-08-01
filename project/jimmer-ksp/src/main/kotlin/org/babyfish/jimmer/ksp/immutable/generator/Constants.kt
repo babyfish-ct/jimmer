@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
 import org.babyfish.jimmer.client.Description
@@ -30,6 +29,7 @@ import org.babyfish.jimmer.sql.collection.MutableIdViewList
 import java.io.Serializable
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -107,6 +107,7 @@ internal val MANY_TO_MANY_VIEW_LIST_CLASS_NAME = ManyToManyViewList::class.asCla
 internal val LOCAL_DATE_CLASS_NAME = LocalDate::class.asClassName()
 internal val LOCAL_DATE_TIME_CLASS_NAME = LocalDateTime::class.asClassName()
 internal val LOCAL_TIME_CLASS_NAME = LocalTime::class.asClassName()
+internal val INSTANT_CLASS_NAME = Instant::class.asClassName()
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"

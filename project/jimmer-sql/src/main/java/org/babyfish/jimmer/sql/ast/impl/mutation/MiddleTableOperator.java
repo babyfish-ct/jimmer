@@ -641,11 +641,16 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             builder.logicalDeleteAssignment(
                     middleTable.getLogicalDeletedInfo(),
                     null,
-                    ignoreAlias ? null : alias
+                    null
             );
             builder.leave();
         } else {
-            builder.sql("delete from ").sql(middleTable.getTableName());
+            builder.sql("delete");
+            if (!ignoreAlias && alias != null && sqlClient.getDialect().isDeletedAliasRequired()) {
+                builder.sql(" ").sql(alias);
+            }
+            builder.sql(" from ")
+                    .sql(middleTable.getTableName());
             if (!ignoreAlias && alias != null) {
                 builder.sql(" ").sql(alias);
             }

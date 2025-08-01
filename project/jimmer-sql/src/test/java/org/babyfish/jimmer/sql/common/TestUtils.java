@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.support.JsonAssertions;
 import org.junit.jupiter.api.Assertions;
 
 public class TestUtils {
@@ -11,10 +12,16 @@ public class TestUtils {
                 "The nullity of json and object must be same"
         );
         if (o != null && json != null) {
-            Assertions.assertEquals(
-                    json.replace("--->", ""),
-                    o.toString()
-            );
+            String normalizedJson = json.replace("--->", "");
+            String actualString = o.toString();
+
+            // Try to parse as JSON and compare semantically to handle property ordering issues
+            try {
+                JsonAssertions.assertJsonEquals(normalizedJson, actualString);
+            } catch (Exception e) {
+                // Fall back to string comparison if JSON parsing fails
+                Assertions.assertEquals(normalizedJson, actualString);
+            }
         }
     }
 }

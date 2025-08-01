@@ -3,6 +3,10 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+
+drop table issue1125_mp_role_perm if exists;
+drop table issue1125_sys_role if exists;
+drop table issue1125_sys_perm if exists;
 drop table time_row if exists;
 drop table issue888_item if exists;
 drop table issue888_structure if exists;
@@ -1537,4 +1541,24 @@ insert into time_row(
     '2025-04-13 18:32:27',
     '2025-04-13 18:32:28+08:00',
     '2025-04-13 18:32:29+08:00'
+);
+
+
+
+create table issue1125_sys_perm (
+  id bigint generated always as identity(start with 1 increment by 1) not null,
+  deleted_at timestamp(0),
+  constraint sys_perm_pkey primary key (id)
+);
+
+create table issue1125_mp_role_perm (
+  role_id bigint not null,
+  perm_id bigint not null,
+  deleted_at timestamp(0)
+);
+
+create table issue1125_sys_role (
+  id bigint generated always as identity(start with 1 increment by 1) not null,
+  deleted_at timestamp(0),
+  constraint sys_role_pkey primary key (id)
 );

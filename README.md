@@ -139,7 +139,7 @@ Since Jimmer is a compile-time framework, and considering that not all users are
 
     -   Use the companion DTO plugin
     -   Perform a full compilation using maven or gradle commands, or the IDE's `Rebuild` button, which can achieve this purpose
-    -   Delete the affected project's compilation output directory, then click the IDE's `Run` or `Debug` button`
+    -   Delete the affected project's compilation output directory, then click the IDE's `Run` or `Debug` button
 
 ## 6. Links
 
