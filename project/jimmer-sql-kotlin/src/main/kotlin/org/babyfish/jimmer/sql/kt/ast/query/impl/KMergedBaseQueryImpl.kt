@@ -10,10 +10,10 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedBaseQuery
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 
-internal class KMergedBaseQueryImpl<T : KBaseTable>(
+internal class KMergedBaseQueryImpl<T : KNonNullBaseTable<*>>(
     private val first: KTypedBaseQuery<T>,
     private val javaBaseQuery: MergedBaseQueryImpl<*>
 ) : KTypedBaseQuery<T>, Ast {

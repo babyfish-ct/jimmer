@@ -66,7 +66,7 @@ internal class KSqlClientImpl(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <B : KBaseTable, R> createQuery(
+    override fun <B : KNonNullBaseTable<*>, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R> {
@@ -82,7 +82,7 @@ internal class KSqlClientImpl(
         ).block()
     }
 
-    override fun <E : Any, B : KBaseTable> createBaseQuery(
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> {
@@ -94,7 +94,7 @@ internal class KSqlClientImpl(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <E : Any, B : KBaseTable> createBaseQuery(
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinType: JoinType,
@@ -110,7 +110,7 @@ internal class KSqlClientImpl(
         }
         val query = KMutableRecursiveBaseQueryImpl<E, B>(
             javaQuery,
-            AbstractKBaseTableImpl.of(javaQuery.recursive()) as B
+            AbstractKBaseTableImpl.nonNull(javaQuery.recursive()) as B
         )
         return query.block()
     }

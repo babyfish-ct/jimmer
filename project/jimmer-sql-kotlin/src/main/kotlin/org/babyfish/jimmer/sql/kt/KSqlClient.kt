@@ -37,17 +37,17 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
     ): KConfigurableRootQuery<KNonNullTable<E>, R> =
         queries.forEntity(entityType, block)
 
-    fun <B: KBaseTable, R> createQuery(
+    fun <B: KNonNullBaseTable<*>, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R>
 
-    fun <E: Any, B: KBaseTable> createBaseQuery(
+    fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <E: Any, B: KBaseTable> createBaseQuery(
+    fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
@@ -61,7 +61,7 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
             block
         )
 
-    fun <E: Any, B: KBaseTable> createBaseQuery(
+    fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinType: JoinType,

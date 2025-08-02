@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.*
 
-interface KConfigurableBaseQuery<T: KBaseTable> : KTypedBaseQuery<T> {
+interface KConfigurableBaseQuery<T: KNonNullBaseTable<*>> : KTypedBaseQuery<T> {
 
     interface Query1<
         T1: Selection<*>,

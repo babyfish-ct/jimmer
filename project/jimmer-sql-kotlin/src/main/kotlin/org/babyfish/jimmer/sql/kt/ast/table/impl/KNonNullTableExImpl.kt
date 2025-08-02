@@ -17,7 +17,6 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.*
-import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl.Companion.of
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -94,8 +93,8 @@ internal open class KNonNullTableExImpl<E: Any>(
             )
         }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <TT : KBaseTable> weakJoin(
+    @Suppress("UNCHECK_CAST")
+    override fun <TT : KNonNullBaseTable<*>> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         joinType: JoinType,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
@@ -108,11 +107,11 @@ internal open class KNonNullTableExImpl<E: Any>(
             joinType,
             null
         )
-        return of(javaJoinedTable) as TT
+        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <TT : KBaseTable> weakJoin(
+    override fun <TT : KNonNullBaseTable<*>> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         joinType: JoinType,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
@@ -125,7 +124,7 @@ internal open class KNonNullTableExImpl<E: Any>(
             joinType,
             null
         )
-        return of(javaJoinedTable) as TT
+        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
     }
 
     override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X> =

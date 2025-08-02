@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 
-internal abstract class AbstractKConfigurableBaseQueryImpl<T: KBaseTable>(
+internal abstract class AbstractKConfigurableBaseQueryImpl<T: KNonNullBaseTable<*>>(
     internal val javaBaseQuery: ConfigurableBaseQuery<out BaseTable>,
     protected val selectionTypes: ByteArray
 ) : KConfigurableBaseQuery<T> {
@@ -20,7 +20,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T: KBaseTable>(
     @Suppress("UNCHECKED_CAST")
     override fun asBaseTable(): KBaseTableSymbol<T> =
         KBaseTableSymbol(
-            AbstractKBaseTableImpl.of(
+            AbstractKBaseTableImpl.nonNull(
                 (javaBaseQuery as TypedBaseQueryImplementor<*>)
                     .asBaseTable(selectionTypes, false)
             ) as T
@@ -29,7 +29,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T: KBaseTable>(
     @Suppress("UNCHECKED_CAST")
     override fun asCteBaseTable(): KBaseTableSymbol<T> =
         KBaseTableSymbol(
-            AbstractKBaseTableImpl.of(
+            AbstractKBaseTableImpl.nonNull(
                 (javaBaseQuery as TypedBaseQueryImplementor<*>)
                     .asBaseTable(selectionTypes, true)
             ) as T

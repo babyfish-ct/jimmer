@@ -32,14 +32,14 @@ abstract class KPropsWeakJoin<SP: KPropsLike, TP: KPropsLike>:
     ): Predicate? {
 
         val st = if (source is BaseTable) {
-            AbstractKBaseTableImpl.of(source)
+            AbstractKBaseTableImpl.nonNull(source)
         } else if (source is UntypedJoinDisabledTableProxy<*>) {
             KNonNullTableExImpl(source.__unwrap(), JOIN_ERROR_REASON)
         } else {
             KNonNullTableExImpl(source as TableImplementor<*>, JOIN_ERROR_REASON)
         }
         val tt = if (target is BaseTable)  {
-            AbstractKBaseTableImpl.of(target)
+            AbstractKBaseTableImpl.nonNull(target)
         } else if (target is UntypedJoinDisabledTableProxy<*>) {
             KNonNullTableExImpl(target.__unwrap(), JOIN_ERROR_REASON)
         } else {

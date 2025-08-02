@@ -6,12 +6,9 @@ import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.RecursiveRef
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMergedBaseQueryImpl
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
-import org.babyfish.jimmer.sql.kt.ast.table.KRecursiveRef
-import org.babyfish.jimmer.sql.kt.ast.table.KRemoteRef
+import org.babyfish.jimmer.sql.kt.ast.table.*
 
-interface KTypedBaseQuery<T: KBaseTable> {
+interface KTypedBaseQuery<T: KNonNullBaseTable<*>> {
 
     fun asBaseTable(): KBaseTableSymbol<T>
 
@@ -69,12 +66,12 @@ interface KTypedBaseQuery<T: KBaseTable> {
         )
 }
 
-inline fun <T: KBaseTable> baseTableSymbol(
+inline fun <T: KNonNullBaseTable<*>> baseTableSymbol(
     queryCreator: () -> KTypedBaseQuery<T>
 ): KBaseTableSymbol<T> =
     queryCreator().asBaseTable()
 
-inline fun <T: KBaseTable> cteBaseTableSymbol(
+inline fun <T: KNonNullBaseTable<*>> cteBaseTableSymbol(
     queryCreator: () -> KTypedBaseQuery<T>
 ): KBaseTableSymbol<T> =
     queryCreator().asCteBaseTable()

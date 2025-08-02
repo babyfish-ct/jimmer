@@ -27,19 +27,19 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     override val loaders: KLoaders
         get() = sqlClient().loaders
 
-    override fun <B : KBaseTable, R> createQuery(
+    override fun <B : KNonNullBaseTable<*>, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R> =
         sqlClient().createQuery(symbol, block)
 
-    override fun <E : Any, B : KBaseTable> createBaseQuery(
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQuery(entityType, block)
 
-    override fun <E : Any, B : KBaseTable> createBaseQuery(
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinType: JoinType,
