@@ -1016,6 +1016,63 @@ class BaseQueryTest : AbstractQueryTest() {
         }
     }
 
+    @Test
+    fun testBaseTableWeakOuterJoin() {
+        val baseBook = baseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.id valueIn listOf(1L, 10L))
+                selections.add(table)
+            }
+        }
+        val baseAuthor = baseTableSymbol {
+            sqlClient.createBaseQuery(Author::class) {
+                where(table.id valueIn listOf(1L, 2L))
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseBook) {
+                select(
+                    table._1,
+                    table.weakOuterJoin(baseAuthor) {
+                        source._1.id eq target._1.asTableEx().books.id
+                    }._1
+                )
+            }
+        ) {
+            sql(
+                """select 
+                    |--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, 
+                    |--->tb_2_.c6, tb_2_.c7, tb_2_.c8, tb_2_.c9 
+                    |from (
+                    |--->select tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, tb_3_.PRICE c4, tb_3_.STORE_ID c5 
+                    |--->from BOOK tb_3_ 
+                    |--->where tb_3_.ID in (?, ?)
+                    |) tb_1_ 
+                    |left join (
+                    |--->select tb_4_.ID c6, tb_4_.FIRST_NAME c7, tb_4_.LAST_NAME c8, tb_4_.GENDER c9 
+                    |--->from AUTHOR tb_4_ 
+                    |--->where tb_4_.ID in (?, ?)
+                    |) tb_2_ 
+                    |inner join BOOK_AUTHOR_MAPPING tb_5_ 
+                    |--->on tb_2_.c6 = tb_5_.AUTHOR_ID 
+                    |on tb_1_.c1 = tb_5_.BOOK_ID""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"_1":{"id":1,"name":"Learning GraphQL","edition":1,"price":50.0,"storeId":1},
+                    |--->"_2":{"id":1,"firstName":"Eve","lastName":"Procello","gender":"FEMALE"}
+                    |},{
+                    |--->"_1":{"id":1,"name":"Learning GraphQL","edition":1,"price":50.0,"storeId":1},
+                    |--->"_2":{"id":2,"firstName":"Alex","lastName":"Banks","gender":"MALE"}
+                    |},{
+                    |--->"_1":{"id":10,"name":"GraphQL in Action","edition":1,"price":80.0,"storeId":2},
+                    |--->"_2":null
+                    |}]""".trimMargin()
+            )
+        }
+    }
+
     private class BaseBookAuthorJoin : KPropsWeakJoin<
         KNonNullBaseTable1<KNonNullTable<Book>, KNullableTable<Book>>,
         KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>

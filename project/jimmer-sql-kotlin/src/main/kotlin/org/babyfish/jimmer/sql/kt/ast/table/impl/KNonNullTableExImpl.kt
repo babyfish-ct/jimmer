@@ -6,10 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpressionImpl
@@ -90,58 +87,6 @@ internal open class KNonNullTableExImpl<E: Any>(
         } else {
             KNonNullTableExImpl(
                 javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
-            )
-        }
-
-    @Suppress("UNCHECK_CAST")
-    override fun <TT : KNonNullBaseTable<*>> weakJoin(
-        targetSymbol: KBaseTableSymbol<TT>,
-        joinType: JoinType,
-        weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
-    ): TT {
-        val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
-        val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
-            javaTable,
-            handle,
-            joinType,
-            null
-        )
-        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <TT : KNonNullBaseTable<*>> weakJoin(
-        targetSymbol: KBaseTableSymbol<TT>,
-        joinType: JoinType,
-        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
-    ): TT {
-        val handle = WeakJoinHandle.of(weakJoinType.java)
-        val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
-            javaTable,
-            handle,
-            joinType,
-            null
-        )
-        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
-    }
-
-    override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X> =
-        if (joinDisabledReason != null) {
-            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
-        } else {
-            KNonNullTableExImpl(
-                createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.INNER)
-            )
-        }
-
-    override fun <X : Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNonNullTableEx<X> =
-        if (joinDisabledReason != null) {
-            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
-        } else {
-            KNonNullTableExImpl(
-                javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)
             )
         }
 

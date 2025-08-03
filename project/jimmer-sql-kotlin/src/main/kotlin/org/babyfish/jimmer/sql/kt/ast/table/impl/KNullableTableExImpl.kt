@@ -9,9 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpressionImpl
-import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.*
@@ -60,16 +57,6 @@ internal class KNullableTableExImpl<E: Any>(
     override fun <X : Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KNonNullTableEx<X> =
         KNonNullTableExImpl(
             javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
-        )
-
-    override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNullableTableEx<X> =
-        KNullableTableExImpl(
-            createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.INNER)
-        )
-
-    override fun <X : Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNullableTableEx<X> =
-        KNullableTableExImpl(
-            javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)
         )
 
     override fun fetch(fetcher: Fetcher<E>?): Selection<E?> =

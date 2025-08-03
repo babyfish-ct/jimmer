@@ -252,5 +252,235 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T: KNonNullBaseTable<
         KNonNullBaseTable5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable>
     >(javaQuery, selectionTypes), KConfigurableBaseQuery.Query5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable> {
 
+        override fun <T : Any> add(table: KNonNullTable<T>): KConfigurableBaseQuery.Query6<T1, T2, T3, T4, T5, KNonNullTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery5 = javaBaseQuery as ConfigurableBaseQuery.Query5<*, *, *, *, *>
+            return Query6Impl(
+                javaQuery5.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(table: KNullableTable<T>): KConfigurableBaseQuery.Query6<T1, T2, T3, T4, T5, KNullableTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery5 = javaBaseQuery as ConfigurableBaseQuery.Query5<*, *, *, *, *>
+            return Query6Impl(
+                javaQuery5.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNonNullExpression<T>): KConfigurableBaseQuery.Query6<T1, T2, T3, T4, T5, KNonNullExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, KNullableExpression<T>> {
+            val javaQuery5 = javaBaseQuery as ConfigurableBaseQuery.Query5<*, *, *, *, *>
+            return Query6Impl(
+                javaQuery5.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_EXPRESSION)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNullableExpression<T>): KConfigurableBaseQuery.Query6<T1, T2, T3, T4, T5, KNullableExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, KNullableExpression<T>> {
+            val javaQuery5 = javaBaseQuery as ConfigurableBaseQuery.Query5<*, *, *, *, *>
+            return Query6Impl(
+                javaQuery5.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_EXPRESSION)
+            )
+        }
     }
+
+    private class Query6Impl<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>
+    >(
+        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        selectionTypes: ByteArray
+    ) : AbstractKConfigurableBaseQueryImpl<
+        KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>
+    >(javaQuery, selectionTypes), KConfigurableBaseQuery.Query6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable> {
+
+        override fun <T : Any> add(table: KNonNullTable<T>): KConfigurableBaseQuery.Query7<T1, T2, T3, T4, T5, T6, KNonNullTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery6 = javaBaseQuery as ConfigurableBaseQuery.Query6<*, *, *, *, *, *>
+            return Query7Impl(
+                javaQuery6.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(table: KNullableTable<T>): KConfigurableBaseQuery.Query7<T1, T2, T3, T4, T5, T6, KNullableTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery6 = javaBaseQuery as ConfigurableBaseQuery.Query6<*, *, *, *, *, *>
+            return Query7Impl(
+                javaQuery6.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNonNullExpression<T>): KConfigurableBaseQuery.Query7<T1, T2, T3, T4, T5, T6, KNonNullExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, KNullableExpression<T>> {
+            val javaQuery6 = javaBaseQuery as ConfigurableBaseQuery.Query6<*, *, *, *, *, *>
+            return Query7Impl(
+                javaQuery6.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_EXPRESSION)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNullableExpression<T>): KConfigurableBaseQuery.Query7<T1, T2, T3, T4, T5, T6, KNullableExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, KNullableExpression<T>> {
+            val javaQuery6 = javaBaseQuery as ConfigurableBaseQuery.Query6<*, *, *, *, *, *>
+            return Query7Impl(
+                javaQuery6.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_EXPRESSION)
+            )
+        }
+    }
+
+    private class Query7Impl<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>,
+        T7Nullable: Selection<*>
+    >(
+        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        selectionTypes: ByteArray
+    ) : AbstractKConfigurableBaseQueryImpl<
+        KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>
+    >(javaQuery, selectionTypes), KConfigurableBaseQuery.Query7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable> {
+
+        override fun <T : Any> add(table: KNonNullTable<T>): KConfigurableBaseQuery.Query8<T1, T2, T3, T4, T5, T6, T7, KNonNullTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery7 = javaBaseQuery as ConfigurableBaseQuery.Query7<*, *, *, *, *, *, *>
+            return Query8Impl(
+                javaQuery7.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(table: KNullableTable<T>): KConfigurableBaseQuery.Query8<T1, T2, T3, T4, T5, T6, T7, KNullableTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery7 = javaBaseQuery as ConfigurableBaseQuery.Query7<*, *, *, *, *, *, *>
+            return Query8Impl(
+                javaQuery7.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNonNullExpression<T>): KConfigurableBaseQuery.Query8<T1, T2, T3, T4, T5, T6, T7, KNonNullExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, KNullableExpression<T>> {
+            val javaQuery7 = javaBaseQuery as ConfigurableBaseQuery.Query7<*, *, *, *, *, *, *>
+            return Query8Impl(
+                javaQuery7.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_EXPRESSION)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNullableExpression<T>): KConfigurableBaseQuery.Query8<T1, T2, T3, T4, T5, T6, T7, KNullableExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, KNullableExpression<T>> {
+            val javaQuery7 = javaBaseQuery as ConfigurableBaseQuery.Query7<*, *, *, *, *, *, *>
+            return Query8Impl(
+                javaQuery7.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_EXPRESSION)
+            )
+        }
+    }
+
+    private class Query8Impl<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T8: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>,
+        T7Nullable: Selection<*>,
+        T8Nullable: Selection<*>
+    >(
+        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        selectionTypes: ByteArray
+    ) : AbstractKConfigurableBaseQueryImpl<
+        KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>
+    >(javaQuery, selectionTypes), KConfigurableBaseQuery.Query8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable> {
+
+        override fun <T : Any> add(table: KNonNullTable<T>): KConfigurableBaseQuery.Query9<T1, T2, T3, T4, T5, T6, T7, T8, KNonNullTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery8 = javaBaseQuery as ConfigurableBaseQuery.Query8<*, *, *, *, *, *, *, *>
+            return Query9Impl(
+                javaQuery8.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(table: KNullableTable<T>): KConfigurableBaseQuery.Query9<T1, T2, T3, T4, T5, T6, T7, T8, KNullableTable<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, KNullableTable<T>> {
+            val javaTable = (table as KTableImplementor<*>).javaTable
+            val javaQuery8 = javaBaseQuery as ConfigurableBaseQuery.Query8<*, *, *, *, *, *, *, *>
+            return Query9Impl(
+                javaQuery8.addSelect(javaTable),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_TABLE)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNonNullExpression<T>): KConfigurableBaseQuery.Query9<T1, T2, T3, T4, T5, T6, T7, T8, KNonNullExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, KNullableExpression<T>> {
+            val javaQuery8 = javaBaseQuery as ConfigurableBaseQuery.Query8<*, *, *, *, *, *, *, *>
+            return Query9Impl(
+                javaQuery8.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_EXPRESSION)
+            )
+        }
+
+        override fun <T : Any> add(expression: KNullableExpression<T>): KConfigurableBaseQuery.Query9<T1, T2, T3, T4, T5, T6, T7, T8, KNullableExpression<T>, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, KNullableExpression<T>> {
+            val javaQuery8 = javaBaseQuery as ConfigurableBaseQuery.Query8<*, *, *, *, *, *, *, *>
+            return Query9Impl(
+                javaQuery8.addSelect(expression as Expression<*>),
+                AbstractKBaseTableImpl.selectionTypes(selectionTypes, AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_EXPRESSION)
+            )
+        }
+    }
+
+    private class Query9Impl<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T8: Selection<*>,
+        T9: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>,
+        T7Nullable: Selection<*>,
+        T8Nullable: Selection<*>,
+        T9Nullable: Selection<*>
+    >(
+        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        selectionTypes: ByteArray
+    ) : AbstractKConfigurableBaseQueryImpl<
+        KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>
+    >(javaQuery, selectionTypes), KConfigurableBaseQuery.Query9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>
 }

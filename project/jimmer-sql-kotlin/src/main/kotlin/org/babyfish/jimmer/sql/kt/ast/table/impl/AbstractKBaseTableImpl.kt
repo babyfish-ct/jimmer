@@ -6,18 +6,18 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
-import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.BaseTable
-import org.babyfish.jimmer.sql.ast.table.WeakJoin
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable3
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable4
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable5
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable6
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable7
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable8
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable9
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.*
@@ -158,6 +158,74 @@ internal abstract class AbstractKBaseTableImpl(
                     Selection<*>,
                     Selection<*>
                 >(baseTable)
+                6 -> NonNullTable6<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>
+                >(baseTable)
+                7 -> NonNullTable7<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>
+                >(baseTable)
+                8 -> NonNullTable8<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>
+                >(baseTable)
+                9 -> NonNullTable9<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>
+                >(baseTable)
                 else -> throw IllegalArgumentException()
             }
 
@@ -182,6 +250,44 @@ internal abstract class AbstractKBaseTableImpl(
                     Selection<*>,
                 >(baseTable)
                 5 -> NullableTable5<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                >(baseTable)
+                6 -> NullableTable6<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                >(baseTable)
+                7 -> NullableTable7<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                >(baseTable)
+                8 -> NullableTable8<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                >(baseTable)
+                9 -> NullableTable9<
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
+                    Selection<*>,
                     Selection<*>,
                     Selection<*>,
                     Selection<*>,
@@ -271,7 +377,7 @@ internal abstract class AbstractKBaseTableImpl(
             get() = kotlinSelection(
                 (javaTable as BaseTable1<T1>)._1,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
-                false
+                true
             )
 
         override fun <TT : KNonNullBaseTable<*>> weakJoin(
@@ -366,14 +472,14 @@ internal abstract class AbstractKBaseTableImpl(
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._1,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
-                false
+                true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._2,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
-                false
+                true
             )
 
         override fun <TT : KNonNullBaseTable<*>> weakJoin(
@@ -481,21 +587,21 @@ internal abstract class AbstractKBaseTableImpl(
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._1,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
-                false
+                true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._2,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
-                false
+                true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._3,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
-                false
+                true
             )
 
         override fun <TT : KNonNullBaseTable<*>> weakJoin(
@@ -616,28 +722,28 @@ internal abstract class AbstractKBaseTableImpl(
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._1,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
-                false
+                true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._2,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
-                false
+                true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._3,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
-                false
+                true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._4,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
-                false
+                true
             )
 
         override fun <TT : KNonNullBaseTable<*>> weakJoin(
@@ -771,35 +877,35 @@ internal abstract class AbstractKBaseTableImpl(
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._1,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
-                false
+                true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._2,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
-                false
+                true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._3,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
-                false
+                true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._4,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
-                false
+                true
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._5,
                 (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
-                false
+                true
             )
 
         override fun <TT : KNonNullBaseTable<*>> weakJoin(
@@ -823,6 +929,856 @@ internal abstract class AbstractKBaseTableImpl(
         override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1, T2, T3, T4, T5>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NonNullTable6<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNonNullBaseTable6<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T1Nullable,
+        T2Nullable,
+        T3Nullable,
+        T4Nullable,
+        T5Nullable,
+        T6Nullable
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                false
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                false
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                false
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                false
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                false
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                false
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NullableTable6<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNullableBaseTable6<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                true
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                true
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                true
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                true
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                true
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable6<*, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                true
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NonNullTable7<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>,
+        T7Nullable: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNonNullBaseTable7<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T7,
+        T1Nullable,
+        T2Nullable,
+        T3Nullable,
+        T4Nullable,
+        T5Nullable,
+        T6Nullable,
+        T7Nullable
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                false
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                false
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                false
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                false
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                false
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                false
+            )
+
+        override val _7: T7
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._7,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                false
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NullableTable7<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNullableBaseTable7<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T7
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                true
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                true
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                true
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                true
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                true
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                true
+            )
+
+        override val _7: T7
+            get() = kotlinSelection(
+                (javaTable as BaseTable7<*, *, *, *, *, *, *>)._7,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                true
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NonNullTable8<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T8: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>,
+        T7Nullable: Selection<*>,
+        T8Nullable: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNonNullBaseTable8<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T7,
+        T8,
+        T1Nullable,
+        T2Nullable,
+        T3Nullable,
+        T4Nullable,
+        T5Nullable,
+        T6Nullable,
+        T7Nullable,
+        T8Nullable
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                false
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                false
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                false
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                false
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                false
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                false
+            )
+
+        override val _7: T7
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._7,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                false
+            )
+
+        override val _8: T8
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._8,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                false
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NullableTable8<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T8: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNullableBaseTable8<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T7,
+        T8
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                true
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                true
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                true
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                true
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                true
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                true
+            )
+
+        override val _7: T7
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._7,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                true
+            )
+
+        override val _8: T8
+            get() = kotlinSelection(
+                (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._8,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                true
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NonNullTable9<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T8: Selection<*>,
+        T9: Selection<*>,
+        T1Nullable: Selection<*>,
+        T2Nullable: Selection<*>,
+        T3Nullable: Selection<*>,
+        T4Nullable: Selection<*>,
+        T5Nullable: Selection<*>,
+        T6Nullable: Selection<*>,
+        T7Nullable: Selection<*>,
+        T8Nullable: Selection<*>,
+        T9Nullable: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNonNullBaseTable9<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T7,
+        T8,
+        T9,
+        T1Nullable,
+        T2Nullable,
+        T3Nullable,
+        T4Nullable,
+        T5Nullable,
+        T6Nullable,
+        T7Nullable,
+        T8Nullable,
+        T9Nullable
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                false
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                false
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                false
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                false
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                false
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                false
+            )
+
+        override val _7: T7
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._7,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                false
+            )
+
+        override val _8: T8
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._8,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                false
+            )
+
+        override val _9: T9
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._9,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[8],
+                false
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<
+                KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinType)
+    }
+
+    private class NullableTable9<
+        T1: Selection<*>,
+        T2: Selection<*>,
+        T3: Selection<*>,
+        T4: Selection<*>,
+        T5: Selection<*>,
+        T6: Selection<*>,
+        T7: Selection<*>,
+        T8: Selection<*>,
+        T9: Selection<*>
+    >(
+        javaTable: BaseTable
+    ) : AbstractKBaseTableImpl(javaTable), KNullableBaseTable9<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+        T6,
+        T7,
+        T8,
+        T9
+    > {
+
+        override val _1: T1
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._1,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                true
+            )
+
+        override val _2: T2
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._2,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                true
+            )
+
+        override val _3: T3
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._3,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                true
+            )
+
+        override val _4: T4
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._4,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                true
+            )
+
+        override val _5: T5
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._5,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                true
+            )
+
+        override val _6: T6
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._6,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                true
+            )
+
+        override val _7: T7
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._7,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                true
+            )
+
+        override val _8: T8
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._8,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                true
+            )
+
+        override val _9: T9
+            get() = kotlinSelection(
+                (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._9,
+                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[8],
+                true
+            )
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>>
+        ): TT =
+            weakJoinImpl(targetSymbol, weakJoinType)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinLambda: KPropsWeakJoinFun<
+                KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>
+        ): TNT =
+            weakOuterJoinImpl(targetSymbol, weakJoinLambda)
+
+        override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+            targetSymbol: KBaseTableSymbol<TT>,
+            weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>>
         ): TNT =
             weakOuterJoinImpl(targetSymbol, weakJoinType)
     }

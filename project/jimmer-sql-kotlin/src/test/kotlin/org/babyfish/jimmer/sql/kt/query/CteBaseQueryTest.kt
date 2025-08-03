@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.query
 
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType
 import org.babyfish.jimmer.sql.kt.ast.expression.*
+import org.babyfish.jimmer.sql.kt.ast.query.baseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.query.cteBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable1
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -1050,6 +1051,65 @@ class CteBaseQueryTest : AbstractQueryTest() {
                     )
                 }
             ) {}
+        }
+    }
+
+    @Test
+    fun testBaseTableWeakOuterJoin() {
+        val baseBook = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.id valueIn listOf(1L, 10L))
+                selections.add(table)
+            }
+        }
+        val baseAuthor = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(Author::class) {
+                where(table.id valueIn listOf(1L, 2L))
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseBook) {
+                select(
+                    table._1,
+                    table.weakOuterJoin(baseAuthor) {
+                        source._1.id eq target._1.asTableEx().books.id
+                    }._1
+                )
+            }
+        ) {
+            sql(
+                """with tb_1_(c1, c2, c3, c4, c5) as (
+                    |--->select tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID 
+                    |--->from BOOK tb_3_ 
+                    |--->where tb_3_.ID in (?, ?)
+                    |), 
+                    |tb_2_(c6, c7, c8, c9) as (
+                    |--->select tb_4_.ID, tb_4_.FIRST_NAME, tb_4_.LAST_NAME, tb_4_.GENDER 
+                    |--->from AUTHOR tb_4_ 
+                    |--->where tb_4_.ID in (?, ?)
+                    |) 
+                    |select 
+                    |--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, 
+                    |--->tb_2_.c6, tb_2_.c7, tb_2_.c8, tb_2_.c9 
+                    |from tb_1_ 
+                    |left join tb_2_ 
+                    |inner join BOOK_AUTHOR_MAPPING tb_5_ 
+                    |--->on tb_2_.c6 = tb_5_.AUTHOR_ID 
+                    |--->on tb_1_.c1 = tb_5_.BOOK_ID""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"_1":{"id":1,"name":"Learning GraphQL","edition":1,"price":50.0,"storeId":1},
+                    |--->"_2":{"id":1,"firstName":"Eve","lastName":"Procello","gender":"FEMALE"}
+                    |},{
+                    |--->"_1":{"id":1,"name":"Learning GraphQL","edition":1,"price":50.0,"storeId":1},
+                    |--->"_2":{"id":2,"firstName":"Alex","lastName":"Banks","gender":"MALE"}
+                    |},{
+                    |--->"_1":{"id":10,"name":"GraphQL in Action","edition":1,"price":80.0,"storeId":2},
+                    |--->"_2":null
+                    |}]""".trimMargin()
+            )
         }
     }
 

@@ -24,8 +24,28 @@ interface KTableEx<E: Any> : KTable<E> {
     override fun <X: Any> inverseOuterJoinReference(backProp: KProperty1<X, E?>): KNullableTableEx<X>
     override fun <X: Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTableEx<X>
 
-    fun <X: Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KTable<X>
-    fun <X: Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KTableEx<X>
+    fun <X: Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X>
+    fun <X: Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNonNullTableEx<X>
     fun <X: Any> weakOuterJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNullableTableEx<X>
     fun <X: Any> weakOuterJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNullableTableEx<X>
+
+    fun <TT: KNonNullBaseTable<*>> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
+    ): TT
+
+    fun <TT: KNonNullBaseTable<*>> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
+    ): TT
+
+    fun <TNT: KNullableBaseTable, TT: KNonNullBaseTable<TNT>> weakOuterJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
+    ): TNT
+
+    fun <TNT: KNullableBaseTable, TT: KNonNullBaseTable<*>> weakOuterJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
+    ): TNT
 }
