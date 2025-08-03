@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
-import jdk.internal.classfile.CodeBuilder;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
