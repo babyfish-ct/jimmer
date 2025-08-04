@@ -42,11 +42,18 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
-        joinType: JoinType,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
-        createBaseQuery(entityType, recursiveRef, joinType, joinBlock, block)
+        sqlClient().createBaseQuery(entityType, recursiveRef, joinBlock, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sqlClient().createBaseQuery(entityType, recursiveRef, weakJoinType, block)
 
     override fun <E : Any> createUpdate(
         entityType: KClass<E>,

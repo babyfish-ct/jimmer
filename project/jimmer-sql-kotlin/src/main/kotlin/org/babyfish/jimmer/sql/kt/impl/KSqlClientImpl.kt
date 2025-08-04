@@ -97,7 +97,6 @@ internal class KSqlClientImpl(
     override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
-        joinType: JoinType,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> {
@@ -106,7 +105,28 @@ internal class KSqlClientImpl(
             javaClient,
             ImmutableType.get(entityType.java),
         ) {
-            BaseTableSymbols.of(recursiveRef.javaRef, it, handle, joinType) as BaseTable
+            BaseTableSymbols.of(recursiveRef.javaRef, it, handle, JoinType.INNER) as BaseTable
+        }
+        val query = KMutableRecursiveBaseQueryImpl<E, B>(
+            javaQuery,
+            AbstractKBaseTableImpl.nonNull(javaQuery.recursive()) as B
+        )
+        return query.block()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> {
+        val handle = WeakJoinHandle.of(weakJoinType.java)
+        val javaQuery = MutableRecursiveBaseQueryImpl(
+            javaClient,
+            ImmutableType.get(entityType.java),
+        ) {
+            BaseTableSymbols.of(recursiveRef.javaRef, it, handle, JoinType.INNER) as BaseTable
         }
         val query = KMutableRecursiveBaseQueryImpl<E, B>(
             javaQuery,

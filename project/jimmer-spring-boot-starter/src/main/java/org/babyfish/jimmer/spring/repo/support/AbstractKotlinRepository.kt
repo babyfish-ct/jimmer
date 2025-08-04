@@ -199,19 +199,9 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         sql.createBaseQuery(
             entityType,
             recursiveRef,
-            JoinType.INNER,
             joinBlock,
             block
         )
-
-    protected fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
-        entityType: KClass<E>,
-        recursiveRef: KRecursiveRef<B>,
-        joinType: JoinType,
-        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
-        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
-    ): KConfigurableBaseQuery<B> =
-        sql.createBaseQuery(entityType, recursiveRef, joinType, joinBlock, block)
 
     protected fun <B: KNonNullBaseTable<*>, R> createQuery(
         symbol: KBaseTableSymbol<B>,

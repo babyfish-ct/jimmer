@@ -52,20 +52,12 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
         recursiveRef: KRecursiveRef<B>,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
-    ): KConfigurableBaseQuery<B> =
-        createBaseQuery(
-            entityType,
-            recursiveRef,
-            JoinType.INNER,
-            joinBlock,
-            block
-        )
+    ): KConfigurableBaseQuery<B>
 
     fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
-        joinType: JoinType,
-        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 

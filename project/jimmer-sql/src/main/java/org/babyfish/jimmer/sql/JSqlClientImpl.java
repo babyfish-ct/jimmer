@@ -476,7 +476,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
     public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
-            JoinType joinType,
             WeakJoin<T, R> weakJoinLambda
     ) {
         WeakJoinLambda lambda = JWeakJoinLambdaFactory.get(weakJoinLambda);
@@ -486,7 +485,19 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 true,
                 (WeakJoin<TableLike<?>, TableLike<?>>)(WeakJoin<?, ?>) weakJoinLambda
         );
-        R recursiveTable = (R) BaseTableSymbols.of(recursiveRef, table, handle, joinType);
+        R recursiveTable = (R) BaseTableSymbols.of(recursiveRef, table, handle, JoinType.INNER);
+        return new MutableRecursiveBaseQueryImpl<>(this, table, recursiveTable);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+            T table,
+            RecursiveRef<R> recursiveRef,
+            Class<? extends WeakJoin<T, R>> weakJoinType
+    ) {
+        WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
+        R recursiveTable = (R) BaseTableSymbols.of(recursiveRef, table, handle, JoinType.INNER);
         return new MutableRecursiveBaseQueryImpl<>(this, table, recursiveTable);
     }
 

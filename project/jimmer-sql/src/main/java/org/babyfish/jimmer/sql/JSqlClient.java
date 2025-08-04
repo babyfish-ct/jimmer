@@ -55,19 +55,16 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
 
     MutableBaseQuery createBaseQuery(TableProxy<?> table);
 
-    default <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+    <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
             WeakJoin<T, R> weakJoinLambda
-    ) {
-        return createBaseQuery(table, recursiveRef, JoinType.INNER, weakJoinLambda);
-    }
+    );
 
     <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
-            JoinType joinType,
-            WeakJoin<T, R> weakJoinLambda
+            Class<? extends WeakJoin<T, R>> weakJoinType
     );
 
     MutableUpdate createUpdate(TableProxy<?> table);
