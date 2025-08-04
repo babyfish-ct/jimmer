@@ -9,6 +9,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi
 import org.babyfish.jimmer.spring.repo.KotlinRepository
 import org.babyfish.jimmer.spring.repo.PageParam
 import org.babyfish.jimmer.spring.repository.orderBy
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
@@ -17,10 +18,17 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableRecursiveBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
+import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsWeakJoinFun
+import org.babyfish.jimmer.sql.kt.ast.table.KRecursiveRef
 import org.springframework.core.GenericTypeResolver
 import kotlin.reflect.KClass
 
@@ -175,4 +183,39 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         block: KMutableDelete<E>.() -> Unit
     ): KExecutable<Int> =
         sql.createDelete(entityType, block)
+
+    protected fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sql.createBaseQuery(entityType, block)
+
+    protected fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sql.createBaseQuery(
+            entityType,
+            recursiveRef,
+            JoinType.INNER,
+            joinBlock,
+            block
+        )
+
+    protected fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        joinType: JoinType,
+        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sql.createBaseQuery(entityType, recursiveRef, joinType, joinBlock, block)
+
+    protected fun <B: KNonNullBaseTable<*>, R> createQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
+    ): KConfigurableRootQuery<B, R> =
+        sql.createQuery(symbol, block)
 }
