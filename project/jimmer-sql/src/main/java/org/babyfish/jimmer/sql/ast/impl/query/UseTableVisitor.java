@@ -4,10 +4,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
@@ -32,36 +31,47 @@ public class UseTableVisitor extends AstVisitor {
 
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
-        if (prop == null) {
-            if (table.getTableImplementor().getImmutableType().getSelectableProps().size() > 1) {
+        TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+        if (implementor instanceof BaseTableImplementor) {
+            BaseTableImplementor baseTableImplementor = (BaseTableImplementor) implementor;
+            baseTableImplementor.realTable(getAstContext()).use(this);
+        } else if (implementor instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+            if (prop == null) {
+                if (tableImplementor.getImmutableType().getSelectableProps().size() > 1) {
+                    use(table);
+                }
+            } else if (prop.isId() && (
+                    rawId || TableUtils.isRawIdAllowed(tableImplementor, getAstContext().getSqlClient()))
+            ) {
+                getAstContext().useTableId(table);
+                use(table.getParent());
+            } else {
                 use(table);
             }
-        } else if (prop.isId() && (
-                rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), getAstContext().getSqlClient()))
-        ) {
-            getAstContext().useTableId(table);
-            use(table.getParent());
-        } else {
-            use(table);
+            BaseTableOwner owner = tableImplementor.getBaseTableOwner();
+            if (owner != null) {
+                BaseTableImplementor baseTableImplementor = getAstContext().resolveBaseTable(owner.getBaseTable());
+                use(baseTableImplementor.realTable(getAstContext()));
+            }
         }
     }
 
     @Override
     public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {
-        new UseJoinFetcherVisitor(getAstContext(), table.getTableImplementor()).visit(fetcher);
+        TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+        if (implementor instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+            new UseJoinFetcherVisitor(getAstContext(), tableImplementor).visit(fetcher);
+        }
     }
 
     @Override
     public void visitStatement(AbstractMutableStatementImpl statement) {
         AstContext ctx = getAstContext();
-        RealTable table = ctx.getStatement().getTableImplementor().realTable(ctx.getJoinTypeMergeScope());
+        RealTable table = ctx.getStatement().getTableLikeImplementor().realTable(ctx);
         rootTables.add(table);
         table.use(this);
-    }
-
-    @Override
-    public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
-        return true;
     }
 
     private void use(RealTable table) {
@@ -86,8 +96,9 @@ public class UseTableVisitor extends AstVisitor {
         @Override
         protected Object enter(Field field) {
             TableImplementor<?> oldTableImplementor = this.tableImplementor;
-            TableImplementor<?> newTableImplementor = oldTableImplementor.joinFetchImplementor(field.getProp());
-            ctx.useTable(newTableImplementor.realTable(ctx.getJoinTypeMergeScope()));
+            TableImplementor<?> newTableImplementor =
+                    oldTableImplementor.joinFetchImplementor(field.getProp(), oldTableImplementor.getBaseTableOwner());
+            ctx.useTable(newTableImplementor.realTable(ctx));
             this.tableImplementor = newTableImplementor;
             return oldTableImplementor;
         }

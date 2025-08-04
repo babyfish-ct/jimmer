@@ -10,11 +10,17 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -22,11 +28,15 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>implements TableImplementor<E> {
+class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplementor<?>>implements TableImplementor<E> {
 
     final AbstractMutableStatementImpl statement;
 
@@ -42,7 +52,16 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     private final JoinType joinType;
 
+    private final boolean fetch;
+
+    @Nullable
+    private final BaseTableOwner baseTableOwner;
+
+    private Map<BaseTableOwner, TableImpl<E>> neighborMap;
+
     private RealTableImpl realTable;
+
+    private boolean hasBaseTable;
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -51,7 +70,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             boolean isInverse,
             ImmutableProp joinProp,
             WeakJoinHandle weakJoinHandle,
-            JoinType joinType
+            JoinType joinType,
+            boolean fetch
     ) {
         if (statement == null) {
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
@@ -76,6 +96,25 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         this.joinProp = joinProp;
         this.weakJoinHandle = weakJoinHandle;
         this.joinType = joinType;
+        this.fetch = fetch;
+        this.baseTableOwner = parent != null ? parent.baseTableOwner : null;
+    }
+
+    private TableImpl(
+            TableImpl<E> base,
+            TableImpl<?> parent,
+            @Nullable BaseTableOwner baseTableOwner
+    ) {
+        this.statement = base.statement;
+        this.immutableType = base.immutableType;
+        this.parent = parent;
+        this.isInverse = base.isInverse;
+        this.joinProp = base.joinProp;
+        this.weakJoinHandle = base.weakJoinHandle;
+        this.joinType = base.joinType;
+        this.fetch = base.fetch;
+        this.neighborMap = base.neighborMap;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override
@@ -99,14 +138,14 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     }
 
     @Override
-    public final boolean isEmpty(java.util.function.Predicate<TableImplementor<?>> filter) {
+    public final boolean isEmpty(java.util.function.Predicate<TableLikeImplementor<?>> filter) {
         if (isEmpty()) {
             return true;
         }
         if (filter == null) {
             return false;
         }
-        for (TableImpl<?> childTable : this) {
+        for (TableLikeImplementor<?> childTable : this) {
             if (filter.test(childTable)) {
                 return false;
             }
@@ -136,6 +175,13 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @Override
     public final RealTableImpl realTable(JoinTypeMergeScope scope) {
+        return realTable0(scope, parent);
+    }
+
+    private RealTableImpl realTable0(
+            JoinTypeMergeScope scope,
+            TableImpl<?> parent
+    ) {
         RealTableImpl realTable = this.realTable;
         if (realTable == null) {
             if (parent == null) {
@@ -145,6 +191,10 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             }
             this.realTable = realTable;
         }
+        return realTable;
+    }
+
+    public RealTableImpl tryGetRealTable() {
         return realTable;
     }
 
@@ -376,7 +426,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         if (manyToManyViewBaseProp != null) {
             return (TableImplementor<X>)
                     ((TableImpl<Object>)join0(false, manyToManyViewBaseProp, joinType))
-                    .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType);
+                            .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType);
         }
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
             if (isRemote()) {
@@ -433,7 +483,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         if (manyToManyViewBaseProp != null) {
             return (TableImplementor<X>)
                     ((TableImpl<?>)join0(true, backProp.getManyToManyViewBaseDeeperProp(), joinType))
-                    .join0(true, manyToManyViewBaseProp, joinType);
+                            .join0(true, manyToManyViewBaseProp, joinType);
         }
         return (TableImplementor<X>) join0(true, backProp, joinType);
     }
@@ -486,7 +536,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             JoinType joinType
     ) {
         Key key = new Key(joinName, joinType, null, false);
-        TableImpl<?> joinedTable = getValue(key);
+        TableImpl<?> joinedTable = (TableImpl<?>) getValue(key);
         if (joinedTable != null) {
             return joinedTable;
         }
@@ -497,7 +547,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
                 isInverse,
                 prop,
                 null,
-                joinType
+                joinType,
+                false
         );
         putValue(key, joinedTable);
         return joinedTable;
@@ -516,11 +567,11 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             WeakJoin<?, ?> weakJoinLambda
     ) {
         return weakJoinImplementor(
-                new WeakJoinHandle(
+                WeakJoinHandle.of(
                         JWeakJoinLambdaFactory.get(weakJoinLambda),
                         true,
                         true,
-                        (WeakJoin<Table<?>, Table<?>>) weakJoinLambda
+                        (WeakJoin<TableLike<?>, TableLike<?>>) weakJoinLambda
                 ),
                 joinType
         );
@@ -530,17 +581,24 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
         return new TableImpl<>(
                 statement,
-                handle.getTargetType(),
+                ((WeakJoinHandle.EntityTableHandle)handle).getTargetType(),
                 this,
                 isInverse,
                 null,
                 handle,
-                joinType
+                joinType,
+                false
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TableImplementor<?> joinFetchImplementor(ImmutableProp prop) {
+    public <X extends BaseTable> X weakJoinImplementor(X targetBaseTable, WeakJoinHandle handle, JoinType joinType) {
+        return (X) BaseTableSymbols.of((BaseTableSymbol) targetBaseTable, this, handle, joinType, null);
+    }
+
+    @Override
+    public TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner) {
         if (!prop.isAssociation(TargetLevel.PERSISTENT) || prop.isReferenceList(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "Cannot join fetch \"" +
@@ -555,7 +613,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         JoinType joinType = prop.isNullable() ? JoinType.LEFT : JoinType.INNER;
 
         Key key = new Key(prop.getName(), joinType, null, true);
-        TableImpl<?> joinedTable = getValue(key);
+        TableImpl<?> joinedTable = (TableImpl<?>) getValue(key);
         if (joinedTable != null) {
             return joinedTable;
         }
@@ -567,10 +625,16 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
                 mappedBy != null,
                 mappedBy != null ? mappedBy : prop,
                 null,
-                joinType
+                joinType,
+                true
         );
         putValue(key, joinedTable);
         return joinedTable;
+    }
+
+    @Override
+    public boolean hasBaseTable() {
+        return hasBaseTable;
     }
 
     @Override
@@ -616,23 +680,23 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
+        visitor.visitTableReference(realTable(visitor.getAstContext()), null, false);
     }
 
     @Override
     public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
-        realTable(builder.getAstContext().getJoinTypeMergeScope()).renderJoinAsFrom(builder, mode);
+        realTable(builder.getAstContext()).renderJoinAsFrom(builder, mode);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        JoinTypeMergeScope scope;
+        AstContext astContext;
         if (builder instanceof SqlBuilder) {
-            scope = ((SqlBuilder)builder).getAstContext().getJoinTypeMergeScope();
+            astContext = ((SqlBuilder)builder).getAstContext();
         } else {
-            scope = null;
+            astContext = null;
         }
-        realTable(scope).renderTo(builder);
+        realTable(astContext).renderTo(builder, false);
     }
 
     @Override
@@ -662,24 +726,35 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @Override
     public String toString() {
-        String text;
-        if (joinProp == null) {
-            text = immutableType.getJavaClass().getSimpleName();
-        } else if (isInverse) {
-            ImmutableProp opposite = joinProp.getOpposite();
-            if (opposite != null) {
-                text = parent.toString() + '.' + opposite.getName();
-            } else {
-                text = parent + "[← " + joinProp + ']';
-            }
+        StringBuilder builder = new StringBuilder();;
+        if (parent == null) {
+            builder.append(immutableType.getJavaClass().getSimpleName());
         } else {
-            return parent.toString() + '.' + joinProp.getName();
+            builder.append(parent);
+            if (isInverse) {
+                ImmutableProp opposite = joinProp.getOpposite();
+                if (opposite != null) {
+                    builder.append('.').append(opposite.getName());
+                } else {
+                    builder.append("[← ").append(joinProp.getName()).append(']');
+                }
+            } else {
+                if (joinProp != null) {
+                    builder.append('.').append(joinProp.getName());
+                }
+                if (weakJoinHandle != null) {
+                    builder.append('[').append(weakJoinHandle).append(']');
+                }
+            }
         }
         JoinType joinType = this.joinType;
-        if (joinType == JoinType.INNER) {
-            return text;
+        if (joinType != JoinType.INNER) {
+            builder.append('(').append(joinType.name().toLowerCase()).append(')');
         }
-        return text + '(' + joinType.name().toLowerCase() + ')';
+        if (baseTableOwner != null) {
+            builder.append(':').append(baseTableOwner);
+        }
+        return builder.toString();
     }
 
     @Override
@@ -738,6 +813,56 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
         return this;
+    }
+
+    @Nullable
+    @Override
+    public  BaseTableOwner getBaseTableOwner() {
+        return baseTableOwner;
+    }
+
+    @Override
+    public TableImpl<E> baseTableOwner(@Nullable BaseTableOwner baseTableOwner) {
+        if (Objects.equals(this.baseTableOwner, baseTableOwner)) {
+            return this;
+        }
+        Map<BaseTableOwner, TableImpl<E>> neighborMap = this.neighborMap;
+        if (neighborMap == null) {
+            neighborMap = new HashMap<>();
+            neighborMap.put(this.baseTableOwner, this);
+            this.neighborMap = neighborMap;
+        }
+        TableImpl<E> neighbor = neighborMap.get(baseTableOwner);
+        if (neighbor != null) {
+            return neighbor;
+        }
+        TableImpl<?> neighborParent = null;
+        if (parent != null && baseTableOwner != null) {
+            neighborParent = parent.baseTableOwner(baseTableOwner);
+        }
+        neighbor = new TableImpl<>(this, neighborParent, baseTableOwner);
+        neighborMap.put(baseTableOwner, neighbor);
+        return neighbor;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends TableLikeImplementor<?>> T computedIfAbsent(Key key, Supplier<T> tableLikeSupplier) {
+        T child = (T) getValue(key);
+        if (child == null) {
+            child = tableLikeSupplier.get();
+            putValue(key, child);
+        }
+        return child;
+    }
+
+    @Override
+    public void setHasBaseTable() {
+        if (!hasBaseTable) {
+            hasBaseTable = true;
+            if (parent != null) {
+                parent.setHasBaseTable();
+            }
+        }
     }
 
     static class Key {

@@ -5,10 +5,10 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.base.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
@@ -18,7 +18,9 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -27,18 +29,18 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     private final TypedQueryData data;
 
-    private AbstractMutableQueryImpl baseQuery;
+    private AbstractMutableQueryImpl mutableQuery;
 
     public AbstractConfigurableTypedQueryImpl(
             TypedQueryData data,
-            AbstractMutableQueryImpl baseQuery
+            AbstractMutableQueryImpl mutableQuery
     ) {
         this.data = data;
-        this.baseQuery = baseQuery;
+        this.mutableQuery = mutableQuery;
     }
 
-    public AbstractMutableQueryImpl getBaseQuery() {
-        return baseQuery;
+    public AbstractMutableQueryImpl getMutableQuery() {
+        return mutableQuery;
     }
 
     public TypedQueryData getData() {
@@ -52,46 +54,79 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     @Override
     public JSqlClientImplementor getSqlClient() {
-        return baseQuery.getSqlClient();
+        return mutableQuery.getSqlClient();
     }
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         AstContext astContext = visitor.getAstContext();
-        astContext.pushStatement(getBaseQuery());
+        astContext.pushStatement(getMutableQuery());
         try {
             Selection<?> idOnlySelection = idOnlyPropExprByOffset();
             if (idOnlySelection != null) {
-                baseQuery.accept(visitor, Collections.singletonList(idOnlySelection), false);
+                mutableQuery.accept(visitor, Collections.singletonList(idOnlySelection), false);
             } else {
-                baseQuery.accept(visitor, data.oldSelections, data.withoutSortingAndPaging);
+                mutableQuery.accept(visitor, data.oldSelections, data.withoutSortingAndPaging);
                 for (Selection<?> selection : data.selections) {
                     Ast.from(selection, visitor.getAstContext()).accept(visitor);
                 }
+                visitBaseTable(mutableQuery.getTableLikeImplementor(), visitor);
             }
         } finally {
             astContext.popStatement();
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void visitBaseTable(TableLikeImplementor<?> tableLikeImplementor, AstVisitor visitor) {
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            RealTable realBaseTable =
+                    tableLikeImplementor.realTable(visitor.getAstContext());
+            visitBaseTableImpl(realBaseTable, visitor);
+        } else {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
+            if (tableImplementor.hasBaseTable()) {
+                Iterable<TableLikeImplementor<?>> children =
+                        (Iterable<TableLikeImplementor<?>>) tableImplementor;
+                for (TableLikeImplementor<?> child : children) {
+                    visitBaseTable(child, visitor);
+                }
+            }
+        }
+    }
+
+    private void visitBaseTableImpl(RealTable realBaseTable, AstVisitor visitor) {
+        realBaseTable.getTableLikeImplementor().accept(visitor);
+        for (RealTable childBaseTable : realBaseTable) {
+            visitBaseTableImpl(childBaseTable, visitor);
+        }
+    }
+
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        renderTo(abstractBuilder, null);
+    }
+
+    protected final void renderTo(
+            @NotNull AbstractSqlBuilder<?> abstractBuilder,
+            @Nullable BaseSelectionAliasRender render
+    ) {
         SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
-        astContext.pushStatement(getBaseQuery());
+        astContext.pushStatement(getMutableQuery());
         try {
             if (data.withoutSortingAndPaging || (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
-                renderWithoutPaging(builder, null);
+                renderWithoutPaging(builder, null, render);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
                 if (idPropExpr != null) {
                     renderIdOnlyQuery(idPropExpr, builder);
                 } else {
                     SqlBuilder subBuilder = builder.createChildBuilder();
-                    renderWithoutPaging(subBuilder, null);
+                    renderWithoutPaging(subBuilder, null, render);
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
-                                getBaseQuery().getSqlClient().getSqlFormatter(),
+                                getMutableQuery().getSqlClient().getSqlFormatter(),
                                 data.limit,
                                 data.offset,
                                 result.get_1(),
@@ -99,7 +134,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                                 result.get_3(),
                                 false
                         );
-                        baseQuery.getSqlClient().getDialect().paginate(ctx);
+                        mutableQuery.getSqlClient().getDialect().paginate(ctx);
                         return ctx.build();
                     });
                 }
@@ -114,21 +149,83 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     @Override
     public boolean hasVirtualPredicate() {
-        return baseQuery.hasVirtualPredicate();
+        return mutableQuery.hasVirtualPredicate();
     }
 
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
-        baseQuery = ctx.resolveVirtualPredicate(baseQuery);
+        mutableQuery = ctx.resolveVirtualPredicate(mutableQuery);
         return this;
     }
 
-    private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {
+    private void renderWithoutPaging(
+            SqlBuilder builder,
+            PropExpressionImplementor<?> idPropExpr,
+            BaseSelectionAliasRender render
+    ) {
+        List<RealTable> cteTables = getCteTables(builder.getAstContext());
+        if (cteTables.isEmpty()) {
+            renderWithoutPagingImpl(builder, idPropExpr, render);
+        } else {
+            SqlBuilder tmpBuilder = builder.createTempBuilder();
+            renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
+            builder.sql("with ").enter(AbstractSqlBuilder.ScopeType.COMMA);
+            for (RealTable cteTable : cteTables) {
+                builder.separator();
+                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
+                BaseSelectionAliasRender cteRender = builder.getAstContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
+                assert cteRender != null;
+                builder.sql(cteTable.getAlias());
+                cteRender.renderCteColumns(cteTable, builder);
+                builder.sql(" as ");
+                cteTable.renderTo(builder, true);
+            }
+            builder.leave().sql(" ");
+            builder.appendTempBuilder(tmpBuilder);
+        }
+    }
+
+    private List<RealTable> getCteTables(AstContext ctx) {
+        TableLikeImplementor<?> tableLikeImplementor = getMutableQuery().getTableLikeImplementor();
+        if (!tableLikeImplementor.hasBaseTable()) {
+            return Collections.emptyList();
+        }
+        RealTable realTable = tableLikeImplementor.realTable(ctx);
+        List<RealTable> cteTables = new ArrayList<>();
+        collectCteTables(realTable, cteTables);
+        return cteTables;
+    }
+
+    private void collectCteTables(RealTable realTable, List<RealTable> cteTables) {
+        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor && !(this instanceof TypedBaseQuery<?>)) {
+            BaseTableImplementor baseTableImplementor =
+                    (BaseTableImplementor) realTable.getTableLikeImplementor();
+            if (baseTableImplementor.isCte()) {
+                cteTables.add(realTable);
+            }
+        }
+        for (RealTable child : realTable) {
+            collectCteTables(child, cteTables);
+        }
+    }
+
+    private void renderWithoutPagingImpl(
+            SqlBuilder builder,
+            PropExpressionImplementor<?> idPropExpr,
+            BaseSelectionAliasRender render
+    ) {
         builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
         if (data.hint != null) {
             builder.sql(" ").sql(data.hint).sql(" ");
         }
-        if (idPropExpr != null) {
+        if (render != null) {
+            List<Selection<?>> selections = data.selections;
+            int size = selections.size();
+            for (int i = 0; i < size; i++) {
+                Selection<?> selection = selections.get(i);
+                render.render(i, selection, builder);
+            }
+        } else if (idPropExpr != null) {
             TableImplementor<?> tableImplementor = TableProxies.resolve(
                     idPropExpr.getTable(),
                     builder.getAstContext()
@@ -142,33 +239,99 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     OffsetOptimizationWriter::idAlias
             );
         } else {
-            for (Selection<?> selection : data.selections) {
-                builder.separator();
-                if (selection instanceof TableSelection) {
-                    TableSelection tableSelection = (TableSelection) selection;
-                    renderAllProps(tableSelection, builder);
-                } else if (selection instanceof Table<?>) {
-                    TableSelection tableSelection = TableProxies.resolve(
-                            (Table<?>) selection,
-                            builder.getAstContext()
-                    );
-                    renderAllProps(tableSelection, builder);
+            renderSelections(builder);
+            fakeRenderExportedForeignKeys(mutableQuery.getTableLikeImplementor(),builder);
+        }
+        builder.leave();
+            mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
+    }
+
+    private void renderSelections(SqlBuilder builder) {
+        for (Selection<?> selection : data.selections) {
+            builder.separator();
+            if (selection instanceof TableSelection) {
+                TableSelection tableSelection = (TableSelection) selection;
+                renderAllProps(tableSelection, builder);
+            } else if (selection instanceof Table<?>) {
+                TableSelection tableSelection = TableProxies.resolve(
+                        (Table<?>) selection,
+                        builder.getAstContext()
+                );
+                renderAllProps(tableSelection, builder);
+            } else {
+                Ast ast = Ast.from(selection, builder.getAstContext());
+                if (ast instanceof PropExpressionImplementor<?>) {
+                    ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
                 } else {
-                    Ast ast = Ast.from(selection, builder.getAstContext());
-                    if (ast instanceof PropExpressionImplementor<?>) {
-                        ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
-                    } else {
-                        ast.renderTo(builder);
+                    ast.renderTo(builder);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void fakeRenderExportedForeignKeys(
+            TableLikeImplementor<?> tableLikeImplementor,
+            SqlBuilder builder
+    ) {
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            fakeRenderExportedForeignKeysImpl((BaseTableImplementor) tableLikeImplementor, builder);
+        } else {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
+            if (tableImplementor.hasBaseTable()) {
+                Iterable<TableLikeImplementor<?>> children =
+                        (Iterable<TableLikeImplementor<?>>) tableImplementor;
+                for (TableLikeImplementor<?> child : children) {
+                    fakeRenderExportedForeignKeys(child, builder);
+                }
+            }
+        }
+    }
+
+    private void fakeRenderExportedForeignKeysImpl(
+            BaseTableImplementor baseTableImplementor,
+            SqlBuilder builder
+    ) {
+        AstContext ctx = builder.getAstContext();
+        for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
+            if (selection instanceof Table<?>) {
+                Table<?> table = (Table<?>) selection;
+                TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
+                BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(tableImplementor.getBaseTableOwner());
+                assert mapper != null;
+                RealTable realTable = tableImplementor.realTable(ctx);
+                for (RealTable childTable : realTable) {
+                    if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+                        continue;
+                    }
+                    TableImplementor<?> childTableImplementor =
+                            (TableImplementor<?>) childTable.getTableLikeImplementor();
+                    ImmutableProp prop = childTableImplementor.getJoinProp();
+                    if (prop == null) {
+                        break;
+                    }
+                    if (childTableImplementor.isInverse()) {
+                        prop = prop.getOpposite();
+                        if (prop == null) {
+                            continue;
+                        }
+                    }
+                    if (!prop.isColumnDefinition()) {
+                        continue;
+                    }
+                    ColumnDefinition definition = prop.getStorage(builder.sqlClient().getMetadataStrategy());
+                    int size = definition.size();
+                    for (int i = 0; i < size; i++) {
+                        // Fake render, only call `columnIndex`, not render it
+                        mapper.columnIndex(realTable.getAlias(), definition.name(i));
                     }
                 }
             }
         }
-        builder.leave();
-        baseQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
     }
 
     private PropExpressionImplementor<?> idOnlyPropExprByOffset() {
-        if (data.offset >= baseQuery.getSqlClient().getOffsetOptimizingThreshold()) {
+        if (data.offset >= mutableQuery.getSqlClient().getOffsetOptimizingThreshold()) {
             return data.getIdOnlyExpression();
         }
         return null;
@@ -205,10 +368,10 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         builder.leave();
         builder.from().enter(SqlBuilder.ScopeType.SUB_QUERY);
         SqlBuilder subBuilder = builder.createChildBuilder();
-        renderWithoutPaging(subBuilder, idPropExpr);
+        renderWithoutPaging(subBuilder, idPropExpr, null);
         subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
-                    getBaseQuery().getSqlClient().getSqlFormatter(),
+                    getMutableQuery().getSqlClient().getSqlFormatter(),
                     data.limit,
                     data.offset,
                     result.get_1(),
@@ -216,7 +379,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     result.get_3(),
                     true
             );
-            baseQuery.getSqlClient().getDialect().paginate(ctx);
+            mutableQuery.getSqlClient().getDialect().paginate(ctx);
             return ctx.build();
         });
         builder
@@ -249,7 +412,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             }
             builder.sql(")");
         }
-        if (getBaseQuery().getSqlClient().getDialect().getOffsetOptimizationNumField() != null) {
+        if (getMutableQuery().getSqlClient().getDialect().getOffsetOptimizationNumField() != null) {
             builder
                     .enter(SqlBuilder.ScopeType.ORDER_BY)
                     .sql(OffsetOptimizationWriter.CORE_ALIAS)

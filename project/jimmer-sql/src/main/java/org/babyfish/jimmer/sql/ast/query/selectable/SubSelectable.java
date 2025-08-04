@@ -4,10 +4,33 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
+
 public interface SubSelectable {
 
     <R> ConfigurableSubQuery<R> select(
             Selection<R> selection
+    );
+
+    ConfigurableSubQuery.Str select(
+            StringExpression selection
+    );
+
+    <T extends Comparable<?>> ConfigurableSubQuery.Cmp<T> select(
+            ComparableExpression<T> selection
+    );
+
+    <N extends Number & Comparable<N>> ConfigurableSubQuery.Num<N> select(
+            NumericExpression<N> selection
+    );
+
+    <T extends Date> ConfigurableSubQuery.Dt<T> select(
+            DateExpression<T> selection
+    );
+
+    <T extends Temporal & Comparable<?>> ConfigurableSubQuery.Tp<T> select(
+            TemporalExpression<T> selection
     );
 
     <T1, T2> ConfigurableSubQuery<Tuple2<T1, T2>> select(

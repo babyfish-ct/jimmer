@@ -7,9 +7,10 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
-public interface Table<E> extends TableDelegate<E>, TableTypeProvider, Selection<E>, Props {
+public interface Table<E> extends TableLike<E>, TableDelegate<E>, TableTypeProvider, Selection<E>, Props {
 
     /**
      * Shortcut for `this.id().eq(other.id())`

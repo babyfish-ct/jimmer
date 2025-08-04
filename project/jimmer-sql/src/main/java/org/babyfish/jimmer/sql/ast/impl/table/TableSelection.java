@@ -3,8 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.function.Function;
 

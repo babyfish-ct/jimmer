@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.WeakJoin
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.table.*
 
@@ -33,11 +34,11 @@ fun <S: Any, T: Any> createWeakJoinHandle(
     val lambda = KWeakJoinLambdaFactory(sourceType, targetType).get(weakJoinFun)
         ?: throw IllegalArgumentException("The argument `weakJoinFun` must be lambda")
     val weakJoin: WeakJoin<Table<S>, Table<T>> = LambdaWeakJoin(weakJoinFun)
-    return WeakJoinHandle(
+    return WeakJoinHandle.of(
         lambda,
         false,
         false,
-        weakJoin as WeakJoin<Table<*>, Table<*>>
+        weakJoin as WeakJoin<TableLike<*>, TableLike<*>>
     )
 }
 

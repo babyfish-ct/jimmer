@@ -45,6 +45,9 @@ class KeywordTest {
                 continue
             }
             var name = method.name
+            if (name.contains("$")) {
+                continue
+            }
             if (name == "getId") {
                 continue
             }

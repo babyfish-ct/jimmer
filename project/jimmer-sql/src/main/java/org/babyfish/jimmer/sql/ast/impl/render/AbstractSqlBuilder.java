@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -283,20 +284,36 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         );
     }
 
-    public T definition(String tableAlias, ColumnDefinition definition) {
-        return definition(tableAlias, definition, null);
+    public T definition(
+            String tableAlias,
+            ColumnDefinition definition,
+            BaseSelectionMapper mapper
+    ) {
+        return definition(tableAlias, definition, null, mapper);
     }
 
     @SuppressWarnings("unchecked")
-    public T definition(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
+    public T definition(
+            String tableAlias,
+            ColumnDefinition definition,
+            Function<Integer, String> asBlock,
+            BaseSelectionMapper mapper
+    ) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return definition(definition);
         }
         preAppend();
         if (definition instanceof SingleColumn) {
-            builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
-            if (asBlock != null) {
-                builder.append(" ").append(asBlock.apply(0));
+            String columnName = ((SingleColumn)definition).getName();
+            if (mapper != null) {
+                builder.append(mapper.getAlias())
+                        .append(".c")
+                        .append(mapper.columnIndex(tableAlias, columnName));
+            } else {
+                builder.append(tableAlias).append('.').append(columnName);
+                if (asBlock != null) {
+                    builder.append(" ").append(asBlock.apply(0));
+                }
             }
         } else {
             int size = definition.size();
@@ -304,9 +321,16 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 if (i != 0) {
                     builder.append(", ");
                 }
-                builder.append(tableAlias).append('.').append(definition.name(i));
-                if (asBlock != null) {
-                    builder.append(" ").append(asBlock.apply(i));
+                String columnName = definition.name(i);
+                if (mapper != null) {
+                    builder.append(mapper.getAlias())
+                            .append(".c")
+                            .append(mapper.columnIndex(tableAlias, columnName));
+                } else {
+                    builder.append(tableAlias).append('.').append(columnName);
+                    if (asBlock != null) {
+                        builder.append(" ").append(asBlock.apply(i));
+                    }
                 }
             }
         }
@@ -343,6 +367,11 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                         SqlBuilder.class.getName() +
                         "\""
         );
+    }
+
+    @Override
+    public String toString() {
+        return builder.toString();
     }
 
     public enum ScopeType {

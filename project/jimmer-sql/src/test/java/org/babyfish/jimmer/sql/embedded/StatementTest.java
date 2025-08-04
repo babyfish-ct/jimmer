@@ -17,7 +17,7 @@ public class StatementTest extends AbstractMutationTest {
                     .where(transform.id().eq(1L));
         });
         Assertions.assertEquals(
-                "The property \"org.babyfish.jimmer.sql.model.embedded.Transform.source.leftTop\" is embedded, " +
+                "The property \"Transform.source.leftTop\" is embedded, " +
                         "it cannot be used as the assignment target of update statement",
                 ex.getMessage()
         );

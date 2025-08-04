@@ -164,7 +164,6 @@ public class TableProxies {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> TableImplementor<E> resolve(Table<E> table, RootTableResolver resolver) {
         if (table instanceof TableImplementor<?>) {
             return (TableImplementor<E>) table;

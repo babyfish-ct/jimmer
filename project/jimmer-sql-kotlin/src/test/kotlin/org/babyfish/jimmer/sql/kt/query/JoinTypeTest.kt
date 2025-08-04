@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.expression.`ilike?`
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.store
@@ -41,7 +42,7 @@ class JoinTypeTest : AbstractQueryTest() {
         }
     }
 
-    private fun createQuery(storeName: String?): KConfigurableRootQuery<Book, Book> =
+    private fun createQuery(storeName: String?): KConfigurableRootQuery<KNonNullTable<Book>, Book> =
         sqlClient
             .createQuery(Book::class) {
                 where(table.store.name `ilike?` storeName)

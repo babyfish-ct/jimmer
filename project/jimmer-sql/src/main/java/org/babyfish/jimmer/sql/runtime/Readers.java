@@ -209,7 +209,7 @@ class Readers {
         }
 
         @Override
-        protected void visit(Field field) {
+        protected void visit(Field field, int depth) {
             ImmutableProp prop = field.getProp();
             if (!prop.isId() && (prop.hasStorage() || prop.getSqlTemplate() != null)) {
                 Reader<?> subReader =

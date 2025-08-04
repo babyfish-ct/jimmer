@@ -1,16 +1,23 @@
 package org.babyfish.jimmer.apt.immutable;
 
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.immutable.generator.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Embeddable;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,9 +33,27 @@ public class ImmutableProcessor {
     }
 
     public Map<TypeElement, ImmutableType> process(RoundEnvironment roundEnv) {
+        validateTopLevel(roundEnv, Immutable.class);
+        validateTopLevel(roundEnv, Entity.class);
+        validateTopLevel(roundEnv, Embeddable.class);
+        validateTopLevel(roundEnv, MappedSuperclass.class);
         Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
         generateJimmerTypes(immutableTypeMap);
         return immutableTypeMap;
+    }
+
+    private void validateTopLevel(RoundEnvironment roundEnv, Class<? extends Annotation> annotationType) {
+        for (Element element : roundEnv.getElementsAnnotatedWith(annotationType)) {
+            TypeElement typeElement = (TypeElement) element;
+            if (!(typeElement.getEnclosingElement() instanceof PackageElement)) {
+                throw new MetaException(
+                        typeElement,
+                        "The type decorated by \"@" +
+                                annotationType.getName() +
+                                "\" must be top level type"
+                );
+            }
+        }
     }
 
     private Map<TypeElement, ImmutableType> parseImmutableTypes(RoundEnvironment roundEnv) {

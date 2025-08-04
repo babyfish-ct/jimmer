@@ -8,32 +8,28 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
+public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
 
-    AbstractMutableStatementImpl getStatement();
-
+    @Override
     TableImplementor<?> getParent();
-
-    boolean isInverse();
-
-    boolean isEmpty(Predicate<TableImplementor<?>> filter);
-
-    boolean isRemote();
 
     ImmutableProp getJoinProp();
 
-    WeakJoinHandle getWeakJoinHandle();
+    boolean isInverse();
 
-    JoinType getJoinType();
+    boolean isEmpty(Predicate<TableLikeImplementor<?>> filter);
 
-    RealTable realTable(JoinTypeMergeScope scope);
+    boolean isRemote();
 
     TableRowCountDestructive getDestructive();
 
@@ -74,7 +70,18 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
 
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
 
-    TableImplementor<?> joinFetchImplementor(ImmutableProp prop);
+    <X extends BaseTable> X weakJoinImplementor(X targetBaseTable, WeakJoinHandle handle, JoinType joinType);
+
+    TableImplementor<?> joinFetchImplementor(ImmutableProp prop, BaseTableOwner baseTableOwner);
+
+    @Nullable
+    BaseTableOwner getBaseTableOwner();
+
+    TableImplementor<E> baseTableOwner(
+            @Nullable BaseTableOwner baseTableOwner
+    );
+
+    void setHasBaseTable();
 
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,
@@ -93,7 +100,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
                 false,
                 null,
                 null,
-                JoinType.INNER
+                JoinType.INNER,
+                false
         );
     }
 

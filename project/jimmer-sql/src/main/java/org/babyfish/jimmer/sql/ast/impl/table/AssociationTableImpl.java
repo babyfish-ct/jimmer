@@ -21,7 +21,8 @@ class AssociationTableImpl<SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE
                 false,
                 null,
                 null,
-                JoinType.INNER
+                JoinType.INNER,
+                false
         );
     }
 }

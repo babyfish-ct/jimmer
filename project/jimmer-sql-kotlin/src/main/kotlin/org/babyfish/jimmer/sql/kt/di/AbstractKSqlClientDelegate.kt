@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.kt.di
 
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.query.*
+import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImplementor
@@ -23,6 +26,27 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
 
     override val loaders: KLoaders
         get() = sqlClient().loaders
+
+    override fun <B : KNonNullBaseTable<*>, R> createQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
+    ): KConfigurableRootQuery<B, R> =
+        sqlClient().createQuery(symbol, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sqlClient().createBaseQuery(entityType, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        joinType: JoinType,
+        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        createBaseQuery(entityType, recursiveRef, joinType, joinBlock, block)
 
     override fun <E : Any> createUpdate(
         entityType: KClass<E>,

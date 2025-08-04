@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AssociatedPredicate;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -60,6 +61,11 @@ public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends 
 
     @Override
     public <P extends TableProxy<Association<SE, TE>>> P __disableJoin(String reason) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TableProxy<Association<SE, TE>>  __baseTableOwner(BaseTableOwner baseTableOwner) {
         throw new UnsupportedOperationException();
     }
 

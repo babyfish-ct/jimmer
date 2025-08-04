@@ -1,9 +1,5 @@
 package org.babyfish.jimmer.sql.kt.meta
 
-import org.babyfish.jimmer.impl.asm.ClassReader
-import org.babyfish.jimmer.impl.asm.ClassVisitor
-import org.babyfish.jimmer.impl.asm.MethodVisitor
-import org.babyfish.jimmer.impl.asm.Opcodes
 import org.babyfish.jimmer.sql.kt.ast.expression.concat
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoinFun

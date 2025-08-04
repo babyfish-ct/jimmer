@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
@@ -22,11 +23,19 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     private final PropExpression.Embedded<T> raw;
 
+    private final BaseTableOwner baseTableOwner;
+
     protected AbstractTypedEmbeddedPropExpression(PropExpression.Embedded<T> raw) {
         if (raw instanceof AbstractTypedEmbeddedPropExpression<?>) {
             throw new IllegalArgumentException("raw cannot be " + AbstractTypedEmbeddedPropExpression.class.getName());
         }
         this.raw = raw;
+        this.baseTableOwner = null;
+    }
+
+    protected AbstractTypedEmbeddedPropExpression(AbstractTypedEmbeddedPropExpression<T> base, BaseTableOwner baseTableOwner) {
+        this.raw = base.raw;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override
@@ -186,5 +195,12 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     public <EXP extends PropExpression<?>> EXP __get(ImmutableProp prop) {
         return raw.get(prop);
+    }
+
+    public abstract AbstractTypedEmbeddedPropExpression<T> __baseTableOwner(BaseTableOwner baseTableOwner);
+
+    @Nullable
+    public BaseTableOwner __baseTableOwner() {
+        return baseTableOwner;
     }
 }

@@ -7,7 +7,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
@@ -75,8 +74,9 @@ public class TableGenerator {
             typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
-                            Constants.TABLE_EX_CLASS_NAME,
-                            type.getClassName()
+                            Constants.TABLE_EX_PROXY_CLASS_NAME,
+                            type.getClassName(),
+                            type.getTableClassName()
                     )
             );
         } else {
@@ -91,7 +91,8 @@ public class TableGenerator {
         addDefaultConstructor();
         addDelayedConstructor();
         addWrapperConstructor();
-        addCopyConstructor();
+        addDisableJoinConstructor();
+        addBaseTableOwnerConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isDsl(isTableEx)) {
@@ -103,10 +104,13 @@ public class TableGenerator {
             }
             addAsTableEx();
             addDisableJoin();
+            addBaseTableOwner();
             addWeakJoin(false);
             addWeakJoin(true);
             addLambdaWeakJoin(false);
             addLambdaWeakJoin(true);
+            addBaseTableLambdaWeakJoin(false);
+            addBaseTableLambdaWeakJoin(true);
             addRemote();
             return typeBuilder.build();
         } finally {
@@ -119,7 +123,7 @@ public class TableGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(className, "$", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
         if (isTableEx) {
-            builder.initializer("new $T($T.$L, null)", className, type.getTableClassName(), "$");
+            builder.initializer("new $T($T.$L, (String)null)", className, type.getTableClassName(), "$");
         } else {
             builder.initializer("new $T()", className);
         }
@@ -171,13 +175,26 @@ public class TableGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addCopyConstructor() {
+    private void addDisableJoinConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PROTECTED)
                 .addParameter(type.getTableClassName(), "base")
                 .addParameter(String.class, "joinDisabledReason")
                 .addStatement("super(base, joinDisabledReason)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addBaseTableOwnerConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PROTECTED)
+                .addParameter(type.getTableClassName(), "base")
+                .addParameter(
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
+                )
+                .addStatement("super(base, baseTableOwner)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -227,7 +244,7 @@ public class TableGenerator {
         if (isTableEx) {
             builder.addStatement("return this");
         } else {
-            builder.addStatement("return new $T(this, null)", tableExClassName);
+            builder.addStatement("return new $T(this, (String)null)", tableExClassName);
         }
         typeBuilder.addMethod(builder.build());
     }
@@ -241,6 +258,21 @@ public class TableGenerator {
                 .returns(selfClassName)
                 .addParameter(String.class, "reason")
                 .addStatement("return new $T(this, reason)", selfClassName);
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addBaseTableOwner() {
+        ClassName selfClassName = isTableEx ? type.getTableExClassName() : type.getTableClassName();
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__baseTableOwner")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(selfClassName)
+                .addParameter(
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
+                )
+                .addStatement("return new $T(this, baseTableOwner)", selfClassName);
         typeBuilder.addMethod(builder.build());
     }
 
@@ -376,6 +408,77 @@ public class TableGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addBaseTableLambdaWeakJoin(boolean withJoinType) {
+        if (!isTableEx) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("weakJoin")
+                .addModifiers(Modifier.PUBLIC)
+                .addTypeVariable(TypeVariableName.get("TT", Constants.BASE_TABLE_CLASS_NAME))
+                .returns(TypeVariableName.get("TT"))
+                .addParameter(TypeVariableName.get("TT"), "targetBaseTable");
+        if (withJoinType) {
+            builder.addParameter(Constants.JOIN_TYPE_CLASS_NAME, "joinType");
+        }
+        builder.addParameter(
+                ParameterizedTypeName.get(
+                        Constants.WEAK_JOIN_CLASS_NAME,
+                        type.getTableClassName(),
+                        TypeVariableName.get("TT")
+                ),
+                "weakJoinLambda"
+        );
+        if (!withJoinType) {
+            builder.addStatement(
+                    "return weakJoin(targetBaseTable, $T.INNER, weakJoinLambda)",
+                    Constants.JOIN_TYPE_CLASS_NAME
+            );
+        } else {
+            CodeBlock.Builder cb = CodeBlock.builder();
+            cb.addStatement(
+                    "$T lambda = $T.get(weakJoinLambda)",
+                    Constants.WEAK_JOIN_LAMBDA_CLASS_NAME,
+                    Constants.J_WEAK_JOIN_LAMBDA_FACTORY_CLASS_NAME
+            );
+            cb.add(
+                    "$T handle = $T.of($>\n",
+                    Constants.WEAK_JOIN_HANDLE_CLASS_NAME,
+                    Constants.WEAK_JOIN_HANDLE_CLASS_NAME
+            );
+            cb.add("lambda,\n");
+            cb.add("true,\n");
+            cb.add("true,\n");
+            cb.add(
+                    "($T)($T) weakJoinLambda\n$<",
+                    ParameterizedTypeName.get(
+                            Constants.WEAK_JOIN_CLASS_NAME,
+                            ParameterizedTypeName.get(
+                                    Constants.TABLE_LIKE_NAME,
+                                    WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                            ),
+                            ParameterizedTypeName.get(
+                                    Constants.TABLE_LIKE_NAME,
+                                    WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                            )
+                    ),
+                    ParameterizedTypeName.get(
+                            Constants.WEAK_JOIN_CLASS_NAME,
+                            WildcardTypeName.subtypeOf(TypeName.OBJECT),
+                            WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                    )
+            );
+            cb.addStatement(")");
+            cb.addStatement(
+                    "return ($T) $T.of(($T) targetBaseTable, this, handle, joinType)",
+                    TypeVariableName.get("TT"),
+                    Constants.BASE_TABLE_SYMBOLS_CLASS_NAME,
+                    Constants.BASE_TABLE_SYMBOL_CLASS_NAME
+            );
+            builder.addCode(cb.build());
+        }
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addRemote() {
         if (isTableEx) {
             return;
@@ -391,15 +494,16 @@ public class TableGenerator {
                                 type.getClassName()
                         )
                 );
-        addRemoteConstructor();
+        addRemoteConstructors();
         addRemoteIdProp();
         addRemoteAsTableEx();
         addRemoteDisableJoin();
+        addRemoteBaseTableOwner();
         tmpTypeBuilder.addType(typeBuilder.build());
         typeBuilder = tmpTypeBuilder;
     }
 
-    private void addRemoteConstructor() {
+    private void addRemoteConstructors() {
         typeBuilder.addMethod(
                 MethodSpec
                         .constructorBuilder()
@@ -425,15 +529,33 @@ public class TableGenerator {
                         .addStatement("super(table)", type.getClassName())
                         .build()
         );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .constructorBuilder()
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(
+                                type.getRemoteTableClassName(),
+                                "base"
+                        )
+                        .addParameter(
+                                Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                                "baseTableOwner"
+                        )
+                        .addStatement("super(base, baseTableOwner)", type.getClassName())
+                        .build()
+        );
     }
 
     private void addRemoteIdProp() {
+        TypeName returnType = PropsGenerator.returnTypeName(context, false, type.getIdProp());
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(type.getIdProp().getName())
                 .addModifiers(Modifier.PUBLIC)
-                .returns(PropsGenerator.returnTypeName(context, false, type.getIdProp()))
+                .returns(returnType)
                 .addStatement(
-                        "return __get($T.$L.unwrap())",
+                        "return ($L)this.<$T>get($T.$L.unwrap())",
+                        returnType,
+                        type.getIdProp().getTypeName().box(),
                         type.getPropsClassName(),
                         StringUtil.snake(type.getIdProp().getName(), StringUtil.SnakeCase.UPPER)
                 );
@@ -464,6 +586,20 @@ public class TableGenerator {
                 .addParameter(Constants.STRING_CLASS_NAME, "reason")
                 .returns(type.getRemoteTableClassName())
                 .addStatement("return this");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addRemoteBaseTableOwner() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__baseTableOwner")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
+                )
+                .returns(type.getRemoteTableClassName())
+                .addStatement("return new Remote(this, baseTableOwner)");
         typeBuilder.addMethod(builder.build());
     }
 }

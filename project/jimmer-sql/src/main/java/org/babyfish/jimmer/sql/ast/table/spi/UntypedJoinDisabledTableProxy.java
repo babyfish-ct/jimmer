@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
@@ -13,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -24,7 +26,7 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
 
     public UntypedJoinDisabledTableProxy(TableImplementor<E> table, String joinDisabledReason) {
         this.table = table;
-        this.joinDisabledReason = "Table join is disabled because " + joinDisabledReason;
+        this.joinDisabledReason = "Table join is disabled. " + joinDisabledReason;
     }
 
     @Override
@@ -228,6 +230,16 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public <P extends TableProxy<E>> P __disableJoin(String reason) {
         return (P) new UntypedJoinDisabledTableProxy<>(table, reason);
+    }
+
+    @Override
+    public TableProxy<E> __baseTableOwner(BaseTableOwner baseTableOwner) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public @Nullable BaseTableOwner __baseTableOwner() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

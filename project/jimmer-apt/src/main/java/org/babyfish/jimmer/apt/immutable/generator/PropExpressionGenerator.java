@@ -6,7 +6,6 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
@@ -60,7 +59,9 @@ public class PropExpressionGenerator {
         typeBuilder = builder;
         try {
             addConstructor();
+            addBaseTableConstructor();
             addProps();
+            addBaseTableOwner();
         } finally {
             typeBuilder = null;
         }
@@ -82,6 +83,22 @@ public class PropExpressionGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addBaseTableConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        type.getPropExpressionClassName(),
+                        "base"
+                )
+                .addParameter(
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
+                )
+                .addStatement("super(base, baseTableOwner)");
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addProps() {
         for (ImmutableProp prop : type.getProps().values()) {
             typeBuilder.addMethod(
@@ -95,5 +112,19 @@ public class PropExpressionGenerator {
                     )
             );
         }
+    }
+
+    private void addBaseTableOwner() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__baseTableOwner")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
+                )
+                .returns(type.getPropExpressionClassName())
+                .addStatement("return new $T(this, baseTableOwner)", type.getPropExpressionClassName());
+        typeBuilder.addMethod(builder.build());
     }
 }

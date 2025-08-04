@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.sql.ast.impl.table.AbstractWeakJoinLambdaFactory
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsWeakJoinFun
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoinFun
 import java.lang.invoke.SerializedLambda
 

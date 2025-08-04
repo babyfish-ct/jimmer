@@ -2,12 +2,20 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
+import org.babyfish.jimmer.sql.JoinType
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
+import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRecursiveBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
+import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.ast.table.WeakJoin
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
@@ -15,14 +23,19 @@ import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.*
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableBaseQueryImpl
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRecursiveBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
+import org.babyfish.jimmer.sql.kt.ast.table.*
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
+import org.babyfish.jimmer.sql.kt.ast.table.impl.createPropsWeakJoinHandle
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.filter.impl.KFiltersImpl
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.kt.loader.impl.KLoadersImpl
+import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import org.babyfish.jimmer.sql.runtime.Executor
@@ -39,17 +52,67 @@ internal class KSqlClientImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any, R> createQuery(
         entityType: KClass<E>,
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
-    ): KConfigurableRootQuery<E, R> {
+        block: KMutableRootQuery.ForEntity<E>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
+    ): KConfigurableRootQuery<KNonNullTable<E>, R> {
         val query = MutableRootQueryImpl<Table<*>>(
             javaClient,
             ImmutableType.get(entityType.java),
             ExecutionPurpose.QUERY,
             FilterLevel.DEFAULT
         )
-        return KMutableRootQueryImpl(
-            query as MutableRootQueryImpl<Table<E>>
+        return KMutableRootQueryImpl.ForEntityImpl<E>(
+            query as MutableRootQueryImpl<TableLike<*>>
         ).block()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <B : KNonNullBaseTable<*>, R> createQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
+    ): KConfigurableRootQuery<B, R> {
+        val query = MutableRootQueryImpl<BaseTable>(
+            javaClient,
+            (symbol.baseTable as AbstractKBaseTableImpl).javaTable,
+            ExecutionPurpose.QUERY,
+            FilterLevel.DEFAULT
+        )
+        return KMutableRootQueryImpl.ForBaseTableImpl<B>(
+            query as MutableRootQueryImpl<TableLike<*>>,
+            symbol.baseTable
+        ).block()
+    }
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> {
+        val query = MutableBaseQueryImpl(
+            javaClient,
+            ImmutableType.get(entityType.java)
+        )
+        return KMutableBaseQueryImpl<E>(query).block()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        entityType: KClass<E>,
+        recursiveRef: KRecursiveRef<B>,
+        joinType: JoinType,
+        joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
+        block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> {
+        val handle = createPropsWeakJoinHandle(entityType.java, KBaseTableSymbol::class.java, joinBlock)
+        val javaQuery = MutableRecursiveBaseQueryImpl(
+            javaClient,
+            ImmutableType.get(entityType.java),
+        ) {
+            BaseTableSymbols.of(recursiveRef.javaRef, it, handle, joinType) as BaseTable
+        }
+        val query = KMutableRecursiveBaseQueryImpl<E, B>(
+            javaQuery,
+            AbstractKBaseTableImpl.nonNull(javaQuery.recursive()) as B
+        )
+        return query.block()
     }
 
     override fun <E : Any> createUpdate(

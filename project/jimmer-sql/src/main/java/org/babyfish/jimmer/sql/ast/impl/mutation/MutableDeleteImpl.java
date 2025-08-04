@@ -13,8 +13,8 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -57,13 +57,13 @@ public class MutableDeleteImpl
     }
 
     @Override
-    public <T extends Table<?>> T getTable() {
+    public <T extends TableLike<?>> T getTable() {
         return deleteQuery.getTable();
     }
 
     @Override
-    public TableImplementor<?> getTableImplementor() {
-        return deleteQuery.getTableImplementor();
+    public TableImplementor<?> getTableLikeImplementor() {
+        return (TableImplementor<?>) deleteQuery.getTableLikeImplementor();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class MutableDeleteImpl
             Executor.validateMutationConnection(con);
         }
 
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
 
         AstContext astContext = new AstContext(sqlClient);
         deleteQuery.applyVirtualPredicates(astContext);
@@ -164,7 +164,7 @@ public class MutableDeleteImpl
         DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
         boolean directly = table
                 .isEmpty(it -> astContext
-                        .getTableUsedState(it.realTable(astContext.getJoinTypeMergeScope())) == TableUsedState.USED
+                        .getTableUsedState(it.realTable(astContext)) == TableUsedState.USED
                 ) && binLogOnly && (
                         isDissociationDisabled ||
                                 info == null ||
@@ -232,7 +232,7 @@ public class MutableDeleteImpl
     @SuppressWarnings("unchecked")
     private void renderDirectly(SqlBuilder builder, boolean logicalDeleted) {
         Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         if (logicalDeleted) {
             LogicalDeletedInfo logicalDeletedInfo = table.getImmutableType().getLogicalDeletedInfo();
             LogicalDeletedValueGenerator<?> generator =
@@ -252,11 +252,11 @@ public class MutableDeleteImpl
         } else {
             builder.sql("delete");
             if (getSqlClient().getDialect().isDeletedAliasRequired()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
             }
             builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
             if (getSqlClient().getDialect().isDeleteAliasSupported()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
             }
             if (predicate != null) {
                 builder.enter(SqlBuilder.ScopeType.WHERE);

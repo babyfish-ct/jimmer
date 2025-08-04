@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
-import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
@@ -81,7 +80,6 @@ class KExample<E: Any> internal constructor(
     internal val type: ImmutableType
         get() = spi.__type()
 
-    @Suppress("UNCHECKED_CAST")
     internal fun toPredicate(table: Table<*>): Predicate? {
         val predicates = mutableListOf<Predicate?>()
         for (prop in spi.__type().props.values) {

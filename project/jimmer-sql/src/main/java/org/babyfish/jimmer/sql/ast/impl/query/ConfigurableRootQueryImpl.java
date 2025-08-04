@@ -6,15 +6,9 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -24,15 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class ConfigurableRootQueryImpl<T extends Table<?>, R>
+public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R> {
 
@@ -47,8 +38,8 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
 
     @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl<T> getBaseQuery() {
-        return (MutableRootQueryImpl<T>) super.getBaseQuery();
+    public MutableRootQueryImpl<T> getMutableQuery() {
+        return (MutableRootQueryImpl<T>) super.getMutableQuery();
     }
 
     @Override
@@ -64,7 +55,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             return pageFactory.create(
                     rows,
                     rows.size(),
-                    PageSource.of(0, Integer.MAX_VALUE, getBaseQuery())
+                    PageSource.of(0, Integer.MAX_VALUE, getMutableQuery())
             );
         }
         if (pageIndex < 0) {
@@ -72,7 +63,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             return pageFactory.create(
                     Collections.emptyList(),
                     0,
-                    PageSource.of(0, pageSize, getBaseQuery())
+                    PageSource.of(0, pageSize, getMutableQuery())
             );
         }
 
@@ -93,7 +84,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             return pageFactory.create(
                     Collections.emptyList(),
                     total,
-                    PageSource.of(pageIndex, pageSize, getBaseQuery())
+                    PageSource.of(pageIndex, pageSize, getMutableQuery())
             );
         }
 
@@ -129,7 +120,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return pageFactory.create(
                 rows,
                 total,
-                PageSource.of(pageIndex, pageSize, getBaseQuery())
+                PageSource.of(pageIndex, pageSize, getMutableQuery())
         );
     }
 
@@ -155,7 +146,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (getData().oldSelections != null) {
             throw new IllegalStateException("The current query has been reselected, it cannot be reselect again");
         }
-        MutableRootQueryImpl<T> baseQuery = getBaseQuery();
+        MutableRootQueryImpl<T> baseQuery = getMutableQuery();
         if (baseQuery.isGroupByClauseUsed()) {
             throw new IllegalStateException("The current query uses group by clause, it cannot be reselected");
         }
@@ -189,7 +180,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return new ConfigurableRootQueryImpl<>(
                 data.distinct(),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -227,7 +218,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return new ConfigurableRootQueryImpl<>(
                 data.limit(limit, offset),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -239,7 +230,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return new ConfigurableRootQueryImpl<>(
                 data.withoutSortingAndPaging(),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -250,12 +241,12 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (data.reverseSorting) {
             return this;
         }
-        if (getBaseQuery().getOrders().isEmpty()) {
+        if (getMutableQuery().getOrders().isEmpty()) {
             return null;
         }
         return new ConfigurableRootQueryImpl<>(
                 data.reverseSorting(),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -267,7 +258,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return new ConfigurableRootQueryImpl<>(
                 data.reverseSortOptimizationEnabled(enabled),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -279,7 +270,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         TypedQueryData data = getData();
         return new ConfigurableRootQueryImpl<>(
                 data.forUpdate(),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -288,13 +279,13 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         TypedQueryData data = getData();
         return new ConfigurableRootQueryImpl<>(
                 data.hint(hint),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
     @Override
     public List<R> execute(Connection con) {
-        return getBaseQuery()
+        return getMutableQuery()
                 .getSqlClient()
                 .getSlaveConnectionManager(getData().forUpdate)
                 .execute(con, this::executeImpl);
@@ -305,7 +296,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (data.limit == 0) {
             return Collections.emptyList();
         }
-        JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
         Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         return Selectors.select(
                 sqlClient,
@@ -314,7 +305,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 data.selections,
-                getBaseQuery().getPurpose()
+                getMutableQuery().getPurpose()
         );
     }
 
@@ -334,7 +325,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (data.limit == 0) {
             return;
         }
-        JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
         int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
         sqlClient.getSlaveConnectionManager(getData().forUpdate).execute(con, newConn -> {
             forEachImpl(newConn, finalBatchSize, consumer);
@@ -343,7 +334,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
-        JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
         Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         Selectors.forEach(
                 sqlClient,
@@ -352,42 +343,22 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 getData().selections,
-                getBaseQuery().getPurpose(),
+                getMutableQuery().getPurpose(),
                 batchSize,
                 consumer
         );
     }
 
     private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
-        if (!getBaseQuery().isFrozen()) {
-            getBaseQuery().applyVirtualPredicates(builder.getAstContext());
-            getBaseQuery().applyGlobalFilters(builder.getAstContext(), getBaseQuery().getContext().getFilterLevel(), getData().selections);
+        if (!getMutableQuery().isFrozen()) {
+            getMutableQuery().applyVirtualPredicates(builder.getAstContext());
+            getMutableQuery().applyGlobalFilters(builder.getAstContext(), getMutableQuery().getContext().getFilterLevel(), getData().selections);
         }
         UseTableVisitor visitor = new UseTableVisitor(builder.getAstContext());
         accept(visitor);
         visitor.allocateAliases();
         renderTo(builder);
         return builder.build();
-    }
-
-    @Override
-    public TypedRootQuery<R> union(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "union", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> unionAll(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "union all", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> minus(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "minus", this, other);
-    }
-
-    @Override
-    public TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
-        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "intersect", this, other);
     }
 
     @Override

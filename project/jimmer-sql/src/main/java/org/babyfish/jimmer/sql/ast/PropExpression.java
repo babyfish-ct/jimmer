@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.EmbeddableDto;
-import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,77 +11,19 @@ import java.util.Date;
 
 public interface PropExpression<T> extends Expression<T> {
 
-    interface Str extends PropExpression<String>, StringExpression {
-
-        @Override
-        @NotNull
-        StringExpression coalesce(String defaultValue);
-
-        @Override
-        @NotNull
-        StringExpression coalesce(Expression<String> defaultExpr);
-
-        @Override
-        CoalesceBuilder.@NotNull Str coalesceBuilder();
+    interface Str extends PropExpression<String>, StringExpressionImplementor {
     }
 
-    interface Num<N extends Number & Comparable<N>> extends PropExpression<N>, NumericExpression<N> {
-
-        @Override
-        @NotNull
-        NumericExpression<N> coalesce(N defaultValue);
-
-        @Override
-        @NotNull
-        NumericExpression<N> coalesce(Expression<N> defaultExpr);
-
-        @Override
-        @NotNull
-        CoalesceBuilder.Num<N> coalesceBuilder();
+    interface Num<N extends Number & Comparable<N>> extends PropExpression<N>, NumericExpressionImplementor<N> {
     }
 
-    interface Dt<T extends Date & Comparable<Date>> extends PropExpression<T>, DateExpression<T> {
-
-        @Override
-        @NotNull
-        DateExpression<T> coalesce(T defaultValue);
-
-        @Override
-        @NotNull
-        DateExpression<T> coalesce(Expression<T> defaultExpr);
-
-        @Override
-        @NotNull
-        CoalesceBuilder.Dt<T> coalesceBuilder();
+    interface Dt<T extends Date & Comparable<Date>> extends PropExpression<T>, DateExpressionImplementor<T> {
     }
 
-    interface Tp<T extends Temporal & Comparable<?>> extends PropExpression<T>, TemporalExpression<T> {
-
-        @Override
-        @NotNull
-        TemporalExpression<T> coalesce(T defaultValue);
-
-        @Override
-        @NotNull
-        TemporalExpression<T> coalesce(Expression<T> defaultExpr);
-
-        @Override
-        @NotNull
-        CoalesceBuilder.Tp<T> coalesceBuilder();
+    interface Tp<T extends Temporal & Comparable<?>> extends PropExpression<T>, TemporalExpressionImplementor<T> {
     }
 
-    interface Cmp<T extends Comparable<?>> extends PropExpression<T>, ComparableExpression<T> {
-
-        @Override
-        @NotNull
-        ComparableExpression<T> coalesce(T defaultValue);
-
-        @Override
-        @NotNull
-        ComparableExpression<T> coalesce(Expression<T> defaultExpr);
-
-        @Override
-        CoalesceBuilder.@NotNull Cmp<T> coalesceBuilder();
+    interface Cmp<T extends Comparable<?>> extends PropExpression<T>, ComparableExpressionImplementor<T> {
     }
 
     interface Embedded<T> extends PropExpression<T> {

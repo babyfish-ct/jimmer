@@ -3,15 +3,23 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.base.*;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -23,7 +31,11 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private JoinTypeMergeFrame joinTypeMergeFrame;
 
+    private BaseTableRenderFrame baseTableRenderFrame;
+
     private int modCount;
+
+    private Set<MergedBaseQueryImpl<?>> visitingRecursiveMergedQueries;
 
     public AstContext(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
@@ -59,6 +71,17 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         this.statementFrame = this.statementFrame.parent;
     }
 
+    public void pushRenderedBaseTable(RealTable realBaseTable) {
+        this.baseTableRenderFrame = new BaseTableRenderFrame(
+                baseTableRenderFrame,
+                realBaseTable
+        );
+    }
+
+    public void popRenderedBaseTable() {
+        this.baseTableRenderFrame = baseTableRenderFrame.parent;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <E> TableImplementor<E> resolveRootTable(Table<E> table) {
@@ -71,12 +94,25 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
         for (StatementFrame frame = this.statementFrame; frame != null; frame = frame.parent) {
             AbstractMutableStatementImpl statement = frame.statement;
-            Table<?> stmtTable = statement.getTable();
-            if (AbstractTypedTable.__refEquals(stmtTable, table)) {
-                return (TableImplementor<E>) statement.getTableImplementor();
+            TableLike<?> stmtTable = statement.getTable();
+            BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+            if (stmtTable instanceof BaseTableSymbol) {
+                TableImplementor<?> resolved = resolve(statement, (BaseTableSymbol) stmtTable, table);
+                if (resolved != null) {
+                    return (TableImplementor<E>) resolved.baseTableOwner(baseTableOwner);
+                }
+            } else if (baseTableOwner != null && baseTableOwner.getBaseTable().getParent() != null) {
+                TableImplementor<?> resolved = resolve(statement, baseTableOwner.getBaseTable(), table);
+                if (resolved != null) {
+                    return (TableImplementor<E>) resolved.baseTableOwner(baseTableOwner);
+                }
+            } else if (AbstractTypedTable.__refEquals(stmtTable, table)) {
+                tableImplementor = (TableImplementor<E>) statement.getTableLikeImplementor();
+                return tableImplementor.baseTableOwner(baseTableOwner);
             }
         }
-        if (((TableProxy<E>) table).__parent() != null) {
+        TableProxy<E> tableProxy = (TableProxy<E>) table;
+        if (tableProxy.__parent() != null) {
             throw new IllegalArgumentException(
                     "\"" +
                             AstContext.class.getName() +
@@ -86,6 +122,55 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             );
         }
         throw new IllegalArgumentException("Cannot resolve the root table " + table);
+    }
+
+    private TableImplementor<?> resolve(AbstractMutableStatementImpl statement, BaseTableSymbol rootBaseTableSymbol, Table<?> table) {
+        TableImplementor<?> resolved = rootBaseTableSymbol.getQuery().resolveRootTable(table);
+        if (resolved != null) {
+            return resolved;
+        }
+        if (!(table instanceof TableProxy<?>)) {
+            return null;
+        }
+        BaseTableOwner baseTableOwner = ((TableProxy<?>) table).__baseTableOwner();
+        if (baseTableOwner == null) {
+            return null;
+        }
+        BaseTableImplementor baseTableImplementor = resolveBaseTable(statement, baseTableOwner.getBaseTable());
+        return baseTableImplementor.getQuery().resolveRootTable(table);
+    }
+
+    public BaseTableImplementor resolveBaseTable(BaseTableSymbol baseTable) {
+        for (StatementFrame frame = statementFrame; frame != null; frame = frame.parent) {
+            BaseTableImplementor baseTableImplementor = resolveBaseTable(frame.statement, baseTable);
+            if (baseTableImplementor != null) {
+                return baseTableImplementor;
+            }
+        }
+        return null;
+    }
+
+    private BaseTableImplementor resolveBaseTable(AbstractMutableStatementImpl statement, BaseTableSymbol baseTable) {
+        TableLike<?> parent = baseTable.getParent();
+        if (parent == null) {
+            TableLikeImplementor<?> implementor = statement.getTableLikeImplementor();
+            if (implementor instanceof BaseTableImplementor) {
+                return (BaseTableImplementor) implementor;
+            }
+            return null;
+        }
+        TableLikeImplementor<?> parentImplementor =
+                parent instanceof BaseTableSymbol ?
+                        resolveBaseTable(statement, (BaseTableSymbol) parent) :
+                        TableProxies.resolve((Table<?>) parent, this);
+        if (parentImplementor == null) {
+            return null;
+        }
+        BaseTableSymbol recursive = baseTable.getRecursive();
+        BaseTableImplementor recursiveImplementor = recursive != null ?
+                resolveBaseTable(recursive) :
+                null;
+        return BaseTableImpl.of(baseTable, parentImplementor, recursiveImplementor);
     }
 
     public AbstractMutableStatementImpl getStatement() {
@@ -133,7 +218,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return expression;
     }
 
-    @SuppressWarnings("unchecked")
     public <T> List<T> resolveVirtualPredicates(List<T> expressions) {
         boolean changed = false;
         for (T expression : expressions) {
@@ -182,6 +266,68 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return modCount;
     }
 
+    @Nullable
+    public BaseSelectionMapper getBaseSelectionMapper(BaseTableOwner baseTableOwner) {
+        if (baseTableOwner == null) {
+            return null;
+        }
+        BaseTableSymbol recursive = baseTableOwner.getBaseTable().getRecursive();
+        if (recursive != null) {
+            baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
+        }
+        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
+        boolean cte = baseTable.isCte();
+        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
+            if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
+                BaseQueryScope scope = frame.baseQueryScope();
+                MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
+                if (mergedBy != null) {
+                    for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
+                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
+                    }
+                }
+                return scope.mapper(baseTableOwner);
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
+        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
+            if (TableUtils.hasBaseTable(frame.statement.getTableLikeImplementor())) {
+                return frame.baseQueryScope().toBaseSelectionRender(query);
+            }
+        }
+        return null;
+    }
+
+    public RealTable getRenderedRealBaseTable() {
+        BaseTableRenderFrame frame = baseTableRenderFrame;
+        if (frame != null && frame.realTable != null) {
+            return frame.realTable;
+        }
+        throw new IllegalStateException("No rendered real base table");
+    }
+
+    public void visitRecursiveQuery(MergedBaseQueryImpl<?> query, Runnable runnable) {
+        if (!query.isRecursive()) {
+            runnable.run();
+            return;
+        }
+        Set<MergedBaseQueryImpl<?>> set = visitingRecursiveMergedQueries;
+        if (set == null) {
+            visitingRecursiveMergedQueries = set = new HashSet<>();
+        }
+        if (set.add(query)) {
+            try {
+                runnable.run();
+            } finally {
+                set.remove(query);
+            }
+        }
+    }
+
     private static class Unwrapped<T> {
 
         final T value;
@@ -218,11 +364,25 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         final StatementFrame parent;
 
+        final boolean usingBaseQuery;
+
         private VirtualPredicateFrame vpFrame;
+
+        private BaseQueryScope baseQueryScope;
+
+        private boolean baseQueryResolved;
 
         private StatementFrame(AbstractMutableStatementImpl statement, StatementFrame parent) {
             this.statement = statement;
             this.parent = parent;
+            boolean usingBaseQuery;
+            if (parent != null && parent.usingBaseQuery) {
+                usingBaseQuery = true;
+            } else {
+                TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
+                usingBaseQuery = TableUtils.hasBaseTable(tableLikeImplementor);
+            }
+            this.usingBaseQuery = usingBaseQuery;
         }
 
         public VirtualPredicateFrame peekVpf() {
@@ -239,6 +399,21 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         public void popVpf() {
             this.vpFrame = vpFrame.parent;
+        }
+
+        public BaseQueryScope baseQueryScope() {
+            if (!baseQueryResolved) {
+                baseQueryScope = createBaseQueryScope();
+                baseQueryResolved = true;
+            }
+            return baseQueryScope;
+        }
+
+        private BaseQueryScope createBaseQueryScope() {
+            if (!usingBaseQuery) {
+                return null;
+            }
+            return new BaseQueryScope(AstContext.this);
         }
     }
 
@@ -278,7 +453,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
     }
 
-    private class JoinTypeMergeFrame {
+    private static class JoinTypeMergeFrame {
 
         final JoinTypeMergeScope scope;
 
@@ -287,6 +462,41 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         JoinTypeMergeFrame(JoinTypeMergeScope scope, JoinTypeMergeFrame parent) {
             this.scope = scope;
             this.parent = parent;
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        boolean addSp = false;
+        for (StatementFrame frame = this.statementFrame; frame != null; frame = frame.parent) {
+            if (addSp) {
+                builder.append("->");
+            } else {
+                addSp = true;
+            }
+            builder.append(frame.statement);
+        }
+        return builder.toString();
+    }
+
+    private static class BaseTableRenderFrame {
+
+        final BaseTableRenderFrame parent;
+
+        final RealTable realTable;
+
+        BaseTableRenderFrame(BaseTableRenderFrame parent, RealTable realTable) {
+            this.parent = parent;
+            this.realTable = realTable;
+        }
+
+        @Override
+        public String toString() {
+            return "BaseTableRenderFrame{" +
+                    "parent=" + parent +
+                    ", realTable=" + realTable +
+                    '}';
         }
     }
 }

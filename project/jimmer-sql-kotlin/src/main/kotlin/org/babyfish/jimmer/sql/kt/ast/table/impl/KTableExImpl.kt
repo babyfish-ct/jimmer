@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
@@ -51,6 +53,16 @@ internal abstract class KTableExImpl<E: Any>(
             javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.LEFT)
         )
 
+    override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X> =
+        KNonNullTableExImpl(
+            createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.INNER)
+        )
+
+    override fun <X : Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNonNullTableEx<X> =
+        KNonNullTableExImpl(
+            javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)
+        )
+
     override fun <X : Any> weakOuterJoin(
         targetType: KClass<X>,
         weakJoinFun: KWeakJoinFun<E, X>
@@ -65,6 +77,70 @@ internal abstract class KTableExImpl<E: Any>(
         KNullableTableExImpl(
             javaTable.weakJoinImplementor(weakJoinType.java, JoinType.LEFT)
         )
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
+    ): TT {
+        val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            JoinType.INNER,
+            null
+        )
+        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
+    ): TT {
+        val handle = WeakJoinHandle.of(weakJoinType.java)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            JoinType.LEFT,
+            null
+        )
+        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
+    ): TNT {
+        val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            JoinType.LEFT,
+            null
+        )
+        return AbstractKBaseTableImpl.nullable(javaJoinedTable) as TNT
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<*>> weakOuterJoin(
+        targetSymbol: KBaseTableSymbol<TT>,
+        weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
+    ): TNT {
+        val handle = WeakJoinHandle.of(weakJoinType.java)
+        val javaJoinedTable = BaseTableSymbols.of(
+            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            javaTable,
+            handle,
+            JoinType.LEFT,
+            null
+        )
+        return AbstractKBaseTableImpl.nullable(javaJoinedTable) as TNT
+    }
 
     override fun <X : Any> exists(
         prop: String,

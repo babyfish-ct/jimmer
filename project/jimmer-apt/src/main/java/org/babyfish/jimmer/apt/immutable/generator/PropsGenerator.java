@@ -7,7 +7,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -76,6 +75,14 @@ public class PropsGenerator {
                         superType.getPropsClassName()
                 );
             }
+        }
+        if (type.isEntity()) {
+            typeBuilder.addSuperinterface(
+                    ParameterizedTypeName.get(
+                            Constants.SELECTION_CLASS_NAME,
+                            type.getClassName()
+                    )
+            );
         }
         try {
             for (ImmutableProp prop : type.getProps().values()) {

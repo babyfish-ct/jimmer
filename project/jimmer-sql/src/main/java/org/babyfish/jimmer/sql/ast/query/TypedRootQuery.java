@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.TypedQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedRootQueryImplementor;
 import org.babyfish.jimmer.sql.exception.EmptyResultException;
 import org.babyfish.jimmer.sql.exception.TooManyResultsException;
@@ -15,13 +17,57 @@ import java.util.function.Function;
 
 public interface TypedRootQuery<R> extends Executable<List<R>> {
 
-    TypedRootQuery<R> union(TypedRootQuery<R> other);
+    @SafeVarargs
+    static <R> TypedRootQuery<R> union(TypedRootQuery<R> ... queries) {
+        return MergedTypedRootQueryImpl.of("union", queries);
+    }
 
-    TypedRootQuery<R> unionAll(TypedRootQuery<R> other);
+    @SafeVarargs
+    static <R> TypedRootQuery<R> unionAll(TypedRootQuery<R> ... queries) {
+        return MergedTypedRootQueryImpl.of("union all", queries);
+    }
 
-    TypedRootQuery<R> minus(TypedRootQuery<R> other);
+    @SafeVarargs
+    static <R> TypedRootQuery<R> minus(TypedRootQuery<R> ... queries) {
+        return MergedTypedRootQueryImpl.of("minus", queries);
+    }
 
-    TypedRootQuery<R> intersect(TypedRootQuery<R> other);
+    @SafeVarargs
+    static <R> TypedRootQuery<R> intersect(TypedRootQuery<R> ... queries) {
+        return MergedTypedRootQueryImpl.of("intersect", queries);
+    }
+
+    /**
+     * @deprecated Please view the static method {@link #union(TypedRootQuery[])}
+     */
+    @Deprecated
+    default TypedRootQuery<R> union(TypedRootQuery<R> other) {
+        return TypedRootQuery.union(this, other);
+    }
+
+    /**
+     * @deprecated Please view the static method {@link #unionAll(TypedRootQuery[])}
+     */
+    @Deprecated
+    default TypedRootQuery<R> unionAll(TypedRootQuery<R> other) {
+        return TypedRootQuery.unionAll(this, other);
+    }
+
+    /**
+     * @deprecated Please view the static method {@link #minus(TypedRootQuery[])}
+     */
+    @Deprecated
+    default TypedRootQuery<R> minus(TypedRootQuery<R> other) {
+        return TypedRootQuery.minus(this, other);
+    }
+
+    /**
+     * @deprecated Please view the static method {@link #intersect(TypedRootQuery[])}
+     */
+    @Deprecated
+    default TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
+        return TypedRootQuery.intersect(this, other);
+    }
 
     default R fetchOne() {
         return fetchOne(null);

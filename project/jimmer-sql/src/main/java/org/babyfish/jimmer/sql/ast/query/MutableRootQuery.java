@@ -6,13 +6,13 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.sql.Connection;
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, RootSelectable<T> {
+public interface MutableRootQuery<T extends TableLike<?>> extends MutableQuery, RootSelectable<T> {
 
     @OldChain
     @Override
@@ -91,12 +91,10 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
     }
 
     @OldChain
-    @SuppressWarnings("unchecked")
     @Override
     MutableRootQuery<T> orderBy(Expression<?>... expressions);
 
     @OldChain
-    @SuppressWarnings("unchecked")
     @Override
     default MutableRootQuery<T> orderByIf(boolean condition, Expression<?>... expressions) {
         if (condition) {

@@ -31,7 +31,7 @@ public abstract class JoinFetchFieldVisitor {
     private void visit0(Fetcher<?> fetcher, int depth) {
         if (depth >= maxJoinFetchDepth) {
             for (Field field : fetcher.getFieldMap().values()) {
-                visit(field);
+                visit(field, depth);
             }
         } else {
             for (Field field : fetcher.getFieldMap().values()) {
@@ -40,7 +40,7 @@ public abstract class JoinFetchFieldVisitor {
                     visit0(field.getChildFetcher(), depth + 1);
                     leave(field, enterValue);
                 } else {
-                    visit(field);
+                    visit(field, depth);
                 }
             }
         }
@@ -50,7 +50,7 @@ public abstract class JoinFetchFieldVisitor {
 
     protected abstract void leave(Field field, Object enterValue);
 
-    protected void visit(Field field) {}
+    protected void visit(Field field, int depth) {}
 
     public static boolean isJoinField(Field field, JSqlClientImplementor sqlClient) {
         ReferenceFetchType fetchType = field.getFetchType();

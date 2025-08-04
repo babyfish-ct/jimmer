@@ -6,9 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.KFilterable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 
 @DslScope
-interface KMutableDelete<E: Any> : KFilterable<E> {
-
-    override val table: KNonNullTableEx<E>
+interface KMutableDelete<E: Any> : KFilterable<KNonNullTableEx<E>> {
 
     fun disableDissociation()
 

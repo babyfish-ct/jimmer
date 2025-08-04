@@ -2,11 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
@@ -17,11 +14,12 @@ import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
+import java.time.temporal.Temporal;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -202,6 +200,46 @@ public class MutableSubQueryImpl
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
         return (ConfigurableSubQuery<R>) ConfigurableSubQueryImpl.of(
+                new TypedQueryData(Collections.singletonList(selection)),
+                this
+        );
+    }
+
+    @Override
+    public ConfigurableSubQuery.Str select(StringExpression selection) {
+        return (ConfigurableSubQuery.Str) ConfigurableSubQueryImpl.<String>of(
+                new TypedQueryData(Collections.singletonList(selection)),
+                this
+        );
+    }
+
+    @Override
+    public <T extends Comparable<?>> ConfigurableSubQuery.Cmp<T> select(ComparableExpression<T> selection) {
+        return (ConfigurableSubQuery.Cmp<T>) ConfigurableSubQueryImpl.<T>of(
+                new TypedQueryData(Collections.singletonList(selection)),
+                this
+        );
+    }
+
+    @Override
+    public <N extends Number & Comparable<N>> ConfigurableSubQuery.Num<N> select(NumericExpression<N> selection) {
+        return (ConfigurableSubQuery.Num<N>) ConfigurableSubQueryImpl.<N>of(
+                new TypedQueryData(Collections.singletonList(selection)),
+                this
+        );
+    }
+
+    @Override
+    public <T extends Date> ConfigurableSubQuery.Dt<T> select(DateExpression<T> selection) {
+        return (ConfigurableSubQuery.Dt<T>) ConfigurableSubQueryImpl.<T>of(
+                new TypedQueryData(Collections.singletonList(selection)),
+                this
+        );
+    }
+
+    @Override
+    public <T extends Temporal & Comparable<?>> ConfigurableSubQuery.Tp<T> select(TemporalExpression<T> selection) {
+        return (ConfigurableSubQuery.Tp<T>) ConfigurableSubQueryImpl.<T>of(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
         );
@@ -420,7 +458,11 @@ public class MutableSubQueryImpl
             ctx = parent.getContext();
         } else if (!MutableDeleteImpl.isCompatible(this.parent, parent)) {
             throw new IllegalStateException(
-                    "The sub query cannot be added to parent query because it is belong to another parent query"
+                    "The sub query cannot be added to parent query \"" +
+                            parent +
+                            "\" because it is belong to another parent query \"" +
+                            this.parent +
+                            "\""
             );
         }
     }

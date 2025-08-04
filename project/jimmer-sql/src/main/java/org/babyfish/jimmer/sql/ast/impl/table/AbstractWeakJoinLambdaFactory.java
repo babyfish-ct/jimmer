@@ -8,6 +8,7 @@ import org.babyfish.jimmer.impl.asm.tree.InsnList;
 import org.babyfish.jimmer.impl.asm.tree.MethodNode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.io.IOException;
 import java.lang.invoke.*;
@@ -22,8 +23,6 @@ public abstract class AbstractWeakJoinLambdaFactory {
 
     private static final WeakJoinLambda NIL =
             new WeakJoinLambda(new InsnList(), void.class, void.class);
-
-    private static final Method INTERFACE_METHOD;
 
     private final ReadWriteLock cacheRwl = new ReentrantReadWriteLock();
 
@@ -123,14 +122,6 @@ public abstract class AbstractWeakJoinLambdaFactory {
                 return this.methodNode = new MethodNode();
             }
             return null;
-        }
-    }
-
-    static {
-        try {
-            INTERFACE_METHOD = WeakJoin.class.getMethod("on", Table.class, Table.class);
-        } catch (NoSuchMethodException ex) {
-            throw new AssertionError("Internal bug", ex);
         }
     }
 }

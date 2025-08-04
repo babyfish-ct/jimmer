@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.Order
-import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -12,6 +11,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.Where
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
@@ -51,11 +51,11 @@ internal class KFilterDslImpl<E: Any>(
         javaQuery.orderBy(orders)
     }
 
-    override val subQueries: KSubQueries<E> by lazy {
+    override val subQueries: KSubQueries<KNonNullTable<E>> by lazy {
         KSubQueriesImpl(javaQuery)
     }
 
-    override val wildSubQueries: KWildSubQueries<E> by lazy {
+    override val wildSubQueries: KWildSubQueries<KNonNullTable<E>> by lazy {
         KWildSubQueriesImpl(javaQuery)
     }
 }

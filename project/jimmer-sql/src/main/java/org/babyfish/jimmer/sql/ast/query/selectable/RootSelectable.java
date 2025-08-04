@@ -3,10 +3,10 @@ package org.babyfish.jimmer.sql.ast.query.selectable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
-public interface RootSelectable<T extends Table<?>> {
+public interface RootSelectable<T extends TableLike<?>> {
 
     <R> ConfigurableRootQuery<T, R> select(
             Selection<R> selection

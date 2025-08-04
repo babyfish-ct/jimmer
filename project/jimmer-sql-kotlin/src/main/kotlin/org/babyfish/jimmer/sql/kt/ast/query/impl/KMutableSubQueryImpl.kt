@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
-import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
@@ -21,23 +20,25 @@ import org.babyfish.jimmer.sql.kt.ast.query.Where
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
-internal class KMutableSubQueryImpl<P: Any, E: Any>(
+internal class KMutableSubQueryImpl<PP: KPropsLike, E: Any>(
     private val javaSubQuery: MutableSubQueryImpl,
-    parentTable: KNonNullTableEx<P>? = null
-) : KMutableSubQuery<P, E>, MutableStatementImplementor {
+    parentTable: PP? = null
+) : KMutableSubQuery<PP, KNonNullTableEx<E>>, MutableStatementImplementor {
 
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaSubQuery.getTable())
 
-    override val parentTable: KNonNullTableEx<P> =
-        parentTable ?: KNonNullTableExImpl(
+    @Suppress("UNCHECKED_CAST")
+    override val parentTable: PP =
+        parentTable ?: KNonNullTableExImpl<Any>(
             javaSubQuery.parent.getTable(),
             "The parent of sub query does not support join"
-        )
+        ) as PP
 
     override val where: Where by lazy {
         Where(this)
@@ -231,10 +232,10 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
             )
         )
 
-    override val subQueries: KSubQueries<E> =
+    override val subQueries: KSubQueries<KNonNullTableEx<E>> =
         KSubQueriesImpl(javaSubQuery)
 
-    override val wildSubQueries: KWildSubQueries<E> =
+    override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
         KWildSubQueriesImpl(javaSubQuery)
 
     override fun hasVirtualPredicate(): Boolean =

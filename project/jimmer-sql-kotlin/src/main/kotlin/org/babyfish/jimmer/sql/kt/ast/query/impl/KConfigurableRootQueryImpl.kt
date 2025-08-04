@@ -8,20 +8,23 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
 import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import java.sql.Connection
-import java.util.Collections
 import java.util.function.BiFunction
 
-internal class KConfigurableRootQueryImpl<E: Any, R>(
-    javaQuery: ConfigurableRootQuery<Table<E>, R>
+internal class KConfigurableRootQueryImpl<P: KPropsLike, R>(
+    javaQuery: ConfigurableRootQuery<TableLike<*>, R>
 ) : KTypedRootQueryImpl<R>(javaQuery),
-    KConfigurableRootQuery<E, R> {
+    KConfigurableRootQuery<P, R> {
 
     @Suppress("UNCHECKED_CAST")
-    override val javaQuery: ConfigurableRootQuery<Table<E>, R>
-        get() = super.javaQuery as ConfigurableRootQuery<Table<E>, R>
+    override val javaQuery: ConfigurableRootQuery<TableLike<*>, R>
+        get() = super.javaQuery as ConfigurableRootQuery<TableLike<*>, R>
 
     override fun <P : Any> fetchPage(
         pageIndex: Int,
@@ -37,7 +40,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 PageSource.of(
                     0,
                     Int.MAX_VALUE,
-                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
                 )
             )
         }
@@ -48,7 +51,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 PageSource.of(
                     0,
                     pageSize,
-                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
                 )
             )
         }
@@ -63,7 +66,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 PageSource.of(
                     pageIndex,
                     pageSize,
-                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
                 )
             )
         }
@@ -106,7 +109,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
             PageSource.of(
                 pageIndex,
                 pageSize,
-                (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
             )
         )
     }
@@ -115,40 +118,44 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
         javaQuery.fetchSlice(limit, offset, con)
 
     override fun <X> reselect(
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, X>
-    ): KConfigurableRootQuery<E, X> {
-        val javaBlock = BiFunction<MutableRootQuery<Table<E>>, Table<E>, ConfigurableRootQuery<Table<E>, X>> { query, _ ->
-            (KMutableRootQueryImpl(query as MutableRootQueryImpl<Table<E>>).block() as KConfigurableRootQueryImpl<E, X>).javaQuery
+        block: KMutableRootQuery<P>.() -> KConfigurableRootQuery<P, X>
+    ): KConfigurableRootQuery<P, X> {
+        val javaBlock = BiFunction<MutableRootQuery<TableLike<*>>, TableLike<*>, ConfigurableRootQuery<TableLike<*>, X>> { query, _ ->
+            // TODO: Not only for entity
+            val q = KMutableRootQueryImpl.ForEntityImpl<Any>(query as MutableRootQueryImpl<TableLike<*>>) as KMutableRootQuery<P>
+            (q.block() as KConfigurableRootQueryImpl<P, X>).javaQuery
         }
         return KConfigurableRootQueryImpl(javaQuery.reselect(javaBlock))
     }
 
-    override fun distinct(): KConfigurableRootQuery<E, R> =
+    override fun distinct(): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.distinct())
 
-    override fun limit(limit: Int): KConfigurableRootQuery<E, R> =
+    override fun limit(limit: Int): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.limit(limit))
 
-    override fun offset(offset: Long): KConfigurableRootQuery<E, R> =
+    override fun offset(offset: Long): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.offset(offset))
 
-    override fun limit(limit: Int, offset: Long): KConfigurableRootQuery<E, R> =
+    override fun limit(limit: Int, offset: Long): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.limit(limit, offset))
 
-    override fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R> =
+    override fun withoutSortingAndPaging(): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.withoutSortingAndPaging())
 
-    override fun reverseSorting(): KConfigurableRootQuery<E, R>? =
+    override fun reverseSorting(): KConfigurableRootQuery<P, R>? =
         javaQuery.reverseSorting()?.let {
             KConfigurableRootQueryImpl(it)
         }
 
-    override fun setReverseSortOptimizationEnabled(enabled: Boolean): KConfigurableRootQuery<E, R>? =
+    override fun setReverseSortOptimizationEnabled(
+        enabled: Boolean
+    ): KConfigurableRootQuery<P, R>? =
         KConfigurableRootQueryImpl(javaQuery.setReverseSortOptimizationEnabled(enabled))
 
-    override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<E, R> =
+    override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.forUpdate(forUpdate))
 
-    override fun hint(hint: String?): KConfigurableRootQuery<E, R> =
+    override fun hint(hint: String?): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.hint(hint))
 }

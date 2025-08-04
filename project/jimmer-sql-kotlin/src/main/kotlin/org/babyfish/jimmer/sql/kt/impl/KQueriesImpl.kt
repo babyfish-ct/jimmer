@@ -9,10 +9,12 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.AssociationTable
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.KQueries
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import kotlin.reflect.KClass
@@ -25,38 +27,38 @@ internal class KQueriesImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any, R> forEntity(
         entityType: KClass<E>,
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
-    ): KConfigurableRootQuery<E, R> {
+        block: KMutableRootQuery.ForEntity<E>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
+    ): KConfigurableRootQuery<KNonNullTable<E>, R> {
         val query = MutableRootQueryImpl<Table<*>>(
             sqlClient,
             ImmutableType.get(entityType.java),
             ExecutionPurpose.QUERY,
             FilterLevel.DEFAULT
         )
-        return KMutableRootQueryImpl(
-            query as MutableRootQueryImpl<Table<E>>
+        return KMutableRootQueryImpl.ForEntityImpl<E>(
+            query as MutableRootQueryImpl<TableLike<*>>
         ).block()
     }
 
     override fun <S : Any, T : Any, R> forReference(
         prop: KProperty1<S, T?>,
-        block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
-    ): KConfigurableRootQuery<Association<S, T>, R> {
+        block: KMutableRootQuery<KNonNullTable<Association<S, T>>>.() -> KConfigurableRootQuery<KNonNullTable<Association<S, T>>, R>
+    ): KConfigurableRootQuery<KNonNullTable<Association<S, T>>, R> {
         return forAssociation(prop.toImmutableProp(), block)
     }
 
     override fun <S : Any, T : Any, R> forList(
         prop: KProperty1<S, List<T>>,
-        block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
-    ): KConfigurableRootQuery<Association<S, T>, R> {
+        block: KMutableRootQuery<KNonNullTable<Association<S, T>>>.() -> KConfigurableRootQuery<KNonNullTable<Association<S, T>>, R>
+    ): KConfigurableRootQuery<KNonNullTable<Association<S, T>>, R> {
         return forAssociation(prop.toImmutableProp(), block)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <S: Any, T: Any, R> forAssociation(
         immutableProp: ImmutableProp,
-        block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
-    ): KConfigurableRootQuery<Association<S, T>, R> {
+        block: KMutableRootQuery<KNonNullTable<Association<S, T>>>.() -> KConfigurableRootQuery<KNonNullTable<Association<S, T>>, R>
+    ): KConfigurableRootQuery<KNonNullTable<Association<S, T>>, R> {
         val associationType = AssociationType.of(immutableProp)
         val query: MutableRootQueryImpl<AssociationTable<S, Table<S>, T, Table<T>>> =
             MutableRootQueryImpl(
@@ -65,8 +67,8 @@ internal class KQueriesImpl(
                 ExecutionPurpose.QUERY,
                 FilterLevel.DEFAULT
             )
-        return KMutableRootQueryImpl(
-            query as MutableRootQueryImpl<Table<Association<S, T>>>
+        return KMutableRootQueryImpl.ForAssociation<S, T>(
+            query as MutableRootQueryImpl<TableLike<*>>
         ).block()
     }
 }

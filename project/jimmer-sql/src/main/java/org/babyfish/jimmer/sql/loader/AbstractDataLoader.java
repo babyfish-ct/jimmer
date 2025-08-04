@@ -631,7 +631,7 @@ public abstract class AbstractDataLoader {
                                 return q.select(sourceIdExpr, targetIdExpr);
                             }).limit(limit, offset);
                 }
-                return new MergedTypedRootQueryImpl<>(sqlClient, "union all", queries).execute(con);
+                return MergedTypedRootQueryImpl.of("union all", queries).execute(con);
             }
             return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
                 Expression<Object> sourceIdExpr = association.sourceId();
@@ -698,7 +698,7 @@ public abstract class AbstractDataLoader {
                             return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
                         }).limit(limit, offset);
             }
-            return new MergedTypedRootQueryImpl<>(sqlClient, "union all", queries).execute(con);
+            return MergedTypedRootQueryImpl.of("union all", queries).execute(con);
         }
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
             Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);

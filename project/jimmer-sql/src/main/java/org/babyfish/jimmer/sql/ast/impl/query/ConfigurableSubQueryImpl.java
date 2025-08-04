@@ -5,13 +5,14 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
 import java.util.List;
 
 public class ConfigurableSubQueryImpl<R>
@@ -83,6 +84,12 @@ public class ConfigurableSubQueryImpl<R>
                 if (Comparable.class.isAssignableFrom(type)) {
                     return (TypedSubQuery<R>) new Cmp<>(data, baseQuery);
                 }
+                if (Date.class.isAssignableFrom(type)) {
+                    return (TypedSubQuery<R>) new Dt<>(data, baseQuery);
+                }
+                if (Temporal.class.isAssignableFrom(type)) {
+                    return (TypedSubQuery<R>) new Tp<>(data, baseQuery);
+                }
             }
         }
         return new ConfigurableSubQueryImpl<>(data, baseQuery);
@@ -94,8 +101,8 @@ public class ConfigurableSubQueryImpl<R>
     }
 
     @Override
-    public MutableSubQueryImpl getBaseQuery() {
-        return (MutableSubQueryImpl) super.getBaseQuery();
+    public MutableSubQueryImpl getMutableQuery() {
+        return (MutableSubQueryImpl) super.getMutableQuery();
     }
 
     @Override
@@ -132,7 +139,7 @@ public class ConfigurableSubQueryImpl<R>
         }
         return new ConfigurableSubQueryImpl<>(
                 data.limit(limit, offset),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -144,7 +151,7 @@ public class ConfigurableSubQueryImpl<R>
         }
         return new ConfigurableSubQueryImpl<>(
                 data.distinct(),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -153,7 +160,7 @@ public class ConfigurableSubQueryImpl<R>
         TypedQueryData data = getData();
         return new ConfigurableSubQueryImpl<>(
                 data.hint(hint),
-                getBaseQuery()
+                getMutableQuery()
         );
     }
 
@@ -179,7 +186,7 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        getBaseQuery().setParent(visitor.getAstContext().getStatement());
+        getMutableQuery().setParent(visitor.getAstContext().getStatement());
         if (visitor.visitSubQuery(this)) {
             super.accept(visitor);
         }
@@ -199,59 +206,19 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public boolean hasVirtualPredicate() {
-        return getBaseQuery().hasVirtualPredicate();
+        return getMutableQuery().hasVirtualPredicate();
     }
 
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
-        getBaseQuery().resolveVirtualPredicate(ctx);
+        getMutableQuery().resolveVirtualPredicate(ctx);
         return this;
-    }
-
-    @Override
-    public TypedSubQuery<R> union(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "union", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> unionAll(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "union all", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> minus(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "minus", this, other);
-    }
-
-    @Override
-    public TypedSubQuery<R> intersect(TypedSubQuery<R> other) {
-        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "intersect", this, other);
     }
 
     private static class Str extends ConfigurableSubQueryImpl<String> implements ConfigurableSubQuery.Str, StringExpressionImplementor {
 
         Str(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
-        }
-
-        @Override
-        public TypedSubQuery.Str union(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str unionAll(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str minus(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Str intersect(TypedSubQuery<String> other) {
-            return (TypedSubQuery.Str) super.intersect(other);
         }
     }
 
@@ -260,26 +227,6 @@ public class ConfigurableSubQueryImpl<R>
         Num(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
         }
-
-        @Override
-        public TypedSubQuery.Num<N> union(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.union(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> unionAll(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.unionAll(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> minus(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Num<N> intersect(TypedSubQuery<N> other) {
-            return (TypedSubQuery.Num<N>) super.intersect(other);
-        }
     }
 
     private static class Cmp<T extends Comparable<?>> extends ConfigurableSubQueryImpl<T> implements ConfigurableSubQuery.Cmp<T>, ComparableExpressionImplementor<T> {
@@ -287,25 +234,19 @@ public class ConfigurableSubQueryImpl<R>
         Cmp(TypedQueryData data, MutableSubQueryImpl baseQuery) {
             super(data, baseQuery);
         }
+    }
 
-        @Override
-        public TypedSubQuery.Cmp<T> union(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.union(other);
+    private static class Dt<T extends Date> extends ConfigurableSubQueryImpl<T> implements ConfigurableSubQuery.Dt<T>, DateExpressionImplementor<T> {
+
+        Dt(TypedQueryData data, MutableSubQueryImpl baseQuery) {
+            super(data, baseQuery);
         }
+    }
 
-        @Override
-        public TypedSubQuery.Cmp<T> unionAll(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.unionAll(other);
-        }
+    private static class Tp<T extends Temporal & Comparable<?>> extends ConfigurableSubQueryImpl<T> implements ConfigurableSubQuery.Tp<T>, TemporalExpressionImplementor<T> {
 
-        @Override
-        public TypedSubQuery.Cmp<T> minus(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.minus(other);
-        }
-
-        @Override
-        public TypedSubQuery.Cmp<T> intersect(TypedSubQuery<T> other) {
-            return (TypedSubQuery.Cmp<T>) super.intersect(other);
+        Tp(TypedQueryData data, MutableSubQueryImpl baseQuery) {
+            super(data, baseQuery);
         }
     }
 }

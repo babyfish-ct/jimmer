@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.*;
 
 public class MutableUpdateImpl
@@ -58,7 +57,7 @@ public class MutableUpdateImpl
     }
 
     private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
-        for (RealTable childTable : tableImplementor.realTable(astContext.getJoinTypeMergeScope())) {
+        for (RealTable childTable : tableImplementor.realTable(astContext)) {
             if (astContext.getTableUsedState(childTable) == TableUsedState.USED) {
                 return true;
             }
@@ -93,7 +92,7 @@ public class MutableUpdateImpl
         validateMutable();
         Target target = Target.of(path, getSqlClient().getMetadataStrategy());
         if (target.table != this.getTable() &&
-            target.table != this.getTableImplementor() &&
+            target.table != this.getTableLikeImplementor() &&
             getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
@@ -104,7 +103,7 @@ public class MutableUpdateImpl
         }
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean joinedTableUpdatable = updateJoin != null && updateJoin.isJoinedTableUpdatable();
-        if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableImplementor())) {
+        if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableLikeImplementor())) {
             throw new IllegalArgumentException(
                     "The current dialect '" +
                     getSqlClient().getDialect().getClass().getName() +
@@ -185,7 +184,7 @@ public class MutableUpdateImpl
             return 0;
         }
 
-        PropId idPropId = getTable().getImmutableType().getIdProp().getId();
+        PropId idPropId = this.<Table<?>>getTable().getImmutableType().getIdProp().getId();
         Map<Object, ImmutableSpi> rowMap = new HashMap<>((rows.size() * 4 + 2) / 3);
         for (ImmutableSpi row : rows) {
             rowMap.put(row.__get(idPropId), row);
@@ -244,6 +243,11 @@ public class MutableUpdateImpl
         renderTo(builder, null);
     }
 
+    @Override
+    public TableImplementor<?> getTableLikeImplementor() {
+        return (TableImplementor<?>) super.getTableLikeImplementor();
+    }
+
     private void accept(@NotNull AstVisitor visitor, boolean visitAssignments) {
         AstContext astContext = visitor.getAstContext();
         freeze(astContext);
@@ -268,7 +272,7 @@ public class MutableUpdateImpl
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(this);
         try {
-            TableImplementor<?> table = getTableImplementor();
+            TableImplementor<?> table = getTableLikeImplementor();
             Dialect dialect = getSqlClient().getDialect();
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
             this.accept(visitor);
@@ -278,13 +282,13 @@ public class MutableUpdateImpl
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
 
             if (getSqlClient().getDialect().isUpdateAliasSupported()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
             }
 
             UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
-                for (RealTable child : table.realTable(astContext.getJoinTypeMergeScope())) {
-                    child.renderTo(builder);
+                for (RealTable child : table.realTable(astContext)) {
+                    child.renderTo(builder, false);
                 }
             }
 
@@ -308,13 +312,14 @@ public class MutableUpdateImpl
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
             visitor.allocateAliases();
-            TableImplementor<?> table = getTableImplementor();
+            TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.enter(SqlBuilder.ScopeType.SELECT);
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
                 builder.separator().definition(
-                        table.realTable(astContext.getJoinTypeMergeScope()).getAlias(),
-                        prop.getStorage(strategy)
+                        table.realTable(astContext).getAlias(),
+                        prop.getStorage(strategy),
+                        null
                 );
             }
             builder.leave();
@@ -325,13 +330,13 @@ public class MutableUpdateImpl
                         .sql(" ");
 
                 if (getSqlClient().getDialect().isUpdateAliasSupported()) {
-                    builder.sql(table.realTable(astContext.getJoinTypeMergeScope()).getAlias());
+                    builder.sql(table.realTable(astContext).getAlias());
                 }
 
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 NativePredicates.renderPredicates(
                         false,
-                        table.realTable(astContext.getJoinTypeMergeScope()).getAlias(),
+                        table.realTable(astContext).getAlias(),
                         table.getImmutableType().getIdProp().getStorage(strategy),
                         ids,
                         builder
@@ -347,7 +352,7 @@ public class MutableUpdateImpl
     }
 
     private void renderAssignments(SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean withTargetPrefix =
                 updateJoin != null &&
@@ -398,7 +403,7 @@ public class MutableUpdateImpl
     }
 
     private void renderTables(SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         if (hasUsedChild(table, builder.getAstContext())) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
@@ -406,7 +411,7 @@ public class MutableUpdateImpl
                     break;
                 case AS_JOIN:
                     builder.from().enter(",");
-                    for (RealTable child : table.realTable(builder.getAstContext().getJoinTypeMergeScope())) {
+                    for (RealTable child : table.realTable(builder.getAstContext())) {
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
                     }
                     builder.leave();
@@ -415,13 +420,13 @@ public class MutableUpdateImpl
     }
 
     private void renderDeeperJoins(SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
             updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
             hasUsedChild(table, builder.getAstContext())
         ) {
-            for (RealTable child : table.realTable(builder.getAstContext().getJoinTypeMergeScope())) {
+            for (RealTable child : table.realTable(builder.getAstContext())) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
             }
         }
@@ -429,7 +434,7 @@ public class MutableUpdateImpl
 
     private void renderWhereClause(SqlBuilder builder, boolean forUpdate, Collection<Object> ids) {
 
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
 
         boolean hasTableCondition =
@@ -446,7 +451,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             NativePredicates.renderPredicates(
                     false,
-                    table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias(),
+                    table.realTable(builder.getAstContext()).getAlias(),
                     table.getImmutableType().getIdProp().getStorage(getSqlClient().getMetadataStrategy()),
                     ids,
                     builder
@@ -454,7 +459,7 @@ public class MutableUpdateImpl
         }
 
         if (hasTableCondition) {
-            for (RealTable child : table.realTable(builder.getAstContext().getJoinTypeMergeScope())) {
+            for (RealTable child : table.realTable(builder.getAstContext())) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }
@@ -548,7 +553,7 @@ public class MutableUpdateImpl
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
                             "but there is a join '" +
-                            table.getTableImplementor() +
+                            table.getTableLikeImplementor() +
                             "'."
                     );
                 }
@@ -563,18 +568,22 @@ public class MutableUpdateImpl
                             "indicates that the first level table joins in update statement " +
                             "must be rendered as 'from' clause, " +
                             "but there is a first level table join whose join type is outer: '" +
-                            table.getTableImplementor() +
+                            table.getTableLikeImplementor() +
                             "'."
                     );
-                    if (table.getTableImplementor().getJoinType() != JoinType.INNER) {
-                        throw new ExecutionException(
-                                "The first level table joins cannot be outer join " + reason.get()
-                        );
-                    }
-                    if (table.getTableImplementor().getWeakJoinHandle() != null) {
-                        throw new ExecutionException(
-                                "The first level table joins cannot be weak join " + reason.get()
-                        );
+                    TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+                    if (implementor instanceof TableImplementor<?>) {
+                        TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                        if (tableImplementor.getJoinType() != JoinType.INNER) {
+                            throw new ExecutionException(
+                                    "The first level table joins cannot be outer join " + reason.get()
+                            );
+                        }
+                        if (tableImplementor.getWeakJoinHandle() != null) {
+                            throw new ExecutionException(
+                                    "The first level table joins cannot be weak join " + reason.get()
+                            );
+                        }
                     }
                 }
             }

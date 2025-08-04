@@ -614,7 +614,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     ExecutionPurpose.MUTATE,
                     FilterLevel.IGNORE_ALL
             );
-            Table<?> table = q.getTableImplementor();
+            Table<?> table = (Table<?>) q.getTableLikeImplementor();
             q.where(table.getId().in(ids));
             List<Object> actualTargetIds = q.select(table.getId()).execute(ctx.con);
             if (actualTargetIds.size() < ids.size()) {

@@ -189,7 +189,7 @@ public class PropExpressionImpl<T>
         visitor.visitTableReference(
                 TableProxies
                         .resolve(table, visitor.getAstContext())
-                        .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
+                        .realTable(visitor.getAstContext()),
                 prop,
                 rawId
         );
@@ -286,7 +286,7 @@ public class PropExpressionImpl<T>
 
     private static class StrImpl
             extends PropExpressionImpl<String>
-            implements PropExpression.Str, StringExpressionImplementor {
+            implements PropExpression.Str {
 
         StrImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
             super(table, prop, rawId);
@@ -297,21 +297,6 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public @NotNull StringExpression coalesce(String defaultValue) {
-            return StringExpressionImplementor.super.coalesce(defaultValue);
-        }
-
-        @Override
-        public @NotNull StringExpression coalesce(Expression<String> defaultExpr) {
-            return StringExpressionImplementor.super.coalesce(defaultExpr);
-        }
-
-        @Override
-        public CoalesceBuilder.@NotNull Str coalesceBuilder() {
-            return StringExpressionImplementor.super.coalesceBuilder();
-        }
-
-        @Override
         public Table<?> getTable() {
             return super.getTable();
         }
@@ -319,7 +304,7 @@ public class PropExpressionImpl<T>
 
     private static class NumImpl<N extends Number & Comparable<N>>
             extends PropExpressionImpl<N>
-            implements PropExpression.Num<N>, NumericExpressionImplementor<N> {
+            implements PropExpression.Num<N> {
 
         NumImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
             super(table, prop, rawId);
@@ -328,26 +313,11 @@ public class PropExpressionImpl<T>
         NumImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
             super(base, prop);
         }
-
-        @Override
-        public @NotNull NumericExpression<N> coalesce(N defaultValue) {
-            return NumericExpressionImplementor.super.coalesce(defaultValue);
-        }
-
-        @Override
-        public @NotNull NumericExpression<N> coalesce(Expression<N> defaultExpr) {
-            return NumericExpressionImplementor.super.coalesce(defaultExpr);
-        }
-
-        @Override
-        public CoalesceBuilder.@NotNull Num<N> coalesceBuilder() {
-            return NumericExpressionImplementor.super.coalesceBuilder();
-        }
     }
 
     private static class DtImpl<T extends Date & Comparable<Date>>
             extends PropExpressionImpl<T>
-            implements PropExpression.Dt<T>, DateExpressionImplementor<T> {
+            implements PropExpression.Dt<T> {
 
         DtImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
             super(table, prop, rawId);
@@ -356,29 +326,11 @@ public class PropExpressionImpl<T>
         DtImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
             super(base, prop);
         }
-
-        @Override
-        @NotNull
-        public DateExpression<T> coalesce(T defaultValue) {
-            return coalesceBuilder().or(defaultValue).build();
-        }
-
-        @Override
-        @NotNull
-        public DateExpression<T> coalesce(Expression<T> defaultExpr) {
-            return coalesceBuilder().or(defaultExpr).build();
-        }
-
-        @Override
-        @NotNull
-        public CoalesceBuilder.Dt<T> coalesceBuilder() {
-            return DateExpressionImplementor.super.coalesceBuilder();
-        }
     }
 
     private static class TpImpl<T extends Temporal & Comparable<?>>
             extends PropExpressionImpl<T>
-            implements PropExpression.Tp<T>, TemporalExpressionImplementor<T> {
+            implements PropExpression.Tp<T> {
 
         TpImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
             super(table, prop, rawId);
@@ -387,26 +339,11 @@ public class PropExpressionImpl<T>
         TpImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
             super(base, prop);
         }
-
-        @Override
-        public @NotNull TemporalExpression<T> coalesce(Expression<T> defaultValue) {
-            return coalesceBuilder().or(defaultValue).build();
-        }
-        @Override
-        public @NotNull TemporalExpression<T> coalesce(T defaultExpr) {
-            return coalesceBuilder().or(defaultExpr).build();
-        }
-
-        @Override
-        @NotNull
-        public CoalesceBuilder.Tp<T> coalesceBuilder() {
-            return TemporalExpressionImplementor.super.coalesceBuilder();
-        }
     }
 
     private static class CmpImpl<T extends Comparable<?>>
             extends PropExpressionImpl<T>
-            implements PropExpression.Cmp<T>, ComparableExpressionImplementor<T> {
+            implements PropExpression.Cmp<T> {
 
         CmpImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
             super(table, prop, rawId);
@@ -414,21 +351,6 @@ public class PropExpressionImpl<T>
 
         CmpImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
             super(base, prop);
-        }
-
-        @Override
-        public @NotNull ComparableExpression<T> coalesce(T defaultValue) {
-            return ComparableExpressionImplementor.super.coalesce(defaultValue);
-        }
-
-        @Override
-        public @NotNull ComparableExpression<T> coalesce(Expression<T> defaultExpr) {
-            return ComparableExpressionImplementor.super.coalesce(defaultExpr);
-        }
-
-        @Override
-        public CoalesceBuilder.@NotNull Cmp<T> coalesceBuilder() {
-            return ComparableExpressionImplementor.super.coalesceBuilder();
         }
     }
 

@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.List;
 
-interface TypedQueryImplementor extends Ast {
+public interface TypedQueryImplementor extends Ast {
 
     List<Selection<?>> getSelections();
 

@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedSubQueryImpl;
 import org.jetbrains.annotations.Nullable;
+
+import java.time.temporal.Temporal;
+import java.util.Date;
 
 public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
 
@@ -28,7 +30,7 @@ public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
      */
     ConfigurableSubQuery<R> hint(@Nullable String hint);
 
-    interface Str extends ConfigurableSubQuery<String>, StringExpression {
+    interface Str extends ConfigurableSubQuery<String>, StringExpressionImplementor {
 
         default TypedSubQuery.Str union(TypedSubQuery<String> other) {
             return (TypedSubQuery.Str) MergedTypedSubQueryImpl.of("union", this, other);
@@ -47,7 +49,7 @@ public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
         }
     }
 
-    interface Num<N extends Number & Comparable<N>> extends ConfigurableSubQuery<N>, NumericExpression<N> {
+    interface Num<N extends Number & Comparable<N>> extends ConfigurableSubQuery<N>, NumericExpressionImplementor<N> {
 
         default TypedSubQuery.Num<N> union(TypedSubQuery<N> other) {
             return (TypedSubQuery.Num<N>)MergedTypedSubQueryImpl.of("union", this, other);
@@ -66,7 +68,7 @@ public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
         }
     }
 
-    interface Cmp<T extends Comparable<?>> extends ConfigurableSubQuery<T>, ComparableExpression<T> {
+    interface Cmp<T extends Comparable<?>> extends ConfigurableSubQuery<T>, ComparableExpressionImplementor<T> {
 
         default TypedSubQuery.Cmp<T> union(TypedSubQuery<T> other) {
             return (TypedSubQuery.Cmp<T>)MergedTypedSubQueryImpl.of("union", this, other);
@@ -82,6 +84,44 @@ public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
 
         default TypedSubQuery.Cmp<T> intersect(TypedSubQuery<T> other) {
             return (TypedSubQuery.Cmp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
+        }
+    }
+
+    interface Dt<T extends Date> extends ConfigurableSubQuery<T>, DateExpressionImplementor<T> {
+
+        default TypedSubQuery.Dt<T> union(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("union", this, other);
+        }
+
+        default TypedSubQuery.Dt<T> unionAll(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("union all", this, other);
+        }
+
+        default TypedSubQuery.Dt<T> minus(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("minus", this, other);
+        }
+
+        default TypedSubQuery.Dt<T> intersect(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
+        }
+    }
+
+    interface Tp<T extends Temporal & Comparable<?>> extends ConfigurableSubQuery<T>, TemporalExpressionImplementor<T> {
+
+        default TypedSubQuery.Tp<T> union(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("union", this, other);
+        }
+
+        default TypedSubQuery.Tp<T> unionAll(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("union all", this, other);
+        }
+
+        default TypedSubQuery.Tp<T> minus(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("minus", this, other);
+        }
+
+        default TypedSubQuery.Tp<T> intersect(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
         }
     }
 }

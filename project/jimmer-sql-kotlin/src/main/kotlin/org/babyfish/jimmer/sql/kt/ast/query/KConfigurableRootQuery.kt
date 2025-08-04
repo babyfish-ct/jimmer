@@ -6,9 +6,10 @@ import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.kt.ast.expression.constant
 import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import java.sql.Connection
 
-interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
+interface KConfigurableRootQuery<P: KPropsLike, R> : KTypedRootQuery<R> {
 
     /**
      * Ignore the sorting and pagination settings of the current query,
@@ -53,35 +54,35 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
     @NewChain
     fun <X> reselect(
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, X>
-    ): KConfigurableRootQuery<E, X>
+        block: KMutableRootQuery<P>.() -> KConfigurableRootQuery<P, X>
+    ): KConfigurableRootQuery<P, X>
 
     @NewChain
-    fun distinct(): KConfigurableRootQuery<E, R>
+    fun distinct(): KConfigurableRootQuery<P, R>
 
     @NewChain
-    fun limit(limit: Int): KConfigurableRootQuery<E, R>
+    fun limit(limit: Int): KConfigurableRootQuery<P, R>
 
     @NewChain
-    fun offset(offset: Long): KConfigurableRootQuery<E, R>
+    fun offset(offset: Long): KConfigurableRootQuery<P, R>
 
     @NewChain
-    fun limit(limit: Int, offset: Long): KConfigurableRootQuery<E, R>
+    fun limit(limit: Int, offset: Long): KConfigurableRootQuery<P, R>
 
     @NewChain
-    fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R>
+    fun withoutSortingAndPaging(): KConfigurableRootQuery<P, R>
 
     /**
      * @return If the original query does not have `order by` clause, returns null
      */
     @NewChain
-    fun reverseSorting(): KConfigurableRootQuery<E, R>?
+    fun reverseSorting(): KConfigurableRootQuery<P, R>?
 
     @NewChain
-    fun setReverseSortOptimizationEnabled(enabled: Boolean): KConfigurableRootQuery<E, R>?
+    fun setReverseSortOptimizationEnabled(enabled: Boolean): KConfigurableRootQuery<P, R>?
 
     @NewChain
-    fun forUpdate(forUpdate: Boolean = true): KConfigurableRootQuery<E, R>
+    fun forUpdate(forUpdate: Boolean = true): KConfigurableRootQuery<P, R>
 
     /**
      * Set the hint
@@ -89,5 +90,5 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
      * @return A new query object
      */
     @NewChain
-    fun hint(hint: String?): KConfigurableRootQuery<E, R>
+    fun hint(hint: String?): KConfigurableRootQuery<P, R>
 }

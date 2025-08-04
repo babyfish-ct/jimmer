@@ -11,12 +11,17 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AssociatedPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -31,6 +36,9 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
+    @Nullable
+    private final BaseTableOwner baseTableOwner;
+
     private final Object identifier;
 
     protected AbstractTypedTable(ImmutableType type) {
@@ -38,6 +46,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -46,6 +55,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -54,6 +64,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = delayedOperation;
         this.joinDisabledReason = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -62,6 +73,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = raw;
         this.joinDisabledReason = null;
         this.delayedOperation = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -70,7 +82,23 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = base.raw;
         this.delayedOperation = base.delayedOperation;
         this.joinDisabledReason = joinDisabledReason != null ? joinDisabledReason : base.joinDisabledReason;
+        this.baseTableOwner = base.baseTableOwner;
         this.identifier = base.identifier;
+    }
+
+    protected AbstractTypedTable(
+            AbstractTypedTable<E> base,
+            @NotNull BaseTableOwner baseTableOwner) {
+        this.immutableType = base.immutableType;
+        this.raw = base.raw != null ? base.raw.baseTableOwner(baseTableOwner) : null;
+        if (base.delayedOperation != null) {
+            this.delayedOperation = base.delayedOperation.baseTableOwner(baseTableOwner);
+        } else {
+            this.delayedOperation = null;
+        }
+        this.joinDisabledReason = base.joinDisabledReason;
+        this.identifier = base.identifier;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override
@@ -510,7 +538,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     protected void __beforeJoin() {
         if (joinDisabledReason != null) {
-            throw new IllegalStateException("Table join is disabled because " + joinDisabledReason);
+            throw new IllegalStateException("Table join is disabled. " + joinDisabledReason);
         }
     }
 
@@ -522,7 +550,12 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (delayedOperation != null) {
             return delayedOperation.toString();
         }
-        return immutableType.toString();
+        StringBuilder builder = new StringBuilder();
+        builder.append(immutableType.getJavaClass().getSimpleName());
+        if (baseTableOwner != null) {
+            builder.append(":withBaseTableOwner");
+        }
+        return builder.toString();
     }
 
     protected <X> DelayedOperation<X> joinOperation(String prop) {
@@ -549,7 +582,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, prop, joinType, treatedAs);
     }
 
-    protected <X> DelayedOperation<X> joinOperation(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType) {
+    protected <X> DelayedOperation<X> joinOperation(
+            Class<? extends WeakJoin<?, ?>> weakJoinType,
+            JoinType joinType
+    ) {
         return new DelayJoin<>(this, weakJoinType, joinType);
     }
 
@@ -561,14 +597,27 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, targetTableType, joinType, weakJoinLambda);
     }
 
-    public static boolean __refEquals(Table<?> a, Table<?> b) {
+    public static boolean __refEquals(TableLike<?> a, TableLike<?> b) {
         if (a == b) {
             return true;
         }
         if (a instanceof AbstractTypedTable<?> && b instanceof AbstractTypedTable<?>) {
-            return ((AbstractTypedTable<?>)a).identifier == ((AbstractTypedTable<?>)b).identifier;
+            AbstractTypedTable<?> ta = (AbstractTypedTable<?>)a;
+            AbstractTypedTable<?> tb = (AbstractTypedTable<?>)b;
+            ta = (AbstractTypedTable<?>) ta.__baseTableOwner(null);
+            tb = (AbstractTypedTable<?>) tb.__baseTableOwner(null);
+            return ta.identifier == tb.identifier;
+        }
+        if (a instanceof TableImplementor<?> && b instanceof TableImplementor<?>) {
+            return ((TableImplementor<?>) a).baseTableOwner(null) ==
+                    ((TableImplementor<?>) b).baseTableOwner(null);
         }
         return false;
+    }
+
+    @Override
+    public @Nullable BaseTableOwner __baseTableOwner() {
+        return baseTableOwner;
     }
 
     public interface DelayedOperation<E> {
@@ -582,6 +631,8 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         ImmutableType targetType();
 
         TableImplementor<E> resolve(RootTableResolver ctx);
+
+        DelayedOperation<E> baseTableOwner(BaseTableOwner baseTableOwner);
     }
 
     private static class DelayJoin<E> implements DelayedOperation<E> {
@@ -602,6 +653,17 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.joinType = joinType;
             this.treatedAs = treatedAs;
             this.prop = prop;
+            this.weakJoinHandle = null;
+        }
+
+        private DelayJoin(
+                DelayJoin<E> base,
+                BaseTableOwner baseTableOwner
+        ) {
+            this.parent = (AbstractTypedTable<?>) base.parent.__baseTableOwner(baseTableOwner);
+            this.joinType = base.joinType;
+            this.treatedAs = base.treatedAs;
+            this.prop = base.prop;
             this.weakJoinHandle = null;
         }
 
@@ -628,11 +690,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.joinType = joinType;
             this.treatedAs = null;
             this.prop = null;
-            this.weakJoinHandle = new WeakJoinHandle(
+            this.weakJoinHandle = WeakJoinHandle.of(
                     JWeakJoinLambdaFactory.get(weakJoinLambda),
                     true,
                     true,
-                    (WeakJoin<Table<?>, Table<?>>) weakJoinLambda
+                    (WeakJoin<TableLike<?>, TableLike<?>>) weakJoinLambda
             );
         }
 
@@ -659,15 +721,26 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             if (prop != null) {
                 return prop.getTargetType();
             }
-            return weakJoinHandle.getTargetType();
+            return ((WeakJoinHandle.EntityTableHandle)weakJoinHandle).getTargetType();
         }
 
         @Override
         public TableImplementor<E> resolve(RootTableResolver ctx) {
+            TableImplementor<E> tableImplementor;
             if (prop != null) {
-                return parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs);
+                tableImplementor = parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs);
+            } else {
+                tableImplementor = parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType);
             }
-            return parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType);
+            return tableImplementor.baseTableOwner(parent.__baseTableOwner());
+        }
+
+        @Override
+        public DelayedOperation<E> baseTableOwner(BaseTableOwner baseTableOwner) {
+            return new DelayJoin<>(
+                    this,
+                    baseTableOwner
+            );
         }
 
         @Override
@@ -701,10 +774,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         private final JoinType joinType;
 
-        private DelayInverseJoin(AbstractTypedTable<?> parent, ImmutableProp prop, JoinType joinType) {
+        DelayInverseJoin(AbstractTypedTable<?> parent, ImmutableProp prop, JoinType joinType) {
             this.parent = parent;
             this.prop = prop;
             this.joinType = joinType;
+        }
+
+        private DelayInverseJoin(DelayInverseJoin<?> base, BaseTableOwner baseTableOwner) {
+            this.parent = (AbstractTypedTable<?>) base.parent.__baseTableOwner(baseTableOwner);
+            this.prop = base.prop;
+            this.joinType = base.joinType;
         }
 
         @Override
@@ -729,7 +808,14 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         @Override
         public TableImplementor<E> resolve(RootTableResolver ctx) {
-            return parent.__resolve(ctx).inverseJoinImplementor(prop, joinType);
+            TableImplementor<E> tableImplementor =
+                    parent.__resolve(ctx).inverseJoinImplementor(prop, joinType);
+            return tableImplementor.baseTableOwner(parent.__baseTableOwner());
+        }
+
+        @Override
+        public DelayedOperation<E> baseTableOwner(BaseTableOwner baseTableOwner) {
+            return new DelayInverseJoin<>(this, baseTableOwner);
         }
 
         @Override

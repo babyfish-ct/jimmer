@@ -139,8 +139,8 @@ internal class KEntitiesImpl(
         }
         val entities = javaEntities as EntitiesImpl
         val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT)
-        val table = query.tableImplementor as TableImplementor<E>
-        query.where(example?.toPredicate(query.tableImplementor))
+        val table = query.tableLikeImplementor as TableImplementor<E>
+        query.where(example?.toPredicate(query.tableLikeImplementor as Table<*>))
         if (block !== null) {
             val dsl = SortDsl<E>()
             dsl.block()
@@ -166,7 +166,7 @@ internal class KEntitiesImpl(
         val type = fetcher.immutableType
         val entities = javaEntities as EntitiesImpl
         val query = MutableRootQueryImpl<Table<*>>(entities.sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT)
-        val table = query.tableImplementor
+        val table = query.tableLikeImplementor as Table<*>
         if (example !== null) {
             query.where(example.toPredicate(table))
         }

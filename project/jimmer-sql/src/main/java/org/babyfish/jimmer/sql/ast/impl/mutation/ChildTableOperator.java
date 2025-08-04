@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -16,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -490,7 +489,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
                 );
         addDisconnectingConditions(query, query.getTable(), args);
         ConfigurableRootQuery<Table<?>, Object> typedQuery = query.select(
-                query.getTableImplementor().getId()
+                ((TableImplementor<?>)query.getTableLikeImplementor()).getId()
         );
         if (limit > 0) {
             typedQuery = typedQuery.limit(limit);

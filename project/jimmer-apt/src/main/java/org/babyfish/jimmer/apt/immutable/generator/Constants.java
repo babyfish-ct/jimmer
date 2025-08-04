@@ -209,6 +209,12 @@ public class Constants {
                     "Table"
             );
 
+    public static final ClassName TABLE_LIKE_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "TableLike"
+            );
+
     public static final ClassName TABLE_EX_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
@@ -236,6 +242,42 @@ public class Constants {
 
     public static final ClassName CONSUMER_CLASS_NAME =
             ClassName.get(Consumer.class);
+
+    public static final ClassName EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "Expression"
+            );
+
+    public static final ClassName STRING_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "StringExpression"
+            );
+
+    public static final ClassName NUMERIC_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "NumericExpression"
+            );
+
+    public static final ClassName DATE_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "DateExpression"
+            );
+
+    public static final ClassName TEMPORAL_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "TemporalExpression"
+            );
+
+    public static final ClassName COMPARABLE_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "ComparableExpression"
+            );
 
     public static final ClassName PROP_EXPRESSION_CLASS_NAME =
             ClassName.get(
@@ -353,10 +395,46 @@ public class Constants {
                     "WeakJoin"
             );
 
+    public static final ClassName WEAK_JOIN_HANDLE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "WeakJoinHandle"
+            );
+
+    public static final ClassName WEAK_JOIN_LAMBDA_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "WeakJoinLambda"
+            );
+
+    public static final ClassName J_WEAK_JOIN_LAMBDA_FACTORY_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "JWeakJoinLambdaFactory"
+            );
+
+    public static final ClassName BASE_TABLE_SYMBOL_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableSymbol"
+            );
+
+    public static final ClassName BASE_TABLE_SYMBOLS_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableSymbols"
+            );
+
     public static final ClassName TABLE_PROXIES_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.impl.table",
                     "TableProxies"
+            );
+
+    public static final ClassName TABLE_EX_PROXY_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "TableExProxy"
             );
 
     public static final ClassName ABSTRACT_TYPED_EMBEDDED_PROP_EXPRESSION_CLASS_NAME =
@@ -396,10 +474,70 @@ public class Constants {
                     "HibernateValidatorEnhancedBean"
             );
 
+    public static final ClassName SELECTION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "Selection"
+            );
+
+    public static final ClassName MAPPER_SELECTION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "MapperSelection"
+            );
+
     public static final ClassName PROPAGATION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.transaction",
                     "Propagation"
+            );
+
+    public static final ClassName BASE_TABLE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table",
+                    "BaseTable"
+            );
+
+    public static final ClassName BASE_TABLE_OWNER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableOwner"
+            );
+
+    public static final ClassName BASE_TABLE_IMPLEMENTOR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "BaseTableImplementor"
+            );
+
+    public static final ClassName ABSTRACT_BASE_TABLE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "AbstractBaseTable"
+            );
+
+    public static final ClassName TYPED_TUPLE_MAPPER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.mapper",
+                    "TypedTupleMapper"
+            );
+
+    public static final ClassName ABSTRACT_BASE_TABLE_MAPPER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.mapper",
+                    "AbstractBaseTableMapper"
+            );
+
+    public static final ClassName BASE_TABLE_QUERY_IMPLEMENTOR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.query",
+                    "BaseTableQueryImplementor"
+            );
+
+    public static final ClassName BASE_TABLE_SELECTIONS_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableSelections"
             );
 
     public static final String T_NULLABLE_QUALIFIED_NAME =

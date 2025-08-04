@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.event.EntityEvent;
@@ -193,7 +194,7 @@ public class LogicalDeletedFilterProvider {
 
         @Override
         public void filter(FilterArgs<Props> args) {
-            Expression<Object> expr = args.getTable().get(info.getProp().getName());
+            PropExpression<Object> expr = args.getTable().get(info.getProp().getName());
             LogicalDeletedInfo.Action action = info.getAction();
             if (action instanceof LogicalDeletedInfo.Action.Eq) {
                 LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
@@ -261,7 +262,7 @@ public class LogicalDeletedFilterProvider {
 
         @Override
         public void filter(FilterArgs<Props> args) {
-            Expression<Object> expr = args.getTable().get(info.getProp().getName());
+            PropExpression<Object> expr = args.getTable().get(info.getProp().getName());
             LogicalDeletedInfo.Action action = info.getAction().reversed();
             if (action instanceof LogicalDeletedInfo.Action.Eq) {
                 LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;

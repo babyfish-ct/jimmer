@@ -13,10 +13,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpress
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
-import org.babyfish.jimmer.sql.kt.ast.table.KTable
-import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
-import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoinFun
+import org.babyfish.jimmer.sql.kt.ast.table.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -93,24 +90,6 @@ internal open class KNonNullTableExImpl<E: Any>(
             )
         }
 
-    override fun <X : Any> weakJoin(targetType: KClass<X>, weakJoinFun: KWeakJoinFun<E, X>): KNonNullTableEx<X> =
-        if (joinDisabledReason != null) {
-            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
-        } else {
-            KNonNullTableExImpl(
-                createWeakJoinTable(javaTable, targetType.java, weakJoinFun, JoinType.INNER)
-            )
-        }
-
-    override fun <X : Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNonNullTableEx<X> =
-        if (joinDisabledReason != null) {
-            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
-        } else {
-            KNonNullTableExImpl(
-                javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)
-            )
-        }
-
     override fun fetch(fetcher: Fetcher<E>?): Selection<E> =
         javaTable.fetch(fetcher)
 
@@ -118,7 +97,7 @@ internal open class KNonNullTableExImpl<E: Any>(
         javaTable.fetch(staticType.java)
 
     override fun asTableEx(): KNonNullTableEx<E> =
-        KNonNullTableExImpl(javaTable.asTableEx() as TableImplementor<E>)
+        KNonNullTableExImpl(javaTable.asTableEx() as TableImplementor<E>, joinDisabledReason)
 
     private fun <X: Any> kotlinExpr(javaExpr: PropExpressionImpl<X>): KPropExpression<X> {
         val isNullable = if (javaExpr.table !== javaTable) {

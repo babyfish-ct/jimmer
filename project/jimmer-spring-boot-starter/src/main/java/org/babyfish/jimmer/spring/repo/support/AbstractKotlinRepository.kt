@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.springframework.core.GenericTypeResolver
 import kotlin.reflect.KClass
 
@@ -156,13 +157,13 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         sql.deleteByIds(entityType, ids, deleteMode).affectedRowCount(entityType)
 
     protected fun <R> executeQuery(
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
+        block: KMutableRootQuery.ForEntity<E>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
     ): List<R> =
         sql.createQuery(entityType, block).execute()
 
     protected fun <R> createQuery(
-        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
-    ): KConfigurableRootQuery<E, R> =
+        block: KMutableRootQuery.ForEntity<E>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
+    ): KConfigurableRootQuery<KNonNullTable<E>, R> =
         sql.createQuery(entityType, block)
 
     protected fun createUpdate(

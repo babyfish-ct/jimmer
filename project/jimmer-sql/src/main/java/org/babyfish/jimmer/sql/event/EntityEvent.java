@@ -183,9 +183,6 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @NotNull
     public ImmutableType getImmutableType() {
-        if (immutableType == null) {
-            throw new IllegalArgumentException("Fuck: " + this);
-        }
         return immutableType;
     }
 

@@ -213,7 +213,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
                         ExecutionPurpose.QUERY,
                         FilterLevel.DEFAULT
                 );
-        TableImplementor<?> table = query.getTableImplementor();
+        TableImplementor<?> table = (TableImplementor<?>) query.getTableLikeImplementor();
         if (sortedProps != null) {
             for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
                 if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(type)) {

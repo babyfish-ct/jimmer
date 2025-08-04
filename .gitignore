@@ -1,4 +1,5 @@
 HELP.md
+.*
 *.log
 *.hprof
 .gradle

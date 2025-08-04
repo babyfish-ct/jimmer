@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 public abstract class SqlTemplate {
 
-    private final List<Object> parts;
+    final List<Object> parts;
 
     private final int charCount;
 

@@ -1,217 +1,54 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.Map;
+public interface WeakJoinHandle {
 
-public class WeakJoinHandle {
-
-    private static final String JOIN_ERROR_REASON =
-            "it is forbidden in the implementation of \"" +
-                    WeakJoin.class.getName() +
-                    "\"";
-
-    private static final ClassCache<WeakJoinHandle> CACHE =
-            new ClassCache<>(WeakJoinHandle::create, false);
-
-    private final WeakJoinLambda weakJoinLambda;
-
-    private final ImmutableType sourceType;
-
-    private final ImmutableType targetType;
-
-    private final boolean hasSourceWrapper;
-
-    private final boolean hasTargetWrapper;
-
-    private final WeakJoin<Table<?>, Table<?>> weakJoin;
-
-    private WeakJoinHandle(
-            ImmutableType sourceType,
-            ImmutableType targetType,
-            boolean hasSourceWrapper,
-            boolean hasTargetWrapper,
-            WeakJoin<Table<?>, Table<?>> weakJoin
-    ) {
-        this.weakJoinLambda = null;
-        this.sourceType = sourceType;
-        this.targetType = targetType;
-        this.hasSourceWrapper = hasSourceWrapper;
-        this.hasTargetWrapper = hasTargetWrapper;
-        this.weakJoin = weakJoin;
-    }
-
-    public WeakJoinHandle(
-            WeakJoinLambda weakJoinLambda,
-            boolean hasSourceWrapper,
-            boolean hasTargetWrapper,
-            WeakJoin<Table<?>, Table<?>> weakJoin
-    ) {
-        this.weakJoinLambda = weakJoinLambda;
-        this.sourceType = ImmutableType.get(weakJoinLambda.getSourceType());
-        this.targetType = ImmutableType.get(weakJoinLambda.getTargetType());
-        this.hasSourceWrapper = hasSourceWrapper;
-        this.hasTargetWrapper = hasTargetWrapper;
-        this.weakJoin = weakJoin;
-    }
-
-    public ImmutableType getSourceType() {
-        return sourceType;
-    }
-
-    public ImmutableType getTargetType() {
-        return targetType;
-    }
-
-    @SuppressWarnings("unchecked")
-    public Class<? extends WeakJoin<?, ?>> getWeakJoinType() {
-        return (Class<? extends WeakJoin<?, ?>>) weakJoin.getClass();
-    }
-
-    @Override
-    public int hashCode() {
-        return weakJoinLambda != null ?
-                weakJoinLambda.hashCode() :
-                getWeakJoinType().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof WeakJoinHandle)) {
-            return false;
-        }
-        WeakJoinHandle that = (WeakJoinHandle) obj;
-        if (weakJoinLambda != null) {
-            return weakJoinLambda.equals(that.weakJoinLambda);
-        }
-        return getWeakJoinType() == that.getWeakJoinType();
-    }
-
-    @Override
-    public String toString() {
-        return "WeakJoinHandle{" +
-                "weakJoin=" + weakJoin +
-                '}';
-    }
-
-    @SuppressWarnings("unchecked")
-    public final Predicate createPredicate(
-            TableImplementor<?> source,
-            TableImplementor<?> target,
+    Predicate createPredicate(
+            TableLike<?> source,
+            TableLike<?> target,
             AbstractMutableStatementImpl statement
+    );
+
+    Class<? extends WeakJoin<?, ?>> getWeakJoinType();
+
+    static WeakJoinHandle of(Class<? extends WeakJoin<?, ?>> weakJoinType) {
+        return WeakJoinHandleImpl.get(weakJoinType);
+    }
+
+    static WeakJoinHandle of(
+            WeakJoinLambda lambda,
+            boolean hasSourceWrapper,
+            boolean hasTargetWrapper,
+            WeakJoin<TableLike<?>, TableLike<?>> weakJoin
     ) {
-        if (weakJoin instanceof KWeakJoinImplementor) {
-            KWeakJoinImplementor<Object, Object> implementor =
-                    (KWeakJoinImplementor<Object, Object>) weakJoin;
-            return implementor.on(
-                    source instanceof TableProxy<?> ?
-                            (Table<Object>)((TableProxy<?>)source).__unwrap() :
-                            (Table<Object>)source,
-                    target instanceof TableProxy<?> ?
-                            (Table<Object>)((TableProxy<?>)target).__unwrap() :
-                            (Table<Object>)target,
-                    statement
-            );
+        if (BaseTable.class.isAssignableFrom(lambda.getTargetType())) {
+            return new WeakJoinHandleImpl.BaseTableHandleImpl(lambda, weakJoin);
         }
-        return weakJoin.on(
-                hasSourceWrapper ?
-                        ((TableProxy<?>)TableProxies.wrap(source)).__disableJoin(JOIN_ERROR_REASON) :
-                        new UntypedJoinDisabledTableProxy<>(source, JOIN_ERROR_REASON),
-                hasTargetWrapper ?
-                        ((TableProxy<?>)TableProxies.wrap(target)).__disableJoin(JOIN_ERROR_REASON) :
-                        new UntypedJoinDisabledTableProxy<>(target, JOIN_ERROR_REASON)
-        );
-    }
-
-    public static WeakJoinHandle of(Class<? extends WeakJoin<?, ?>> weakJoinType) {
-        return CACHE.get(weakJoinType);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static WeakJoinHandle create(Class<?> weakJoinType) {
-        Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
-        if (typeArguments == null || typeArguments.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Illegal class \"" + weakJoinType.getName() + "\", generic arguments are missing"
-            );
+        if (WeakJoinHandleImpl.K_BASE_TABLE_TYPE_SYMBOL != null &&
+                WeakJoinHandleImpl.K_BASE_TABLE_TYPE_SYMBOL.isAssignableFrom(lambda.getTargetType())) {
+            return new WeakJoinHandleImpl.BaseTableHandleImpl(lambda, weakJoin);
         }
-        Type sourceTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[0]);
-        Type targetTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[1]);
-        Type sourceType = TypeUtils.getTypeArguments(sourceTableType, Table.class).values().iterator().next();
-        Type targetType = TypeUtils.getTypeArguments(targetTableType, Table.class).values().iterator().next();
-        if (sourceType instanceof TypeVariable<?>) {
-            sourceType = typeArguments.get((TypeVariable<?>) sourceType);
-        }
-        if (targetType instanceof TypeVariable<?>) {
-            targetType = typeArguments.get((TypeVariable<?>) targetType);
-        }
-        if (!(sourceType instanceof Class<?>) || !((Class<?>)sourceType).isAnnotationPresent(Entity.class)) {
-            throw new IllegalArgumentException(
-                    "Illegal class \"" +
-                            weakJoinType.getName() +
-                            "\", the source type is not entity"
-            );
-        }
-        if (!(targetType instanceof Class<?>) || !((Class<?>)targetType).isAnnotationPresent(Entity.class)) {
-            throw new IllegalArgumentException(
-                    "Illegal class \"" +
-                            weakJoinType.getName() +
-                            "\", the target type is not entity"
-            );
-        }
-        boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>)sourceType) != null;
-        boolean hasTargetWrapper = TableProxies.tableWrapperClass((Class<?>)targetType) != null;
-        Constructor<WeakJoin<Table<?>, Table<?>>> constructor;
-        try {
-            constructor = (Constructor<WeakJoin<Table<?>, Table<?>>>) weakJoinType.getDeclaredConstructor();
-        } catch (NoSuchMethodException ex) {
-            throw new IllegalArgumentException(
-                    "No default constructor can be found in \"" +
-                            weakJoinType.getName() +
-                            "\""
-            );
-        }
-        constructor.setAccessible(true);
-        WeakJoin<Table<?>, Table<?>> weakJoin;
-        try {
-            weakJoin = constructor.newInstance();
-        } catch (InstantiationException | IllegalAccessException ex) {
-            throw new IllegalArgumentException(
-                    "Cannot create instance of \"" +
-                            weakJoinType.getName() +
-                            "\"",
-                    ex
-            );
-        } catch (InvocationTargetException ex) {
-            throw new IllegalArgumentException(
-                    "Cannot create instance of \"" +
-                            weakJoinType.getName() +
-                            "\"",
-                    ex.getTargetException()
-            );
-        }
-        return new WeakJoinHandle(
-                ImmutableType.get((Class<?>) sourceType),
-                ImmutableType.get((Class<?>) targetType),
+        return new WeakJoinHandleImpl.EntityTableHandleImpl(
+                lambda,
                 hasSourceWrapper,
                 hasTargetWrapper,
                 weakJoin
         );
+    }
+
+    interface EntityTableHandle extends WeakJoinHandle {
+
+        ImmutableType getSourceType();
+
+        ImmutableType getTargetType();
+    }
+
+    interface BaseTableHandle extends WeakJoinHandle {
     }
 }

@@ -7,11 +7,11 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
-import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -41,7 +41,6 @@ public abstract class AbstractMutableQueryImpl
 
     private int acceptedByPriority = ORDER_BY_PRIORITY_STATEMENT;
 
-    @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType
@@ -52,6 +51,13 @@ public abstract class AbstractMutableQueryImpl
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table
+    ) {
+        super(sqlClient, table);
+    }
+
+    protected AbstractMutableQueryImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable table
     ) {
         super(sqlClient, table);
     }
@@ -224,6 +230,10 @@ public abstract class AbstractMutableQueryImpl
             boolean withoutSortingAndPaging
     ) {
         visitor.visitStatement(this);
+
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        tableLikeImplementor.accept(visitor);
+
         List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
@@ -261,13 +271,21 @@ public abstract class AbstractMutableQueryImpl
     }
 
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            SqlBuilder tmpBuilder = builder.createTempBuilder();
+            renderClausesAfterTable(tmpBuilder, withoutSortingAndPaging, reverseOrder);
+            tableLikeImplementor.renderTo(builder);
+            builder.appendTempBuilder(tmpBuilder);
+        } else {
+            tableLikeImplementor.renderTo(builder);
+            renderClausesAfterTable(builder, withoutSortingAndPaging, reverseOrder);
+        }
+    }
 
+    private void renderClausesAfterTable(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
         Predicate predicate = getPredicate(builder.getAstContext());
         Predicate havingPredicate = getHavingPredicate(builder.getAstContext());
-
-        TableImplementor<?> tableImplementor = getTableImplementor();
-        tableImplementor.renderTo(builder);
-
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
             ((Ast) predicate).renderTo(builder);
@@ -370,20 +388,28 @@ public abstract class AbstractMutableQueryImpl
 
         @Override
         public void visitTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
-            handle(
-                    table,
-                    prop != null && prop.isId() &&
-                    (rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), getAstContext().getSqlClient()))
-            );
+            TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+            if (implementor instanceof TableImplementor<?>) {
+                TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                handle(
+                        table,
+                        prop != null && prop.isId() &&
+                                (rawId || TableUtils.isRawIdAllowed(tableImplementor, getAstContext().getSqlClient()))
+                );
+            }
         }
 
         private void handle(RealTable table, boolean isRawId) {
-            if (table.getTableImplementor().getDestructive() != TableRowCountDestructive.NONE) {
-                if (isRawId) {
-                    getAstContext().useTableId(table);
-                    use(table.getParent());
-                } else {
-                    use(table);
+            TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+            if (implementor instanceof TableImplementor<?>) {
+                TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                if (tableImplementor.getDestructive() != TableRowCountDestructive.NONE) {
+                    if (isRawId) {
+                        getAstContext().useTableId(table);
+                        use(table.getParent());
+                    } else {
+                        use(table);
+                    }
                 }
             }
         }

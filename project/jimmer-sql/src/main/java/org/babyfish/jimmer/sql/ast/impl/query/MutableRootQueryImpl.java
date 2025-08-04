@@ -7,12 +7,16 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -24,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class MutableRootQueryImpl<T extends Table<?>>
+public class MutableRootQueryImpl<T extends TableLike<?>>
         extends AbstractMutableQueryImpl
         implements MutableRootQuery<T> {
 
@@ -38,12 +42,22 @@ public class MutableRootQueryImpl<T extends Table<?>>
     ) {
         super(sqlClient, immutableType);
         ctx = new StatementContext(purpose, filterLevel);
-        getTableImplementor();
+        getTableLikeImplementor();
     }
 
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table,
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel
+    ) {
+        super(sqlClient, table);
+        ctx = new StatementContext(purpose, filterLevel);
+    }
+
+    public MutableRootQueryImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable table,
             ExecutionPurpose purpose,
             FilterLevel filterLevel
     ) {
@@ -368,5 +382,17 @@ public class MutableRootQueryImpl<T extends Table<?>>
                 .limit(1)
                 .execute()
                 .isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        if (getTable() instanceof BaseTable) {
+            return "MutableRootQuery{baseTable=" +
+                    getTable() +
+                    "}";
+        }
+        return "MutableRootQuery{type=" +
+                getType() +
+                "}";
     }
 }

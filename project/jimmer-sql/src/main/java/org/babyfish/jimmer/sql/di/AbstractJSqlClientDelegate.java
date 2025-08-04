@@ -7,11 +7,12 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRecursiveBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
@@ -29,14 +30,10 @@ import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.babyfish.jimmer.sql.transaction.Propagation;
-import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
 import java.time.ZoneId;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -74,6 +71,21 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table) {
         return sqlClient().createQuery(table);
+    }
+
+    @Override
+    public <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable) {
+        return sqlClient().createQuery(baseTable);
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
+        return sqlClient().createBaseQuery(table);
+    }
+
+    @Override
+    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(T table, RecursiveRef<R> recursiveRef, JoinType joinType, WeakJoin<T, R> weakJoinLambda) {
+        return sqlClient().createBaseQuery(table, recursiveRef, joinType, weakJoinLambda);
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.Where
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullProps
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
@@ -51,11 +52,11 @@ internal class KFilterArgsImpl<E: Any>(
         (javaStatement as? Sortable)?.orderBy(orders)
     }
 
-    override val subQueries: KSubQueries<E> by lazy {
+    override val subQueries: KSubQueries<KNonNullProps<E>> by lazy {
         KSubQueriesImpl(javaStatement, this.table as KNonNullTableEx<E>)
     }
 
-    override val wildSubQueries: KWildSubQueries<E> =
+    override val wildSubQueries: KWildSubQueries<KNonNullProps<E>> =
         KWildSubQueriesImpl(javaStatement, this.table as KNonNullTableEx<E>)
 
     companion object {
