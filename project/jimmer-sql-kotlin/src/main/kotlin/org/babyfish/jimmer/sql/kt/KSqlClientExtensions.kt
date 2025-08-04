@@ -9,7 +9,7 @@ import kotlin.reflect.KProperty1
 
 fun <E : Any> KSqlClient.exists(
     type: KClass<E>,
-    block: KMutableRootQuery<KNonNullTable<E>>.() -> Unit = {}
+    block: KMutableRootQuery.ForEntity<E>.() -> Unit = {}
 ): Boolean = queries.forEntity(type) {
     block()
     select(constant(1))
