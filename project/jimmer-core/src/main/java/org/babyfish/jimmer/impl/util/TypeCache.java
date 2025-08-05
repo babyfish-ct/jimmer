@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.impl.util;
 
-import org.babyfish.jimmer.impl.asm.Type;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Type;
 import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.HashMap;

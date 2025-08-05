@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
-import org.babyfish.jimmer.impl.asm.ClassWriter;
-import org.babyfish.jimmer.impl.asm.MethodVisitor;
-import org.babyfish.jimmer.impl.asm.Opcodes;
-import org.babyfish.jimmer.impl.asm.Type;
+import org.babyfish.jimmer.impl.org.objectweb.asm.ClassWriter;
+import org.babyfish.jimmer.impl.org.objectweb.asm.MethodVisitor;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Opcodes;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Type;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.spring.repository.parser.Context;
 import org.springframework.data.repository.core.RepositoryInformation;

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
 import org.babyfish.jimmer.Specification;
-import org.babyfish.jimmer.impl.asm.Type;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Type;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.spring.repository.parser.Context;
 import org.babyfish.jimmer.spring.repository.parser.QueryMethod;

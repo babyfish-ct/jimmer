@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
-import org.babyfish.jimmer.impl.asm.Opcodes;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Method;
 

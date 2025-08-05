@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.impl.asm.tree.InsnList;
+import org.babyfish.jimmer.impl.org.objectweb.asm.tree.InsnList;
 
 public class WeakJoinLambda {
 

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.impl.asm.Handle;
-import org.babyfish.jimmer.impl.asm.tree.*;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Handle;
+import org.babyfish.jimmer.impl.org.objectweb.asm.tree.*;
 
 import java.util.*;
 

@@ -1,14 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.impl.asm.ClassReader;
-import org.babyfish.jimmer.impl.asm.ClassVisitor;
-import org.babyfish.jimmer.impl.asm.MethodVisitor;
-import org.babyfish.jimmer.impl.asm.Opcodes;
-import org.babyfish.jimmer.impl.asm.tree.InsnList;
-import org.babyfish.jimmer.impl.asm.tree.MethodNode;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.impl.org.objectweb.asm.ClassReader;
+import org.babyfish.jimmer.impl.org.objectweb.asm.ClassVisitor;
+import org.babyfish.jimmer.impl.org.objectweb.asm.MethodVisitor;
+import org.babyfish.jimmer.impl.org.objectweb.asm.Opcodes;
+import org.babyfish.jimmer.impl.org.objectweb.asm.tree.InsnList;
+import org.babyfish.jimmer.impl.org.objectweb.asm.tree.MethodNode;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.io.IOException;
 import java.lang.invoke.*;
