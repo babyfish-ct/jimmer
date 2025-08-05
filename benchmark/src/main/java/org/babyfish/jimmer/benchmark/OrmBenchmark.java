@@ -15,6 +15,7 @@ import org.babyfish.jimmer.benchmark.jimmer.kt.JimmerKtJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jooq.JooqData;
 import org.babyfish.jimmer.benchmark.jooq.JooqDataTable;
 import org.babyfish.jimmer.benchmark.ktorm.KtormDataTable;
+import org.babyfish.jimmer.benchmark.mug.MugSafeSql;
 import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
 import org.babyfish.jimmer.benchmark.mybatis.plus.MyBatisPlusDataBaseMapper;
 import org.babyfish.jimmer.benchmark.nutz.NutzData;
@@ -75,6 +76,8 @@ public class OrmBenchmark {
 
     private APIJSONCreator<Long> apijsonCreator;
 
+    private MugSafeSql mug;
+
     @Setup
     public void initialize() throws SQLException, IOException {
         ApplicationContext ctx = SpringApplication.run(BenchmarkApplication.class);
@@ -106,6 +109,7 @@ public class OrmBenchmark {
         FakeObjSqlLoggerFactory.init();
 
         apijsonCreator = ctx.getBean(APIJSONCreator.class);
+        mug = ctx.getBean(MugSafeSql.class);
     }
 
     /*
@@ -242,6 +246,11 @@ public class OrmBenchmark {
                 "        }\n" +
                 "    }\n" +
                 "}");
+    }
+
+    @Benchmark
+    public void runMug() {
+        mug.execute();
     }
 
     @TearDown
