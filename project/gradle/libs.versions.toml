@@ -30,6 +30,8 @@ hibernateValitation = "8.0.1.Final"
 quarkus = "3.15.0"
 
 [libraries]
+
+gradlePlugin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 apache-commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "apacheCommonsLang3" }
 

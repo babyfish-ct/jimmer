@@ -1,8 +1,7 @@
 plugins {
     `kotlin-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
 }
-
 dependencies {
     implementation(projects.jimmerSql)
     compileOnly(libs.spring.boot)

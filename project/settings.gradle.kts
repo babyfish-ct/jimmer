@@ -23,3 +23,4 @@ dependencyResolutionManagement {
         }
     }
 }
+include("jimmer-ksp-jdbc2entity")

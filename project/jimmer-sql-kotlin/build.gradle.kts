@@ -1,7 +1,7 @@
 plugins {
     `kotlin-convention`
     `dokka-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
 }
 
 dependencies {

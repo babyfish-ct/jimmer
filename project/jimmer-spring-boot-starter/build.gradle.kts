@@ -1,6 +1,6 @@
 plugins {
     `kotlin-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
 }
 
 dependencies {
