@@ -63,7 +63,8 @@ public class OpenApiUiController {
         String resource;
         if (hasMetadata()) {
             resource = refPath != null && !refPath.isEmpty() ?
-                    "META-INF/jimmer/openapi/index.html.template" :
+//                    "META-INF/jimmer/openapi/index.html.template" :
+                    "META-INF/jimmer/openapi/newui.html.template" :
                     "META-INF/jimmer/openapi/no-api.html";
         } else {
             resource = "META-INF/jimmer/openapi/no-metadata.html";
@@ -74,7 +75,7 @@ public class OpenApiUiController {
         assert inputStream != null;
         try (Reader reader = new InputStreamReader(inputStream)) {
             int len;
-            while ((len = reader.read(buf)) != -1) {
+            if ((len = reader.read(buf)) != -1) {
                 builder.append(buf, 0, len);
             }
         } catch (IOException ex) {
@@ -82,7 +83,7 @@ public class OpenApiUiController {
         }
         boolean isTemplate = resource.endsWith(".template");
         if (!isTemplate) {
-            return builder.toString().replace("\r\n", "\n");  // Normalize line endings to LF
+            return builder.toString();
         }
         if (groups != null && !groups.isEmpty()) {
             try {
@@ -93,7 +94,6 @@ public class OpenApiUiController {
         }
         return builder
                 .toString()
-            .replace("\r\n", "\n")  // Normalize line endings to LF
                 .replace("${openapi.css}",
                         exists(CSS_RESOURCE) ?
                                 CSS_URL :
