@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 public interface Reader<T> {
 
@@ -66,6 +68,7 @@ public interface Reader<T> {
             return draftContext().resolveObject(spi);
         }
     }
+
 
     static <T1, T2> Reader<Tuple2<T1, T2>> tuple(Reader<T1> reader1, Reader<T2> reader2) {
         return new Reader<Tuple2<T1, T2>>() {
@@ -312,6 +315,25 @@ public interface Reader<T> {
                         reader8.read(rs, ctx),
                         reader9.read(rs, ctx)
                 );
+            }
+        };
+    }
+
+    static  Reader<Tuple> tuple(List<Reader<?>> readers) {
+        return new Reader<Tuple>() {
+
+            @Override
+            public void skip(Context ctx) {
+                readers.forEach(reader -> reader.skip(ctx));
+            }
+
+            @Override
+            public Tuple read(ResultSet rs, Context ctx) throws SQLException {
+                List<Object> items = new ArrayList<>(readers.size());
+                for(Reader<?> reader : readers) {
+                    items.add(reader.read(rs, ctx));
+                }
+                return Tuple.fromList(items);
             }
         };
     }

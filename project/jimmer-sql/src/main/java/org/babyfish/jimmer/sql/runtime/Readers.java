@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 class Readers {
 
@@ -92,7 +93,14 @@ class Readers {
                         createSingleReader(sqlClient, selections.get(8))
                 );
             default:
-                throw new IllegalArgumentException("The selection count must between 1 and 9");
+                return Reader.tuple(
+                        selections
+                                .stream()
+                                .map(selection ->
+                                     createSingleReader(sqlClient, selection)
+                                )
+                                .collect(Collectors.toList())
+                );
         }
     }
 

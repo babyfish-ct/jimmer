@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier
-import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.KSubQueries
@@ -26,10 +25,8 @@ import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
 import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
-import org.babyfish.jimmer.sql.kt.ast.table.impl.KNullableTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
@@ -68,6 +65,10 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
     override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
         javaQuery.having(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
+
+    override fun select(vararg selection: Selection<*>): KConfigurableRootQuery<P, Tuple> =
+        KConfigurableRootQueryImpl(javaQuery.select(*selection))
+
 
     override fun <T> select(selection: Selection<T>): KConfigurableRootQuery<P, T> =
         KConfigurableRootQueryImpl(javaQuery.select(selection))

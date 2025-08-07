@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.tuple
 
+fun Tuple.map(block: (Any) -> Any): Any = block(items)
 fun <T1, T2, R> Tuple2<T1, T2>.map(block: (T1, T2) -> R): R = block(_1, _2)
 
 fun <T1, T2, T3, R> Tuple3<T1, T2, T3>.map(block: (T1, T2, T3) -> R): R = block(_1, _2, _3)

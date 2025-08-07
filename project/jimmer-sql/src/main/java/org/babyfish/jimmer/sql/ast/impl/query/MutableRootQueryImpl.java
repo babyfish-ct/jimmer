@@ -7,8 +7,6 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
@@ -27,6 +25,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MutableRootQueryImpl<T extends TableLike<?>>
         extends AbstractMutableQueryImpl
@@ -100,6 +100,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                 this
         );
     }
+
 
     @Override
     public <T1, T2> ConfigurableRootQuery<T, Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
@@ -226,6 +227,16 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                 ),
                 this
         );
+    }
+
+    @Override
+    public ConfigurableRootQuery<T, Tuple> select(Selection<?>... selection) {
+        return new ConfigurableRootQueryImpl<>(
+                new TypedQueryData(
+                        Stream.of(selection).collect(Collectors.toList())),
+                this
+        );
+
     }
 
     @SuppressWarnings("unchecked")

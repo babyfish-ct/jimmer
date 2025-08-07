@@ -9,6 +9,8 @@ interface KRootSelectable<P: KPropsLike> {
 
     fun <T> select(selection: Selection<T>): KConfigurableRootQuery<P, T>
 
+    fun select(vararg selection: Selection<*>): KConfigurableRootQuery<P, Tuple>
+
     fun <T1, T2> select(
         selection1: Selection<T1>,
         selection2: Selection<T2>

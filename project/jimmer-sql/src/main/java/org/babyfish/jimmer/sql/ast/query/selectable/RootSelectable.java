@@ -80,6 +80,10 @@ public interface RootSelectable<T extends TableLike<?>> {
             Selection<T9> selection9
     );
 
+    ConfigurableRootQuery<T, ?> select(
+            Selection<?> ...selection
+    );
+
     default ConfigurableRootQuery<T, Long> selectCount() {
         return select(Expression.rowCount());
     }
