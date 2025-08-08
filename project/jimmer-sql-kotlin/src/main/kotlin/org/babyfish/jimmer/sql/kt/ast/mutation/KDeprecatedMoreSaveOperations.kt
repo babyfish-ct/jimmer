@@ -11,7 +11,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features", 
-        replaceWith = ReplaceWith(".entities.saveInputs(inputs, mode, associatedMode, viewType, block")
+        replaceWith = ReplaceWith("entities.saveInputs(inputs, mode, associatedMode, viewType, block)")
     )
     override fun <E : Any, V : View<E>> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -25,7 +25,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveInputs(inputs, viewType, block")
+        replaceWith = ReplaceWith("entities.saveInputs(inputs, viewType, block)")
     )
     override fun <E : Any, V : View<E>> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -37,7 +37,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(input, mode, associatedMode, viewType, block")
+        replaceWith = ReplaceWith("entities.save(input, mode, associatedMode, viewType, block)")
     )
     override fun <E : Any, V : View<E>> save(
         input: Input<E>,
@@ -51,7 +51,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(input, viewType, block")
+        replaceWith = ReplaceWith("entities.save(input, viewType, block)")
     )
     override fun <E : Any, V : View<E>> save(
         input: Input<E>,
@@ -63,7 +63,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveEntities(entities, mode, associatedMode, viewType, block")
+        replaceWith = ReplaceWith("entities.saveEntities(entities, mode, associatedMode, viewType, block)")
     )
     override fun <E : Any, V : View<E>> saveEntities(
         entities: Iterable<E>,
@@ -77,7 +77,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveEntities(entities, viewType, block")
+        replaceWith = ReplaceWith("entities.saveEntities(entities, viewType, block)")
     )
     override fun <E : Any, V : View<E>> saveEntities(
         entities: Iterable<E>,
@@ -89,7 +89,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(entity, mode, associatedMode, viewType, block")
+        replaceWith = ReplaceWith("entities.save(entity, mode, associatedMode, viewType, block)")
     )
     override fun <E : Any, V : View<E>> save(
         entity: E,
@@ -103,7 +103,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(entity, viewType, block")
+        replaceWith = ReplaceWith("entities.save(entity, viewType, block)")
     )
     override fun <E : Any, V : View<E>> save(
         entity: E,
@@ -115,7 +115,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveInputs(inputs, mode, associatedMode, fetcher, block")
+        replaceWith = ReplaceWith("entities.saveInputs(inputs, mode, associatedMode, fetcher, block)")
     )
     override fun <E : Any> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -129,7 +129,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveInputs(inputs, fetcher, block")
+        replaceWith = ReplaceWith("entities.saveInputs(inputs, fetcher, block)")
     )
     override fun <E : Any> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -141,7 +141,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(input, mode, associatedMode, fetcher, block")
+        replaceWith = ReplaceWith("entities.save(input, mode, associatedMode, fetcher, block)")
     )
     override fun <E : Any> save(
         input: Input<E>,
@@ -155,7 +155,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(input, fetcher, block")
+        replaceWith = ReplaceWith("entities.save(input, fetcher, block)")
     )
     override fun <E : Any> save(
         input: Input<E>,
@@ -167,7 +167,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveEntities(entities, mode, associatedMode, fetcher, block")
+        replaceWith = ReplaceWith("entities.saveEntities(entities, mode, associatedMode, fetcher, block)")
     )
     override fun <E : Any> saveEntities(
         entities: Iterable<E>,
@@ -181,7 +181,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.saveEntities(entities, mode, associatedMode, fetcher, block")
+        replaceWith = ReplaceWith("entities.saveEntities(entities, mode, associatedMode, fetcher, block)")
     )
     override fun <E : Any> saveEntities(
         entities: Iterable<E>,
@@ -193,7 +193,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(entity, mode, associatedMode, fetcher, block")
+        replaceWith = ReplaceWith("entities.save(entity, mode, associatedMode, fetcher, block)")
     )
     override fun <E : Any> save(
         entity: E,
@@ -207,7 +207,7 @@ interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features",
-        replaceWith = ReplaceWith(".entities.save(entity, fetcher, block")
+        replaceWith = ReplaceWith("entities.save(entity, fetcher, block)")
     )
     override fun <E : Any> save(
         entity: E,
