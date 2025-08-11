@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+    <title>Jimmer API Reference</title>
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <meta charset="utf-8"/>
+    <meta
+            content="width=device-width, initial-scale=1"
+            name="viewport"/>
+</head>
+
+<body>
+<div id="app"></div>
+
+<!-- Load the Script -->
+<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
+<!-- Initialize the Scalar API Reference -->
+<script>
+    Scalar.createApiReference('#app', {
+        // The URL of the OpenAPI/Swagger document
+        url: '${openapi.refPath}',
+        // Avoid CORS issues
+        proxyUrl: 'https://proxy.scalar.com',
+        // Add CORS configuration
+        corsProxy: true,
+        // alternate
+        // alternate、default、moon、purple、solarized、bluePlanet、saturn、kepler、mars、deepSpace、none
+        theme: 'kepler'
+        // theme: 'deepSpace'
+
+
+    })
+</script>
+</body>
+</html>
