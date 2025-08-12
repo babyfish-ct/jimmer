@@ -1014,7 +1014,18 @@ class UpsertPreHandler extends AbstractPreHandler {
                     updatedMap.add(draft, true);
                 }
             }
-            this.mergedMap = ShapedEntityMap.empty();
+            // key如果在数据库存在的情况下 updatedMap不为空 如果不做判断会导致多一条merge sql
+            if (updatedMap != null) {
+                this.mergedMap = ShapedEntityMap.empty();
+            } else {
+                this.mergedMap = createEntityMap(
+                        null,
+                        draftsWithId,
+                        draftsWithKey,
+                        SaveMode.UPSERT,
+                        SaveMode.UPSERT
+                );
+            }
         }
     }
 }
