@@ -6,6 +6,7 @@ import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ksp.toTypeName
+import org.babyfish.jimmer.ClientException
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.FetchBy
@@ -14,8 +15,6 @@ import org.babyfish.jimmer.client.meta.impl.*
 import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
-import org.babyfish.jimmer.ClientException
-import org.babyfish.jimmer.client.Description
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
@@ -399,6 +398,23 @@ class ClientProcessor(
         jsonValueTypeRef(typeRef.typeName)?.let {
             throw JsonValueTypeChangeException(it)
         }
+        val simpleName = type.realDeclaration.simpleName.asString()
+        val jsonFlag = listOf(
+            "JsonNode",
+            "JSONObject",
+            "JsonObject",
+            "JsonElement",
+            "ObjectNode",
+            "ArrayNode",
+        ).any {
+            it.equals(simpleName, ignoreCase = true)
+        }
+        if (jsonFlag) {
+            typeRef.typeName = TypeName.OBJECT
+            return
+        }
+
+
         if (typeRef.typeName == TypeName.OBJECT) {
             throw UnambiguousTypeException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
