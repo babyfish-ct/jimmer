@@ -14,7 +14,6 @@ public class MugSafeSql {
         this.dataSource = dataSource;
     }
 
-
     public void execute() {
         SafeSql.of("SELECT ID, VALUE_1, VALUE_2,  VALUE_3, VALUE_4, VALUE_5, VALUE_6, VALUE_7, VALUE_8, VALUE_9 FROM DATA").query(dataSource, MugSafeSqlData.class);
     }
