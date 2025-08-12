@@ -956,6 +956,9 @@ class UpsertPreHandler extends AbstractPreHandler {
                         items.add(newItem(draft, original));
                     }
                 }
+            } else {
+                updatedList = new ArrayList<>(draftsWithId);
+                insertedList = new ArrayList<>();
             }
         }
 
