@@ -1,9 +1,9 @@
 [versions]
-kotlin = "1.9.25"
-ksp = "1.9.25-1.0.20"
+kotlin = "2.2.0"
+ksp = "2.2.0+"
 springboot = "2.7.0"
 spring-dependency-management = "1.1.6"
-jimmer = "0.9.10"
+jimmer = "0.9.104"
 eclipselink = "3.78.0"
 jooq = "3.16.6"
 mybatis = "2.2.2"
@@ -16,6 +16,7 @@ easyquery = "2.0.102"
 jmh = "1.37"
 h2 = "2.3.232"
 apijson = "6.3.0"
+mug = "9.1"
 
 [libraries]
 spring-boot-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot" }
@@ -40,6 +41,7 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 apijson = { module = "com.github.Tencent:APIJSON", version.ref = "apijson" }
 apijson-framework = { module = "com.github.APIJSON:apijson-framework", version.ref = "apijson" }
+mug-safesql = { module = "com.google.mug:mug-safesql", version.ref = "mug" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
