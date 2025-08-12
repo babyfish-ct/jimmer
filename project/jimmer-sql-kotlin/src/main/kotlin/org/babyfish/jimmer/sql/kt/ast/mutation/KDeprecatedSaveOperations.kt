@@ -517,7 +517,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(entity).execute(fetcher)")
+        replaceWith = ReplaceWith("saveCommand(entity, block).execute(fetcher)")
     )
     fun <E: Any> save(
         entity: E,
@@ -529,7 +529,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(entity, mode, associatedMode).execute(fetcher)")
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode, block).execute(fetcher)")
     )
     fun <E: Any> save(
         entity: E,
@@ -543,7 +543,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveEntitiesCommand(entities).execute(fetcher)")
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities, block).execute(fetcher)")
     )
     fun <E: Any> saveEntities(
         entities: Iterable<E>,
@@ -555,7 +555,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveEntitiesCommand(entities, mode, associatedMode).execute(fetcher)")
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities, mode, associatedMode, block).execute(fetcher)")
     )
     fun <E: Any> saveEntities(
         entities: Iterable<E>,
@@ -569,7 +569,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(input).execute(fetcher)")
+        replaceWith = ReplaceWith("saveCommand(input, block).execute(fetcher)")
     )
     fun <E: Any> save(
         input: Input<E>,
@@ -581,7 +581,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(input, mode, associatedMode).execute(fetcher)")
+        replaceWith = ReplaceWith("saveCommand(input, mode, associatedMode, block).execute(fetcher)")
     )
     fun <E: Any> save(
         input: Input<E>,
@@ -595,7 +595,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveInputsCommand(inputs).execute(fetcher)")
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, block).execute(fetcher)")
     )
     fun <E: Any> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -607,7 +607,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveInputsCommand(inputs, mode, associatedMode).execute(fetcher)")
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, mode, associatedMode, block).execute(fetcher)")
     )
     fun <E: Any> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -621,7 +621,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(entity).execute(viewType)")
+        replaceWith = ReplaceWith("saveCommand(entity, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> save(
         entity: E,
@@ -633,7 +633,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(entity, mode, associatedMode).execute(viewType)")
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> save(
         entity: E,
@@ -647,7 +647,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveEntitiesCommand(entities).execute(viewType)")
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> saveEntities(
         entities: Iterable<E>,
@@ -659,7 +659,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveEntitiesCommand(entities, mode, associatedMode).execute(viewType)")
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities, mode, associatedMode, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> saveEntities(
         entities: Iterable<E>,
@@ -673,7 +673,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(input).execute(viewType)")
+        replaceWith = ReplaceWith("saveCommand(input, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> save(
         input: Input<E>,
@@ -685,7 +685,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveCommand(input, mode, associatedMode).execute(viewType)")
+        replaceWith = ReplaceWith("saveCommand(input, mode, associatedMode, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> save(
         input: Input<E>,
@@ -699,7 +699,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveInputsCommand(inputs).execute(viewType)")
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> saveInputs(
         inputs: Iterable<Input<E>>,
@@ -711,7 +711,7 @@ interface KDeprecatedSaveOperations : KSaveOperations {
 
     @Deprecated(
         "fetcher/viewType is advanced feature, please use saveCommand",
-        replaceWith = ReplaceWith(".saveInputsCommand(inputs, mode, associatedMode).execute(viewType)")
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, mode, associatedMode, block).execute(viewType)")
     )
     fun <E: Any, V: View<E>> saveInputs(
         inputs: Iterable<Input<E>>,
