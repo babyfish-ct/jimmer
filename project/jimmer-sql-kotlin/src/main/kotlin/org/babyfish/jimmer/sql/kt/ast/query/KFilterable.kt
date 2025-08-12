@@ -35,9 +35,27 @@ fun <X> KFilterable<*>.whereIfNotNull(
     }
 }
 
-fun KFilterable<*>. whereIfNotEmpty(
+fun KFilterable<*>.whereIfNotEmpty(
     value: String?,
     block: (String) -> KNonNullExpression<Boolean>?
+) {
+    value?.takeIf { it.isNotEmpty() }?.let {
+        where(block(it))
+    }
+}
+
+fun <T> KFilterable<*>.whereIfNotEmpty(
+    value: Collection<T>?,
+    block: (Collection<T>) -> KNonNullExpression<Boolean>?
+) {
+    value?.takeIf { it.isNotEmpty() }?.let {
+        where(block(it))
+    }
+}
+
+fun <T> KFilterable<*>.whereIfNotEmpty(
+    value: Array<T>?,
+    block: (Array<T>) -> KNonNullExpression<Boolean>?
 ) {
     value?.takeIf { it.isNotEmpty() }?.let {
         where(block(it))
