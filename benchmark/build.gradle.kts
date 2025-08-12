@@ -36,6 +36,7 @@ dependencies {
     implementation(libs.easyquery)
     implementation(libs.apijson)
     implementation(libs.apijson.framework)
+    implementation(libs.mug.safesql)
     implementation(libs.jmh.core)
     annotationProcessor(libs.jmh.generator.annprocess)
 
