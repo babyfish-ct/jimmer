@@ -979,6 +979,7 @@ public class SpringJavaTest extends AbstractTest {
                 "<!DOCTYPE html>\n" +
                         "<html lang=\"en\">\n" +
                         "<head>\n" +
+                        "  <link rel=\"icon\" href=\"./favicon.ico\" type=\"image/x-icon\">\n" +
                         "  <meta charset=\"utf-8\" />\n" +
                         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" +
                         "  <meta\n" +
@@ -1000,7 +1001,7 @@ public class SpringJavaTest extends AbstractTest {
                         "  };\n" +
                         "</script>\n" +
                         "</body>\n" +
-                        "</html>",
+                        "</html>\n",
                 result.getResponse().getContentAsString()
         );
     }
