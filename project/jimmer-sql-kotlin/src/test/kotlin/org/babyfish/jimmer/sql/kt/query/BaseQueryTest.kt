@@ -1073,6 +1073,64 @@ class BaseQueryTest : AbstractQueryTest() {
         }
     }
 
+    @Test
+    fun testOuterExpression() {
+        val baseTable = baseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.edition eq 3)
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                where(table._1.name eq "GraphQL in Action")
+                select(table._1.fetchBy {  })
+            }
+        ) {
+            sql(
+                """select tb_1_.c1 from (
+                    |--->select 
+                    |--->--->tb_2_.ID c1, tb_2_.NAME c2 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.EDITION = ?
+                    |) tb_1_ 
+                    |where tb_1_.c2 = ?""".trimMargin()
+            )
+            rows(
+                """[{"id":12}]"""
+            )
+        }
+    }
+
+    @Test
+    fun testOuterExpressionAndFetcher() {
+        val baseTable = baseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.edition eq 3)
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                where(table._1.name eq "GraphQL in Action")
+                select(table._1.fetchBy { name() })
+            }
+        ) {
+            sql(
+                """select tb_1_.c1, tb_1_.c2 from (
+                    |--->select 
+                    |--->--->tb_2_.ID c1, tb_2_.NAME c2 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.EDITION = ?
+                    |) tb_1_ 
+                    |where tb_1_.c2 = ?""".trimMargin()
+            )
+            rows(
+                """[{"id":12,"name":"GraphQL in Action"}]"""
+            )
+        }
+    }
+
     private class BaseBookAuthorJoin : KPropsWeakJoin<
         KNonNullBaseTable1<KNonNullTable<Book>, KNullableTable<Book>>,
         KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>

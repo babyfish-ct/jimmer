@@ -2,6 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
@@ -39,6 +43,8 @@ public class ComparisonPredicates {
                 List<ValueGetter> valueGetters =
                         ValueGetter.valueGetters(builder.sqlClient(), (Expression<Object>) left, value);
                 if (builder instanceof SqlBuilder) {
+                    BaseTableOwner owner = BaseTableOwner.of(propExpressionImplementor.getTable());
+                    BaseSelectionMapper mapper = ((SqlBuilder) builder).getAstContext().getBaseSelectionMapper(owner);
                     String alias = TableProxies.resolve(
                             propExpressionImplementor.getTable(),
                             ((SqlBuilder)builder).getAstContext()
@@ -49,8 +55,7 @@ public class ComparisonPredicates {
                             propExpressionImplementor.isRawId(),
                             builder.sqlClient()
                     );
-
-                    valueGetters = ValueGetter.alias(alias, valueGetters);
+                    valueGetters = ValueGetter.alias(mapper, alias, valueGetters);
                 }
                 renderCmp(operator, valueGetters, value, builder);
                 return;

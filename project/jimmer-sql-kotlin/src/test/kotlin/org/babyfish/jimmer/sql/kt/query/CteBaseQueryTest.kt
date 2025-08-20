@@ -1113,6 +1113,68 @@ class CteBaseQueryTest : AbstractQueryTest() {
         }
     }
 
+    @Test
+    fun testOuterExpression() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.edition eq 3)
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                where(table._1.name eq "GraphQL in Action")
+                select(table._1.fetchBy {  })
+            }
+        ) {
+            sql(
+                """with tb_1_(c1, c2) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.EDITION = ?
+                    |) 
+                    |select tb_1_.c1 
+                    |from tb_1_ 
+                    |where tb_1_.c2 = ?""".trimMargin()
+            )
+            rows(
+                """[{"id":12}]"""
+            )
+        }
+    }
+
+    @Test
+    fun testOuterExpressionAndFetcher() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.edition eq 3)
+                selections.add(table)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                where(table._1.name eq "GraphQL in Action")
+                select(table._1.fetchBy { name() })
+            }
+        ) {
+            sql(
+                """with tb_1_(c1, c2) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.EDITION = ?
+                    |) 
+                    |select tb_1_.c1, tb_1_.c2 
+                    |from tb_1_ 
+                    |where tb_1_.c2 = ?""".trimMargin()
+            )
+            rows(
+                """[{"id":12,"name":"GraphQL in Action"}]"""
+            )
+        }
+    }
+
     private class BaseBookAuthorJoin : KPropsWeakJoin<
         KNonNullBaseTable1<KNonNullTable<Book>, KNullableTable<Book>>,
         KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>

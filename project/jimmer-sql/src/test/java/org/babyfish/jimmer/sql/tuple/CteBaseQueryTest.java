@@ -1220,6 +1220,70 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testOuterExpression() {
+        BookTable table = BookTable.$;
+        BaseTable1<BookTable> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .where(table.edition().eq(3))
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_1().name().eq("GraphQL in Action"))
+                        .select(baseTable.get_1().fetch(BookFetcher.$)),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID, tb_2_.NAME " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_2_.EDITION = ?" +
+                                    ") " +
+                                    "select tb_1_.c1 " +
+                                    "from tb_1_ " +
+                                    "where tb_1_.c2 = ?"
+                    );
+                    ctx.rows(
+                            "[{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testOuterExpressionAndFetcher() {
+        BookTable table = BookTable.$;
+        BaseTable1<BookTable> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .where(table.edition().eq(3))
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_1().name().eq("GraphQL in Action"))
+                        .select(baseTable.get_1().fetch(BookFetcher.$.name())),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID, tb_2_.NAME " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_2_.EDITION = ?" +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c2 " +
+                                    "from tb_1_ " +
+                                    "where tb_1_.c2 = ?"
+                    );
+                    ctx.rows(
+                            "[{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\",\"name\":\"GraphQL in Action\"}]"
+                    );
+                }
+        );
+    }
     
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 
