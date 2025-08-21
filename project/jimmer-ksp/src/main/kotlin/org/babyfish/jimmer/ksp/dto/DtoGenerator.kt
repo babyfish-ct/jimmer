@@ -5,25 +5,115 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
-import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.*
+import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSFile
+import com.squareup.kotlinpoet.ANY
+import com.squareup.kotlinpoet.ARRAY
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.BOOLEAN_ARRAY
+import com.squareup.kotlinpoet.BYTE
+import com.squareup.kotlinpoet.BYTE_ARRAY
+import com.squareup.kotlinpoet.CHAR
+import com.squareup.kotlinpoet.CHAR_ARRAY
+import com.squareup.kotlinpoet.COLLECTION
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DOUBLE_ARRAY
+import com.squareup.kotlinpoet.FLOAT
+import com.squareup.kotlinpoet.FLOAT_ARRAY
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.INT_ARRAY
+import com.squareup.kotlinpoet.ITERABLE
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.LONG_ARRAY
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.MAP
+import com.squareup.kotlinpoet.MUTABLE_COLLECTION
+import com.squareup.kotlinpoet.MUTABLE_ITERABLE
+import com.squareup.kotlinpoet.MUTABLE_LIST
+import com.squareup.kotlinpoet.MUTABLE_MAP
+import com.squareup.kotlinpoet.MUTABLE_SET
+import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.SET
+import com.squareup.kotlinpoet.SHORT
+import com.squareup.kotlinpoet.SHORT_ARRAY
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.STRING
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.UNIT
+import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.meta.Doc
-import org.babyfish.jimmer.dto.compiler.*
-import org.babyfish.jimmer.dto.compiler.Anno.*
+import org.babyfish.jimmer.dto.compiler.AbstractProp
+import org.babyfish.jimmer.dto.compiler.Anno
+import org.babyfish.jimmer.dto.compiler.Anno.AnnoValue
+import org.babyfish.jimmer.dto.compiler.Anno.ArrayValue
+import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
+import org.babyfish.jimmer.dto.compiler.Anno.LiteralValue
+import org.babyfish.jimmer.dto.compiler.Anno.TypeRefValue
+import org.babyfish.jimmer.dto.compiler.Anno.Value
+import org.babyfish.jimmer.dto.compiler.Constants
+import org.babyfish.jimmer.dto.compiler.DtoModifier
+import org.babyfish.jimmer.dto.compiler.DtoProp
+import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.dto.compiler.LikeOption
 import org.babyfish.jimmer.dto.compiler.PropConfig.PathNode
 import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate
-import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.*
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.And
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Cmp
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Nullity
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Or
+import org.babyfish.jimmer.dto.compiler.TypeRef
+import org.babyfish.jimmer.dto.compiler.UserProp
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
-import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.Context
+import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.client.DocMetadata
-import org.babyfish.jimmer.ksp.immutable.generator.*
+import org.babyfish.jimmer.ksp.fullName
+import org.babyfish.jimmer.ksp.get
+import org.babyfish.jimmer.ksp.immutable.generator.BIG_DECIMAL_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.BIG_INTEGER_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.CLASS_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.DESCRIPTION_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.DTO_METADATA_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.DTO_PROP_ACCESSOR
+import org.babyfish.jimmer.ksp.immutable.generator.EMBEDDED_DTO_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.FIXED_INPUT_FIELD_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.HIBERNATE_VALIDATOR_ENHANCED_BEAN
+import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_CREATOR_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_DESERIALIZE_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_IGNORE_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_PROPERTY_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_SERIALIZE_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_ARGS_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.NEW_FETCHER_FUN_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.PREDICATE_APPLIER
+import org.babyfish.jimmer.ksp.immutable.generator.REFERENCE_FETCH_TYPE_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.VIEW_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
-import org.babyfish.jimmer.ksp.util.*
+import org.babyfish.jimmer.ksp.util.ConverterMetadata
+import org.babyfish.jimmer.ksp.util.GenericParser
+import org.babyfish.jimmer.ksp.util.fastResolve
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
+import org.babyfish.jimmer.ksp.util.toPoetTarget
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -35,7 +125,7 @@ class DtoGenerator private constructor(
     val dtoType: DtoType<ImmutableType, ImmutableProp>,
     private val codeGenerator: CodeGenerator?,
     private val parent: DtoGenerator?,
-    private val innerClassName: String?
+    private val innerClassName: String?,
 ) {
     private val root: DtoGenerator = parent?.root ?: this
 
@@ -62,7 +152,7 @@ class DtoGenerator private constructor(
         mutable: Boolean,
         dtoType: DtoType<ImmutableType, ImmutableProp>,
         codeGenerator: CodeGenerator?,
-    ): this(ctx, docMetadata, mutable, dtoType, codeGenerator, null, null)
+    ) : this(ctx, docMetadata, mutable, dtoType, codeGenerator, null, null)
 
     val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
@@ -83,7 +173,7 @@ class DtoGenerator private constructor(
                 }.toTypedArray()
             )
         }
-        if  (nestedSimpleName == null) {
+        if (nestedSimpleName == null) {
             return ClassName(
                 root.dtoType.packageName,
                 dtoType.name!!
@@ -159,7 +249,7 @@ class DtoGenerator private constructor(
 
     private fun collectImports(
         dtoType: DtoType<ImmutableType, ImmutableProp>,
-        packages: SortedSet<String>
+        packages: SortedSet<String>,
     ) {
         packages += dtoType.baseType.className.packageName
         for (prop in dtoType.dtoProps) {
@@ -409,7 +499,7 @@ class DtoGenerator private constructor(
     }
 
     private fun CodeBlock.Builder.addConfigLambda(
-        prop: DtoProp<ImmutableType, ImmutableProp>
+        prop: DtoProp<ImmutableType, ImmutableProp>,
     ) {
         val cfg = prop.getConfig() ?: return
         add(" {")
@@ -432,7 +522,7 @@ class DtoGenerator private constructor(
                         add("\n)")
                     }
                 }
-                cfg.orderItems.takeIf {it.isNotEmpty() }?.let {
+                cfg.orderItems.takeIf { it.isNotEmpty() }?.let {
                     add("\norderBy(")
                     indent()
                     for (i in it.indices) {
@@ -453,6 +543,7 @@ class DtoGenerator private constructor(
                 unindent()
                 add("\n}")
             }
+
             cfg.filterClassName != null -> {
                 val fetcherDeclaration = ctx.resolver.getClassDeclarationByName(cfg.filterClassName!!)
                     ?: throw DtoException(
@@ -467,14 +558,14 @@ class DtoGenerator private constructor(
                 if (entityTypeName != targetTypeName) {
                     throw DtoException(
                         "The filter class \"" +
-                            cfg.filterClassName +
-                            "\" is illegal, it specify the generic type argument of \"" +
-                            "org.babyfish.jimmer.sql.kt.fetcher.KFieldFilter" +
-                            "\" as \"" +
-                            entityTypeName +
-                            "\", which is not associated entity type \"" +
-                            targetTypeName +
-                            "\""
+                                cfg.filterClassName +
+                                "\" is illegal, it specify the generic type argument of \"" +
+                                "org.babyfish.jimmer.sql.kt.fetcher.KFieldFilter" +
+                                "\" as \"" +
+                                entityTypeName +
+                                "\", which is not associated entity type \"" +
+                                targetTypeName +
+                                "\""
                     )
                 }
                 add("\nfilter(%L())", cfg.filterClassName)
@@ -494,14 +585,14 @@ class DtoGenerator private constructor(
             if (entityTypeName != targetTypeName) {
                 throw DtoException(
                     "The recursion class \"" +
-                        cfg.recursionClassName +
-                        "\" is illegal, it specify the generic type argument of \"" +
-                        "org.babyfish.jimmer.sql.fetcher.RecursionStrategy" +
-                        "\" as \"" +
-                        entityTypeName +
-                        "\", which is not associated entity type \"" +
-                        targetTypeName +
-                        "\""
+                            cfg.recursionClassName +
+                            "\" is illegal, it specify the generic type argument of \"" +
+                            "org.babyfish.jimmer.sql.fetcher.RecursionStrategy" +
+                            "\" as \"" +
+                            entityTypeName +
+                            "\", which is not associated entity type \"" +
+                            targetTypeName +
+                            "\""
                 )
             }
             add("\nrecursive(%L())", cfg.recursionClassName)
@@ -541,6 +632,7 @@ class DtoGenerator private constructor(
                 unindent()
                 add("\n)")
             }
+
             is Or -> {
                 add("%M(\n", MemberName(EXPRESSION_PACKAGE, "or"))
                 indent()
@@ -553,11 +645,12 @@ class DtoGenerator private constructor(
                 unindent()
                 add("\n)")
             }
+
             is Cmp<*> -> {
                 addPropPath(predicate.path as List<PathNode<ImmutableProp>>)
                 val ktOp = MemberName(
                     EXPRESSION_PACKAGE,
-                    when(predicate.operator) {
+                    when (predicate.operator) {
                         "=" -> "eq"
                         "<>" -> "ne"
                         "<" -> "lt"
@@ -581,16 +674,19 @@ class DtoGenerator private constructor(
                             BIG_INTEGER_CLASS_NAME,
                             predicate.value
                         )
+
                         BIG_DECIMAL_CLASS_NAME -> add(
                             " %M %T(%S)",
                             ktOp,
                             BIG_DECIMAL_CLASS_NAME,
                             predicate.value
                         )
+
                         else -> add(" %M %L", ktOp, predicate.value)
                     }
                 }
             }
+
             is Nullity<*> -> {
                 addPropPath(predicate.path as List<PathNode<ImmutableProp>>)
                 if (predicate.isNegative) {
@@ -599,6 +695,7 @@ class DtoGenerator private constructor(
                     add(".%M()", MemberName(EXPRESSION_PACKAGE, "isNull"))
                 }
             }
+
             else -> throw DtoException("Illegal predicate type: ${predicate::class.qualifiedName}")
         }
     }
@@ -838,8 +935,8 @@ class DtoGenerator private constructor(
                                     add(
                                         "%S\n",
                                         "Cannot convert \"${dtoType.baseType.className}\" to " +
-                                            "\"${getDtoClassName()}\" because the cannot get non-null " +
-                                            "value for \"${prop.name}\""
+                                                "\"${getDtoClassName()}\" because the cannot get non-null " +
+                                                "value for \"${prop.name}\""
                                     )
                                     unindent()
                                     add(")")
@@ -903,10 +1000,10 @@ class DtoGenerator private constructor(
                 .receiver(ITERABLE.parameterizedBy(dtoClassName))
                 .returns(LIST.parameterizedBy(dtoType.baseType.className))
                 .addStatement(
-                        "return map(%T::%L)",
-                        dtoClassName,
-                        if (dtoType.baseType.isEntity) "toEntity" else "toImmutable"
-                    )
+                    "return map(%T::%L)",
+                    dtoClassName,
+                    if (dtoType.baseType.isEntity) "toEntity" else "toImmutable"
+                )
                 .build()
         )
     }
@@ -1075,7 +1172,7 @@ class DtoGenerator private constructor(
 
     private fun FunSpec.Builder.addStackOperations(
         stack: List<ImmutableProp>,
-        newStack: List<ImmutableProp>
+        newStack: List<ImmutableProp>,
     ): List<ImmutableProp> {
         val size = min(stack.size, newStack.size)
         var sameCount = size
@@ -1175,8 +1272,8 @@ class DtoGenerator private constructor(
         }
         return if ((prop.isNullable() && (!prop.getBaseProp().isNullable || dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) ||
             (prop.baseProp.converterMetadata !== null &&
-                !dtoType.modifiers.contains(DtoModifier.INPUT) &&
-                !dtoType.modifiers.contains(DtoModifier.SPECIFICATION))
+                    !dtoType.modifiers.contains(DtoModifier.INPUT) &&
+                    !dtoType.modifiers.contains(DtoModifier.SPECIFICATION))
         ) {
             false
         } else {
@@ -1201,10 +1298,10 @@ class DtoGenerator private constructor(
                     indent()
 
                     if (prop.isNullable() && (!prop.toTailProp().getBaseProp().isNullable ||
-                            dtoType.modifiers.contains(DtoModifier.SPECIFICATION) ||
-                            dtoType.modifiers.contains(DtoModifier.FUZZY) ||
-                            prop.inputModifier == DtoModifier.FUZZY
-                        )
+                                dtoType.modifiers.contains(DtoModifier.SPECIFICATION) ||
+                                dtoType.modifiers.contains(DtoModifier.FUZZY) ||
+                                prop.inputModifier == DtoModifier.FUZZY
+                                )
                     ) {
                         add("\nfalse")
                     } else {
@@ -1341,12 +1438,16 @@ class DtoGenerator private constructor(
                     it
                 }
             }
+
             "valueIn", "valueNotIn" ->
                 LIST.parameterizedBy(baseProp.typeName())
+
             "associatedIdEq", "associatedIdNe" ->
                 baseProp.targetType!!.idProp!!.typeName()
+
             "associatedIdIn", "associatedIdNotIn" ->
                 LIST.parameterizedBy(baseProp.targetType!!.idProp!!.typeName())
+
             else -> baseProp.typeName()
         }.copy(nullable = prop.isNullable)
         val builder = FunSpec
@@ -1386,9 +1487,11 @@ class DtoGenerator private constructor(
     private fun TypeSpec.Builder.addHibernateValidatorEnhancement(getter: Boolean) {
         addFunction(
             FunSpec
-                .builder("\$\$_hibernateValidator_get${
-                    if (getter) "Getter" else "Field"
-                }Value")
+                .builder(
+                    "\$\$_hibernateValidator_get${
+                        if (getter) "Getter" else "Field"
+                    }Value"
+                )
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("name", STRING)
                 .returns(ANY.copy(nullable = true))
@@ -1442,13 +1545,15 @@ class DtoGenerator private constructor(
                 when (funcName) {
                     "null", "notNull" ->
                         return BOOLEAN.copy(nullable = prop.isNullable)
+
                     "valueIn", "valueNotIn" ->
                         return COLLECTION.parameterizedBy(
-                            metadata?.targetTypeName ?:
-                            propElementName.toList(baseProp.isList)
+                            metadata?.targetTypeName ?: propElementName.toList(baseProp.isList)
                         ).copy(nullable = prop.isNullable)
+
                     "id", "associatedIdEq", "associatedIdNe" ->
                         return baseProp.targetType!!.idProp!!.clientClassName.copy(nullable = prop.isNullable)
+
                     "associatedIdIn", "associatedIdNotIn" ->
                         return COLLECTION.parameterizedBy(baseProp.targetType!!.idProp!!.clientClassName)
                             .copy(nullable = prop.isNullable)
@@ -1504,7 +1609,7 @@ class DtoGenerator private constructor(
     private fun collectNames(list: MutableList<String>) {
         if (parent == null) {
             list.add(dtoType.name!!)
-        } else if (innerClassName !== null){
+        } else if (innerClassName !== null) {
             parent.collectNames(list)
             list.add(innerClassName)
         }
@@ -1568,7 +1673,7 @@ class DtoGenerator private constructor(
 
     private fun CodeBlock.Builder.addConverterLoading(
         prop: DtoProp<ImmutableType, ImmutableProp>,
-        forList: Boolean
+        forList: Boolean,
     ) {
         val baseProp: ImmutableProp = prop.toTailProp().getBaseProp()
         add(
@@ -1639,12 +1744,16 @@ class DtoGenerator private constructor(
                         when {
                             s.endsWith("FIELD") ->
                                 field = true
+
                             s.endsWith("PROPERTY_GETTER") ->
                                 getter = true
+
                             s.endsWith("FUNCTION") ->
                                 getter = true
+
                             s.endsWith("PROPERTY_SETTER") ->
                                 setter = true
+
                             s.endsWith("PROPERTY") ->
                                 property = true
                         }
@@ -1657,6 +1766,7 @@ class DtoGenerator private constructor(
                     when {
                         s.endsWith("FIELD") ->
                             field = true
+
                         s.endsWith("METHOD") ->
                             getter = true
                     }
@@ -1756,12 +1866,12 @@ class DtoGenerator private constructor(
             FunSpec
                 .builder("equals")
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-                .addParameter("o", ANY.copy(nullable = true))
+                .addParameter("other", ANY.copy(nullable = true))
                 .returns(BOOLEAN)
                 .addCode(
                     CodeBlock.builder()
                         .apply {
-                            addStatement("val _other = o as? %T ?: return false", getDtoClassName())
+                            addStatement("val _other = other as? %T ?: return false", getDtoClassName())
                             dtoType.props.forEachIndexed { index, prop ->
                                 if (index == 0) {
                                     add("return ")
@@ -1803,7 +1913,7 @@ class DtoGenerator private constructor(
                         .builder()
                         .apply {
                             val hashCondProps = dtoType.modifiers.contains(DtoModifier.INPUT) &&
-                                dtoType.dtoProps.any { statePropName(it, false) != null || it.inputModifier == DtoModifier.FUZZY }
+                                    dtoType.dtoProps.any { statePropName(it, false) != null || it.inputModifier == DtoModifier.FUZZY }
                             if (hashCondProps) {
                                 addStatement("val builder = StringBuilder()")
                                 addStatement("var separator = \"\"")
@@ -1873,7 +1983,7 @@ class DtoGenerator private constructor(
     private fun simpleNamePart(): String =
         (innerClassName ?: dtoType.name!!).let { name ->
             parent
-                ?.let {  "${it.simpleNamePart()}.$name" }
+                ?.let { "${it.simpleNamePart()}.$name" }
                 ?: name
         }
 
@@ -1948,19 +2058,19 @@ class DtoGenerator private constructor(
 
     private val isSerializerRequired: Boolean by lazy {
         dtoType.modifiers.contains(DtoModifier.INPUT) &&
-            dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
+                dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
     }
 
     private val isBuilderRequired: Boolean by lazy {
         dtoType.modifiers.contains(DtoModifier.INPUT) &&
-            dtoType.dtoProps.any { prop ->
-                prop.inputModifier.let { it == DtoModifier.FIXED || it == DtoModifier.DYNAMIC }
-            }
+                dtoType.dtoProps.any { prop ->
+                    prop.inputModifier.let { it == DtoModifier.FIXED || it == DtoModifier.DYNAMIC }
+                }
     }
 
-    private val isHibernateValidatorEnhancementRequired: Boolean by lazy{
+    private val isHibernateValidatorEnhancementRequired: Boolean by lazy {
         ctx.isHibernateValidatorEnhancement &&
-            dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
+                dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
     }
 
     private val baseDocString: String?
@@ -1986,13 +2096,13 @@ class DtoGenerator private constructor(
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
             val qualifiedName = annotation.annotationType.fastResolve().declaration.qualifiedName!!.asString()
             return (
-                qualifiedName != KOTLIN_DTO_TYPE_NAME && (
-                    !qualifiedName.startsWith("org.babyfish.jimmer.") ||
-                    qualifiedName.startsWith("org.babyfish.jimmer.client.")
-                ) && dtoAnnotations.none {
-                    it.qualifiedName == annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()
-                }
-            )
+                    qualifiedName != KOTLIN_DTO_TYPE_NAME && (
+                            !qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                                    qualifiedName.startsWith("org.babyfish.jimmer.client.")
+                            ) && dtoAnnotations.none {
+                        it.qualifiedName == annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()
+                    }
+                    )
         }
 
         internal fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
@@ -2040,6 +2150,7 @@ class DtoGenerator private constructor(
                     unindent()
                     add("\n]")
                 }
+
                 is AnnoValue -> {
                     add("%T", ClassName.bestGuess(value.anno.qualifiedName))
                     if (value.anno.valueMap.isEmpty()) {
@@ -2054,6 +2165,7 @@ class DtoGenerator private constructor(
                         add("\n)")
                     }
                 }
+
                 is TypeRefValue -> value.typeRef.let {
                     if (it.isNullable) {
                         add(
@@ -2068,11 +2180,13 @@ class DtoGenerator private constructor(
                         add("%T::class", typeName(it))
                     }
                 }
+
                 is EnumValue -> add(
                     "%T.%N",
                     ClassName.bestGuess(value.qualifiedName),
                     value.constant
                 )
+
                 else -> add((value as LiteralValue).value.replace("%", "%%"))
             }
         }
@@ -2257,7 +2371,9 @@ class DtoGenerator private constructor(
                     "kotlin.BooleanArray", "kotlin.CharArray",
                     "kotlin.ByteArray", "kotlin.ShortArray", "kotlin.IntArray", "kotlin.LongArray",
                     "kotlin.FloatArray", "kotlin.DoubleArray",
-                    "kotlin.Array" -> true
+                    "kotlin.Array",
+                        -> true
+
                     else -> false
                 }
             } else if (this is ParameterizedTypeName) {
