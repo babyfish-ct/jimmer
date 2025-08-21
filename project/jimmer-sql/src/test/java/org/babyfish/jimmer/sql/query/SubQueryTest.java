@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.query;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.UUID;
 
 public class SubQueryTest extends AbstractQueryTest {
 
@@ -305,6 +308,40 @@ public class SubQueryTest extends AbstractQueryTest {
                                     "--->--->\"price\":51.00," +
                                     "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1155() {
+        BookStoreTable store = BookStoreTable.$;
+        BookTable book = BookTable.$;
+        ConfigurableSubQuery.Cmp<UUID> storeIds =
+                getSqlClient()
+                        .createSubQuery(book)
+                        .where(book.name().ilike("graphql"))
+                        .select(book.store().id());
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(store)
+                        .where(store.id().in(storeIds))
+                        .select(store),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "where tb_1_.ID in (" +
+                                    "--->select tb_2_.STORE_ID " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_2_.NAME ilike ?" +
+                                    ")"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"name\":\"MANNING\",\"website\":null,\"version\":0}," +
+                                    "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"O'REILLY\",\"website\":null,\"version\":0}" +
+                                    "]"
                     );
                 }
         );

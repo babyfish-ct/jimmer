@@ -81,14 +81,14 @@ public class ConfigurableSubQueryImpl<R>
                 if (Number.class.isAssignableFrom(type)) {
                     return (TypedSubQuery<R>) new Num<>(data, baseQuery);
                 }
-                if (Comparable.class.isAssignableFrom(type)) {
-                    return (TypedSubQuery<R>) new Cmp<>(data, baseQuery);
-                }
                 if (Date.class.isAssignableFrom(type)) {
                     return (TypedSubQuery<R>) new Dt<>(data, baseQuery);
                 }
                 if (Temporal.class.isAssignableFrom(type)) {
                     return (TypedSubQuery<R>) new Tp<>(data, baseQuery);
+                }
+                if (Comparable.class.isAssignableFrom(type)) {
+                    return (TypedSubQuery<R>) new Cmp<>(data, baseQuery);
                 }
             }
         }
@@ -137,7 +137,7 @@ public class ConfigurableSubQueryImpl<R>
         if (offset < 0) {
             throw new IllegalArgumentException("'offset' can not be less than 0");
         }
-        return new ConfigurableSubQueryImpl<>(
+        return (ConfigurableSubQuery<R>) ConfigurableSubQueryImpl.<R>of(
                 data.limit(limit, offset),
                 getMutableQuery()
         );
@@ -158,7 +158,7 @@ public class ConfigurableSubQueryImpl<R>
     @Override
     public ConfigurableSubQuery<R> hint(@Nullable String hint) {
         TypedQueryData data = getData();
-        return new ConfigurableSubQueryImpl<>(
+        return (ConfigurableSubQuery<R>) ConfigurableSubQueryImpl.<R>of(
                 data.hint(hint),
                 getMutableQuery()
         );
