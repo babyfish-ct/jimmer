@@ -132,6 +132,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     ChildTableOperator operator = operator(
                             getSqlClient(it -> {
                                 it.setDialect(new H2Dialect());
+                                it.setInListToAnyEqualityEnabled(true);
                                 it.setTriggerType(TriggerType.TRANSACTION_ONLY);
                             }),
                             con,

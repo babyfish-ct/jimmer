@@ -139,7 +139,10 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     ChildTableOperator operator = operator(
-                            getSqlClient(it -> it.setDialect(new H2Dialect())),
+                            getSqlClient(it -> {
+                              it.setDialect(new H2Dialect());
+                              it.setInListToAnyEqualityEnabled(true);
+                            }),
                             con,
                             BookProps.STORE.unwrap(),
                             DissociateAction.DELETE
@@ -217,6 +220,7 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                             getSqlClient(it -> {
                                 it.setMaxCommandJoinCount(1);
                                 it.setDialect(new H2Dialect());
+                                it.setInListToAnyEqualityEnabled(true);
                             }),
                             con,
                             BookProps.STORE.unwrap(),

@@ -105,7 +105,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     ChildTableOperator operator = operator(
-                            getSqlClient(it -> it.setDialect(new H2Dialect())),
+                            getSqlClient(it -> {
+                              it.setDialect(new H2Dialect());
+                              it.setInListToAnyEqualityEnabled(true);
+                            }),
                             con,
                             BookProps.STORE.unwrap(),
                             DissociateAction.SET_NULL

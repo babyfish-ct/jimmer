@@ -100,6 +100,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean expandedInListPaddingEnabled;
 
+    private final boolean inListToAnyEqualityEnabled;
+
     private final int offsetOptimizingThreshold;
 
     private final boolean reverseSortOptimizationEnabled;
@@ -174,6 +176,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int defaultListBatchSize,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
+            boolean inListToAnyEqualityEnabled,
             int offsetOptimizingThreshold,
             boolean reverseSortOptimizationEnabled,
             int maxCommandJoinCount,
@@ -225,6 +228,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultListBatchSize = defaultListBatchSize;
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
+        this.inListToAnyEqualityEnabled = inListToAnyEqualityEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.reverseSortOptimizationEnabled = reverseSortOptimizationEnabled;
         this.maxCommandJoinCount = maxCommandJoinCount;
@@ -385,6 +389,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isExpandedInListPaddingEnabled() {
         return expandedInListPaddingEnabled;
+    }
+
+    @Override
+    public boolean isInListToAnyEqualityEnabled() {
+        return inListToAnyEqualityEnabled;
     }
 
     @Override
@@ -688,6 +697,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultListBatchSize,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
@@ -743,6 +753,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultListBatchSize,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
@@ -793,6 +804,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultListBatchSize,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
@@ -846,6 +858,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultListBatchSize,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
@@ -1030,6 +1043,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean inListPaddingEnabled;
 
         private boolean expandedInListPaddingEnabled;
+
+        private boolean inListToAnyEqualityEnabled;
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
@@ -1456,6 +1471,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public JSqlClient.Builder setExpandedInListPaddingEnabled(boolean enabled) {
             this.expandedInListPaddingEnabled = enabled;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setInListToAnyEqualityEnabled(boolean enabled) {
+            this.inListToAnyEqualityEnabled = enabled;
             return this;
         }
 
@@ -1894,6 +1915,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     defaultListBatchSize,
                     inListPaddingEnabled,
                     expandedInListPaddingEnabled,
+                    inListToAnyEqualityEnabled,
                     offsetOptimizingThreshold,
                     reverseSortOptimizationEnabled,
                     maxCommandJoinCount,

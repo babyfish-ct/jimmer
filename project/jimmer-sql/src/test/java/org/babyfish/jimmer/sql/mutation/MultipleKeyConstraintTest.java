@@ -707,6 +707,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 getSqlClient(it -> {
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 })
                         .getEntities()
                         .saveEntitiesCommand(users),
@@ -787,6 +788,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 getSqlClient(it -> {
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 })
                         .getEntities()
                         .saveEntitiesCommand(users),
@@ -861,6 +863,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 getSqlClient(it -> {
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 }).saveEntitiesCommand(
                         Arrays.asList(
                                 Immutables.createSysUser(draft -> {
@@ -965,6 +968,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 getSqlClient(it -> {
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 }).saveEntitiesCommand(
                         Arrays.asList(
                                 Immutables.createSysUser(draft -> {
@@ -1028,6 +1032,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 getSqlClient(it -> {
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 }).saveEntitiesCommand(
                         Arrays.asList(
                                 Immutables.createSysUser(draft -> {
@@ -1117,6 +1122,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 getSqlClient(it -> {
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 }).saveEntitiesCommand(
                         Arrays.asList(
                                 Immutables.createSysUser(draft -> {

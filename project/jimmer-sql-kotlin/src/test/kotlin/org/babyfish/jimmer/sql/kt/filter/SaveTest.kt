@@ -155,6 +155,7 @@ class SaveTest : AbstractMutationTest() {
         val sqlClient = sqlClient {
             setIdGenerator(User::class, PreparedIdGenerator(10000L))
             setDialect(H2Dialect())
+            setInListToAnyEqualityEnabled(true)
         }
         val file = new(File::class).by {
             id = 20L

@@ -534,8 +534,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             }
             return;
         }
-        if (this.targetGetters.size() == 1 &&
-                sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+        if (this.targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported() && sqlClient.isInListToAnyEqualityEnabled()) {
             BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
             addOperation(builder, false);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
@@ -572,7 +571,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         if (idPairs.entries().size() == 1) {
             Tuple2<Object, Collection<Object>> entry = entries.iterator().next();
             disconnectExceptBySimpleInPredicate(entry.get_1(), entry.get_2());
-        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported() && sqlClient.isInListToAnyEqualityEnabled()) {
             disconnectExceptByBatch(idPairs);
         } else {
             disconnectExceptByComplexInPredicate(idPairs);

@@ -1203,4 +1203,9 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     protected boolean isAnyEqualityOfArraySupported() {
         return true;
     }
+
+    @Override
+    protected boolean isInListToAnyEqualityEnabled() {
+      return true;
+    }
 }

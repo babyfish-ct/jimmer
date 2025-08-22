@@ -163,6 +163,7 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
         executeAndExpectResult(
                 getSqlClient(it -> {
                     it.setDialect(new H2Dialect());
+                    it.setInListToAnyEqualityEnabled(true);
                     it.setTargetTransferable(true);
                     it.addDraftPreProcessor(new DraftPreProcessor<TreeNodeDraft>() {
                         @Override
@@ -366,6 +367,7 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
         executeAndExpectResult(
                 getSqlClient(it -> {
                     it.setDialect(new H2Dialect());
+                    it.setInListToAnyEqualityEnabled(true);
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     it.addDraftPreProcessor(new DraftPreProcessor<AuthorDraft>() {
 

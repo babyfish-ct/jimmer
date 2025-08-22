@@ -572,6 +572,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
         return sqlClient().isExpandedInListPaddingEnabled();
     }
 
+    @Override
+    public boolean isInListToAnyEqualityEnabled() {
+      return sqlClient().isInListToAnyEqualityEnabled();
+    }
+
     public int getOffsetOptimizingThreshold() {
         return sqlClient().getOffsetOptimizingThreshold();
     }

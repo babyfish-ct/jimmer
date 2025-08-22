@@ -1067,4 +1067,9 @@ public class InCollectionTest extends AbstractQueryTest {
     protected boolean isAnyEqualityOfArraySupported() {
         return true;
     }
+
+    @Override
+    protected boolean isInListToAnyEqualityEnabled() {
+        return true;
+    }
 }

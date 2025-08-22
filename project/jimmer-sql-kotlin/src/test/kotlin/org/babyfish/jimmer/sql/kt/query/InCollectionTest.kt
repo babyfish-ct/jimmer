@@ -26,6 +26,7 @@ class InCollectionTest : AbstractQueryTest() {
                 })
                 setInListPaddingEnabled(true)
                 setExpandedInListPaddingEnabled(true)
+                setInListToAnyEqualityEnabled(true)
             }.createQuery(TreeNode::class) {
                 where += tuple(
                     table.parentId,

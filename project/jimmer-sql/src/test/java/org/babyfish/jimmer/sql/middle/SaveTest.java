@@ -231,8 +231,10 @@ public class SaveTest extends AbstractMutationTest {
             draft.addIntoCategories(category -> category.setId(4L));
         });
         executeAndExpectResult(
-                getSqlClient(it -> it.setDialect(new H2Dialect()).addScalarProvider(ScalarProvider.uuidByByteArray()))
-                        .saveCommand(post),
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect()).addScalarProvider(ScalarProvider.uuidByByteArray());
+                    it.setInListToAnyEqualityEnabled(true);
+                }).saveCommand(post),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -210,6 +210,7 @@ class DMLTest : AbstractMutationTest() {
         executeAndExpectRowCount(
             sqlClient {
                 setDialect(H2Dialect())
+                setInListToAnyEqualityEnabled(true)
             }.createDelete(Book::class) {
                 where(
                     table.storeId valueIn subQuery(BookStore::class) {
@@ -249,7 +250,10 @@ class DMLTest : AbstractMutationTest() {
     @Test
     fun testDeleteByImplicitSubQuery() {
         executeAndExpectRowCount(
-            sqlClient { setDialect(H2Dialect()) }.createDelete(Book::class) {
+            sqlClient {
+                setDialect(H2Dialect())
+                setInListToAnyEqualityEnabled(true)
+            }.createDelete(Book::class) {
                 where += table.authors {
                     id eq 2L
                 }

@@ -1122,7 +1122,10 @@ public class ConstraintViolationTest extends AbstractMutationTest {
         });
         executeAndExpectResult(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
-                getSqlClient(it -> it.setDialect(new PostgresDialect())).getEntities()
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
+                }).getEntities()
                         .saveEntitiesCommand(
                                 Arrays.asList(treeNode1, treeNode2)
                         )
@@ -1250,6 +1253,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(it -> {
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                 })
                         .getEntities()
                         .saveEntitiesCommand(
@@ -1553,6 +1557,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(it -> {
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                     UserIdGenerator<?> idGenerator = this::autoId;
                     it.setIdGenerator(idGenerator);
                 })
@@ -1690,6 +1695,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(it -> {
                     it.setDialect(new PostgresDialect());
+                    it.setInListToAnyEqualityEnabled(true);
                     it.addExceptionTranslator(new IllegalTargetIdTranslatorImpl());
                 })
                         .getEntities()

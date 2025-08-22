@@ -123,6 +123,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> getSqlClient(it -> {
                     it.setDialect(new H2Dialect());
+                    it.setInListToAnyEqualityEnabled(true);
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveEntitiesCommand(departments).execute(
                         con,
@@ -257,6 +258,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> getSqlClient(it -> {
                     it.setDialect(new H2Dialect());
+                    it.setInListToAnyEqualityEnabled(true);
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveEntitiesCommand(departments).setMode(SaveMode.INSERT_IF_ABSENT).execute(
                         con,

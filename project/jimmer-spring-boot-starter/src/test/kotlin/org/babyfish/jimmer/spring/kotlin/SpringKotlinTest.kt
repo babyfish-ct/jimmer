@@ -42,7 +42,7 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect
 import org.babyfish.jimmer.sql.dialect.Dialect
 import javax.sql.DataSource
 
-@SpringBootTest(properties = ["jimmer.client.ts.path=/my-ts.zip", "jimmer.language=kotlin"])
+@SpringBootTest(properties = ["jimmer.client.ts.path=/my-ts.zip", "jimmer.language=kotlin", "jimmer.in-list-to-any-equality-enabled=true"])
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories

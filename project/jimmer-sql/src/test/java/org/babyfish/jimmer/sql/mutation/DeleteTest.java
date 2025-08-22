@@ -888,7 +888,10 @@ public class DeleteTest extends AbstractMutationTest {
         connectAndExpect(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 con -> {
-                    return getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                    return getSqlClient(it -> {
+                        it.setDialect(new PostgresDialect());
+                        it.setInListToAnyEqualityEnabled(true);
+                    })
                             .getEntities()
                             .deleteAllCommand(SysPerm.class, Arrays.asList(1L, 2L))
                             .setMaxCommandJoinCount(0)

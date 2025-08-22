@@ -60,6 +60,7 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                     return true;
                 }
             });
+            it.setInListToAnyEqualityEnabled(true);
         });
         List<ValueGetter> getters = ValueGetter.valueGetters(
                 sqlClient,
@@ -308,6 +309,7 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                     return true;
                 }
             });
+            it.setInListToAnyEqualityEnabled(true);
         });
         List<ValueGetter> getters = ValueGetter.tupleGetters(
                 ValueGetter.valueGetters(sqlClient, TreeNodeProps.NAME.unwrap()),

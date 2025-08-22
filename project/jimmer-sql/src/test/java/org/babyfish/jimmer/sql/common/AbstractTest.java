@@ -113,6 +113,7 @@ public class AbstractTest extends Tests {
                         return AbstractTest.this.isAnyEqualityOfArraySupported();
                     }
                 })
+                .setInListToAnyEqualityEnabled(AbstractTest.this.isInListToAnyEqualityEnabled())
                 .setTransientResolverProvider(
                         new DefaultTransientResolverProvider() {
                             @Override
@@ -150,6 +151,10 @@ public class AbstractTest extends Tests {
     }
 
     protected boolean isAnyEqualityOfArraySupported() {
+        return false;
+    }
+
+    protected boolean isInListToAnyEqualityEnabled() {
         return false;
     }
 

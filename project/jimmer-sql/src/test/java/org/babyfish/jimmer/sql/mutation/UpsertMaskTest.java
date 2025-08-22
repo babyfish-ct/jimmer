@@ -127,7 +127,10 @@ public class UpsertMaskTest extends AbstractMutationTest {
     public void testUpsertWithTrigger() {
         UUID graphQLInActionId4 = UUID.fromString("6f08ac6a-58cb-4716-876f-b1c149424e00");
         executeAndExpectResult(
-                getSqlClient(it -> it.setDialect(new H2Dialect()).setTriggerType(TriggerType.TRANSACTION_ONLY))
+                getSqlClient(it -> {
+                  it.setDialect(new H2Dialect()).setTriggerType(TriggerType.TRANSACTION_ONLY);
+                  it.setInListToAnyEqualityEnabled(true);
+                })
                         .saveEntitiesCommand(
                                 Arrays.asList(
                                         Immutables.createBook(draft -> {

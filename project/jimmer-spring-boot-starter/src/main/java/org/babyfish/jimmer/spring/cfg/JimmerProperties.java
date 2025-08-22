@@ -64,6 +64,8 @@ public class JimmerProperties {
 
     private final boolean expandedInListPaddingEnabled;
 
+    private final boolean inListToAnyEqualityEnabled;
+
     private final int offsetOptimizingThreshold;
 
     private final boolean reverseSortOptimizationEnabled;
@@ -113,6 +115,7 @@ public class JimmerProperties {
             @Nullable Integer defaultListBatchSize,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
+            boolean inListToAnyEqualityEnabled,
             @Nullable Integer offsetOptimizingThreshold,
             boolean reverseSortOptimizationEnabled,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
@@ -232,6 +235,7 @@ public class JimmerProperties {
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
+        this.inListToAnyEqualityEnabled = inListToAnyEqualityEnabled;
         this.offsetOptimizingThreshold =
                 offsetOptimizingThreshold != null ?
                         offsetOptimizingThreshold :
@@ -343,6 +347,10 @@ public class JimmerProperties {
 
     public boolean isExpandedInListPaddingEnabled() {
         return expandedInListPaddingEnabled;
+    }
+
+    public boolean isInListToAnyEqualityEnabled() {
+        return inListToAnyEqualityEnabled;
     }
 
     /**
@@ -474,6 +482,7 @@ public class JimmerProperties {
                 ", defaultListBatchSize=" + defaultListBatchSize +
                 ", inListPaddingEnabled=" + inListPaddingEnabled +
                 ", expandedInListPaddingEnabled=" + expandedInListPaddingEnabled +
+                ", inListToAnyEqualityEnabled=" + inListToAnyEqualityEnabled +
                 ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
                 ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
                 ", maxCommandJoinCount=" + maxCommandJoinCount +

@@ -421,7 +421,10 @@ public class IdentityTest extends AbstractMutationTest {
 
         resetIdentity(null);
 
-        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new H2Dialect()));
+        JSqlClient sqlClient = getSqlClient(it -> {
+            it.setDialect(new H2Dialect());
+            it.setInListToAnyEqualityEnabled(true);
+        });
         Department department1 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
@@ -836,7 +839,10 @@ public class IdentityTest extends AbstractMutationTest {
         NativeDatabases.assumeNativeDatabase();
         resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE);
 
-        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new PostgresDialect()));
+        JSqlClient sqlClient = getSqlClient(it -> {
+            it.setDialect(new PostgresDialect());
+            it.setInListToAnyEqualityEnabled(true);
+        });
         Department department1 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {

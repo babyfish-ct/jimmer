@@ -33,6 +33,7 @@ public class GetIdTest extends AbstractMutationTest {
 
         JSqlClient sqlClient = getSqlClient(it -> {
             it.setDialect(new H2Dialect());
+            it.setInListToAnyEqualityEnabled(true);
             it.setTargetTransferable(true);
         });
         Department department1 = DepartmentDraft.$.produce(draft -> {
@@ -563,6 +564,7 @@ public class GetIdTest extends AbstractMutationTest {
 
         JSqlClient sqlClient = getSqlClient(it -> {
             it.setDialect(new PostgresDialect());
+            it.setInListToAnyEqualityEnabled(true);
             it.setTargetTransferable(true);
         });
         Department department1 = DepartmentDraft.$.produce(draft -> {
@@ -752,6 +754,7 @@ public class GetIdTest extends AbstractMutationTest {
                     return false;
                 }
             });
+            it.setInListToAnyEqualityEnabled(true);
         });
         Employee employee1 = EmployeeDraft.$.produce(draft -> {
             draft.setName("Jacob");
