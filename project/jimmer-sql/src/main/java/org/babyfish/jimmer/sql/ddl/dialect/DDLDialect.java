@@ -45,7 +45,7 @@ public interface DDLDialect extends Dialect {
     /**
      * null -> null
      * "name" -> "name"
-     * `name" -> "name"
+     * `name -> "name"
      * foo bar -> "foo bar"
      * column_name -> column_name
      */
@@ -145,7 +145,8 @@ public interface DDLDialect extends Dialect {
 
     default String getCheckCondition(String columnName, List<String> values) {
         StringBuilder check = new StringBuilder();
-        check.append(quote(columnName)).append(" in (");
+        String quotedColumnName = quote(columnName);
+        check.append(quotedColumnName).append(" in (");
         String separator = "";
         boolean nullIsValid = false;
         for (String value : values) {
@@ -158,7 +159,7 @@ public interface DDLDialect extends Dialect {
         }
         check.append(')');
         if (nullIsValid) {
-            check.append(" or ").append(columnName).append(" is null");
+            check.append(" or ").append(quotedColumnName).append(" is null");
         }
         return check.toString();
     }

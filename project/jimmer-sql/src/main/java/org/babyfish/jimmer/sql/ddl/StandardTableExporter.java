@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.EnumItem;
 import org.babyfish.jimmer.sql.EnumType;
 import org.babyfish.jimmer.sql.GeneratedValue;
 import org.babyfish.jimmer.sql.ddl.annotations.*;
@@ -17,6 +18,7 @@ import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.Storages;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
+import java.lang.reflect.Field;
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
 import java.util.*;
@@ -379,7 +381,17 @@ public class StandardTableExporter implements Exporter<ImmutableType> {
                             break;
                         case NAME:
                         default:
-                            List<String> names = Arrays.stream(enumConstants).map(Enum::name).collect(Collectors.toList());
+                            List<String> names = Arrays.stream(enumConstants).map(enumValue -> {
+                                try {
+                                    Field e = returnClass.getField(enumValue.name());
+                                    EnumItem enumItem = e.getAnnotation(EnumItem.class);
+                                    if (enumItem != null) {
+                                        return enumItem.name();
+                                    }
+                                } catch (NoSuchFieldException ignore) {
+                                }
+                                return enumValue.name();
+                            }).collect(Collectors.toList());
                             if (prop.isNullable()) {
                                 names.add(null);
                             }

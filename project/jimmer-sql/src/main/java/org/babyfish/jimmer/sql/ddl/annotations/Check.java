@@ -1,15 +1,14 @@
 package org.babyfish.jimmer.sql.ddl.annotations;
 
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * @author honhimW
  */
 @Target({})
-@Retention(RUNTIME)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Check {
 
     String name() default "";

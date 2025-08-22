@@ -4,14 +4,13 @@ import org.babyfish.jimmer.sql.ddl.ConstraintNamingStrategy;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * @author honhimW
  */
 @Target({})
-@Retention(RUNTIME)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Unique {
 
     String name() default "";

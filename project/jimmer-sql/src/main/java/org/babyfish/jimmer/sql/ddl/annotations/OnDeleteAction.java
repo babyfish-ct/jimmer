@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ddl.annotations;
 
 /**
- *
+ * @author honhimW
  */
 public enum OnDeleteAction {
     NONE(""),
