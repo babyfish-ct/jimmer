@@ -119,6 +119,9 @@ public interface ConfigurableRootQuery<T extends TableLike<?>, R> extends TypedR
     @NewChain
     ConfigurableRootQuery<T, R> forUpdate(boolean forUpdate);
 
+    @NewChain
+    ConfigurableRootQuery<T, R> forUpdate(LockMode lockMode, LockWait lockWait);
+
     /**
      * Set the hint
      * @param hint Optional hint, both <b>/&#42;+ sth &#42;/</b> and <b>sth</b> are OK.

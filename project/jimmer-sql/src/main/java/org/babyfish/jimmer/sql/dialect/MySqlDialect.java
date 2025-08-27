@@ -1,6 +1,10 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
+
+import java.util.function.IntSupplier;
 
 /**
  * MySQL 8.x
@@ -73,6 +77,40 @@ public class MySqlDialect extends MySql5Dialect {
                 ctx.separator().appendUpdatingAssignments("values(", ")");
             }
             ctx.leave();
+        }
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        builder.sql(" for ");
+        switch (forUpdate.getLockMode()) {
+            case UPDATE:
+                builder.sql("update");
+                break;
+            case SHARE:
+                builder.sql("share");
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        "MySQL8 does not support the lock mode \"" +
+                                forUpdate.getLockMode() +
+                                "\""
+                );
+        }
+        LockWait wait = forUpdate.getLockWait();
+        if (wait == LockWait.NO_WAIT) {
+            builder.sql(" no wait");
+        } else if (wait == LockWait.SKIP_LOCKED) {
+            if (forUpdate.getLockMode().isShared()) {
+                throw new IllegalArgumentException(
+                        "MySQL8 does not support LockMode.SHARE and LockWait.SKIP_LOCKED"
+                );
+            }
+            builder.sql(" skip locked");
+        } else if (wait instanceof IntSupplier) {
+            throw new IllegalArgumentException(
+                    "MySQL8 does not support " + wait
+            );
         }
     }
 }

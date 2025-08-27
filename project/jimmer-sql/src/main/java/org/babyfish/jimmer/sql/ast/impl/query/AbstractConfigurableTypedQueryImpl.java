@@ -139,8 +139,8 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     });
                 }
             }
-            if (data.forUpdate) {
-                builder.sql(" for update");
+            if (data.forUpdate != null) {
+                getSqlClient().getDialect().renderForUpdate(builder, data.forUpdate);
             }
         } finally {
             astContext.popStatement();

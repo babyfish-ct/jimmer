@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 class TypedQueryData {
 
@@ -35,7 +34,7 @@ class TypedQueryData {
 
     final Boolean reverseSortOptimizationEnabled;
 
-    final boolean forUpdate;
+    final ForUpdate forUpdate;
 
     final String hint;
 
@@ -52,7 +51,7 @@ class TypedQueryData {
         withoutSortingAndPaging = false;
         reverseSorting = false;
         reverseSortOptimizationEnabled = null;
-        forUpdate = false;
+        forUpdate = null;
         hint = null;
     }
 
@@ -65,7 +64,7 @@ class TypedQueryData {
             boolean withoutSortingAndPaging,
             boolean reverseSorting,
             Boolean reverseSortOptimizationEnabled,
-            boolean forUpdate,
+            ForUpdate forUpdate,
             String hint
     ) {
         this.selections = selections;
@@ -170,7 +169,7 @@ class TypedQueryData {
         );
     }
 
-    public TypedQueryData forUpdate() {
+    public TypedQueryData forUpdate(ForUpdate forUpdate) {
         return new TypedQueryData(
                 selections,
                 oldSelections,
@@ -180,7 +179,7 @@ class TypedQueryData {
                 withoutSortingAndPaging,
                 reverseSorting,
                 reverseSortOptimizationEnabled,
-                true,
+                forUpdate,
                 hint
         );
     }

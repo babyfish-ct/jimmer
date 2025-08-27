@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.query.LockMode;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
 
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -100,5 +103,14 @@ public class DefaultDialect implements Dialect {
     @Override
     public String toString() {
         return getClass().getName();
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        if (forUpdate.getLockMode() == LockMode.UPDATE && forUpdate.getLockWait() == LockWait.DEFAULT) {
+            builder.sql(" for update");
+        } else {
+            throw new IllegalArgumentException("Illegal for update" + forUpdate);
+        }
     }
 }

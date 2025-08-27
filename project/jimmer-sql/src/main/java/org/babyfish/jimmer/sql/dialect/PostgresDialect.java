@@ -4,8 +4,10 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 import org.postgresql.util.PGobject;
@@ -15,6 +17,7 @@ import java.sql.*;
 import java.time.*;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.IntSupplier;
 
 public class PostgresDialect extends DefaultDialect {
 
@@ -448,5 +451,34 @@ public class PostgresDialect extends DefaultDialect {
         builder.sql(" - ");
         builder.ast(otherAst, 0);
         builder.sql(")").sql(op);
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        builder.sql(" for ");
+        switch (forUpdate.getLockMode()) {
+            case UPDATE:
+                builder.sql("update");
+                break;
+            case SHARE:
+                builder.sql("share");
+                break;
+            case PG_NO_KEY_UPDATE:
+                builder.sql("no key update");
+                break;
+            case PG_KEY_SHARE:
+                builder.sql("key share");
+                break;
+        }
+        LockWait wait = forUpdate.getLockWait();
+        if (wait == LockWait.NO_WAIT) {
+            builder.sql(" no wait");
+        } else if (wait == LockWait.SKIP_LOCKED) {
+            builder.sql(" skip locked");
+        } else if (wait instanceof IntSupplier) {
+            IntSupplier supplier = (IntSupplier) wait;
+            int seconds = supplier.getAsInt();
+            builder.sql(" wait ").sql(Integer.toString(seconds));
+        }
     }
 }

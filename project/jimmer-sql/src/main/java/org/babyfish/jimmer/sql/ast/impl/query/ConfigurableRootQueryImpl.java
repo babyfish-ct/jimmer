@@ -264,12 +264,28 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
 
     @Override
     public ConfigurableRootQuery<T, R> forUpdate(boolean forUpdate) {
-        if (!forUpdate) {
-            return this;
+        if (forUpdate) {
+            return forUpdate(LockMode.UPDATE, LockWait.DEFAULT);
         }
         TypedQueryData data = getData();
+        if (data.forUpdate == null) {
+            return this;
+        }
         return new ConfigurableRootQueryImpl<>(
-                data.forUpdate(),
+                data.forUpdate(null),
+                getMutableQuery()
+        );
+    }
+
+    @Override
+    public ConfigurableRootQuery<T, R> forUpdate(LockMode lockMode, LockWait lockWait) {
+        TypedQueryData data = getData();
+        ForUpdate forUpdate = new ForUpdate(lockMode, lockWait);
+        if (Objects.equals(data.forUpdate, forUpdate)) {
+            return this;
+        }
+        return new ConfigurableRootQueryImpl<>(
+                data.forUpdate(forUpdate),
                 getMutableQuery()
         );
     }
@@ -287,7 +303,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     public List<R> execute(Connection con) {
         return getMutableQuery()
                 .getSqlClient()
-                .getSlaveConnectionManager(getData().forUpdate)
+                .getSlaveConnectionManager(getData().forUpdate != null)
                 .execute(con, this::executeImpl);
     }
 
@@ -327,7 +343,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         }
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
         int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
-        sqlClient.getSlaveConnectionManager(getData().forUpdate).execute(con, newConn -> {
+        sqlClient.getSlaveConnectionManager(getData().forUpdate != null).execute(con, newConn -> {
             forEachImpl(newConn, finalBatchSize, consumer);
             return (Void) null;
         });
@@ -362,7 +378,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     }
 
     @Override
-    public boolean isForUpdate() {
+    public ForUpdate getForUpdate() {
         return getData().forUpdate;
     }
 

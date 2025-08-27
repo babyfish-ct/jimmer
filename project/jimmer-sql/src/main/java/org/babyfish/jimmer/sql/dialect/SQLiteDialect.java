@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.dialect;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.jetbrains.annotations.Nullable;
@@ -336,5 +337,10 @@ public class SQLiteDialect extends DefaultDialect {
             }
         }
         return rs.getTimestamp(col);
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        throw new IllegalArgumentException("Sqlite does not support `for update`");
     }
 }

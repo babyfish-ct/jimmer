@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.h2.value.ValueJson;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +15,7 @@ import java.sql.SQLException;
 import java.time.*;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.IntSupplier;
 
 public class H2Dialect extends DefaultDialect {
 
@@ -219,5 +222,35 @@ public class H2Dialect extends DefaultDialect {
             builder.sql(", ").ast(startAst, currentPrecedence);
         }
         builder.sql(")");
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        builder.sql(" for ");
+        switch (forUpdate.getLockMode()) {
+            case UPDATE:
+                builder.sql("update");
+                break;
+            case SHARE:
+                builder.sql("share");
+                break;
+            default:
+                throw new IllegalArgumentException("H2 does not support LockMode." + forUpdate.getLockMode().name());
+        }
+        LockWait wait = forUpdate.getLockWait();
+        if (wait == LockWait.NO_WAIT) {
+            builder.sql(" no wait");
+        } else if (wait == LockWait.SKIP_LOCKED) {
+            if (forUpdate.getLockMode().isShared()) {
+                throw new IllegalArgumentException(
+                        "H2 does not support LockMode.SHARE and LockWait.SKIP_LOCKED"
+                );
+            }
+            builder.sql(" skip locked");
+        } else if (wait instanceof IntSupplier) {
+            throw new IllegalArgumentException(
+                    "H2 does not support " + wait
+            );
+        }
     }
 }

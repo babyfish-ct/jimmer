@@ -2,7 +2,10 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.query.LockMode;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -202,5 +205,20 @@ public class SqlServerDialect extends DefaultDialect {
         builder.sql(", ");
         builder.ast(otherAst, 0);
         builder.sql(")").sql(op);
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        if (forUpdate.getLockMode() != LockMode.UPDATE) {
+            throw new IllegalArgumentException("SqlServer only supports LockMode.UPDATE");
+        }
+        LockWait wait = forUpdate.getLockWait();
+        if (wait == LockWait.DEFAULT) {
+            builder.sql(" with(updlock, rowlock)");
+        } else if (wait == LockWait.SKIP_LOCKED) {
+            builder.sql(" with(updlock, rowlock, readpast)");
+        } else {
+            throw new IllegalArgumentException("SqlServer does not support " + wait);
+        }
     }
 }

@@ -3,8 +3,10 @@ package org.babyfish.jimmer.sql.dialect;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.query.LockMode;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -446,4 +448,6 @@ public interface Dialect extends SqlTypeStrategy {
     default Timestamp getTimestamp(ResultSet rs, int col) throws SQLException {
         return rs.getTimestamp(col);
     }
+
+    void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate);
 }

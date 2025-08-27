@@ -2,12 +2,16 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.query.LockMode;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.UUID;
+import java.util.function.IntSupplier;
 
 public class OracleDialect extends DefaultDialect {
 
@@ -300,6 +304,26 @@ public class OracleDialect extends DefaultDialect {
                                 this.getClass().getName() +
                                 "\""
                 );
+        }
+    }
+
+    @Override
+    public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
+        if (forUpdate.getLockMode() != LockMode.UPDATE) {
+            throw new IllegalArgumentException(
+                    "Oracle only supports LockMode.UPDATE"
+            );
+        }
+        builder.sql(" for update ");
+        LockWait wait = forUpdate.getLockWait();
+        if (wait == LockWait.NO_WAIT) {
+            builder.sql(" no wait");
+        } else if (wait == LockWait.SKIP_LOCKED) {
+            builder.sql(" skip locked");
+        } else if (wait instanceof IntSupplier) {
+            IntSupplier supplier = (IntSupplier) wait;
+            int seconds = supplier.getAsInt();
+            builder.sql(" wait ").sql(Integer.toString(seconds));
         }
     }
 }

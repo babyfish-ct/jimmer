@@ -29,7 +29,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
 
     private final String operator;
     private final List<Selection<?>> selections;
-    private final boolean isForUpdate;
+    private final ForUpdate forUpdate;
     protected final TypedRootQueryImplementor<?>[] queries;
 
     @SafeVarargs
@@ -60,18 +60,18 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
         TypedRootQueryImplementor<?>[] queryArr = new TypedRootQueryImplementor[queries.length];
         queryArr[0] = (TypedRootQueryImplementor<?>) queries[0];
         List<Selection<?>> selectionArr = null;
-        boolean isForUpdate = queryArr[0].isForUpdate();
+        ForUpdate forUpdate = queryArr[0].getForUpdate();
         for (int i = 1; i < queryArr.length; i++) {
             queryArr[i] = (TypedRootQueryImplementor<?>) queries[i];
             selectionArr = mergedSelections(
                     queryArr[0].getSelections(),
                     queryArr[i].getSelections()
             );
-            isForUpdate |= queryArr[i].isForUpdate();
+            forUpdate = ForUpdate.combine(forUpdate, queryArr[i].getForUpdate());
         }
         this.queries = queryArr;
         selections = selectionArr;
-        this.isForUpdate = isForUpdate;
+        this.forUpdate = forUpdate;
     }
 
     private static List<Selection<?>> mergedSelections(
@@ -111,7 +111,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public List<R> execute(Connection con) {
         return sqlClient
-                .getSlaveConnectionManager(isForUpdate)
+                .getSlaveConnectionManager(forUpdate != null)
                 .execute(con, this::executeImpl);
     }
 
@@ -141,7 +141,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public void forEach(Connection con, int batchSize, Consumer<R> consumer) {
         int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
-        sqlClient.getSlaveConnectionManager(isForUpdate).execute(con, newConn -> {
+        sqlClient.getSlaveConnectionManager(forUpdate != null).execute(con, newConn -> {
             forEachImpl(newConn, finalBatchSize, consumer);
             return (Void) null;
         });
@@ -218,8 +218,8 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     @Override
-    public boolean isForUpdate() {
-        return false;
+    public ForUpdate getForUpdate() {
+        return null;
     }
 
     @Override
