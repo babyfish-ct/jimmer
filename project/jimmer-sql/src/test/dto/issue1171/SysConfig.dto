@@ -1,0 +1,10 @@
+export org.babyfish.jimmer.sql.model.issue1171.SysConfig
+    -> package org.babyfish.jimmer.sql.model.issue1171.dto
+
+specification SysConfigSpecification {
+    like(configName),
+    eq(configType),
+    like(configKey),
+    ge(createTime) as beginTime,
+    le(createTime) as endTime
+}
