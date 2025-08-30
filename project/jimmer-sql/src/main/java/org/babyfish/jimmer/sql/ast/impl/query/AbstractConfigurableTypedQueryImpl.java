@@ -361,7 +361,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 writer.prop(field.getProp(), OffsetOptimizationWriter.ALIAS, false);
             }
         } else {
-            for (ImmutableProp prop : tableImplementor.getImmutableType().getProps().values()) {
+            for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
                 writer.prop(prop, OffsetOptimizationWriter.ALIAS, false);
             }
         }
