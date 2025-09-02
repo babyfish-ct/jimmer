@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -13,10 +14,43 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 
 public class FetcherUtil {
 
     private FetcherUtil() {}
+
+    private static void visitFetchColumns(
+            JSqlClientImplementor sqlClient,
+            List<Selection<?>> selections,
+            IntFunction<Boolean> block
+    ) {
+        for (int i = 0; i < selections.size(); i++) {
+            Selection<?> selection = selections.get(i);
+            if (selection instanceof FetcherSelection<?>) {
+                FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
+                Fetcher<?> fetcher = fetcherSelection.getFetcher();
+                if (!((FetcherImplementor<?>)fetcher).__isSimpleFetcher() ||
+                        hasReferenceFilter(fetcher.getImmutableType(), sqlClient) ||
+                        fetcherSelection.getConverter() != null) {
+                    if (Boolean.TRUE.equals(block.apply(i))) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public static boolean hasFetchColumns(JSqlClientImplementor sqlClient, List<Selection<?>> selections
+    ) {
+        boolean[] hasRef = new boolean[1];
+        visitFetchColumns(sqlClient, selections, i -> {
+            hasRef[0] = true;
+            return true;
+        });
+        return hasRef[0];
+    }
 
     @SuppressWarnings("unchecked")
     public static void fetch(
@@ -32,18 +66,10 @@ public class FetcherUtil {
         }
 
         Map<Integer, List<Object>> columnMap = new LinkedHashMap<>();
-        for (int i = 0; i < selections.size(); i++) {
-            Selection<?> selection = selections.get(i);
-            if (selection instanceof FetcherSelection<?>) {
-                FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
-                Fetcher<?> fetcher = fetcherSelection.getFetcher();
-                if (!((FetcherImplementor<?>)fetcher).__isSimpleFetcher() ||
-                        hasReferenceFilter(fetcher.getImmutableType(), sqlClient) ||
-                        fetcherSelection.getConverter() != null) {
-                    columnMap.put(i, new ArrayList<>());
-                }
-            }
-        }
+        visitFetchColumns(sqlClient, selections, i -> {
+            columnMap.put(i, new ArrayList<>());
+            return false;
+        });
         if (columnMap.isEmpty()) {
             return;
         }

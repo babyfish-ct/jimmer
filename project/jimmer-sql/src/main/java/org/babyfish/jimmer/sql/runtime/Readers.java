@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 
 import java.util.*;
@@ -26,7 +27,10 @@ class Readers {
             for (int i = 0; i < size; i++) {
                 readers[i] = createSingleReader(sqlClient, selections.get(i));
             }
-            return Reader.tuple(readers);
+            if (FetcherUtil.hasFetchColumns(sqlClient, selections)) {
+                return Reader.tuple(readers, null);
+            }
+            return Reader.tuple(readers, tupleCreator);
         }
         switch (size) {
             case 1:

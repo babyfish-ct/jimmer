@@ -316,7 +316,7 @@ public interface Reader<T> {
         };
     }
 
-    static Reader<?> tuple(Reader<?>[] readers) {
+    static Reader<?> tuple(Reader<?>[] readers, TupleCreator<?> tupleCreator) {
         return new Reader<Object>() {
             @Override
             public void skip(Context ctx) {
@@ -331,6 +331,9 @@ public interface Reader<T> {
                 Object[] args = new Object[size];
                 for (int i = 0; i < size; i++) {
                     args[i] = readers[i].read(rs, ctx);
+                }
+                if (tupleCreator != null) {
+                    return tupleCreator.createTuple(args);
                 }
                 return args;
             }
