@@ -200,7 +200,7 @@ public class MutableSubQueryImpl
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
         return (ConfigurableSubQuery<R>) ConfigurableSubQueryImpl.of(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -208,7 +208,7 @@ public class MutableSubQueryImpl
     @Override
     public ConfigurableSubQuery.Str select(StringExpression selection) {
         return (ConfigurableSubQuery.Str) ConfigurableSubQueryImpl.<String>of(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -216,7 +216,7 @@ public class MutableSubQueryImpl
     @Override
     public <T extends Comparable<?>> ConfigurableSubQuery.Cmp<T> select(ComparableExpression<T> selection) {
         return (ConfigurableSubQuery.Cmp<T>) ConfigurableSubQueryImpl.<T>of(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -224,7 +224,7 @@ public class MutableSubQueryImpl
     @Override
     public <N extends Number & Comparable<N>> ConfigurableSubQuery.Num<N> select(NumericExpression<N> selection) {
         return (ConfigurableSubQuery.Num<N>) ConfigurableSubQueryImpl.<N>of(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -232,7 +232,7 @@ public class MutableSubQueryImpl
     @Override
     public <T extends Date> ConfigurableSubQuery.Dt<T> select(DateExpression<T> selection) {
         return (ConfigurableSubQuery.Dt<T>) ConfigurableSubQueryImpl.<T>of(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -240,7 +240,7 @@ public class MutableSubQueryImpl
     @Override
     public <T extends Temporal & Comparable<?>> ConfigurableSubQuery.Tp<T> select(TemporalExpression<T> selection) {
         return (ConfigurableSubQuery.Tp<T>) ConfigurableSubQueryImpl.<T>of(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -254,7 +254,8 @@ public class MutableSubQueryImpl
         }
         return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
-                        Arrays.asList(selection1, selection2)
+                        Arrays.asList(selection1, selection2),
+                        null
                 ),
                 this
         );
@@ -274,7 +275,8 @@ public class MutableSubQueryImpl
                                 selection1,
                                 selection2,
                                 selection3
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -296,7 +298,8 @@ public class MutableSubQueryImpl
                                 selection2,
                                 selection3,
                                 selection4
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -320,7 +323,8 @@ public class MutableSubQueryImpl
                                 selection3,
                                 selection4,
                                 selection5
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -346,7 +350,8 @@ public class MutableSubQueryImpl
                                 selection4,
                                 selection5,
                                 selection6
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -374,7 +379,8 @@ public class MutableSubQueryImpl
                                 selection5,
                                 selection6,
                                 selection7
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -404,7 +410,8 @@ public class MutableSubQueryImpl
                                 selection6,
                                 selection7,
                                 selection8
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -436,7 +443,8 @@ public class MutableSubQueryImpl
                                 selection7,
                                 selection8,
                                 selection9
-                        )
+                        ),
+                        null
                 ),
                 this
         );

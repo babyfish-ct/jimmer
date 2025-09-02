@@ -1,8 +1,7 @@
-package org.babyfish.jimmer.sql.tuple;
+package org.babyfish.jimmer.sql.base;
 
 import org.babyfish.jimmer.sql.ast.*;
-import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
@@ -11,11 +10,12 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-public class CteBaseQueryTest extends AbstractQueryTest {
+public class BaseQueryTest extends AbstractQueryTest {
 
     @Test
     public void testBaseQueryWithFetch() {
@@ -34,7 +34,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                         .selectCount()
                         )
                 )
-                .asCteBaseTable();
+                .asBaseTable();
         TypedRootQuery<BookStore> q = getSqlClient()
                 .createQuery(baseTable)
                 .where(baseTable.get_2().le(2))
@@ -51,16 +51,15 @@ public class CteBaseQueryTest extends AbstractQueryTest {
         executeAndExpect(
                 q,
                 ctx -> {
-                    ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
-                                    "--->select tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION, " +
+                    ctx.sql( // aggregate-root
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
+                                    "from (" +
+                                    "--->select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.WEBSITE c3, tb_2_.VERSION c4, " +
                                     "--->dense_rank() over(" +
                                     "--->--->order by (select count(1) from BOOK tb_3_ where tb_3_.STORE_ID = tb_2_.ID) desc" +
-                                    "--->) " +
+                                    "--->) c5 " +
                                     "--->from BOOK_STORE tb_2_" +
-                                    ") " +
-                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
-                                    "from tb_1_ " +
+                                    ") tb_1_ " +
                                     "where tb_1_.c5 <= ? and tb_1_.c2 like ?"
                     );
                     ctx.statement(1).sql( // associated objects
@@ -109,7 +108,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                 .where(author.books().id().eq(table.id()))
                                 .select(Expression.rowCount())
                 )
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseTable)
                         .where(baseTable.get_2().gt(1L))
@@ -124,21 +123,22 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
-                                    "--->select tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, " +
-                                    "--->(" +
-                                    "--->--->select count(1) from AUTHOR tb_3_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
-                                    "--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
-                                    "--->) " +
-                                    "--->from BOOK tb_2_" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_6_.ID, " +
-                                    "--->tb_6_.NAME, tb_6_.WEBSITE, tb_6_.VERSION " +
-                                    "from tb_1_ " +
-                                    "left join BOOK_STORE tb_6_ on tb_1_.c5 = tb_6_.ID " +
-                                    "where tb_1_.c6 > ?"
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_6_.ID, tb_6_.NAME, tb_6_.WEBSITE, tb_6_.VERSION " +
+                                    "--->from (" +
+                                    "--->--->select " +
+                                    "--->--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, " +
+                                    "--->--->--->(" +
+                                    "--->--->--->--->select count(1) " +
+                                    "--->--->--->--->from AUTHOR tb_3_ " +
+                                    "--->--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
+                                    "--->--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
+                                    "--->--->--->) c6 " +
+                                    "--->--->from BOOK tb_2_" +
+                                    "--->) tb_1_ " +
+                                    "--->left join BOOK_STORE tb_6_ on tb_1_.c5 = tb_6_.ID " +
+                                    "--->where tb_1_.c6 > ?"
                     );
                     ctx.rows(
                             "[{" +
@@ -195,7 +195,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                         .where(authorEx.books().id().eq(store.asTableEx().books().id()))
                                         .select(Expression.rowCount())
                         )
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -203,21 +203,21 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .select(baseTable.get_1()),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
-                                    "--->select " +
-                                    "--->--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, " +
-                                    "--->--->(" +
-                                    "--->--->--->select count(1) " +
-                                    "--->--->--->from AUTHOR tb_4_ " +
-                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
-                                    "--->--->--->where tb_5_.BOOK_ID = tb_3_.ID" +
-                                    "--->--->) " +
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "--->select tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, tb_3_.PRICE c4, tb_3_.STORE_ID c5, " +
+                                    "--->(" +
+                                    "--->--->select count(1) " +
+                                    "--->--->from AUTHOR tb_4_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->where tb_5_.BOOK_ID = tb_3_.ID" +
+                                    "--->) c6 " +
                                     "--->from BOOK_STORE tb_2_ " +
-                                    "--->inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID " +
+                                    "--->inner join BOOK tb_3_ " +
+                                    "--->--->on tb_2_.ID = tb_3_.STORE_ID " +
                                     "--->where tb_2_.NAME = ? and tb_3_.EDITION = ?" +
-                                    ") " +
-                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
-                                    "from tb_1_ where tb_1_.c6 > ?"
+                                    ") tb_1_ where tb_1_.c6 > ?"
                     );
                     ctx.rows(
                             "[{" +
@@ -247,7 +247,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                         .where(authorEx.books().id().eq(store.asTableEx().books().id()))
                                         .select(Expression.rowCount())
                         )
-                        .asCteBaseTable();
+                        .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -263,23 +263,23 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_8_.ID, tb_8_.NAME, tb_8_.WEBSITE, tb_8_.VERSION " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, " +
+                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, " +
+                                    "--->--->tb_3_.PRICE c4, tb_3_.STORE_ID c5, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_4_ " +
                                     "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->--->where tb_5_.BOOK_ID = tb_3_.ID" +
-                                    "--->--->) " +
+                                    "--->--->) c6 " +
                                     "--->from BOOK_STORE tb_2_ " +
-                                    "--->inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID where " +
-                                    "--->tb_2_.NAME = ? and tb_3_.EDITION = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_8_.ID, tb_8_.NAME, tb_8_.WEBSITE, tb_8_.VERSION " +
-                                    "from tb_1_ " +
+                                    "--->inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID " +
+                                    "--->where tb_2_.NAME = ? and tb_3_.EDITION = ?" +
+                                    ") tb_1_ " +
                                     "left join BOOK_STORE tb_8_ on tb_1_.c5 = tb_8_.ID " +
                                     "where tb_1_.c6 > ?"
                     );
@@ -328,7 +328,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                                 .where(authorEx.books().id().eq(store.asTableEx().books().id()))
                                                 .select(Expression.rowCount())
                                 )
-                ).asCteBaseTable();
+                ).asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -336,40 +336,39 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .select(baseTable.get_1()),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, " +
-                                    "--->--->tb_2_.NAME, " +
-                                    "--->--->tb_2_.EDITION, " +
-                                    "--->--->tb_2_.PRICE, " +
-                                    "--->--->tb_2_.STORE_ID, " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.NAME c2, " +
+                                    "--->--->tb_2_.EDITION c3, " +
+                                    "--->--->tb_2_.PRICE c4, " +
+                                    "--->--->tb_2_.STORE_ID c5, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_3_ " +
                                     "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
                                     "--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
-                                    "--->--->) " +
+                                    "--->--->) c6 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_7_.ID, " +
-                                    "--->--->tb_7_.NAME, " +
-                                    "--->--->tb_7_.EDITION, " +
-                                    "--->--->tb_7_.PRICE, " +
-                                    "--->--->tb_7_.STORE_ID, " +
+                                    "--->--->tb_7_.ID c1, " +
+                                    "--->--->tb_7_.NAME c2, " +
+                                    "--->--->tb_7_.EDITION c3, " +
+                                    "--->--->tb_7_.PRICE c4, " +
+                                    "--->--->tb_7_.STORE_ID c5, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_8_ " +
                                     "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID " +
                                     "--->--->--->where tb_9_.BOOK_ID = tb_7_.ID" +
-                                    "--->--->) " +
+                                    "--->--->) c6 " +
                                     "--->from BOOK_STORE tb_6_ " +
                                     "--->inner join BOOK tb_7_ on tb_6_.ID = tb_7_.STORE_ID " +
                                     "--->where tb_6_.NAME = ? and tb_7_.EDITION = ?" +
-                                    ") " +
-                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
-                                    "from tb_1_ " +
+                                    ") tb_1_ " +
                                     "where tb_1_.c6 > ?"
                     );
                     ctx.rows(
@@ -418,7 +417,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                                 .where(authorEx.books().id().eq(store.asTableEx().books().id()))
                                                 .select(Expression.rowCount())
                                 )
-                ).asCteBaseTable();
+                ).asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -435,36 +434,34 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_11_.ID, tb_11_.NAME, tb_11_.WEBSITE, tb_11_.VERSION " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_3_ " +
                                     "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ " +
                                     "--->--->--->on tb_3_.ID = tb_4_.AUTHOR_ID where tb_4_.BOOK_ID = tb_2_.ID" +
-                                    "--->--->) " +
+                                    "--->--->) c6 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_7_.ID, tb_7_.NAME, tb_7_.EDITION, tb_7_.PRICE, tb_7_.STORE_ID, " +
+                                    "--->--->tb_7_.ID c1, tb_7_.NAME c2, tb_7_.EDITION c3, tb_7_.PRICE c4, tb_7_.STORE_ID c5, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_8_ " +
                                     "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID " +
                                     "--->--->--->where tb_9_.BOOK_ID = tb_7_.ID" +
-                                    "--->--->) " +
+                                    "--->--->) c6 " +
                                     "--->from BOOK_STORE tb_6_ " +
                                     "--->inner join BOOK tb_7_ on tb_6_.ID = tb_7_.STORE_ID " +
                                     "--->where tb_6_.NAME = ? and tb_7_.EDITION = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_11_.ID, tb_11_.NAME, tb_11_.WEBSITE, tb_11_.VERSION " +
-                                    "from tb_1_ " +
-                                    "left join BOOK_STORE tb_11_ on tb_1_.c5 = tb_11_.ID " +
-                                    "where tb_1_.c6 > ?"
+                                    ") tb_1_ " +
+                                    "left join BOOK_STORE tb_11_ on tb_1_.c5 = tb_11_.ID where tb_1_.c6 > ?"
                     );
                     ctx.rows(
                             "[{" +
@@ -523,7 +520,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                                 .where(authorEx.books().id().eq(store.asTableEx().books().id()))
                                                 .select(Expression.rowCount())
                                 )
-                ).asCteBaseTable();
+                ).asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -541,34 +538,33 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c5, c4) as (" +
+                            "select " +
+                                    "tb_1_.c1, tb_1_.c2, tb_13_.ID, tb_13_.NAME " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.STORE_ID, tb_2_.EDITION, " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.STORE_ID c3, tb_2_.EDITION c5, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_3_ " +
                                     "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
                                     "--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
-                                    "--->--->) " +
+                                    "--->--->) c4 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
                                     "--->union all " +
-                                    "--->select tb_7_.ID, tb_7_.NAME, tb_7_.STORE_ID, tb_7_.EDITION, " +
+                                    "--->select tb_7_.ID c1, tb_7_.NAME c2, tb_7_.STORE_ID c3, tb_7_.EDITION c5, " +
                                     "--->(" +
                                     "--->--->select count(1) " +
                                     "--->--->from AUTHOR tb_10_ " +
                                     "--->--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_10_.ID = tb_11_.AUTHOR_ID " +
                                     "--->--->where tb_11_.BOOK_ID = tb_7_.ID" +
-                                    "--->) " +
+                                    "--->) c4 " +
                                     "--->from BOOK_STORE tb_6_ " +
                                     "--->inner join BOOK tb_7_ on tb_6_.ID = tb_7_.STORE_ID " +
                                     "--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_7_.ID = tb_8_.BOOK_ID " +
                                     "--->inner join AUTHOR tb_9_ on tb_8_.AUTHOR_ID = tb_9_.ID " +
                                     "--->where tb_6_.NAME = ? and tb_7_.EDITION = ? and tb_9_.GENDER = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_13_.ID, tb_13_.NAME " +
-                                    "from tb_1_ " +
+                                    ") tb_1_ " +
                                     "left join BOOK_STORE tb_13_ on tb_1_.c3 = tb_13_.ID " +
                                     "where tb_1_.c4 > ? and (tb_1_.c5 between ? and ?)"
                     );
@@ -603,7 +599,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 getSqlClient().createBaseQuery(author)
                         .where(author.id().eq(Constants.borisId))
                         .addSelect(author)
-        ).asCteBaseTable();
+        ).asBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseTable)
                         .select(
@@ -614,17 +610,15 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2) as (" +
-                                    "--->select tb_2_.ID, concat(tb_2_.FIRST_NAME, ' ', tb_2_.LAST_NAME) " +
+                            "select tb_1_.c1, tb_1_.c2 from (" +
+                                    "--->select tb_2_.ID c1, concat(tb_2_.FIRST_NAME, ' ', tb_2_.LAST_NAME) c2 " +
                                     "--->from AUTHOR tb_2_ " +
                                     "--->where tb_2_.ID = ? " +
                                     "--->union all " +
-                                    "--->select tb_3_.ID, concat(tb_3_.FIRST_NAME, ' ', tb_3_.LAST_NAME) " +
+                                    "--->select tb_3_.ID c1, concat(tb_3_.FIRST_NAME, ' ', tb_3_.LAST_NAME) c2 " +
                                     "--->from AUTHOR tb_3_ " +
                                     "--->where tb_3_.ID = ?" +
-                                    ") " +
-                                    "select tb_1_.c1, tb_1_.c2 " +
-                                    "from tb_1_"
+                                    ") tb_1_"
                     );
                     ctx.rows(
                             "[{" +
@@ -651,7 +645,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .createBaseQuery(transform)
                         .where(transform.id().eq(2L))
                         .addSelect(transform)
-        ).asCteBaseTable();
+        ).asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -664,26 +658,25 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6, c7, c8, c9) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, " +
+                                    "--->tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
+                                    "--->tb_1_.c6, tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, " +
-                                    "--->--->tb_2_.`LEFT`, tb_2_.TOP, tb_2_.`RIGHT`, tb_2_.BOTTOM, " +
-                                    "--->--->tb_2_.TARGET_LEFT, tb_2_.TARGET_TOP, tb_2_.TARGET_RIGHT, tb_2_.TARGET_BOTTOM " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.`LEFT` c2, tb_2_.TOP c3, tb_2_.`RIGHT` c4, tb_2_.BOTTOM c5, " +
+                                    "--->--->tb_2_.TARGET_LEFT c6, tb_2_.TARGET_TOP c7, tb_2_.TARGET_RIGHT c8, tb_2_.TARGET_BOTTOM c9 " +
                                     "--->from TRANSFORM tb_2_ " +
                                     "--->where tb_2_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_3_.ID, " +
-                                    "--->--->tb_3_.`LEFT`, tb_3_.TOP, tb_3_.`RIGHT`, tb_3_.BOTTOM, " +
-                                    "--->--->tb_3_.TARGET_LEFT, tb_3_.TARGET_TOP, tb_3_.TARGET_RIGHT, tb_3_.TARGET_BOTTOM " +
+                                    "--->--->tb_3_.ID c1, " +
+                                    "--->--->tb_3_.`LEFT` c2, tb_3_.TOP c3, tb_3_.`RIGHT` c4, tb_3_.BOTTOM c5, " +
+                                    "--->--->tb_3_.TARGET_LEFT c6, tb_3_.TARGET_TOP c7, tb_3_.TARGET_RIGHT c8, tb_3_.TARGET_BOTTOM c9 " +
                                     "--->from TRANSFORM tb_3_ " +
                                     "--->where tb_3_.ID = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, " +
-                                    "--->tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
-                                    "--->tb_1_.c6, tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
-                                    "from tb_1_"
+                                    ") tb_1_"
                     );
                     ctx.rows(
                             "[{" +
@@ -712,7 +705,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .createBaseQuery(transform)
                         .where(transform.id().eq(2L))
                         .addSelect(transform)
-        ).asCteBaseTable();
+        ).asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -725,26 +718,25 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, " +
+                                    "--->tb_1_.c2, tb_1_.c3, " +
+                                    "--->tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, " +
-                                    "--->--->tb_2_.`LEFT`, tb_2_.TOP, " +
-                                    "--->--->tb_2_.TARGET_RIGHT, tb_2_.TARGET_BOTTOM " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.`LEFT` c2, tb_2_.TOP c3, " +
+                                    "--->--->tb_2_.TARGET_RIGHT c4, tb_2_.TARGET_BOTTOM c5 " +
                                     "--->from TRANSFORM tb_2_ " +
                                     "--->where tb_2_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_3_.ID, " +
-                                    "--->--->tb_3_.`LEFT`, tb_3_.TOP, " +
-                                    "--->--->tb_3_.TARGET_RIGHT, tb_3_.TARGET_BOTTOM " +
+                                    "--->--->tb_3_.ID c1, " +
+                                    "--->--->tb_3_.`LEFT` c2, tb_3_.TOP c3, " +
+                                    "--->--->tb_3_.TARGET_RIGHT c4, tb_3_.TARGET_BOTTOM c5 " +
                                     "--->from TRANSFORM tb_3_ " +
                                     "--->where tb_3_.ID = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, " +
-                                    "--->tb_1_.c2, tb_1_.c3, " +
-                                    "--->tb_1_.c4, tb_1_.c5 " +
-                                    "from tb_1_"
+                                    ") tb_1_"
                     );
                     ctx.rows(
                             "[{" +
@@ -768,7 +760,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 .createBaseQuery(table)
                 .addSelect(table)
                 .addSelect(table.name())
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -781,17 +773,16 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6, c7) as (" +
-                                    "--->select " +
-                                    "--->--->tb_2_.ORDER_ITEM_A, tb_2_.ORDER_ITEM_B, tb_2_.ORDER_ITEM_C, " +
-                                    "--->--->tb_2_.NAME, " +
-                                    "--->--->tb_2_.FK_ORDER_X, tb_2_.FK_ORDER_Y, " +
-                                    "--->--->tb_2_.NAME " +
-                                    "--->from ORDER_ITEM tb_2_" +
-                                    ") " +
-                                    "select " +
+                            "select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
-                                    "from tb_1_ " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ORDER_ITEM_A c1, tb_2_.ORDER_ITEM_B c2, tb_2_.ORDER_ITEM_C c3, " +
+                                    "--->--->tb_2_.NAME c4, " +
+                                    "--->--->tb_2_.FK_ORDER_X c5, tb_2_.FK_ORDER_Y c6, " +
+                                    "--->--->tb_2_.NAME c7 " +
+                                    "--->from ORDER_ITEM tb_2_" +
+                                    ") tb_1_ " +
                                     "inner join ORDER_ tb_3_ on " +
                                     "--->tb_1_.c5 = tb_3_.ORDER_X and tb_1_.c6 = tb_3_.ORDER_Y " +
                                     "where tb_1_.c7 not ilike ? and tb_3_.NAME = ?"
@@ -816,7 +807,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 .createBaseQuery(table)
                 .addSelect(table)
                 .addSelect(table.name())
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -833,18 +824,17 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5, c6, c7) as (" +
-                                    "--->select " +
-                                    "--->--->tb_2_.ORDER_ITEM_A, tb_2_.ORDER_ITEM_B, tb_2_.ORDER_ITEM_C, " +
-                                    "--->--->tb_2_.NAME, " +
-                                    "--->--->tb_2_.FK_ORDER_X, tb_2_.FK_ORDER_Y, " +
-                                    "--->--->tb_2_.NAME " +
-                                    "--->from ORDER_ITEM tb_2_" +
-                                    ") " +
-                                    "select " +
+                            "select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
                                     "--->tb_3_.ORDER_X, tb_3_.ORDER_Y, tb_3_.NAME " +
-                                    "from tb_1_ " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ORDER_ITEM_A c1, tb_2_.ORDER_ITEM_B c2, tb_2_.ORDER_ITEM_C c3, " +
+                                    "--->--->tb_2_.NAME c4, " +
+                                    "--->--->tb_2_.FK_ORDER_X c5, tb_2_.FK_ORDER_Y c6, " +
+                                    "--->--->tb_2_.NAME c7 " +
+                                    "--->from ORDER_ITEM tb_2_" +
+                                    ") tb_1_ " +
                                     "left join ORDER_ tb_3_ " +
                                     "--->on tb_1_.c5 = tb_3_.ORDER_X and tb_1_.c6 = tb_3_.ORDER_Y " +
                                     "where tb_1_.c7 not ilike ?"
@@ -893,7 +883,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 getSqlClient().createBaseQuery(book)
                         .where(book.id().eq(Constants.graphQLInActionId2))
                         .addSelect(book)
-        ).asCteBaseTable();
+        ).asBaseTable();
         AuthorTable author = AuthorTable.$;
         BaseTable1<AuthorTable> baseAuthor = TypedBaseQuery.unionAll(
                 getSqlClient().createBaseQuery(author)
@@ -902,7 +892,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 getSqlClient().createBaseQuery(author)
                         .where(author.id().eq(Constants.alexId))
                         .addSelect(author)
-        ).asCteBaseTable();
+        ).asBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseBook)
                         .where(baseBook.weakJoin(baseAuthor, BaseBookAuthorJoin.class).get_1().firstName().isNotNull())
@@ -912,38 +902,36 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_1_.c5, tb_2_.c6, tb_2_.c7, tb_2_.c8, " +
+                                    "--->tb_2_.c9 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, " +
-                                    "--->--->tb_3_.PRICE, tb_3_.STORE_ID " +
+                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, " +
+                                    "--->--->tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
                                     "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_4_.ID, tb_4_.NAME, tb_4_.EDITION, " +
-                                    "--->--->tb_4_.PRICE, tb_4_.STORE_ID " +
+                                    "--->--->tb_4_.ID c1, tb_4_.NAME c2, tb_4_.EDITION c3, " +
+                                    "--->--->tb_4_.PRICE c4, tb_4_.STORE_ID c5 " +
                                     "--->from BOOK tb_4_ " +
                                     "--->where tb_4_.ID = ?" +
-                                    "), " +
-                                    "tb_2_(c6, c7, c8, c9) as (" +
+                                    ") tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
+                                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
+                                    "inner join (" +
                                     "--->select " +
-                                    "--->--->tb_5_.ID, tb_5_.FIRST_NAME, tb_5_.LAST_NAME, tb_5_.GENDER " +
+                                    "--->--->tb_5_.ID c6, tb_5_.FIRST_NAME c7, tb_5_.LAST_NAME c8, tb_5_.GENDER c9 " +
                                     "--->from AUTHOR tb_5_ " +
                                     "--->where tb_5_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_6_.ID, tb_6_.FIRST_NAME, tb_6_.LAST_NAME, tb_6_.GENDER " +
+                                    "--->--->tb_6_.ID c6, tb_6_.FIRST_NAME c7, tb_6_.LAST_NAME c8, tb_6_.GENDER c9 " +
                                     "--->from AUTHOR tb_6_ " +
                                     "--->where tb_6_.ID = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_1_.c5, tb_2_.c6, tb_2_.c7, tb_2_.c8, " +
-                                    "--->tb_2_.c9 " +
-                                    "from tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
-                                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
-                                    "inner join tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c6 " +
+                                    ") tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c6 " +
                                     "where tb_2_.c7 is not null"
                     );
                 }
@@ -960,7 +948,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 getSqlClient().createBaseQuery(book)
                         .where(book.id().eq(Constants.graphQLInActionId2))
                         .addSelect(book)
-        ).asCteBaseTable();
+        ).asBaseTable();
         AuthorTable author = AuthorTable.$;
         BaseTable1<AuthorTable> baseAuthor = TypedBaseQuery.unionAll(
                 getSqlClient().createBaseQuery(author)
@@ -969,7 +957,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 getSqlClient().createBaseQuery(author)
                         .where(author.id().eq(Constants.alexId))
                         .addSelect(author)
-        ).asCteBaseTable();
+        ).asBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseBook)
                         .where(
@@ -989,37 +977,36 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_1_.c5, tb_2_.c6, tb_2_.c7, tb_2_.c8, " +
+                                    "--->tb_2_.c9 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, " +
-                                    "--->--->tb_3_.PRICE, tb_3_.STORE_ID " +
+                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, " +
+                                    "--->--->tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
                                     "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_4_.ID, tb_4_.NAME, tb_4_.EDITION, " +
-                                    "--->--->tb_4_.PRICE, tb_4_.STORE_ID " +
+                                    "--->--->tb_4_.ID c1, tb_4_.NAME c2, tb_4_.EDITION c3, " +
+                                    "--->--->tb_4_.PRICE c4, tb_4_.STORE_ID c5 " +
                                     "--->from BOOK tb_4_ " +
                                     "--->where tb_4_.ID = ?" +
-                                    "), " +
-                                    "tb_2_(c6, c7, c8, c9) as (" +
+                                    ") tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
+                                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
+                                    "inner join (" +
                                     "--->select " +
-                                    "--->--->tb_5_.ID, tb_5_.FIRST_NAME, tb_5_.LAST_NAME, tb_5_.GENDER " +
+                                    "--->--->tb_5_.ID c6, tb_5_.FIRST_NAME c7, tb_5_.LAST_NAME c8, tb_5_.GENDER c9 " +
                                     "--->from AUTHOR tb_5_ " +
                                     "--->where tb_5_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_6_.ID, tb_6_.FIRST_NAME, tb_6_.LAST_NAME, tb_6_.GENDER " +
+                                    "--->--->tb_6_.ID c6, tb_6_.FIRST_NAME c7, tb_6_.LAST_NAME c8, tb_6_.GENDER c9 " +
                                     "--->from AUTHOR tb_6_ " +
                                     "--->where tb_6_.ID = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_1_.c5, tb_2_.c6, tb_2_.c7, tb_2_.c8, " +
-                                    "--->tb_2_.c9 " +
-                                    "from tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_1_.c1 = tb_7_.BOOK_ID " +
-                                    "inner join tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c6 " +
+                                    ") tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c6 " +
                                     "where tb_2_.c7 is not null"
                     );
                 }
@@ -1033,13 +1020,12 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 .where(book.id().eq(Constants.graphQLInActionId1))
                 .addSelect(book.price())
                 .addSelect(book)
-                .asCteBaseTable();
+                .asBaseTable();
         AuthorTable author = AuthorTable.$;
         BaseTable2<ComparableExpression<Gender>, AuthorTable> baseAuthor = getSqlClient().createBaseQuery(author)
                 .where(author.id().eq(Constants.danId))
                 .addSelect(author.gender())
-                .addSelect(author)
-                .asCteBaseTable();
+                .addSelect(author).asBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseBook)
                         .where(baseBook.get_1().gt(BigDecimal.ZERO))
@@ -1064,27 +1050,24 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c5, c1, c2) as (" +
-                                    "--->select " +
-                                    "--->--->tb_3_.PRICE, " +
-                                    "--->--->tb_3_.ID, tb_3_.NAME " +
-                                    "--->from BOOK tb_3_ " +
-                                    "--->where tb_3_.ID = ?" +
-                                    "), " +
-                                    "tb_2_(c6, c3, c4) as (" +
-                                    "--->select " +
-                                    "--->--->tb_4_.GENDER, " +
-                                    "--->--->tb_4_.ID, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) " +
-                                    "--->from AUTHOR tb_4_ " +
-                                    "--->where tb_4_.ID = ?" +
-                                    ") " +
-                                    "select " +
+                            "select " +
                                     "--->tb_1_.c1, tb_1_.c2, " +
                                     "--->tb_2_.c3, tb_2_.c4 " +
-                                    "from tb_1_ " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_3_.PRICE c5, tb_3_.ID c1, tb_3_.NAME c2 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.ID = ?" +
+                                    ") tb_1_ " +
                                     "inner join BOOK_AUTHOR_MAPPING tb_5_ " +
                                     "--->on tb_1_.c1 = tb_5_.BOOK_ID " +
-                                    "inner join tb_2_ " +
+                                    "inner join (" +
+                                    "--->select " +
+                                    "--->--->tb_4_.GENDER c6, " +
+                                    "--->--->tb_4_.ID c3, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) c4 " +
+                                    "--->from AUTHOR tb_4_ " +
+                                    "--->where tb_4_.ID = ?" +
+                                    ") tb_2_ " +
                                     "--->on tb_5_.AUTHOR_ID = tb_2_.c3 " +
                                     "where tb_1_.c5 > ? and tb_2_.c6 = ?"
                     );
@@ -1104,7 +1087,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .where(book.id().eq(Constants.graphQLInActionId2))
                         .addSelect(book.price())
                         .addSelect(book)
-        ).asCteBaseTable();
+        ).asBaseTable();
         AuthorTable author = AuthorTable.$;
         BaseTable2<ComparableExpression<Gender>, AuthorTable> baseAuthor = TypedBaseQuery.unionAll(
                 getSqlClient().createBaseQuery(author)
@@ -1115,7 +1098,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .where(author.id().eq(Constants.alexId))
                         .addSelect(author.gender())
                         .addSelect(author)
-        ).asCteBaseTable();
+        ).asBaseTable();
         executeAndExpect(
                 getSqlClient().createQuery(baseBook)
                         .where(baseBook.get_1().gt(BigDecimal.ZERO))
@@ -1140,37 +1123,35 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c5, c1, c2) as (" +
+                            "select " +
+                                    "tb_1_.c1, tb_1_.c2, " +
+                                    "tb_2_.c3, tb_2_.c4 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_3_.PRICE, tb_3_.ID, tb_3_.NAME " +
+                                    "--->--->tb_3_.PRICE c5, tb_3_.ID c1, tb_3_.NAME c2 " +
                                     "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_4_.PRICE, tb_4_.ID, tb_4_.NAME " +
+                                    "--->--->tb_4_.PRICE c5, tb_4_.ID c1, tb_4_.NAME c2 " +
                                     "--->from BOOK tb_4_ " +
                                     "--->where tb_4_.ID = ?" +
-                                    "), " +
-                                    "tb_2_(c6, c3, c4) as (" +
+                                    ") tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
+                                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
+                                    "inner join (" +
                                     "--->select " +
-                                    "--->--->tb_5_.GENDER, tb_5_.ID, " +
-                                    "--->--->concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) " +
+                                    "--->--->tb_5_.GENDER c6, tb_5_.ID c3, " +
+                                    "--->--->concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) c4 " +
                                     "--->from AUTHOR tb_5_ " +
                                     "--->where tb_5_.ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_6_.GENDER, tb_6_.ID, " +
-                                    "--->--->concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) " +
+                                    "--->--->tb_6_.GENDER c6, tb_6_.ID c3, " +
+                                    "--->--->concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) c4 " +
                                     "--->from AUTHOR tb_6_ " +
                                     "--->where tb_6_.ID = ?" +
-                                    ") " +
-                                    "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, " +
-                                    "--->tb_2_.c3, tb_2_.c4 " +
-                                    "from tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
-                                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
-                                    "inner join tb_2_ " +
+                                    ") tb_2_ " +
                                     "--->on tb_7_.AUTHOR_ID = tb_2_.c3 " +
                                     "where tb_1_.c5 > ? " +
                                     "and tb_2_.c6 = ?"
@@ -1187,7 +1168,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 .createBaseQuery(author)
                 .where(author.gender().eq(Gender.MALE))
                 .addSelect(author)
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
@@ -1200,24 +1181,54 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_2_(c1, c2, c3, c4) as (" +
-                                    "--->select " +
-                                    "--->--->tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "--->from AUTHOR tb_3_ " +
-                                    "--->where tb_3_.GENDER = ?" +
-                                    ") " +
-                                    "select " +
+                            "select " +
                                     "--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
                                     "--->tb_2_.c1, tb_2_.c2, tb_2_.c3, tb_2_.c4 " +
                                     "from BOOK tb_1_ " +
                                     "inner join (" +
-                                    "--->tb_2_ " +
+                                    "--->(" +
+                                    "--->--->select " +
+                                    "--->--->--->tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4 " +
+                                    "--->--->from AUTHOR tb_3_ " +
+                                    "--->--->where tb_3_.GENDER = ?" +
+                                    "--->) tb_2_ " +
                                     "--->inner join BOOK_AUTHOR_MAPPING tb_4_ " +
                                     "--->--->on tb_2_.c1 = tb_4_.AUTHOR_ID" +
-                                    ") " +
-                                    "on tb_1_.ID = tb_4_.BOOK_ID"
+                                    "--->) " +
+                                    "--->on tb_1_.ID = tb_4_.BOOK_ID"
                     );
                 }
+        );
+    }
+
+    @Test
+    public void testIllegalTableWeakJoinBaseTable() {
+        BookTable table = BookTable.$;
+        AuthorTable author = AuthorTable.$;
+        BaseTable1<AuthorTable> baseAuthor = getSqlClient()
+                .createBaseQuery(author)
+                .where(author.gender().eq(Gender.MALE))
+                .addSelect(author)
+                .asBaseTable();
+        IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> {
+            executeAndExpect(
+                    getSqlClient()
+                            .createQuery(table)
+                            .select(
+                                    table,
+                                    table.asTableEx().weakJoin(
+                                            baseAuthor,
+                                            (b, a) -> b.asTableEx().authors().eq(a.get_1())
+                                    ).get_1()
+                            ),
+                    ctx -> {}
+            );
+        });
+        Assertions.assertEquals(
+                "Table join is disabled. " +
+                        "For the weak join operation from a regular table to a base table, " +
+                        "the strong join is not allowed on the regular table side (source side).",
+                ex.getMessage()
         );
     }
 
@@ -1228,7 +1239,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 .createBaseQuery(table)
                 .where(table.edition().eq(3))
                 .addSelect(table)
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -1236,14 +1247,14 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .select(baseTable.get_1().fetch(BookFetcher.$)),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2) as (" +
+                            "select " +
+                                    "--->tb_1_.c1 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, tb_2_.NAME " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->where tb_2_.EDITION = ?" +
-                                    ") " +
-                                    "select tb_1_.c1 " +
-                                    "from tb_1_ " +
+                                    ") tb_1_ " +
                                     "where tb_1_.c2 = ?"
                     );
                     ctx.rows(
@@ -1260,7 +1271,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 .createBaseQuery(table)
                 .where(table.edition().eq(3))
                 .addSelect(table)
-                .asCteBaseTable();
+                .asBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(baseTable)
@@ -1268,15 +1279,15 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         .select(baseTable.get_1().fetch(BookFetcher.$.name())),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2) as (" +
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2 " +
+                                    "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID, tb_2_.NAME " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.NAME c2 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->where tb_2_.EDITION = ?" +
-                                    ") " +
-                                    "select tb_1_.c1, tb_1_.c2 " +
-                                    "from tb_1_ " +
-                                    "where tb_1_.c2 = ?"
+                                    ") tb_1_ where tb_1_.c2 = ?"
                     );
                     ctx.rows(
                             "[{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\",\"name\":\"GraphQL in Action\"}]"
@@ -1284,7 +1295,7 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
-    
+
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 
         @Override

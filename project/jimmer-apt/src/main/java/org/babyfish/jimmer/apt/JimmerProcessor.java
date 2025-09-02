@@ -8,14 +8,14 @@ import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
 import org.babyfish.jimmer.apt.transactional.TxProcessor;
-// TUPLE: import org.babyfish.jimmer.apt.tuple.TypedTupleProcessor;
+import org.babyfish.jimmer.apt.tuple.TypedTupleProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
-// TUPLE: import org.babyfish.jimmer.sql.TypedTuple;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
+import org.babyfish.jimmer.sql.TypedTuple;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -198,12 +198,12 @@ public class JimmerProcessor extends AbstractProcessor {
                 new TxProcessor(context).process(roundEnv);
                 new ExportDocProcessor(context).process(roundEnv);
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
-//                    delayedTupleTypeNames = roundEnv
-//                            .getElementsAnnotatedWith(TypedTuple.class)
-//                            .stream()
-//                            .filter(it -> it instanceof TypeElement)
-//                            .map(it -> ((TypeElement) it).getQualifiedName().toString())
-//                            .collect(Collectors.toSet());
+                    delayedTupleTypeNames = roundEnv
+                            .getElementsAnnotatedWith(TypedTuple.class)
+                            .stream()
+                            .filter(it -> it instanceof TypeElement)
+                            .map(it -> ((TypeElement) it).getQualifiedName().toString())
+                            .collect(Collectors.toSet());
                     delayedClientTypeNames = roundEnv
                             .getRootElements()
                             .stream()
@@ -215,7 +215,7 @@ public class JimmerProcessor extends AbstractProcessor {
             }
             if (!toolGenerated && !context.isBuddyIgnoreResourceGeneration()) {
                 toolGenerated = true;
-                //new TypedTupleProcessor(context, delayedTupleTypeNames).process(roundEnv);
+                new TypedTupleProcessor(context, delayedTupleTypeNames).process(roundEnv);
                 new ClientProcessor(context, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
                 delayedClientTypeNames = null;
             }

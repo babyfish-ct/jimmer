@@ -27,15 +27,14 @@ dependencies {
         exclude("com.ibm.icu", "icu4j")
     }
 
+    testImplementation(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     testAnnotationProcessor(projects.jimmerApt)
 
     testImplementation(libs.jupiter.api)
     testRuntimeOnly(libs.jupiter.engine)
 
     testImplementation(libs.spring.jdbc)
-
-    testImplementation(libs.lombok)
-    testAnnotationProcessor(libs.lombok)
 
     testImplementation(libs.h2)
     testImplementation(libs.mysql.connector.java)

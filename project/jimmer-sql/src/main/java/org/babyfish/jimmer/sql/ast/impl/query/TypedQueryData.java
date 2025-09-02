@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.runtime.TupleCreator;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +21,11 @@ class TypedQueryData {
 
     final List<Selection<?>> selections;
 
+    final TupleCreator<?> tupleCreator;
+
     final List<Selection<?>> oldSelections;
+
+    final TupleCreator<?> oldTupleCreator;
 
     final boolean distinct;
 
@@ -42,9 +47,11 @@ class TypedQueryData {
 
     private boolean idOnlyExpressionResolved;
 
-    public TypedQueryData(List<Selection<?>> selections) {
+    public TypedQueryData(List<Selection<?>> selections, TupleCreator<?> tupleCreator) {
         this.selections = processSelections(selections);
+        this.tupleCreator = tupleCreator;
         oldSelections = null;
+        oldTupleCreator = null;
         distinct = false;
         limit = Integer.MAX_VALUE;
         offset = 0;
@@ -57,7 +64,9 @@ class TypedQueryData {
 
     private TypedQueryData(
             List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
             List<Selection<?>> oldSelections,
+            TupleCreator<?> oldTupleCreator,
             boolean distinct,
             int limit,
             long offset,
@@ -68,7 +77,9 @@ class TypedQueryData {
             String hint
     ) {
         this.selections = selections;
+        this.tupleCreator = tupleCreator;
         this.oldSelections = oldSelections;
+        this.oldTupleCreator = oldTupleCreator;
         this.distinct = distinct;
         this.limit = limit;
         this.offset = offset;
@@ -79,10 +90,12 @@ class TypedQueryData {
         this.hint = hint;
     }
 
-    public TypedQueryData reselect(List<Selection<?>> selections) {
+    public TypedQueryData reselect(List<Selection<?>> selections, TupleCreator<?> tupleCreator) {
         return new TypedQueryData(
                 processSelections(selections),
+                tupleCreator,
                 this.selections,
+                this.tupleCreator,
                 distinct,
                 limit,
                 offset,
@@ -97,7 +110,9 @@ class TypedQueryData {
     public TypedQueryData distinct() {
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 true,
                 limit,
                 offset,
@@ -112,7 +127,9 @@ class TypedQueryData {
     public TypedQueryData limit(int limit, long offset) {
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,
@@ -127,7 +144,9 @@ class TypedQueryData {
     public TypedQueryData withoutSortingAndPaging() {
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,
@@ -142,7 +161,9 @@ class TypedQueryData {
     public TypedQueryData reverseSorting() {
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,
@@ -157,7 +178,9 @@ class TypedQueryData {
     public TypedQueryData reverseSortOptimizationEnabled(Boolean enabled) {
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,
@@ -172,7 +195,9 @@ class TypedQueryData {
     public TypedQueryData forUpdate(ForUpdate forUpdate) {
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,
@@ -200,7 +225,9 @@ class TypedQueryData {
         }
         return new TypedQueryData(
                 selections,
+                tupleCreator,
                 oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,

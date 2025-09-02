@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.runtime.TupleCreator;
 
 import java.util.Map;
 
@@ -10,9 +11,12 @@ class ColumnAccessors {
 
     private ColumnAccessors() {}
 
-    public static Object get(Object row, int index) {
+    public static Object get(Object row, int index, TupleCreator<?> tupleCreator) {
         if (row == null) {
             return null;
+        }
+        if (tupleCreator != null) {
+            return ((Object[])row)[index];
         }
         if (row instanceof ImmutableSpi) {
             if (index != 0) {
@@ -169,9 +173,16 @@ class ColumnAccessors {
         throw new AssertionError("Internal bug");
     }
 
-    public static Object set(Object row, Map<Integer, Object> indexValueMap) {
+    public static Object set(Object row, Map<Integer, Object> indexValueMap, TupleCreator<?> tupleCreator) {
         if (row == null) {
             return null;
+        }
+        if (tupleCreator != null) {
+            Object[] args = (Object[]) row;
+            for (Map.Entry<Integer, Object> e : indexValueMap.entrySet()) {
+                args[e.getKey()] = e.getValue();
+            }
+            return tupleCreator.createTuple(args);
         }
         if (row instanceof ImmutableSpi) {
             if (indexValueMap.size() != 1 || !indexValueMap.containsKey(0)) {

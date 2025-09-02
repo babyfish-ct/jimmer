@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.tuple;
+package org.babyfish.jimmer.sql.base;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;

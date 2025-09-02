@@ -19,8 +19,16 @@ class Readers {
 
     private Readers() {}
 
-    public static Reader<?> createReader(JSqlClientImplementor sqlClient, List<Selection<?>> selections) {
-        switch (selections.size()) {
+    public static Reader<?> createReader(JSqlClientImplementor sqlClient, List<Selection<?>> selections, TupleCreator<?> tupleCreator) {
+        int size = selections.size();
+        if (tupleCreator != null) {
+            Reader<?>[] readers = new Reader<?>[size];
+            for (int i = 0; i < size; i++) {
+                readers[i] = createSingleReader(sqlClient, selections.get(i));
+            }
+            return Reader.tuple(readers);
+        }
+        switch (size) {
             case 1:
                 return createSingleReader(sqlClient, selections.get(0));
             case 2:

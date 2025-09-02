@@ -315,4 +315,25 @@ public interface Reader<T> {
             }
         };
     }
+
+    static Reader<?> tuple(Reader<?>[] readers) {
+        return new Reader<Object>() {
+            @Override
+            public void skip(Context ctx) {
+                for (Reader<?> reader : readers) {
+                    reader.skip(ctx);
+                }
+            }
+
+            @Override
+            public Object read(ResultSet rs, Context ctx) throws SQLException {
+                int size = readers.length;
+                Object[] args = new Object[size];
+                for (int i = 0; i < size; i++) {
+                    args[i] = readers[i].read(rs, ctx);
+                }
+                return args;
+            }
+        };
+    }
 }

@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.TupleMapper;
 
 import java.sql.Connection;
 import java.util.Arrays;
@@ -96,7 +97,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(Collections.singletonList(selection)),
+                new TypedQueryData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -104,7 +105,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2> ConfigurableRootQuery<T, Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(Arrays.asList(selection1, selection2)),
+                new TypedQueryData(Arrays.asList(selection1, selection2), null),
                 this
         );
     }
@@ -117,7 +118,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection1,
                                 selection2,
                                 selection3
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -132,7 +134,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection2,
                                 selection3,
                                 selection4
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -148,7 +151,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection3,
                                 selection4,
                                 selection5
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -165,7 +169,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection4,
                                 selection5,
                                 selection6
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -183,7 +188,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection5,
                                 selection6,
                                 selection7
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -202,7 +208,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection6,
                                 selection7,
                                 selection8
-                        )
+                        ),
+                        null
                 ),
                 this
         );
@@ -222,7 +229,19 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                                 selection7,
                                 selection8,
                                 selection9
-                        )
+                        ),
+                        null
+                ),
+                this
+        );
+    }
+
+    @Override
+    public <R> ConfigurableRootQuery<T, R> select(TupleMapper<R> mapper) {
+        return new ConfigurableRootQueryImpl<>(
+                new TypedQueryData(
+                        mapper.getSelections(),
+                        mapper
                 ),
                 this
         );

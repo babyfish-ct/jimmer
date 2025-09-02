@@ -26,6 +26,7 @@ public class Selectors {
             List<Object> variables,
             @Nullable List<Integer> variablePositions,
             List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
             ExecutionPurpose purpose
     ) {
         List<R> rows = sqlClient.getExecutor().execute(
@@ -39,7 +40,7 @@ public class Selectors {
                         null,
                         null,
                         (stmt, args) -> {
-                            Reader<?> reader = Readers.createReader(sqlClient, selections);
+                            Reader<?> reader = Readers.createReader(sqlClient, selections, tupleCreator);
                             return Internal.usingSqlDraftContext(draftCtx -> {
                                 Reader.Context ctx = new Reader.Context(draftCtx, sqlClient);
                                 List<R> results = new ArrayList<>();
@@ -54,7 +55,7 @@ public class Selectors {
                         }
                 )
         );
-        FetcherUtil.fetch(sqlClient, con, selections, rows);
+        FetcherUtil.fetch(sqlClient, con, selections, tupleCreator, rows);
         return rows;
     }
 
@@ -66,6 +67,7 @@ public class Selectors {
             List<Object> variables,
             @Nullable List<Integer> variablePositions,
             List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
             ExecutionPurpose purpose,
             int batchSize,
             Consumer<R> consumer
@@ -81,7 +83,7 @@ public class Selectors {
                 purpose,
                 null,
                 (stmt, a) -> {
-                    Reader<?> reader = Readers.createReader(sqlClient, selections);
+                    Reader<?> reader = Readers.createReader(sqlClient, selections, tupleCreator);
                     return Internal.usingSqlDraftContext((draftContext) -> {
                         Reader.Context ctx = new Reader.Context(draftContext, sqlClient);
                         List<R> results = new ArrayList<>();
@@ -91,7 +93,7 @@ public class Selectors {
                                 results.add((R) reader.read(resultSet, ctx));
                                 ctx.resetCol();
                                 if (results.size() >= batchSize) {
-                                    FetcherUtil.fetch(sqlClient, con, selections, results);
+                                    FetcherUtil.fetch(sqlClient, con, selections, tupleCreator, results);
                                     for (R result : results) {
                                         consumer.accept(result);
                                     }
@@ -99,7 +101,7 @@ public class Selectors {
                                 }
                             }
                         }
-                        FetcherUtil.fetch(sqlClient, con, selections, results);
+                        FetcherUtil.fetch(sqlClient, con, selections, tupleCreator, results);
                         for (R result : results) {
                             consumer.accept(result);
                         }

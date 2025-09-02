@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.runtime.TupleMapper;
 
 public interface RootSelectable<T extends TableLike<?>> {
 
@@ -79,6 +80,8 @@ public interface RootSelectable<T extends TableLike<?>> {
             Selection<T8> selection8,
             Selection<T9> selection9
     );
+    
+    <R> ConfigurableRootQuery<T, R> select(TupleMapper<R> mapper);
 
     default ConfigurableRootQuery<T, Long> selectCount() {
         return select(Expression.rowCount());

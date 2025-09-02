@@ -167,7 +167,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         );
         List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>) reselected).getData().selections;
         return new ConfigurableRootQueryImpl<>(
-                getData().reselect(selections),
+                getData().reselect(selections, null),
                 baseQuery
         );
     }
@@ -321,6 +321,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 data.selections,
+                data.tupleCreator,
                 getMutableQuery().getPurpose()
         );
     }
@@ -359,6 +360,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 getData().selections,
+                getData().tupleCreator,
                 getMutableQuery().getPurpose(),
                 batchSize,
                 consumer

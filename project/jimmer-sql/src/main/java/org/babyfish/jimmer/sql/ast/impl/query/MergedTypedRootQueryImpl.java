@@ -11,10 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.Selectors;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -29,6 +26,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
 
     private final String operator;
     private final List<Selection<?>> selections;
+    private final TupleCreator<?> tupleCreator;
     private final ForUpdate forUpdate;
     protected final TypedRootQueryImplementor<?>[] queries;
 
@@ -71,6 +69,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
         }
         this.queries = queryArr;
         selections = selectionArr;
+        tupleCreator = queryArr[0].getTupleCreator();
         this.forUpdate = forUpdate;
     }
 
@@ -124,6 +123,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 selections,
+                tupleCreator,
                 ExecutionPurpose.QUERY
         );
     }
@@ -156,6 +156,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 selections,
+                tupleCreator,
                 ExecutionPurpose.QUERY,
                 batchSize,
                 consumer

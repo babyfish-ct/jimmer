@@ -98,6 +98,9 @@ public class Constants {
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
 
+    public static final ClassName ARRAYS_CLASS_NAME =
+            ClassName.get(Arrays.class);
+
     public static final ClassName FUNCTION_CLASS_NAME =
             ClassName.get(Function.class);
 
@@ -480,12 +483,6 @@ public class Constants {
                     "Selection"
             );
 
-    public static final ClassName MAPPER_SELECTION_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.table",
-                    "MapperSelection"
-            );
-
     public static final ClassName PROPAGATION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.transaction",
@@ -516,28 +513,10 @@ public class Constants {
                     "AbstractBaseTable"
             );
 
-    public static final ClassName TYPED_TUPLE_MAPPER_CLASS_NAME =
+    public static final ClassName TUPLE_MAPPER_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.mapper",
-                    "TypedTupleMapper"
-            );
-
-    public static final ClassName ABSTRACT_BASE_TABLE_MAPPER_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.mapper",
-                    "AbstractBaseTableMapper"
-            );
-
-    public static final ClassName BASE_TABLE_QUERY_IMPLEMENTOR_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.query",
-                    "BaseTableQueryImplementor"
-            );
-
-    public static final ClassName BASE_TABLE_SELECTIONS_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.base",
-                    "BaseTableSelections"
+                    "org.babyfish.jimmer.sql.runtime",
+                    "TupleMapper"
             );
 
     public static final String T_NULLABLE_QUALIFIED_NAME =

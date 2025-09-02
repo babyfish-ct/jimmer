@@ -178,6 +178,7 @@ public class MutableUpdateImpl
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(this.getTable()),
+                null,
                 ExecutionPurpose.UPDATE
         );
         if (rows.isEmpty()) {
@@ -222,6 +223,7 @@ public class MutableUpdateImpl
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(this.getTable()),
+                null,
                 ExecutionPurpose.UPDATE
         );
         MutationTrigger trigger = new MutationTrigger();

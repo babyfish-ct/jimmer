@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -22,6 +23,7 @@ public class FetcherUtil {
             JSqlClientImplementor sqlClient,
             Connection con,
             List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
             List<?> rows
     ) {
 
@@ -50,7 +52,7 @@ public class FetcherUtil {
             for (Map.Entry<Integer, List<Object>> e : columnMap.entrySet()) {
                 int columnIndex = e.getKey();
                 List<Object> columnValues = e.getValue();
-                columnValues.add(ColumnAccessors.get(row, columnIndex));
+                columnValues.add(ColumnAccessors.get(row, columnIndex, tupleCreator));
             }
         }
 
@@ -94,7 +96,7 @@ public class FetcherUtil {
                 Object value = e.getValue().get(rowIndex);
                 indexValueMap.put(colIndex, value);
             }
-            itr.set(ColumnAccessors.set(itr.next(), indexValueMap));
+            itr.set(ColumnAccessors.set(itr.next(), indexValueMap, tupleCreator));
             rowIndex++;
         }
     }

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,9 +28,9 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     private MergedBaseQueryImpl<T> mergedBy;
 
-    ConfigurableBaseQueryImpl(List<Selection<?>> selections, MutableBaseQueryImpl mutableQuery) {
+    ConfigurableBaseQueryImpl(List<Selection<?>> selections, TupleCreator<?> tupleCreator, MutableBaseQueryImpl mutableQuery) {
         super(
-                new TypedQueryData(selections),
+                new TypedQueryData(selections, tupleCreator),
                 mutableQuery
         );
     }
@@ -203,7 +204,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query1<S1> {
 
         Query1Impl(Selection<?> selection, MutableBaseQueryImpl mutableQuery) {
-            super(Collections.singletonList(selection), mutableQuery);
+            super(Collections.singletonList(selection), null, mutableQuery);
         }
 
         @Override
@@ -252,7 +253,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query2<S1, S2> {
 
         Query2Impl(Query1Impl<S1> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -301,7 +302,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query3<S1, S2, S3> {
 
         Query3Impl(Query2Impl<S1, S2> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -353,7 +354,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     > extends ConfigurableBaseQueryImpl<BaseTable4<S1, S2, S3, S4>> implements Query4<S1, S2, S3, S4> {
 
         Query4Impl(Query3Impl<S1, S2, S3> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -407,7 +408,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query5<S1, S2, S3, S4, S5> {
 
         Query5Impl(Query4Impl<S1, S2, S3, S4> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -462,7 +463,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query6<S1, S2, S3, S4, S5, S6> {
 
         Query6Impl(Query5Impl<S1, S2, S3, S4, S5> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -518,7 +519,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query7<S1, S2, S3, S4, S5, S6, S7> {
 
         Query7Impl(Query6Impl<S1, S2, S3, S4, S5, S6> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -575,7 +576,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             implements Query8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
         Query8Impl(Query7Impl<S1, S2, S3, S4, S5, S6, S7> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
 
         @Override
@@ -633,7 +634,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Query9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
         Query9Impl(Query8Impl<S1, S2, S3, S4, S5, S6, S7, S8> prev, Selection<?> selection) {
-            super(selections(prev, selection), prev.getMutableQuery());
+            super(selections(prev, selection), null, prev.getMutableQuery());
         }
     }
 }
