@@ -15,6 +15,7 @@ import org.babyfish.jimmer.ksp.dto.DtoProcessor
 import org.babyfish.jimmer.ksp.error.ErrorProcessor
 import org.babyfish.jimmer.ksp.immutable.ImmutableProcessor
 import org.babyfish.jimmer.ksp.transactional.TxProcessor
+import org.babyfish.jimmer.ksp.tuple.TypedTupleProcessor
 import java.util.regex.Pattern
 
 class JimmerProcessor(
@@ -59,6 +60,10 @@ class JimmerProcessor(
 
     private var explicitClientApi: Boolean? = null
 
+    private var tupleGenerated = false
+
+    private var delayedTupleTypeNames : Collection<String>? = null
+
     private var clientGenerated = false
 
     private var delayedClientTypeNames: Collection<String>? = null
@@ -93,13 +98,20 @@ class JimmerProcessor(
                 ExportDocProcessor(ctx).process()
                 serverGenerated = true
                 if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {
-                    delayedClientTypeNames = resolver.getAllFiles().flatMap {  file ->
+                    delayedClientTypeNames = resolver.getAllFiles().flatMap { file ->
                         file.declarations.filterIsInstance<KSClassDeclaration>().map { it.fullName }
                     }.toList()
                     return processedDeclarations
                 }
             }
-            if (!clientGenerated && !ctx.isBuddyIgnoreResourceGeneration) {
+            if (!tupleGenerated) {
+                tupleGenerated = true
+                val processedDeclarations = TypedTupleProcessor(ctx, delayedTupleTypeNames).process()
+                if (processedDeclarations.isNotEmpty()) {
+                    return processedDeclarations
+                }
+            }
+            if (tupleGenerated && !clientGenerated && !ctx.isBuddyIgnoreResourceGeneration) {
                 clientGenerated = true
                 ClientProcessor(
                     ctx,

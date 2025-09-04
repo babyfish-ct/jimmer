@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt.query
+package org.babyfish.jimmer.sql.kt.query.base
 
 import org.babyfish.jimmer.sql.kt.ast.expression.constant
 import org.babyfish.jimmer.sql.kt.ast.expression.eq

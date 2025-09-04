@@ -32,6 +32,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNullableTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
+import org.babyfish.jimmer.sql.runtime.TupleMapper
 
 internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
     protected val javaQuery: MutableRootQueryImpl<TableLike<*>>
@@ -209,6 +210,13 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
                 selection8,
                 selection9
             )
+        )
+
+    override fun <T> select(
+        mapper: TupleMapper<T>
+    ): KConfigurableRootQuery<P, T> =
+        KConfigurableRootQueryImpl(
+            javaQuery.select(mapper)
         )
 
     override val subQueries: KSubQueries<P> =

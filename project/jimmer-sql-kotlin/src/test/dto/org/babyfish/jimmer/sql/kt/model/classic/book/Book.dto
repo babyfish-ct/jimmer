@@ -78,6 +78,15 @@ BookView2 {
     authorIds
 }
 
+BookViewForTupleTest {
+    id
+    name
+    store {
+        id
+        name
+    }
+}
+
 dynamic input DynamicBookInput {
     name?
     edition?

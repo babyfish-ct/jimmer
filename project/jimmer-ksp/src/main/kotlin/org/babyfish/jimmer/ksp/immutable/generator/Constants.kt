@@ -33,6 +33,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.Arrays
+import java.util.Collections
 import java.util.regex.Pattern
 
 internal const val DRAFT = "Draft"
@@ -50,6 +52,7 @@ internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val DESCRIPTION_CLASS_NAME = Description::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
+internal val COLLECTIONS_CLASS_NAME = Collections::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val JSON_PROPERTY_ORDER_CLASS_NAME = JsonPropertyOrder::class.asClassName()
@@ -272,6 +275,11 @@ internal val HIBERNATE_VALIDATOR_ENHANCED_BEAN = ClassName(
 internal val PROPAGATION_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.transaction",
     "Propagation"
+)
+
+internal val TUPLE_MAPPER_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.runtime",
+    "TupleMapper"
 )
 
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"

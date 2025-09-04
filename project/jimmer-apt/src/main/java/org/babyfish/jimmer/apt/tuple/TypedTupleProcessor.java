@@ -10,8 +10,6 @@ import java.util.*;
 
 public class TypedTupleProcessor {
 
-    private static final String[] EMPTY_STR_ARR = new String[0];
-
     private final Context context;
 
     private final Set<String> delayedTupleTypeNames;

@@ -1,8 +1,7 @@
-package org.babyfish.jimmer.sql.kt.query
+package org.babyfish.jimmer.sql.kt.query.base
 
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType
 import org.babyfish.jimmer.sql.kt.ast.expression.*
-import org.babyfish.jimmer.sql.kt.ast.query.baseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.query.cteBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable1
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
