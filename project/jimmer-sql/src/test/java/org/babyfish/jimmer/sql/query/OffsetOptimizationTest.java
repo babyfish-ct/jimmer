@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
+import org.babyfish.jimmer.sql.model.inheritance.PermissionTable;
 import org.junit.jupiter.api.Test;
 
 public class OffsetOptimizationTest extends AbstractQueryTest {
@@ -318,6 +319,29 @@ public class OffsetOptimizationTest extends AbstractQueryTest {
                                     "--->}" +
                                     "]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testWithInheritance() {
+        PermissionTable table = PermissionTable.$;
+        executeAndExpect(
+                getSqlClient(cfg -> {
+                    cfg.setOffsetOptimizingThreshold(0);
+                    cfg.setReverseSortOptimizationEnabled(true);
+                })
+                        .createQuery(table)
+                        .orderBy(table.name())
+                        .select(table)
+                        .limit(2),
+                ctx -> {
+                    // use getSelectableProps in renderIdOnlyQuery, keep id first
+                    ctx.sql("select optimize_.ID, " +
+                            "optimize_.NAME, optimize_.DELETED, optimize_.CREATED_TIME, optimize_.MODIFIED_TIME, optimize_.ROLE_ID from " +
+                            "(select tb_1_.ID optimize_core_id_ from PERMISSION tb_1_ where tb_1_.DELETED <> ? " +
+                            "order by tb_1_.NAME asc limit ?) optimize_core_ " +
+                            "inner join PERMISSION optimize_ on optimize_.ID = optimize_core_.optimize_core_id_");
                 }
         );
     }
