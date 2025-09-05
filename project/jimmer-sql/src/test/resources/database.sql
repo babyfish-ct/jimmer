@@ -7,6 +7,7 @@ create schema if not exists D;
 drop table issue1125_mp_role_perm if exists;
 drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
+drop table issue1171_sys_config if exists;
 drop table time_row if exists;
 drop table issue888_item if exists;
 drop table issue888_structure if exists;
@@ -1561,4 +1562,19 @@ create table issue1125_sys_role (
   id bigint generated always as identity(start with 1 increment by 1) not null,
   deleted_at timestamp(0),
   constraint sys_role_pkey primary key (id)
+);
+
+create table issue1171_sys_config (
+    config_id    int8,
+    config_name  varchar(100) default '',
+    config_key   varchar(100) default '',
+    config_value varchar(500) default '',
+    config_type  char         default 'N',
+    create_dept  int8,
+    create_by    int8,
+    create_time  timestamp,
+    update_by    int8,
+    update_time  timestamp,
+    remark       varchar(500) default null,
+    constraint sys_config_pk primary key (config_id)
 );
