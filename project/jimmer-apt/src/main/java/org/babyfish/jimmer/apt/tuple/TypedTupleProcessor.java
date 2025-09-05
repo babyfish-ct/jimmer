@@ -48,6 +48,14 @@ public class TypedTupleProcessor {
                             "\" must be class"
             );
         }
+        if (!(typeElement.getEnclosingElement() instanceof PackageElement)) {
+            throw new MetaException(
+                    typeElement,
+                    "The type decorated by \"@" +
+                            TypedTuple.class.getName() +
+                            "\" must be top-level class"
+            );
+        }
         if (!typeElement.getSuperclass().toString().equals("java.lang.Object")) {
             throw new MetaException(
                     typeElement,
