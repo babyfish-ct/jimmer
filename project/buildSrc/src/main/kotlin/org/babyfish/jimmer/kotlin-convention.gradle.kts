@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("java-convention")
@@ -6,9 +6,10 @@ plugins {
 }
 
 val javaVersion = extensions.getByName<JavaPluginExtension>("java").targetCompatibility.toString()
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        jvmTarget = javaVersion
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xjvm-default=all")
+        jvmTarget = JvmTarget.fromTarget(javaVersion)
+        javaParameters = true
     }
 }
