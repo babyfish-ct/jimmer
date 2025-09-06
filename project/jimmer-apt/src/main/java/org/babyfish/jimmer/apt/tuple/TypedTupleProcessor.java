@@ -20,6 +20,11 @@ public class TypedTupleProcessor {
     }
 
     public void process(RoundEnvironment roundEnv) {
+        if (delayedTupleTypeNames == null || delayedTupleTypeNames.isEmpty()) {
+            // If delayedTupleTypeNames is null or empty, do nothing.
+            return;
+        }
+
         List<TypeElement> typeElements = new ArrayList<>();
         for (Element element : roundEnv.getElementsAnnotatedWith(TypedTuple.class)) {
             TypeElement typeElement = (TypeElement) element;
@@ -31,6 +36,7 @@ public class TypedTupleProcessor {
             TypeElement typeElement = context.getElements().getTypeElement(typeName);
             typeElements.add(typeElement);
         }
+
         for (TypeElement typeElement : typeElements) {
             validate(typeElement);
         }
