@@ -17,6 +17,7 @@ jmh = "1.37"
 h2 = "2.3.232"
 apijson = "6.3.0"
 mug = "9.1"
+sqltoy = "5.6.52.jre8"
 
 [libraries]
 spring-boot-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot" }
@@ -42,6 +43,7 @@ h2 = { module = "com.h2database:h2", version.ref = "h2" }
 apijson = { module = "com.github.Tencent:APIJSON", version.ref = "apijson" }
 apijson-framework = { module = "com.github.APIJSON:apijson-framework", version.ref = "apijson" }
 mug-safesql = { module = "com.google.mug:mug-safesql", version.ref = "mug" }
+sqltoy = { module = "com.sagframe:sagacity-sqltoy-spring-starter", version.ref = "sqltoy" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

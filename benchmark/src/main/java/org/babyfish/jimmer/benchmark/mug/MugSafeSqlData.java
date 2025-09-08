@@ -2,9 +2,6 @@ package org.babyfish.jimmer.benchmark.mug;
 
 import com.google.mu.safesql.SqlName;
 
-/**
- * @author Enaium
- */
 public class MugSafeSqlData {
 
     private final long id;

@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.apijson.framework)
     implementation(libs.mug.safesql)
     implementation(libs.jmh.core)
+    implementation(libs.sqltoy)
     annotationProcessor(libs.jmh.generator.annprocess)
 
     runtimeOnly(libs.h2)
