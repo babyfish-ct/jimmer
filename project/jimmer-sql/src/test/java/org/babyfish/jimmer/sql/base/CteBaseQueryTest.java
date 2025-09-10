@@ -1183,14 +1183,27 @@ public class CteBaseQueryTest extends AbstractQueryTest {
     public void testTableWeakJoinBaseTable() {
         BookTable table = BookTable.$;
         AuthorTable author = AuthorTable.$;
-        BaseTable1<AuthorTable> baseAuthor = getSqlClient()
+        BaseTable2<AuthorTable, NumericExpression<Integer>> baseAuthor = getSqlClient()
                 .createBaseQuery(author)
                 .where(author.gender().eq(Gender.MALE))
                 .addSelect(author)
+                .addSelect(
+                        Expression.numeric().sql(
+                                Integer.class,
+                                "row_number() over(order by %e desc)",
+                                author.firstName().length().plus(author.lastName().length())
+                        )
+                )
                 .asCteBaseTable();
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
+                        .where(
+                                table.asTableEx().weakJoin(
+                                        baseAuthor,
+                                        (b, a) -> b.eq(a.get_1().asTableEx().books())
+                                ).get_2().lt(4)
+                        )
                         .select(
                                 table,
                                 table.asTableEx().weakJoin(
@@ -1200,22 +1213,22 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_2_(c1, c2, c3, c4) as (" +
+                            "with tb_2_(c1, c2, c3, c4, c5) as (" +
                                     "--->select " +
-                                    "--->--->tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "--->from AUTHOR tb_3_ " +
-                                    "--->where tb_3_.GENDER = ?" +
+                                    "--->--->tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER, " +
+                                    "--->--->row_number() over(" +
+                                    "--->--->--->order by (length(tb_3_.FIRST_NAME) + length(tb_3_.LAST_NAME)) desc" +
+                                    "--->) " +
+                                    "--->from AUTHOR tb_3_ where tb_3_.GENDER = ?" +
                                     ") " +
                                     "select " +
                                     "--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
                                     "--->tb_2_.c1, tb_2_.c2, tb_2_.c3, tb_2_.c4 " +
                                     "from BOOK tb_1_ " +
                                     "inner join (" +
-                                    "--->tb_2_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ " +
-                                    "--->--->on tb_2_.c1 = tb_4_.AUTHOR_ID" +
-                                    ") " +
-                                    "on tb_1_.ID = tb_4_.BOOK_ID"
+                                    "--->tb_2_ inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.c1 = tb_4_.AUTHOR_ID" +
+                                    ") on tb_1_.ID = tb_4_.BOOK_ID " +
+                                    "where tb_2_.c5 < ?"
                     );
                 }
         );

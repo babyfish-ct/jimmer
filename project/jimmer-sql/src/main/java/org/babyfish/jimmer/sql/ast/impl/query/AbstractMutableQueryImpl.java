@@ -272,7 +272,7 @@ public abstract class AbstractMutableQueryImpl
 
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
         TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
-        if (tableLikeImplementor instanceof BaseTableImplementor) {
+        if (tableLikeImplementor.hasBaseTable()) {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderClausesAfterTable(tmpBuilder, withoutSortingAndPaging, reverseOrder);
             tableLikeImplementor.renderTo(builder);

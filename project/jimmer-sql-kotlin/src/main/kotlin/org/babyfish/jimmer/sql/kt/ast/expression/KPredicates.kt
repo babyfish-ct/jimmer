@@ -4,6 +4,7 @@ import org.babyfish.jimmer.View
 import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.AndPredicate
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.BetweenPredicate
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.ComparisonPredicate
@@ -276,6 +277,12 @@ fun KExpression<String>.`ilike?`(
     pattern?.takeIf { it.isNotEmpty() || mode == LikeMode.EXACT }?.let {
         LikePredicate(this, true, it, mode)
     }
+
+fun KNonNullExpression<String>.length(): KNonNullExpression<Int> =
+    LengthExpression.NonNull(this)
+
+fun KNullableExpression<String>.length(): KNullableExpression<Int> =
+    LengthExpression.Nullable(this)
 
 infix fun <T: Any> KExpression<T>.valueIn(
     values: Collection<T>

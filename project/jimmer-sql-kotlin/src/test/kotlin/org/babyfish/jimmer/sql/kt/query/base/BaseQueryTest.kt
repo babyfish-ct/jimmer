@@ -958,11 +958,22 @@ class BaseQueryTest : AbstractQueryTest() {
         val baseAuthor = baseTableSymbol {
             sqlClient.createBaseQuery(Author::class) {
                 where(table.gender eq Gender.MALE)
-                selections.add(table)
+                selections
+                    .add(table)
+                    .add(
+                        sql(Int::class, "row_number() over(order by %e desc)") {
+                            expression(table.firstName.length() + table.lastName.length())
+                        }
+                    )
             }
         }
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
+                where(
+                    table.asTableEx().weakJoin(baseAuthor) {
+                        source.id eq target._1.asTableEx().books.id
+                    }._2 lt 4
+                )
                 select(
                     table,
                     table.asTableEx().weakJoin(baseAuthor) {
@@ -978,13 +989,16 @@ class BaseQueryTest : AbstractQueryTest() {
                     |from BOOK tb_1_ 
                     |inner join (
                     |--->(
-                    |--->--->select tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4 
-                    |--->--->from AUTHOR tb_3_ 
-                    |--->--->where tb_3_.GENDER = ?
+                    |--->--->select 
+                    |--->--->--->tb_3_.ID c1, tb_3_.FIRST_NAME c2, tb_3_.LAST_NAME c3, tb_3_.GENDER c4, 
+                    |--->--->--->row_number() over(
+                    |--->--->--->--->order by (length(tb_3_.FIRST_NAME) + length(tb_3_.LAST_NAME)) desc
+                    |--->--->--->) c5 
+                    |--->--->from AUTHOR tb_3_ where tb_3_.GENDER = ?
                     |--->) tb_2_ 
-                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ 
-                    |--->--->on tb_2_.c1 = tb_4_.AUTHOR_ID
-                    |) on tb_1_.ID = tb_4_.BOOK_ID""".trimMargin()
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.c1 = tb_4_.AUTHOR_ID
+                    |) on tb_1_.ID = tb_4_.BOOK_ID 
+                    |where tb_2_.c5 < ?""".trimMargin()
             )
         }
     }

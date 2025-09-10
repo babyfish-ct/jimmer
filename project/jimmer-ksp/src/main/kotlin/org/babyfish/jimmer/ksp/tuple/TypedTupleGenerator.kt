@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.Context
+import org.babyfish.jimmer.ksp.MetaException
 import org.babyfish.jimmer.ksp.immutable.generator.COLLECTIONS_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.SELECTION_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.TUPLE_MAPPER_CLASS_NAME
@@ -20,6 +21,15 @@ class TypedTupleGenerator(
     val declaration: KSClassDeclaration
 ) {
     private val props = declaration.getDeclaredProperties().toList()
+
+    init {
+        if (props.isEmpty()) {
+            throw MetaException(
+                declaration,
+                "There is properties"
+            )
+        }
+    }
 
     fun generate() {
         val allFiles = ctx.resolver.getAllFiles().toList()
