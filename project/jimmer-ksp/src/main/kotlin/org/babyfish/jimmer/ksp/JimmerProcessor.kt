@@ -106,9 +106,9 @@ class JimmerProcessor(
             }
             if (!tupleGenerated) {
                 tupleGenerated = true
-                val processedDeclarations = TypedTupleProcessor(ctx, delayedTupleTypeNames).process()
-                if (processedDeclarations.isNotEmpty()) {
-                    return processedDeclarations
+                val processedTupleDeclarations = TypedTupleProcessor(ctx, delayedTupleTypeNames).process()
+                if (processedTupleDeclarations.isNotEmpty()) {
+                    return processedTupleDeclarations
                 }
             }
             if (tupleGenerated && !clientGenerated && !ctx.isBuddyIgnoreResourceGeneration) {

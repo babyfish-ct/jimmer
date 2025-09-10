@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.tuple;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.sql.TypedTuple;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
@@ -12,9 +13,10 @@ public class TypedTupleProcessor {
 
     private final Context context;
 
+    @Nullable
     private final Set<String> delayedTupleTypeNames;
 
-    public TypedTupleProcessor(Context context, Set<String> delayedTupleTypeNames) {
+    public TypedTupleProcessor(Context context, @Nullable Set<String> delayedTupleTypeNames) {
         this.context = context;
         this.delayedTupleTypeNames = delayedTupleTypeNames;
     }
@@ -23,13 +25,15 @@ public class TypedTupleProcessor {
         List<TypeElement> typeElements = new ArrayList<>();
         for (Element element : roundEnv.getElementsAnnotatedWith(TypedTuple.class)) {
             TypeElement typeElement = (TypeElement) element;
-            if (!delayedTupleTypeNames.contains(typeElement.getQualifiedName().toString())) {
+            if (delayedTupleTypeNames == null || !delayedTupleTypeNames.contains(typeElement.getQualifiedName().toString())) {
                 typeElements.add(typeElement);
             }
         }
-        for (String typeName : delayedTupleTypeNames) {
-            TypeElement typeElement = context.getElements().getTypeElement(typeName);
-            typeElements.add(typeElement);
+        if (delayedTupleTypeNames != null) {
+            for (String typeName : delayedTupleTypeNames) {
+                TypeElement typeElement = context.getElements().getTypeElement(typeName);
+                typeElements.add(typeElement);
+            }
         }
         for (TypeElement typeElement : typeElements) {
             validate(typeElement);
