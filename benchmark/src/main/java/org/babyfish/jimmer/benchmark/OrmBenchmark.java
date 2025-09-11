@@ -14,6 +14,7 @@ import org.babyfish.jimmer.benchmark.jimmer.JimmerDataTable;
 import org.babyfish.jimmer.benchmark.jimmer.kt.JimmerKtJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jooq.JooqData;
 import org.babyfish.jimmer.benchmark.jooq.JooqDataTable;
+import org.babyfish.jimmer.benchmark.komapper.KomapperSql;
 import org.babyfish.jimmer.benchmark.ktorm.KtormDataTable;
 import org.babyfish.jimmer.benchmark.mug.MugSafeSql;
 import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
@@ -22,13 +23,16 @@ import org.babyfish.jimmer.benchmark.nutz.NutzData;
 import org.babyfish.jimmer.benchmark.objsql.FakeObjSqlLoggerFactory;
 import org.babyfish.jimmer.benchmark.objsql.ObjSqlData;
 import org.babyfish.jimmer.benchmark.springjdbc.SpringJdbcDataRepository;
+import org.babyfish.jimmer.benchmark.sqltoy.SqltoyData;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.jooq.DSLContext;
+import org.komapper.jdbc.JdbcDatabase;
 import org.ktorm.database.Database;
 import org.ktorm.entity.EntitySequenceKt;
 import org.nutz.dao.impl.NutDao;
 import org.openjdk.jmh.annotations.*;
+import org.sagacity.sqltoy.dao.LightDao;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
@@ -77,6 +81,9 @@ public class OrmBenchmark {
     private APIJSONCreator<Long> apijsonCreator;
 
     private MugSafeSql mug;
+    private LightDao lightDao;
+    private KomapperSql komapper;
+
 
     @Setup
     public void initialize() throws SQLException, IOException {
@@ -110,6 +117,8 @@ public class OrmBenchmark {
 
         apijsonCreator = ctx.getBean(APIJSONCreator.class);
         mug = ctx.getBean(MugSafeSql.class);
+        lightDao = ctx.getBean(LightDao.class);
+        komapper = ctx.getBean(KomapperSql.class);
     }
 
     /*
@@ -251,6 +260,16 @@ public class OrmBenchmark {
     @Benchmark
     public void runMug() {
         mug.execute();
+    }
+
+    @Benchmark
+    public void runSqltoy() {
+        lightDao.find("SELECT ID, VALUE_1, VALUE_2,  VALUE_3, VALUE_4, VALUE_5, VALUE_6, VALUE_7, VALUE_8, VALUE_9 FROM DATA", new SqltoyData(), SqltoyData.class);
+    }
+
+    @Benchmark
+    public void runKomapper() {
+        komapper.execute();
     }
 
     @TearDown

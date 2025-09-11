@@ -15,6 +15,8 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.jmh.core)
+    annotationProcessor(libs.jmh.generator.annprocess)
 
     implementation(libs.jimmer.sql)
     annotationProcessor(libs.jimmer.apt)
@@ -37,8 +39,10 @@ dependencies {
     implementation(libs.apijson)
     implementation(libs.apijson.framework)
     implementation(libs.mug.safesql)
-    implementation(libs.jmh.core)
-    annotationProcessor(libs.jmh.generator.annprocess)
+    implementation(libs.sqltoy)
+    implementation(libs.komapper.starter.jdbc)
+    implementation(libs.komapper.dialect.h2.jdbc)
+    ksp(libs.komapper.processor)
 
     runtimeOnly(libs.h2)
 }
