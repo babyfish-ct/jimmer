@@ -78,8 +78,7 @@ public class ConfigurableSubQueryImpl<R>
                 if (type == String.class) {
                     return (TypedSubQuery<R>) new Str(data, baseQuery);
                 }
-                // 基础类型 long int double之类
-                if (isNumericType(type)) {
+                if (isPrimitiveNumberType(type)) {
                     return (TypedSubQuery<R>) new Num<>(data, baseQuery);
                 }
                 if (Number.class.isAssignableFrom(type)) {
@@ -99,9 +98,8 @@ public class ConfigurableSubQueryImpl<R>
         return new ConfigurableSubQueryImpl<>(data, baseQuery);
     }
 
-    private static boolean isNumericType(Class<?> type) {
-        return type == long.class || type == int.class || type == double.class ||
-                type == float.class || type == short.class || type == byte.class;
+    private static boolean isPrimitiveNumberType(Class<?> type) {
+        return type.isPrimitive() && type != boolean.class && type != char.class;
     }
 
     @Override
