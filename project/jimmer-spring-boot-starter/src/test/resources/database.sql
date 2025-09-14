@@ -1,3 +1,4 @@
+drop table organization if exists;
 drop table gis_area if exists;
 drop table order_item_product_mapping if exists;
 drop table product if exists;
@@ -454,3 +455,16 @@ insert into order_item_product_mapping(fk_order_item_a, fk_order_item_b, fk_orde
     (1, 2, 1, '00A', '00B'),
     (2, 1, 1, '00A', '00B'),
     (2, 1, 1, '00B', '00A');
+
+
+
+create table organization(
+    id uuid not null,
+    idm_org_id uuid
+);
+alter table organization
+    add constraint pk_organization
+        primary key(id);
+alter table organization
+    add constraint uq_organization_idm_org_id
+        unique(idm_org_id);

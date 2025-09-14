@@ -208,7 +208,7 @@ class QueryParser {
         List<Source> subSources = new ArrayList<>();
         while (!source.isEmpty()) {
             int orIndex = source.indexOf("Or");
-            if (orIndex > 0 && orIndex + 2 < source.length()) {
+            if (orIndex > 0 && orIndex + 2 < source.length() && Character.isUpperCase(source.charAt(orIndex + 2))) {
                 subSources.add(source.subSource(0, orIndex));
                 source = source.subSource(orIndex + 2);
             } else {
@@ -228,7 +228,7 @@ class QueryParser {
         List<Source> subSources = new ArrayList<>();
         while (!source.isEmpty()) {
             int andIndex = source.indexOf("And");
-            if (andIndex > 0 && andIndex + 3 < source.length()) {
+            if (andIndex > 0 && andIndex + 3 < source.length() && Character.isUpperCase(source.charAt(andIndex + 3))) {
                 subSources.add(source.subSource(0, andIndex));
                 source = source.subSource(andIndex + 3);
             } else {
