@@ -141,6 +141,8 @@ Apt/Ksp是行业内的标准技术，Java IDE会给予支持。
 
 -   文档: https://babyfish-ct.github.io/jimmer-doc/zh
 
+-   Baeldung: https://www.baeldung.com/jimmer-orm-intro
+
 -   QQ群：622853051
 
 -   主要视频
