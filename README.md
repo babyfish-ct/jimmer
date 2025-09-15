@@ -11,6 +11,7 @@ English | [中文](./README_zh_CN.md)
 -   Convenient query API, robust Java DSL, elegant Kotlin DSL
     -   Dynamic querying is designed for multi-table queries
     -   DSL supports mixing native SQL expressions to use non-standard database-specific capabilities
+    -   Supports advanced SQL features such as `Derived Table`, `CTE`, and `Recursive CTE`
     -   Extends SQL capabilities, easily supporting advanced features that are costly to implement with native SQL
     -   Advanced SQL optimization capabilities
         -   Automatic removal of unnecessary table joins

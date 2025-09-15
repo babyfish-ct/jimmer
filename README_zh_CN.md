@@ -11,7 +11,8 @@
 -   便捷的查询API，健全的Java DSL，优美的Kotlin DSL
     -   动态查询为多表查询设计
     -   DSL支持混入原生SQL表达式以使用非标准的数据库特有能力
-	-   拓展SQL的能力，轻松支持原生SQL实现成本高昂的高级功能
+    -   支持Derived Table, CTE和Recursive-CTE这样的高级SQL
+    -   拓展SQL的能力，轻松支持原生SQL实现成本高昂的高级功能
     -   高级的SQL优化能力
         -   自动去除无用的表连接
         -   自动合并逻辑等价的表连接
