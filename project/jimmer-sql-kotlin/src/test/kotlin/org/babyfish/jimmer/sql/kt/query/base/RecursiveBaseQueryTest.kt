@@ -41,7 +41,7 @@ class RecursiveBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """with tb_1_(c1, c2, c3) as (
+                """with recursive tb_1_(c1, c2, c3) as (
                     |--->select tb_2_.NODE_ID, tb_2_.NAME, 1 
                     |--->from TREE_NODE tb_2_ 
                     |--->where tb_2_.PARENT_ID is null 

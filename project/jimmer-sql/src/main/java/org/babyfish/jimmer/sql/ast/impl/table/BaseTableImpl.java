@@ -109,6 +109,11 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     }
 
     @Override
+    public boolean isRecursiveCte() {
+        return toSymbol().isRecursiveCte();
+    }
+
+    @Override
     public RealTable realTable(JoinTypeMergeScope scope) {
         if (parent == null) {
             RealTable rrt = this.rootRealTable;

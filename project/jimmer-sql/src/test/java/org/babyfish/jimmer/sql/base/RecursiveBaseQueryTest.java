@@ -47,7 +47,7 @@ public class RecursiveBaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "with tb_1_(c1, c2, c3) as (" +
+                            "with recursive tb_1_(c1, c2, c3) as (" +
                                     "--->select " +
                                     "--->--->tb_2_.NODE_ID, tb_2_.NAME, " +
                                     "--->--->1 " +

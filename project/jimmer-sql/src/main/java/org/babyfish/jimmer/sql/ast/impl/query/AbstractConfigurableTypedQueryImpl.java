@@ -175,7 +175,14 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         } else {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
-            builder.sql("with ").enter(AbstractSqlBuilder.ScopeType.COMMA);
+            builder.sql("with ");
+            for (RealTable cteTable : cteTables) {
+                if (((BaseTableImplementor)cteTable.getTableLikeImplementor()).isRecursiveCte()) {
+                    builder.sql("recursive ");
+                    break;
+                }
+            }
+            builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
             for (RealTable cteTable : cteTables) {
                 builder.separator();
                 BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
@@ -203,7 +210,8 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private void collectCteTables(RealTable realTable, List<RealTable> cteTables) {
-        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor && !(this instanceof TypedBaseQuery<?>)) {
+        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor &&
+                !(this instanceof TypedBaseQuery<?>)) {
             BaseTableImplementor baseTableImplementor =
                     (BaseTableImplementor) realTable.getTableLikeImplementor();
             if (baseTableImplementor.isCte()) {

@@ -23,5 +23,7 @@ public interface BaseTableSymbol extends BaseTable {
 
     boolean isCte();
 
+    boolean isRecursiveCte();
+
     BaseTableSymbol getRecursive();
 }

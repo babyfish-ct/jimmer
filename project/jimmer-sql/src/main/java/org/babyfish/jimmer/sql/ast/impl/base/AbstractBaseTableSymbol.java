@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -20,7 +19,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final byte[] kotlinSelectionTypes;
 
-    protected final boolean cte;
+    protected final BaseTableKind kind;
 
     protected final BaseTableSymbol recursive;
 
@@ -34,12 +33,12 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
             byte[] kotlinSelectionTypes,
-            boolean cte
+            BaseTableKind kind
     ) {
         this.query = query;
         this.selections = wrapSelections(selections);
         this.kotlinSelectionTypes = kotlinSelectionTypes;
-        this.cte = cte;
+        this.kind = kind;
         this.parent = null;
         this.handle = null;
         this.joinType = JoinType.INNER;
@@ -56,7 +55,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
         this.kotlinSelectionTypes = ((AbstractBaseTableSymbol) base).kotlinSelectionTypes;
-        this.cte = ((AbstractBaseTableSymbol) base).cte;
+        this.kind = ((AbstractBaseTableSymbol) base).kind;
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");
         this.joinType = joinType;
@@ -115,7 +114,12 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     @Override
     public boolean isCte() {
-        return cte;
+        return kind != BaseTableKind.DERIVED;
+    }
+
+    @Override
+    public boolean isRecursiveCte() {
+        return kind == BaseTableKind.RECURSIVE_CTE;
     }
 
     @Override
@@ -126,13 +130,13 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     public abstract AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query);
 
     protected final String suffix() {
-        return recursive != null ?
+        return kind == BaseTableKind.RECURSIVE_CTE ?
                 "(RecursiveCTE)" :
-                cte ? "(CTE)" : "";
+                kind == BaseTableKind.CTE ? "(CTE)" : "";
     }
 
     public static <T extends BaseTable> T validateCte(T baseTable, boolean cte) {
-        if (((AbstractBaseTableSymbol) baseTable).cte != cte) {
+        if ((((AbstractBaseTableSymbol) baseTable).kind == BaseTableKind.DERIVED) == cte) {
             throw new IllegalStateException(
                     "BaseQuery does not support calling " +
                             "`asBaseTable`/`asCteBaseTable` " +

@@ -5,13 +5,13 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -306,7 +306,15 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         this.baseTable = baseTable =
                 mergedBy != null ?
                         mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
-                        (T) BaseTableSymbols.of(this, expandedQueries[0].getSelections(), kotlinSelectionTypes, cte);
+                        (T) BaseTableSymbols.of(
+                                this,
+                                expandedQueries[0].getSelections(),
+                                kotlinSelectionTypes,
+                                recursive ?
+                                        BaseTableKind.RECURSIVE_CTE :
+                                                cte ? BaseTableKind.CTE :
+                                                BaseTableKind.DERIVED
+                        );
         return baseTable;
     }
 

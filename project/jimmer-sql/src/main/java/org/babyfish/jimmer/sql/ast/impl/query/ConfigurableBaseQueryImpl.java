@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.*;
@@ -147,7 +148,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
         this.baseTable = baseTable =
             mergedBy != null ?
                     mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
-                    (T) BaseTableSymbols.of(this, getData().selections, kotlinSelectionTypes, cte);
+                    (T) BaseTableSymbols.of(this, getData().selections, kotlinSelectionTypes, cte ? BaseTableKind.CTE : BaseTableKind.DERIVED);
         return baseTable;
     }
 

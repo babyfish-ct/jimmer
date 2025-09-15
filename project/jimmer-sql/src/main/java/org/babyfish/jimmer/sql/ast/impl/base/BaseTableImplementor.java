@@ -21,4 +21,6 @@ public interface BaseTableImplementor extends BaseTable, TableLikeImplementor<Ob
     BaseTableImplementor getRecursive();
 
     boolean isCte();
+
+    boolean isRecursiveCte();
 }
