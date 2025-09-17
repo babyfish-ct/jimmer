@@ -4,7 +4,7 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;

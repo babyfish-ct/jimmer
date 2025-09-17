@@ -9,7 +9,7 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;

@@ -9,8 +9,8 @@ import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.error.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.*;
@@ -176,7 +176,7 @@ public class ErrorGenerator {
             builder.addParameter(
                     ParameterSpec
                             .builder(Constants.STRING_CLASS_NAME, "message")
-                            .addAnnotation(NotNull.class)
+                            .addAnnotation(NonNull.class)
                             .build()
             );
         }
@@ -196,7 +196,7 @@ public class ErrorGenerator {
             builder.addParameter(
                     ParameterSpec
                             .builder(field.type, field.name)
-                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class)
+                            .addAnnotation(field.isNullable ? Nullable.class : NonNull.class)
                             .build()
             );
         }
@@ -278,7 +278,7 @@ public class ErrorGenerator {
             FieldSpec.Builder fieldBuilder = FieldSpec
                     .builder(field.type, field.name)
                     .addModifiers(Modifier.FINAL)
-                    .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+                    .addAnnotation(field.isNullable ? Nullable.class : NonNull.class);
             builder.addField(fieldBuilder.build());
         }
 
@@ -291,7 +291,7 @@ public class ErrorGenerator {
             ParameterSpec.Builder parameterBuilder =
                     ParameterSpec
                             .builder(field.type, field.name)
-                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+                            .addAnnotation(field.isNullable ? Nullable.class : NonNull.class);
             constructorBuilder.addParameter(parameterBuilder.build());
         }
         if (element.getKind() == ElementKind.ENUM) {
@@ -319,7 +319,7 @@ public class ErrorGenerator {
                     )
                     .addModifiers(Modifier.PUBLIC)
                     .returns(field.type)
-                    .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+                    .addAnnotation(field.isNullable ? Nullable.class : NonNull.class);
             if (!field.doc.isEmpty()) {
                 mb.addJavadoc(field.doc);
             }

@@ -12,7 +12,7 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
 import org.babyfish.jimmer.sql.Id;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import java.util.Objects;

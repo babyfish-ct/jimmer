@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.Table;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 

@@ -7,7 +7,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.lang.OldChain;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import java.io.IOException;

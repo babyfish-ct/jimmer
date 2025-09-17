@@ -360,7 +360,10 @@ public class ImmutableProp implements BaseProp {
                         null,
                 reason -> new MetaException(executableElement, reason)
         );
-        for (AnnotationMirror annotationMirror : executableElement.getAnnotationMirrors()) {
+        List<AnnotationMirror> annotationMirrors = new ArrayList<>();
+        annotationMirrors.addAll(executableElement.getAnnotationMirrors());
+        annotationMirrors.addAll(executableElement.getReturnType().getAnnotationMirrors());
+        for (AnnotationMirror annotationMirror : annotationMirrors) {
             String annotationTypeName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
                     .getQualifiedName()
                     .toString();

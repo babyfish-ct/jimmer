@@ -5,8 +5,8 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
@@ -94,15 +94,16 @@ public class BuilderGenerator {
         if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
+        TypeName box = prop.getTypeName().box();
+        if (prop.isNullable()) {
+            box = box.annotated(AnnotationSpec.builder(Nullable.class).build());
+        } else {
+            box = box.annotated(AnnotationSpec.builder(NonNull.class).build());
+        }
         ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(
-                prop.getTypeName().box(),
+                box,
                 prop.getName()
         );
-        if (prop.isNullable()) {
-            parameterBuilder.addAnnotation(Nullable.class);
-        } else {
-            parameterBuilder.addAnnotation(NotNull.class);
-        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)

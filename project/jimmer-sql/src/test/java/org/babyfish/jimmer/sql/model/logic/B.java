@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model.logic;
 
 import org.babyfish.jimmer.sql.*;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 @Table(name ="JIMMER_TEST_DB.B.TABLE_B")

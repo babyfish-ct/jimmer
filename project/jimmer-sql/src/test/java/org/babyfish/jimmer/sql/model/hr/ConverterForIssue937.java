@@ -1,19 +1,19 @@
 package org.babyfish.jimmer.sql.model.hr;
 
 import org.babyfish.jimmer.jackson.Converter;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 public class ConverterForIssue937 implements Converter<String, String> {
 
-    @NotNull
+    @NonNull
     @Override
-    public String output(@NotNull String value) {
+    public String output(@NonNull String value) {
         return value;
     }
 
-    @NotNull
+    @NonNull
     @Override
-    public String input(@NotNull String jsonValue) {
+    public String input(@NonNull String jsonValue) {
         return jsonValue;
     }
 }

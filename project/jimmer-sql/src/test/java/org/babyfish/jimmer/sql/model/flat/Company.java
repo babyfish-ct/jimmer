@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.model.flat;
 
 import org.babyfish.jimmer.sql.*;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 public interface Company {
