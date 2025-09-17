@@ -880,7 +880,11 @@ public class ClientProcessor {
         boolean isRawTypePrimitive = rawType.getKind().isPrimitive();
         String nullableTypeName = null;
         String nonNullTypeName = null;
-        for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+        List<AnnotationMirror> annotationMirrors = new ArrayList<>(element.getAnnotationMirrors());
+        if (element instanceof ExecutableElement) {
+            annotationMirrors.addAll(((ExecutableElement) element).getReturnType().getAnnotationMirrors());
+        }
+        for (AnnotationMirror annotationMirror : annotationMirrors) {
             TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
             String annoClassName = annoElement.getSimpleName().toString();
             String annoClassFullName = annoElement.getQualifiedName().toString();
