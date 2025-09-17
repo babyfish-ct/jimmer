@@ -7,8 +7,8 @@ import com.squareup.javapoet.TypeSpec;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.lang.OldChain;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import java.util.Objects;
@@ -37,7 +37,7 @@ class AssociatedIdGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(idTypeName);
         if (!idTypeName.isPrimitive()) {
-            builder.addAnnotation(prop.isNullable() ? Nullable.class : NotNull.class);
+            builder.addAnnotation(prop.isNullable() ? Nullable.class : NonNull.class);
         }
         builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
         if (!withImplementation) {
@@ -69,7 +69,7 @@ class AssociatedIdGenerator {
         ParameterSpec.Builder parameterBuilder = ParameterSpec
                 .builder(idTypeName, parameterName);
         if (!idTypeName.isPrimitive()) {
-            parameterBuilder.addAnnotation(prop.isNullable() ? Nullable.class : NotNull.class);
+            parameterBuilder.addAnnotation(prop.isNullable() ? Nullable.class : NonNull.class);
         }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(StringUtil.identifier(prop.getSetterName(), "Id"))
