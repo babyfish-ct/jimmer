@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.model.pg;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
@@ -15,12 +15,12 @@ public class ScoresScalarProvider implements ScalarProvider<Map<Long, Integer>, 
             new TypeReference<Map<Long, Integer>>() {};
 
     @Override
-    public @NotNull Map<Long, Integer> toScalar(@NotNull String sqlValue) throws Exception {
+    public @NonNull Map<Long, Integer> toScalar(@NonNull String sqlValue) throws Exception {
         return MAPPER.readValue(sqlValue, TYPE_REFERENCE);
     }
 
     @Override
-    public @NotNull String toSql(@NotNull Map<Long, Integer> scalarValue) throws Exception {
+    public @NonNull String toSql(@NonNull Map<Long, Integer> scalarValue) throws Exception {
         return MAPPER.writeValueAsString(scalarValue);
     }
 

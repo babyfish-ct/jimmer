@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model.issue1125;
 
 import org.babyfish.jimmer.sql.*;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.List;

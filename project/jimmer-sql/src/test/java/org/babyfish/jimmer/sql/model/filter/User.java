@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model.filter;
 
 import org.babyfish.jimmer.sql.*;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import testpkg.annotations.Serializable;
 
 import java.time.LocalDateTime;

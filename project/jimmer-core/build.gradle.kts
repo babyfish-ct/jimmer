@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(libs.javax.validation.api)
     api(libs.jackson.databind)
     api(libs.kotlin.reflect)

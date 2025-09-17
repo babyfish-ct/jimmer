@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model.cycle;
 
 import org.babyfish.jimmer.sql.*;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 public interface Person {

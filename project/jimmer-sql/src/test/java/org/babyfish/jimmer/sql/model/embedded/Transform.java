@@ -4,7 +4,7 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.PropOverride;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 public interface Transform {

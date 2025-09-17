@@ -17,8 +17,8 @@ import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.*;
 import java.io.IOException;
@@ -906,7 +906,7 @@ public class DtoGenerator {
             if (prop.isNullable()) {
                 getterBuilder.addAnnotation(Nullable.class);
             } else {
-                getterBuilder.addAnnotation(NotNull.class);
+                getterBuilder.addAnnotation(NonNull.class);
             }
         }
         boolean isBuilderRequired = isBuildRequired();
@@ -980,7 +980,7 @@ public class DtoGenerator {
             if (prop.isNullable()) {
                 parameterBuilder.addAnnotation(Nullable.class);
             } else {
-                parameterBuilder.addAnnotation(NotNull.class);
+                parameterBuilder.addAnnotation(NonNull.class);
             }
         }
         MethodSpec.Builder setterBuilder = MethodSpec
@@ -1053,7 +1053,7 @@ public class DtoGenerator {
                 .addParameter(
                         ParameterSpec
                                 .builder(dtoType.getBaseType().getClassName(), "base")
-                                .addAnnotation(NotNull.class)
+                                .addAnnotation(NonNull.class)
                                 .build()
                 );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {

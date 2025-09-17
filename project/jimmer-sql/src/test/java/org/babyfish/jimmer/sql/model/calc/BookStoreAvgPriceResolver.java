@@ -10,8 +10,8 @@ import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.BookStoreProps;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -43,7 +43,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<UUID, BigDec
 
     @Nullable
     @Override
-    public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) {
+    public Collection<?> getAffectedSourceIds(@NonNull AssociationEvent e) {
         if (e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
             return Collections.singleton(e.getSourceId());
         }
@@ -52,7 +52,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<UUID, BigDec
 
     @Nullable
     @Override
-    public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
+    public Collection<?> getAffectedSourceIds(@NonNull EntityEvent<?> e) {
         if (e.getImmutableType().getJavaClass() == Book.class && e.isChanged(BookProps.PRICE)) {
             return Collections.singleton(e.getUnchangedValue(BookProps.STORE_ID));
         }
