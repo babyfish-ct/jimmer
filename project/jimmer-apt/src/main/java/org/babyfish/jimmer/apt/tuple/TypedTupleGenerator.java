@@ -393,6 +393,7 @@ public class TypedTupleGenerator {
     ) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(fieldElement.getSimpleName().toString())
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.SELECTION_CLASS_NAME,
