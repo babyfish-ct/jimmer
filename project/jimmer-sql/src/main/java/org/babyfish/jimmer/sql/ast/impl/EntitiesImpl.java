@@ -635,7 +635,7 @@ public class EntitiesImpl implements Entities {
     @Override
     public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
         if (entity instanceof Iterable<?>) {
-            throw new IllegalArgumentException("entity cannot be collection, do you want to call `saveAll/saveAllCommand`?");
+            throw new IllegalArgumentException("entity cannot be collection, do you want to call `saveEntities/saveEntitiesCommand`?");
         }
         if (entity instanceof Input<?>) {
             throw new IllegalArgumentException(
