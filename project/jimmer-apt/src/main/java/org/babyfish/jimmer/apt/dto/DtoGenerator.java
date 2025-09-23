@@ -1277,6 +1277,7 @@ public class DtoGenerator {
 
     private void addPredicateOperation(MethodSpec.Builder builder, DtoProp<ImmutableType, ImmutableProp> prop) {
         String propName = prop.getName();
+        String propGetter = getterName(prop);
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
         if (tailProp.getTargetType() != null) {
             builder.beginControlFlow("if (this.$L != null)", propName);
@@ -1330,12 +1331,12 @@ public class DtoGenerator {
         }
         if (isSpecificationConverterRequired(tailProp)) {
             cb.add(
-                    "$L(this.$L)",
+                    "$L(this.$L())",
                     StringUtil.identifier("__convert", propName),
-                    propName
+                    propGetter
             );
         } else {
-            cb.add("this.$L", propName);
+            cb.add("this.$L()", propGetter);
         }
         if ("like".equals(funcName) || "notLike".equals(funcName)) {
             cb.add(", ");
