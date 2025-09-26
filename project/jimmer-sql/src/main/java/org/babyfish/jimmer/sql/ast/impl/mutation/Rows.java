@@ -14,13 +14,15 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
 
 class Rows {
 
-    private Rows() {}
+    private Rows() {
+    }
 
     static Map<Object, ImmutableSpi> findMapByIds(
             SaveContext ctx,
@@ -140,19 +142,45 @@ class Rows {
             }
             Set<ImmutableProp> keyProps = fixedGroup.getProps();
             Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+            // 用于记录缺失的键属性信息
+            List<String> missingKeyProps = new ArrayList<>();
+            Set<String> processedSpiIds = new HashSet<>();
+
             for (ImmutableSpi spi : rows) {
                 boolean unloaded = false;
+                List<String> spiMissingProps = new ArrayList<>();
+
                 for (ImmutableProp keyProp : keyProps) {
                     if (!spi.__isLoaded(keyProp.getId())) {
                         unloaded = true;
-                        break;
+                        spiMissingProps.add(keyProp.getName()); // 记录缺失的属性名
                     }
                 }
+
                 if (!unloaded) {
                     keys.add(Keys.keyOf(spi, keyProps));
+                } else {
+                    // 记录当前SPI对象缺失的属性
+                    String spiId = spi.__type().getJavaClass().getName();
+                    if (!processedSpiIds.contains(spiId)) {
+                        processedSpiIds.add(spiId);
+                        missingKeyProps.add(String.format(
+                                "object[%s]Missing key attributes: %s",
+                                spiId,
+                                String.join(", ", spiMissingProps)
+                        ));
+                    }
                 }
             }
+
             if (keys.isEmpty()) {
+                // 如果没有有效键且存在缺失属性，抛出详细异常
+                if (!missingKeyProps.isEmpty()) {
+                    throw new IllegalStateException(
+                            "objects lack the necessary key attributes to generate query keys. Details: " +
+                                    String.join("; ", missingKeyProps)
+                    );
+                }
                 return Collections.emptyMap();
             }
             return Collections.singletonMap(
@@ -195,6 +223,19 @@ class Rows {
         return resultMap;
     }
 
+    // 辅助方法：获取SPI对象的唯一标识（根据实际情况实现）
+    private static String getSpiIdentifier(ImmutableSpi spi) {
+        // 这里假设SPI有getId()方法，实际实现需根据ImmutableSpi的结构调整
+        try {
+            Method getIdMethod = spi.getClass().getMethod("getId");
+            Object id = getIdMethod.invoke(spi);
+            return id != null ? id.toString() : "未知ID_" + System.identityHashCode(spi);
+        } catch (Exception e) {
+            // 如果没有getId()方法，使用对象哈希码作为临时标识
+            return "对象_" + System.identityHashCode(spi);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     static List<ImmutableSpi> findRows(
             SaveContext ctx,
@@ -213,10 +254,10 @@ class Rows {
                     (q, table) -> {
                         block.accept(q, table);
                         if (ctx.trigger != null) {
-                            return q.select((Table<ImmutableSpi>)table);
+                            return q.select((Table<ImmutableSpi>) table);
                         }
                         return q.select(
-                                ((Table<ImmutableSpi>)table).fetch(fetcher)
+                                ((Table<ImmutableSpi>) table).fetch(fetcher)
                         );
                     }
             ).forUpdate(options.isPessimisticLocked(type)).execute(ctx.con);
@@ -242,7 +283,7 @@ class Rows {
                     (q, table) -> {
                         block.accept(q, table);
                         return q.select(
-                                ((Table<ImmutableSpi>)table).fetch(fetcher)
+                                ((Table<ImmutableSpi>) table).fetch(fetcher)
                         );
                     }
             ).execute(con);
