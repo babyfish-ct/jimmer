@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -221,19 +220,6 @@ class Rows {
             resultMap.put(group, list);
         }
         return resultMap;
-    }
-
-    // 辅助方法：获取SPI对象的唯一标识（根据实际情况实现）
-    private static String getSpiIdentifier(ImmutableSpi spi) {
-        // 这里假设SPI有getId()方法，实际实现需根据ImmutableSpi的结构调整
-        try {
-            Method getIdMethod = spi.getClass().getMethod("getId");
-            Object id = getIdMethod.invoke(spi);
-            return id != null ? id.toString() : "未知ID_" + System.identityHashCode(spi);
-        } catch (Exception e) {
-            // 如果没有getId()方法，使用对象哈希码作为临时标识
-            return "对象_" + System.identityHashCode(spi);
-        }
     }
 
     @SuppressWarnings("unchecked")
