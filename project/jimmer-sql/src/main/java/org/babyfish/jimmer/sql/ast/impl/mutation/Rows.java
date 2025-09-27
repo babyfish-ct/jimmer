@@ -140,7 +140,7 @@ class Rows {
             }
             Set<ImmutableProp> keyProps = fixedGroup.getProps();
             Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
-            // 用于记录缺失的非空键属性信息
+            // Record missing non-null key prop
             List<String> missingKeyProps = new ArrayList<>();
             Set<String> processedSpiIds = new HashSet<>();
 
@@ -152,7 +152,7 @@ class Rows {
                     if (!spi.__isLoaded(keyProp.getId())) {
                         unloaded = true;
                         if (!keyProp.isNullable()) {
-                            spiMissingProps.add(keyProp.getName()); //  记录缺失的非空key属性名
+                            spiMissingProps.add(keyProp.getName()); //  Add missing non-null key prop name
                         }
                     }
                 }
@@ -160,7 +160,7 @@ class Rows {
                 if (!unloaded) {
                     keys.add(Keys.keyOf(spi, keyProps));
                 } else {
-                    // 记录当前SPI对象缺失的非空key属性
+                    // Add the current missing non-null key prop of the SPI object
                     String spiId = spi.__type().getJavaClass().getSimpleName();
                     if (!processedSpiIds.contains(spiId)) {
                         processedSpiIds.add(spiId);
