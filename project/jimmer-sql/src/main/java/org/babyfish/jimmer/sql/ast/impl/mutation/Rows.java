@@ -140,19 +140,46 @@ class Rows {
             }
             Set<ImmutableProp> keyProps = fixedGroup.getProps();
             Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+            // 用于记录缺失的非空键属性信息
+            List<String> missingKeyProps = new ArrayList<>();
+            Set<String> processedSpiIds = new HashSet<>();
+
             for (ImmutableSpi spi : rows) {
                 boolean unloaded = false;
+                List<String> spiMissingProps = new ArrayList<>();
+
                 for (ImmutableProp keyProp : keyProps) {
                     if (!spi.__isLoaded(keyProp.getId())) {
                         unloaded = true;
-                        break;
+                        if (!keyProp.isNullable()) {
+                            spiMissingProps.add(keyProp.getName()); //  记录缺失的非空key属性名
+                        }
                     }
                 }
+
                 if (!unloaded) {
                     keys.add(Keys.keyOf(spi, keyProps));
+                } else {
+                    // 记录当前SPI对象缺失的非空key属性
+                    String spiId = spi.__type().getJavaClass().getSimpleName();
+                    if (!processedSpiIds.contains(spiId)) {
+                        processedSpiIds.add(spiId);
+                        missingKeyProps.add(String.format(
+                                "[%s]Missing Nonnull key : %s",
+                                spiId,
+                                String.join(", ", spiMissingProps)
+                        ));
+                    }
                 }
             }
             if (keys.isEmpty()) {
+                  // 如果没有有效键且存在缺失的非空key属性，抛出详细异常
+                if (!missingKeyProps.isEmpty()) {
+                    throw new IllegalStateException(
+                        String.join("; ", missingKeyProps)
+                    );
+                }
+
                 return Collections.emptyMap();
             }
             return Collections.singletonMap(
