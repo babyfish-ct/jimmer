@@ -152,7 +152,8 @@ class Rows {
                     if (!spi.__isLoaded(keyProp.getId())) {
                         unloaded = true;
                         if (!keyProp.isNullable()) {
-                            spiMissingProps.add(keyProp.getName()); //  Add missing non-null key prop name
+                            //  Add missing non-null key prop name
+                            spiMissingProps.add(keyProp.getName()); 
                         }
                     }
                 }
@@ -173,7 +174,7 @@ class Rows {
                 }
             }
             if (keys.isEmpty()) {
-                  // 如果没有有效键且存在缺失的非空key属性，抛出详细异常
+                  // If there is no valid key and there is a missing non-empty key attribute, a detailed exception is thrown.
                 if (!missingKeyProps.isEmpty()) {
                     throw new IllegalStateException(
                         String.join("; ", missingKeyProps)
