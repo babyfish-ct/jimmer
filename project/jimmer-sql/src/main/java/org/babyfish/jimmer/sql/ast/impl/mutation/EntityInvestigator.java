@@ -3,16 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 
-import java.sql.BatchUpdateException;
 import java.util.*;
 
 class EntityInvestigator {
@@ -35,7 +32,7 @@ class EntityInvestigator {
             new HashMap<>();
 
     private final List<ImmutableProp> missedProps;
-    
+
     private final boolean isIdMissed;
 
     private final KeyMatcher.Group primaryGroup;
@@ -128,20 +125,23 @@ class EntityInvestigator {
             if (group == null) {
                 return Collections.emptyList();
             }
-            Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> mapByKeys = Rows.findMapByKeys(
                     ctx,
                     QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
                     keyFetcher(group.getProps(), missedProps),
                     drafts,
                     keyMatcher.getGroup(group.getName())
-            ).values().iterator().next();
-            for (DraftSpi draft : drafts) {
-                Object key = Keys.keyOf(draft, group.getProps());
-                ImmutableSpi row = rowMap.get(key);
-                if (row != null) {
-                    for (ImmutableProp missedProp : missedProps) {
-                        PropId missedPropId = missedProp.getId();
-                        draft.__set(missedPropId, row.__get(missedPropId));
+            );
+            if (!mapByKeys.isEmpty()) {
+                Map<Object, ImmutableSpi> rowMap = mapByKeys.values().iterator().next();
+                for (DraftSpi draft : drafts) {
+                    Object key = Keys.keyOf(draft, group.getProps());
+                    ImmutableSpi row = rowMap.get(key);
+                    if (row != null) {
+                        for (ImmutableProp missedProp : missedProps) {
+                            PropId missedPropId = missedProp.getId();
+                            draft.__set(missedPropId, row.__get(missedPropId));
+                        }
                     }
                 }
             }
@@ -206,7 +206,7 @@ class EntityInvestigator {
                 if (!((ImmutableSpi) associatedObject).__isLoaded(associatedIdPropId)) {
                     continue;
                 }
-                Object associatedId = ((ImmutableSpi)associatedObject).__get(associatedIdPropId);
+                Object associatedId = ((ImmutableSpi) associatedObject).__get(associatedIdPropId);
                 List<ImmutableSpi> rows = Rows.findRows(
                         ctx.prop(prop),
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
@@ -249,13 +249,17 @@ class EntityInvestigator {
             if (!keyProps.isEmpty() &&
                     containsAny(shape.getGetterMap().keySet(), keyProps) &&
                     (!updatable || !isIdMissed || primaryGroup != null)) {
-                Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
+                Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> mapByKeys = Rows.findMapByKeys(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
                         keyFetcher(keyProps, primaryGroup != null ? primaryGroup.getProps() : null),
                         entities,
                         keyMatcher.getGroup(groupName)
-                ).values().iterator().next();
+                );
+                if (mapByKeys.isEmpty()) {
+                    continue;
+                }
+                Map<Object, ImmutableSpi> rowMap = mapByKeys.values().iterator().next();
                 if (rowMap == null || rowMap.isEmpty()) {
                     continue;
                 }
@@ -289,10 +293,10 @@ class EntityInvestigator {
                         continue;
                     }
                     PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
-                    if (!((ImmutableSpi)associatedObject).__isLoaded(targetIdPropId)) {
+                    if (!((ImmutableSpi) associatedObject).__isLoaded(targetIdPropId)) {
                         continue;
                     }
-                    Object associatedId = ((ImmutableSpi)associatedObject).__get(targetIdPropId);
+                    Object associatedId = ((ImmutableSpi) associatedObject).__get(targetIdPropId);
                     targetIdMultiMap
                             .computeIfAbsent(prop, it -> new LinkedHashSet<>())
                             .add(associatedId);
@@ -343,7 +347,7 @@ class EntityInvestigator {
             if (t == null) {
                 t = ctx.path.getType();
             }
-            return new FetcherImpl<>((Class<ImmutableSpi>)t.getJavaClass());
+            return new FetcherImpl<>((Class<ImmutableSpi>) t.getJavaClass());
         });
     }
 
@@ -366,7 +370,7 @@ class EntityInvestigator {
 
     @SuppressWarnings("unchecked")
     private Fetcher<ImmutableSpi> keyFetcher(Set<ImmutableProp> keyProps) {
-        Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
+        Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass());
         for (ImmutableProp keyProp : keyProps) {
             if (keyProp.isReference(TargetLevel.ENTITY)) {
                 fetcher = fetcher.add(keyProp.getName(), IdOnlyFetchType.RAW);
