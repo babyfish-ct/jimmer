@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.dialect.MySql5Dialect;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -343,11 +344,18 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
             return;
         }
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
+        int finalBatchSize = nonNull(
+                sqlClient.getDialect().getForEachBatchSize(),
+                batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize()
+        );
         sqlClient.getSlaveConnectionManager(getData().forUpdate != null).execute(con, newConn -> {
             forEachImpl(newConn, finalBatchSize, consumer);
             return (Void) null;
         });
+    }
+
+    private static <T> T nonNull(T a, T b) {
+        return a != null ? a : b;
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {

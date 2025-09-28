@@ -3,11 +3,17 @@ package org.babyfish.jimmer.sql.dialect;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * MySQL 5.x
  */
 public class MySql5Dialect extends MySqlStyleDialect {
+
+    @Override
+    public @Nullable Integer getForEachBatchSize() {
+        return Integer.MIN_VALUE;
+    }
 
     @Override
     public boolean isExplicitBatchRequired() {

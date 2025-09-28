@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.query.LockMode;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -17,7 +16,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public interface Dialect extends SqlTypeStrategy {
 
@@ -28,6 +26,11 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     void paginate(PaginationContext ctx);
+
+    @Nullable
+    default Integer getForEachBatchSize() {
+        return null;
+    }
 
     @Nullable
     default UpdateJoin getUpdateJoin() {
