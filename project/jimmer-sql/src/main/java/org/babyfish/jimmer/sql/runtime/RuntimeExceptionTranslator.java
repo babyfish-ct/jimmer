@@ -19,7 +19,7 @@ class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
     }
 
     @Override
-    public @Nullable Exception translate(@NotNull Exception exception, @NotNull Args args) {
+    public @Nullable Exception translate(@NotNull Exception exception, @Nullable Args args) {
         Set<Class<?>> handledTypes = new HashSet<>();
         while (true) {
             Exception translated = translate(exception, args, handledTypes);

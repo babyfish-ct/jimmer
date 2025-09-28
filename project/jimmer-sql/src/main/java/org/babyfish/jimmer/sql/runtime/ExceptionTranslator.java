@@ -19,7 +19,7 @@ import java.util.Collection;
  *     @Override
  *     public @Nullable Exception translate(
  *             @NotNull SaveException.NotUnique exception,
- *             @NotNull Args args
+ *             @Nullable Args args
  *     ) {
  *         if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
  *             return new IllegalArgumentException(
@@ -102,7 +102,7 @@ public interface ExceptionTranslator<E extends Exception> {
      * please return runtime exception.</p>
      */
     @Nullable
-    Exception translate(@NotNull E exception, @NotNull Args args);
+    Exception translate(@NotNull E exception, @Nullable Args args);
 
     interface Args {
         JSqlClientImplementor sqlClient();

@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -25,6 +26,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -523,9 +525,23 @@ abstract class AbstractPreHandler implements PreHandler {
 
     final void resolve() {
         if (!resolved) {
-            validateAloneIds();
-            onResolve();
-            resolved = true;
+            try {
+                validateAloneIds();
+                onResolve();
+                resolved = true;
+            } catch (RuntimeException ex) {
+                ExceptionTranslator<Exception> translator = this.ctx.options.getExceptionTranslator();
+                if (translator != null) {
+                    Exception translatedException = translator.translate(ex, null);
+                    if (translatedException instanceof RuntimeException) {
+                        throw (RuntimeException) translatedException;
+                    }
+                    if (translatedException != null) {
+                        throw new ExecutionException("Cannot pre handle the saved data", ex);
+                    }
+                }
+                throw ex;
+            }
         }
     }
 

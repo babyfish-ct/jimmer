@@ -459,4 +459,30 @@ public class JoinTest extends AbstractQueryTest {
             );
         }
     }
+
+//    @Test
+//    public void testIssue1176() {
+//        AuthorTable table = AuthorTable.$;
+//        BookTable b1 = table.asTableEx().weakJoin(BookTable.class, JoinType.LEFT, (s, t) -> {
+//           return s.firstName().eq(t.name());
+//        });
+//        BookTable b2 = table.asTableEx().weakJoin(BookTable.class, JoinType.LEFT, (s, t) -> {
+//            return s.lastName().eq(t.name());
+//        });
+//        BookStoreTable store = b2.asTableEx().weakJoin(BookStoreTable.class, JoinType.LEFT, (s, t) -> {
+//            return s.name().eq(s.name());
+//        });
+//        executeAndExpect(
+//                getSqlClient()
+//                        .createQuery(table)
+//                        .select(
+//                                store.name(),
+//                                b1.name(),
+//                                b2.name()
+//                        ),
+//                ctx -> {
+//                    ctx.sql("");
+//                }
+//        );
+//    }
 }

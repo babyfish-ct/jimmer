@@ -345,7 +345,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 @Override
                                 public @Nullable Exception translate(
                                         @NotNull SaveException.NotUnique exception,
-                                        @NotNull Args args
+                                        @Nullable Args args
                                 ) {
                                     if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                         return new IllegalArgumentException(
@@ -413,7 +413,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 @Override
                                 public @Nullable Exception translate(
                                         @NotNull SaveException.NotUnique exception,
-                                        @NotNull Args args
+                                        @Nullable Args args
                                 ) {
                                     if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                         return new IllegalArgumentException(
@@ -483,7 +483,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 @Override
                                 public @Nullable Exception translate(
                                         @NotNull SaveException.NotUnique exception,
-                                        @NotNull Args args
+                                        @Nullable Args args
                                 ) {
                                     if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                         return new IllegalArgumentException(
@@ -504,7 +504,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                     @Override
                                     public @Nullable Exception translate(
                                             @NotNull SaveException.NotUnique exception,
-                                            @NotNull Args args
+                                            @Nullable Args args
                                     ) {
                                         if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                             return new IllegalArgumentException(
@@ -571,7 +571,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 @Override
                                 public @Nullable Exception translate(
                                         @NotNull SaveException.NotUnique exception,
-                                        @NotNull Args args
+                                        @Nullable Args args
                                 ) {
                                     if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                         return new IllegalArgumentException(
@@ -594,7 +594,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                     @Override
                                     public @Nullable Exception translate(
                                             @NotNull SaveException.NotUnique exception,
-                                            @NotNull Args args
+                                            @Nullable Args args
                                     ) {
                                         if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                             return new IllegalArgumentException(
@@ -1746,7 +1746,10 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     private static class IllegalTargetIdTranslatorImpl implements ExceptionTranslator<SaveException.IllegalTargetId> {
 
         @Override
-        public @Nullable Exception translate(SaveException.@NotNull IllegalTargetId exception, @NotNull Args args) {
+        public @Nullable Exception translate(
+                @NotNull SaveException.IllegalTargetId exception,
+                @Nullable Args args
+        ) {
             Assertions.assertNotNull(args);
             return new IllegalTargetWrapper(exception);
         }
