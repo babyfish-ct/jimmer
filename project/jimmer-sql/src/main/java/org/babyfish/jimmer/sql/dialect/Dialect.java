@@ -27,6 +27,9 @@ public interface Dialect extends SqlTypeStrategy {
 
     void paginate(PaginationContext ctx);
 
+    /**
+     * Feedback from issue #1170
+     */
     @Nullable
     default Integer getForEachBatchSize() {
         return null;
