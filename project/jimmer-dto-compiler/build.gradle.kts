@@ -8,8 +8,6 @@ plugins {
 
 dependencies {
     implementation(libs.jetbrains.annotations)
-    testImplementation(libs.jupiter.api)
-    testRuntimeOnly(libs.jupiter.engine)
     antlr(libs.antlr)
 }
 

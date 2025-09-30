@@ -31,9 +31,6 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
     testAnnotationProcessor(projects.jimmerApt)
 
-    testImplementation(libs.jupiter.api)
-    testRuntimeOnly(libs.jupiter.engine)
-
     testImplementation(libs.spring.jdbc)
 
     testImplementation(libs.h2)

@@ -13,10 +13,8 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     compileOnly(libs.mapstruct)
 
-    testImplementation(libs.jupiter.api)
     testImplementation(libs.mapstruct)
     testImplementation(libs.lombok)
-    testRuntimeOnly(libs.jupiter.engine)
 
     testAnnotationProcessor(projects.jimmerApt)
     testAnnotationProcessor(libs.lombok)
