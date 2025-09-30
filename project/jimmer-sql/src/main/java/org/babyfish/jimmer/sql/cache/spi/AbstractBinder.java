@@ -3,16 +3,12 @@ package org.babyfish.jimmer.sql.cache.spi;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.chain.Binder;
-import org.checkerframework.checker.units.qual.C;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Collections;
 
 public abstract class AbstractBinder<K> implements Binder<K> {
 
