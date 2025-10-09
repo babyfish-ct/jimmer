@@ -2,7 +2,6 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
@@ -228,7 +227,25 @@ class ImplGenerator(
                 .builder("clone")
                 .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
                 .returns(type.draftClassName(PRODUCER, IMPL))
-                .addStatement("return super.clone() as %T", type.draftClassName(PRODUCER, IMPL))
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            addStatement("val copy = super.clone() as %T", type.draftClassName(PRODUCER, IMPL))
+                            addStatement("val originalVisibility = this.__visibility")
+                            beginControlFlow("if (originalVisibility != null)")
+                            addStatement("val newVisibility = %T.of(%L)", VISIBILITY_CLASS_NAME, type.properties.size)
+                            beginControlFlow("for (propId in 0 until %L)", type.properties.size)
+                            addStatement("newVisibility.show(propId, originalVisibility.visible(propId))")
+                            endControlFlow()
+                            addStatement("copy.__visibility = newVisibility")
+                            nextControlFlow("else")
+                            addStatement("copy.__visibility = null")
+                            endControlFlow()
+                            addStatement("return copy")
+                        }
+                        .build()
+                )
                 .build()
         )
     }
