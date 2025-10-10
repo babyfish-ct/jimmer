@@ -186,7 +186,18 @@ public class ImplGenerator {
                 .returns(type.getImplClassName());
         builder
                 .beginControlFlow("try")
-                .addStatement("return ($T)super.clone()", type.getImplClassName())
+                .addStatement("$T copy = ($T) super.clone()", type.getImplClassName(), type.getImplClassName())
+                .addStatement("$T originalVisibility = this.__visibility", Constants.VISIBILITY_CLASS_NAME)
+                .beginControlFlow("if (originalVisibility != null)")
+                .addStatement("$T newVisibility = $T.of($L)", Constants.VISIBILITY_CLASS_NAME, Constants.VISIBILITY_CLASS_NAME, type.getProps().size())
+                .beginControlFlow("for (int propId = 0; propId < $L; propId++)", type.getProps().size())
+                .addStatement("newVisibility.show(propId, originalVisibility.visible(propId))")
+                .endControlFlow()
+                .addStatement("copy.__visibility = newVisibility")
+                .nextControlFlow("else")
+                .addStatement("copy.__visibility = null")
+                .endControlFlow()
+                .addStatement("return copy")
                 .nextControlFlow("catch($T ex)", Constants.CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME)
                 .addStatement("throw new AssertionError(ex)")
                 .endControlFlow();
