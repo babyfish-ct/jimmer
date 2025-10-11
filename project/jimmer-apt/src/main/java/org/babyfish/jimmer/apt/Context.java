@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt;
 
+import kotlin.Metadata;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.Specification;
@@ -28,7 +29,7 @@ public class Context {
 
     @SuppressWarnings("unchecked")
     private final static Class<? extends Annotation>[] SQL_TYPE_ANNOTATION_TYPES =
-            (Class<? extends Annotation>[]) new Class[] { Entity.class, MappedSuperclass.class, Embeddable.class };
+            (Class<? extends Annotation>[]) new Class[]{Entity.class, MappedSuperclass.class, Embeddable.class};
 
     private final Elements elements;
 
@@ -76,6 +77,12 @@ public class Context {
 
     private final Modifier dtoFieldModifier;
 
+    private final boolean withTables;
+
+    private final boolean withTableExes;
+
+    private final boolean withFetchers;
+
     Context(
             Elements elements,
             Types types,
@@ -89,6 +96,9 @@ public class Context {
             String fetchersTypeName,
             boolean hibernateValidatorEnhancement,
             boolean buddyIgnoreResourceGeneration,
+            boolean withTables,
+            boolean withTableExes,
+            boolean withFetchers,
             Modifier dtoFieldModifier
     ) {
         this.elements = elements;
@@ -136,10 +146,13 @@ public class Context {
         comparableType = types
                 .getDeclaredType(
                         elements
-                        .getTypeElement(Comparable.class.getName()),
+                                .getTypeElement(Comparable.class.getName()),
                         types.getWildcardType(null, null)
                 );
         enumElement = elements.getTypeElement(Enum.class.getName());
+        this.withTables = withTables;
+        this.withTableExes = withTableExes;
+        this.withFetchers = withFetchers;
     }
 
     public Class<? extends Annotation> getImmutableAnnotationType(TypeElement typeElement) {
@@ -155,9 +168,9 @@ public class Context {
                     throw new MetaException(
                             typeElement,
                             "it can not be decorated by both @" +
-                                    sqlAnnotation.annotationType().getName() +
-                                    " and @" +
-                                    newSqlAnnotation.annotationType().getName()
+                            sqlAnnotation.annotationType().getName() +
+                            " and @" +
+                            newSqlAnnotation.annotationType().getName()
                     );
                 }
                 sqlAnnotation = newSqlAnnotation;
@@ -267,8 +280,8 @@ public class Context {
 
     public boolean isDto(TypeMirror type) {
         return types.isSubtype(type, viewType) ||
-                types.isSubtype(type, inputType) ||
-                types.isSubtype(type, specificationType);
+               types.isSubtype(type, inputType) ||
+               types.isSubtype(type, specificationType);
     }
 
     public Elements getElements() {
@@ -288,7 +301,7 @@ public class Context {
     }
 
     public boolean include(TypeElement typeElement) {
-        if (typeElement.getAnnotation(kotlin.Metadata.class) != null) {
+        if (typeElement.getAnnotation(Metadata.class) != null) {
             return false;
         }
         String qualifiedName = typeElement.getQualifiedName().toString();
@@ -335,5 +348,17 @@ public class Context {
 
     public Modifier getDtoFieldModifier() {
         return dtoFieldModifier;
+    }
+
+    public boolean withTables() {
+        return withTables;
+    }
+
+    public boolean withTableExes() {
+        return withTableExes;
+    }
+
+    public boolean withFetchers() {
+        return withFetchers;
     }
 }

@@ -165,6 +165,15 @@ public class JimmerProcessor extends AbstractProcessor {
                 "true".equals(
                         processingEnv.getOptions().get("jimmer.buddy.ignoreResourceGeneration")
                 ),
+                "true".equals(
+                        processingEnv.getOptions().get("jimmer.entry.withTables")
+                ),
+                "true".equals(
+                        processingEnv.getOptions().get("jimmer.entry.withTableExes")
+                ),
+                "true".equals(
+                        processingEnv.getOptions().get("jimmer.entry.withFetchers")
+                ),
                 dtoFieldModifier
         );
         elements = processingEnv.getElementUtils();
