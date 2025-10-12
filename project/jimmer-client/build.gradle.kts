@@ -11,8 +11,6 @@ dependencies {
     testAnnotationProcessor(projects.jimmerApt)
     kspTest(projects.jimmerKsp)
     testImplementation(projects.jimmerSqlKotlin)
-    testImplementation(libs.jupiter.api)
-    testRuntimeOnly(libs.jupiter.engine)
     testImplementation(libs.spring.web)
 }
 

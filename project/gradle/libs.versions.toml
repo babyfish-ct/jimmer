@@ -13,7 +13,6 @@ javapoet = "1.13.0"
 javaxValidation = "2.0.1.Final"
 jetbrainsAnnotations = "24.0.0"
 jspecify = "1.0.0"
-jupiter = "5.10.2"
 kafka = "0.10.0.0"
 kotlinpoet = "2.1.0"
 ksp = "2.1.20-2.0.0"
@@ -55,9 +54,6 @@ javax-validation-api = { group = "javax.validation", name = "validation-api", ve
 
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrainsAnnotations" }
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }
-
-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "jupiter" }
-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "jupiter" }
 
 kafka-connect-api = { group = "org.apache.kafka", name = "connect-api", version.ref = "kafka" }
 
@@ -102,7 +98,7 @@ springdoc-openapi-common = { group = "org.springdoc", name = "springdoc-openapi-
 
 quarkus-redis-client = { group = "io.quarkus", name = "quarkus-redis-client", version.ref = "quarkus" }
 
-hibernate-validation = { group = "org.hibernate", name="hibernate-validator", version.ref = "hibernateValitation" }
+hibernate-validation = { group = "org.hibernate", name = "hibernate-validator", version.ref = "hibernateValitation" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

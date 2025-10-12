@@ -26,9 +26,7 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
 
     testImplementation(libs.spring.boot.starter.test)
-    testImplementation(libs.jupiter.api)
     testImplementation(libs.h2)
-    testRuntimeOnly(libs.jupiter.engine)
     testImplementation(libs.spring.boot.starter.web)
 }
 

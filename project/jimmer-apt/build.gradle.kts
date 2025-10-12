@@ -12,7 +12,4 @@ dependencies {
     implementation(libs.spring.core)
     implementation(libs.intellij.annotations)
     implementation(libs.javapoet)
-
-    testImplementation(libs.jupiter.api)
-    testRuntimeOnly(libs.jupiter.engine)
 }
