@@ -249,10 +249,8 @@ public abstract class Context {
     protected abstract String getFileExtension();
 
     protected static String indent(int indent) {
-        StringBuilder indentBuilder = new StringBuilder();
-        for (int i = indent; i > 0; --i) {
-            indentBuilder.append(' ');
-        }
-        return indentBuilder.toString();
+        byte[] spaces = new byte[indent];
+        Arrays.fill(spaces, (byte) ' ');
+        return new String(spaces);
     }
 }
