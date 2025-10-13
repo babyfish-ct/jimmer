@@ -198,7 +198,7 @@ public abstract class Context {
         }
     }
 
-    public void renderIndex(String dir, Writer writer) {
+    public void renderIndex(String dir, Appendable writer) {
         if (!isIndexRequired()) {
             return;
         }

@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.cache.chain.LockableBinder;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.time.Duration;
 import java.util.*;
 
@@ -61,27 +60,22 @@ public abstract class AbstractRemoteHashBinder<K, V>
 
     private String hashKey(SortedMap<String, Object> parameterMap) {
         try {
-            StringWriter writer = new StringWriter();
-            try {
-                writer.write("{");
-                boolean addComma = false;
-                for (Map.Entry<String, Object> e : parameterMap.entrySet()) {
-                    if (addComma) {
-                        writer.write(",");
-                    } else {
-                        addComma = true;
-                    }
-                    writer.write("\"");
-                    writer.write(e.getKey());
-                    writer.write("\":");
-                    writer.write(objectMapper.writeValueAsString(e.getValue()));
+            StringBuilder builder = new StringBuilder();
+            builder.append("{");
+            boolean addComma = false;
+            for (Map.Entry<String, Object> e : parameterMap.entrySet()) {
+                if (addComma) {
+                    builder.append(",");
+                } else {
+                    addComma = true;
                 }
-                writer.write("}");
-                writer.flush();
-                return writer.toString();
-            } finally {
-                writer.close();
+                builder.append("\"");
+                builder.append(e.getKey());
+                builder.append("\":");
+                builder.append(objectMapper.writeValueAsString(e.getValue()));
             }
+            builder.append("}");
+            return builder.toString();
         } catch (IOException ex) {
             throw new SerializationException(ex);
         }

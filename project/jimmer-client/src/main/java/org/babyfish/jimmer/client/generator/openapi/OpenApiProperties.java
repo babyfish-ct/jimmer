@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
-import java.io.StringWriter;
 import java.util.*;
 
 @ConfigurationProperties("jimmer.client.openapi.properties")
@@ -57,7 +56,7 @@ public class OpenApiProperties {
 
         @Override
         public String toString() {
-            StringWriter writer = new StringWriter();
+            StringBuilder writer = new StringBuilder();
             YmlWriter ymlWriter = new YmlWriter(writer);
             writeTo(ymlWriter);
             return writer.toString();

@@ -2,13 +2,11 @@ package org.babyfish.jimmer.client.generator.openapi;
 
 import org.babyfish.jimmer.client.generator.CodeWriter;
 
-import java.io.Writer;
-
 public class YmlWriter extends CodeWriter<YmlWriter> {
 
     private static final boolean[] SPECIAL_CHAR_FLAGS;
 
-    public YmlWriter(Writer writer) {
+    public YmlWriter(Appendable writer) {
         super("  ");
         setWriter(writer);
     }

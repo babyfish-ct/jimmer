@@ -6,8 +6,8 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 
+import java.io.Flushable;
 import java.io.IOException;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -38,7 +38,7 @@ public class OpenApiGenerator {
         this.typeNameManager = new TypeNameManager(metadata);
     }
 
-    public void generate(Writer writer) {
+    public void generate(Appendable writer) {
         YmlWriter ymlWriter = new YmlWriter(writer);
         ymlWriter.prop("openapi", "3.0.1");
         generateInfo(ymlWriter);
@@ -47,10 +47,12 @@ public class OpenApiGenerator {
         generateTags(ymlWriter);
         generatePaths(ymlWriter);
         generateComponents(ymlWriter);
-        try {
-            writer.flush();
-        } catch (IOException ex) {
-            throw new GeneratorException("Cannot flush the writer");
+        if (writer instanceof Flushable) {
+            try {
+                ((Flushable) writer).flush();
+            } catch (IOException ex) {
+                throw new GeneratorException("Cannot flush the writer");
+            }
         }
     }
 
