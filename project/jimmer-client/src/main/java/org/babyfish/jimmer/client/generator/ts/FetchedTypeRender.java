@@ -6,8 +6,9 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.FetchedTypeImpl;
 
-import java.util.LinkedList;
-import java.util.ListIterator;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
 
 public class FetchedTypeRender implements Render {
@@ -20,7 +21,7 @@ public class FetchedTypeRender implements Render {
 
     private final String fetcherPrefix;
 
-    private final LinkedList<String> paths = new LinkedList<>();
+    private final Deque<String> paths = new ArrayDeque<>();
 
     final Map<Type, String> recursiveTypeNames;
 
@@ -42,9 +43,8 @@ public class FetchedTypeRender implements Render {
             }
             StringBuilder builder = new StringBuilder();
             builder.append(fetcherPrefix);
-            ListIterator<String> itr = paths.listIterator(paths.size());
-            while (itr.hasPrevious()) {
-                builder.append('@').append(itr.previous());
+            for (Iterator<String> itr = paths.descendingIterator(); itr.hasNext();) {
+                builder.append('@').append(itr.next());
             }
             recursiveTypeNames.put(type, builder.toString());
         }
@@ -63,9 +63,9 @@ public class FetchedTypeRender implements Render {
                 if (targetObjectType.isRecursiveFetchedType() && !objectType.hasMultipleRecursiveProps()) {
                     collectRecursiveTypeNames((ObjectType) targetType);
                 } else {
-                    paths.push(property.getName());
+                    paths.addFirst(property.getName());
                     collectRecursiveTypeNames((ObjectType) targetType);
-                    paths.pop();
+                    paths.removeFirst();
                 }
             }
         }

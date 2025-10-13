@@ -123,7 +123,7 @@ public class JacksonUtils {
 
         final Class<A> annotationType;
 
-        private LinkedList<Class<? extends Annotation>> pathStack = new LinkedList<>();
+        private final Deque<Class<? extends Annotation>> pathStack = new ArrayDeque<>();
 
         private ArrayList<Class<? extends Annotation>> path;
 
@@ -169,7 +169,7 @@ public class JacksonUtils {
             }
         }
 
-        private static String declaredPath(List<Class<? extends Annotation>> path) {
+        private static String declaredPath(Collection<Class<? extends Annotation>> path) {
             if (path.isEmpty()) {
                 return "is declared directly";
             }

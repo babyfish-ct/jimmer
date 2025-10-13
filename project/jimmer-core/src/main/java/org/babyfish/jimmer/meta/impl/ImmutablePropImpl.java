@@ -1329,7 +1329,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             try {
                 list = dependencies;
                 if (list == null) {
-                    dependencies = list = Collections.unmodifiableList(getDependenciesImpl(new LinkedList<>()));
+                    dependencies = list = Collections.unmodifiableList(getDependenciesImpl(new ArrayDeque<>()));
                 }
             } finally {
                 META_LOCK.unlock();
@@ -1517,7 +1517,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         return original != null ? original : this;
     }
 
-    private List<Dependency> getDependenciesImpl(LinkedList<ImmutableProp> stack) {
+    private List<Dependency> getDependenciesImpl(Deque<ImmutableProp> stack) {
         List<Dependency> list = dependencies;
         if (list == null) {
             META_LOCK.lock();
@@ -1577,7 +1577,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     }
 
     private static Dependency createFormulaDependency(
-            LinkedList<ImmutableProp> stack,
+            Deque<ImmutableProp> stack,
             ImmutableProp formulaProp,
             String dependency
     ) {

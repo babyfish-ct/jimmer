@@ -7,8 +7,8 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class IsNullUtils {
 
@@ -50,10 +50,10 @@ public class IsNullUtils {
             }
         }
 
-        List<String> pathNames = new LinkedList<>();
+        Deque<String> pathNames = new ArrayDeque<>();
         for (PropExpressionImplementor<?> pe = propExpression; pe != null; pe = pe.getBase()) {
             if (pe.isNullable()) {
-                pathNames.add(0, pe.getProp().getName());
+                pathNames.addFirst(pe.getProp().getName());
             }
         }
         for (Table<?> table = propExpression.getTable(); table != null; ) {
@@ -64,14 +64,13 @@ public class IsNullUtils {
                     prop = prop.getOpposite();
                 }
                 if (prop != null) {
-                    pathNames.add(0, prop.getName() + "(" + proxy.__joinType().name() + ")");
+                    pathNames.addFirst(prop.getName() + "(" + proxy.__joinType().name() + ")");
                 } else if (proxy.__weakJoinHandle() != null) {
-                    pathNames.add(
-                            0,
+                    pathNames.addFirst(
                             "weakJoin<" + proxy.__weakJoinHandle().getWeakJoinType().getSimpleName() + ">"
                     );
                 } else {
-                    pathNames.add(0, table.getImmutableType().getJavaClass().getSimpleName());
+                    pathNames.addFirst(table.getImmutableType().getJavaClass().getSimpleName());
                 }
                 table = proxy.__parent();
             } else {
@@ -81,14 +80,13 @@ public class IsNullUtils {
                     prop = prop.getOpposite();
                 }
                 if (prop != null) {
-                    pathNames.add(0, prop.getName() + "(" + impl.getJoinType().name() + ")");
+                    pathNames.addFirst(prop.getName() + "(" + impl.getJoinType().name() + ")");
                 } if (impl.getWeakJoinHandle() != null) {
-                    pathNames.add(
-                            0,
+                    pathNames.addFirst(
                             "weakJoin<" + impl.getWeakJoinHandle().getWeakJoinType().getSimpleName() + ">"
                     );
                 } else {
-                    pathNames.add(0, table.getImmutableType().getJavaClass().getSimpleName());
+                    pathNames.addFirst(table.getImmutableType().getJavaClass().getSimpleName());
                 }
                 table = impl.getParent();
             }

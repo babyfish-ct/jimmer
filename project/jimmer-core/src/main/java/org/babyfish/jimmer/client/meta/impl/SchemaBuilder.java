@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import kotlin.collections.ArrayDeque;
 import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
-import javax.lang.model.element.Element;
 import java.security.Principal;
 import java.util.*;
 import java.util.function.Consumer;
@@ -12,7 +12,7 @@ public abstract class SchemaBuilder<S> {
 
     private static final Set<String> IGNORED_PARAMETER_TYPES;
 
-    private LinkedList<AstNode<S>> stack = new LinkedList<>();
+    private final ArrayDeque<AstNode<S>> stack = new ArrayDeque<>();
 
     @SuppressWarnings("unchecked")
     public SchemaBuilder(Schema original) {
@@ -23,7 +23,7 @@ public abstract class SchemaBuilder<S> {
             serviceMap.keySet().removeIf(s -> loadSource(s.toString()) == null);
         }
         SchemaImpl<S> schema = new SchemaImpl<>(serviceMap);
-        stack.push(schema);
+        stack.addFirst(schema);
     }
 
     @SuppressWarnings("unchecked")
@@ -56,7 +56,7 @@ public abstract class SchemaBuilder<S> {
 
     @SuppressWarnings("unchecked")
     public <X extends AstNode<S>> X current() {
-        return (X) stack.peek();
+        return (X) stack.firstOrNull();
     }
 
     @SuppressWarnings("unchecked")
@@ -100,26 +100,26 @@ public abstract class SchemaBuilder<S> {
     }
 
     private <X extends AstNode<S>> void run(X child, Consumer<X> block) {
-        stack.push(child);
+        stack.addFirst(child);
         try {
             block.accept(child);
         } finally {
-            stack.pop();
+            stack.removeFirst();
         }
     }
 
     public void push(AstNode<S> child) {
-        stack.push(child);
+        stack.addFirst(child);
     }
 
     public void pop() {
-        stack.pop();
+        stack.removeFirst();
     }
 
     public Schema build() {
         resolve();
         unnecessaryPart();
-        return (Schema) stack.peek();
+        return (Schema) stack.firstOrNull();
     }
 
     @Nullable

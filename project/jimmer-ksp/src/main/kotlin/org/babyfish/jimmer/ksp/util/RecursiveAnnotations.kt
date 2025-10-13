@@ -1,12 +1,9 @@
 package org.babyfish.jimmer.ksp.util
 
 import com.google.devtools.ksp.symbol.KSAnnotation
-import com.google.devtools.ksp.symbol.KSClassifierReference
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import org.babyfish.jimmer.ksp.MetaException
 import java.util.*
-import javax.lang.model.element.AnnotationMirror
-import javax.lang.model.element.TypeElement
 import kotlin.reflect.KClass
 
 fun KSPropertyDeclaration.recursiveAnnotationOf(annotationType: KClass<out Annotation>): KSAnnotation? =
@@ -39,7 +36,7 @@ private class VisitContext(
     private val prop: KSPropertyDeclaration,
     val annotationName: String
 ) {
-    private val stack = LinkedList<String>()
+    private val stack: Deque<String> = ArrayDeque()
 
     private var path: List<String> = emptyList()
 
@@ -79,7 +76,7 @@ private class VisitContext(
     companion object {
 
         @JvmStatic
-        private fun declared(path: List<String>): String {
+        private fun declared(path: Collection<String>): String {
             return if (path.isEmpty()) {
                 "is declared directly"
             } else "is declared as nest annotation of $path"

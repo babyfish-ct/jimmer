@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class FilterManager implements Filters {
 
-    private final static ThreadLocal<LinkedList<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
+    private final static ThreadLocal<Deque<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
 
     private final AopProxyProvider aopProxyProvider;
 
@@ -791,7 +791,7 @@ public class FilterManager implements Filters {
     }
 
     public static Filter<?> currentFilter() {
-        LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        Deque<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
         return executingFilters != null ? executingFilters.peek() : null;
     }
 
@@ -803,9 +803,9 @@ public class FilterManager implements Filters {
         if (filter instanceof Exported) {
             throw new IllegalArgumentException("The filter cannot be exported filter");
         }
-        LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        Deque<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
         if (executingFilters == null) {
-            executingFilters = new LinkedList<>();
+            executingFilters = new ArrayDeque<>();
             executingFilters.add(filter);
             EXECUTING_FILTERS_LOCAL.set(executingFilters);
             try {

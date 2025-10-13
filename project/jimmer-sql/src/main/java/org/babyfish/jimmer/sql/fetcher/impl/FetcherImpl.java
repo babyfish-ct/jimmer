@@ -210,7 +210,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         Map<String, Field> map = fieldMap;
         if (map == null) {
             map = new HashMap<>();
-            LinkedList<String> orderedNames = new LinkedList<>();
+            Deque<String> orderedNames = new ArrayDeque<>();
             for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
                 if (fetcher.prop == null) {
                     continue;
@@ -238,11 +238,11 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                 }
                 if (!map.containsKey(name)) {
                     map.putIfAbsent(name, field);
-                    orderedNames.add(0, name);
+                    orderedNames.addFirst(name);
                 }
             }
             Map<String, Field> orderedMap = new LinkedHashMap<>();
-            LinkedList<Field> extensionFields = new LinkedList<>();
+            Deque<Field> extensionFields = new ArrayDeque<>();
             for (String name : orderedNames) {
                 Field field = map.get(name);
                 if (field != null) {
@@ -254,7 +254,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                 }
             }
             while (!extensionFields.isEmpty()) {
-                Field field = extensionFields.remove(0);
+                Field field = extensionFields.removeFirst();
                 for (Dependency dependency : getLeafDependencies(field.getProp())) {
                     ImmutableProp depProp = dependency.getProps().get(0);
                     ImmutableProp deeperDepProp = dependency.getProps().size() > 1 ? dependency.getProps().get(1) : null;

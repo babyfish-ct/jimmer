@@ -5,9 +5,7 @@ import org.babyfish.jimmer.apt.MetaException;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class RecursiveAnnotations {
 
@@ -43,9 +41,9 @@ public class RecursiveAnnotations {
 
         final String annotationName;
 
-        private final LinkedList<String> stack = new LinkedList<>();
+        private final Deque<String> stack = new ArrayDeque<>();
 
-        private ArrayList<String> path;
+        private List<String> path;
 
         AnnotationMirror annotation;
 
@@ -82,7 +80,7 @@ public class RecursiveAnnotations {
             this.path = new ArrayList<>(stack);
         }
 
-        private static String declared(List<String> path) {
+        private static String declared(Collection<String> path) {
             if (path.isEmpty()) {
                 return "is declared directly";
             }

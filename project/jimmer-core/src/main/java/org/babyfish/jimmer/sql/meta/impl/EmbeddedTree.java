@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 class EmbeddedTree {
 
@@ -36,9 +35,9 @@ class EmbeddedTree {
     private EmbeddedTree(EmbeddedTree parent, ImmutableProp prop) {
         for (EmbeddedTree p = parent; p != null; p = p.parent) {
             if (p.prop.getDeclaringType() == prop.getTargetType()) {
-                List<String> names = new LinkedList<>();
+                Deque<String> names = new ArrayDeque<>();
                 for (EmbeddedTree p2 = parent; p2 != null; p2 = p2.parent) {
-                    names.add(0, p2.prop.getName());
+                    names.addFirst(p2.prop.getName());
                     if (p2 == p) {
                         break;
                     }
@@ -47,7 +46,7 @@ class EmbeddedTree {
                         "Reference cycle is found in \"" +
                                 p.prop.getDeclaringType() +
                                 '.' +
-                                names.stream().collect(Collectors.joining(".")) +
+                                String.join(".", names) +
                                 '.' +
                                 prop.getName() +
                                 "\""
