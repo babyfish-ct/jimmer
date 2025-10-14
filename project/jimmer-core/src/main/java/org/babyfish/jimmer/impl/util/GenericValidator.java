@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.impl.util;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 
@@ -61,9 +61,9 @@ public class GenericValidator {
     }
 
     public void validate() {
-        Map<TypeVariable<?>, Type> argumentMap = TypeUtils.getTypeArguments(configImplType, configItfType);
+        Type[] arguments = Generics.getTypeArguments(configImplType, configItfType);
         for (Expected expected : expectedMap.values()) {
-            Type actualType = argumentMap.get(parameters[expected.typeParameterIndex]);
+            Type actualType = arguments[expected.typeParameterIndex];
             if (actualType == null) {
                 ex(
                         "\"that type does not specify type arguments for \"" +

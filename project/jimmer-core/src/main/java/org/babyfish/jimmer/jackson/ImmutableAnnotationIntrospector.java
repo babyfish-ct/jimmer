@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedClass;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.apache.commons.lang3.StringUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.JimmerVersion;
 import org.babyfish.jimmer.impl.util.StringUtil;

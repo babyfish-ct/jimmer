@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -100,11 +99,10 @@ public class Storages {
             elementType = prop.getReturnClass().getComponentType();
             isArray = true;
         } else if (Collection.class.isAssignableFrom(prop.getReturnClass())) {
-            Collection<Type> types = TypeUtils
-                    .getTypeArguments((ParameterizedType) prop.getGenericType())
-                    .values();
-            if (!types.isEmpty()) {
-                Type type = types.iterator().next();
+            Type[] types = Generics
+                    .getTypeArguments(prop.getGenericType(), Collection.class);
+            if (types.length != 0) {
+                Type type = types[0];
                 if (type instanceof Class<?>) {
                     elementType = (Class<?>) type;
                     isArray = true;

@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.meta.impl;
 
 import kotlin.reflect.KClass;
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.spi.TableDelegate;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -43,11 +43,8 @@ public class Metadata {
             if (javaClass.getTypeParameters().length != 0) {
                 return null;
             }
-            Type type = TypeUtils
-                    .getTypeArguments(javaClass, TableDelegate.class)
-                    .values()
-                    .iterator()
-                    .next();
+            Type type = Generics
+                    .getTypeArguments(javaClass, TableDelegate.class)[0];
             if (!(type instanceof Class<?>)) {
                 return null;
             }

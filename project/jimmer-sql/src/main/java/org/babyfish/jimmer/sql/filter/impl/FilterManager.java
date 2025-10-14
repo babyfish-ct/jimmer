@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.impl.util.TypeCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -439,10 +439,9 @@ public class FilterManager implements Filters {
         }
 
         Class<?> filterClass = filter.getClass();
-        Collection<Type> filterTypeArguments = TypeUtils
-                .getTypeArguments(filterClass, Filter.class)
-                .values();
-        if (filterTypeArguments.isEmpty()) {
+        Type[] filterTypeArguments = Generics
+                .getTypeArguments(filterClass, Filter.class);
+        if (filterTypeArguments.length == 0) {
             throw new IllegalStateException(
                     "`" +
                             filterClass.getName() +
@@ -451,7 +450,7 @@ public class FilterManager implements Filters {
                             "`"
             );
         }
-        Type propsType = filterTypeArguments.iterator().next();
+        Type propsType = filterTypeArguments[0];
         Class<?> propsClass;
         if (propsType instanceof Class<?>) {
             propsClass = (Class<?>) propsType;
@@ -476,10 +475,9 @@ public class FilterManager implements Filters {
             );
         }
         if (Table.class.isAssignableFrom(propsClass)) {
-            Collection<Type> propsTypeArguments = TypeUtils
-                    .getTypeArguments(propsType, Table.class)
-                    .values();
-            if (propsTypeArguments.isEmpty()) {
+            Type[] propsTypeArguments = Generics
+                    .getTypeArguments(propsType, Table.class);
+            if (propsTypeArguments.length == 0) {
                 throw new IllegalStateException(
                         "`" +
                                 filterClass.getName() +
@@ -488,7 +486,7 @@ public class FilterManager implements Filters {
                                 "`"
                 );
             }
-            Type entityType = propsTypeArguments.iterator().next();
+            Type entityType = propsTypeArguments[0];
             if (!(entityType instanceof Class<?>)) {
                 throw new IllegalStateException(
                         "`" +

@@ -11,7 +11,6 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.kotlin.stdlib)
     implementation(libs.jetbrains.annotations)
-    implementation(libs.apache.commons.lang3)
     implementation(libs.jackson.datatype.jsr310)
     compileOnly(libs.h2)
     compileOnly(libs.postgresql)

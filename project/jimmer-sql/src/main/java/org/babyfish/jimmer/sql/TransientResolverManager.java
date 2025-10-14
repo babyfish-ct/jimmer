@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.impl.util.PropCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
@@ -163,14 +163,12 @@ class TransientResolverManager {
         }
         Type expectedType;
         if (prop.isReferenceList(TargetLevel.ENTITY)) {
-            expectedType = TypeUtils.parameterize(
+            expectedType = Generics.makeParameterizedType(
                     List.class,
-                    TypeUtils
-                            .wildcardType()
-                            .withUpperBounds(
-                                    Classes.boxTypeOf(prop.getTargetType().getIdProp().getReturnClass())
-                            )
-                            .build()
+                    Generics.makeWildcardType(
+                            new Type[] { Classes.boxTypeOf(prop.getTargetType().getIdProp().getReturnClass()) },
+                            null
+                    )
             );
         } else if (prop.isReference(TargetLevel.ENTITY)) {
             expectedType = Classes.boxTypeOf(prop.getTargetType().getIdProp().getReturnClass());

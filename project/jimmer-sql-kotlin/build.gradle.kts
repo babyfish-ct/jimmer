@@ -9,7 +9,6 @@ dependencies {
     implementation(libs.kotlin.reflect)
     api(projects.jimmerCoreKotlin)
     api(projects.jimmerSql)
-    implementation(libs.apache.commons.lang3)
 
     testImplementation(libs.kotlin.test)
     kspTest(projects.jimmerKsp)

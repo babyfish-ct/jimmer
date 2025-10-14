@@ -1,15 +1,13 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Dto;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.lang.Generics;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -77,8 +75,8 @@ public final class DtoMetadata<E, V> {
                             "\""
             );
         }
-        Iterator<Type> itr = TypeUtils.getTypeArguments(dtoType, Dto.class).values().iterator();
-        if (!itr.hasNext()) {
+        Type[] types = Generics.getTypeArguments(dtoType, Dto.class);
+        if (types.length == 0) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             dtoType.getName() +
@@ -87,7 +85,7 @@ public final class DtoMetadata<E, V> {
                             "\""
             );
         }
-        Type type = itr.next();
+        Type type = types[0];
         if (!(type instanceof Class<?>) || !((Class<?>)type).isInterface()) {
             throw new IllegalArgumentException(
                     "The type \"" +
@@ -127,9 +125,9 @@ public final class DtoMetadata<E, V> {
             );
         }
         TypeVariable<?>[] typeParameters = DtoMetadata.class.getTypeParameters();
-        Map<TypeVariable<?>, Type> typeArgumentMap =
-                TypeUtils.getTypeArguments(metadataField.getGenericType(), DtoMetadata.class);
-        if (typeArgumentMap.get(typeParameters[0]) != entityType) {
+        Type[] typeArguments =
+                Generics.getTypeArguments(metadataField.getGenericType(), DtoMetadata.class);
+        if (typeArguments[0] != entityType) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             dtoType.getName() +
@@ -140,7 +138,7 @@ public final class DtoMetadata<E, V> {
                             "\""
             );
         }
-        if (typeArgumentMap.get(typeParameters[1]) != dtoType) {
+        if (typeArguments[1] != dtoType) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             dtoType.getName() +

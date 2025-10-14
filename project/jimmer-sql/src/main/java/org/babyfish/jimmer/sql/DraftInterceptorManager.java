@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.impl.util.TypeCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
@@ -26,12 +26,12 @@ class DraftInterceptorManager {
         Map<ImmutableType, List<DraftInterceptor<?, ?>>> interceptorMap = new HashMap<>();
         for (DraftInterceptor<?, ?> interceptor : interceptors) {
             if (interceptor != null) {
-                Map<TypeVariable<?>, Type> argTypeMap = TypeUtils
+                Type[] argTypes = Generics
                         .getTypeArguments(
                                 interceptor.getClass(),
                                 DraftInterceptor.class
                         );
-                if (argTypeMap.isEmpty()) {
+                if (argTypes.length == 0) {
                     throw new IllegalArgumentException(
                             "Illegal draft interceptor type \"" +
                                     interceptor.getClass().getName() +
@@ -40,9 +40,8 @@ class DraftInterceptorManager {
                                     "\" but the generic type arguments are not specified"
                     );
                 }
-                TypeVariable<?>[] typeVariables = DraftInterceptor.class.getTypeParameters();
-                Type entityType = argTypeMap.get(typeVariables[0]);
-                Type draftType = argTypeMap.get(typeVariables[1]);
+                Type entityType = argTypes[0];
+                Type draftType = argTypes[1];
                 if (!(entityType instanceof Class<?>) || 
                         !((Class<?>) entityType).isInterface() || (
                                 ((Class<?>) entityType).getAnnotation(Entity.class) == null &&

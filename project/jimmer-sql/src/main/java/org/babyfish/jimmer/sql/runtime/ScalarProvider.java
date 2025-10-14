@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.Embeddable;
@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -130,8 +129,8 @@ public interface ScalarProvider<T, S> {
                                 "\""
                 );
             }
-            Map<TypeVariable<?>, Type> argMap = TypeUtils.getTypeArguments(scalarProviderType, ScalarProvider.class);
-            if (argMap.isEmpty()) {
+            Type[] argTypes = Generics.getTypeArguments(scalarProviderType, ScalarProvider.class);
+            if (argTypes.length == 0) {
                 throw new IllegalStateException(
                         "Illegal type \"" +
                                 scalarProviderType.getName() +
@@ -140,9 +139,8 @@ public interface ScalarProvider<T, S> {
                                 "\""
                 );
             }
-            TypeVariable<?>[] params = ScalarProvider.class.getTypeParameters();
-            Type scalarType = argMap.get(params[0]);
-            Class<?> sqlType = (Class<?>) argMap.get(params[1]);
+            Type scalarType = argTypes[0];
+            Class<?> sqlType = (Class<?>) argTypes[1];
             validateScalarType(scalarType);
             return new Meta(scalarType, sqlType);
         }

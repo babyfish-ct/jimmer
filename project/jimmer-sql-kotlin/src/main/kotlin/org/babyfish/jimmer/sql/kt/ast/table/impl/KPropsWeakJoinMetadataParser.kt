@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
-import org.apache.commons.lang3.reflect.TypeUtils
+import org.babyfish.jimmer.lang.Generics
 import org.babyfish.jimmer.sql.ast.table.spi.WeakJoinMetadata
 import org.babyfish.jimmer.sql.ast.table.spi.WeakJoinMetadataParser
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
@@ -10,9 +10,9 @@ import java.lang.reflect.ParameterizedType
 internal class KPropsWeakJoinMetadataParser : WeakJoinMetadataParser {
 
     override fun parse(weakJoinType: Class<*>): WeakJoinMetadata {
-        val argumentTypeItr = TypeUtils.getTypeArguments(weakJoinType, KPropsWeakJoin::class.java).values.iterator()
-        val sourceTableType = argumentTypeItr.next() as ParameterizedType
-        val targetTableType = argumentTypeItr.next() as ParameterizedType
+        val arguments = Generics.getTypeArguments(weakJoinType, KPropsWeakJoin::class.java)
+        val sourceTableType = arguments[0] as ParameterizedType
+        val targetTableType = arguments[1] as ParameterizedType
         val isSourceBaseTable = KBaseTable::class.java.isAssignableFrom(sourceTableType.rawType as Class<*>)
         val isTargetBaseTable = KBaseTable::class.java.isAssignableFrom(targetTableType.rawType as Class<*>)
         val sourceEntityType =

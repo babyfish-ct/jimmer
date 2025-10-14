@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -8,8 +8,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.Map;
 
 public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
 
@@ -69,8 +67,8 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
                                 "\" cannot contains generic type parameter"
                 );
             }
-            Map<TypeVariable<?>, Type> argumentMap = TypeUtils.getTypeArguments(type, Table.class);
-            if (argumentMap.isEmpty()) {
+            Type[] arguments = Generics.getTypeArguments(type, Table.class);
+            if (arguments.length == 0) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +
                                 serializedLambda.getImplClass() +
@@ -83,7 +81,7 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
                                 "\""
                 );
             }
-            Type argumentType = argumentMap.values().iterator().next();
+            Type argumentType = arguments[0];
             if (!(argumentType instanceof Class<?>)) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +

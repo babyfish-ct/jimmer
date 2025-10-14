@@ -2,17 +2,15 @@ package org.babyfish.jimmer.jackson;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ConverterMetadata {
 
@@ -88,9 +86,9 @@ public class ConverterMetadata {
                             "\", it should not have type parameters"
             );
         }
-        Map<TypeVariable<?>, Type> typeMap = TypeUtils.getTypeArguments(converterClass, Converter.class);
-        Type sourceType = typeMap.get(Converter.class.getTypeParameters()[0]);
-        Type targetType = typeMap.get(Converter.class.getTypeParameters()[1]);
+        Type[] types = Generics.getTypeArguments(converterClass, Converter.class);
+        Type sourceType = types[0];
+        Type targetType = types[1];
         if (sourceType == null || targetType == null) {
             throw new IllegalArgumentException(
                     "Illegal converter class \"" +
@@ -137,8 +135,8 @@ public class ConverterMetadata {
 
         public ListMetadata() {
             super(
-                    TypeUtils.parameterize(List.class, ConverterMetadata.this.sourceType),
-                    TypeUtils.parameterize(List.class, ConverterMetadata.this.targetType),
+                    Generics.makeParameterizedType(List.class, ConverterMetadata.this.sourceType),
+                    Generics.makeParameterizedType(List.class, ConverterMetadata.this.targetType),
                     CollectionType.construct(
                             List.class,
                             null,

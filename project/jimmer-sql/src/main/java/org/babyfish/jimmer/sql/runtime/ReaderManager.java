@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.impl.util.PropCache;
@@ -250,7 +249,7 @@ public class ReaderManager {
 
         @Override
         public short[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Short[].class));
+            return toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Short[].class));
         }
     }
 
@@ -274,7 +273,7 @@ public class ReaderManager {
 
         @Override
         public int[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Integer[].class));
+            return toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Integer[].class));
         }
     }
 
@@ -298,7 +297,7 @@ public class ReaderManager {
 
         @Override
         public long[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Long[].class));
+            return toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Long[].class));
         }
     }
 
@@ -322,7 +321,7 @@ public class ReaderManager {
 
         @Override
         public float[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Float[].class));
+            return toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Float[].class));
         }
     }
 
@@ -346,7 +345,7 @@ public class ReaderManager {
 
         @Override
         public double[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Double[].class));
+            return toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Double[].class));
         }
     }
 
@@ -833,8 +832,70 @@ public class ReaderManager {
         }
     }
 
-    public static boolean isStandardScalarType(Class<?> type) {
-        return BASE_READER_MAP.containsKey(type);
+    private static boolean[] toPrimitive(Boolean[] arr) {
+        if (arr == null) {
+            return null;
+        }
+        boolean[] newArr = new boolean[arr.length];
+        for (int i = arr.length - 1; i >= 0; --i) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
+    }
+
+    private static short[] toPrimitive(Short[] arr) {
+        if (arr == null) {
+            return null;
+        }
+        short[] newArr = new short[arr.length];
+        for (int i = arr.length - 1; i >= 0; --i) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
+    }
+
+    private static int[] toPrimitive(Integer[] arr) {
+        if (arr == null) {
+            return null;
+        }
+        int[] newArr = new int[arr.length];
+        for (int i = arr.length - 1; i >= 0; --i) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
+    }
+
+    private static long[] toPrimitive(Long[] arr) {
+        if (arr == null) {
+            return null;
+        }
+        long[] newArr = new long[arr.length];
+        for (int i = arr.length - 1; i >= 0; --i) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
+    }
+
+    private static float[] toPrimitive(Float[] arr) {
+        if (arr == null) {
+            return null;
+        }
+        float[] newArr = new float[arr.length];
+        for (int i = arr.length - 1; i >= 0; --i) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
+    }
+
+    private static double[] toPrimitive(Double[] arr) {
+        if (arr == null) {
+            return null;
+        }
+        double[] newArr = new double[arr.length];
+        for (int i = arr.length - 1; i >= 0; --i) {
+            newArr[i] = arr[i];
+        }
+        return newArr;
     }
 
     static {

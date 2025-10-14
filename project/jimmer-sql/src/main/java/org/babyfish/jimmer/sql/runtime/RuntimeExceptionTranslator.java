@@ -1,11 +1,10 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.lang.Generics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.*;
 
 class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
@@ -94,9 +93,9 @@ class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
 
     @SuppressWarnings("unchecked")
     private static Class<? extends Exception> exceptionType(ExceptionTranslator<?> translator) {
-        Map<TypeVariable<?>, Type> typeMap =
-                TypeUtils.getTypeArguments(translator.getClass(), ExceptionTranslator.class);
-        if (typeMap.isEmpty()) {
+        Type[] types =
+                Generics.getTypeArguments(translator.getClass(), ExceptionTranslator.class);
+        if (types.length == 0) {
             throw new IllegalArgumentException(
                     "Illegal exception translator type \"" +
                             translator.getClass().getName() +
@@ -105,7 +104,7 @@ class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
                             "\""
             );
         }
-        Type type = typeMap.values().iterator().next();
+        Type type = types[0];
         if (!(type instanceof Class<?>)) {
             throw new IllegalArgumentException(
                     "Illegal exception translator type \"" +

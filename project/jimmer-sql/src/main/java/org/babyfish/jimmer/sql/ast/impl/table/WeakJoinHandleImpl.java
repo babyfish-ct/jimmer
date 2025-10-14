@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -74,37 +74,35 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 );
             }
         }
-        Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
-        if (typeArguments == null || typeArguments.isEmpty()) {
+        Type[] typeArguments = Generics.getTypeArguments(weakJoinType, WeakJoin.class);
+        if (typeArguments.length == 0) {
             throw new IllegalArgumentException(
                     "Illegal class \"" + weakJoinType.getName() + "\", generic arguments are missing"
             );
         }
-        Type sourceTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[0]);
-        Type targetTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[1]);
+        Type sourceTableType = typeArguments[0];
+        Type targetTableType = typeArguments[1];
         if (isBaseTable(sourceTableType) && isBaseTable(targetTableType)) {
             return new BaseTableHandleImpl(null, createWeakJoin(weakJoinType));
         }
-        Type sourceType = TypeUtils.getTypeArguments(sourceTableType, TableLike.class).values().iterator().next();
-        Type targetType = TypeUtils.getTypeArguments(targetTableType, TableLike.class).values().iterator().next();
-        if (sourceType instanceof TypeVariable<?>) {
-            sourceType = typeArguments.get((TypeVariable<?>) sourceType);
-        }
-        if (targetType instanceof TypeVariable<?>) {
-            targetType = typeArguments.get((TypeVariable<?>) targetType);
-        }
+        Type sourceType = Generics.getTypeArguments(sourceTableType, TableLike.class)[0];
+        Type targetType = Generics.getTypeArguments(targetTableType, TableLike.class)[0];
         if (!(sourceType instanceof Class<?>) || !((Class<?>)sourceType).isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException(
                     "Illegal class \"" +
                             weakJoinType.getName() +
-                            "\", the source type is not entity"
+                            "\", the source type \"" +
+                            sourceType +
+                            "\" is not entity"
             );
         }
         if (!(targetType instanceof Class<?>) || !((Class<?>)targetType).isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException(
                     "Illegal class \"" +
                             weakJoinType.getName() +
-                            "\", the target type is not entity"
+                            "\", the target type \"" +
+                            targetType +
+                            "\" is not entity"
             );
         }
         boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>)sourceType) != null;
@@ -291,22 +289,16 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
 
         @SuppressWarnings("unchecked")
         private static WeakJoinHandle create(Class<?> weakJoinType) {
-            Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
-            if (typeArguments == null || typeArguments.isEmpty()) {
+            Type[] typeArguments = Generics.getTypeArguments(weakJoinType, WeakJoin.class);
+            if (typeArguments.length == 0) {
                 throw new IllegalArgumentException(
                         "Illegal class \"" + weakJoinType.getName() + "\", generic arguments are missing"
                 );
             }
-            Type sourceTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[0]);
-            Type targetTableType = typeArguments.get(WeakJoin.class.getTypeParameters()[1]);
-            Type sourceType = TypeUtils.getTypeArguments(sourceTableType, Table.class).values().iterator().next();
-            Type targetType = TypeUtils.getTypeArguments(targetTableType, Table.class).values().iterator().next();
-            if (sourceType instanceof TypeVariable<?>) {
-                sourceType = typeArguments.get((TypeVariable<?>) sourceType);
-            }
-            if (targetType instanceof TypeVariable<?>) {
-                targetType = typeArguments.get((TypeVariable<?>) targetType);
-            }
+            Type sourceTableType = typeArguments[0];
+            Type targetTableType = typeArguments[1];
+            Type sourceType = Generics.getTypeArguments(sourceTableType, Table.class)[0];
+            Type targetType = Generics.getTypeArguments(targetTableType, Table.class)[0];
             if (!(sourceType instanceof Class<?>) || !((Class<?>)sourceType).isAnnotationPresent(Entity.class)) {
                 throw new IllegalArgumentException(
                         "Illegal class \"" +

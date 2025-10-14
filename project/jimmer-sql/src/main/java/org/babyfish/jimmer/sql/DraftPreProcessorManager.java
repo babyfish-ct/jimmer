@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.sql;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.impl.util.TypeCache;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.*;
 
 class DraftPreProcessorManager {
@@ -22,12 +21,12 @@ class DraftPreProcessorManager {
         Map<ImmutableType, List<DraftPreProcessor<?>>> processorMap = new HashMap<>();
         for (DraftPreProcessor<?> processor : processors) {
             if (processor != null) {
-                Map<TypeVariable<?>, Type> argTypeMap = TypeUtils
+                Type[] argTypes = Generics
                         .getTypeArguments(
                                 processor.getClass(),
                                 DraftPreProcessor.class
                         );
-                if (argTypeMap.isEmpty()) {
+                if (argTypes.length == 0) {
                     throw new IllegalArgumentException(
                             "Illegal draft processor type \"" +
                                     processor.getClass().getName() +
@@ -36,8 +35,7 @@ class DraftPreProcessorManager {
                                     "\" but the generic type arguments are not specified"
                     );
                 }
-                TypeVariable<?>[] typeVariables = DraftPreProcessor.class.getTypeParameters();
-                Type draftType = argTypeMap.get(typeVariables[0]);
+                Type draftType = argTypes[0];
                 if (!(draftType instanceof Class<?>) ||
                         !(((Class<?>)draftType).isInterface()) ||
                         !Draft.class.isAssignableFrom((Class<?>)draftType)) {

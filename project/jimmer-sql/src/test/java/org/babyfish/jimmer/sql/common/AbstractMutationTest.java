@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
 import com.mysql.cj.MysqlConnection;
-import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -10,6 +9,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.*;
@@ -343,7 +343,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 }
                 if (exp != null && exp.getClass().isArray()) {
                     Assertions.assertTrue(
-                            new EqualsBuilder().append(exp, act).isEquals(),
+                            eq(exp, act),
                             "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "] is error, " +
                                     "expected variables: " +
                                     Arrays.toString(values) +
@@ -362,6 +362,22 @@ public abstract class AbstractMutationTest extends AbstractTest {
                     );
                 }
             }
+        }
+
+        private static boolean eq(Object exp, Object act) {
+            if (exp.getClass().isArray()) {
+                int len = Array.getLength(exp);
+                if (len != Array.getLength(act)) {
+                    return false;
+                }
+                for (int i = 0; i < len; i++) {
+                    if (!Objects.equals(Array.get(exp, i), Array.get(act, i))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return Objects.equals(exp, act);
         }
 
         public void unorderedVariables(Object ... values) {
