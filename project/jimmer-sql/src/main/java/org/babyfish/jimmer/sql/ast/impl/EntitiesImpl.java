@@ -2,16 +2,12 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.BatchEntitySaveCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SimpleEntitySaveCommandImpl;
@@ -33,14 +29,11 @@ import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.exception.EmptyResultException;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
+import org.babyfish.jimmer.sql.fetcher.impl.Shapes;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -285,64 +278,7 @@ public class EntitiesImpl implements Entities {
                     entities.add(entity);
                 }
             }
-            if (fetcher != null && !entities.isEmpty()) {
-                boolean needUnload = false;
-                for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                            needUnload = true;
-                            break;
-                        }
-                    }
-                }
-                if (needUnload) {
-                    ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
-                    while (itr.hasNext()) {
-                        ImmutableSpi spi = itr.next();
-                        itr.set(
-                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
-                                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                                        if (!prop.isView() &&
-                                            spi.__isLoaded(prop.getId()) &&
-                                            !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                            ((DraftSpi) draft).__unload(prop.getId());
-                                        }
-                                    }
-                                })
-                        );
-                    }
-                }
-                FetcherUtil.fetch(
-                        sqlClient,
-                        con,
-                        Collections.singletonList(
-                                new FetcherSelection<E>() {
-
-                                    @Override
-                                    public FetchPath getPath() {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public Fetcher<?> getFetcher() {
-                                        return fetcher;
-                                    }
-
-                                    @Override
-                                    public PropExpression.Embedded<?> getEmbeddedPropExpression() {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public @Nullable Function<?, E> getConverter() {
-                                        return null;
-                                    }
-                                }
-                        ),
-                        null,
-                        entities
-                );
-            }
+            Shapes.reshape(sqlClient, con, entities, fetcher, null);
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
@@ -404,69 +340,7 @@ public class EntitiesImpl implements Entities {
                     )
             ).values();
             List<E> entities = new ArrayList<>(cachedEntities.size());
-            for (E entity : cachedEntities) {
-                if (entity != null) {
-                    entities.add(entity);
-                }
-            }
-            if (!entities.isEmpty()) {
-                boolean needUnload = false;
-                for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                            needUnload = true;
-                            break;
-                        }
-                    }
-                }
-                if (needUnload) {
-                    ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
-                    while (itr.hasNext()) {
-                        ImmutableSpi spi = itr.next();
-                        itr.set(
-                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
-                                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                                        if (!prop.isView() &&
-                                            spi.__isLoaded(prop.getId()) &&
-                                            !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                            ((DraftSpi) draft).__unload(prop.getId());
-                                        }
-                                    }
-                                })
-                        );
-                    }
-                }
-                FetcherUtil.fetch(
-                        sqlClient,
-                        con,
-                        Collections.singletonList(
-                                new FetcherSelection<E>() {
-
-                                    @Override
-                                    public FetchPath getPath() {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public Fetcher<?> getFetcher() {
-                                        return fetcher;
-                                    }
-
-                                    @Override
-                                    public PropExpression.Embedded<?> getEmbeddedPropExpression() {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public @Nullable Function<?, E> getConverter() {
-                                        return converter;
-                                    }
-                                }
-                        ),
-                        null,
-                        entities
-                );
-            }
+            Shapes.reshape(sqlClient, con, entities, fetcher, converter);
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(

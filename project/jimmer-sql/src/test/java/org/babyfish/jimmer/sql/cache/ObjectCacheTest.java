@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.babyfish.jimmer.sql.common.Constants.alexId;
 import static org.babyfish.jimmer.sql.common.Constants.oreillyId;
 
 public class ObjectCacheTest extends AbstractQueryTest {
@@ -111,6 +112,42 @@ public class ObjectCacheTest extends AbstractQueryTest {
                             ctx.statement(1).sql("select tb_1_.ID, tb_2_.ID from BOOK_STORE tb_1_ inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID where (tb_2_.NAME, tb_2_.EDITION) in (select tb_3_.NAME, max(tb_3_.EDITION) from BOOK tb_3_ where tb_3_.STORE_ID in (?, ?) group by tb_3_.NAME)");
                             ctx.statement(2).sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK tb_1_ where tb_1_.ID in (?, ?, ?, ?)");
                         }
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void testIssue1221() {
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            connectAndExpect(
+                    con -> {
+                        return sqlClient
+                                .getEntities()
+                                .forConnection(con)
+                                .findById(
+                                        AuthorFetcher.$.fullName(),
+                                        alexId
+                                );
+                    }, ctx -> {
+                        if (useSql) {
+                            ctx.sql(
+                                    "select tb_1_.ID, " +
+                                            "tb_1_.FIRST_NAME, " +
+                                            "tb_1_.LAST_NAME, " +
+                                            "tb_1_.GENDER, " +
+                                            "length(tb_1_.FIRST_NAME) + length(tb_1_.LAST_NAME), " +
+                                            "concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) " +
+                                            "from AUTHOR tb_1_ where tb_1_.ID = ?"
+                            );
+                        }
+                        ctx.rows(
+                                "[{" +
+                                        "--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                        "--->\"fullName\":\"Alex Banks\"" +
+                                        "}]"
+                        );
                     }
             );
         }
