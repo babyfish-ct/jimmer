@@ -24,6 +24,9 @@ drop table if exists pg_array_model cascade;
 drop table if exists pg_date_time cascade;
 drop table if exists container cascade;
 drop table if exists nullable_bool cascade;
+drop table if exists issue1125_mp_role_perm cascade;
+drop table if exists issue1125_sys_role cascade;
+drop table if exists issue1125_sys_perm cascade;
 
 create table book_store(
     id uuid not null,
@@ -592,3 +595,23 @@ create table nullable_bool(
 alter table nullable_bool
     add constraint pk_nullable_bool
         primary key(id);
+
+
+
+create table issue1125_sys_role (
+  id bigint generated always as identity (start with 1 increment by 1) not null,
+  deleted_at timestamp(0),
+  constraint sys_role_pkey primary key (id)
+);
+
+create table issue1125_sys_perm (
+  id bigint generated always as identity(start with 1 increment by 1) not null,
+  deleted_at timestamp(0),
+  constraint sys_perm_pkey primary key (id)
+);
+
+create table issue1125_mp_role_perm (
+  role_id bigint not null,
+  perm_id bigint not null,
+  deleted_at timestamp(0)
+);
