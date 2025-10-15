@@ -222,7 +222,7 @@ public class TypedTupleTest extends AbstractQueryTest {
                 getSqlClient().createQuery(table)
                         .where(table.edition().eq(3))
                         .select(
-                                EntityTupleMapper
+                                LombokEntityTupleMapper
                                         .book(
                                                 table.fetch(
                                                         BookFetcher.$.name()
