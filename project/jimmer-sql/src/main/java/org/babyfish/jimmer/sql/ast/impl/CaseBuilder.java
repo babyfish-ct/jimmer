@@ -4,7 +4,6 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ public class CaseBuilder<T> {
         return this;
     }
 
-    public Expression<T> end() {
+    public Expression<T> otherwiseNull() {
         return otherwise((Expression<T>) null);
     }
 
@@ -84,8 +83,8 @@ public class CaseBuilder<T> {
         }
 
         @Override
-        public StringExpression end() {
-            return (StringExpression) super.end();
+        public StringExpression otherwiseNull() {
+            return (StringExpression) super.otherwiseNull();
         }
 
         @Override
@@ -116,8 +115,8 @@ public class CaseBuilder<T> {
         }
 
         @Override
-        public NumericExpression<N> end() {
-            return (NumericExpression<N>) super.end();
+        public NumericExpression<N> otherwiseNull() {
+            return (NumericExpression<N>) super.otherwiseNull();
         }
 
         @Override
@@ -148,8 +147,8 @@ public class CaseBuilder<T> {
         }
 
         @Override
-        public ComparableExpression<T> end() {
-            return (ComparableExpression<T>) super.end();
+        public ComparableExpression<T> otherwiseNull() {
+            return (ComparableExpression<T>) super.otherwiseNull();
         }
         
         @Override
