@@ -503,16 +503,41 @@ public class ClientProcessor {
                 break;
         }
     }
+//    private void handleTypeVariable(TypeVariable typeVariable) {
+//
+//        TypeRefImpl<Element> typeRef = builder.current();
+//        Element element = typeVariable.asElement();
+//        Element enclosingElement = element.getEnclosingElement();
+//        String name = element.getSimpleName().toString();
+//        TypeName typeName = typeName(enclosingElement);
+//        typeRef.setTypeName(typeName.typeVariable(name));
+//    }
 
     private void handleTypeVariable(TypeVariable typeVariable) {
 
         TypeRefImpl<Element> typeRef = builder.current();
 
         Element element = typeVariable.asElement();
-        TypeElement parentElement = (TypeElement) element.getEnclosingElement();
+        Element enclosingElement = element.getEnclosingElement();
         String name = element.getSimpleName().toString();
 
-        typeRef.setTypeName(typeName(parentElement).typeVariable(name));
+        if (enclosingElement instanceof TypeElement) {
+            TypeElement parentElement = (TypeElement) enclosingElement;
+            TypeName typeName = typeName(parentElement);
+            typeRef.setTypeName(typeName.typeVariable(name));
+        } else {
+            String elementInfo = element.getSimpleName().toString();
+            String methodInfo = enclosingElement.getSimpleName().toString();
+            throw new UnambiguousTypeException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
+                    builder.ancestorSource(),
+                    "Client API system does not accept method type parameters. " +
+                    "Found type variable '" + elementInfo + "' from method '" +
+                    methodInfo + "'. " +
+                    "Method type parameters (such as <T> in method <T> T find(...)) " +
+                    "cannot be used in parameter types or return types of client API methods."
+            );
+        }
     }
 
     private void handleWildcardType(WildcardType wildcardType) {
