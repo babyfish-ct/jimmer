@@ -140,19 +140,47 @@ class Rows {
             }
             Set<ImmutableProp> keyProps = fixedGroup.getProps();
             Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+            // Record missing non-null key prop
+            List<String> missingKeyProps = new ArrayList<>();
+            Set<String> processedSpiIds = new HashSet<>();
+
             for (ImmutableSpi spi : rows) {
                 boolean unloaded = false;
+                List<String> spiMissingProps = new ArrayList<>();
+
                 for (ImmutableProp keyProp : keyProps) {
                     if (!spi.__isLoaded(keyProp.getId())) {
                         unloaded = true;
-                        break;
+                        if (!keyProp.isNullable()) {
+                            //  Add missing non-null key prop name
+                            spiMissingProps.add(keyProp.getName()); 
+                        }
                     }
                 }
+
                 if (!unloaded) {
                     keys.add(Keys.keyOf(spi, keyProps));
+                } else {
+                    // Add the current missing non-null key prop of the SPI object
+                    String spiId = spi.__type().getJavaClass().getSimpleName();
+                    if (!processedSpiIds.contains(spiId)) {
+                        processedSpiIds.add(spiId);
+                        missingKeyProps.add(String.format(
+                                "[%s]Missing Nonnull key : %s",
+                                spiId,
+                                String.join(", ", spiMissingProps)
+                        ));
+                    }
                 }
             }
             if (keys.isEmpty()) {
+                  // If there is no valid key and there is a missing non-empty key attribute, a detailed exception is thrown.
+                if (!missingKeyProps.isEmpty()) {
+                    throw new IllegalStateException(
+                        String.join("; ", missingKeyProps)
+                    );
+                }
+
                 return Collections.emptyMap();
             }
             return Collections.singletonMap(
