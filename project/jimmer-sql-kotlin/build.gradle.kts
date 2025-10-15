@@ -23,6 +23,7 @@ dependencies {
     testImplementation(libs.jackson.module.kotlin)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.caffeine)
+    testImplementation("com.alibaba:easyexcel:4.0.3")
 }
 
 ksp {

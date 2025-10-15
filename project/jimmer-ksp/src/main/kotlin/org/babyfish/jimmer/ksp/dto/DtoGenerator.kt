@@ -796,10 +796,12 @@ class DtoGenerator private constructor(
                             }
                             allowedTargets(anno.fullName).firstOrNull()?.let {
                                 addAnnotation(
-                                    object : KSAnnotation by anno {
-                                        override val useSiteTarget: AnnotationUseSiteTarget?
-                                            get() = it
-                                    }.toAnnotationSpec()
+                                    standardSpec(
+                                        object : KSAnnotation by anno {
+                                            override val useSiteTarget: AnnotationUseSiteTarget
+                                                get() = it
+                                        }.toAnnotationSpec()
+                                    )
                                 )
                             }
                         }
@@ -814,10 +816,9 @@ class DtoGenerator private constructor(
                             allowedTargets(anno.qualifiedName).firstOrNull() ?: continue
                         }
                         addAnnotation(
-                            annotationOf(
-                                anno,
-                                target.toPoetTarget()
-                            ),
+                            standardSpec(
+                                annotationOf(anno, target.toPoetTarget())
+                            )
                         )
                     }
                     initializer(prop.name)
@@ -2385,5 +2386,36 @@ class DtoGenerator private constructor(
         val DOC_EXPLICIT_FUN = "Avoid anonymous lambda affects coverage of non-kotlin-friendly tools such as jacoco"
 
         private val EXPRESSION_PACKAGE = "org.babyfish.jimmer.sql.kt.ast.expression"
+
+        // Issue#1218, Avoid bug of kotlinpoet
+        private fun standardSpec(spec: AnnotationSpec): AnnotationSpec {
+            var modifiedIndex = -1
+            for (i in spec.members.indices) {
+                val text = spec.members[i].toString()
+                val eqIndex = text.indexOf('=')
+                val modified = if (eqIndex == -1) {
+                    true
+                } else {
+                    val quoteIndex = text.indexOf('"')
+                    quoteIndex != -1 && quoteIndex < eqIndex
+                }
+                if (modified) {
+                    if (modifiedIndex != -1) {
+                        return spec
+                    }
+                    modifiedIndex = i
+                }
+            }
+            if (modifiedIndex == -1) {
+                return spec
+            }
+            val builder = spec.toBuilder()
+            builder.members[modifiedIndex] = CodeBlock
+                .builder()
+                .add("value = ")
+                .add(builder.members[modifiedIndex])
+                .build()
+            return builder.build()
+        }
     }
 }
