@@ -103,9 +103,9 @@ public class ClientProcessor {
                 ClientProcessor.this.fillDefinition(
                         typeElement,
                         typeElement.getAnnotation(Immutable.class) != null ||
-                                typeElement.getAnnotation(Entity.class) != null ||
-                                typeElement.getAnnotation(MappedSuperclass.class) != null ||
-                                typeElement.getAnnotation(Embeddable.class) != null
+                        typeElement.getAnnotation(Entity.class) != null ||
+                        typeElement.getAnnotation(MappedSuperclass.class) != null ||
+                        typeElement.getAnnotation(Embeddable.class) != null
                 );
             }
         };
@@ -253,12 +253,12 @@ public class ClientProcessor {
                         throw new MetaException(
                                 operation.getSource(),
                                 "It cannot be decorated by \"@" +
-                                        Api.class +
-                                        "\" with `groups` \"" +
-                                        set +
-                                        "\" because they are not declared in declaring type \"" +
-                                        service.getTypeName() +
-                                        "\""
+                                Api.class +
+                                "\" with `groups` \"" +
+                                set +
+                                "\" because they are not declared in declaring type \"" +
+                                service.getTypeName() +
+                                "\""
                         );
                     }
                 }
@@ -315,7 +315,7 @@ public class ClientProcessor {
         for (ClientExceptionMetadata subMetadata : metadata.getSubMetdatas()) {
             collectExceptionTypeNames(subMetadata, exceptionTypeNames);
         }
-     }
+    }
 
     private void fillType(TypeMirror type) {
         if (type.getKind() != TypeKind.VOID) {
@@ -335,7 +335,7 @@ public class ClientProcessor {
 
         TypeRefImpl<Element> typeRef = builder.current();
 
-        AnnotationMirror fetchBy = entityType.getAnnotationMirrors().stream().filter( it ->
+        AnnotationMirror fetchBy = entityType.getAnnotationMirrors().stream().filter(it ->
                 FETCH_BY_NAME.equals(typeName(it.getAnnotationType().asElement()))
         ).findFirst().orElse(null);
         if (fetchBy == null) {
@@ -346,8 +346,8 @@ public class ClientProcessor {
                     builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "Illegal type because \"" +
-                            entityType +
-                            "\" which is decorated by `@FetchBy` is not entity type"
+                    entityType +
+                    "\" which is decorated by `@FetchBy` is not entity type"
             );
         }
         String constant = Annotations.annotationValue(fetchBy, "value", null);
@@ -375,8 +375,8 @@ public class ClientProcessor {
         VariableElement fetcherElement = null;
         for (Element element : ownerElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.FIELD &&
-                    element.getModifiers().contains(Modifier.STATIC) &&
-                    element.getSimpleName().toString().equals(constant)) {
+                element.getModifiers().contains(Modifier.STATIC) &&
+                element.getSimpleName().toString().equals(constant)) {
                 fetcherElement = (VariableElement) element;
                 break;
             }
@@ -386,9 +386,9 @@ public class ClientProcessor {
                     builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "Illegal `@FetcherBy`, there is no static field \"" +
-                            constant +
-                            "\" in entityType \"\"" +
-                            owner
+                    constant +
+                    "\" in entityType \"\"" +
+                    owner
             );
         }
         TypeMirror typeMirror = fetcherElement.asType();
@@ -408,24 +408,24 @@ public class ClientProcessor {
                             builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                             builder.ancestorSource(),
                             "Illegal `@FetcherBy`, there is static field \"" +
-                                    constant +
-                                    "\" in entityType \"\"" +
-                                    owner + " but it is not \"org.babyfish.jimmer.sql.fetcher.Fetcher\""
+                            constant +
+                            "\" in entityType \"\"" +
+                            owner + " but it is not \"org.babyfish.jimmer.sql.fetcher.Fetcher\""
                     );
                 }
                 genericTypeName = declaredType.getTypeArguments().get(0).toString();
             }
         }
-        if (!((TypeElement)((DeclaredType)entityType).asElement()).getQualifiedName().toString().equals(genericTypeName)) {
+        if (!((TypeElement) ((DeclaredType) entityType).asElement()).getQualifiedName().toString().equals(genericTypeName)) {
             throw new MetaException(
                     builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "Illegal `@FetcherBy`, there is static field \"" +
-                            constant +
-                            "\" in owner type \"\"" +
-                            owner + " but it is not fetcher for \"" +
-                            ((TypeElement)((DeclaredType)entityType).asElement()).getQualifiedName() +
-                            "\""
+                    constant +
+                    "\" in owner type \"\"" +
+                    owner + " but it is not fetcher for \"" +
+                    ((TypeElement) ((DeclaredType) entityType).asElement()).getQualifiedName() +
+                    "\""
             );
         }
 
@@ -443,8 +443,8 @@ public class ClientProcessor {
                 throw new MetaException(
                         builder.ancestorSource(),
                         "Illegal annotation `@" +
-                                TNullable.class.getName() +
-                                "` which cannot be used to decorate primitive type"
+                        TNullable.class.getName() +
+                        "` which cannot be used to decorate primitive type"
                 );
             }
             typeRef.setNullable(true);
@@ -503,16 +503,40 @@ public class ClientProcessor {
                 break;
         }
     }
+    // TODO:I'm not sure if this is correct, but I feel like there's no need to force the conversion
+   //    private void handleTypeVariable(TypeVariable typeVariable) {
+//
+//        TypeRefImpl<Element> typeRef = builder.current();
+//        Element element = typeVariable.asElement();
+//        Element enclosingElement = element.getEnclosingElement();
+//        String name = element.getSimpleName().toString();
+//        TypeName typeName = typeName(enclosingElement);
+//        typeRef.setTypeName(typeName.typeVariable(name));
+//    }
+
 
     private void handleTypeVariable(TypeVariable typeVariable) {
 
         TypeRefImpl<Element> typeRef = builder.current();
-
         Element element = typeVariable.asElement();
-        TypeElement parentElement = (TypeElement) element.getEnclosingElement();
-        String name = element.getSimpleName().toString();
-
-        typeRef.setTypeName(typeName(parentElement).typeVariable(name));
+        Element enclosingElement = element.getEnclosingElement();
+        if (element instanceof TypeElement) {
+            TypeElement parentElement = (TypeElement) enclosingElement;
+            String name = element.getSimpleName().toString();
+            typeRef.setTypeName(typeName(parentElement).typeVariable(name));
+        } else {
+            String elementInfo = element.getSimpleName().toString();
+            String methodInfo = enclosingElement.getSimpleName().toString();
+            throw new UnambiguousTypeException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
+                    builder.ancestorSource(),
+                    "Client API system does not accept method type parameters. " +
+                    "Found type variable '" + elementInfo + "' from method '" +
+                    methodInfo + "'. " +
+                    "Method type parameters (such as <T> in method <T> T find(...)) " +
+                    "cannot be used in parameter types or return types of client API methods."
+            );
+        }
     }
 
     private void handleWildcardType(WildcardType wildcardType) {
@@ -610,8 +634,6 @@ public class ClientProcessor {
         }
 
 
-
-
         if (!typeElement.getTypeParameters().isEmpty() && declaredType.getTypeArguments().isEmpty()) {
             throw new NoGenericArgumentsException(
                     builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
@@ -648,9 +670,9 @@ public class ClientProcessor {
                         builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                         builder.ancestorSource(),
                         "Cannot resolve \"@" +
-                                JsonValue.class.getName() +
-                                "\" because of dead recursion: " +
-                                jsonValueTypeNameStack
+                        JsonValue.class.getName() +
+                        "\" because of dead recursion: " +
+                        jsonValueTypeNameStack
                 );
             }
             try {
@@ -706,23 +728,23 @@ public class ClientProcessor {
 
                 ExecutableElement executableElement = (ExecutableElement) element;
                 if (!executableElement.getParameters().isEmpty() ||
-                        executableElement.getModifiers().contains(Modifier.STATIC) ||
-                        !executableElement.getModifiers().contains(Modifier.PUBLIC) ||
-                        executableElement.getReturnType().getKind() == TypeKind.VOID ||
-                        executableElement.getAnnotation(ApiIgnore.class) != null ||
-                        executableElement.getAnnotation(JsonIgnore.class) != null
+                    executableElement.getModifiers().contains(Modifier.STATIC) ||
+                    !executableElement.getModifiers().contains(Modifier.PUBLIC) ||
+                    executableElement.getReturnType().getKind() == TypeKind.VOID ||
+                    executableElement.getAnnotation(ApiIgnore.class) != null ||
+                    executableElement.getAnnotation(JsonIgnore.class) != null
                 ) {
                     continue;
                 }
                 String name = executableElement.getSimpleName().toString();
                 if (executableElement.getReturnType().getKind() == TypeKind.BOOLEAN &&
-                        name.length() > 2 &&
-                        name.startsWith("is") &&
-                        !Character.isLowerCase(name.charAt(2))) {
+                    name.length() > 2 &&
+                    name.startsWith("is") &&
+                    !Character.isLowerCase(name.charAt(2))) {
                     name = StringUtil.identifier(name.substring(2));
                 } else if (name.length() > 3 &&
-                        name.startsWith("get") &&
-                        !Character.isLowerCase(name.charAt(3))) {
+                           name.startsWith("get") &&
+                           !Character.isLowerCase(name.charAt(3))) {
                     name = StringUtil.identifier(name.substring(3));
                 } else {
                     if (!immutable && !typeElement.getKind().name().equals("RECORD")) {
@@ -795,8 +817,8 @@ public class ClientProcessor {
                 if (Annotations.annotationMirror(superElement, ApiIgnore.class) == null) {
                     TypeName superName = typeName(superElement);
                     if (superName.isGenerationRequired() &&
-                            !superName.equals(CODE_BASED_EXCEPTION_NAME) &&
-                            !superName.equals(CODE_BASED_RUNTIME_EXCEPTION_NAME)) {
+                        !superName.equals(CODE_BASED_EXCEPTION_NAME) &&
+                        !superName.equals(CODE_BASED_RUNTIME_EXCEPTION_NAME)) {
                         builder.typeRef(type -> {
                             fillType(typeElement.getSuperclass());
                             typeDefinition.addSuperType(type);
@@ -868,7 +890,7 @@ public class ClientProcessor {
             return false;
         }
         return ApiOperation.AUTO_OPERATION_ANNOTATIONS.stream().anyMatch(it ->
-            Annotations.annotationMirror(element, it) != null
+                Annotations.annotationMirror(element, it) != null
         );
     }
 
@@ -889,27 +911,27 @@ public class ClientProcessor {
             String annoClassName = annoElement.getSimpleName().toString();
             String annoClassFullName = annoElement.getQualifiedName().toString();
             if (annoClassName.equals("Null") ||
-                    annoClassName.equals("Nullable") ||
-                    annoElement.getQualifiedName().toString().equals(Constants.T_NULLABLE_QUALIFIED_NAME)) {
+                annoClassName.equals("Nullable") ||
+                annoElement.getQualifiedName().toString().equals(Constants.T_NULLABLE_QUALIFIED_NAME)) {
                 if (isRawTypePrimitive) {
                     throw new MetaException(
                             builder.ancestorSource(),
                             "Illegal annotation `@" +
-                                    annoClassName +
-                                    "` which cannot be used to decorate primitive type"
+                            annoClassName +
+                            "` which cannot be used to decorate primitive type"
                     );
                 }
                 nullableTypeName = annoClassFullName;
             } else if ((annoClassName.equals("NotNull") || annoClassName.equals("NonNull")) &&
-                    !annoClassFullName.equals("javax.validation.constraints.NotNull") &&
-                    !annoClassFullName.equals("jakarta.validation.constraints.NotNull")) {
+                       !annoClassFullName.equals("javax.validation.constraints.NotNull") &&
+                       !annoClassFullName.equals("jakarta.validation.constraints.NotNull")) {
                 if (isPrimitive && !isRawTypePrimitive) {
                     throw new MetaException(
                             builder.ancestorSource(),
                             "Illegal annotation `@" +
-                                    annoClassName +
-                                    "` which cannot be used to decorate boxed type of primitive type, " +
-                                    "please replace it to unboxed primitive type"
+                            annoClassName +
+                            "` which cannot be used to decorate boxed type of primitive type, " +
+                            "please replace it to unboxed primitive type"
                     );
                 }
                 nonNullTypeName = annoClassFullName;
@@ -919,10 +941,10 @@ public class ClientProcessor {
             throw new MetaException(
                     element,
                     "Conflict nullity annotation \"@" +
-                            nullableTypeName +
-                            "\" and \"@" +
-                            nonNullTypeName +
-                            "\""
+                    nullableTypeName +
+                    "\" and \"@" +
+                    nonNullTypeName +
+                    "\""
             );
         }
         if (nullableTypeName != null) {
