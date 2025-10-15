@@ -10,6 +10,19 @@ import java.util.Objects;
 /**
  * After upgrade to Java25, the `TypeUtils` of `common-lang3`
  * may cause errors, use this class to replace it.
+ *
+ * <p>For example, there are some types</p>
+ * <pre>{@code
+ * interface Data<T> { T get(); }
+ * interface Matrix<T> extends Data<T[][]> {}
+ * interface DoubleMatrix extends Matrix<Double>
+ * }</pre>
+ * Then, execute the code
+ * <pre>{@code
+ * Type type = Generics.getTypeArguments(DoubleMatrix.class, Data.class);
+ * System.out.println(type.getTypeName());
+ * }</pre>
+ * The result is {@code java.lang.Double[][]}
  */
 public class Generics {
 
