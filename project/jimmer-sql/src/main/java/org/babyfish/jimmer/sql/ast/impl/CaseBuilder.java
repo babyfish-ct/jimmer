@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -21,13 +22,19 @@ public class CaseBuilder<T> {
         this.type = type;
     }
 
+    @OldChain
     public CaseBuilder<T> when(Predicate cond, T then) {
         return when(cond, Literals.any(then));
     }
 
+    @OldChain
     public CaseBuilder<T> when(Predicate cond, Expression<T> then) {
         whens.add(new Tuple2<>(cond, then));
         return this;
+    }
+
+    public Expression<T> end() {
+        return otherwise((Expression<T>) null);
     }
 
     public Expression<T> otherwise(T otherwise) {
@@ -77,6 +84,11 @@ public class CaseBuilder<T> {
         }
 
         @Override
+        public StringExpression end() {
+            return (StringExpression) super.end();
+        }
+
+        @Override
         public StringExpression otherwise(String otherwise) {
             return (StringExpression) super.otherwise(otherwise);
         }
@@ -101,6 +113,11 @@ public class CaseBuilder<T> {
         @Override
         public Num<N> when(Predicate cond, Expression<N> then) {
             return (Num<N>)super.when(cond, then);
+        }
+
+        @Override
+        public NumericExpression<N> end() {
+            return (NumericExpression<N>) super.end();
         }
 
         @Override
@@ -130,6 +147,11 @@ public class CaseBuilder<T> {
             return (Cmp<T>) super.when(cond, then);
         }
 
+        @Override
+        public ComparableExpression<T> end() {
+            return (ComparableExpression<T>) super.end();
+        }
+        
         @Override
         public ComparableExpression<T> otherwise(T otherwise) {
             return (ComparableExpression<T>) super.otherwise(otherwise);
@@ -176,7 +198,7 @@ public class CaseBuilder<T> {
                 ((Ast) when.get_1()).accept(visitor);
                 ((Ast) when.get_2()).accept(visitor);
             }
-            ((Ast) otherwise).accept(visitor);
+            if (otherwise != null) ((Ast) otherwise).accept(visitor);
         }
 
         @Override
@@ -189,8 +211,10 @@ public class CaseBuilder<T> {
                     builder.sql(" then ");
                     renderChild((Ast) when.get_2(), builder);
                 }
-                builder.sql(" else ");
-                renderChild((Ast) otherwise, builder);
+                if (otherwise != null) {
+                    builder.sql(" else ");
+                    renderChild((Ast) otherwise, builder);
+                }
                 builder.sql(" end");
             });
         }
