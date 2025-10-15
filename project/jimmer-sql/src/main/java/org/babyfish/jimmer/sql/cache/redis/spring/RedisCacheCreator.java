@@ -7,12 +7,15 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheCreator;
+import org.babyfish.jimmer.sql.cache.RemoteKeyPrefixProvider;
 import org.babyfish.jimmer.sql.cache.caffeine.CaffeineHashBinder;
 import org.babyfish.jimmer.sql.cache.caffeine.CaffeineValueBinder;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheCreator;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 import java.util.Objects;
@@ -157,6 +160,98 @@ public class RedisCacheCreator extends AbstractCacheCreator {
                 .publish(args.tracker)
                 .objectMapper(args.objectMapper)
                 .keyPrefixProvider(args.keyPrefixProvider)
+                .duration(args.multiVewDuration)
+                .randomPercent(args.randomDurationPercent)
+                .redis(args.connectionFactory)
+                .build()
+                .lock(
+                        args.locker,
+                        args.lockWaitDuration,
+                        args.lockLeaseDuration
+                );
+    }
+
+    @Override
+    public <K, V> Cache<K, V> createForObject(
+            ImmutableType type,
+            @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider
+    ) {
+        return new ChainCacheBuilder<K, V>()
+                .add(caffeineValueBinder(type))
+                .add(redisValueBinder(type, userKeyPrefixProvider))
+                .build();
+    }
+
+    @Override
+    public <K, V> Cache<K, V> createForProp(
+            ImmutableProp prop,
+            boolean multiView,
+            @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider
+    ) {
+        if (multiView) {
+            return new ChainCacheBuilder<K, V>()
+                    .add(caffeineHashBinder(prop))
+                    .add(redisHashBinder(prop, userKeyPrefixProvider))
+                    .build();
+        }
+        return new ChainCacheBuilder<K, V>()
+                .add(caffeineValueBinder(prop))
+                .add(redisValueBinder(prop, userKeyPrefixProvider))
+                .build();
+    }
+
+    private <K, V> SimpleBinder<K, V> redisValueBinder(
+            ImmutableType type,
+            @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider
+    ) {
+        Args args = args();
+        return RedisValueBinder
+                .<K, V>forObject(type)
+                .publish(args.tracker)
+                .objectMapper(args.objectMapper)
+                .keyPrefixProvider(userKeyPrefixProvider)
+                .duration(args.duration)
+                .randomPercent(args.randomDurationPercent)
+                .redis(args.connectionFactory)
+                .build()
+                .lock(
+                        args.locker,
+                        args.lockWaitDuration,
+                        args.lockLeaseDuration
+                );
+    }
+
+    private <K, V> SimpleBinder<K, V> redisValueBinder(
+            ImmutableProp prop,
+            @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider
+    ) {
+        Args args = args();
+        return RedisValueBinder
+                .<K, V>forProp(prop)
+                .publish(args.tracker)
+                .objectMapper(args.objectMapper)
+                .duration(args.duration)
+                .keyPrefixProvider(userKeyPrefixProvider)
+                .randomPercent(args.randomDurationPercent)
+                .redis(args.connectionFactory)
+                .build()
+                .lock(
+                        args.locker,
+                        args.lockWaitDuration,
+                        args.lockLeaseDuration
+                );
+    }
+
+    private <K, V> SimpleBinder.Parameterized<K, V> redisHashBinder(
+            ImmutableProp prop,
+            @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider
+    ) {
+        Args args = args();
+        return RedisHashBinder
+                .<K, V>forProp(prop)
+                .publish(args.tracker)
+                .objectMapper(args.objectMapper)
+                .keyPrefixProvider(userKeyPrefixProvider)
                 .duration(args.multiVewDuration)
                 .randomPercent(args.randomDurationPercent)
                 .redis(args.connectionFactory)

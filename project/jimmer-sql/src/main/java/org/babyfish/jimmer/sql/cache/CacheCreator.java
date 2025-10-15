@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Duration;
 
@@ -134,6 +135,14 @@ public interface CacheCreator {
     <K, V> Cache<K, V> createForObject(ImmutableType type);
 
     <K, V> Cache<K, V> createForProp(ImmutableProp prop, boolean multiView);
+
+    <K, V> Cache<K, V> createForObject(ImmutableType type, @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider);
+
+    <K, V> Cache<K, V> createForProp(
+            ImmutableProp prop,
+            boolean multiView,
+            @NonNull RemoteKeyPrefixProvider userKeyPrefixProvider
+    );
 
     Duration DEFAULT_REMOTE_DURATION = Duration.ofMinutes(30);
 
