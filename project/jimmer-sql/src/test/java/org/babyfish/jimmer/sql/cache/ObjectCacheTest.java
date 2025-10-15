@@ -15,8 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.babyfish.jimmer.sql.common.Constants.alexId;
-import static org.babyfish.jimmer.sql.common.Constants.oreillyId;
+import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class ObjectCacheTest extends AbstractQueryTest {
 
@@ -118,7 +117,7 @@ public class ObjectCacheTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testIssue1221() {
+    public void testIssue1221ByObject() {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
@@ -146,6 +145,38 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                 "[{" +
                                         "--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
                                         "--->\"fullName\":\"Alex Banks\"" +
+                                        "}]"
+                        );
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void testIssue1221ByAssociation() {
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            connectAndExpect(
+                    con -> {
+                        return sqlClient
+                                .getEntities()
+                                .forConnection(con)
+                                .findById(
+                                        BookFetcher.$.storeId(),
+                                        graphQLInActionId3
+                                );
+                    }, ctx -> {
+                        if (useSql) {
+                            ctx.sql(
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                            "from BOOK tb_1_ " +
+                                            "where tb_1_.ID = ?"
+                            );
+                        }
+                        ctx.rows(
+                                "[{" +
+                                        "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                         "}]"
                         );
                     }
