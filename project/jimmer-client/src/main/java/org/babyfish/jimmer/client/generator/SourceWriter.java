@@ -6,8 +6,6 @@ import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;

@@ -3,12 +3,10 @@ package org.babyfish.jimmer.client.generator.ts;
 import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Context;
-import org.babyfish.jimmer.client.runtime.EnumType;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
-import java.io.Writer;
 import java.util.List;
 
 public class TypeScriptContext extends Context {
@@ -77,7 +75,7 @@ public class TypeScriptContext extends Context {
     }
 
     @Override
-    protected void renderIndexCode(String dir, List<Source> sources, Writer writer) {
+    protected void renderIndexCode(String dir, List<Source> sources, Appendable writer) {
         if (!dir.equals(TypeScriptSourceManager.ENUM_DIR)) {
             return;
         }
@@ -183,7 +181,7 @@ public class TypeScriptContext extends Context {
 
     private static class EnumConstantWriter extends CodeWriter<EnumConstantWriter> {
 
-        public EnumConstantWriter(Writer writer, String indent) {
+        public EnumConstantWriter(Appendable writer, String indent) {
             super(indent);
             setWriter(writer);
         }

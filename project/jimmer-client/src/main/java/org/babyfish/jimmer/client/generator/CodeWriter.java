@@ -1,14 +1,12 @@
 package org.babyfish.jimmer.client.generator;
 
 import java.io.IOException;
-import java.io.Writer;
-import java.util.function.Function;
 
 public class CodeWriter<W extends CodeWriter<W>> {
 
     private final String indentText;
 
-    private Writer writer;
+    private Appendable writer;
 
     private int indent;
 
@@ -61,14 +59,14 @@ public class CodeWriter<W extends CodeWriter<W>> {
         try {
             if (!lineDirty) {
                 for (int i = indent; i > 0; --i) {
-                    writer.write(indentText);
+                    writer.append(indentText);
                 }
                 lineDirty = true;
             }
             if (scope != null) {
                 scope.dirty();
             }
-            writer.write(c);
+            writer.append(c);
             if (c == '\n') {
                 lineDirty = false;
             }
@@ -165,7 +163,7 @@ public class CodeWriter<W extends CodeWriter<W>> {
         }
     }
 
-    protected void setWriter(Writer writer) {
+    protected void setWriter(Appendable writer) {
         this.writer = writer;
     }
 }

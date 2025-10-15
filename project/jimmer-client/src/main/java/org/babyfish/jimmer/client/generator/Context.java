@@ -178,28 +178,27 @@ public abstract class Context {
         }
     }
 
-    public void render(Source source, Writer writer) {
+    public void render(Source source, Appendable writer) {
         init();
         SourceWriter codeWriter = this.createCodeWriter(this, source);
-        StringWriter headWriter = new StringWriter();
-        StringWriter bodyWriter = new StringWriter();
+        StringBuilder headWriter = new StringBuilder();
+        StringBuilder bodyWriter = new StringBuilder();
         codeWriter.setWriter(bodyWriter);
         source.getRender().render(codeWriter);
         codeWriter.setWriter(headWriter);
         codeWriter.onFlushImportedTypes();
         try {
-            String head = headWriter.toString();
-            if (!head.isEmpty()) {
-                writer.write(head);
-                writer.write('\n');
+            if (headWriter.length() != 0) {
+                writer.append(headWriter);
+                writer.append('\n');
             }
-            writer.write(bodyWriter.toString());
+            writer.append(bodyWriter);
         } catch (IOException ex) {
             throw new GeneratorException("Failed to write code for " + source);
         }
     }
 
-    public void renderIndex(String dir, Writer writer) {
+    public void renderIndex(String dir, Appendable writer) {
         if (!isIndexRequired()) {
             return;
         }
@@ -213,9 +212,9 @@ public abstract class Context {
         renderIndex(dir, sources, writer);
     }
 
-    private void renderIndex(String dir, List<Source> sources, Writer writer) {
-        StringWriter headWriter = new StringWriter();
-        StringWriter bodyWriter = new StringWriter();
+    private void renderIndex(String dir, List<Source> sources, Appendable writer) {
+        StringBuilder headWriter = new StringBuilder();
+        StringBuilder bodyWriter = new StringBuilder();
         for (Source source : sources) {
             SourceWriter codeWriter = this.createCodeWriter(this, source);
             codeWriter.setWriter(bodyWriter);
@@ -224,12 +223,11 @@ public abstract class Context {
             codeWriter.onFlushImportedTypes();
         }
         try {
-            String head = headWriter.toString();
-            if (!head.isEmpty()) {
-                writer.write(head);
-                writer.write('\n');
+            if (headWriter.length() != 0) {
+                writer.append(headWriter);
+                writer.append('\n');
             }
-            writer.write(bodyWriter.toString());
+            writer.append(bodyWriter);
             renderIndexCode(dir, sources, writer);
         } catch (IOException ex) {
             throw new GeneratorException("Failed to write index for " + String.join("/", sources.get(0).getDirs()));
@@ -244,15 +242,13 @@ public abstract class Context {
         return false;
     }
 
-    protected void renderIndexCode(String dir, List<Source> sources, Writer writer) {}
+    protected void renderIndexCode(String dir, List<Source> sources, Appendable writer) {}
 
     protected abstract String getFileExtension();
 
     protected static String indent(int indent) {
-        StringBuilder indentBuilder = new StringBuilder();
-        for (int i = indent; i > 0; --i) {
-            indentBuilder.append(' ');
-        }
-        return indentBuilder.toString();
+        byte[] spaces = new byte[indent];
+        Arrays.fill(spaces, (byte) ' ');
+        return new String(spaces);
     }
 }
