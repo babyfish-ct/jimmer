@@ -340,6 +340,11 @@ public class EntitiesImpl implements Entities {
                     )
             ).values();
             List<E> entities = new ArrayList<>(cachedEntities.size());
+            for (E entity : cachedEntities) {
+                if (entity != null) {
+                    entities.add(entity);
+                }
+            }
             Shapes.reshape(sqlClient, con, entities, fetcher, converter);
             return entities;
         }
