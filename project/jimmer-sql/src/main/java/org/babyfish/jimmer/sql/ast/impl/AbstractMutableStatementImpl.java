@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
@@ -217,7 +218,13 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
         // Resolve real table implementation to get table alias immediately before resolving virtual predicates,
         // this is important because it makes table aliases of SQL looks beautiful
-        getTableLikeImplementor();
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            TypedBaseQueryImplementor<?> typedBaseQueryImplementor =
+                    ((BaseTableImplementor)tableLikeImplementor).getQuery();
+            typedBaseQueryImplementor.resolveVirtualPredicate(ctx);
+        }
 
         predicates = ctx.resolveVirtualPredicates(predicates);
         List<Predicate> havingPredicates = getHavingPredicates();
