@@ -9,6 +9,7 @@ import org.babyfish.jimmer.impl.org.objectweb.asm.tree.MethodNode;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.*;
 import java.lang.reflect.*;
 import java.util.Map;
@@ -59,10 +60,22 @@ public abstract class AbstractWeakJoinLambdaFactory {
             return null;
         }
         Class<?>[] types = getTypes(serializedLambda);
-        ClassReader classReader;
-        try {
-            classReader = new ClassReader(serializedLambda.getImplClass());
-        } catch (IOException ex) {
+        ClassReader classReader = null;
+        InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(
+                serializedLambda.getImplClass() + ".class"
+        );
+        if (inputStream != null) {
+            try {
+                try {
+                    classReader = new ClassReader(inputStream);
+                } finally {
+                    inputStream.close();
+                }
+            } catch (IOException ex) {
+                // Nothing
+            }
+        }
+        if (classReader == null) {
             throw new IllegalStateException(
                     "Cannot read the byte code of \"" +
                             serializedLambda.getImplClass() +
