@@ -2095,7 +2095,19 @@ class DtoGenerator private constructor(
         private val KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto"
 
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
-            val qualifiedName = annotation.annotationType.fastResolve().declaration.qualifiedName!!.asString()
+            val qualifiedName =
+                annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()
+                    ?: throw DtoException(
+                        """
+                        Unable to resolve qualifiedName for annotation: '${annotation.annotationType.fastResolve()}'
+                        Possible reasons:
+                        1. The annotation's dependency is missing from compilation classpath
+                        2. Required library is not included as a dependency
+                        3. Dependency is declared with 'implementation' instead of 'api' configuration
+                        
+                        Solution: Add the corresponding dependency to your build configuration.
+                        """.trimIndent()
+                    )
             return (
                     qualifiedName != KOTLIN_DTO_TYPE_NAME && (
                             !qualifiedName.startsWith("org.babyfish.jimmer.") ||
