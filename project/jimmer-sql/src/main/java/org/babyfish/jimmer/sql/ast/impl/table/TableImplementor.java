@@ -45,13 +45,13 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType);
 
-    <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs);
+    <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs, long order);
 
-    <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs);
+    <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs, long order);
 
     <X> TableImplementor<X> inverseJoinImplementor(ImmutableProp prop);
 
-    <X> TableImplementor<X> inverseJoinImplementor(ImmutableProp prop, JoinType joinType);
+    <X> TableImplementor<X> inverseJoinImplementor(ImmutableProp prop, JoinType joinType, long order);
 
     <X> TableImplementor<X> inverseJoinImplementor(TypedProp.Association<?, ?> prop);
 
@@ -68,7 +68,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
             WeakJoin<?, ?> weakJoinLambda
     );
 
-    <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
+    <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType, long order);
 
     <X extends BaseTable> X weakJoinImplementor(X targetBaseTable, WeakJoinHandle handle, JoinType joinType);
 
@@ -97,6 +97,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                 statement,
                 immutableType,
                 null,
+                -1,
                 false,
                 null,
                 null,

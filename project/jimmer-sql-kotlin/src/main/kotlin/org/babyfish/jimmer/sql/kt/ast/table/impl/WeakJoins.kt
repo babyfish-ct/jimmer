@@ -22,7 +22,8 @@ fun <S: Any, T: Any> createWeakJoinTable(
             targetType,
             weakJoinFun
         ),
-        joinType
+        joinType,
+        -1
     )
 
 @Suppress("UNCHECKED_CAST")

@@ -36,13 +36,15 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplementor<?>>implements TableImplementor<E> {
+class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplementor<?>> implements TableImplementor<E> {
 
     final AbstractMutableStatementImpl statement;
 
     final ImmutableType immutableType;
 
     final TableImpl<?> parent;
+
+    final long order;
 
     final boolean isInverse;
 
@@ -67,6 +69,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType,
             TableImpl<?> parent,
+            long order,
             boolean isInverse,
             ImmutableProp joinProp,
             WeakJoinHandle weakJoinHandle,
@@ -92,6 +95,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         this.statement = statement;
         this.immutableType = immutableType;
         this.parent = parent;
+        this.order = order != -1 ? order : parent != null ? (long)parent.size() : 0L;
         this.isInverse = isInverse;
         this.joinProp = joinProp;
         this.weakJoinHandle = weakJoinHandle;
@@ -108,6 +112,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         this.statement = base.statement;
         this.immutableType = base.immutableType;
         this.parent = parent;
+        this.order = base.order;
         this.isInverse = base.isInverse;
         this.joinProp = base.joinProp;
         this.weakJoinHandle = base.weakJoinHandle;
@@ -135,6 +140,16 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     @Override
     public final boolean isInverse() {
         return isInverse;
+    }
+
+    @Override
+    public int getSize() {
+        return size();
+    }
+
+    @Override
+    public long getOrder() {
+        return order;
     }
 
     @Override
@@ -191,10 +206,6 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             }
             this.realTable = realTable;
         }
-        return realTable;
-    }
-
-    public RealTableImpl tryGetRealTable() {
         return realTable;
     }
 
@@ -327,12 +338,12 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
-        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs));
+        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs, -1));
     }
 
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
-        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs));
+        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs, -1));
     }
 
     @Override
@@ -340,7 +351,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         ImmutableProp oppositeProp = prop.getOpposite();
         TableImplementor<?> joinedTable = inverseJoinImplementor(
                 prop,
-                oppositeProp != null && oppositeProp.isNullable() ? JoinType.LEFT : JoinType.INNER
+                oppositeProp != null && oppositeProp.isNullable() ? JoinType.LEFT : JoinType.INNER,
+                -1
         );
         return joinedTable.get(joinedTable.getImmutableType().getIdProp(), true);
     }
@@ -352,7 +364,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType) {
-        return TableProxies.wrap(inverseJoinImplementor(prop, joinType));
+        return TableProxies.wrap(inverseJoinImplementor(prop, joinType, -1));
     }
 
     @Override
@@ -384,32 +396,32 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop) {
-        return joinImplementor(immutableType.getProp(prop), JoinType.INNER, null);
+        return joinImplementor(immutableType.getProp(prop), JoinType.INNER, null, -1);
     }
 
     @Override
     public <X> TableImplementor<X> joinImplementor(ImmutableProp prop) {
-        return joinImplementor(prop, JoinType.INNER, null);
+        return joinImplementor(prop, JoinType.INNER, null, -1);
     }
 
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType) {
-        return joinImplementor(immutableType.getProp(prop), joinType, null);
+        return joinImplementor(immutableType.getProp(prop), joinType, null, -1);
     }
 
     @Override
     public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType) {
-        return joinImplementor(prop, joinType, null);
+        return joinImplementor(prop, joinType, null, -1);
     }
 
     @Override
-    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs) {
-        return joinImplementor(immutableType.getProp(prop), joinType, treatedAs);
+    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs, long order) {
+        return joinImplementor(immutableType.getProp(prop), joinType, treatedAs, order);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
+    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs, long order) {
         if (prop.getDeclaringType() != immutableType) {
             if (!prop.getDeclaringType().isAssignableFrom(immutableType)) {
                 throw new IllegalArgumentException(
@@ -425,8 +437,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
         if (manyToManyViewBaseProp != null) {
             return (TableImplementor<X>)
-                    ((TableImpl<Object>)join0(false, manyToManyViewBaseProp, joinType))
-                            .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType);
+                    ((TableImpl<Object>)join0(false, manyToManyViewBaseProp, joinType, order))
+                            .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType, order);
         }
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
             if (isRemote()) {
@@ -452,27 +464,27 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                             "\""
             );
         }
-        return (TableImplementor<X>) join0(false, prop, joinType);
+        return (TableImplementor<X>) join0(false, prop, joinType, order);
     }
 
     @Override
     public <X> TableImplementor<X>  inverseJoinImplementor(ImmutableProp prop) {
-        return inverseJoinImplementor(prop, JoinType.INNER);
+        return inverseJoinImplementor(prop, JoinType.INNER, -1);
     }
 
     @Override
     public <X> TableImplementor<X>  inverseJoinImplementor(TypedProp.Association<?, ?> prop) {
-        return inverseJoinImplementor(prop.unwrap(), JoinType.INNER);
+        return inverseJoinImplementor(prop.unwrap(), JoinType.INNER, -1);
     }
 
     @Override
     public <X> TableImplementor<X>  inverseJoinImplementor(TypedProp.Association<?, ?> prop, JoinType joinType) {
-        return inverseJoinImplementor(prop.unwrap(), joinType);
+        return inverseJoinImplementor(prop.unwrap(), joinType, -1);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <X> TableImplementor<X>  inverseJoinImplementor(ImmutableProp backProp, JoinType joinType) {
+    public <X> TableImplementor<X>  inverseJoinImplementor(ImmutableProp backProp, JoinType joinType, long order) {
         if (backProp.getTargetType() != immutableType) {
             throw new IllegalArgumentException("'" + backProp + "' is not back association property");
         }
@@ -482,16 +494,17 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         ImmutableProp manyToManyViewBaseProp = backProp.getManyToManyViewBaseProp();
         if (manyToManyViewBaseProp != null) {
             return (TableImplementor<X>)
-                    ((TableImpl<?>)join0(true, backProp.getManyToManyViewBaseDeeperProp(), joinType))
-                            .join0(true, manyToManyViewBaseProp, joinType);
+                    ((TableImpl<?>)join0(true, backProp.getManyToManyViewBaseDeeperProp(), joinType, order))
+                            .join0(true, manyToManyViewBaseProp, joinType, order);
         }
-        return (TableImplementor<X>) join0(true, backProp, joinType);
+        return (TableImplementor<X>) join0(true, backProp, joinType, order);
     }
 
     private TableImplementor<?> join0(
             boolean isInverse,
             ImmutableProp prop,
-            JoinType joinType
+            JoinType joinType,
+            long order
     ) {
         if (prop.isTransient()) {
             throw new ExecutionException(
@@ -523,17 +536,25 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                     joinName,
                     !isInverse,
                     prop.getMappedBy(),
-                    joinType
+                    joinType,
+                    order
             );
         }
-        return join1(joinName, isInverse, prop, joinType);
+        return join1(
+                joinName,
+                isInverse,
+                prop,
+                joinType,
+                order
+        );
     }
 
     private TableImplementor<?> join1(
             String joinName,
             boolean isInverse,
             ImmutableProp prop,
-            JoinType joinType
+            JoinType joinType,
+            long order
     ) {
         Key key = new Key(joinName, joinType, null, false);
         TableImpl<?> joinedTable = (TableImpl<?>) getValue(key);
@@ -544,6 +565,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                 statement,
                 isInverse ? prop.getDeclaringType() : prop.getTargetType(),
                 this,
+                order,
                 isInverse,
                 prop,
                 null,
@@ -556,7 +578,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public <X> TableImplementor<X> weakJoinImplementor(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType) {
-        return weakJoinImplementor(WeakJoinHandle.of(weakJoinType), joinType);
+        return weakJoinImplementor(WeakJoinHandle.of(weakJoinType), joinType, -1);
     }
 
     @SuppressWarnings("unchecked")
@@ -573,16 +595,18 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                         true,
                         (WeakJoin<TableLike<?>, TableLike<?>>) weakJoinLambda
                 ),
-                joinType
+                joinType,
+                -1
         );
     }
 
     @Override
-    public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
+    public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType, long order) {
         return new TableImpl<>(
                 statement,
                 ((WeakJoinHandle.EntityTableHandle)handle).getTargetType(),
                 this,
+                order,
                 isInverse,
                 null,
                 handle,
@@ -622,6 +646,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                 statement,
                 prop.getTargetType(),
                 this,
+                order,
                 mappedBy != null,
                 mappedBy != null ? mappedBy : prop,
                 null,

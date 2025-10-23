@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
+
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
@@ -460,29 +462,29 @@ public class JoinTest extends AbstractQueryTest {
         }
     }
 
-//    @Test
-//    public void testIssue1176() {
-//        AuthorTable table = AuthorTable.$;
-//        BookTable b1 = table.asTableEx().weakJoin(BookTable.class, JoinType.LEFT, (s, t) -> {
-//           return s.firstName().eq(t.name());
-//        });
-//        BookTable b2 = table.asTableEx().weakJoin(BookTable.class, JoinType.LEFT, (s, t) -> {
-//            return s.lastName().eq(t.name());
-//        });
-//        BookStoreTable store = b2.asTableEx().weakJoin(BookStoreTable.class, JoinType.LEFT, (s, t) -> {
-//            return s.name().eq(s.name());
-//        });
-//        executeAndExpect(
-//                getSqlClient()
-//                        .createQuery(table)
-//                        .select(
-//                                store.name(),
-//                                b1.name(),
-//                                b2.name()
-//                        ),
-//                ctx -> {
-//                    ctx.sql("");
-//                }
-//        );
-//    }
+    @Test
+    public void testIssue1176() {
+        NativeDatabases.assumeNativeDatabase();
+        AuthorTable table = AuthorTable.$;
+        BookTable book1 = table.asTableEx().weakJoin(BookTable.class, JoinType.LEFT, (s, t) -> {
+           return s.firstName().eq(t.name());
+        });
+        BookTable book2 = table.asTableEx().weakJoin(BookTable.class, JoinType.LEFT, (s, t) -> {
+            return s.lastName().eq(t.name());
+        });
+        executeAndExpect(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient()
+                        .createQuery(table)
+                        .select(book2.name(), book1.name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_3_.NAME, tb_2_.NAME " +
+                                    "from AUTHOR tb_1_ " +
+                                    "left join BOOK tb_2_ on tb_1_.FIRST_NAME = tb_2_.NAME " +
+                                    "left join BOOK tb_3_ on tb_1_.LAST_NAME = tb_3_.NAME"
+                    );
+                }
+        );
+    }
 }

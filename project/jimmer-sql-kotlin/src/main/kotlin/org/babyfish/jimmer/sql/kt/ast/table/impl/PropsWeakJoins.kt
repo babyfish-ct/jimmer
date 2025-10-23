@@ -24,7 +24,8 @@ fun <SP: KPropsLike, TP: KPropsLike> createPropsWeakJoinTable(
                 targetTableType::class.java,
                 propsWeakJoinFun
             ),
-            joinType
+            joinType,
+            -1
         ) as TP
     } else {
         TODO()

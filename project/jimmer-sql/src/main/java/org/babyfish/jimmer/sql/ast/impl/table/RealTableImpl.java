@@ -120,7 +120,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return child;
         }
         child = new RealTableImpl(key, owner, this);
-        putValue(key, child);
+        putValue(key, child, RealTableImpl::lessThan);
         return child;
     }
 
@@ -134,7 +134,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return child;
         }
         child = new RealTableImpl(key, owner, this);
-        putValue(key, child);
+        putValue(key, child, RealTableImpl::lessThan);
         return child;
     }
 
@@ -148,8 +148,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return child;
         }
         child = new RealTableImpl(key, owner, this);
-        putValue(key, child);
+        putValue(key, child, RealTableImpl::lessThan);
         return child;
+    }
+
+    private static boolean lessThan(RealTable a, RealTable b) {
+        return ((RealTableImpl)a).owner.getOrder() < ((RealTableImpl)b).owner.getOrder();
     }
 
     @Override

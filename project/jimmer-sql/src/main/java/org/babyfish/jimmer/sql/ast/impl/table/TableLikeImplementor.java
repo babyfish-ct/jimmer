@@ -29,4 +29,8 @@ public interface TableLikeImplementor<E> extends TableLike<E> {
     AbstractMutableStatementImpl getStatement();
 
     boolean hasBaseTable();
+
+    int getSize();
+
+    long getOrder();
 }

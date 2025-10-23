@@ -24,6 +24,8 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     private final TableLikeImplementor<?> parent;
 
+    private final int order;
+
     private final BaseTableImplementor recursive;
 
     private BaseTableSymbol rootSymbol;
@@ -65,12 +67,23 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
     private BaseTableImpl(BaseTableSymbol symbol, TableLikeImplementor<?> parent, BaseTableImplementor recursive) {
         this.symbol = symbol;
         this.parent = parent;
+        this.order = parent != null ? parent.getSize() : 0;
         this.recursive = recursive;
     }
 
     @Override
     public TableLikeImplementor<?> getParent() {
         return parent;
+    }
+
+    @Override
+    public int getSize() {
+        return this.size();
+    }
+
+    @Override
+    public long getOrder() {
+        return order;
     }
 
     @Override

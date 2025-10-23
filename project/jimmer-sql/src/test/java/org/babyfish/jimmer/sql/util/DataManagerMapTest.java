@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 public class DataManagerMapTest {
 
@@ -18,8 +20,7 @@ public class DataManagerMapTest {
     }
 
     @Test
-    public void test() {
-
+    public void testAppend() {
         for (int i = 0; i < 10; i++) {
             String key = "key" + i;
             String value = "value" + i;
@@ -48,6 +49,36 @@ public class DataManagerMapTest {
         );
     }
 
+    @Test
+    public void testInsert() {
+        BiPredicate<String, String> lessThan = (a, b) -> a.compareTo(b) < 0;
+        map.put("three", "***", lessThan);
+        Assertions.assertEquals(
+                "[***]",
+                map.toList().toString()
+        );
+        map.put("one", "*", lessThan);
+        Assertions.assertEquals(
+                "[*, ***]",
+                map.toList().toString()
+        );
+        map.put("five", "*****", lessThan);
+        Assertions.assertEquals(
+                "[*, ***, *****]",
+                map.toList().toString()
+        );
+        map.put("four", "****", lessThan);
+        Assertions.assertEquals(
+                "[*, ***, ****, *****]",
+                map.toList().toString()
+        );
+        map.put("two", "**", lessThan);
+        Assertions.assertEquals(
+                "[*, **, ***, ****, *****]",
+                map.toList().toString()
+        );
+    }
+
     private static class FastMap extends AbstractDataManager<String, String> {
 
         public String get(String key) {
@@ -56,6 +87,10 @@ public class DataManagerMapTest {
 
         public void put(String key, String value) {
             super.putValue(key, value);
+        }
+
+        public void put(String key, String value, BiPredicate<String, String> valueLessBlock) {
+            super.putValue(key, value, valueLessBlock);
         }
 
         public List<String> toList() {

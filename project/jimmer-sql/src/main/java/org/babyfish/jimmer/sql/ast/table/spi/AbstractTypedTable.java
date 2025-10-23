@@ -24,9 +24,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 public abstract class AbstractTypedTable<E> implements TableProxy<E> {
+
+    private static final int THREAD_ORDER_SEQUENCE_COUNT = 1 << 6;
+
+    private static final AtomicLong[] THREAD_ORDER_SEQUENCES = new AtomicLong[THREAD_ORDER_SEQUENCE_COUNT];
 
     private final ImmutableType immutableType;
 
@@ -638,6 +643,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     private static class DelayJoin<E> implements DelayedOperation<E> {
 
         private final AbstractTypedTable<?> parent;
+        private final long order;
         private final ImmutableProp prop;
         private final WeakJoinHandle weakJoinHandle;
         private final JoinType joinType;
@@ -650,6 +656,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 ImmutableType treatedAs
         ) {
             this.parent = parent;
+            this.order = allocateThreadOrder();
             this.joinType = joinType;
             this.treatedAs = treatedAs;
             this.prop = prop;
@@ -661,6 +668,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 BaseTableOwner baseTableOwner
         ) {
             this.parent = (AbstractTypedTable<?>) base.parent.__baseTableOwner(baseTableOwner);
+            this.order = allocateThreadOrder();
             this.joinType = base.joinType;
             this.treatedAs = base.treatedAs;
             this.prop = base.prop;
@@ -673,6 +681,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 JoinType joinType
         ) {
             this.parent = parent;
+            this.order = allocateThreadOrder();
             this.joinType = joinType;
             this.treatedAs = null;
             this.prop = null;
@@ -687,6 +696,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 WeakJoin<?, ?> weakJoinLambda
         ) {
             this.parent = parent;
+            this.order = allocateThreadOrder();
             this.joinType = joinType;
             this.treatedAs = null;
             this.prop = null;
@@ -728,9 +738,9 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         public TableImplementor<E> resolve(RootTableResolver ctx) {
             TableImplementor<E> tableImplementor;
             if (prop != null) {
-                tableImplementor = parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs);
+                tableImplementor = parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs, order);
             } else {
-                tableImplementor = parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType);
+                tableImplementor = parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType, order);
             }
             return tableImplementor.baseTableOwner(parent.__baseTableOwner());
         }
@@ -770,18 +780,22 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         private final AbstractTypedTable<?> parent;
 
+        private final long order;
+
         private final ImmutableProp prop;
 
         private final JoinType joinType;
 
         DelayInverseJoin(AbstractTypedTable<?> parent, ImmutableProp prop, JoinType joinType) {
             this.parent = parent;
+            this.order = allocateThreadOrder();
             this.prop = prop;
             this.joinType = joinType;
         }
 
         private DelayInverseJoin(DelayInverseJoin<?> base, BaseTableOwner baseTableOwner) {
             this.parent = (AbstractTypedTable<?>) base.parent.__baseTableOwner(baseTableOwner);
+            this.order = allocateThreadOrder();
             this.prop = base.prop;
             this.joinType = base.joinType;
         }
@@ -809,7 +823,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         @Override
         public TableImplementor<E> resolve(RootTableResolver ctx) {
             TableImplementor<E> tableImplementor =
-                    parent.__resolve(ctx).inverseJoinImplementor(prop, joinType);
+                    parent.__resolve(ctx).inverseJoinImplementor(prop, joinType, order);
             return tableImplementor.baseTableOwner(parent.__baseTableOwner());
         }
 
@@ -838,6 +852,19 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 return opposite.toString();
             }
             return parent + "[← " + prop + ']';
+        }
+    }
+
+    private static long allocateThreadOrder() {
+        int h = Thread.currentThread().hashCode();
+        h = h ^ (h >>> 16);
+        int index = (THREAD_ORDER_SEQUENCE_COUNT - 1) & h;
+        return THREAD_ORDER_SEQUENCES[index].incrementAndGet();
+    }
+
+    static {
+        for (int i = THREAD_ORDER_SEQUENCE_COUNT - 1; i >= 0; --i) {
+            THREAD_ORDER_SEQUENCES[i] = new AtomicLong();
         }
     }
 }

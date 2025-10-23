@@ -18,6 +18,7 @@ class AssociationTableImpl<SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE
                 statement,
                 associationType,
                 null,
+                -1,
                 false,
                 null,
                 null,

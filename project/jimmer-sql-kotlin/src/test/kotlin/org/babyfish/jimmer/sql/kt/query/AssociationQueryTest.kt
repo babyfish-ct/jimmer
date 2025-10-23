@@ -52,12 +52,14 @@ class AssociationQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select 
-                        |--->tb_1_.BOOK_ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, 
-                        |--->tb_1_.AUTHOR_ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER 
-                        |from BOOK_AUTHOR_MAPPING tb_1_ 
-                        |inner join BOOK tb_2_ on tb_1_.BOOK_ID = tb_2_.ID 
-                        |inner join AUTHOR tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID 
-                        |where tb_3_.FIRST_NAME = ?""".trimMargin()
+                    |--->tb_1_.BOOK_ID, 
+                    |--->tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, 
+                    |--->tb_1_.AUTHOR_ID, 
+                    |--->tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER 
+                    |from BOOK_AUTHOR_MAPPING tb_1_ 
+                    |inner join AUTHOR tb_2_ on tb_1_.AUTHOR_ID = tb_2_.ID 
+                    |inner join BOOK tb_3_ on tb_1_.BOOK_ID = tb_3_.ID 
+                    |where tb_2_.FIRST_NAME = ?""".trimMargin()
             )
             variables("Alex")
             rows {
