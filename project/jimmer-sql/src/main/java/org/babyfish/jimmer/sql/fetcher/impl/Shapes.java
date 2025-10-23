@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.meta.Dependency;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
@@ -62,7 +60,11 @@ public class Shapes {
                                 if (spi.__isLoaded(prop.getId())) {
                                     Field field = fetcher.getFieldMap().get(prop.getName());
                                     if (field == null) {
-                                        ((DraftSpi) draft).__unload(prop.getId());
+                                        if (!prop.isView()) {
+                                            ((DraftSpi) draft).__unload(prop.getId());
+                                        } else {
+                                            ((DraftSpi) draft).__show(prop.getId(), false);
+                                        }
                                     } else if (field.isImplicit()) {
                                         ((DraftSpi) draft).__show(prop.getId(), false);
                                     }
