@@ -751,7 +751,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();;
+        StringBuilder builder = new StringBuilder();
         if (parent == null) {
             builder.append(immutableType.getJavaClass().getSimpleName());
         } else {

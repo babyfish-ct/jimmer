@@ -396,7 +396,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.argument = rootCfg.argument;
             this.con = connectionCfg != null ? connectionCfg.con : null;
             this.mode = modeCfg != null ? modeCfg.mode : SaveMode.UPSERT;
-            this.associatedModeMap = MapNode.toMap(associatedModeCfg, it -> it.mapNode);;
+            this.associatedModeMap = MapNode.toMap(associatedModeCfg, it -> it.mapNode);
             this.associatedMode = associatedModeCfg != null ?
                     associatedModeCfg.defaultMode :
                     AssociatedSaveMode.REPLACE;

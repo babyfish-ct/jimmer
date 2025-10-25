@@ -154,7 +154,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
                 return;
             }
             if (args.deletedIds == null || args.caller != this) {
-                PropId idPropId = ctx.path.getType().getIdProp().getId();;
+                PropId idPropId = ctx.path.getType().getIdProp().getId();
                 args = DisconnectionArgs.delete(
                         rows
                                 .stream()
