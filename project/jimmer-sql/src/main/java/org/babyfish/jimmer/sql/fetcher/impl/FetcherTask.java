@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -199,14 +196,50 @@ class FetcherTask {
         return size;
     }
 
+    @SuppressWarnings("unchecked")
     private void setDraftProp(DraftSpi draft, Object value, Field field) {
         PropId propId = field.getProp().getId();
         if (value == null && field.getProp().isReferenceList(TargetLevel.ENTITY)) {
             draft.__set(propId, Collections.emptyList());
         } else {
+            if (value instanceof List<?>) {
+                List<DraftSpi> drafts = (List<DraftSpi>) value;
+                List<OrderedItem> orderedItems = field.getProp().getOrderedItems();
+                if (!orderedItems.isEmpty()) {
+                    for (OrderedItem orderedItem : orderedItems) {
+                        boolean desc = orderedItem.isDesc();
+                        PropId orderPropId = orderedItem.getProp().getId();
+                        drafts.sort((draft1, draft2) -> {
+                            Object o1 = draft1.__get(orderPropId);
+                            Object o2 = draft2.__get(orderPropId);
+
+                            int result = compareObjects(o1, o2);
+                            return desc ? -result : result;
+                        });
+                    }
+                }
+            }
             draft.__set(propId, value);
         }
         show(draft, field);
+    }
+
+    private int compareObjects(Object o1, Object o2) {
+        if (o1 == null && o2 == null) return 0;
+        if (o1 == null) return -1;
+        if (o2 == null) return 1;
+
+        if (o1 instanceof Number && o2 instanceof Number) {
+            double d1 = ((Number) o1).doubleValue();
+            double d2 = ((Number) o2).doubleValue();
+            return Double.compare(d1, d2);
+        }
+
+        if (o1 instanceof String && o2 instanceof String) {
+            return ((String) o1).compareTo((String) o2);
+        }
+
+        return o1.toString().compareTo(o2.toString());
     }
 
     private static void show(DraftSpi draft, Field field) {
