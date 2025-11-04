@@ -1,9 +1,13 @@
 package org.babyfish.jimmer.sql.base;
 
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
 
 public class IssueTest extends AbstractQueryTest {
 
@@ -59,6 +63,52 @@ public class IssueTest extends AbstractQueryTest {
                                     "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1244() {
+        TreeNodeTable table = TreeNodeTable.$;
+        BaseTable1<TreeNodeTable> baseTable = TypedBaseQuery.unionAllRecursively(
+                getSqlClient()
+                        .createBaseQuery(table)
+                        .where(table.id().in(Collections.singletonList(1L)))
+                        .addSelect(table),
+                recursiveRef -> getSqlClient()
+                        .createBaseQuery(table, recursiveRef, (source, target) -> {
+                            return source.parentId().eq(target.get_1().id());
+                        })
+                        .addSelect(table)
+        ).asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_1().parent().name().ilike("e"))
+                        .select(baseTable.get_1()),
+                ctx -> {
+
+                }
+        );
+    }
+
+    @Test
+    public void testNewIssue() {
+        TreeNodeTable table = TreeNodeTable.$;
+        BaseTable1<TreeNodeTable> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .where(table.parentId().isNull())
+                .addSelect(table)
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_1().parent().name().like("shirt"))
+                        .select(baseTable.get_1()),
+                ctx -> {
+                    ctx.sql(
+                            ""
                     );
                 }
         );
