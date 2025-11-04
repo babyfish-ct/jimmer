@@ -545,7 +545,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                Utils.joinMultiMapAndMap(idMultiMap, targetMap)
+                Utils.joinMultiMapAndMap(idMultiMap, targetMap, prop.getComparator())
         );
     }
 

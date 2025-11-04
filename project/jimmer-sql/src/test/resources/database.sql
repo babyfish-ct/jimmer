@@ -69,6 +69,7 @@ drop table city if exists;
 drop table province if exists;
 drop table country if exists;
 drop table book_store if exists;
+drop view tree_node_2 if exists;
 drop table tree_node if exists;
 drop table array_model if exists;
 drop table person if exists;
@@ -433,6 +434,9 @@ insert into tree_node(node_id, name, parent_id) values
                     (23, 'Suit', 22),
                     (24, 'Shirt', 22)
 ;
+
+create view tree_node_2 as
+    select * from tree_node;
 
 create table administrator(
     id bigint auto_increment(100) not null,

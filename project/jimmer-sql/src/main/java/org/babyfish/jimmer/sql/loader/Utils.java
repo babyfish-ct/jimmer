@@ -43,9 +43,11 @@ class Utils {
         return map;
     }
 
+    @SuppressWarnings("unchecked")
     static <K, T, V> Map<K, List<V>> joinMultiMapAndMap(
             Map<K, List<T>> map1,
-            Map<T, V> map2
+            Map<T, V> map2,
+            Comparator<?> comparator
     ) {
         Map<K, List<V>> map = new LinkedHashMap<>((map1.size() * 4 + 2) / 3);
         for (Map.Entry<K, List<T>> e : map1.entrySet()) {
@@ -54,6 +56,9 @@ class Utils {
                 List<V> values = new ArrayList<>();
                 for (T t : originalValues) {
                     values.add(map2.get(t));
+                }
+                if (comparator != null) {
+                    values.sort((Comparator<? super V>) comparator);
                 }
                 map.put(e.getKey(), values);
             }

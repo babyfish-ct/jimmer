@@ -3,6 +3,7 @@ package org.babyfish.jimmer.meta;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.meta.*;
@@ -11,7 +12,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public interface ImmutableProp {
 
@@ -118,6 +121,40 @@ public interface ImmutableProp {
     ImmutableType getTargetType();
 
     List<OrderedItem> getOrderedItems();
+
+    @Nullable
+    default Comparator<?> getComparator() {
+        List<OrderedItem> orderItems = getOrderedItems();
+        if (orderItems.isEmpty()) {
+            return null;
+        }
+        return new Comparator<Object>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public int compare(Object o1, Object o2) {
+                if (o1 == o2) {
+                    return 0;
+                }
+                if (o1 == null) {
+                    return -1;
+                }
+                if (o2 == null) {
+                    return +1;
+                }
+                ImmutableSpi spi1 = (ImmutableSpi) o1;
+                ImmutableSpi spi2 = (ImmutableSpi) o2;
+                for (OrderedItem orderedItem : orderItems) {
+                    PropId propId = orderedItem.getProp().getId();
+                    Comparator<?> comparator = orderedItem.isDesc() ? Comparator.reverseOrder() : Comparator.naturalOrder();
+                    int cmp = ((Comparator<Object>)comparator).compare(spi1.__get(propId), spi2.__get(propId));
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                }
+                return 0;
+            }
+        };
+    }
 
     ImmutableProp getMappedBy();
 

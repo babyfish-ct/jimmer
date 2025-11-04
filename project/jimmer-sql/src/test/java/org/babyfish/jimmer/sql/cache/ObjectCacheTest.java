@@ -6,13 +6,13 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
-import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
-import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
+import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
+import org.babyfish.jimmer.sql.model.issue1252.TreeNode2Fetcher;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -182,5 +182,92 @@ public class ObjectCacheTest extends AbstractQueryTest {
                     }
             );
         }
+    }
+
+    @Test
+    public void testIssue1252() {
+        connectAndExpect(
+                con -> {
+                    return sqlClient
+                            .getEntities()
+                            .forConnection(con)
+                            .findById(
+                                    TreeNode2Fetcher.$.name()
+                                            .childNodes(
+                                                    TreeNode2Fetcher.$
+                                                            .name()
+                                            ),
+                                    1L
+                            );
+                },
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE_2 tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE_2 tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NAME asc"
+                    );
+                    ctx.statement(2).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE_2 tb_1_ " +
+                                    "where tb_1_.NODE_ID in (?, ?)"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":1," +
+                                    "--->\"name\":\"Home\"," +
+                                    "--->\"childNodes\":[" +
+                                    "--->--->{\"id\":9,\"name\":\"Clothing\"}," +
+                                    "--->--->{\"id\":2,\"name\":\"Food\"}]" +
+                                    "}]"
+                    );
+                }
+        );
+        jdbc(con -> {
+            try (PreparedStatement stmt = con.prepareStatement(
+                    "update tree_node set name = ? where node_id = ?"
+            )) {
+                stmt.setString(1, "clothing");
+                stmt.setLong(2, 9L);
+                stmt.executeUpdate();
+            }
+        });
+        sqlClient.getCaches().getObjectCache(TreeNode2.class).delete(9L);
+        connectAndExpect(
+                con -> {
+                    return sqlClient
+                            .getEntities()
+                            .forConnection(con)
+                            .findById(
+                                    TreeNode2Fetcher.$.name()
+                                            .childNodes(
+                                                    TreeNode2Fetcher.$
+                                                            .name()
+                                            ),
+                                    1L
+                            );
+                },
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE_2 tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":1," +
+                                    "--->\"name\":\"Home\"," +
+                                    "--->\"childNodes\":[" +
+                                    "--->--->{\"id\":2,\"name\":\"Food\"}," +
+                                    "--->--->{\"id\":9,\"name\":\"clothing\"}]" +
+                                    "}]"
+                    );
+                }
+        );
     }
 }
