@@ -14,7 +14,7 @@ interface KFilterable<P: KPropsLike> : KSubQueryProvider<P> {
 
     fun where(vararg predicates: KNonNullExpression<Boolean>?)
 
-    fun where(block: () -> KNonNullPropExpression<Boolean>?)
+    fun where(block: () -> KNonNullExpression<Boolean>?)
 }
 
 @JvmInline
