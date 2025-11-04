@@ -255,6 +255,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             }
             if (!cte) {
                 for (RealTable childTable : this) {
+                    BaseTableOwner childOwner = childTable.getBaseTableOwner();
+                    if (childOwner != null && childOwner.getBaseTable().isRecursiveCte()) {
+                        continue;
+                    }
                     childTable.renderTo(sqlBuilder, false);
                 }
             }
