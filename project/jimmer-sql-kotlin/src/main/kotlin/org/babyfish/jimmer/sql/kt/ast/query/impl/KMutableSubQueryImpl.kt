@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
@@ -48,7 +47,7 @@ internal class KMutableSubQueryImpl<PP: KPropsLike, E: Any>(
         javaSubQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun where(block: () -> KNonNullPropExpression<Boolean>?) {
+    override fun where(block: () -> KNonNullExpression<Boolean>?) {
         where(block())
     }
 

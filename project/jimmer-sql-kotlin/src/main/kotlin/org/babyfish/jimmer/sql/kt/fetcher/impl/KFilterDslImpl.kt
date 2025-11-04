@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.Where
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -35,7 +34,7 @@ internal class KFilterDslImpl<E: Any>(
         javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun where(block: () -> KNonNullPropExpression<Boolean>?) {
+    override fun where(block: () -> KNonNullExpression<Boolean>?) {
         where(block())
     }
 

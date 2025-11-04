@@ -30,7 +30,7 @@ internal class KMutableUpdateImpl<E: Any>(
         javaUpdate.where(*predicates.map { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun where(block: () -> KNonNullPropExpression<Boolean>?) {
+    override fun where(block: () -> KNonNullExpression<Boolean>?) {
         where(block())
     }
 
