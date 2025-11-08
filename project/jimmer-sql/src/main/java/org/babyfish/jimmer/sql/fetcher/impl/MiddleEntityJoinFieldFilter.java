@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -81,6 +82,11 @@ class MiddleEntityJoinFieldFilter implements FieldFilter<Table<?>> {
 
         @Override
         public MutableSubQuery createSubQuery(TableProxy<?> table) {
+            return raw.createSubQuery(table);
+        }
+
+        @Override
+        public <T extends BaseTable> MutableSubQuery createSubQuery(T table) {
             return raw.createSubQuery(table);
         }
 
