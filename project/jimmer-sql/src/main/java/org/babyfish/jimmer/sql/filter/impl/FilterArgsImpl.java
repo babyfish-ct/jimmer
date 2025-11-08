@@ -97,6 +97,12 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     }
 
     @Override
+    public <T extends BaseTable> MutableSubQuery createSubQuery(T table) {
+        FilterableImplementor filterable = tableLikeImplementor.getStatement();
+        return filterable.createSubQuery(table);
+    }
+
+    @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
     MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
         FilterableImplementor filterable = tableLikeImplementor.getStatement();

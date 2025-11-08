@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -167,6 +168,11 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgsI
 
     @Override
     public MutableSubQuery createSubQuery(TableProxy<?> table) {
+        return query.createSubQuery(table);
+    }
+
+    @Override
+    public <T extends BaseTable> MutableSubQuery createSubQuery(T table) {
         return query.createSubQuery(table);
     }
 
