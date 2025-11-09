@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
