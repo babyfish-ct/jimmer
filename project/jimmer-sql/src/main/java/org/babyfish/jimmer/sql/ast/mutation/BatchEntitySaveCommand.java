@@ -274,6 +274,9 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setTransactionRequired(boolean required);
 
+    @Override
+    BatchEntitySaveCommand<E> setDissociationLogicalDeleteEnabled(boolean enabled);
+
     default BatchSaveResult<E> execute() {
         return execute(null, (Fetcher<E>) null);
     }

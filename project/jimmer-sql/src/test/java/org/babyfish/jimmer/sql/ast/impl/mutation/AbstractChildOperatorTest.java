@@ -41,7 +41,8 @@ public class AbstractChildOperatorTest extends AbstractMutationTest {
                             new MutationTrigger() : null,
                         new HashMap<>(),
                         MutationPath.root(manyToOneProp.getTargetType())
-                ).backPropOf(manyToOneProp)
+                ).backPropOf(manyToOneProp),
+                false
         );
     }
 }

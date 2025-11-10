@@ -211,6 +211,11 @@ public class BatchEntitySaveCommandImpl<E>
         return new BatchEntitySaveCommandImpl<>(new TransactionRequiredCfg(cfg, required));
     }
 
+    @Override
+    public BatchEntitySaveCommand<E> setDissociationLogicalDeleteEnabled(boolean enabled) {
+        return new BatchEntitySaveCommandImpl<>(new DissociationLogicalDeleteEnabledCfg(cfg, enabled));
+    }
+
     private static <E> Collection<E> entities(OptionsImpl options) {
         Iterable<E> iterable = options.getArument();
         if (iterable instanceof Collection<?>) {

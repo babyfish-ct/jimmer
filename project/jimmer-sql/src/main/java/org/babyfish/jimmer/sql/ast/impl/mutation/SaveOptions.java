@@ -58,6 +58,8 @@ public interface SaveOptions {
 
     boolean isTransactionRequired();
 
+    boolean isDissociationLogicalDeleteEnabled();
+
     default SaveOptions withMode(SaveMode mode) {
         if (getMode() == mode) {
             return this;
@@ -185,6 +187,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isTransactionRequired() {
         return raw.isTransactionRequired();
+    }
+
+    @Override
+    public boolean isDissociationLogicalDeleteEnabled() {
+        return raw.isDissociationLogicalDeleteEnabled();
     }
 
     private static SaveOptions unwrap(SaveOptions options) {

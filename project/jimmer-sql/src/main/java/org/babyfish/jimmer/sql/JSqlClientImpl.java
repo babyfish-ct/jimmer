@@ -134,6 +134,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final UserIdGeneratorProvider userIdGeneratorProvider;
 
+    private final boolean dissociationLogicalDeleteEnabled;
+
     private final LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider;
 
     private final TransientResolverManager transientResolverManager;
@@ -192,6 +194,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             BinLog binLog,
             FilterManager filterManager,
             UserIdGeneratorProvider userIdGeneratorProvider,
+            boolean dissociationLogicalDeleteEnabled,
             LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider,
             TransientResolverManager transientResolverManager,
             boolean defaultDissociationActionCheckable,
@@ -249,6 +252,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 userIdGeneratorProvider != null ?
                         userIdGeneratorProvider :
                         new DefaultUserIdGeneratorProvider();
+        this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabled;
         this.logicalDeletedValueGeneratorProvider =
                 logicalDeletedValueGeneratorProvider != null ?
                         logicalDeletedValueGeneratorProvider :
@@ -432,6 +436,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isMutationTransactionRequired() {
         return mutationTransactionRequired;
+    }
+
+    @Override
+    public boolean isDissociationLogicalDeleteEnabled() {
+        return dissociationLogicalDeleteEnabled;
     }
 
     @Override
@@ -706,6 +715,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 userIdGeneratorProvider,
+                dissociationLogicalDeleteEnabled,
                 logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
@@ -761,6 +771,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 cfg.getFilterManager(),
                 userIdGeneratorProvider,
+                dissociationLogicalDeleteEnabled,
                 logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
@@ -811,6 +822,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 userIdGeneratorProvider,
+                dissociationLogicalDeleteEnabled,
                 logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
@@ -864,6 +876,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 userIdGeneratorProvider,
+                dissociationLogicalDeleteEnabled,
                 logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
@@ -996,6 +1009,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private ZoneId zoneId;
 
         private UserIdGeneratorProvider userIdGeneratorProvider;
+
+        private boolean dissociationLogicalDeleteEnabled;
 
         private LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider;
 
@@ -1193,6 +1208,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @OldChain
         public Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider) {
             this.userIdGeneratorProvider = userIdGeneratorProvider;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public Builder setDissociationLogicalDeleteEnabled(boolean dissociationLogicalDeleteEnabled) {
+            this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabled;
             return this;
         }
 
@@ -1912,6 +1934,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     binLog,
                     filterManager,
                     userIdGeneratorProvider,
+                    dissociationLogicalDeleteEnabled,
                     logicalDeletedValueGeneratorProvider,
                     transientResolverManager,
                     defaultDissociationActionCheckable,

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.cfg
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import jdk.jfr.Enabled
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
@@ -148,6 +149,10 @@ class KSqlClientDsl constructor(
 
     fun setUserIdGeneratorProvider(provider: UserIdGeneratorProvider) {
         javaBuilder.setUserIdGeneratorProvider(provider)
+    }
+
+    fun setDissociationLogicalDeleteEnabled(enabled: Boolean) {
+        javaBuilder.setDissociationLogicalDeleteEnabled(enabled)
     }
 
     fun setLogicalDeletedValueGeneratorProvider(provider: LogicalDeletedValueGeneratorProvider) {

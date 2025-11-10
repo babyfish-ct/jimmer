@@ -86,6 +86,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isMutationTransactionRequired();
 
+    boolean isDissociationLogicalDeleteEnabled();
+
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 

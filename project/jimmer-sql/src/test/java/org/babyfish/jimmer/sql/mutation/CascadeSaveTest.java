@@ -1613,6 +1613,30 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testSaveOneToOneToNullForIssue1260() {
+        Administrator administrator = AdministratorDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setMetadata(null);
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).getEntities().saveCommand(administrator).setDissociationLogicalDeleteEnabled(true),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA " +
+                                        "set DELETED = ? " +
+                                        "where ADMINISTRATOR_ID = ? and DELETED <> ?"
+                        );
+                        it.variables(true, 1L, true);
+                    });
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
     public void saveIllegalWildParent() {
         Task task = TaskDraft.$.produce(draft -> {
             draft.setTaskName("Install K8S");

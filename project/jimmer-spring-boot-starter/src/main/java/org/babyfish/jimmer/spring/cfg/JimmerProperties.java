@@ -64,6 +64,8 @@ public class JimmerProperties {
 
     private final boolean expandedInListPaddingEnabled;
 
+    private final boolean dissociationLogicalDeleteEnabled;
+
     private final int offsetOptimizingThreshold;
 
     private final boolean reverseSortOptimizationEnabled;
@@ -113,6 +115,7 @@ public class JimmerProperties {
             @Nullable Integer defaultListBatchSize,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
+            boolean dissociationLogicalDeleteEnabled,
             @Nullable Integer offsetOptimizingThreshold,
             boolean reverseSortOptimizationEnabled,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
@@ -232,6 +235,7 @@ public class JimmerProperties {
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
+        this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabled;
         this.offsetOptimizingThreshold =
                 offsetOptimizingThreshold != null ?
                         offsetOptimizingThreshold :
@@ -343,6 +347,10 @@ public class JimmerProperties {
 
     public boolean isExpandedInListPaddingEnabled() {
         return expandedInListPaddingEnabled;
+    }
+
+    public boolean isDissociationLogicalDeleteEnabled() {
+        return dissociationLogicalDeleteEnabled;
     }
 
     /**
@@ -464,20 +472,29 @@ public class JimmerProperties {
                 ", showSql=" + showSql +
                 ", prettySql=" + prettySql +
                 ", inlineSqlVariables=" + inlineSqlVariables +
+                ", defaultReferenceFetchType=" + defaultReferenceFetchType +
+                ", maxJoinFetchDepth=" + maxJoinFetchDepth +
                 ", databaseValidationMode=" + databaseValidationMode +
                 ", triggerType=" + triggerType +
                 ", defaultDissociationActionCheckable=" + defaultDissociationActionCheckable +
                 ", idOnlyTargetCheckingLevel=" + idOnlyTargetCheckingLevel +
                 ", transactionCacheOperatorFixedDelay=" + transactionCacheOperatorFixedDelay +
                 ", defaultEnumStrategy=" + defaultEnumStrategy +
+                ", defaultSchema='" + defaultSchema + '\'' +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
                 ", inListPaddingEnabled=" + inListPaddingEnabled +
                 ", expandedInListPaddingEnabled=" + expandedInListPaddingEnabled +
+                ", dissociationLogicalDeleteEnabled=" + dissociationLogicalDeleteEnabled +
                 ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
+                ", reverseSortOptimizationEnabled=" + reverseSortOptimizationEnabled +
                 ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
                 ", maxCommandJoinCount=" + maxCommandJoinCount +
+                ", mutationTransactionRequired=" + mutationTransactionRequired +
                 ", targetTransferable=" + targetTransferable +
+                ", explicitBatchEnabled=" + explicitBatchEnabled +
+                ", dumbBatchAcceptable=" + dumbBatchAcceptable +
+                ", constraintViolationTranslatable=" + constraintViolationTranslatable +
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +
                 ", errorTranslator=" + errorTranslator +

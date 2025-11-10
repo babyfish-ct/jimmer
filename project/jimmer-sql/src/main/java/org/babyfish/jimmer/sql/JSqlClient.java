@@ -464,6 +464,9 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
         Builder setTriggerType(TriggerType triggerType);
 
         @OldChain
+        Builder setDissociationLogicalDeleteEnabled(boolean enabled);
+
+        @OldChain
         Builder setLogicalDeletedBehavior(LogicalDeletedBehavior behavior);
 
         @OldChain

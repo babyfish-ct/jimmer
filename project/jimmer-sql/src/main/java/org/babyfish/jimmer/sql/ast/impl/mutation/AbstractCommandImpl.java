@@ -221,6 +221,16 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class DissociationLogicalDeleteEnabledCfg extends Cfg {
+
+        final boolean enabled;
+
+        DissociationLogicalDeleteEnabledCfg(Cfg prev, boolean enabled) {
+            super(prev);
+            this.enabled = enabled;
+        }
+    }
+
     static class DissociationActionCfg extends Cfg {
 
         final MapNode<ImmutableProp, DissociateAction> mapNode;

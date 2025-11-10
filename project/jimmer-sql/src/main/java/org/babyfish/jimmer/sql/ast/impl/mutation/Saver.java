@@ -463,7 +463,8 @@ public class Saver {
                                     ctx.trigger,
                                     ctx.affectedRowCountMap,
                                     ctx.path.to(prop)
-                            )
+                            ),
+                            ctx.options.isDissociationLogicalDeleteEnabled()
                     );
                 } else if (mappedBy.isMiddleTableDefinition()) {
                     middleTableOperator = new MiddleTableOperator(
@@ -504,7 +505,8 @@ public class Saver {
                                     ctx.trigger,
                                     ctx.affectedRowCountMap,
                                     ctx.path.to(prop)
-                            )
+                            ),
+                            ctx.options.isDissociationLogicalDeleteEnabled()
                     );
                 } else if (mappedBy.isMiddleTableDefinition()) {
                     middleTableOperator = new MiddleTableOperator(

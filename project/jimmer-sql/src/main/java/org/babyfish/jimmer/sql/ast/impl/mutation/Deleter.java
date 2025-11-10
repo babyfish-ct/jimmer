@@ -145,7 +145,7 @@ public class Deleter {
                 ctx.options.getSqlClient(),
                 ctx.path,
                 ctx.isLogicalDeleted() ? DisconnectingType.LOGICAL_DELETE : DisconnectingType.PHYSICAL_DELETE,
-                backProp -> new ChildTableOperator(ctx.backPropOf(backProp))
+                backProp -> new ChildTableOperator(ctx.backPropOf(backProp), false)
         );
         for (ChildTableOperator subOperator : subOperators) {
             subOperator.disconnect(ids);
@@ -424,6 +424,11 @@ public class Deleter {
             @Override
             public boolean isTransactionRequired() {
                 return options.isTransactionRequired();
+            }
+
+            @Override
+            public boolean isDissociationLogicalDeleteEnabled() {
+                return false;
             }
         };
     }

@@ -612,6 +612,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isDissociationLogicalDeleteEnabled() {
+        return sqlClient().isDissociationLogicalDeleteEnabled();
+    }
+
+    @Override
     public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
         return sqlClient().getExceptionTranslator();
     }

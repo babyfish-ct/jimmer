@@ -180,5 +180,13 @@ internal class KSaveCommandDslImpl(
     override fun setMaxCommandJoinCount(count: Int) {
         javaCommand = javaCommand.setMaxCommandJoinCount(count)
     }
+
+    override fun setTransactionRequired(required: Boolean) {
+        javaCommand = javaCommand.setTransactionRequired(required)
+    }
+
+    override fun setEnabled(enabled: Boolean) {
+        javaCommand = javaCommand.setDissociationLogicalDeleteEnabled(enabled)
+    }
 }
 

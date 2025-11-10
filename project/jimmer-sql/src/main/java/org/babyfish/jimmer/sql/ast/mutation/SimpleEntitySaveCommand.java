@@ -271,6 +271,9 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setTransactionRequired(boolean required);
 
+    @Override
+    SimpleEntitySaveCommand<E> setDissociationLogicalDeleteEnabled(boolean enabled);
+
     default SimpleSaveResult<E> execute() {
         return execute(null, (Fetcher<E>) null);
     }

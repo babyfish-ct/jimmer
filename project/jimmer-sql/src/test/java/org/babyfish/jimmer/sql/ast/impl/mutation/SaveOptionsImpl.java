@@ -136,4 +136,9 @@ public class SaveOptionsImpl implements SaveOptions {
     public boolean isTransactionRequired() {
         return sqlClient.isMutationTransactionRequired();
     }
+
+    @Override
+    public boolean isDissociationLogicalDeleteEnabled() {
+        return sqlClient.isDissociationLogicalDeleteEnabled();
+    }
 }

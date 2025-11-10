@@ -369,6 +369,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean transactionRequired;
 
+        private final boolean dissociationLogicalDeleteEnabled;
+
         OptionsImpl(Cfg cfg) {
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
@@ -390,6 +392,8 @@ abstract class AbstractEntitySaveCommandImpl
                     cfg.as(ConstraintViolationTranslatableCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
             TransactionRequiredCfg transactionRequiredCfg = cfg.as(TransactionRequiredCfg.class);
+            DissociationLogicalDeleteEnabledCfg dissociationLogicalDeleteEnabledCfg =
+                    cfg.as(DissociationLogicalDeleteEnabledCfg.class);
 
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
@@ -446,6 +450,9 @@ abstract class AbstractEntitySaveCommandImpl
             this.transactionRequired = transactionRequiredCfg != null ?
                     transactionRequiredCfg.required :
                     sqlClient.isMutationTransactionRequired();
+            this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabledCfg != null ?
+                    dissociationLogicalDeleteEnabledCfg.enabled :
+                    sqlClient.isDissociationLogicalDeleteEnabled();
         }
 
         @Override
@@ -598,6 +605,11 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public boolean isTransactionRequired() {
             return transactionRequired;
+        }
+
+        @Override
+        public boolean isDissociationLogicalDeleteEnabled() {
+            return dissociationLogicalDeleteEnabled;
         }
 
         @Override

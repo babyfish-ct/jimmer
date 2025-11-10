@@ -185,6 +185,10 @@ interface KSaveCommandPartialDsl {
 
     fun setMaxCommandJoinCount(count: Int)
 
+    fun setTransactionRequired(required: Boolean)
+
+    fun setEnabled(enabled: Boolean)
+
     interface OptimisticLockContext<E: Any> {
         val table: KNonNullTable<E>
         fun <V: Any> newNonNull(prop: KProperty1<E, V>): KNonNullExpression<V>

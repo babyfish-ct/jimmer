@@ -214,4 +214,7 @@ public interface AbstractEntitySaveCommand {
 
     @NewChain
     AbstractEntitySaveCommand setTransactionRequired(boolean required);
+
+    @NewChain
+    AbstractEntitySaveCommand setDissociationLogicalDeleteEnabled(boolean enabled);
 }

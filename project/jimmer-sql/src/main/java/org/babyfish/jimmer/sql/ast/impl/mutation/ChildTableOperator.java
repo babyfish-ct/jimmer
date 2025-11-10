@@ -45,15 +45,15 @@ class ChildTableOperator extends AbstractAssociationOperator {
 
     final List<ValueGetter> targetGetters;
 
-    ChildTableOperator(DeleteContext ctx) {
-        this(null, ctx);
+    ChildTableOperator(DeleteContext ctx, boolean dissociate) {
+        this(null, ctx, dissociate);
     }
 
     private ChildTableOperator(ChildTableOperator parent, ImmutableProp backReferenceProp) {
-        this(parent, parent.ctx.backPropOf(backReferenceProp));
+        this(parent, parent.ctx.backPropOf(backReferenceProp), false);
     }
 
-    private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx) {
+    private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx, boolean dissociate) {
         super(
                 ctx.options.getSqlClient(),
                 ctx.con,
@@ -84,6 +84,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
                 break;
             case DELETE:
                 if (ctx.isLogicalDeleted() && (
+                        dissociate ||
                         (ctx.parent != null && ctx.parent.isLogicalDeleted()) ||
                         !ctx.backProp.isTargetForeignKeyReal(ctx.options.getSqlClient().getMetadataStrategy())
                 )) {
