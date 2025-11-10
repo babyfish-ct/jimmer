@@ -2,7 +2,10 @@ package org.babyfish.jimmer.sql.base;
 
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.junit.jupiter.api.Assumptions;
@@ -113,6 +116,27 @@ public class IssueTest extends AbstractQueryTest {
                     ctx.sql(
                             ""
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1258() {
+        Assumptions.abort("It is hard to resolve this bug");
+        BookTable table = BookTable.$;
+        BaseTable2<BookTable, BookStoreTable> baseTable =
+                getSqlClient()
+                        .createBaseQuery(table)
+                        .addSelect(table)
+                        .addSelect(table.store())
+                        .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_2().id().eq(Constants.manningId))
+                        .select(baseTable.get_1(), baseTable.get_2()),
+                ctx -> {
+
                 }
         );
     }
