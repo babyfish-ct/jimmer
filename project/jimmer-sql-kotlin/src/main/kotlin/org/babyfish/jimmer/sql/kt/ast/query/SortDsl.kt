@@ -6,10 +6,9 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.TargetLevel
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.query.NullOrderMode
+import org.babyfish.jimmer.meta.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
 @DslScope
