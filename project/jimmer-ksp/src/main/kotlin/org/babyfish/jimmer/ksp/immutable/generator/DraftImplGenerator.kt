@@ -329,7 +329,7 @@ class DraftImplGenerator(
                                     )
                                 }
                                 if (prop.isList) {
-                                    addStatement("%L = emptyList()", prop.name)
+                                    addStatement("%L = mutableListOf()", prop.name)
                                 } else {
                                     addStatement(
                                         "%L = %T.produce()",
