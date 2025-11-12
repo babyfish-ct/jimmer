@@ -22,9 +22,9 @@ public class Order {
 
     private final OrderMode orderMode;
 
-    private final NullOrderMode nullOrderMode;
+    private final org.babyfish.jimmer.meta.NullOrderMode nullOrderMode;
 
-    public Order(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
+    public Order(Expression<?> expression, OrderMode orderMode, org.babyfish.jimmer.meta.NullOrderMode nullOrderMode) {
         this.expression = Objects.requireNonNull(expression);
         this.orderMode = Objects.requireNonNull(orderMode);
         this.nullOrderMode = Objects.requireNonNull(nullOrderMode);
@@ -38,18 +38,18 @@ public class Order {
         return orderMode;
     }
 
-    public NullOrderMode getNullOrderMode() {
+    public org.babyfish.jimmer.meta.NullOrderMode getNullOrderMode() {
         return nullOrderMode;
     }
 
     @NewChain
     public Order nullsFirst() {
-        return new Order(expression, orderMode, NullOrderMode.NULLS_FIRST);
+        return new Order(expression, orderMode, org.babyfish.jimmer.meta.NullOrderMode.NULLS_FIRST);
     }
 
     @NewChain
     public Order nullsLast() {
-        return new Order(expression, orderMode, NullOrderMode.NULLS_LAST);
+        return new Order(expression, orderMode, org.babyfish.jimmer.meta.NullOrderMode.NULLS_LAST);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class Order {
 
         String[] parts = WHITESPACE_PATTERN.split(code);
         OrderMode orderMode = OrderMode.ASC;
-        NullOrderMode nullOrderMode = NullOrderMode.UNSPECIFIED;
+        org.babyfish.jimmer.meta.NullOrderMode nullOrderMode = org.babyfish.jimmer.meta.NullOrderMode.UNSPECIFIED;
 
         // 0: asc | desc, 1: nulls, 2: first | last, 3: end
         int channel = 0;
@@ -195,11 +195,11 @@ public class Order {
                     switch (rest) {
                         case "first":
                             channel = 3;
-                            nullOrderMode = NullOrderMode.NULLS_FIRST;
+                            nullOrderMode = org.babyfish.jimmer.meta.NullOrderMode.NULLS_FIRST;
                             break;
                         case "last":
                             channel = 3;
-                            nullOrderMode = NullOrderMode.NULLS_LAST;
+                            nullOrderMode = org.babyfish.jimmer.meta.NullOrderMode.NULLS_LAST;
                             break;
                         default:
                             throw new IllegalArgumentException(
@@ -310,6 +310,6 @@ public class Order {
     }
 
     public interface CustomOrderCreator<O> {
-        O create(String path, OrderMode orderMode, NullOrderMode nullOrderMode);
+        O create(String path, OrderMode orderMode, org.babyfish.jimmer.meta.NullOrderMode nullOrderMode);
     }
 }
