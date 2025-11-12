@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
-import org.babyfish.jimmer.meta.NullOrderMode
+import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.tuple.*

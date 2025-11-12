@@ -1140,7 +1140,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                                 "\" is not scalar field"
                                 );
                             }
-                            map.put(orderedProp.value(), new OrderedItem(prop, orderedProp.desc(), orderedProp.nullsOrder()));
+                            map.put(orderedProp.value(), new OrderedItem(prop, orderedProp.desc()));
                         }
                         orderedItems = Collections.unmodifiableList(new ArrayList<>(map.values()));
                     }

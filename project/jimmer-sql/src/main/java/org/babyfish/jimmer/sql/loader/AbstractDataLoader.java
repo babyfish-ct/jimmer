@@ -17,7 +17,9 @@ import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.query.MutableQuery;
+import org.babyfish.jimmer.sql.ast.query.Sortable;
+import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -755,11 +757,11 @@ public abstract class AbstractDataLoader {
         if (!orderedItems.isEmpty() && !remote) {
             for (OrderedItem orderedItem : orderedItems) {
                 Expression<?> expr = table.get(orderedItem.getProp().getName());
-                OrderMode orderMode = OrderMode.ASC;
                 if (orderedItem.isDesc()) {
-                    orderMode = OrderMode.DESC;
+                    query.orderBy(expr.desc());
+                } else {
+                    query.orderBy(expr);
                 }
-                query.orderBy(new Order(expr, orderMode, orderedItem.getNullsOrder()));
             }
         }
     }

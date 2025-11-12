@@ -14,6 +14,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public interface ImmutableProp {
 
@@ -127,26 +128,32 @@ public interface ImmutableProp {
         if (orderItems.isEmpty()) {
             return null;
         }
-        // build comparator
-        return orderItems.stream()
-                .<Comparator<ImmutableSpi>>map(orderedItem -> {
-                    boolean desc = orderedItem.isDesc();
-                    Comparator<Comparable> comparator = desc
-                            ? Comparator.reverseOrder()
-                            : Comparator.naturalOrder();
-                    NullOrderMode nullsOrder = orderedItem.getNullsOrder();
-                    if (nullsOrder == NullOrderMode.NULLS_FIRST) {
-                        comparator = Comparator.nullsFirst(comparator);
-                    } else if (nullsOrder ==  NullOrderMode.NULLS_LAST) {
-                        comparator = Comparator.nullsLast(comparator);
+        return new Comparator<Object>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public int compare(Object o1, Object o2) {
+                if (o1 == o2) {
+                    return 0;
+                }
+                if (o1 == null) {
+                    return -1;
+                }
+                if (o2 == null) {
+                    return +1;
+                }
+                ImmutableSpi spi1 = (ImmutableSpi) o1;
+                ImmutableSpi spi2 = (ImmutableSpi) o2;
+                for (OrderedItem orderedItem : orderItems) {
+                    PropId propId = orderedItem.getProp().getId();
+                    Comparator<?> comparator = orderedItem.isDesc() ? Comparator.reverseOrder() : Comparator.naturalOrder();
+                    int cmp = ((Comparator<Object>)comparator).compare(spi1.__get(propId), spi2.__get(propId));
+                    if (cmp != 0) {
+                        return cmp;
                     }
-                    PropId orderPropId = orderedItem.getProp().getId();
-                    return Comparator.comparing(
-                            d -> (Comparable) d.__get(orderPropId),
-                            comparator);
-                })
-                .reduce(Comparator::thenComparing)
-                .orElse(null);
+                }
+                return 0;
+            }
+        };
     }
 
     ImmutableProp getMappedBy();

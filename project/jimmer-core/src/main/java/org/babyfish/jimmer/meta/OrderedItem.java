@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.meta;
 
-
 import java.util.Objects;
 
 public class OrderedItem {
@@ -8,20 +7,14 @@ public class OrderedItem {
     private final ImmutableProp prop;
 
     private final boolean desc;
-    private final NullOrderMode nullsOrder;
 
-    public OrderedItem(ImmutableProp prop, boolean desc, NullOrderMode nullsOrder) {
+    public OrderedItem(ImmutableProp prop, boolean desc) {
         this.prop = prop;
         this.desc = desc;
-        this.nullsOrder = nullsOrder;
     }
 
     public ImmutableProp getProp() {
         return prop;
-    }
-
-    public NullOrderMode getNullsOrder() {
-        return nullsOrder;
     }
 
     public boolean isDesc() {

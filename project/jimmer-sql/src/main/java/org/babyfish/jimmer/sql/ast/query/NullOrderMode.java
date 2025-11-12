@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.meta;
+package org.babyfish.jimmer.sql.ast.query;
 
 public enum NullOrderMode {
     UNSPECIFIED,
