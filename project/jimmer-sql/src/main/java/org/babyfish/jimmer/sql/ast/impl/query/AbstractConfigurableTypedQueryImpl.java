@@ -230,7 +230,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     ) {
         builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
         if (data.hint != null) {
-            builder.sql(" ").sql(data.hint).sql(" ");
+            builder.sql(data.hint).sql(" ").resetScope();
         }
         if (render != null) {
             List<Selection<?>> selections = data.selections;

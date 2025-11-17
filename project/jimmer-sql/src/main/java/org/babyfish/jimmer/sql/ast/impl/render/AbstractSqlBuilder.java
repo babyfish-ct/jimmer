@@ -208,6 +208,16 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         return (T)this;
     }
 
+    @SuppressWarnings("unchecked")
+    public T resetScope() {
+        ScopeManager scopeManager = scopeManager();
+        Scope scope = scopeManager.current;
+        if (scope != null) {
+            scope.dirty = false;
+        }
+        return (T)this;
+    }
+
     private void part(ScopeType.Part part) {
         part(part, false);
     }

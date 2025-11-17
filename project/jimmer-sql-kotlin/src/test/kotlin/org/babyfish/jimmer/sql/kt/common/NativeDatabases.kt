@@ -15,7 +15,7 @@ object NativeDatabases {
     val MYSQL_DATA_SOURCE: DataSource by lazy {
         SimpleDriverDataSource(
             com.mysql.cj.jdbc.Driver(),
-            "jdbc:mysql://localhost:3306/jimmer_test",
+            "jdbc:mysql://localhost:3306/jimmer_test?useUnicode=true&characterEncoding=UTF-8",
             "root",
             "123456"
         )
