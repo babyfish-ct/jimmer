@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.dto
 
+import com.google.devtools.ksp.processing.Resolver
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.dto.compiler.AbstractProp
@@ -62,6 +63,7 @@ class InputBuilderGenerator(
     }
 
     private fun TypeSpec.Builder.addMembers() {
+        parentGenerator
         for (prop in dtoType.dtoProps) {
             addField(prop)
             addStateField(prop)
@@ -118,7 +120,7 @@ class InputBuilderGenerator(
                 .addParameter(prop.name, typeName)
                 .returns(parentGenerator.getDtoClassName("Builder"))
                 .apply {
-                    addJacksonAnnotations(prop)
+                    addJacksonAnnotations(prop, parentGenerator.ctx.resolver)
                 }
                 .addStatement("this.%L = %L", prop.name, prop.name)
                 .apply {
@@ -207,12 +209,12 @@ class InputBuilderGenerator(
             prop !is DtoProp<*, *> || (prop.funcName != "null" && prop.funcName != "notNull")
 
         @Suppress("UNCHECKED_CAST")
-        private fun FunSpec.Builder.addJacksonAnnotations(prop: AbstractProp) {
+        private fun FunSpec.Builder.addJacksonAnnotations(prop: AbstractProp, resolver: Resolver) {
             val typeNames = mutableSetOf<String>()
             for (anno in prop.annotations) {
                 if (JACKSON_ANNO_PREFIXIES.any { anno.qualifiedName.startsWith(it) } &&
                     typeNames.add(anno.qualifiedName)) {
-                    addAnnotation(DtoGenerator.annotationOf(anno))
+                    addAnnotation(DtoGenerator.annotationOf(anno, resolver))
                 }
             }
             if (prop is DtoProp<*, *>) {

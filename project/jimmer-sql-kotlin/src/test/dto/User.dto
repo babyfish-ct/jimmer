@@ -13,6 +13,7 @@ UserView {
     }
 }
 
+@Module(["os", "lib"])
 UserView2 {
 
     #allScalars

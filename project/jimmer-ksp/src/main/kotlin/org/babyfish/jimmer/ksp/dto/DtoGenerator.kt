@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.Origin
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -109,6 +111,7 @@ import org.babyfish.jimmer.ksp.immutable.generator.REFERENCE_FETCH_TYPE_CLASS_NA
 import org.babyfish.jimmer.ksp.immutable.generator.VIEW_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.name
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import org.babyfish.jimmer.ksp.util.GenericParser
 import org.babyfish.jimmer.ksp.util.fastResolve
@@ -119,7 +122,7 @@ import java.util.*
 import kotlin.math.min
 
 class DtoGenerator private constructor(
-    private val ctx: Context,
+    val ctx: Context,
     private val docMetadata: DocMetadata,
     private val mutable: Boolean,
     val dtoType: DtoType<ImmutableType, ImmutableProp>,
@@ -272,7 +275,7 @@ class DtoGenerator private constructor(
         }
         for (anno in dtoType.annotations) {
             if (anno.qualifiedName != KOTLIN_DTO_TYPE_NAME) {
-                addAnnotation(annotationOf(anno))
+                addAnnotation(annotationOf(anno, ctx.resolver))
             }
         }
     }
@@ -817,7 +820,7 @@ class DtoGenerator private constructor(
                         }
                         addAnnotation(
                             standardSpec(
-                                annotationOf(anno, target.toPoetTarget())
+                                annotationOf(anno, ctx.resolver, target.toPoetTarget())
                             )
                         )
                     }
@@ -2115,10 +2118,14 @@ class DtoGenerator private constructor(
                             ) && dtoAnnotations.none {
                         it.qualifiedName == annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()
                     }
-                    )
+            )
         }
 
-        internal fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
+        internal fun annotationOf(
+            anno: Anno,
+            resolver: Resolver,
+            target: AnnotationSpec.UseSiteTarget? = null
+        ): AnnotationSpec =
             AnnotationSpec
                 .builder(ClassName.bestGuess(anno.qualifiedName))
                 .apply {
@@ -2127,10 +2134,27 @@ class DtoGenerator private constructor(
                             CodeBlock
                                 .builder()
                                 .apply {
+                                    var vararg = false
                                     if (anno.valueMap.let { it.size == 1 && it.keys.first() == "value" }) {
-                                        add("(")
-                                        add(anno.valueMap.values.first())
-                                        add(")")
+                                        val declaration = resolver.getClassDeclarationByName(anno.qualifiedName)
+                                        if (declaration?.origin == Origin.KOTLIN || declaration?.origin == Origin.KOTLIN_LIB) {
+                                            vararg = declaration.primaryConstructor?.parameters?.any {
+                                                it.name?.asString() == "value" && it.isVararg
+                                            } ?: false
+                                        }
+                                    }
+                                    if (vararg) {
+                                        val value = anno.valueMap.values.first()
+                                        if (value is ArrayValue) {
+                                            for (i in 0 until value.elements.size) {
+                                                if (i != 0) {
+                                                    add(", ")
+                                                }
+                                                add(value.elements[i])
+                                            }
+                                        } else {
+                                            add(value)
+                                        }
                                     } else {
                                         add("\n")
                                         add(anno.valueMap)

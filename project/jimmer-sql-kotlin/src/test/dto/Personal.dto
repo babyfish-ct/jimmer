@@ -6,5 +6,6 @@ PersonalPhoneView {
 }
 
 input PersonalPhoneInput {
+    @com.fasterxml.jackson.annotation.JsonAlias(value = ["mobile"])
     phone
 }
