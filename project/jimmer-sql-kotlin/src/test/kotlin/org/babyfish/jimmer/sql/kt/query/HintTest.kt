@@ -4,19 +4,15 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.NativeDatabases
 import org.babyfish.jimmer.sql.kt.model.TreeNode
-import org.babyfish.jimmer.sql.kt.model.classic.book.Book
-import org.babyfish.jimmer.sql.kt.model.classic.book.name
 import org.babyfish.jimmer.sql.kt.model.name
-import org.junit.jupiter.api.Assumptions
+import org.junit.Assume
 import kotlin.test.Test
 
 class HintTest : AbstractQueryTest() {
 
     @Test
     fun testIssue1272() {
-        Assumptions.assumeTrue {
-            NativeDatabases.isNativeAllowed()
-        }
+        Assume.assumeTrue(NativeDatabases.isNativeAllowed())
         executeAndExpect(
             NativeDatabases.MYSQL_DATA_SOURCE,
             sqlClient.createQuery(TreeNode::class) {
