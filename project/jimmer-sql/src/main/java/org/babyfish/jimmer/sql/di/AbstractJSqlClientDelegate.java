@@ -464,6 +464,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <T extends BaseTable> MutableSubQuery createSubQuery(T table) {
+        return sqlClient().createSubQuery(table);
+    }
+
+    @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>> MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
         return sqlClient().createAssociationSubQuery(table);
     }

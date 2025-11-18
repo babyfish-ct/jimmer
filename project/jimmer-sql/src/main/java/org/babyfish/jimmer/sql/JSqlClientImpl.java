@@ -542,6 +542,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public <T extends BaseTable> MutableSubQuery createSubQuery(T table) {
+        return new MutableSubQueryImpl(this, table);
+    }
+
+    @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
     MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
         if (!(table instanceof TableProxy<?>)) {
