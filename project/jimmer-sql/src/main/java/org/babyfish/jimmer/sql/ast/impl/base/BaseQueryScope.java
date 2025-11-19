@@ -78,7 +78,14 @@ public class BaseQueryScope {
                     .realTable(builder.getAstContext());
             for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
                 BaseSelectionMapper.QualifiedColumn qualifiedColumn = e.getKey();
-                String alias = childTableByKeys(realTable, qualifiedColumn.keys).getAlias();
+                RealTable childTable = childTableByKeys(realTable, qualifiedColumn.keys);
+                if (qualifiedColumn.foreignKeyInBaseQuery) {
+                    RealTable newChildTable = childTable.getParent();
+                    if (newChildTable != null) {
+                        childTable = newChildTable;
+                    }
+                }
+                String alias = childTable.getAlias();
                 builder.separator();
                 if (qualifiedColumn.formula != null) {
                     builder.sql(qualifiedColumn.formula.toSql(alias));

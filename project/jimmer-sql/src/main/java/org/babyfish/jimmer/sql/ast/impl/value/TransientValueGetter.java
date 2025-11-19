@@ -74,6 +74,11 @@ class TransientValueGetter extends AbstractValueGetter {
     }
 
     @Override
+    public boolean isForeignKey() {
+        return false;
+    }
+
+    @Override
     public boolean isNullable() {
         for (ImmutableProp prop : props) {
             if (prop.isNullable()) {

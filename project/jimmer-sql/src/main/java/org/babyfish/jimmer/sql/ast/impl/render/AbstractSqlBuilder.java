@@ -299,13 +299,14 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             ColumnDefinition definition,
             BaseSelectionMapper mapper
     ) {
-        return definition(tableAlias, definition, null, mapper);
+        return definition(tableAlias, definition, false, null, mapper);
     }
 
     @SuppressWarnings("unchecked")
     public T definition(
             String tableAlias,
             ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
             Function<Integer, String> asBlock,
             BaseSelectionMapper mapper
     ) {
@@ -318,7 +319,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             if (mapper != null) {
                 builder.append(mapper.getAlias())
                         .append(".c")
-                        .append(mapper.columnIndex(tableAlias, columnName));
+                        .append(mapper.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
             } else {
                 builder.append(tableAlias).append('.').append(columnName);
                 if (asBlock != null) {
@@ -335,7 +336,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 if (mapper != null) {
                     builder.append(mapper.getAlias())
                             .append(".c")
-                            .append(mapper.columnIndex(tableAlias, columnName));
+                            .append(mapper.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {

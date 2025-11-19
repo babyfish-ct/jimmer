@@ -26,6 +26,8 @@ class EmbeddedValueGetter extends AbstractValueGetter {
 
     private final String columnName;
 
+    private final boolean foreignKey;
+
     private final List<ImmutableProp> props;
 
     private final int hash;
@@ -37,15 +39,17 @@ class EmbeddedValueGetter extends AbstractValueGetter {
             boolean join,
             boolean rawId,
             ImmutableProp valueProp,
-            String columnName
+            String columnName,
+            boolean foreignKey
     ) {
         super(sqlClient, valueProp);
         this.table = table;
         this.join = join;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
+        this.foreignKey = foreignKey;
         this.props = props;
-        this.hash = columnName.hashCode() * 31 + props.hashCode();
+        this.hash = (columnName.hashCode() * 31 + props.hashCode()) * 31 + Boolean.hashCode(foreignKey);
     }
 
     List<ImmutableProp> props() {
@@ -79,6 +83,7 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         EmbeddedValueGetter other = (EmbeddedValueGetter) obj;
         return hash == other.hash &&
                columnName.equals(other.columnName) &&
+               foreignKey == other.foreignKey &&
                props.equals(other.props);
     }
 
@@ -108,6 +113,11 @@ class EmbeddedValueGetter extends AbstractValueGetter {
     @Override
     public @Nullable String getColumnName() {
         return columnName;
+    }
+
+    @Override
+    public boolean isForeignKey() {
+        return foreignKey;
     }
 
     @Override

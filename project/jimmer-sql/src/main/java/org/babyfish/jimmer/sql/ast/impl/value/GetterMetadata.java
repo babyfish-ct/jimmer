@@ -11,6 +11,8 @@ public interface GetterMetadata {
     @Nullable
     String getColumnName();
 
+    boolean isForeignKey();
+
     boolean isNullable();
 
     boolean isJson();

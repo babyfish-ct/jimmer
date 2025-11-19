@@ -592,7 +592,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             for (int i = 0; i < size; i++) {
                 builder.separator();
                 if (mapper != null) {
-                    int index = mapper.columnIndex(previousAlias, previousDefinition.name(i));
+                    int index = mapper.columnIndex(previousAlias, previousDefinition.name(i), false);
                     builder
                             .sql(mapper.getAlias())
                             .sql(".c")
@@ -664,6 +664,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         builder.definition(
                                 withPrefix ? aliases().middleValue : null,
                                 middleTable.getColumnDefinition(),
+                                false,
                                 asBlock,
                                 null
                         );
@@ -671,6 +672,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         builder.definition(
                                 withPrefix ? aliases().middleValue : null,
                                 middleTable.getTargetColumnDefinition(),
+                                false,
                                 asBlock,
                                 null
                         );
@@ -703,6 +705,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     builder.definition(
                             withPrefix ? parent.aliases().value : null,
                             joinProp.getStorage(strategy),
+                            true,
                             asBlock,
                             mapper
                     );
@@ -741,6 +744,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             builder.definition(
                     withPrefix ? aliases().value : null,
                     definition,
+                    false,
                     asBlock,
                     mapper
             );

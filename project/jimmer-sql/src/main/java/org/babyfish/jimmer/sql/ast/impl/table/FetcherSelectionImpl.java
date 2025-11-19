@@ -258,7 +258,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                             builder
                                     .sql(mapper.getAlias())
                                     .sql(".c")
-                                    .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName)));
+                                    .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName, false)));
                         } else {
                             builder
                                     .sql(realTable.getAlias()).sql(".")

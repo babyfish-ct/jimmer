@@ -181,7 +181,8 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     true,
                                     rawId,
                                     embeddedProps.get(embeddedProps.size() - 1),
-                                    columnName
+                                    columnName,
+                                    rootProp.isReference(TargetLevel.ENTITY)
                             )
                     );
                 }
@@ -208,7 +209,8 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     rawId,
                                     false,
                                     embeddedProps.get(embeddedProps.size() - 1),
-                                    columnName
+                                    columnName,
+                                    rootProp.isReference(TargetLevel.ENTITY)
                             )
                     );
                 }
@@ -223,7 +225,8 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                 rootProp,
                         table,
                         rawId,
-                        definition.name(0)
+                        definition.name(0),
+                        rootProp.isReference(TargetLevel.ENTITY)
                 )
         );
     }

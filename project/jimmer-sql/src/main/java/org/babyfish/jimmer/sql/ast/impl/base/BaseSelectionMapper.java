@@ -32,13 +32,13 @@ public class BaseSelectionMapper {
         return realBaseTable.getAlias();
     }
 
-    public int columnIndex(String alias, String columnName) {
+    public int columnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
         AstContext ctx = scope.astContext;
         Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
-                new QualifiedColumn(keys, columnName),
+                new QualifiedColumn(keys, columnName, foreignKeyInBaseQuery),
                 it -> scope.colNo()
         );
     }
@@ -88,16 +88,20 @@ public class BaseSelectionMapper {
 
         final FormulaTemplate formula;
 
-        QualifiedColumn(List<RealTable.Key> keys, String name) {
+        final boolean foreignKeyInBaseQuery;
+
+        QualifiedColumn(List<RealTable.Key> keys, String name, boolean foreignKeyInBaseQuery) {
             this.keys = keys;
             this.name = name;
             this.formula = null;
+            this.foreignKeyInBaseQuery = foreignKeyInBaseQuery;
         }
 
         QualifiedColumn(List<RealTable.Key> keys, FormulaTemplate formula) {
             this.keys = keys;
             this.name = null;
             this.formula = formula;
+            this.foreignKeyInBaseQuery = false;
         }
 
         @Override
@@ -105,6 +109,7 @@ public class BaseSelectionMapper {
             int result = keys.hashCode();
             result = 31 * result + Objects.hashCode(name);
             result = 31 * result + Objects.hashCode(formula);
+            result = 31 * result + Boolean.hashCode(foreignKeyInBaseQuery);
             return result;
         }
 
@@ -115,7 +120,8 @@ public class BaseSelectionMapper {
             QualifiedColumn that = (QualifiedColumn) o;
             return keys.equals(that.keys) &&
                     Objects.equals(name, that.name) &&
-                    Objects.equals(formula, that.formula);
+                    Objects.equals(formula, that.formula) &&
+                    foreignKeyInBaseQuery == that.foreignKeyInBaseQuery;
         }
 
         @Override
@@ -124,6 +130,7 @@ public class BaseSelectionMapper {
                     "keys=" + keys +
                     ", name='" + name + '\'' +
                     ", formula=" + formula +
+                    ", foreignKeyInBaseQuery=" + foreignKeyInBaseQuery +
                     '}';
         }
     }

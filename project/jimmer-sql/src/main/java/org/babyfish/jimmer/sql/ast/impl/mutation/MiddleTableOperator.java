@@ -896,6 +896,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public boolean isForeignKey() {
+            return false;
+        }
+
+        @Override
         public boolean isNullable() {
             return false;
         }
@@ -953,6 +958,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         @Override
         public @Nullable String getColumnName() {
             return middleTable.getFilterInfo().getColumnName();
+        }
+
+        @Override
+        public boolean isForeignKey() {
+            return false;
         }
 
         @Override

@@ -53,6 +53,11 @@ class ReferencePropertyGetter extends AbstractPropertyGetter implements GetterMe
     }
 
     @Override
+    public boolean isForeignKey() {
+        return true;
+    }
+
+    @Override
     public boolean isNullable() {
         return valueGetter.metadata().isNullable();
     }

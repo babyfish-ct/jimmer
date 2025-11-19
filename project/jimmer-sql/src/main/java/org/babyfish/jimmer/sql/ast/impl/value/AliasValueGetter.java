@@ -41,6 +41,11 @@ class AliasValueGetter implements ValueGetter, GetterMetadata {
     }
 
     @Override
+    public boolean isForeignKey() {
+        return raw.metadata().isForeignKey();
+    }
+
+    @Override
     public boolean isNullable() {
         return raw.metadata().isNullable();
     }
@@ -73,7 +78,7 @@ class AliasValueGetter implements ValueGetter, GetterMetadata {
     @Override
     public void renderTo(AbstractSqlBuilder<?> builder) {
         if (mapper != null) {
-            int index = mapper.columnIndex(alias, metadata().getColumnName());
+            int index = mapper.columnIndex(alias, metadata().getColumnName(), metadata().isForeignKey());
             builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(index));
         } else {
             builder.sql(alias).sql(".").sql(metadata().getColumnName());

@@ -23,17 +23,21 @@ class SimpleValueGetter extends AbstractValueGetter {
     
     private final String columnName;
 
+    private final boolean foreignKey;
+
     SimpleValueGetter(
             JSqlClientImplementor sqlClientImplementor,
             ImmutableProp valueProp,
             Table<?> table,
             boolean rawId,
-            String columnName
+            String columnName,
+            boolean foreignKey
     ) {
         super(sqlClientImplementor, valueProp);
         this.table = table;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
+        this.foreignKey = foreignKey;
     }
 
     @Override
@@ -71,6 +75,11 @@ class SimpleValueGetter extends AbstractValueGetter {
     @Override
     public @Nullable String getColumnName() {
         return columnName;
+    }
+
+    @Override
+    public boolean isForeignKey() {
+        return foreignKey;
     }
 
     @Override

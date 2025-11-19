@@ -36,6 +36,11 @@ public class NonColumnDefinitionValueGetter extends AbstractValueGetter {
     }
 
     @Override
+    public boolean isForeignKey() {
+        return false;
+    }
+
+    @Override
     public boolean isNullable() {
         return true;
     }
