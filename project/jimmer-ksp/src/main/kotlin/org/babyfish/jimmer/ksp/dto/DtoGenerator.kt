@@ -777,6 +777,7 @@ class DtoGenerator private constructor(
                         addAnnotation(
                             AnnotationSpec
                                 .builder(JSON_PROPERTY_CLASS_NAME)
+                                .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
                                 .apply {
                                     addMember("%S", prop.name)
                                     if (!prop.isNullable) {
