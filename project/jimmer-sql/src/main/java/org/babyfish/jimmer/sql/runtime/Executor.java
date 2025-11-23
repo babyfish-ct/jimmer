@@ -5,11 +5,11 @@ import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -39,23 +39,53 @@ public interface Executor {
             ExecutionPurpose purpose,
             @Nullable ExecutorContext ctx,
             JSqlClientImplementor sqlClient
-    ) {}
+    ) {
+    }
 
     static Executor log() {
-        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, null);
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, null, Level.INFO);
+    }
+
+    /**
+     * Log the SQL execution result with the specified level
+     */
+    static Executor log(Level level) {
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, null, level);
     }
 
     static Executor log(Executor executor) {
-        return ExecutorForLog.wrap(executor, null);
+        return ExecutorForLog.wrap(executor, null, Level.INFO);
+    }
+
+    /**
+     * Log the SQL execution result with the specified level
+     */
+    static Executor log(Executor executor, Level level) {
+        return ExecutorForLog.wrap(executor, null, level);
     }
 
     static Executor log(Logger logger) {
-        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, logger);
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, logger, Level.INFO);
+    }
+
+    /**
+     * Log the SQL execution result with the specified level
+     */
+    static Executor log(Logger logger, Level level) {
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, logger, level);
     }
 
     static Executor log(Executor executor, Logger logger) {
-        return ExecutorForLog.wrap(executor, logger);
+        return ExecutorForLog.wrap(executor, logger, Level.INFO);
     }
+
+    /**
+     * Log the SQL execution result with the specified level
+     */
+    static Executor log(Executor executor, Logger logger, Level level) {
+        return ExecutorForLog.wrap(executor, logger, level);
+    }
+
 
     static void validateMutationConnection(Connection con) {
         try {
@@ -185,12 +215,19 @@ public interface Executor {
 
     interface BatchContext extends ExceptionTranslator.Args, AutoCloseable {
         JSqlClientImplementor sqlClient();
+
         String sql();
+
         ExecutionPurpose purpose();
+
         ExecutorContext ctx();
+
         void add(List<Object> variables);
+
         int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator);
+
         Object[] generatedIds();
+
         void addExecutedListener(Runnable listener);
 
         @Override
