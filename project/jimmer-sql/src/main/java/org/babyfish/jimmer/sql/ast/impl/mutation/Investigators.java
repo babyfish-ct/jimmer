@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.Nullable;
+import org.slf4j.event.Level;
 
 class Investigators {
 
-    private Investigators() {}
+    private Investigators() {
+    }
 
     public static JSqlClientImplementor toInvestigatorSqlClient(
             JSqlClientImplementor sqlClient,
@@ -20,10 +21,10 @@ class Investigators {
         }
         InvestigatorLogger investigatorLogger = new InvestigatorLogger(executorLog.getLogger());
         if (args instanceof Executor.BatchContext) {
-            ((Executor.BatchContext)args).addExecutedListener(investigatorLogger::submit);
+            ((Executor.BatchContext) args).addExecutedListener(investigatorLogger::submit);
         }
         return sqlClient.executor(
-                ExecutorForLog.wrap(sqlClient.getExecutor(), investigatorLogger)
+                ExecutorForLog.wrap(sqlClient.getExecutor(), investigatorLogger, Level.INFO)
         );
     }
 }

@@ -4,9 +4,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public class ExecutorForLog extends AbstractExecutorProxy {
@@ -16,21 +19,35 @@ public class ExecutorForLog extends AbstractExecutorProxy {
     private static final String REQUEST = "===>";
 
     private static final String RESPONSE = "<===";
-    
-    private final Logger logger;
+
+    protected final Logger logger;
+
+    protected final Level level;
 
     public static Executor wrap(Executor raw, Logger logger) {
+        return wrap(raw, logger, Level.INFO);
+    }
+
+    public static Executor wrap(Executor raw, Logger logger, Level level) {
         return applier(
                 ExecutorForLog.class,
                 p -> p.logger == logger,
-                r -> new ExecutorForLog(r, logger)
+                r -> new ExecutorForLog(r, logger, level)
         ).applyTo(raw);
     }
 
-    private ExecutorForLog(Executor raw, Logger logger) {
+    protected ExecutorForLog(Executor raw, Logger logger) {
         super(raw);
         this.logger = logger != null ? logger : LOGGER;
+        this.level = Level.INFO;
     }
+
+    protected ExecutorForLog(Executor raw, Logger logger, Level level) {
+        super(raw);
+        this.logger = logger != null ? logger : LOGGER;
+        this.level = level != null ? level : Level.INFO;
+    }
+
 
     public Logger getLogger() {
         return logger;
@@ -38,13 +55,22 @@ public class ExecutorForLog extends AbstractExecutorProxy {
 
     @Override
     public <R> R execute(@NotNull Args<R> args) {
-        if (!logger.isInfoEnabled()) {
+        if (!logger.isEnabledForLevel(level)) {
             return raw.execute(args);
         }
         if (args.sqlClient.getSqlFormatter().isPretty()) {
             return prettyLog(args);
         }
         return simpleLog(args);
+    }
+
+    /**
+     * Log a message with a given level.
+     *
+     * @param message the message to log
+     */
+    protected void log(String message, Object... args) {
+        logger.atLevel(level).log(message, args);
     }
 
     @Override
@@ -57,7 +83,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             @Nullable ExecutorContext ctx,
             JSqlClientImplementor sqlClient
     ) {
-        if (!logger.isInfoEnabled()) {
+        if (!logger.isEnabledForLevel(level)) {
             return;
         }
         StringBuilder builder = new StringBuilder();
@@ -71,17 +97,17 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                 ctx,
                 sqlClient
         );
-        logger.info(builder.toString());
+        log(builder.toString());
     }
 
     @Override
     protected AbstractExecutorProxy recreate(Executor raw) {
-        return new ExecutorForLog(raw, logger);
+        return new ExecutorForLog(raw, logger, level);
     }
 
     @Override
     protected Batch createBatch(BatchContext raw) {
-        return new Batch(raw, logger);
+        return new Batch(raw, logger, level);
     }
 
     private <R> R simpleLog(Args<R> args) {
@@ -89,7 +115,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
         String sql = args.sql;
         List<Object> variables = args.variables;
         if (ctx == null) {
-            logger.info(
+            log(
                     "jimmer> sql: " +
                             sql +
                             ", variables: " +
@@ -99,7 +125,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             );
         } else {
             Logger logger = LoggerFactory.getLogger(ctx.getPrimaryElement().getClassName());
-            logger.info(
+            log(
                     "jimmer> sql: " +
                             sql +
                             ", variables: " +
@@ -108,7 +134,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                             args.purpose
             );
             for (StackTraceElement element : ctx.getMatchedElements()) {
-                logger.info(
+                log(
                         "jimmer stacktrace-element)> {}",
                         element
                 );
@@ -130,7 +156,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
         int affectedRowCount = -1;
         char ch = args.sql.charAt(0);
         if ((ch == 'i' || ch == 'u' || ch == 'd') && result instanceof Integer) {
-            affectedRowCount = (Integer)result;
+            affectedRowCount = (Integer) result;
         }
 
         StringBuilder builder = new StringBuilder();
@@ -162,13 +188,13 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             builder.append(RESPONSE).append("Execute SQL");
         }
 
-        logger.info(builder.toString());
+        log(builder.toString());
 
         if (throwable instanceof RuntimeException) {
-            throw (RuntimeException)throwable;
+            throw (RuntimeException) throwable;
         }
         if (throwable != null) {
-            throw (Error)throwable;
+            throw (Error) throwable;
         }
         return result;
     }
@@ -226,11 +252,14 @@ public class ExecutorForLog extends AbstractExecutorProxy {
 
         private final Logger logger;
 
+        private final Level level;
+
         private List<List<Object>> variableMatrix = new ArrayList<>();
 
-        Batch(BatchContext raw, Logger logger) {
+        Batch(BatchContext raw, Logger logger, Level level) {
             super(raw);
             this.logger = logger;
+            this.level = level;
         }
 
         @Override
@@ -261,13 +290,22 @@ public class ExecutorForLog extends AbstractExecutorProxy {
 
         @Override
         public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
-            if (!logger.isInfoEnabled()) {
+            if (!logger.isEnabledForLevel(level)) {
                 return raw.execute(exceptionTranslator);
             }
             if (raw.sqlClient().getSqlFormatter().isPretty()) {
                 return prettyLog(exceptionTranslator);
             }
             return simpleLog(exceptionTranslator);
+        }
+
+        /**
+         * Log a message with a given level.
+         *
+         * @param message the message to log
+         */
+        protected void log(String message, Object... args) {
+            logger.atLevel(level).log(message, args);
         }
 
         @Override
@@ -299,7 +337,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             }
             builder.append("}");
             if (ectx == null) {
-                logger.info(
+                log(
                         "jimmer> sql: " +
                                 raw.sql() +
                                 ", variables: " +
@@ -309,7 +347,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                 );
             } else {
                 Logger logger = LoggerFactory.getLogger(ectx.getPrimaryElement().getClassName());
-                logger.info(
+                log(
                         "jimmer> sql: " +
                                 raw.sql() +
                                 ", variables: " +
@@ -318,7 +356,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                                 raw.purpose()
                 );
                 for (StackTraceElement element : ectx.getMatchedElements()) {
-                    logger.info(
+                    log(
                             "jimmer stacktrace-element)> {}",
                             element
                     );
@@ -368,13 +406,13 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                     throwable,
                     millis
             );
-            logger.info(builder.toString());
+            log(builder.toString());
 
             if (throwable instanceof RuntimeException) {
-                throw (RuntimeException)throwable;
+                throw (RuntimeException) throwable;
             }
             if (throwable != null) {
-                throw (Error)throwable;
+                throw (Error) throwable;
             }
             return rowCounts;
         }
