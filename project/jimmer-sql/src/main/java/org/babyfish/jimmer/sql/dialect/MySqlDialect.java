@@ -25,12 +25,16 @@ public class MySqlDialect extends MySql5Dialect {
         ctx
                 .sql("update ")
                 .appendTableName()
-                .enter(AbstractSqlBuilder.ScopeType.SET)
-                .separator()
-                .appendId()
-                .sql(" = last_insert_id(")
-                .appendId()
-                .sql(")")
+                .enter(AbstractSqlBuilder.ScopeType.SET);
+        if (ctx.isIdInteger()) {
+            ctx
+                    .separator()
+                    .appendId()
+                    .sql(" = last_insert_id(")
+                    .appendId()
+                    .sql(")");
+        }
+        ctx
                 .appendAssignments()
                 .leave()
                 .enter(AbstractSqlBuilder.ScopeType.WHERE)
@@ -63,7 +67,7 @@ public class MySqlDialect extends MySql5Dialect {
                     .leave()
                     .sql(" on duplicate key update ")
                     .enter(AbstractSqlBuilder.ScopeType.COMMA);
-            if (ctx.hasGeneratedId()) {
+            if (ctx.hasGeneratedId() && ctx.isIdInteger()) {
                 ctx.separator()
                         .sql(FAKE_UPDATE_COMMENT)
                         .sql(" ")

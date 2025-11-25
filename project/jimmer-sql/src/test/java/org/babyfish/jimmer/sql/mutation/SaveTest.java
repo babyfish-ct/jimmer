@@ -1439,7 +1439,9 @@ public class SaveTest extends AbstractMutationTest {
         NativeDatabases.assumeNativeDatabase();
         executeAndExpectResult(
                 NativeDatabases.MYSQL_DATA_SOURCE,
-                getSqlClient()
+                getSqlClient(it -> {
+                    it.setDialect(new MySqlDialect());
+                })
                         .saveCommand(BookDraft.$.produce(book -> {
                             book.setName("GraphQL in Action");
                             book.setEdition(3);

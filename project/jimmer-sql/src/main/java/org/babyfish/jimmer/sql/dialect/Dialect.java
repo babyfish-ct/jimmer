@@ -190,6 +190,7 @@ public interface Dialect extends SqlTypeStrategy {
 
     interface UpdateContext {
 
+        boolean isIdInteger();
         boolean isUpdatedByKey();
 
         UpdateContext sql(String sql);
@@ -211,6 +212,7 @@ public interface Dialect extends SqlTypeStrategy {
         boolean hasGeneratedId();
         boolean isUpdateIgnored();
         boolean isComplete();
+        boolean isIdInteger();
         List<ValueGetter> getConflictGetters();
 
         UpsertContext sql(String sql);

@@ -1,7 +1,26 @@
 package org.babyfish.jimmer.impl.util;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 public class Classes {
 
+    public static Set<Class<?>> INT_TYPES = Collections.unmodifiableSet(
+            new LinkedHashSet<>(
+                    Arrays.asList(
+                            byte.class,
+                            short.class,
+                            int.class,
+                            long.class,
+                            Byte.class,
+                            Short.class,
+                            Integer.class,
+                            Long.class
+                    )
+            )
+    );
     public static Class<?> boxTypeOf(Class<?> type) {
         if (type.isPrimitive()) {
             if (type == boolean.class) {

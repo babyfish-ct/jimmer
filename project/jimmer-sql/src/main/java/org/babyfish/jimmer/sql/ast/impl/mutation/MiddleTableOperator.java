@@ -793,6 +793,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public boolean isIdInteger() {
+            return false;
+        }
+
+        @Override
         public List<ValueGetter> getConflictGetters() {
             return getters;
         }
