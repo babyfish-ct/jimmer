@@ -67,7 +67,9 @@ public abstract class JoinFetchFieldVisitor {
         Caches caches = sqlClient.getCaches();
         Filters filters = sqlClient.getFilters();
         Fetcher<?> childFetcher = field.getChildFetcher();
-        assert childFetcher != null;
+        if (childFetcher == null) {
+            return false;
+        }
         if (childFetcher.getFieldMap().size() == 1) {
             if (filters.getTargetFilter(prop) == null) {
                 return false;

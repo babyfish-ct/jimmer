@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.flat.CityFetcher;
 import org.babyfish.jimmer.sql.model.flat.CompanyTable;
@@ -409,6 +410,39 @@ public class JoinFetchTest extends AbstractQueryTest {
                                     "{\"name\":\"a_1\",\"metadata\":{\"name\":\"am_1\",\"id\":10},\"id\":1}," +
                                     "{\"name\":\"a_3\",\"metadata\":{\"name\":\"am_3\",\"id\":30},\"id\":3}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1278() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient(it -> {
+                    it.setDefaultReferenceFetchType(ReferenceFetchType.JOIN_ALWAYS);
+                }).createQuery(table)
+                        .where(table.id().eq(Constants.graphQLInActionId3))
+                        .select(
+                                table.fetch(
+                                        BookFetcher.$.allTableFields()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"name\":\"GraphQL in Action\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":80.00," +
+                                    "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                    "}]"
                     );
                 }
         );
