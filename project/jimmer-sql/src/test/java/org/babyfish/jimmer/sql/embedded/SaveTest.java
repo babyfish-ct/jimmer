@@ -7,8 +7,6 @@ import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
 public class SaveTest extends AbstractMutationTest {
 
     @Test

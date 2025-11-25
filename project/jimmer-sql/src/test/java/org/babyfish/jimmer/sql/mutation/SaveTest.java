@@ -1433,4 +1433,29 @@ public class SaveTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testIssue1282() {
+        NativeDatabases.assumeNativeDatabase();
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient()
+                        .saveCommand(BookDraft.$.produce(book -> {
+                            book.setName("GraphQL in Action");
+                            book.setEdition(3);
+                            book.setPrice(new BigDecimal("70"));
+                        }))
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ? where NAME = ? and EDITION = ?");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":70}"
+                        );
+                    });
+                }
+        );
+    }
 }
