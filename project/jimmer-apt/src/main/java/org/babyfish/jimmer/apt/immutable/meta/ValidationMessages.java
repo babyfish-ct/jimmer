@@ -4,14 +4,15 @@ import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.MetaException;
 
 import javax.lang.model.element.*;
-import javax.validation.Constraint;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.*;
 
 public class ValidationMessages {
 
-    public static final String CONSTRAINT_FULL_NAME = Constraint.class.getName();
+    public static final String JAVAX_CONSTRAINT_FULL_NAME = "javax.validation.Constraint";
+
+    public static final String JAKARTA_CONSTRAINT_FULL_NAME = "jakarta.validation.Constraint";
 
     private ValidationMessages() {}
 
@@ -50,7 +51,8 @@ public class ValidationMessages {
     private static boolean hasConstraint(TypeElement element) {
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
             TypeElement annoElement = (TypeElement) mirror.getAnnotationType().asElement();
-            if (annoElement.getQualifiedName().toString().equals(CONSTRAINT_FULL_NAME)) {
+            if (annoElement.getQualifiedName().toString().equals(JAKARTA_CONSTRAINT_FULL_NAME) ||
+            annoElement.getQualifiedName().toString().equals(JAVAX_CONSTRAINT_FULL_NAME)) {
                 Retention retention = element.getAnnotation(Retention.class);
                 if (retention == null || retention.value() != RetentionPolicy.RUNTIME) {
                     throw new MetaException(
@@ -58,7 +60,7 @@ public class ValidationMessages {
                             "the annotation @" +
                                     element.getQualifiedName().toString() +
                                     " is decorated by @" +
-                                    Constraint.class.getName() +
+                                    annoElement.getQualifiedName() +
                                     " but its retention is not runtime"
                     );
                 }

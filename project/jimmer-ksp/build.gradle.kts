@@ -11,6 +11,4 @@ dependencies {
     implementation(libs.ksp.symbolProcessing.api)
     implementation(libs.kotlinpoet)
     implementation(libs.kotlinpoet.ksp)
-    implementation(libs.javax.validation.api)
-    implementation(libs.jakarta.validation.api)
 }

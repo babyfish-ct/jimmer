@@ -9,7 +9,6 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.fastResolve
 import java.lang.annotation.ElementType
-import javax.validation.Constraint
 import kotlin.math.abs
 import kotlin.reflect.KClass
 
@@ -61,7 +60,8 @@ fun parseValidationMessages(source: KSAnnotated): Map<ClassName, String> =
             val validatedBy = annotationDeclaration
                 .annotations
                 .firstOrNull {
-                    it.fullName == Constraint::class.qualifiedName
+                    it.fullName == "jakarta.validation.Constraint" ||
+                            it.fullName == "javax.validation.Constraint"
                 }
                 ?.arguments
                 ?.firstOrNull { it.name?.asString() == "validatedBy" }
