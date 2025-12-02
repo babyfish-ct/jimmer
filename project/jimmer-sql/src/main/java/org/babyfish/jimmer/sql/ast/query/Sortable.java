@@ -111,4 +111,12 @@ public interface Sortable extends Filterable {
         }
         return this;
     }
+
+    @OldChain
+    default Sortable orderByIf(boolean condition, Supplier<List<Order>> block) {
+        if (condition) {
+            orderBy(block.get());
+        }
+        return this;
+    }
 }
