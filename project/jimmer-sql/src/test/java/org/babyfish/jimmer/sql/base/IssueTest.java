@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.sql.base;
 
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
-import org.babyfish.jimmer.sql.model.BookStoreTable;
-import org.babyfish.jimmer.sql.model.BookTable;
-import org.babyfish.jimmer.sql.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.OrderIdDraft;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderTable;
@@ -269,6 +270,103 @@ public class IssueTest extends AbstractQueryTest {
                                     "--->--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
                                     "--->--->\"name\":\"order-1\"" +
                                     "--->}" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    // Cannot reproduce
+    @Test
+    public void testIssue1290() {
+        BookStoreTable store = BookStoreTable.$;
+        BookTable book = BookTable.$;
+        NumericExpression<Long> bookCount = getSqlClient()
+                .createSubQuery(book)
+                .where(book.store().eq(store))
+                .selectCount();
+        BaseTable3<BookStoreTable, NumericExpression<Long>, NumericExpression<Long>> baseTable = getSqlClient()
+                .createBaseQuery(store)
+                .where(bookCount.gt(0L))
+                .addSelect(store)
+                .addSelect(bookCount)
+                .addSelect(
+                        Expression.numeric().sql(
+                                Long.class,
+                                "row_number() over(order by %e desc)",
+                                bookCount
+                        )
+                )
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_1().id().eq(Constants.manningId))
+                        .select(
+                                baseTable.get_1().fetch(
+                                        BookStoreFetcher.$
+                                                .name()
+                                                .books(
+                                                        BookFetcher.$.
+                                                                name()
+                                                )
+                                ),
+                                baseTable.get_2(),
+                                baseTable.get_3()
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, " +
+                                    "--->--->(" +
+                                    "--->--->--->select count(1) " +
+                                    "--->--->--->from BOOK tb_3_ " +
+                                    "--->--->--->where tb_3_.STORE_ID = tb_2_.ID" +
+                                    "--->--->) c3, " +
+                                    "--->--->row_number() over(" +
+                                    "--->--->--->order by (" +
+                                    "--->--->--->--->select count(1) " +
+                                    "--->--->--->--->from BOOK tb_3_ " +
+                                    "--->--->--->--->where tb_3_.STORE_ID = tb_2_.ID" +
+                                    "--->--->--->) desc" +
+                                    "--->--->) c4 " +
+                                    "--->from BOOK_STORE tb_2_ " +
+                                    "--->where (" +
+                                    "--->--->select count(1) " +
+                                    "--->--->from BOOK tb_3_ " +
+                                    "--->--->where tb_3_.STORE_ID = tb_2_.ID" +
+                                    "--->) > ?" +
+                                    ") tb_1_ " +
+                                    "where tb_1_.c1 = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.STORE_ID = ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"_1\":{" +
+                                    "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                    "--->--->\"name\":\"MANNING\"," +
+                                    "--->--->\"books\":[" +
+                                    "--->--->--->{" +
+                                    "--->--->--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                    "--->--->--->--->\"name\":\"GraphQL in Action\"" +
+                                    "--->--->--->},{" +
+                                    "--->--->--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
+                                    "--->--->--->--->\"name\":\"GraphQL in Action\"" +
+                                    "--->--->--->},{" +
+                                    "--->--->--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->--->--->--->\"name\":\"GraphQL in Action\"" +
+                                    "--->--->--->}" +
+                                    "--->--->]" +
+                                    "--->}," +
+                                    "--->\"_2\":3," +
+                                    "--->\"_3\":2" +
                                     "}]"
                     );
                 }
