@@ -7,11 +7,13 @@ plugins {
 dependencies {
     api(projects.jimmerCore)
     implementation(libs.kotlin.stdlib)
+    compileOnly(libs.jackson.databind)
 
     testAnnotationProcessor(projects.jimmerApt)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mapstruct)
     testImplementation(libs.javax.validation.api)
+    testImplementation(libs.jackson.databind)
     kspTest(projects.jimmerKsp)
 }
 

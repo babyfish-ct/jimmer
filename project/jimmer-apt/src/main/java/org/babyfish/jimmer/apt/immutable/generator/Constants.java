@@ -1,12 +1,5 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -51,25 +44,37 @@ public class Constants {
             ClassName.get(Description.class);
 
     public static final ClassName JSON_IGNORE_CLASS_NAME =
-            ClassName.get(JsonIgnore.class);
+            ClassName.get("com.fasterxml.jackson.annotation", "JsonIgnore");
+
+    public static final ClassName JSON_VALUE_CLASS_NAME =
+            ClassName.get("com.fasterxml.jackson.annotation", "JsonValue");
 
     public static final ClassName JSON_PROPERTY_ORDER_CLASS_NAME =
-            ClassName.get(JsonPropertyOrder.class);
+            ClassName.get("com.fasterxml.jackson.annotation", "JsonPropertyOrder");
 
-    public static final ClassName JSON_SERIALIZE_CLASS_NAME =
-            ClassName.get(JsonSerialize.class);
+    public static final ClassName JSON_FORMAT_CLASS_NAME =
+            ClassName.get("com.fasterxml.jackson.annotation", "JsonFormat");
 
     public static final ClassName JSON_SERIALIZER_CLASS_NAME =
-            ClassName.get(JsonSerializer.class);
+            ClassName.get("com.fasterxml.jackson.databind", "JsonSerializer");
+
+    public static final ClassName JSON_SERIALIZE_CLASS_NAME =
+            ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonSerialize");
 
     public static final ClassName JSON_DESERIALIZE_CLASS_NAME =
-            ClassName.get(JsonDeserialize.class);
+            ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonDeserialize");
 
     public static final ClassName JSON_POJO_BUILDER_CLASS_NAME =
-            ClassName.get(JsonPOJOBuilder.class);
+            ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonPOJOBuilder");
 
     public static final ClassName JSON_NAMING_CLASS_NAME =
-            ClassName.get(JsonNaming.class);
+            ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonNaming");
+
+    public static final ClassName JSON_GENERATOR_CLASS_NAME =
+            ClassName.get("com.fasterxml.jackson.core", "JsonGenerator");
+
+    public static final ClassName SERIALIZER_PROVIDER_CLASS_NAME =
+            ClassName.get("com.fasterxml.jackson.databind", "SerializerProvider");
 
     public static final ClassName STRING_CLASS_NAME =
             ClassName.get(String.class);

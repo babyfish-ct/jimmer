@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.kotlin.reflect)
     api(projects.jimmerCoreKotlin)
     api(projects.jimmerSql)
+    compileOnly(libs.jackson.databind)
 
     testImplementation(libs.kotlin.test)
     kspTest(projects.jimmerKsp)

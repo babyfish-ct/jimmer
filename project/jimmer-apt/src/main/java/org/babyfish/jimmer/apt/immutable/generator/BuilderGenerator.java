@@ -1,10 +1,8 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
-import org.babyfish.jimmer.impl.util.StringUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 

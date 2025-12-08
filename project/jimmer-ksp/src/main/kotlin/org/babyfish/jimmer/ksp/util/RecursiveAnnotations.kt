@@ -9,8 +9,8 @@ import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.TypeElement
 import kotlin.reflect.KClass
 
-fun KSPropertyDeclaration.recursiveAnnotationOf(annotationType: KClass<out Annotation>): KSAnnotation? =
-    VisitContext(this, annotationType.qualifiedName!!).apply {
+fun KSPropertyDeclaration.recursiveAnnotationOf(annotationTypeName: String): KSAnnotation? =
+    VisitContext(this, annotationTypeName).apply {
         for (anno in annotations) {
             collectAnnotationTypes(anno, this)
         }

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.ksp.error
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.ClassKind
@@ -17,6 +16,7 @@ import org.babyfish.jimmer.error.ErrorField
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.CLIENT_EXCEPTION_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_IGNORE_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
@@ -285,7 +285,7 @@ class ErrorGenerator(
                 }
                 .addAnnotation(
                     AnnotationSpec
-                        .builder(JsonIgnore::class.asTypeName())
+                        .builder(JSON_IGNORE_CLASS_NAME)
                         .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                         .build()
                 )

@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.apt.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
@@ -10,11 +8,13 @@ import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
+import org.babyfish.jimmer.apt.util.GeneratedAnnotation;
 import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jspecify.annotations.NonNull;
@@ -26,14 +26,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.*;
 
-import static org.babyfish.jimmer.apt.immutable.generator.Constants.*;
-import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
-
 public class DtoGenerator {
 
     private static final String[] EMPTY_STR_ARR = new String[0];
-
-    private static final String JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize.class.getName();
 
     private static final String KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto";
 
@@ -121,9 +116,9 @@ public class DtoGenerator {
             );
         }
         if (parent == null) {
-            typeBuilder.addAnnotation(generatedAnnotation(dtoType.getDtoFile()));
+            typeBuilder.addAnnotation(GeneratedAnnotation.generatedAnnotation(dtoType.getDtoFile()));
         } else {
-            typeBuilder.addAnnotation(generatedAnnotation());
+            typeBuilder.addAnnotation(GeneratedAnnotation.generatedAnnotation());
         }
         if (isSerializerRequired()) {
             typeBuilder.addAnnotation(
@@ -429,7 +424,7 @@ public class DtoGenerator {
             cb.add("$<\n)");
         }
         if (!cfg.getFetchType().equals("AUTO")) {
-            cb.add("\n.fetchType($T.$L)", REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.getFetchType());
+            cb.add("\n.fetchType($T.$L)", Constants.REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.getFetchType());
         }
         if (cfg.getFilterClassName() != null) {
             String filterClassName = cfg.getFilterClassName();
@@ -497,7 +492,7 @@ public class DtoGenerator {
             PropConfig.Predicate predicate
     ) {
         if (predicate instanceof PropConfig.Predicate.And) {
-            cb.add("$T.and(\n$>", PREDICATE_CLASS_NAME);
+            cb.add("$T.and(\n$>", Constants.PREDICATE_CLASS_NAME);
             boolean addComma = false;
             for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.And)predicate).getPredicates()) {
                 if (addComma) {
@@ -509,7 +504,7 @@ public class DtoGenerator {
             }
             cb.add("$<\n)");
         } else if (predicate instanceof PropConfig.Predicate.Or) {
-            cb.add("$T.or(\n$>", PREDICATE_CLASS_NAME);
+            cb.add("$T.or(\n$>", Constants.PREDICATE_CLASS_NAME);
             boolean addComma = false;
             for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.Or)predicate).getPredicates()) {
                 if (addComma) {
@@ -566,16 +561,16 @@ public class DtoGenerator {
                     cb.add("$LF", value);
                 } else if (typeName.equals(TypeName.DOUBLE)) {
                     cb.add("$LD", value);
-                } else if (typeName.equals(BIG_INTEGER_CLASS_NAME)) {
+                } else if (typeName.equals(Constants.BIG_INTEGER_CLASS_NAME)) {
                     cb.add(
                             "new $T($S)",
-                            BIG_INTEGER_CLASS_NAME,
+                            Constants.BIG_INTEGER_CLASS_NAME,
                             cmp.getValue().toString()
                     );
-                } else if (typeName.equals(BIG_DECIMAL_CLASS_NAME)) {
+                } else if (typeName.equals(Constants.BIG_DECIMAL_CLASS_NAME)) {
                     cb.add(
                             "new $T($S)",
-                            BIG_DECIMAL_CLASS_NAME,
+                            Constants.BIG_DECIMAL_CLASS_NAME,
                             cmp.getValue().toString()
                     );
                 } else {
@@ -822,7 +817,7 @@ public class DtoGenerator {
                         .asElement())
                         .getQualifiedName()
                         .toString();
-                if (qualifiedName.equals(JSON_DESERIALIZE_TYPE_NAME)) {
+                if (qualifiedName.equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
                     continue;
                 }
             }
@@ -831,7 +826,7 @@ public class DtoGenerator {
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            if (isBuilderRequired && anno.getQualifiedName().equals(JSON_DESERIALIZE_TYPE_NAME)) {
+            if (isBuilderRequired && anno.getQualifiedName().equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
                 continue;
             }
             if (hasElementType(anno, ElementType.FIELD)) {
@@ -918,7 +913,7 @@ public class DtoGenerator {
                             .asElement())
                             .getQualifiedName()
                             .toString();
-                    if (qualifiedName.equals(JSON_DESERIALIZE_TYPE_NAME)) {
+                    if (qualifiedName.equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
                         continue;
                     }
                 }
@@ -928,7 +923,7 @@ public class DtoGenerator {
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            if (isBuilderRequired && anno.getQualifiedName().equals(JSON_DESERIALIZE_TYPE_NAME)) {
+            if (isBuilderRequired && anno.getQualifiedName().equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
                 continue;
             }
             if (hasElementType(anno, ElementType.METHOD)) {
@@ -953,7 +948,7 @@ public class DtoGenerator {
             );
             if (dtoType.getModifiers().contains(DtoModifier.INPUT) &&
                     typeName instanceof ParameterizedTypeName &&
-                    LIST_CLASS_NAME.equals(((ParameterizedTypeName) typeName).rawType)) {
+                    Constants.LIST_CLASS_NAME.equals(((ParameterizedTypeName) typeName).rawType)) {
                 getterBuilder.addComment(
                         "GraphQLInput requires `obj." +
                                 getterName +
@@ -962,7 +957,7 @@ public class DtoGenerator {
                 getterBuilder.addStatement(
                         "return this.$L = new $T<>()",
                         prop.getName(),
-                        ARRAY_LIST_CLASS_NAME
+                        Constants.ARRAY_LIST_CLASS_NAME
                 );
             } else {
                 getterBuilder.addStatement(
@@ -1002,7 +997,7 @@ public class DtoGenerator {
                     .returns(TypeName.BOOLEAN)
                     .addModifiers(Modifier.PUBLIC)
                     .addAnnotation(ApiIgnore.class)
-                    .addAnnotation(JsonIgnore.class)
+                    .addAnnotation(Constants.JSON_IGNORE_CLASS_NAME)
                     .addStatement("return this.$L", stateFieldName);
             typeBuilder.addMethod(isLoadedBuilder.build());
             MethodSpec.Builder setLoadedBuilder = MethodSpec
@@ -1520,11 +1515,11 @@ public class DtoGenerator {
         }
 
         return toListType(propElementName, baseProp.isList()
-                && !(propElementName instanceof ParameterizedTypeName && ((ParameterizedTypeName) propElementName).rawType.equals(LIST_CLASS_NAME)));
+                && !(propElementName instanceof ParameterizedTypeName && ((ParameterizedTypeName) propElementName).rawType.equals(Constants.LIST_CLASS_NAME)));
     }
 
     private static TypeName toListType(TypeName typeName, boolean isList) {
-        return isList ? ParameterizedTypeName.get(LIST_CLASS_NAME, typeName.box()) : typeName;
+        return isList ? ParameterizedTypeName.get(Constants.LIST_CLASS_NAME, typeName.box()) : typeName;
     }
 
     private static TypeName getTypeName(@Nullable TypeRef typeRef) {

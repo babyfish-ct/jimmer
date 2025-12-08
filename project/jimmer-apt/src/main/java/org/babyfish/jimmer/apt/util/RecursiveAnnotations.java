@@ -13,8 +13,8 @@ public class RecursiveAnnotations {
 
     private RecursiveAnnotations() {}
 
-    public static AnnotationMirror of(ExecutableElement element, Class<?> annotationType) {
-        VisitContext ctx = new VisitContext(element, annotationType.getName());
+    public static AnnotationMirror of(ExecutableElement element, String annotationTypeName) {
+        VisitContext ctx = new VisitContext(element, annotationTypeName);
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
             collectAnnotationTypes(mirror, ctx);
         }

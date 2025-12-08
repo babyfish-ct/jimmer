@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.apt.error;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
@@ -160,7 +159,7 @@ public class ErrorGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("get" + typeElement.getSimpleName().toString())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addAnnotation(JsonIgnore.class)
+                .addAnnotation(Constants.JSON_IGNORE_CLASS_NAME)
                 .returns(className);
         typeBuilder.addMethod(builder.build());
     }
@@ -228,7 +227,7 @@ public class ErrorGenerator {
                 MethodSpec
                         .methodBuilder("get" + typeElement.getSimpleName().toString())
                         .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(JsonIgnore.class)
+                        .addAnnotation(Constants.JSON_IGNORE_CLASS_NAME)
                         .addAnnotation(Override.class)
                         .returns(className)
                         .addStatement("return $T.$L", className, element.getSimpleName().toString())

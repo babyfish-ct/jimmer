@@ -257,7 +257,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             fakeRenderExportedForeignKeys(mutableQuery.getTableLikeImplementor(),builder);
         }
         builder.leave();
-            mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
+        mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
     }
 
     private void renderSelections(SqlBuilder builder) {

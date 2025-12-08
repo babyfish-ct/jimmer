@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.ksp.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -773,7 +771,7 @@ class DtoGenerator private constructor(
                                 .build()
                         )
                     }
-                    if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == JSON_PROPERTY_TYPE_NAME }) {
+                    if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == JSON_PROPERTY_CLASS_NAME.reflectionName() }) {
                         addAnnotation(
                             AnnotationSpec
                                 .builder(JSON_PROPERTY_CLASS_NAME)
@@ -795,7 +793,7 @@ class DtoGenerator private constructor(
                         for (anno in dtoProp.toTailProp().baseProp.annotations {
                             isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
-                            if (isBuilderRequired && anno.fullName == JSON_DESERIALIZE_TYPE_NAME) {
+                            if (isBuilderRequired && anno.fullName == JSON_DESERIALIZE_CLASS_NAME.reflectionName()) {
                                 continue
                             }
                             allowedTargets(anno.fullName).firstOrNull()?.let {
@@ -811,7 +809,7 @@ class DtoGenerator private constructor(
                         }
                     }
                     for (anno in prop.annotations) {
-                        if (isBuilderRequired && anno.qualifiedName == JSON_DESERIALIZE_TYPE_NAME) {
+                        if (isBuilderRequired && anno.qualifiedName == JSON_DESERIALIZE_CLASS_NAME.reflectionName()) {
                             continue
                         }
                         val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
@@ -2088,12 +2086,6 @@ class DtoGenerator private constructor(
 
         @JvmStatic
         private val NEW = MemberName("org.babyfish.jimmer.kt", "new")
-
-        @JvmStatic
-        private val JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize::class.qualifiedName!!
-
-        @JvmStatic
-        private val JSON_PROPERTY_TYPE_NAME = JsonProperty::class.qualifiedName!!
 
         @JvmStatic
         private val KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto"

@@ -1,14 +1,5 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonPropertyOrder
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonNaming
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
@@ -33,7 +24,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Arrays
 import java.util.Collections
 import java.util.regex.Pattern
 
@@ -53,15 +43,19 @@ internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val DESCRIPTION_CLASS_NAME = Description::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val COLLECTIONS_CLASS_NAME = Collections::class.asClassName()
-internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
-internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
-internal val JSON_PROPERTY_ORDER_CLASS_NAME = JsonPropertyOrder::class.asClassName()
-internal val JSON_CREATOR_CLASS_NAME = JsonCreator::class.asClassName()
-internal val JSON_SERIALIZE_CLASS_NAME = JsonSerialize::class.asClassName()
-internal val JSON_SERIALIZER_CLASS_NAME = JsonSerializer::class.asClassName()
-internal val JSON_DESERIALIZE_CLASS_NAME = JsonDeserialize::class.asClassName()
-internal val JSON_POJO_BUILDER_CLASS_NAME = JsonPOJOBuilder::class.asClassName()
-internal val JSON_NAMING_CLASS_NAME = JsonNaming::class.asClassName()
+internal val JSON_IGNORE_CLASS_NAME = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore")
+internal val JSON_VALUE_CLASS_NAME = ClassName("com.fasterxml.jackson.annotation", "JsonValue")
+internal val JSON_FORMAT_CLASS_NAME = ClassName("com.fasterxml.jackson.annotation", "JsonFormat")
+internal val JSON_PROPERTY_CLASS_NAME = ClassName("com.fasterxml.jackson.annotation", "JsonProperty")
+internal val JSON_PROPERTY_ORDER_CLASS_NAME = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder")
+internal val JSON_CREATOR_CLASS_NAME = ClassName("com.fasterxml.jackson.annotation", "JsonCreator")
+internal val JSON_SERIALIZER_CLASS_NAME = ClassName("com.fasterxml.jackson.databind", "JsonSerializer")
+internal val JSON_SERIALIZE_CLASS_NAME = ClassName("com.fasterxml.jackson.databind.annotation", "JsonSerialize")
+internal val JSON_DESERIALIZE_CLASS_NAME = ClassName("com.fasterxml.jackson.databind.annotation", "JsonDeserialize")
+internal val JSON_POJO_BUILDER_CLASS_NAME = ClassName("com.fasterxml.jackson.databind.annotation", "JsonPOJOBuilder")
+internal val JSON_NAMING_CLASS_NAME = ClassName("com.fasterxml.jackson.databind.annotation", "JsonNaming")
+internal val JSON_GENERATOR_CLASS_NAME = ClassName("com.fasterxml.jackson.core", "JsonGenerator")
+internal val SERIALIZER_PROVIDER_CLASS_NAME = ClassName("com.fasterxml.jackson.databind", "SerializerProvider")
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val FIXED_INPUT_FIELD_CLASS_NAME = FixedInputField::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()

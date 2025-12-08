@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 
@@ -37,6 +38,10 @@ public class Annotations {
 
     public static AnnotationMirror annotationMirror(Element element, Class<? extends Annotation> annotationType) {
         return annotationMirror(element, annotationType.getName());
+    }
+
+    public static AnnotationMirror annotationMirror(Element element, ClassName annotationTypeName) {
+        return annotationMirror(element, annotationTypeName.reflectionName());
     }
 
     public static AnnotationMirror annotationMirror(Element element, String qualifiedName) {

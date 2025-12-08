@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.apt.immutable.meta;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -8,6 +7,7 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
+import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.apt.immutable.generator.Strings;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.apt.util.RecursiveAnnotations;
@@ -513,7 +513,7 @@ public class ImmutableProp implements BaseProp {
     }
 
     private ConverterMetadata determineConverterMetadata() {
-        AnnotationMirror jsonConverter = RecursiveAnnotations.of(executableElement, JsonConverter.class);
+        AnnotationMirror jsonConverter = RecursiveAnnotations.of(executableElement, JsonConverter.class.getName());
         if (jsonConverter != null) {
             if (isEntityAssociation) {
                 throw new MetaException(
@@ -523,13 +523,13 @@ public class ImmutableProp implements BaseProp {
                                 "\" because it is association"
                 );
             }
-            if (RecursiveAnnotations.of(executableElement, JsonFormat.class) != null) {
+            if (RecursiveAnnotations.of(executableElement, Constants.JSON_FORMAT_CLASS_NAME.reflectionName()) != null) {
                 throw new MetaException(
                         executableElement,
                         "it cannot be decorated by both \"@" +
                                 JsonConverter.class.getName() +
                                 "\" and \"@" +
-                                JsonFormat.class.getName() +
+                                "com.fasterxml.jackson.annotation.JsonFormat" +
                                 "\""
                 );
             }
