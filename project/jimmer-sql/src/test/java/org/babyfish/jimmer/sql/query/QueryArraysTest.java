@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.model.arrays.ArrayModel;
 import org.babyfish.jimmer.sql.model.arrays.ArrayModelTable;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModel;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModelTable;
+import org.h2.value.ValueJson;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -26,7 +27,7 @@ public class QueryArraysTest extends AbstractQueryTest {
             },
             ctx -> {
                 ctx.sql(
-                  "select tb_1_.ID, tb_1_.STRINGS, tb_1_.BYTES, tb_1_.INTS, tb_1_.INTEGERS, tb_1_.LONGS, tb_1_.UUIDS, tb_1_.FLOATS " +
+                  "select tb_1_.ID, tb_1_.STRINGS, tb_1_.BYTES, tb_1_.INTS, tb_1_.INTEGERS, tb_1_.LONGS, tb_1_.UUIDS, tb_1_.FLOATS, tb_1_.SERIALIZED_ARR " +
                           "from ARRAY_MODEL tb_1_ " +
                           "where tb_1_.ID = ?"
                 );
@@ -40,7 +41,8 @@ public class QueryArraysTest extends AbstractQueryTest {
                       "--->--->\"integers\":[3,2,1]," +
                       "--->--->\"longs\":[3,2,1]," +
                       "--->--->\"uuids\":[\"e110c564-23cc-4811-9e81-d587a13db635\"]," +
-                      "--->--->\"floats\":[3.0,2.0,1.0]" +
+                      "--->--->\"floats\":[3.0,2.0,1.0]," +
+                      "--->--->\"serializedArr\":[1,2,3,4,5]" +
                       "--->}" +
                       "]"
                 );
@@ -61,9 +63,15 @@ public class QueryArraysTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.STRINGS, tb_1_.BYTES, tb_1_.INTS, tb_1_.INTEGERS, tb_1_.LONGS, tb_1_.UUIDS, tb_1_.FLOATS " +
+                            "select tb_1_.ID, tb_1_.STRINGS, tb_1_.BYTES, tb_1_.INTS, tb_1_.INTEGERS, tb_1_.LONGS, tb_1_.UUIDS, tb_1_.FLOATS, tb_1_.SERIALIZED_ARR " +
                                     "from ARRAY_MODEL tb_1_ " +
                                     "where tb_1_.STRINGS = ? and tb_1_.INTS = ? and tb_1_.INTEGERS = ? and tb_1_.UUIDS = ? and tb_1_.FLOATS = ?"
+                    ).variables(
+                            new String[] {"3", "2", "1"},
+                            new Integer[] {6, 5, 4},
+                            new Integer[] {3, 2, 1},
+                            new UUID[] { UUID.fromString("e110c564-23cc-4811-9e81-d587a13db635") },
+                            new Float[] {3F, 2F, 1F}
                     );
                     ctx.rows(
                             "[" +
@@ -75,7 +83,8 @@ public class QueryArraysTest extends AbstractQueryTest {
                                     "--->--->\"integers\":[3,2,1]," +
                                     "--->--->\"longs\":[3,2,1]," +
                                     "--->--->\"uuids\":[\"e110c564-23cc-4811-9e81-d587a13db635\"]," +
-                                    "--->--->\"floats\":[3.0,2.0,1.0]" +
+                                    "--->--->\"floats\":[3.0,2.0,1.0]," +
+                                    "--->--->\"serializedArr\":[1,2,3,4,5]" +
                                     "--->}" +
                                     "]"
                     );

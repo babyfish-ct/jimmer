@@ -28,4 +28,7 @@ public interface ArrayModel {
     UUID[] uuids();
 
     Float[] floats();
+
+    @Serialized // Issue#1293
+    Byte[] serializedArr();
 }

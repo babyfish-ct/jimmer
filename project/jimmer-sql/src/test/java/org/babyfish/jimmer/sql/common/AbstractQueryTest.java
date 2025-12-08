@@ -9,6 +9,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.collection.TypedList;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
 
@@ -189,6 +190,9 @@ public class AbstractQueryTest extends AbstractTest {
                 Object act = executions.get(index).getVariables(batchIndex).get(i);
                 if (act instanceof TypedList<?>) {
                     act = ((TypedList<?>)act).toArray();
+                }
+                if (act instanceof DbLiteral.DbValue) {
+                    act = DbLiteral.unwrap(act);
                 }
                 if (exp != null && exp.getClass().isArray()) {
                     Assertions.assertArrayEquals(

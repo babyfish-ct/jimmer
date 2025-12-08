@@ -7,9 +7,12 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.arrays.ArrayModelDraft;
 import org.babyfish.jimmer.sql.model.arrays.ArrayModel;
+import org.babyfish.jimmer.sql.model.arrays.ArrayModelProps;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModel;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModelDraft;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModelTable;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.h2.value.ValueJson;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -31,13 +34,14 @@ public class SaveArraysTest extends AbstractMutationTest {
                     model.setLongs(new Long[]{1L, 2L, 3L});
                     model.setFloats(new Float[]{1f, 2f, 3f});
                     model.setUuids(new UUID[]{newId});
+                    model.setSerializedArr(new Byte[] {1, 2, 3, 4, 5});
                 })
             ).setMode(SaveMode.INSERT_ONLY),
             ctx -> {
                 ctx.statement(it -> {
                     it.sql(
-                        "insert into ARRAY_MODEL(ID, STRINGS, BYTES, INTS, INTEGERS, LONGS, UUIDS, FLOATS) " +
-                        "values(?, ?, ?, ?, ?, ?, ?, ?)"
+                        "insert into ARRAY_MODEL(ID, STRINGS, BYTES, INTS, INTEGERS, LONGS, UUIDS, FLOATS, SERIALIZED_ARR) " +
+                        "values(?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                     it.variables(
                         newId,
@@ -47,7 +51,12 @@ public class SaveArraysTest extends AbstractMutationTest {
                         new Integer[]{1, 2, 3},
                         new Long[]{1L, 2L, 3L},
                         new UUID[]{newId},
-                        new Float[]{1f, 2f, 3f}
+                        new Float[]{1f, 2f, 3f},
+                        new DbLiteral.DbValue(
+                                ArrayModelProps.SERIALIZED_ARR.unwrap(),
+                                ValueJson.fromJson("[1, 2, 3, 4, 5]"),
+                                true
+                        )
                     );
                 });
                 ctx.entity(it -> {
@@ -56,11 +65,12 @@ public class SaveArraysTest extends AbstractMutationTest {
                                     "--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                                     "--->\"strings\":[\"1\",\"2\",\"3\"]," +
                                     "--->\"bytes\":[1,2,3]," +
-                                    "\"ints\":[4,5,6]," +
+                                    "--->\"ints\":[4,5,6]," +
                                     "--->\"integers\":[1,2,3]," +
                                     "--->\"longs\":[1,2,3]," +
                                     "--->\"uuids\":[\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"]," +
-                                    "--->\"floats\":[1.0,2.0,3.0]}"
+                                    "--->\"floats\":[1.0,2.0,3.0]," +
+                                    "--->\"serializedArr\":[1,2,3,4,5]}"
                     );
                     it.modified(
                             "{" +
@@ -71,7 +81,8 @@ public class SaveArraysTest extends AbstractMutationTest {
                                     "\"integers\":[1,2,3]," +
                                     "\"longs\":[1,2,3]," +
                                     "\"uuids\":[\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"]," +
-                                    "\"floats\":[1.0,2.0,3.0]}"
+                                    "\"floats\":[1.0,2.0,3.0]," +
+                                    "\"serializedArr\":[1,2,3,4,5]}"
                     );
                 });
                 ctx.totalRowCount(1);

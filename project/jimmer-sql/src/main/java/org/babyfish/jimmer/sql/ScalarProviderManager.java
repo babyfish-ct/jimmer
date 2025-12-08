@@ -397,10 +397,10 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             Class<?> clazz = (Class<?>) type;
             if (clazz.isArray()) {
                 return ArrayType.construct(
+                        jacksonType(clazz.getComponentType()),
                         null,
                         null,
-                        null,
-                        jacksonType(clazz.getComponentType())
+                        null
                 );
             }
             return SimpleType.constructUnsafe(clazz);

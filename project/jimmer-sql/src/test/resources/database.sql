@@ -1119,14 +1119,15 @@ create table array_model(
     bytes bytea array not null,
     longs bigint array not null,
     uuids uuid array not null,
-    floats decimal array not null
+    floats decimal array not null,
+    serialized_arr text not null
 );
 alter table array_model
     add constraint pk_arrays
         primary key(id)
 ;
 
-insert into array_model(id, integers, ints, strings, bytes, longs, uuids, floats) values
+insert into array_model(id, integers, ints, strings, bytes, longs, uuids, floats, serialized_arr) values
     ('e110c564-23cc-4811-9e81-d587a13db635',
     array[3, 2, 1],
     array[6, 5, 4],
@@ -1134,7 +1135,8 @@ insert into array_model(id, integers, ints, strings, bytes, longs, uuids, floats
     array[X'03' ,X'02', X'01'],
     array[3, 2, 1],
     array['e110c564-23cc-4811-9e81-d587a13db635'],
-    array[3.0, 2.0, 1.0]
+    array[3.0, 2.0, 1.0],
+    '[1, 2, 3, 4, 5]'
 );
 
 
