@@ -86,6 +86,7 @@ public class Context {
             boolean keepIsPrefix,
             String[] includes,
             String[] excludes,
+            boolean jackson3,
             String immutablesTypeName,
             String tablesTypeName,
             String tableExesTypeName,
@@ -143,8 +144,8 @@ public class Context {
                         types.getWildcardType(null, null)
                 );
         enumElement = elements.getTypeElement(Enum.class.getName());
-        if (elements.getTypeElement("tools.jackson.annotation.JsonIgnore") != null) {
-            this.jacksonTypes = new JacksonTypes(
+        if (jackson3) {
+            jacksonTypes = new JacksonTypes(
                 ClassName.get("tools.jackson.annotation", "JsonIgnore"),
                 ClassName.get("tools.jackson.annotation", "JsonValue"),
                 ClassName.get("tools.jackson.annotation", "JsonPropertyOrder"),
@@ -158,7 +159,7 @@ public class Context {
                 ClassName.get("tools.jackson.databind", "SerializerProvider")
             );
         } else {
-            this.jacksonTypes = new JacksonTypes(
+            jacksonTypes = new JacksonTypes(
                     ClassName.get("com.fasterxml.jackson.annotation", "JsonIgnore"),
                     ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"),
                     ClassName.get("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),

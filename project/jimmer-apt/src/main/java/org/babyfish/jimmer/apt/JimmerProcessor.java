@@ -71,6 +71,8 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private Modifier dtoFieldModifier;
 
+    private boolean jackson3;
+
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
@@ -148,6 +150,13 @@ public class JimmerProcessor extends AbstractProcessor {
                     );
             }
         }
+        String jakcson3Text = processingEnv.getOptions().get("jimmer.jackson3");
+        boolean jackson3;
+        if (jakcson3Text == null || jakcson3Text.isEmpty()) {
+            jackson3 = processingEnv.getElementUtils().getTypeElement("tools.jackson.annotation.JsonIgnore") != null;
+        } else {
+            jackson3 = "true".equals(jakcson3Text);
+        }
         context = new Context(
                 processingEnv.getElementUtils(),
                 processingEnv.getTypeUtils(),
@@ -155,6 +164,7 @@ public class JimmerProcessor extends AbstractProcessor {
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix")),
                 includeArr,
                 excludeArr,
+                jackson3,
                 processingEnv.getOptions().get("jimmer.entry.immutables"),
                 processingEnv.getOptions().get("jimmer.entry.tables"),
                 processingEnv.getOptions().get("jimmer.entry.tableExes"),

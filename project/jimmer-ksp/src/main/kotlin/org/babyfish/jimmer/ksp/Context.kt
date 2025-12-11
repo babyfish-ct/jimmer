@@ -39,7 +39,7 @@ class Context(
         environment.options["jimmer.buddy.ignoreResourceGeneration"]?.trim() == "true"
 
     val jacksonTypes: JacksonTypes =
-        if (resolver.getClassDeclarationByName("tools.jackson.annotation.JsonIgnore") != null) {
+        if (jackson3(resolver, environment)) {
             JacksonTypes(
                 jsonIgnore = ClassName("tools.jackson.annotation", "JsonIgnore"),
                 jsonValue = ClassName("tools.jackson.annotation", "JsonValue"),
@@ -144,5 +144,14 @@ class Context(
             MappedSuperclass::class,
             Embeddable::class
         )
+
+        private fun jackson3(resolver: Resolver, environmnet: SymbolProcessorEnvironment): Boolean =
+            environmnet.options["jimmer.jackson3"].let {
+                if (it.isNullOrEmpty()) {
+                    resolver.getClassDeclarationByName("tools.jackson.annotation.JsonIgnore") != null
+                } else {
+                    "true" == it
+                }
+            }
     }
 }
