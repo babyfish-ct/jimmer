@@ -46,19 +46,19 @@ public class InputBuilderGenerator {
     private void addAnnotations() {
         typeBuilder.addAnnotation(
                 AnnotationSpec
-                        .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_POJO_BUILDER_CLASS_NAME)
+                        .builder(parentGenerator.ctx.getJacksonTypes().jsonPojoBuilder)
                         .addMember("withPrefix", "$S", "")
                         .build()
         );
 
         for (Anno annotation : dtoType.getAnnotations()) {
-            if (annotation.getQualifiedName().equals(Constants.JSON_NAMING_CLASS_NAME.canonicalName())) {
+            if (annotation.getQualifiedName().equals(parentGenerator.ctx.getJacksonTypes().jsonNaming.canonicalName())) {
                 if (!annotation.getValueMap().containsKey("value")) {
                     continue;
                 }
                 typeBuilder.addAnnotation(
                         AnnotationSpec
-                                .builder(Constants.JSON_NAMING_CLASS_NAME)
+                                .builder(parentGenerator.ctx.getJacksonTypes().jsonNaming)
                                 .addMember(
                                         "value", "$T.class",
                                         ClassName.bestGuess(((Anno.TypeRefValue) annotation.getValueMap().get("value")).typeRef.getTypeName()))

@@ -159,7 +159,7 @@ public class ErrorGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("get" + typeElement.getSimpleName().toString())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addAnnotation(Constants.JSON_IGNORE_CLASS_NAME)
+                .addAnnotation(context.getJacksonTypes().jsonIgnore)
                 .returns(className);
         typeBuilder.addMethod(builder.build());
     }
@@ -227,7 +227,7 @@ public class ErrorGenerator {
                 MethodSpec
                         .methodBuilder("get" + typeElement.getSimpleName().toString())
                         .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Constants.JSON_IGNORE_CLASS_NAME)
+                        .addAnnotation(context.getJacksonTypes().jsonIgnore)
                         .addAnnotation(Override.class)
                         .returns(className)
                         .addStatement("return $T.$L", className, element.getSimpleName().toString())

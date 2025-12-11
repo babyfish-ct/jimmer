@@ -126,11 +126,11 @@ public class DraftGenerator {
     }
 
     private void addAssociatedIdGetter(ImmutableProp prop) {
-        new AssociatedIdGenerator(typeBuilder, false).getter(prop);
+        new AssociatedIdGenerator(ctx, typeBuilder, false).getter(prop);
     }
 
     private void addAssociatedIdSetter(ImmutableProp prop) {
-        new AssociatedIdGenerator(typeBuilder, false).setter(prop);
+        new AssociatedIdGenerator(ctx, typeBuilder, false).setter(prop);
     }
 
     private void addSetter(ImmutableProp prop) {

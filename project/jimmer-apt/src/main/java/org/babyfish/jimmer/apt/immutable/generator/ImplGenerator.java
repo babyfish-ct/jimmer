@@ -122,7 +122,7 @@ public class ImplGenerator {
                 .addAnnotation(Override.class)
                 .returns(TypeName.get(prop.getReturnType()));
         if (!prop.isBeanStyle()) {
-            builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
+            builder.addAnnotation(ctx.getJacksonTypes().jsonIgnore);
         }
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);

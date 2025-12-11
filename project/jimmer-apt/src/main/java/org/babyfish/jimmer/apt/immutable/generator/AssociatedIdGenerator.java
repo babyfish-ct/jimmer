@@ -4,6 +4,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.lang.OldChain;
@@ -15,11 +16,14 @@ import java.util.Objects;
 
 class AssociatedIdGenerator {
 
+    private final Context ctx;
+
     private final TypeSpec.Builder typeBuilder;
 
     private final boolean withImplementation;
 
-    public AssociatedIdGenerator(TypeSpec.Builder typeBuilder, boolean withImplementation) {
+    public AssociatedIdGenerator(Context ctx, TypeSpec.Builder typeBuilder, boolean withImplementation) {
+        this.ctx = ctx;
         this.typeBuilder = typeBuilder;
         this.withImplementation = withImplementation;
     }
@@ -39,7 +43,7 @@ class AssociatedIdGenerator {
         if (!idTypeName.isPrimitive()) {
             builder.addAnnotation(prop.isNullable() ? Nullable.class : NonNull.class);
         }
-        builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
+        builder.addAnnotation(ctx.getJacksonTypes().jsonIgnore);
         if (!withImplementation) {
             builder.addModifiers(Modifier.ABSTRACT);
         } else {

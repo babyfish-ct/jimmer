@@ -32,7 +32,7 @@ public class DtoGenerator {
 
     private static final String KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto";
 
-    private final Context ctx;
+    public final Context ctx;
 
     private final DocMetadata docMetadata;
 
@@ -123,7 +123,7 @@ public class DtoGenerator {
         if (isSerializerRequired()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
-                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_SERIALIZE_CLASS_NAME)
+                            .builder(ctx.getJacksonTypes().jsonSerialize)
                             .addMember(
                                     "using",
                                     "$T.class",
@@ -135,7 +135,7 @@ public class DtoGenerator {
         if (isBuildRequired()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
-                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_DESERIALIZE_CLASS_NAME)
+                            .builder(ctx.getJacksonTypes().jsonDeserialize)
                             .addMember(
                                     "builder",
                                     "$T.class",
@@ -817,7 +817,7 @@ public class DtoGenerator {
                         .asElement())
                         .getQualifiedName()
                         .toString();
-                if (qualifiedName.equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
+                if (qualifiedName.equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
                     continue;
                 }
             }
@@ -826,7 +826,7 @@ public class DtoGenerator {
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            if (isBuilderRequired && anno.getQualifiedName().equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
+            if (isBuilderRequired && anno.getQualifiedName().equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
                 continue;
             }
             if (hasElementType(anno, ElementType.FIELD)) {
@@ -913,7 +913,7 @@ public class DtoGenerator {
                             .asElement())
                             .getQualifiedName()
                             .toString();
-                    if (qualifiedName.equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
+                    if (qualifiedName.equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
                         continue;
                     }
                 }
@@ -923,7 +923,7 @@ public class DtoGenerator {
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            if (isBuilderRequired && anno.getQualifiedName().equals(Constants.JSON_DESERIALIZE_CLASS_NAME)) {
+            if (isBuilderRequired && anno.getQualifiedName().equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
                 continue;
             }
             if (hasElementType(anno, ElementType.METHOD)) {
@@ -997,7 +997,7 @@ public class DtoGenerator {
                     .returns(TypeName.BOOLEAN)
                     .addModifiers(Modifier.PUBLIC)
                     .addAnnotation(ApiIgnore.class)
-                    .addAnnotation(Constants.JSON_IGNORE_CLASS_NAME)
+                    .addAnnotation(ctx.getJacksonTypes().jsonIgnore)
                     .addStatement("return this.$L", stateFieldName);
             typeBuilder.addMethod(isLoadedBuilder.build());
             MethodSpec.Builder setLoadedBuilder = MethodSpec

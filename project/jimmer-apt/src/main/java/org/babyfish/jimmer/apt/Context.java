@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt;
 
+import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.Specification;
@@ -76,6 +77,8 @@ public class Context {
 
     private final Modifier dtoFieldModifier;
 
+    private final JacksonTypes jacksonTypes;
+
     Context(
             Elements elements,
             Types types,
@@ -140,6 +143,35 @@ public class Context {
                         types.getWildcardType(null, null)
                 );
         enumElement = elements.getTypeElement(Enum.class.getName());
+        if (elements.getTypeElement("tools.jackson.annotation.JsonIgnore") != null) {
+            this.jacksonTypes = new JacksonTypes(
+                ClassName.get("tools.jackson.annotation", "JsonIgnore"),
+                ClassName.get("tools.jackson.annotation", "JsonValue"),
+                ClassName.get("tools.jackson.annotation", "JsonPropertyOrder"),
+                ClassName.get("tools.jackson.annotation", "JsonFormat"),
+                ClassName.get("tools.jackson.databind", "JsonSerializer"),
+                ClassName.get("tools.jackson.databind.annotation", "JsonSerialize"),
+                ClassName.get("tools.jackson.databind.annotation", "JsonDeserialize"),
+                ClassName.get("tools.jackson.databind.annotation", "JsonPOJOBuilder"),
+                ClassName.get("tools.jackson.databind.annotation", "JsonNaming"),
+                ClassName.get("tools.jackson.core", "JsonGenerator"),
+                ClassName.get("tools.jackson.databind", "SerializerProvider")
+            );
+        } else {
+            this.jacksonTypes = new JacksonTypes(
+                    ClassName.get("com.fasterxml.jackson.annotation", "JsonIgnore"),
+                    ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"),
+                    ClassName.get("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
+                    ClassName.get("com.fasterxml.jackson.annotation", "JsonFormat"),
+                    ClassName.get("com.fasterxml.jackson.databind", "JsonSerializer"),
+                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonSerialize"),
+                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonDeserialize"),
+                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonPOJOBuilder"),
+                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonNaming"),
+                    ClassName.get("com.fasterxml.jackson.core", "JsonGenerator"),
+                    ClassName.get("com.fasterxml.jackson.databind", "SerializerProvider")
+            );
+        }
     }
 
     public Class<? extends Annotation> getImmutableAnnotationType(TypeElement typeElement) {
@@ -335,5 +367,9 @@ public class Context {
 
     public Modifier getDtoFieldModifier() {
         return dtoFieldModifier;
+    }
+
+    public JacksonTypes getJacksonTypes() {
+        return this.jacksonTypes;
     }
 }

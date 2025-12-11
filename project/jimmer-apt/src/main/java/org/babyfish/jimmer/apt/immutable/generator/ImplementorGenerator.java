@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -8,12 +9,13 @@ import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
 public class ImplementorGenerator {
+
+    private final Context ctx;
 
     private final ImmutableType type;
 
@@ -21,7 +23,8 @@ public class ImplementorGenerator {
 
     private TypeSpec.Builder typeBuilder;
 
-    ImplementorGenerator(ImmutableType type) {
+    ImplementorGenerator(Context ctx, ImmutableType type) {
+        this.ctx = ctx;
         this.type = type;
         spiClassName = ClassName.get(ImmutableSpi.class);
     }
@@ -55,7 +58,7 @@ public class ImplementorGenerator {
         builder.add("}");
         typeBuilder.addAnnotation(
                 AnnotationSpec
-                        .builder(Constants.JSON_PROPERTY_ORDER_CLASS_NAME)
+                        .builder(ctx.getJacksonTypes().jsonPropertyOrder)
                         .addMember("value", builder.build())
                         .build()
         );

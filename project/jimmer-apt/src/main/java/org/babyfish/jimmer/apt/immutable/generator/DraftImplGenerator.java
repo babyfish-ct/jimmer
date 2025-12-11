@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.immutable.generator;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
@@ -25,13 +26,16 @@ public class DraftImplGenerator {
 
     private static final Enum<?>[] EMPTY_ENUM_ARR = new Enum[0];
 
+    private final Context ctx;
+
     private final ImmutableType type;
 
     private final ClassName draftSpiClassName;
 
     private TypeSpec.Builder typeBuilder;
 
-    public DraftImplGenerator(ImmutableType type) {
+    public DraftImplGenerator(Context ctx, ImmutableType type) {
+        this.ctx = ctx;
         this.type = type;
         draftSpiClassName = ClassName.get(DraftSpi.class);
     }
@@ -346,7 +350,7 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .returns(prop.getDraftTypeName(false));
         if (!prop.isBeanStyle()) {
-            builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
+            builder.addAnnotation(ctx.getJacksonTypes().jsonIgnore);
         }
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);
@@ -570,11 +574,11 @@ public class DraftImplGenerator {
     }
 
     private void addAssociatedIdGetter(ImmutableProp prop) {
-        new AssociatedIdGenerator(typeBuilder, true).getter(prop);
+        new AssociatedIdGenerator(ctx, typeBuilder, true).getter(prop);
     }
 
     private void addAssociatedIdSetter(ImmutableProp prop) {
-        new AssociatedIdGenerator(typeBuilder, true).setter(prop);
+        new AssociatedIdGenerator(ctx, typeBuilder, true).setter(prop);
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {

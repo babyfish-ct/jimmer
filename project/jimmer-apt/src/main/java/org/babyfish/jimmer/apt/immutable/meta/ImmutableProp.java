@@ -523,7 +523,7 @@ public class ImmutableProp implements BaseProp {
                                 "\" because it is association"
                 );
             }
-            if (RecursiveAnnotations.of(executableElement, Constants.JSON_FORMAT_CLASS_NAME.reflectionName()) != null) {
+            if (RecursiveAnnotations.of(executableElement, context.getJacksonTypes().jsonFormat.reflectionName()) != null) {
                 throw new MetaException(
                         executableElement,
                         "it cannot be decorated by both \"@" +
