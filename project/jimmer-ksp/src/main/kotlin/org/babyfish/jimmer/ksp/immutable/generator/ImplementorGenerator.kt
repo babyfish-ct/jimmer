@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
@@ -10,6 +11,7 @@ import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 
 class ImplementorGenerator(
+    private val ctx: Context,
     private val type: ImmutableType,
     private val parent: TypeSpec.Builder
 ) {
@@ -37,7 +39,7 @@ class ImplementorGenerator(
     private fun TypeSpec.Builder.addPropertyOrderAnnotation() {
         addAnnotation(
             AnnotationSpec
-                .builder(JSON_PROPERTY_ORDER_CLASS_NAME)
+                .builder(ctx.jacksonTypes.jsonPropertyOrder)
                 .addMember(
                     CodeBlock
                         .builder()

@@ -6,6 +6,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
@@ -36,6 +37,41 @@ class Context(
 
     val isBuddyIgnoreResourceGeneration: Boolean =
         environment.options["jimmer.buddy.ignoreResourceGeneration"]?.trim() == "true"
+
+    val jacksonTypes: JacksonTypes =
+        if (resolver.getClassDeclarationByName("tools.jackson.annotation.JsonIgnore") != null) {
+            JacksonTypes(
+                jsonIgnore = ClassName("tools.jackson.annotation", "JsonIgnore"),
+                jsonValue = ClassName("tools.jackson.annotation", "JsonValue"),
+                jsonFormat = ClassName("tools.jackson.annotation", "JsonFormat"),
+                jsonProperty = ClassName("tools.jackson.annotation", "JsonProperty"),
+                jsonPropertyOrder = ClassName("tools.jackson.annotation", "JsonPropertyOrder"),
+                jsonCreator = ClassName("tools.jackson.annotation", "JsonCreator"),
+                jsonSerializer = ClassName("tools.jackson.databind", "JsonSerializer"),
+                jsonSerialize = ClassName("tools.jackson.databind.annotation", "JsonSerialize"),
+                jsonDeserialize = ClassName("tools.jackson.databind.annotation", "JsonDeserialize"),
+                jsonPojoBuilder = ClassName("tools.jackson.databind.annotation", "JsonPOJOBuilder"),
+                jsonNaming = ClassName("tools.jackson.databind.annotation", "JsonNaming"),
+                jsonGenerator = ClassName("tools.jackson.core", "JsonGenerator"),
+                serializeProvider = ClassName("tools.jackson.databind", "SerializerProvider")
+            )
+        } else {
+            JacksonTypes(
+                jsonIgnore = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore"),
+                jsonValue = ClassName("com.fasterxml.jackson.annotation", "JsonValue"),
+                jsonFormat = ClassName("com.fasterxml.jackson.annotation", "JsonFormat"),
+                jsonProperty = ClassName("com.fasterxml.jackson.annotation", "JsonProperty"),
+                jsonPropertyOrder = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
+                jsonCreator = ClassName("com.fasterxml.jackson.annotation", "JsonCreator"),
+                jsonSerializer = ClassName("com.fasterxml.jackson.databind", "JsonSerializer"),
+                jsonSerialize = ClassName("com.fasterxml.jackson.databind.annotation", "JsonSerialize"),
+                jsonDeserialize = ClassName("com.fasterxml.jackson.databind.annotation", "JsonDeserialize"),
+                jsonPojoBuilder = ClassName("com.fasterxml.jackson.databind.annotation", "JsonPOJOBuilder"),
+                jsonNaming = ClassName("com.fasterxml.jackson.databind.annotation", "JsonNaming"),
+                jsonGenerator = ClassName("com.fasterxml.jackson.core", "JsonGenerator"),
+                serializeProvider = ClassName("com.fasterxml.jackson.databind", "SerializerProvider")
+            )
+        }
 
     private val includes: Array<String>? =
         environment.options["jimmer.source.includes"]

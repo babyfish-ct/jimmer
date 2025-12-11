@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
@@ -9,6 +10,7 @@ import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 
 class ImplGenerator(
+    private val ctx: Context,
     private val type: ImmutableType,
     private val parent: TypeSpec.Builder
 ) {
@@ -29,7 +31,7 @@ class ImplGenerator(
                             .mutable()
                             .addAnnotation(
                                 AnnotationSpec
-                                    .builder(JSON_IGNORE_CLASS_NAME)
+                                    .builder(ctx.jacksonTypes.jsonIgnore)
                                     .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                                     .build()
                             )
@@ -77,7 +79,7 @@ class ImplGenerator(
                     .addModifiers(KModifier.INTERNAL)
                     .addAnnotation(
                         AnnotationSpec
-                            .builder(JSON_IGNORE_CLASS_NAME)
+                            .builder(ctx.jacksonTypes.jsonIgnore)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )
@@ -106,7 +108,7 @@ class ImplGenerator(
                     .addModifiers(KModifier.INTERNAL)
                     .addAnnotation(
                         AnnotationSpec
-                            .builder(JSON_IGNORE_CLASS_NAME)
+                            .builder(ctx.jacksonTypes.jsonIgnore)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )

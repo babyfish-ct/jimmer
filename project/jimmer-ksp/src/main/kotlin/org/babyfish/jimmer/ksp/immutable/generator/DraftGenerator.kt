@@ -92,7 +92,7 @@ class DraftGenerator(
                             addAssociatedIdProp(prop)
                         }
                     }
-                    ProducerGenerator(type, this).generate()
+                    ProducerGenerator(ctx, type, this).generate()
                     if (!type.isMappedSuperclass) {
                         BuilderGenerator(type, this, excludedUserTypePrefixes).generate()
                     }
@@ -153,7 +153,7 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addAssociatedIdProp(prop: ImmutableProp) {
-        AssociatedIdGenerator(this, false).generate(prop)
+        AssociatedIdGenerator(ctx, this, false).generate(prop)
     }
 
     private fun FileSpec.Builder.addAddFun(type: ImmutableType, withBase: Boolean, withBlock: Boolean) {

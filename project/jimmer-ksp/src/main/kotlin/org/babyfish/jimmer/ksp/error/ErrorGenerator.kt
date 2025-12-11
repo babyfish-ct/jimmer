@@ -16,13 +16,13 @@ import org.babyfish.jimmer.error.ErrorField
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.CLIENT_EXCEPTION_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_IGNORE_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
 import kotlin.reflect.KClass
 
 class ErrorGenerator(
+    private val ctx: Context,
     private val declaration: KSClassDeclaration,
     private val checkedException: Boolean,
     private val codeGenerator: CodeGenerator
@@ -285,7 +285,7 @@ class ErrorGenerator(
                 }
                 .addAnnotation(
                     AnnotationSpec
-                        .builder(JSON_IGNORE_CLASS_NAME)
+                        .builder(ctx.jacksonTypes.jsonIgnore)
                         .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                         .build()
                 )

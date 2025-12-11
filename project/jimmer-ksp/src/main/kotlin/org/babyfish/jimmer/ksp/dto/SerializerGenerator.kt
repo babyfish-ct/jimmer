@@ -7,9 +7,6 @@ import com.squareup.kotlinpoet.TypeSpec
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.impl.util.StringUtil
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_GENERATOR_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_SERIALIZER_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.SERIALIZER_PROVIDER_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 
@@ -23,7 +20,7 @@ class SerializerGenerator(
         parentGenerator.typeBuilder.addType(
             TypeSpec.classBuilder("Serializer")
                 .superclass(
-                    JSON_SERIALIZER_CLASS_NAME.parameterizedBy(
+                    parentGenerator.ctx.jacksonTypes.jsonSerializer.parameterizedBy(
                         parentGenerator.getDtoClassName()
                     )
                 )
@@ -41,11 +38,11 @@ class SerializerGenerator(
             )
             .addParameter(
                 "gen",
-                JSON_GENERATOR_CLASS_NAME
+                parentGenerator.ctx.jacksonTypes.jsonGenerator
             )
             .addParameter(
                 "provider",
-                SERIALIZER_PROVIDER_CLASS_NAME
+                parentGenerator.ctx.jacksonTypes.serializeProvider
             )
             .addStatement("gen.writeStartObject()")
             .apply {

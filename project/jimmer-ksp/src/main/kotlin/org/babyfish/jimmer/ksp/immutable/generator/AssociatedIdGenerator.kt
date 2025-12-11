@@ -2,9 +2,11 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 
 internal class AssociatedIdGenerator(
+    private val ctx: Context,
     private val typeBuilder: TypeSpec.Builder,
     private val withImplementation: Boolean
 ) {
@@ -28,7 +30,7 @@ internal class AssociatedIdGenerator(
                 )
                 .addModifiers(KModifier.PUBLIC)
                 .addAnnotation(
-                    AnnotationSpec.builder(JSON_IGNORE_CLASS_NAME)
+                    AnnotationSpec.builder(ctx.jacksonTypes.jsonIgnore)
                         .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                         .build()
                 )

@@ -4,12 +4,14 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.currentVersion
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.sql.*
 
 class ProducerGenerator(
+    private val ctx: Context,
     private val type: ImmutableType,
     private val parent: TypeSpec.Builder
 ) {
@@ -26,9 +28,9 @@ class ProducerGenerator(
                     if (!type.isMappedSuperclass) {
                         addProduceFun(withBlock = false)
                         addProduceFun(withBlock = true)
-                        ImplementorGenerator(type, this).generate()
-                        ImplGenerator(type, this).generate()
-                        DraftImplGenerator(type, this).generate()
+                        ImplementorGenerator(ctx, type, this).generate()
+                        ImplGenerator(ctx, type, this).generate()
+                        DraftImplGenerator(ctx, type, this).generate()
                     }
                 }
                 .build()

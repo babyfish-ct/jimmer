@@ -95,11 +95,6 @@ import org.babyfish.jimmer.ksp.immutable.generator.EMBEDDED_DTO_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.FIXED_INPUT_FIELD_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.HIBERNATE_VALIDATOR_ENHANCED_BEAN
 import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_CREATOR_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_DESERIALIZE_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_IGNORE_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_PROPERTY_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_SERIALIZE_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_ARGS_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_CLASS_NAME
@@ -109,7 +104,6 @@ import org.babyfish.jimmer.ksp.immutable.generator.REFERENCE_FETCH_TYPE_CLASS_NA
 import org.babyfish.jimmer.ksp.immutable.generator.VIEW_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
-import org.babyfish.jimmer.ksp.name
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import org.babyfish.jimmer.ksp.util.GenericParser
 import org.babyfish.jimmer.ksp.util.fastResolve
@@ -293,7 +287,7 @@ class DtoGenerator private constructor(
         if (isSerializerRequired) {
             typeBuilder.addAnnotation(
                 AnnotationSpec
-                    .builder(JSON_SERIALIZE_CLASS_NAME)
+                    .builder(ctx.jacksonTypes.jsonSerialize)
                     .addMember("using = %T::class", getDtoClassName("Serializer"))
                     .build()
             )
@@ -301,7 +295,7 @@ class DtoGenerator private constructor(
         if (isBuilderRequired) {
             typeBuilder.addAnnotation(
                 AnnotationSpec
-                    .builder(JSON_DESERIALIZE_CLASS_NAME)
+                    .builder(ctx.jacksonTypes.jsonDeserialize)
                     .addMember("builder = %T::class", getDtoClassName("Builder"))
                     .build()
             )
@@ -738,7 +732,7 @@ class DtoGenerator private constructor(
                     .addAnnotation(ApiIgnore::class)
                     .addAnnotation(
                         AnnotationSpec
-                            .builder(JSON_IGNORE_CLASS_NAME)
+                            .builder(ctx.jacksonTypes.jsonIgnore)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )
@@ -771,10 +765,10 @@ class DtoGenerator private constructor(
                                 .build()
                         )
                     }
-                    if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == JSON_PROPERTY_CLASS_NAME.reflectionName() }) {
+                    if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == ctx.jacksonTypes.jsonProperty.reflectionName() }) {
                         addAnnotation(
                             AnnotationSpec
-                                .builder(JSON_PROPERTY_CLASS_NAME)
+                                .builder(ctx.jacksonTypes.jsonProperty)
                                 .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
                                 .apply {
                                     addMember("%S", prop.name)
@@ -793,7 +787,7 @@ class DtoGenerator private constructor(
                         for (anno in dtoProp.toTailProp().baseProp.annotations {
                             isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
-                            if (isBuilderRequired && anno.fullName == JSON_DESERIALIZE_CLASS_NAME.reflectionName()) {
+                            if (isBuilderRequired && anno.fullName == ctx.jacksonTypes.jsonDeserialize.reflectionName()) {
                                 continue
                             }
                             allowedTargets(anno.fullName).firstOrNull()?.let {
@@ -809,7 +803,7 @@ class DtoGenerator private constructor(
                         }
                     }
                     for (anno in prop.annotations) {
-                        if (isBuilderRequired && anno.qualifiedName == JSON_DESERIALIZE_CLASS_NAME.reflectionName()) {
+                        if (isBuilderRequired && anno.qualifiedName == ctx.jacksonTypes.jsonDeserialize.reflectionName()) {
                             continue
                         }
                         val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
@@ -848,7 +842,7 @@ class DtoGenerator private constructor(
                 .constructorBuilder()
                 .apply {
                     if (!isBuilderRequired) {
-                        addAnnotation(JSON_CREATOR_CLASS_NAME)
+                        addAnnotation(ctx.jacksonTypes.jsonCreator)
                     }
                     for (prop in dtoType.dtoProps) {
                         addParameter(

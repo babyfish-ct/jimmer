@@ -14,8 +14,6 @@ import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_IGNORE_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_VALUE_CLASS_NAME
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
@@ -447,7 +445,7 @@ class ClientProcessor(
         val jsonValueFun = declaration
             .getDeclaredFunctions()
             .firstOrNull {
-                it.annotation(JSON_VALUE_CLASS_NAME.reflectionName()) !== null &&
+                it.annotation(ctx.jacksonTypes.jsonValue.reflectionName()) !== null &&
                     it.parameters.isEmpty() &&
                     it.returnType?.realDeclaration?.qualifiedName?.asString().let { n ->
                         n != "kotlin.Unit" && n != "kotlin.Nothing"
@@ -458,7 +456,7 @@ class ClientProcessor(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
                 ancestorSource(),
                 "Cannot resolve \"@" +
-                    JSON_VALUE_CLASS_NAME.reflectionName() +
+                    ctx.jacksonTypes.jsonValue.reflectionName() +
                     "\" because of dead recursion: " +
                     jsonValueTypeNameStack
             )
@@ -498,7 +496,7 @@ class ClientProcessor(
             for (propDeclaration in declaration.getDeclaredProperties()) {
                 if (!propDeclaration.isPublic() ||
                     propDeclaration.annotation(ApiIgnore::class) != null ||
-                    propDeclaration.annotation(JSON_IGNORE_CLASS_NAME.reflectionName()) != null) {
+                    propDeclaration.annotation(ctx.jacksonTypes.jsonIgnore.reflectionName()) != null) {
                     continue
                 }
                 if (isClientException &&
@@ -538,7 +536,7 @@ class ClientProcessor(
                 if (!funcDeclaration.isConstructor() &&
                     funcDeclaration.isPublic() &&
                     funcDeclaration.parameters.isEmpty() &&
-                    funcDeclaration.annotation(JSON_IGNORE_CLASS_NAME.reflectionName()) == null &&
+                    funcDeclaration.annotation(ctx.jacksonTypes.jsonIgnore.reflectionName()) == null &&
                     funcDeclaration.annotation(ApiIgnore::class) == null) {
                     val returnTypReference = funcDeclaration.returnType ?: continue
                     val returnTypeName = returnTypReference.realDeclaration.qualifiedName?.asString() ?: continue

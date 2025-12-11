@@ -36,7 +36,7 @@ class ErrorProcessor(
     private fun generateErrorTypes(declarations: Collection<KSClassDeclaration>) {
         val allFiles = ctx.resolver.getNewFiles().toList()
         for (declaration in declarations) {
-            ErrorGenerator(declaration, checkedException, ctx.environment.codeGenerator).generate(allFiles)
+            ErrorGenerator(ctx, declaration, checkedException, ctx.environment.codeGenerator).generate(allFiles)
         }
     }
 }
