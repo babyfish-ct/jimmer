@@ -146,10 +146,10 @@ public class Context {
         enumElement = elements.getTypeElement(Enum.class.getName());
         if (jackson3) {
             jacksonTypes = new JacksonTypes(
-                ClassName.get("tools.jackson.annotation", "JsonIgnore"),
-                ClassName.get("tools.jackson.annotation", "JsonValue"),
-                ClassName.get("tools.jackson.annotation", "JsonPropertyOrder"),
-                ClassName.get("tools.jackson.annotation", "JsonFormat"),
+                ClassName.get("com.fasterxml.jackson.annotation", "JsonIgnore"),
+                ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"),
+                ClassName.get("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
+                ClassName.get("com.fasterxml.jackson.annotation", "JsonFormat"),
                 ClassName.get("tools.jackson.databind", "JsonSerializer"),
                 ClassName.get("tools.jackson.databind.annotation", "JsonSerialize"),
                 ClassName.get("tools.jackson.databind.annotation", "JsonDeserialize"),

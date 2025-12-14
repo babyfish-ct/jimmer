@@ -7,6 +7,8 @@ dependencies {
     api(libs.jspecify)
     implementation(libs.javax.validation.api)
     compileOnly(libs.jackson.databind)
+    compileOnly(libs.jackson3.databind)
+    compileOnly(libs.jackson3.core)
     api(libs.kotlin.reflect)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.kotlin.stdlib)

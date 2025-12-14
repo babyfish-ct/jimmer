@@ -41,12 +41,12 @@ class Context(
     val jacksonTypes: JacksonTypes =
         if (jackson3(resolver, environment)) {
             JacksonTypes(
-                jsonIgnore = ClassName("tools.jackson.annotation", "JsonIgnore"),
-                jsonValue = ClassName("tools.jackson.annotation", "JsonValue"),
-                jsonFormat = ClassName("tools.jackson.annotation", "JsonFormat"),
-                jsonProperty = ClassName("tools.jackson.annotation", "JsonProperty"),
-                jsonPropertyOrder = ClassName("tools.jackson.annotation", "JsonPropertyOrder"),
-                jsonCreator = ClassName("tools.jackson.annotation", "JsonCreator"),
+                jsonIgnore = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore"),
+                jsonValue = ClassName("com.fasterxml.jackson.annotation", "JsonValue"),
+                jsonFormat = ClassName("com.fasterxml.jackson.annotation", "JsonFormat"),
+                jsonProperty = ClassName("com.fasterxml.jackson.annotation", "JsonProperty"),
+                jsonPropertyOrder = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
+                jsonCreator = ClassName("com.fasterxml.jackson.annotation", "JsonCreator"),
                 jsonSerializer = ClassName("tools.jackson.databind", "JsonSerializer"),
                 jsonSerialize = ClassName("tools.jackson.databind.annotation", "JsonSerialize"),
                 jsonDeserialize = ClassName("tools.jackson.databind.annotation", "JsonDeserialize"),

@@ -6,6 +6,7 @@ redisson = "3.32.0"
 h2 = "2.1.212"
 intellijAnnotations = "12.0"
 jackson = "2.15.2"
+jackson3 = "3.0.3"
 jakartaValidation = "2.0.2"
 jakartaee = "9.0.0"
 javapoet = "1.13.0"
@@ -42,6 +43,8 @@ intellij-annotations = { group = "com.intellij", name = "annotations", version.r
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+jackson3-core = { group = "tools.jackson.core", name = "jackson-core", version.ref = "jackson3" }
+jackson3-databind = { group = "tools.jackson.core", name = "jackson-databind", version.ref = "jackson3" }
 
 jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validation-api", version.ref = "jakartaValidation" }
 jakartaee-api = { group = "jakarta.platform", name = "jakarta.jakartaee-api", version.ref = "jakartaee" }

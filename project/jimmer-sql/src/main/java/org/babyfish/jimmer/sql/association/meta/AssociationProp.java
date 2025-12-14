@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.association.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.jackson.v3.ConverterMetadata3;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -169,6 +170,11 @@ public abstract class AssociationProp implements ImmutableProp {
 
     @Override
     public ConverterMetadata getConverterMetadata() {
+        return null;
+    }
+
+    @Override
+    public ConverterMetadata3 getConverterMetadata3() {
         return null;
     }
 

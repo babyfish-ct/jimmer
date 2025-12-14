@@ -6,11 +6,11 @@ import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.lang.reflect.Method;
 
-class ImmutableProps {
+public class ImmutableProps {
 
     private ImmutableProps() {}
 
-    static ImmutableProp get(ImmutableType type, Method method) {
+    public static ImmutableProp get(ImmutableType type, Method method) {
         String propName = StringUtil.propName(method.getName(), false);
         if (propName == null) {
             propName = method.getName();
