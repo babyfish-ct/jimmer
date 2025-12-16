@@ -85,7 +85,9 @@ class PagingTest : AbstractQueryTest() {
         }
 
         connectAndExpect({
-            sqlClient.createQuery(Book::class) {
+            sqlClient {
+                setReverseSortOptimizationEnabled(true)
+            }.createQuery(Book::class) {
                 where(table.name like "GraphQL")
                 orderBy(table.name.asc(), table.edition.desc())
                 select(table)
@@ -142,7 +144,7 @@ class PagingTest : AbstractQueryTest() {
                 where(table.storeId eq 2L)
                 orderBy(table.name.asc(), table.edition.desc())
                 select(table)
-            }.fetchPage(1, 2, it) { entities, totalCount, _ ->
+            }.setReverseSortOptimizationEnabled(true).fetchPage(1, 2, it) { entities, totalCount, _ ->
                 Page(entities, totalCount)
             }
         }) {
@@ -193,6 +195,28 @@ class PagingTest : AbstractQueryTest() {
                     it
                 )
             }
+        }
+    }
+
+    @Test
+    fun testIssue1192() {
+        connectAndExpect({
+            sqlClient { setReverseSortOptimizationEnabled(true) }
+                .createQuery(Book::class) {
+                    orderBy(table.name.asc())
+                    orderBy(table.edition.desc())
+                    select(table.fetchBy { name() })
+                }
+                .setReverseSortOptimizationEnabled(false)
+                .fetchPage(5, 2, it)
+        }) {
+            sql("select count(1) from BOOK tb_1_")
+            statement(1).sql(
+                """select tb_1_.ID, tb_1_.NAME 
+                    |from BOOK tb_1_ 
+                    |order by tb_1_.NAME asc, tb_1_.EDITION desc 
+                    |limit ?""".trimMargin()
+            )
         }
     }
 

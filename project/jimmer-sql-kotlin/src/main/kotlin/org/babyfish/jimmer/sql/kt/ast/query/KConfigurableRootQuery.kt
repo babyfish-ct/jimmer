@@ -79,7 +79,7 @@ interface KConfigurableRootQuery<P: KPropsLike, R> : KTypedRootQuery<R> {
     fun reverseSorting(): KConfigurableRootQuery<P, R>?
 
     @NewChain
-    fun setReverseSortOptimizationEnabled(enabled: Boolean): KConfigurableRootQuery<P, R>?
+    fun setReverseSortOptimizationEnabled(enabled: Boolean): KConfigurableRootQuery<P, R>
 
     @NewChain
     fun forUpdate(forUpdate: Boolean = true): KConfigurableRootQuery<P, R>

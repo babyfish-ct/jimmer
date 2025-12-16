@@ -150,7 +150,7 @@ internal class KConfigurableRootQueryImpl<P: KPropsLike, R>(
 
     override fun setReverseSortOptimizationEnabled(
         enabled: Boolean
-    ): KConfigurableRootQuery<P, R>? =
+    ): KConfigurableRootQuery<P, R> =
         KConfigurableRootQueryImpl(javaQuery.setReverseSortOptimizationEnabled(enabled))
 
     override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<P, R> =

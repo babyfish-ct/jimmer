@@ -238,8 +238,15 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     @Override
     @Nullable
     public ConfigurableRootQuery<T, R> reverseSorting() {
-        TypedQueryData data = this.getData();
+        TypedQueryData data = getData();
         if (data.reverseSorting) {
+            return this;
+        }
+        boolean reversereverseSortOptimizationEnabled =
+                data.reverseSortOptimizationEnabled != null ?
+                        data.reverseSortOptimizationEnabled :
+                        getSqlClient().isReverseSortOptimizationEnabled();
+        if (!reversereverseSortOptimizationEnabled) {
             return this;
         }
         if (getMutableQuery().getOrders().isEmpty()) {
