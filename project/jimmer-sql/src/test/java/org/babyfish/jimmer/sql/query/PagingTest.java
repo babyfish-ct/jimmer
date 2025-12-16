@@ -578,6 +578,28 @@ public class PagingTest extends AbstractQueryTest {
         );
     }
 
+    @Test
+    public void testIssue1192() {
+        BookTable table = BookTable.$;
+        connectAndExpect(con ->
+                getSqlClient(it -> it.setReverseSortOptimizationEnabled(true))
+                        .createQuery(table)
+                        .orderBy(table.name().asc(), table.edition().desc())
+                        .select(table.fetch(BookFetcher.$.name()))
+                        .setReverseSortOptimizationEnabled(false)
+                        .fetchPage(5, 2, con),
+                ctx -> {
+                    ctx.sql("select count(1) from BOOK tb_1_");
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
+                                    "limit ? offset ?"
+                    );
+                }
+        );
+    }
+
     private static class Page<E> {
 
         final List<E> entities;
