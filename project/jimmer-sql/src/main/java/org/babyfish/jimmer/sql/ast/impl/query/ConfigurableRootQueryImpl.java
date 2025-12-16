@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.MySql5Dialect;
@@ -41,6 +42,22 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     @Override
     public MutableRootQueryImpl<T> getMutableQuery() {
         return (MutableRootQueryImpl<T>) super.getMutableQuery();
+    }
+
+    @Override
+    public long fetchUnlimitedCount(final Connection con) {
+        if (getMutableQuery().getTable() instanceof BaseTable) {
+            return simpleCount(con);
+        }
+        return ConfigurableRootQuery.super.fetchUnlimitedCount(con);
+    }
+
+    @Override
+    public boolean exists(final Connection con) {
+        if (getMutableQuery().getTable() instanceof BaseTable) {
+            return ((ConfigurableRootQueryImpl<?, ?>)limit(1)).simpleExists(con);
+        }
+        return ConfigurableRootQuery.super.exists(con);
     }
 
     @Override
@@ -313,6 +330,40 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 .getSqlClient()
                 .getSlaveConnectionManager(getData().forUpdate != null)
                 .execute(con, this::executeImpl);
+    }
+
+    private long simpleCount(Connection con) {
+        TypedQueryData data = getData();
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        List<Object> rows = Selectors.select(
+                sqlClient,
+                con,
+                "select count(1) from (" + sqlResult.get_1() + ") tb_simple_count__",
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                Collections.singletonList(Expression.rowCount()),
+                data.tupleCreator,
+                getMutableQuery().getPurpose()
+        );
+        return (Long)rows.get(0);
+    }
+
+    private boolean simpleExists(Connection con) {
+        TypedQueryData data = getData();
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        List<Object> rows = Selectors.select(
+                sqlClient,
+                con,
+                "select 1 from (" + sqlResult.get_1() + ") tb_simple_exists__",
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                Collections.singletonList(Expression.rowCount()),
+                data.tupleCreator,
+                getMutableQuery().getPurpose()
+        );
+        return !rows.isEmpty();
     }
 
     private List<R> executeImpl(Connection con) {

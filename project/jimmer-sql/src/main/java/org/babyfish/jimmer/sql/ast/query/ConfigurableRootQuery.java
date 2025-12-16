@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Page;
 import org.babyfish.jimmer.Slice;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

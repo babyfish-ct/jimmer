@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.like
+import org.babyfish.jimmer.sql.kt.ast.expression.sql
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
@@ -216,6 +217,59 @@ class PagingTest : AbstractQueryTest() {
                     |from BOOK tb_1_ 
                     |order by tb_1_.NAME asc, tb_1_.EDITION desc 
                     |limit ?""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue1297() {
+        val baseTable = sqlClient.createBaseQuery(Book::class) {
+            selections
+                .add(table)
+                .add(
+                    sql<Int>(
+                        "row_number() over(partition by %e order by %e desc)",
+                        table.storeId,
+                        table.price
+                    )
+                )
+        }.asBaseTable()
+        connectAndExpect({
+            sqlClient.createQuery(baseTable) {
+                where(table._2 eq 1)
+                select(table._1.fetchBy { name() })
+            }.fetchPage(0, 2, it)
+        }) {
+            sql(
+                """select count(1) 
+                    |from (
+                    |--->select 
+                    |--->--->tb_1_.c1, tb_1_.c2 
+                    |--->from (
+                    |--->--->select 
+                    |--->--->--->tb_2_.ID c1, tb_2_.NAME c2, 
+                    |--->--->--->row_number() over(
+                    |--->--->--->--->partition by tb_2_.STORE_ID 
+                    |--->--->--->--->order by tb_2_.PRICE desc
+                    |--->--->--->) c3 
+                    |--->--->from BOOK tb_2_
+                    |--->) tb_1_ 
+                    |--->where tb_1_.c3 = ?
+                    |) tb_simple_count__""".trimMargin()
+            )
+            statement(1).sql(
+                """select 
+                    |--->tb_1_.c1, tb_1_.c2 
+                    |from (
+                    |--->select 
+                    |--->--->tb_2_.ID c1, tb_2_.NAME c2, 
+                    |--->--->row_number() over(
+                    |--->--->--->partition by tb_2_.STORE_ID 
+                    |--->--->--->order by tb_2_.PRICE desc
+                    |--->--->) c3 
+                    |--->from BOOK tb_2_
+                    |) tb_1_ 
+                    |where tb_1_.c3 = ? limit ?""".trimMargin()
             )
         }
     }
