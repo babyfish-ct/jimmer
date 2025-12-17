@@ -31,6 +31,7 @@ dependencies {
     testAnnotationProcessor(projects.jimmerApt)
 
     testImplementation(libs.spring.jdbc)
+    testImplementation(libs.jackson.databind)
 
     testImplementation(libs.h2)
     testImplementation(libs.mysql.connector.java)

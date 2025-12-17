@@ -8,7 +8,6 @@ dependencies {
     implementation(libs.javax.validation.api)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.jackson3.databind)
-    compileOnly(libs.jackson3.core)
     api(libs.kotlin.reflect)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.kotlin.stdlib)
@@ -16,6 +15,7 @@ dependencies {
 
     testImplementation(libs.mapstruct)
     testImplementation(libs.lombok)
+    testImplementation(libs.jackson.databind)
 
     testAnnotationProcessor(projects.jimmerApt)
     testAnnotationProcessor(libs.lombok)

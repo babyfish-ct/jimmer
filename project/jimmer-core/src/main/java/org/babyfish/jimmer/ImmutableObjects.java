@@ -5,21 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
-import org.babyfish.jimmer.jackson.v3.ImmutableModule3;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.Nullable;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.util.*;
 
 public class ImmutableObjects {
 
     private static final ObjectMapper OBJECT_MAPPER;
-
-    private static final JsonMapper JSON_MAPPER;
 
     private ImmutableObjects() {}
 
@@ -363,9 +359,6 @@ public class ImmutableObjects {
      * @return JSON string
      */
     public static String toString(Object immutable) {
-        if (JSON_MAPPER != null) {
-            return JSON_MAPPER.writeValueAsString(immutable);
-        }
         try {
             return OBJECT_MAPPER.writeValueAsString(immutable);
         } catch (JsonProcessingException ex) {
@@ -380,18 +373,11 @@ public class ImmutableObjects {
      * @return Deserialized object
      */
     public static <I> I fromString(Class<I> type, String json) throws JsonProcessingException {
-        if (JSON_MAPPER != null) {
-            return JSON_MAPPER.readValue(json, type);
-        }
         return OBJECT_MAPPER.readValue(json, type);
     }
 
     public static <I> I fromString(Class<I> type, String json, @Nullable ObjectMapper mapper) throws JsonProcessingException {
         return (mapper != null ? mapper : objectMapper()).readValue(json, type);
-    }
-
-    public static <I> I fromString(Class<I> type, String json, @Nullable JsonMapper mapper) throws JsonProcessingException {
-        return (mapper != null ? mapper : jsonMapper()).readValue(json, type);
     }
 
     @SuppressWarnings("unchecked")
@@ -556,13 +542,6 @@ public class ImmutableObjects {
         });
     }
 
-    private static JsonMapper jsonMapper() {
-        if (JSON_MAPPER == null) {
-            throw new IllegalStateException("Jackson3 is required");
-        }
-        return JSON_MAPPER;
-    }
-
     private static ObjectMapper objectMapper() {
         if (OBJECT_MAPPER == null) {
             throw new IllegalStateException("Jackson2 is required");
@@ -589,13 +568,5 @@ public class ImmutableObjects {
         } else {
             OBJECT_MAPPER = null;
         }
-//        if (classExists("tools.jackson.databind.json.JsonMapper")) {
-//            JSON_MAPPER = JsonMapper.builder()
-//                    .addModule(new ImmutableModule3())
-//                    .build();
-//        } else {
-//            JSON_MAPPER = null;
-//        }
-        JSON_MAPPER = null;
     }
 }

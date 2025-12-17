@@ -148,7 +148,7 @@ class Context(
         private fun jackson3(resolver: Resolver, environmnet: SymbolProcessorEnvironment): Boolean =
             environmnet.options["jimmer.jackson3"].let {
                 if (it.isNullOrEmpty()) {
-                    resolver.getClassDeclarationByName("tools.jackson.annotation.JsonIgnore") != null
+                    false//resolver.getClassDeclarationByName("tools.jackson.annotation.JsonIgnore") != null
                 } else {
                     "true" == it
                 }

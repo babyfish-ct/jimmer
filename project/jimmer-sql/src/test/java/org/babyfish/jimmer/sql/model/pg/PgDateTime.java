@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model.pg;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.babyfish.jimmer.sql.Column;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.Entity;

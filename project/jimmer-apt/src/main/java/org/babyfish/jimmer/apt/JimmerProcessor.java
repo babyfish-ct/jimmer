@@ -153,7 +153,7 @@ public class JimmerProcessor extends AbstractProcessor {
         String jakcson3Text = processingEnv.getOptions().get("jimmer.jackson3");
         boolean jackson3;
         if (jakcson3Text == null || jakcson3Text.isEmpty()) {
-            jackson3 = processingEnv.getElementUtils().getTypeElement("tools.jackson.annotation.JsonIgnore") != null;
+            jackson3 = false; // processingEnv.getElementUtils().getTypeElement("tools.jackson.annotation.JsonIgnore") != null;
         } else {
             jackson3 = "true".equals(jakcson3Text);
         }
