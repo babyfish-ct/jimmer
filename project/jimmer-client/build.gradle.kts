@@ -6,14 +6,12 @@ plugins {
 dependencies {
     implementation(projects.jimmerSql)
     compileOnly(libs.spring.boot)
-    compileOnly(libs.jackson.databind)
     annotationProcessor(libs.spring.boot.configurationProcessor)
 
     testAnnotationProcessor(projects.jimmerApt)
     kspTest(projects.jimmerKsp)
     testImplementation(projects.jimmerSqlKotlin)
     testImplementation(libs.spring.web)
-    testImplementation(libs.jackson.databind)
 }
 
 tasks.withType<JavaCompile>().configureEach {

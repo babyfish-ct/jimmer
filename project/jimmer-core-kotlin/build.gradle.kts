@@ -7,7 +7,6 @@ plugins {
 dependencies {
     api(projects.jimmerCore)
     implementation(libs.kotlin.stdlib)
-    compileOnly(libs.jackson.databind)
 
     testAnnotationProcessor(projects.jimmerApt)
     testImplementation(libs.kotlin.test)

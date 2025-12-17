@@ -6,7 +6,7 @@ plugins {
 dependencies {
     api(libs.jspecify)
     implementation(libs.javax.validation.api)
-    compileOnly(libs.jackson.databind)
+    api(libs.jackson.databind)
     compileOnly(libs.jackson3.databind)
     api(libs.kotlin.reflect)
     implementation(libs.jackson.datatype.jsr310)
@@ -15,7 +15,6 @@ dependencies {
 
     testImplementation(libs.mapstruct)
     testImplementation(libs.lombok)
-    testImplementation(libs.jackson.databind)
 
     testAnnotationProcessor(projects.jimmerApt)
     testAnnotationProcessor(libs.lombok)
