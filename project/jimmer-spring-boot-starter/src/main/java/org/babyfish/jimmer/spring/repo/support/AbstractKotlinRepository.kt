@@ -151,6 +151,31 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
     override fun deleteByIds(ids: Iterable<ID>, deleteMode: DeleteMode): Int =
         sql.deleteByIds(entityType, ids, deleteMode).affectedRowCount(entityType)
 
+    inline fun <reified V : View<E>> findView(id: ID): V? {
+        return findById(id, V::class)
+    }
+
+    inline fun <reified V : View<E>> findViews(ids: Iterable<ID>): List<V> {
+        return findByIds(ids, V::class)
+    }
+
+    inline fun <reified V : View<E>> findMapView(ids: Iterable<ID>): Map<ID, V> {
+        return findMapByIds(ids, V::class)
+    }
+
+    inline fun <reified V : View<E>> findAllViews(
+        noinline block: (SortDsl<E>.() -> Unit)? = null
+    ): List<V> {
+        return findAll(V::class, block)
+    }
+
+    inline fun <reified V : View<E>> findPageView(
+        pageParam: PageParam,
+        noinline block: (SortDsl<E>.() -> Unit)? = null
+    ): Page<V> {
+        return findPage(pageParam, V::class, block)
+    }
+
     protected fun <R> executeQuery(
         block: KMutableRootQuery.ForEntity<E>.() -> KConfigurableRootQuery<KNonNullTable<E>, R>
     ): List<R> =
