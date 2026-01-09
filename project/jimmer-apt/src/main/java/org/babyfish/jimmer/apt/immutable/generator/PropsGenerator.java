@@ -1,16 +1,16 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-
 import java.io.IOException;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
@@ -208,6 +208,10 @@ public class PropsGenerator {
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
+        Doc doc =context.getDocMetadata().getDoc(prop.toElement());
+        if (doc != null) {
+            builder.addJavadoc("$L", doc.getValue());
+        }
         if (withImplementation) {
             if (!isTableEx && !ignoreOverride) {
                 builder.addAnnotation(Override.class);

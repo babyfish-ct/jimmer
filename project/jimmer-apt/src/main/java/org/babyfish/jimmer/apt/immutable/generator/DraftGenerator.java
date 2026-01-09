@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.lang.OldChain;
 import org.jspecify.annotations.Nullable;
 
@@ -143,6 +144,12 @@ public class DraftGenerator {
                 .addAnnotation(OldChain.class)
                 .addParameter(TypeName.get(prop.getReturnType()), prop.getName())
                 .returns(type.getDraftClassName());
+
+        Doc doc = prop.context().getDocMetadata().getDoc(prop.toElement());
+        if (doc != null) {
+            builder.addJavadoc("$L", doc.getValue());
+        }
+
         typeBuilder.addMethod(builder.build());
     }
 
