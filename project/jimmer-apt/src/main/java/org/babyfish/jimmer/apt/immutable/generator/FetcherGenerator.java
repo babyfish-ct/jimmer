@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.*;
@@ -174,6 +175,10 @@ public class FetcherGenerator {
                         "return add($S)",
                         prop.getName()
                 );
+        Doc doc = context.getDocMetadata().getDoc(prop.toElement());
+        if (doc != null) {
+            builder.addJavadoc("$L", doc.getValue());
+        }
         typeBuilder.addMethod(builder.build());
     }
 
@@ -189,6 +194,10 @@ public class FetcherGenerator {
                         prop.getName(),
                         prop.getName()
                 );
+        Doc doc = context.getDocMetadata().getDoc(prop.toElement());
+        if (doc != null) {
+            builder.addJavadoc("$L", doc.getValue());
+        }
         typeBuilder.addMethod(builder.build());
     }
 
