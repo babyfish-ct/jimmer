@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.dialect.SQLiteDialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +36,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
     private final MutationPath path;
 
     private final ExceptionTranslator<Exception> exceptionTranslator;
-    
+
     private final MutationTrigger trigger;
 
     final Map<AffectedTable, Integer> affectedRowCount;
@@ -60,7 +61,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     MiddleTableOperator(SaveContext ctx, boolean isSourceLogicalDeleted) {
         this(
-                ctx.options.getSqlClient(), 
+                ctx.options.getSqlClient(),
                 ctx.con,
                 ctx.options.isBatchForbidden(),
                 ctx.options.getExceptionTranslator(),
@@ -652,7 +653,12 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             builder.sql(" from ")
                     .sql(middleTable.getTableName());
             if (!ignoreAlias && alias != null) {
-                builder.sql(" ").sql(alias);
+                String aliasKeyword = " ";
+                // sqlite need as when delete
+                if (sqlClient.getDialect().getClass() == SQLiteDialect.class) {
+                    aliasKeyword = " as ";
+                }
+                builder.sql(aliasKeyword).sql(alias);
             }
         }
     }
@@ -1005,7 +1011,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             builder.sql(middleTable.getFilterInfo().getColumnName());
         }
     }
-    
+
     private void fireInsert(Object sourceId, Object targetId) {
         ImmutableProp prop = path.getProp();
         if (prop != null) {
