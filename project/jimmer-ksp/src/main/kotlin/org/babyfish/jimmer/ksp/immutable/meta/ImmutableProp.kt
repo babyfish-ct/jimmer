@@ -110,6 +110,14 @@ class ImmutableProp(
                 }
             }
         }
+        val expectedType = FORBIDDEN_TYPE_NAMES[propDeclaration.type.fastResolve().declaration.qualifiedName!!.asString()]
+        if (expectedType !== null) {
+            throw MetaException(
+                propDeclaration,
+                "Cannot use \"${propDeclaration.type.fastResolve().declaration.qualifiedName!!.asString()}\", " +
+                        "please use \"${expectedType}\""
+            )
+        }
     }
 
     override val name: String = propDeclaration.name.also {
@@ -248,29 +256,6 @@ class ImmutableProp(
         primaryAnnotationType = descriptor.type.annotationType
         _isNullable = descriptor.isNullable
     }
-
-    val isInputNotNull: Boolean =
-        (annotation(ManyToOne::class) ?: annotation(OneToOne::class)) ?.let {
-            val inputNotNull = it[ManyToOne::inputNotNull] ?: false
-            if (inputNotNull && it[OneToMany::mappedBy]?.takeIf { v -> v.isNotEmpty() } !== null) {
-                throw MetaException(
-                    propDeclaration,
-                    "the `inputNotNull` of annotation @${
-                            it.annotationType.fastResolve().declaration.qualifiedName
-                        } is true but the `mappedBy` of the annotation is specified " +
-                        ""
-                )
-            }
-            if (inputNotNull && !isNullable) {
-                throw MetaException(
-                    propDeclaration,
-                    "the `inputNotNull` of annotation @${
-                            it.annotationType.fastResolve().declaration.qualifiedName
-                        } is true but the property is not nullable"
-                )
-            }
-            inputNotNull
-        } ?: false
 
     private val isAssociation: Boolean =
         (targetDeclaration.classKind === ClassKind.INTERFACE)
@@ -746,6 +731,36 @@ class ImmutableProp(
     }
 
     companion object {
+
+        val FORBIDDEN_TYPE_NAMES = mapOf(
+
+            "java.util.Collection" to "kotlin.collections.Collection",
+            "java.util.List" to "kotlin.collections.List",
+            "java.util.Set" to "kotlin.collections.Set",
+            "java.util.SortedSet" to "kotlin.collections.Set",
+            "java.util.NavigableSet" to "kotlin.collections.Set",
+            "java.util.Map" to "kotlin.collections.Map",
+            "java.util.SortedMap" to "kotlin.collections.Map",
+            "java.util.NavigableMap" to "kotlin.collections.Map",
+
+            "java.util.ArrayList" to "kotlin.collections.List",
+            "java.util.LinkedList" to "kotlin.collections.List",
+            "java.util.HashSet" to "kotlin.collections.Set",
+            "java.util.LinkedHashSet" to "kotlin.collections.Set",
+            "java.util.TreeSet" to "kotlin.collections.Set",
+            "java.util.HashMap" to "kotlin.collections.Map",
+            "java.util.LinkedHashMap" to "kotlin.collections.Map",
+            "java.util.TreeMap" to "kotlin.collections.Map",
+
+            "kotlin.collections.ArrayList" to "kotlin.collections.List",
+            "kotlin.collections.LinkedList" to "kotlin.collections.List",
+            "kotlin.collections.HashSet" to "kotlin.collections.Set",
+            "kotlin.collections.LinkedHashSet" to "kotlin.collections.Set",
+            "kotlin.collections.TreeSet" to "kotlin.collections.Set",
+            "kotlin.collections.HashMap" to "kotlin.collections.Map",
+            "kotlin.collections.LinkedHashMap" to "kotlin.collections.Map",
+            "kotlin.collections.TreeMap" to "kotlin.collections.Map",
+        )
 
         fun isExplicitScalar(anno: KSAnnotation, handledQualifiedNames: MutableSet<String>): Boolean {
             if (!handledQualifiedNames.add(anno.fullName)) {

@@ -297,7 +297,7 @@ public class TreeServiceTest {
                         "         * \n" +
                         "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "         */\n" +
-                        "        readonly id: number;\n" +
+                        "        readonly id: string;\n" +
                         "        /**\n" +
                         "         * The name of current tree node\n" +
                         "         * \n" +
@@ -316,7 +316,7 @@ public class TreeServiceTest {
                         "         * \n" +
                         "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "         */\n" +
-                        "        readonly id: number;\n" +
+                        "        readonly id: string;\n" +
                         "        /**\n" +
                         "         * The name of current tree node\n" +
                         "         * \n" +
@@ -324,7 +324,7 @@ public class TreeServiceTest {
                         "         */\n" +
                         "        readonly name: string;\n" +
                         "        /**\n" +
-                        "         * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "         * The many-to-one association from `TreeNode` to `TreeNode`\n" +
                         "         * \n" +
                         "         * <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "         */\n" +
@@ -341,7 +341,7 @@ public class TreeServiceTest {
                         "         * \n" +
                         "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "         */\n" +
-                        "        readonly id: number;\n" +
+                        "        readonly id: string;\n" +
                         "        /**\n" +
                         "         * The name of current tree node\n" +
                         "         * \n" +
@@ -349,7 +349,7 @@ public class TreeServiceTest {
                         "         */\n" +
                         "        readonly name: string;\n" +
                         "        /**\n" +
-                        "         * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "         * The many-to-one association from `TreeNode` to `TreeNode`\n" +
                         "         * \n" +
                         "         * <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "         */\n" +
@@ -361,7 +361,7 @@ public class TreeServiceTest {
                         "         * \n" +
                         "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "         */\n" +
-                        "        readonly id: number;\n" +
+                        "        readonly id: string;\n" +
                         "        /**\n" +
                         "         * The name of current tree node\n" +
                         "         * \n" +
@@ -395,7 +395,7 @@ public class TreeServiceTest {
                         "     * \n" +
                         "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "     */\n" +
-                        "    readonly id: number;\n" +
+                        "    readonly id: string;\n" +
                         "    /**\n" +
                         "     * The name of current tree node\n" +
                         "     * \n" +
@@ -403,16 +403,16 @@ public class TreeServiceTest {
                         "     */\n" +
                         "    readonly name: string;\n" +
                         "    /**\n" +
-                        "     * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "     * The many-to-one association from `TreeNode` to `TreeNode`\n" +
                         "     * \n" +
                         "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "     */\n" +
-                        "    readonly parentId?: number | undefined;\n" +
+                        "    readonly parentId?: string | undefined;\n" +
                         "    /**\n" +
                         "     * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
                         "     * it is opposite mirror of `TreeNode.parent`\n" +
                         "     */\n" +
-                        "    readonly childNodeIds: ReadonlyArray<number>;\n" +
+                        "    readonly childNodeIds: ReadonlyArray<string>;\n" +
                         "}\n",
                 writer.toString()
         );

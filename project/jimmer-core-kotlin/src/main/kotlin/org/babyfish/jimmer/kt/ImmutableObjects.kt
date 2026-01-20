@@ -10,6 +10,9 @@ import kotlin.reflect.KProperty1
 fun <T: Any> isLoaded(obj: T, prop: KProperty1<T, *>): Boolean =
     ImmutableObjects.isLoaded(obj, prop.toImmutableProp())
 
+fun <T: Any> isLonely(obj: T): Boolean =
+    ImmutableObjects.isLonely(obj)
+
 @Suppress("UNCHECKED_CAST")
 fun <T: Any, X> get(obj: T, prop: KProperty1<T, X>): X =
     ImmutableObjects.get(obj, prop.toImmutableProp()) as X

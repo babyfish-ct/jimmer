@@ -1172,8 +1172,7 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
+                        "          type: string\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +
@@ -1194,8 +1193,7 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
+                        "          type: string\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +
@@ -1203,19 +1201,17 @@ public class OpenApiGeneratorTest {
                         "          type: string\n" +
                         "        parentId:\n" +
                         "          description: |+\n" +
-                        "            The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "            The many-to-one association from `TreeNode` to `TreeNode`\n" +
                         "            <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "          nullable: true\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
+                        "          type: string\n" +
                         "        childNodeIds:\n" +
                         "          description: |+\n" +
                         "            The one-to-many association from `TreeNode` to `TreeNode`,\n" +
                         "            it is opposite mirror of `TreeNode.parent`\n" +
                         "          type: array\n" +
                         "          items:\n" +
-                        "            type: integer\n" +
-                        "            format: int64\n" +
+                        "            type: string\n" +
                         "    Tree_String:\n" +
                         "      type: object\n" +
                         "      description: Static Object Tree\n" +
@@ -1251,8 +1247,7 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
+                        "          type: string\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +
@@ -1260,7 +1255,7 @@ public class OpenApiGeneratorTest {
                         "          type: string\n" +
                         "        parent:\n" +
                         "          description: |+\n" +
-                        "            The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "            The many-to-one association from `TreeNode` to `TreeNode`\n" +
                         "            <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "          nullable: true\n" +
                         "          $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_parent'\n" +
@@ -1279,8 +1274,7 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
+                        "          type: string\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +
@@ -1288,7 +1282,7 @@ public class OpenApiGeneratorTest {
                         "          type: string\n" +
                         "        parent:\n" +
                         "          description: |+\n" +
-                        "            The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "            The many-to-one association from `TreeNode` to `TreeNode`\n" +
                         "            <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "          $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_parent'\n" +
                         "    TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_childNodes:\n" +
@@ -1299,8 +1293,7 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
+                        "          type: string\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +

@@ -92,6 +92,7 @@ internal class KConfigurableRootQueryImpl<P: KPropsLike, R>(
         val reversedQuery = this
             .takeIf { offset + pageSize / 2 > total / 2 }
             ?.reverseSorting()
+            ?.takeIf { (it as KConfigurableRootQueryImpl<*, *>).javaQuery !== javaQuery }
 
         val entities: List<R> =
             if (reversedQuery != null) {

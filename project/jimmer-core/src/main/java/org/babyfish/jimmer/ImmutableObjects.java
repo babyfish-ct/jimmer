@@ -250,23 +250,25 @@ public class ImmutableObjects {
     }
 
     public static boolean isLonely(Object immutable) {
-        if (immutable instanceof ImmutableSpi) {
-            ImmutableSpi spi = (ImmutableSpi) immutable;
-            ImmutableType type = spi.__type();
-            for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(prop.getId())) {
-                    if (prop.isColumnDefinition()) {
-                        ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
-                        if (target != null && !isIdOnly(target)) {
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                }
+        if (!(immutable instanceof ImmutableSpi)) {
+            throw new IllegalArgumentException("The first argument is not immutable object created by jimmer");
+        }
+
+        ImmutableSpi spi = (ImmutableSpi) immutable;
+        ImmutableType type = spi.__type();
+        for (ImmutableProp prop : type.getProps().values()) {
+            if (!(prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(prop.getId()))) {
+                continue;
+            }
+            if (!prop.isColumnDefinition()) {
+                return false;
+            }
+            ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
+            if (target != null && !isIdOnly(target)) {
+                return false;
             }
         }
-        throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+        return true;
     }
 
     @SuppressWarnings("unchecked")

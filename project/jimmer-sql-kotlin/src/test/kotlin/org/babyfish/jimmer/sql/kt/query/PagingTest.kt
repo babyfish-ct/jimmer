@@ -216,7 +216,7 @@ class PagingTest : AbstractQueryTest() {
                 """select tb_1_.ID, tb_1_.NAME 
                     |from BOOK tb_1_ 
                     |order by tb_1_.NAME asc, tb_1_.EDITION desc 
-                    |limit ?""".trimMargin()
+                    |limit ? offset ?""".trimMargin()
             )
         }
     }
@@ -270,6 +270,117 @@ class PagingTest : AbstractQueryTest() {
                     |--->from BOOK tb_2_
                     |) tb_1_ 
                     |where tb_1_.c3 = ? limit ?""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue1302() {
+        connectAndExpect({
+            sqlClient.createQuery(Book::class) {
+                where(table.storeId eq 1)
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table.fetchBy {
+                    name()
+                })
+            }.fetchPage(0, 3, it)
+        }) {
+            sql(
+                """select count(1) 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID = ?""".trimMargin()
+            )
+            statement(1).sql(
+                """select 
+                    |--->tb_1_.ID, 
+                    |--->tb_1_.NAME 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID = ? 
+                    |order by tb_1_.NAME asc, tb_1_.EDITION desc 
+                    |limit ?""".trimMargin()
+            ).variables(1L, 3)
+            rows(
+                """[{
+                    |--->"rows":[
+                    |--->--->{"id":6,"name":"Effective TypeScript"},
+                    |--->--->{"id":5,"name":"Effective TypeScript"},
+                    |--->--->{"id":4,"name":"Effective TypeScript"}
+                    |--->],
+                    |--->"totalRowCount":9,
+                    |--->"totalPageCount":3
+                    |}]""".trimMargin()
+            )
+        }
+
+        connectAndExpect({
+            sqlClient.createQuery(Book::class) {
+                where(table.storeId eq 1)
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table.fetchBy {
+                    name()
+                })
+            }.fetchPage(1, 3, it)
+        }) {
+            sql(
+                """select count(1) 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID = ?""".trimMargin()
+            )
+            statement(1).sql(
+                """select 
+                    |--->tb_1_.ID, 
+                    |--->tb_1_.NAME 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID = ? 
+                    |order by tb_1_.NAME asc, tb_1_.EDITION desc 
+                    |limit ? offset ?""".trimMargin()
+            ).variables(1L, 3, 3L)
+            rows(
+                """[{
+                    |--->"rows":[
+                    |--->--->{"id":3,"name":"Learning GraphQL"},
+                    |--->--->{"id":2,"name":"Learning GraphQL"},
+                    |--->--->{"id":1,"name":"Learning GraphQL"}
+                    |--->],
+                    |--->"totalRowCount":9,
+                    |--->"totalPageCount":3
+                    |}]""".trimMargin()
+            )
+        }
+
+        connectAndExpect({
+            sqlClient.createQuery(Book::class) {
+                where(table.storeId eq 1)
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table.fetchBy {
+                    name()
+                })
+            }.fetchPage(2, 3, it)
+        }) {
+            sql(
+                """select count(1) 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID = ?""".trimMargin()
+            )
+            statement(1).sql(
+                """select 
+                    |--->tb_1_.ID, 
+                    |--->tb_1_.NAME 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID = ? 
+                    |order by tb_1_.NAME asc, tb_1_.EDITION desc 
+                    |limit ? offset ?""".trimMargin()
+            ).variables(1L, 3, 6L)
+            rows(
+                """[{
+                    |--->"rows":[
+                    |--->--->{"id":9,"name":"Programming TypeScript"},
+                    |--->--->{"id":8,"name":"Programming TypeScript"},
+                    |--->--->{"id":7,"name":"Programming TypeScript"}
+                    |--->],
+                    |--->"totalRowCount":9,
+                    |--->"totalPageCount":3
+                    |}]""".trimMargin()
             )
         }
     }

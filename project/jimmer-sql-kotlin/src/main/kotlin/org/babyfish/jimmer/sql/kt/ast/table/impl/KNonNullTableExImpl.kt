@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.table.spi.KTable
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpressionImpl
@@ -20,7 +21,7 @@ import kotlin.reflect.KProperty1
 internal open class KNonNullTableExImpl<E: Any>(
     javaTable: TableImplementor<E>,
     private val joinDisabledReason: String? = null
-) : KTableExImpl<E>(javaTable), KNonNullTableEx<E> {
+) : KTableExImpl<E>(javaTable), KNonNullTableEx<E>, KTable<E> {
 
     override fun <X: Any> get(prop: String): KPropExpression<X> =
         kotlinExpr((javaTable.get<X>(prop) as PropExpressionImpl<X>))
@@ -119,5 +120,9 @@ internal open class KNonNullTableExImpl<E: Any>(
                 NonNullPropExpressionImpl(javaExpr)
             }
         }
+    }
+
+    override fun getImplementor(): TableImplementor<E> {
+        return javaTable
     }
 }

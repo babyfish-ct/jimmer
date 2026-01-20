@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 
 public class OperationRender implements Render {
 
+    private static final Pattern SIMPLE_IDENTIFIER_PATTERN =
+            Pattern.compile("^[A-Za-z_$][0-9A-Za-z_$]*$");
+
     private final String name;
 
     private final Operation operation;
@@ -164,7 +167,7 @@ public class OperationRender implements Render {
                     if (header == null || parameter.getType() instanceof NullableType) {
                         continue;
                     }
-                    writer.separator().code(header.contains("-") ? "'" + header + "'" : header).code(": options.").code(parameter.getName());
+                    writer.separator().code(tsObjectKey(header)).code(": options.").code(parameter.getName());
                 }
             });
             writer.code(";\n");
@@ -176,7 +179,7 @@ public class OperationRender implements Render {
                 if (type instanceof NullableType) {
                     writer.code("if (options.").code(parameter.getName()).code(") ");
                     writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
-                        writer.code("_headers['").code(header.contains("-") ? "'" + header + "'" : header).code("'] = options.").code(parameter.getName()).code('\n');
+                        writer.code("_headers[").code(tsStringLiteral(header)).code("] = options.").code(parameter.getName()).code('\n');
                     }).code('\n');
                 }
             } else if (parameter.getRequestParam() != null) {
@@ -302,6 +305,55 @@ public class OperationRender implements Render {
             writer.typeRef(operation.getReturnType());
         }
         writer.code(">;");
+    }
+
+    private static String tsObjectKey(String name) {
+        if (SIMPLE_IDENTIFIER_PATTERN.matcher(name).matches()) {
+            return name;
+        }
+        return tsStringLiteral(name);
+    }
+
+    private static String tsStringLiteral(String value) {
+        StringBuilder builder = new StringBuilder(value.length() + 2);
+        builder.append('\'');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '\\':
+                    builder.append("\\\\");
+                    break;
+                case '\'':
+                    builder.append("\\'");
+                    break;
+                case '\n':
+                    builder.append("\\n");
+                    break;
+                case '\r':
+                    builder.append("\\r");
+                    break;
+                case '\t':
+                    builder.append("\\t");
+                    break;
+                case '\b':
+                    builder.append("\\b");
+                    break;
+                case '\f':
+                    builder.append("\\f");
+                    break;
+                case '\u2028':
+                    builder.append("\\u2028");
+                    break;
+                case '\u2029':
+                    builder.append("\\u2029");
+                    break;
+                default:
+                    builder.append(c);
+                    break;
+            }
+        }
+        builder.append('\'');
+        return builder.toString();
     }
 
     private void renderRequestPart(Parameter parameter, SourceWriter writer) {
