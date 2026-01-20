@@ -193,6 +193,11 @@ public class MutableSubQueryImpl
         return (MutableSubQueryImpl)super.orderByIf(condition, orders);
     }
 
+    @Override
+    public MutableSubQueryImpl orderByIf(boolean condition, Supplier<List<Order>> block) {
+        return (MutableSubQueryImpl)super.orderByIf(condition, block);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <R> ConfigurableSubQuery<R> select(Selection<R> selection) {

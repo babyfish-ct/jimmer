@@ -145,6 +145,11 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     }
 
     @Override
+    public MutableBaseQueryImpl orderByIf(boolean condition, Supplier<List<Order>> block) {
+        return (MutableBaseQueryImpl) super.orderByIf(condition, block);
+    }
+
+    @Override
     public MutableBaseQueryImpl orderBy(Order... orders) {
         return (MutableBaseQueryImpl) super.orderBy(orders);
     }

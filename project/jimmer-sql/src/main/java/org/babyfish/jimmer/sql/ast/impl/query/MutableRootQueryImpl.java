@@ -395,6 +395,12 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
         return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public MutableRootQueryImpl<T> orderByIf(boolean condition, Supplier<List<Order>> block) {
+        return (MutableRootQueryImpl<T>)super.orderByIf(condition, block);
+    }
+
     @Override
     public boolean exists(Connection con) {
         return !select(Expression.constant(1))

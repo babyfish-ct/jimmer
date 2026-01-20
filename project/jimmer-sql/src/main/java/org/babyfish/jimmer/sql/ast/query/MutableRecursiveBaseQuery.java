@@ -122,6 +122,15 @@ public interface MutableRecursiveBaseQuery<R extends BaseTable> extends MutableB
         return this;
     }
 
+    @OldChain
+    @Override
+    default MutableRecursiveBaseQuery<R> orderByIf(boolean condition, Supplier<List<Order>> block) {
+        if (condition) {
+            orderBy(block.get());
+        }
+        return this;
+    }
+
     @Override
     MutableRecursiveBaseQuery<R> groupBy(Expression<?>... expressions);
 

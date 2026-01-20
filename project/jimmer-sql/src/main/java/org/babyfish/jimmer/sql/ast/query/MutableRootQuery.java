@@ -130,6 +130,15 @@ public interface MutableRootQuery<T extends TableLike<?>> extends MutableQuery, 
         return this;
     }
 
+    @OldChain
+    @Override
+    default MutableRootQuery<T> orderByIf(boolean condition, Supplier<List<Order>> block) {
+        if (condition) {
+            orderBy(block.get());
+        }
+        return this;
+    }
+
     @Override
     MutableRootQuery<T> groupBy(Expression<?>... expressions);
 

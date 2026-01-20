@@ -103,6 +103,15 @@ public interface MutableBaseQuery extends MutableQuery {
 
     @OldChain
     @Override
+    default MutableBaseQuery orderByIf(boolean condition, Supplier<List<Order>> block) {
+        if (condition) {
+            orderBy(block.get());
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
     MutableBaseQuery orderBy(Order... orders);
 
     @OldChain

@@ -93,6 +93,12 @@ public class MutableRecursiveBaseQueryImpl<R extends BaseTable>
 
     @SuppressWarnings("unchecked")
     @Override
+    public MutableRecursiveBaseQueryImpl<R> orderByIf(boolean condition, Supplier<List<Order>> block) {
+        return (MutableRecursiveBaseQueryImpl<R>)super.orderByIf(condition, block);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public MutableRecursiveBaseQueryImpl<R> orderByIf(boolean condition, Order... orders) {
         return (MutableRecursiveBaseQueryImpl<R>)super.orderByIf(condition, orders);
     }

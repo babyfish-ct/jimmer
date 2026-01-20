@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public interface MutableQuery extends Sortable {
 
@@ -44,6 +45,15 @@ public interface MutableQuery extends Sortable {
     default MutableQuery orderByIf(boolean condition, List<Order> orders) {
         if (condition) {
             orderBy(orders);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    default MutableQuery orderByIf(boolean condition, Supplier<List<Order>> block) {
+        if (condition) {
+            orderBy(block.get());
         }
         return this;
     }

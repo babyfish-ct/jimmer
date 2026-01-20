@@ -192,6 +192,14 @@ public abstract class AbstractMutableQueryImpl
         return this;
     }
 
+    @Override
+    public AbstractMutableQueryImpl orderByIf(boolean condition, Supplier<List<Order>> block) {
+        if (condition) {
+            orderBy(block.get());
+        }
+        return this;
+    }
+
     @OldChain
     @Override
     public AbstractMutableQueryImpl orderBy(List<Order> orders) {
