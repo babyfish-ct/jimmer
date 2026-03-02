@@ -47,7 +47,7 @@ public class ServletControllerConfiguration {
     @Bean
     public WebMvcConfigurer swaggerUiConfig(
             @Value("${jimmer.client.openapi.ui-path}") String uiPath,
-            @Value("${jimmer-client-swagger-ui.version}") String version) {
+            @Value("${jimmer-client-swagger-ui.version:}") String version) {
         return new SwaggerUiConfig(uiPath, version);
     }
 
