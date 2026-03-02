@@ -8,7 +8,7 @@ public class PropertyNamingCustomization implements JsonCodecCustomization {
     }
 
     @Override
-    public void customizeV2(com.fasterxml.jackson.databind.json.JsonMapper.Builder builder) {
+    public void customizeV2(com.fasterxml.jackson.databind.cfg.MapperBuilder<?, ?> builder) {
         switch (propertyNaming) {
             case LOWER_CAMEL_CASE:
                 builder.propertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.LOWER_CAMEL_CASE);
@@ -32,7 +32,7 @@ public class PropertyNamingCustomization implements JsonCodecCustomization {
     }
 
     @Override
-    public void customizeV3(tools.jackson.databind.json.JsonMapper.Builder builder) {
+    public void customizeV3(tools.jackson.databind.cfg.MapperBuilder<?, ?> builder) {
         switch (propertyNaming) {
             case LOWER_CAMEL_CASE:
                 builder.propertyNamingStrategy(tools.jackson.databind.PropertyNamingStrategies.LOWER_CAMEL_CASE);
