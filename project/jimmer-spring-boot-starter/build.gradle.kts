@@ -1,6 +1,7 @@
 plugins {
     `kotlin-convention`
     alias(libs.plugins.ksp)
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
@@ -10,6 +11,8 @@ dependencies {
     api(libs.spring.boot.starter.jdbc)
     api(libs.spring.data.commons)
 
+    compileOnly(libs.jackson2.databind)
+    compileOnly(libs.jackson3.databind)
     compileOnly(libs.spring.boot.starter.web)
     compileOnly(libs.spring.data.redis)
     compileOnly(libs.caffeine)
@@ -31,15 +34,11 @@ dependencies {
     testRuntimeOnly(projects.jimmerClientSwagger)
 }
 
-tasks.processResources {
-    inputs.property("swagger", libs.versions.swaggerUi.get())
-    filesMatching("application.properties") {
-        expand(
-            mapOf(
-                "swaggerUiVersion" to libs.versions.swaggerUi.get().toString()
-            )
-        )
-    }
+buildConfig {
+    packageName("org.babyfish.jimmer.spring.cfg")
+    className("SwaggerUiVersion")
+    useJavaOutput()
+    buildConfigField("String", "DEFAULT_VALUE", "\"${libs.versions.swaggerUi.get()}\"")
 }
 
 kotlin {

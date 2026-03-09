@@ -2,6 +2,7 @@ package org.babyfish.jimmer.jackson.v2;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.babyfish.jimmer.jackson.codec.*;
 
@@ -13,7 +14,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS
 import static org.babyfish.jimmer.jackson.v2.ModulesRegistrarV2.registerWellKnownModules;
 
 public class JsonCodecV2 implements JsonCodec<JavaType> {
-    private final JsonMapper mapper;
+    private final ObjectMapper mapper;
     private final JsonTypeFactory<JavaType> typeFactory;
     private final JsonConverter converter;
 
@@ -21,13 +22,13 @@ public class JsonCodecV2 implements JsonCodec<JavaType> {
         this(createDefaultMapper());
     }
 
-    public JsonCodecV2(JsonMapper mapper) {
+    public JsonCodecV2(ObjectMapper mapper) {
         this.mapper = mapper;
         this.typeFactory = new JsonTypeFactoryV2(mapper.getTypeFactory());
         this.converter = new JsonConverterV2(mapper);
     }
 
-    private static JsonMapper createDefaultMapper() {
+    private static ObjectMapper createDefaultMapper() {
         JsonMapper.Builder builder = JsonMapper.builder()
                 .disable(WRITE_DATES_AS_TIMESTAMPS)
                 .disable(FAIL_ON_UNKNOWN_PROPERTIES);
@@ -39,7 +40,7 @@ public class JsonCodecV2 implements JsonCodec<JavaType> {
 
     @Override
     public JsonCodec<JavaType> withCustomizations(JsonCodecCustomization... customizations) {
-        JsonMapper.Builder builder = mapper.rebuild();
+        ObjectMapperBuilder builder = new ObjectMapperBuilder(mapper.copy());
         for (JsonCodecCustomization c : customizations) {
             c.customizeV2(builder);
         }
