@@ -30,7 +30,7 @@ public class Validator<T> {
 
     private final List<ConstraintValidator<?, T>> javaxConstraintValidators;
 
-    private final List<JakartaValidatorDelegate<T>> jakartaConstraintValidators;
+    private final List<JakartaConstraintValidatorDelegate<T>> jakartaConstraintValidators;
 
     @SuppressWarnings("unchecked")
     public Validator(
@@ -129,7 +129,7 @@ public class Validator<T> {
                     Method initialize =
                             findInitializeMethod(validatorType, annotation.annotationType());
                     initialize.invoke(constraintValidator, annotation);
-                    jakartaConstraintValidators.add(new JakartaValidatorDelegate<>(constraintValidator));
+                    jakartaConstraintValidators.add(new JakartaConstraintValidatorDelegate<>(constraintValidator));
                 }
             } catch (InvocationTargetException ex) {
                 Throwable cause = ex.getTargetException();
@@ -169,7 +169,7 @@ public class Validator<T> {
                 throw new ValidationException(message);
             }
         }
-        for (JakartaValidatorDelegate<T> delegate : jakartaConstraintValidators) {
+        for (JakartaConstraintValidatorDelegate<T> delegate : jakartaConstraintValidators) {
             try {
                 if (!delegate.isValid(value)) {
                     throwJakartaValidationException(message);
@@ -201,13 +201,13 @@ public class Validator<T> {
         }
     }
 
-    private static final class JakartaValidatorDelegate<T> {
+    private static final class JakartaConstraintValidatorDelegate<T> {
 
         private final Object delegate;
 
         private final Method isValidMethod;
 
-        JakartaValidatorDelegate(Object delegate) throws ReflectiveOperationException {
+        JakartaConstraintValidatorDelegate(Object delegate) throws ReflectiveOperationException {
             this.delegate = delegate;
             Class<?> ctxClass = Class.forName("jakarta.validation.ConstraintValidatorContext");
             this.isValidMethod = delegate.getClass().getMethod("isValid", Object.class, ctxClass);
