@@ -71,7 +71,7 @@ public class Variables {
                         scalarProvider != null ?
                                 getSqlType(scalarProvider, sqlClient.getDialect()) :
                                 prop.getReturnClass()
-                        );
+                );
             }
             if (scalarProvider != null) {
                 return scalarProvider.isJsonScalar() ?
@@ -131,19 +131,20 @@ public class Variables {
 
     private static Object handleDateTime(Object value, ZoneId zoneId) {
         if (value instanceof Instant) {
-            return Timestamp.from((Instant) value);
+            // issue #1366 Print SQL Time Error
+            return ((Instant) value).atOffset(ZoneOffset.UTC);
         }
         if (value instanceof LocalDateTime) {
-            return Timestamp.from(((LocalDateTime)value).atZone(zoneId).toInstant());
+            return Timestamp.from(((LocalDateTime) value).atZone(zoneId).toInstant());
         }
         if (value instanceof LocalDate) {
-            return java.sql.Date.valueOf((LocalDate)value);
+            return java.sql.Date.valueOf((LocalDate) value);
         }
         if (value instanceof LocalTime) {
             return java.sql.Time.valueOf((LocalTime) value);
         }
         if (value instanceof java.util.Date) {
-            return new Timestamp(((java.util.Date)value).getTime());
+            return new Timestamp(((java.util.Date) value).getTime());
         }
         return value;
     }
