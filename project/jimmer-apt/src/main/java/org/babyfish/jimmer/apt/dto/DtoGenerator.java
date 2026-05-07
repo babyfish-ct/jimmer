@@ -14,7 +14,6 @@ import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jspecify.annotations.NonNull;
@@ -1410,7 +1409,7 @@ public class DtoGenerator {
                     baseTypeName,
                     getPropTypeName(prop).box(),
                     baseProp.isAssociation(true) ?
-                            "getAssociatedIdConverter(true)" :
+                            "getAssociatedIdConverter(" + (prop.isFunc("associatedIdIn", "associatedIdNotIn") ? "true" : "false") + ")" :
                             "getConverter(" + (prop.isFunc("valueIn", "valueNotIn") ? "true" : "") + ")"
             );
         }
