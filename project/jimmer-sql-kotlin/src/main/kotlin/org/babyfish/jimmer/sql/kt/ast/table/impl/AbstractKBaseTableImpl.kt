@@ -320,7 +320,7 @@ internal abstract class AbstractKBaseTableImpl(
                 SELECTION_TYPE_NON_NULL_TABLE ->
                     KNonNullTableExImpl(javaSelection as TableImplementor) as T
                 SELECTION_TYPE_NULLABLE_TABLE ->
-                    KNonNullTableExImpl(javaSelection as TableImplementor) as T
+                    KNullableTableExImpl(javaSelection as TableImplementor) as T
                 SELECTION_TYPE_NON_NULL_EXPRESSION ->
                     JavaToKotlinNonNullExpression(javaSelection as ExpressionImplementor<T>) as T
                 SELECTION_TYPE_NULLABLE_EXPRESSION ->
