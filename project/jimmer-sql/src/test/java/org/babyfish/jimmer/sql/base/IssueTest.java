@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.base;
 
+import org.babyfish.jimmer.Page;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -12,12 +14,89 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.OrderIdDraft;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderTable;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
 public class IssueTest extends AbstractQueryTest {
+
+    @Test
+    public void testBaseTableFetchPageWithoutConnection() {
+        BookTable table = BookTable.$;
+        JSqlClient sqlClient = getSqlClient(it -> it.setConnectionManager(testConnectionManager()));
+        BaseTable1<BookTable> existsBaseTable = sqlClient
+                .createBaseQuery(table)
+                .where(table.store().id().eq(Constants.manningId))
+                .orderBy(table.edition().desc())
+                .addSelect(table)
+                .asBaseTable();
+
+        connectAndExpect(
+                con -> sqlClient
+                        .createQuery(existsBaseTable)
+                        .select(existsBaseTable.get_1())
+                        .exists(),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 from (" +
+                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5 " +
+                                    "from BOOK tb_2_ " +
+                                    "where tb_2_.STORE_ID = ?" +
+                                    ") tb_1_ " +
+                                    "limit ?" +
+                                    ") tb_simple_exists__"
+                    );
+                    ctx.rows("[true]");
+                }
+        );
+
+        BaseTable1<BookTable> pageBaseTable = sqlClient
+                .createBaseQuery(table)
+                .where(table.store().id().eq(Constants.manningId))
+                .orderBy(table.edition().desc())
+                .addSelect(table)
+                .asBaseTable();
+
+        connectAndExpect(
+                con -> sqlClient
+                        .createQuery(pageBaseTable)
+                        .orderBy(pageBaseTable.get_1().edition().desc())
+                        .select(pageBaseTable.get_1())
+                        .fetchPage(0, 2),
+                ctx -> {
+                    ctx.sql(
+                            "select count(1) from (" +
+                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5 " +
+                                    "from BOOK tb_2_ " +
+                                    "where tb_2_.STORE_ID = ?" +
+                                    ") tb_1_" +
+                                    ") tb_simple_count__"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5 " +
+                                    "from BOOK tb_2_ " +
+                                    "where tb_2_.STORE_ID = ? " +
+                                    "order by tb_2_.EDITION desc" +
+                                    ") tb_1_ " +
+                                    "order by tb_1_.c3 desc " +
+                                    "limit ?"
+                    );
+                    ctx.rows(it -> {
+                        Page<Book> page = (Page<Book>) it.get(0);
+                        Assertions.assertEquals(2, page.getRows().size());
+                        Assertions.assertEquals(3, page.getTotalRowCount());
+                    });
+                }
+        );
+    }
 
     @Test
     public void testIssue1238() {

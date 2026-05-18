@@ -121,7 +121,8 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {
-            if (data.withoutSortingAndPaging || (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
+            if (data.withoutSortingAndPaging || astContext.isQueryWithoutSortingAndPaging() ||
+                    (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
                 renderWithoutPaging(builder, null, render);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
@@ -257,7 +258,11 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             fakeRenderExportedForeignKeys(mutableQuery.getTableLikeImplementor(),builder);
         }
         builder.leave();
-        mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
+        mutableQuery.renderTo(
+                builder,
+                data.withoutSortingAndPaging || builder.getAstContext().isQueryWithoutSortingAndPaging(),
+                data.reverseSorting
+        );
     }
 
     private void renderSelections(SqlBuilder builder) {
