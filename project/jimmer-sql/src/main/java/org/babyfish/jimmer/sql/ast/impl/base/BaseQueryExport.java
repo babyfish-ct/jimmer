@@ -47,7 +47,26 @@ public final class BaseQueryExport {
             String name,
             boolean foreignKeyInBaseQuery
     ) {
-        return selectionExport(selectionIndex).column(tableKeys, name, foreignKeyInBaseQuery);
+        return selectionExport(selectionIndex).column(
+                tableKeys,
+                name,
+                foreignKeyInBaseQuery,
+                BaseQueryExportColumnRole.SELECTION
+        );
+    }
+
+    BaseQueryExportColumn joinKeyColumn(
+            int selectionIndex,
+            List<RealTable.Key> tableKeys,
+            String name,
+            boolean foreignKeyInBaseQuery
+    ) {
+        return selectionExport(selectionIndex).column(
+                tableKeys,
+                name,
+                foreignKeyInBaseQuery,
+                BaseQueryExportColumnRole.JOIN_KEY
+        );
     }
 
     BaseQueryExportColumn formula(
@@ -86,7 +105,8 @@ public final class BaseQueryExport {
         BaseQueryExportColumn column(
                 List<RealTable.Key> tableKeys,
                 String name,
-                boolean foreignKeyInBaseQuery
+                boolean foreignKeyInBaseQuery,
+                BaseQueryExportColumnRole role
         ) {
             BaseQueryExportColumn.Key key =
                     new BaseQueryExportColumn.Key(tableKeys, name, null, foreignKeyInBaseQuery);
@@ -96,6 +116,7 @@ public final class BaseQueryExport {
                             tableKeys,
                             name,
                             foreignKeyInBaseQuery,
+                            role,
                             nextColumnIndex()
                     )
             );

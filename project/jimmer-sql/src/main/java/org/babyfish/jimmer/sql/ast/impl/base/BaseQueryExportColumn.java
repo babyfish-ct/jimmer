@@ -16,18 +16,22 @@ public final class BaseQueryExportColumn {
 
     private final boolean foreignKeyInBaseQuery;
 
+    private final BaseQueryExportColumnRole role;
+
     private final int index;
 
     BaseQueryExportColumn(
             List<RealTable.Key> tableKeys,
             String name,
             boolean foreignKeyInBaseQuery,
+            BaseQueryExportColumnRole role,
             int index
     ) {
         this.tableKeys = tableKeys;
         this.name = name;
         this.formula = null;
         this.foreignKeyInBaseQuery = foreignKeyInBaseQuery;
+        this.role = role;
         this.index = index;
     }
 
@@ -40,6 +44,7 @@ public final class BaseQueryExportColumn {
         this.name = null;
         this.formula = formula;
         this.foreignKeyInBaseQuery = false;
+        this.role = BaseQueryExportColumnRole.SELECTION;
         this.index = index;
     }
 
@@ -57,6 +62,10 @@ public final class BaseQueryExportColumn {
 
     public boolean isForeignKeyInBaseQuery() {
         return foreignKeyInBaseQuery;
+    }
+
+    public BaseQueryExportColumnRole getRole() {
+        return role;
     }
 
     public int getIndex() {

@@ -81,7 +81,7 @@ final class BaseQueryExportAnalysis {
                 ColumnDefinition definition = prop.getStorage(ctx.getSqlClient().getMetadataStrategy());
                 int size = definition.size();
                 for (int i = 0; i < size; i++) {
-                    mapper.columnIndex(realTable.getAlias(), definition.name(i), false);
+                    mapper.joinKeyColumnIndex(realTable.getAlias(), definition.name(i), false);
                 }
             }
         }

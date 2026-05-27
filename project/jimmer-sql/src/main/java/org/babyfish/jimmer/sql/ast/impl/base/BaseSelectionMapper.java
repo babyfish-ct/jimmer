@@ -41,6 +41,20 @@ public class BaseSelectionMapper {
                 .getIndex();
     }
 
+    public int joinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+        AstContext ctx = export.astContext();
+        Selection<?> selection = ((BaseTableImplementor) export
+                .getRealBaseTable()
+                .getTableLikeImplementor())
+                .getSelections()
+                .get(selectionIndex);
+        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
+        List<RealTable.Key> keys = keys(realTable, alias);
+        return export
+                .joinKeyColumn(selectionIndex, keys, columnName, foreignKeyInBaseQuery)
+                .getIndex();
+    }
+
     public int formulaIndex(String alias, FormulaTemplate formula) {
         AstContext ctx = export.astContext();
         Selection<?> selection = ((BaseTableImplementor) export
