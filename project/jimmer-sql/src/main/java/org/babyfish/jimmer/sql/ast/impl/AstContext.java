@@ -29,6 +29,9 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private StatementFrame statementFrame;
 
+    private final Map<AbstractMutableStatementImpl, BaseQueryScope> baseQueryScopeMap =
+            new IdentityHashMap<>();
+
     private JoinTypeMergeFrame joinTypeMergeFrame;
 
     private BaseTableRenderFrame baseTableRenderFrame;
@@ -267,6 +270,12 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     }
 
     @Nullable
+    public BaseQueryScope getBaseQueryScope() {
+        StatementFrame frame = statementFrame;
+        return frame != null && frame.usingBaseQuery ? frame.baseQueryScope() : null;
+    }
+
+    @Nullable
     public BaseSelectionMapper getBaseSelectionMapper(BaseTableOwner baseTableOwner) {
         if (baseTableOwner == null) {
             return null;
@@ -368,10 +377,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         private VirtualPredicateFrame vpFrame;
 
-        private BaseQueryScope baseQueryScope;
-
-        private boolean baseQueryResolved;
-
         private StatementFrame(AbstractMutableStatementImpl statement, StatementFrame parent) {
             this.statement = statement;
             this.parent = parent;
@@ -402,18 +407,13 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
 
         public BaseQueryScope baseQueryScope() {
-            if (!baseQueryResolved) {
-                baseQueryScope = createBaseQueryScope();
-                baseQueryResolved = true;
-            }
-            return baseQueryScope;
-        }
-
-        private BaseQueryScope createBaseQueryScope() {
             if (!usingBaseQuery) {
                 return null;
             }
-            return new BaseQueryScope(AstContext.this);
+            return baseQueryScopeMap.computeIfAbsent(
+                    statement,
+                    it -> new BaseQueryScope(AstContext.this)
+            );
         }
     }
 

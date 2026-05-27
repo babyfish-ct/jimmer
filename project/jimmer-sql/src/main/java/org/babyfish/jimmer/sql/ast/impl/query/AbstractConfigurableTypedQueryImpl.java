@@ -254,7 +254,6 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             );
         } else {
             renderSelections(builder);
-            fakeRenderExportedForeignKeys(mutableQuery.getTableLikeImplementor(),builder);
         }
         builder.leave();
         mutableQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
@@ -278,67 +277,6 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
                 } else {
                     ast.renderTo(builder);
-                }
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void fakeRenderExportedForeignKeys(
-            TableLikeImplementor<?> tableLikeImplementor,
-            SqlBuilder builder
-    ) {
-        if (tableLikeImplementor instanceof BaseTableImplementor) {
-            fakeRenderExportedForeignKeysImpl((BaseTableImplementor) tableLikeImplementor, builder);
-        } else {
-            TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
-            if (tableImplementor.hasBaseTable()) {
-                Iterable<TableLikeImplementor<?>> children =
-                        (Iterable<TableLikeImplementor<?>>) tableImplementor;
-                for (TableLikeImplementor<?> child : children) {
-                    fakeRenderExportedForeignKeys(child, builder);
-                }
-            }
-        }
-    }
-
-    private void fakeRenderExportedForeignKeysImpl(
-            BaseTableImplementor baseTableImplementor,
-            SqlBuilder builder
-    ) {
-        AstContext ctx = builder.getAstContext();
-        for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
-            if (selection instanceof Table<?>) {
-                Table<?> table = (Table<?>) selection;
-                TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
-                BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(tableImplementor.getBaseTableOwner());
-                assert mapper != null;
-                RealTable realTable = tableImplementor.realTable(ctx);
-                for (RealTable childTable : realTable) {
-                    if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
-                        continue;
-                    }
-                    TableImplementor<?> childTableImplementor =
-                            (TableImplementor<?>) childTable.getTableLikeImplementor();
-                    ImmutableProp prop = childTableImplementor.getJoinProp();
-                    if (prop == null) {
-                        break;
-                    }
-                    if (childTableImplementor.isInverse()) {
-                        prop = prop.getOpposite();
-                        if (prop == null) {
-                            continue;
-                        }
-                    }
-                    if (!prop.isColumnDefinition()) {
-                        continue;
-                    }
-                    ColumnDefinition definition = prop.getStorage(builder.sqlClient().getMetadataStrategy());
-                    int size = definition.size();
-                    for (int i = 0; i < size; i++) {
-                        // Fake render, only call `columnIndex`, not render it
-                        mapper.columnIndex(realTable.getAlias(), definition.name(i), false);
-                    }
                 }
             }
         }
