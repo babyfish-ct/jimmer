@@ -79,10 +79,9 @@ public class BaseQueryScope {
             }
             RealTable realTable = TableProxies.resolve((Table<?>) selection, builder.getAstContext())
                     .realTable(builder.getAstContext());
-            for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
-                BaseSelectionMapper.QualifiedColumn qualifiedColumn = e.getKey();
-                RealTable childTable = childTableByKeys(realTable, qualifiedColumn.keys);
-                if (qualifiedColumn.foreignKeyInBaseQuery) {
+            for (BaseQueryExportColumn column : mapper.columns()) {
+                RealTable childTable = childTableByKeys(realTable, column.getTableKeys());
+                if (column.isForeignKeyInBaseQuery()) {
                     RealTable newChildTable = childTable.getParent();
                     if (newChildTable != null) {
                         childTable = newChildTable;
@@ -90,16 +89,16 @@ public class BaseQueryScope {
                 }
                 String alias = childTable.getAlias();
                 builder.separator();
-                if (qualifiedColumn.formula != null) {
-                    builder.sql(qualifiedColumn.formula.toSql(alias));
+                if (column.getFormula() != null) {
+                    builder.sql(column.getFormula().toSql(alias));
                 } else {
                     builder
                             .sql(alias)
                             .sql(".")
-                            .sql(qualifiedColumn.name);
+                            .sql(column.getName());
                 }
                 if (!cte) {
-                    builder.sql(" c").sql(Integer.toString(e.getValue()));
+                    builder.sql(" c").sql(Integer.toString(column.getIndex()));
                 }
             }
         }
@@ -117,8 +116,8 @@ public class BaseQueryScope {
                 if (selection instanceof Expression<?>) {
                     builder.separator().sql("c").sql(Integer.toString(mapper.expressionIndex));
                 } else {
-                    for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
-                        builder.separator().sql("c").sql(Integer.toString(e.getValue()));
+                    for (BaseQueryExportColumn column : mapper.columns()) {
+                        builder.separator().sql("c").sql(Integer.toString(column.getIndex()));
                     }
                 }
             }

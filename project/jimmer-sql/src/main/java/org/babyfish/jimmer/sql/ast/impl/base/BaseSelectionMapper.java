@@ -16,7 +16,7 @@ public class BaseSelectionMapper {
 
     private final int selectionIndex;
 
-    final Map<QualifiedColumn, Integer> columnIndexMap = new LinkedHashMap<>();
+    final Map<BaseQueryExportColumn.Key, BaseQueryExportColumn> columnMap = new LinkedHashMap<>();
 
     int expressionIndex;
 
@@ -38,10 +38,17 @@ public class BaseSelectionMapper {
                 .get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
-        return columnIndexMap.computeIfAbsent(
-                new QualifiedColumn(keys, columnName, foreignKeyInBaseQuery),
-                it -> export.nextColumnIndex()
-        );
+        BaseQueryExportColumn.Key key =
+                new BaseQueryExportColumn.Key(keys, columnName, null, foreignKeyInBaseQuery);
+        return columnMap.computeIfAbsent(
+                key,
+                it -> new BaseQueryExportColumn(
+                        keys,
+                        columnName,
+                        foreignKeyInBaseQuery,
+                        export.nextColumnIndex()
+                )
+        ).getIndex();
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula) {
@@ -53,10 +60,16 @@ public class BaseSelectionMapper {
                 .get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
-        return columnIndexMap.computeIfAbsent(
-                new QualifiedColumn(keys, formula),
-                it -> export.nextColumnIndex()
-        );
+        BaseQueryExportColumn.Key key =
+                new BaseQueryExportColumn.Key(keys, null, formula, false);
+        return columnMap.computeIfAbsent(
+                key,
+                it -> new BaseQueryExportColumn(
+                        keys,
+                        formula,
+                        export.nextColumnIndex()
+                )
+        ).getIndex();
     }
 
     public int expressionIndex() {
@@ -85,58 +98,7 @@ public class BaseSelectionMapper {
         }
     }
 
-    static class QualifiedColumn {
-
-        final List<RealTable.Key> keys;
-
-        final String name;
-
-        final FormulaTemplate formula;
-
-        final boolean foreignKeyInBaseQuery;
-
-        QualifiedColumn(List<RealTable.Key> keys, String name, boolean foreignKeyInBaseQuery) {
-            this.keys = keys;
-            this.name = name;
-            this.formula = null;
-            this.foreignKeyInBaseQuery = foreignKeyInBaseQuery;
-        }
-
-        QualifiedColumn(List<RealTable.Key> keys, FormulaTemplate formula) {
-            this.keys = keys;
-            this.name = null;
-            this.formula = formula;
-            this.foreignKeyInBaseQuery = false;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = keys.hashCode();
-            result = 31 * result + Objects.hashCode(name);
-            result = 31 * result + Objects.hashCode(formula);
-            result = 31 * result + Boolean.hashCode(foreignKeyInBaseQuery);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == null || getClass() != o.getClass()) return false;
-
-            QualifiedColumn that = (QualifiedColumn) o;
-            return keys.equals(that.keys) &&
-                    Objects.equals(name, that.name) &&
-                    Objects.equals(formula, that.formula) &&
-                    foreignKeyInBaseQuery == that.foreignKeyInBaseQuery;
-        }
-
-        @Override
-        public String toString() {
-            return "QualifiedColumn{" +
-                    "keys=" + keys +
-                    ", name='" + name + '\'' +
-                    ", formula=" + formula +
-                    ", foreignKeyInBaseQuery=" + foreignKeyInBaseQuery +
-                    '}';
-        }
+    Collection<BaseQueryExportColumn> columns() {
+        return columnMap.values();
     }
 }
