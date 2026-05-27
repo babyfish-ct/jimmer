@@ -16,8 +16,6 @@ public class BaseSelectionMapper {
 
     private final int selectionIndex;
 
-    final Map<BaseQueryExportColumn.Key, BaseQueryExportColumn> columnMap = new LinkedHashMap<>();
-
     int expressionIndex;
 
     BaseSelectionMapper(BaseQueryExport export, int selectionIndex) {
@@ -38,17 +36,9 @@ public class BaseSelectionMapper {
                 .get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
-        BaseQueryExportColumn.Key key =
-                new BaseQueryExportColumn.Key(keys, columnName, null, foreignKeyInBaseQuery);
-        return columnMap.computeIfAbsent(
-                key,
-                it -> new BaseQueryExportColumn(
-                        keys,
-                        columnName,
-                        foreignKeyInBaseQuery,
-                        export.nextColumnIndex()
-                )
-        ).getIndex();
+        return export
+                .column(selectionIndex, keys, columnName, foreignKeyInBaseQuery)
+                .getIndex();
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula) {
@@ -60,16 +50,9 @@ public class BaseSelectionMapper {
                 .get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
-        BaseQueryExportColumn.Key key =
-                new BaseQueryExportColumn.Key(keys, null, formula, false);
-        return columnMap.computeIfAbsent(
-                key,
-                it -> new BaseQueryExportColumn(
-                        keys,
-                        formula,
-                        export.nextColumnIndex()
-                )
-        ).getIndex();
+        return export
+                .formula(selectionIndex, keys, formula)
+                .getIndex();
     }
 
     public int expressionIndex() {
@@ -99,6 +82,6 @@ public class BaseSelectionMapper {
     }
 
     Collection<BaseQueryExportColumn> columns() {
-        return columnMap.values();
+        return export.columns(selectionIndex);
     }
 }
