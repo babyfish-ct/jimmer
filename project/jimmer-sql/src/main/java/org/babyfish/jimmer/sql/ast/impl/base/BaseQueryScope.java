@@ -18,7 +18,7 @@ public class BaseQueryScope {
 
     final AstContext astContext;
 
-    private final Map<Key, BaseSelectionMapper> mapperMap =
+    private final Map<RealTable, BaseQueryExport> exportMap =
             new LinkedHashMap<>();
 
     private int colNoSequence;
@@ -30,10 +30,12 @@ public class BaseQueryScope {
     public BaseSelectionMapper mapper(BaseTableOwner baseTableOwner) {
         BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
         RealTable realBaseTable = baseTable.realTable(astContext);
-        return mapperMap
+        return exportMap
                 .computeIfAbsent(
-                        new Key(realBaseTable, baseTableOwner.index),
-                        it -> new BaseSelectionMapper(this, it.realTable, it.selectionIndex));
+                        realBaseTable,
+                        it -> new BaseQueryExport(this, it)
+                )
+                .mapper(baseTableOwner.index);
     }
 
     int colNo() {
@@ -42,26 +44,27 @@ public class BaseQueryScope {
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
         return new BaseSelectionAliasRenderImpl(
-                mapperMap,
+                exportMap,
                 (BaseTableSymbol) ((ConfigurableBaseQueryImpl<?>)query).getBaseTable()
         );
     }
 
     private static class BaseSelectionAliasRenderImpl implements BaseSelectionAliasRender {
 
-        private final Map<Key, BaseSelectionMapper> mapperMap;
+        private final Map<RealTable, BaseQueryExport> exportMap;
 
         private final boolean cte;
 
-        BaseSelectionAliasRenderImpl(Map<Key, BaseSelectionMapper> mapperMap, BaseTableSymbol baseTableSymbol) {
-            this.mapperMap = mapperMap;
+        BaseSelectionAliasRenderImpl(Map<RealTable, BaseQueryExport> exportMap, BaseTableSymbol baseTableSymbol) {
+            this.exportMap = exportMap;
             this.cte = baseTableSymbol.isCte();
         }
 
         @Override
         public void render(int index, Selection<?> selection, SqlBuilder builder) {
             RealTable realBaseTable = builder.getAstContext().getRenderedRealBaseTable();
-            BaseSelectionMapper mapper = mapperMap.get(new Key(realBaseTable, index));
+            BaseQueryExport export = exportMap.get(realBaseTable);
+            BaseSelectionMapper mapper = export != null ? export.mapperOrNull(index) : null;
             if (mapper == null) {
                 return;
             }
@@ -109,7 +112,7 @@ public class BaseQueryScope {
             int size = selections.size();
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (int i = 0; i < size; i++) {
-                BaseSelectionMapper mapper = mapperMap.get(new Key(realBaseTable, i));
+                BaseSelectionMapper mapper = exportMap.get(realBaseTable).mapperOrNull(i);
                 Selection<?> selection = selections.get(i);
                 if (selection instanceof Expression<?>) {
                     builder.separator().sql("c").sql(Integer.toString(mapper.expressionIndex));
@@ -128,37 +131,5 @@ public class BaseQueryScope {
             table = table.child(key);
         }
         return table;
-    }
-
-    private static final class Key {
-        final RealTable realTable;
-        final int selectionIndex;
-
-        private Key(RealTable realTable, int selectionIndex) {
-            this.realTable = realTable;
-            this.selectionIndex = selectionIndex;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = System.identityHashCode(realTable);
-            result = 31 * result + selectionIndex;
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof Key)) return false;
-            Key key = (Key) o;
-            return realTable == key.realTable && selectionIndex == key.selectionIndex;
-        }
-
-        @Override
-        public String toString() {
-            return "Key{" +
-                    "realTable=" + realTable +
-                    ", selectionIndex=" + selectionIndex +
-                    '}';
-        }
     }
 }

@@ -12,9 +12,7 @@ import java.util.*;
 
 public class BaseSelectionMapper {
 
-    private final BaseQueryScope scope;
-
-    private final RealTable realBaseTable;
+    private final BaseQueryExport export;
 
     private final int selectionIndex;
 
@@ -22,41 +20,48 @@ public class BaseSelectionMapper {
 
     int expressionIndex;
 
-    public BaseSelectionMapper(BaseQueryScope scope, RealTable realBaseTable, int selectionIndex) {
-        this.scope = scope;
-        this.realBaseTable = realBaseTable;
+    BaseSelectionMapper(BaseQueryExport export, int selectionIndex) {
+        this.export = export;
         this.selectionIndex = selectionIndex;
     }
 
     public String getAlias() {
-        return realBaseTable.getAlias();
+        return export.getRealBaseTable().getAlias();
     }
 
     public int columnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
-        AstContext ctx = scope.astContext;
-        Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
+        AstContext ctx = export.astContext();
+        Selection<?> selection = ((BaseTableImplementor) export
+                .getRealBaseTable()
+                .getTableLikeImplementor())
+                .getSelections()
+                .get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, columnName, foreignKeyInBaseQuery),
-                it -> scope.colNo()
+                it -> export.nextColumnIndex()
         );
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula) {
-        AstContext ctx = scope.astContext;
-        Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).getSelections().get(selectionIndex);
+        AstContext ctx = export.astContext();
+        Selection<?> selection = ((BaseTableImplementor) export
+                .getRealBaseTable()
+                .getTableLikeImplementor())
+                .getSelections()
+                .get(selectionIndex);
         RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, formula),
-                it -> scope.colNo()
+                it -> export.nextColumnIndex()
         );
     }
 
     public int expressionIndex() {
         if (expressionIndex == 0) {
-            expressionIndex = scope.colNo();
+            expressionIndex = export.nextColumnIndex();
         }
         return expressionIndex;
     }
@@ -73,7 +78,7 @@ public class BaseSelectionMapper {
         }
         RealTable realTable =
                 (table.getTableLikeImplementor())
-                        .realTable(scope.astContext.getJoinTypeMergeScope());
+                        .realTable(export.astContext().getJoinTypeMergeScope());
         for (RealTable childTable : realTable) {
             keys.add(childTable.getKey());
             keys0(childTable, alias, keys);
