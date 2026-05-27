@@ -80,6 +80,10 @@ public final class BaseTableOwner {
             BaseTableExpression<?> baseTableExpression = (BaseTableExpression<?>) expression;
             return baseTableExpression.getBaseTableOwner();
         }
+        if (expression instanceof BaseTablePropExpression<?>) {
+            BaseTablePropExpression<?> baseTablePropExpression = (BaseTablePropExpression<?>) expression;
+            return baseTablePropExpression.getBaseTableOwner();
+        }
         return null;
     }
 }
