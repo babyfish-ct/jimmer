@@ -10,6 +10,7 @@ extensions.configure<JavaPluginExtension> {
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("user.timezone", "Asia/Shanghai")
 }
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-parameters")
