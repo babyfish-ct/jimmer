@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.ast.Selection;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -21,6 +22,9 @@ public final class BaseQueryExport {
     private final Map<Integer, SelectionExport> selectionExportMap =
             new LinkedHashMap<>();
 
+    private final Map<Integer, BaseQueryExportSelection> selectionMap =
+            new LinkedHashMap<>();
+
     BaseQueryExport(BaseQueryScope scope, RealTable realBaseTable) {
         this.scope = scope;
         this.realBaseTable = realBaseTable;
@@ -33,7 +37,7 @@ public final class BaseQueryExport {
     public BaseSelectionMapper mapper(int selectionIndex) {
         return selectionMapperMap.computeIfAbsent(
                 selectionIndex,
-                it -> new BaseSelectionMapper(this, it)
+                it -> new BaseSelectionMapper(this, selection(it))
         );
     }
 
@@ -42,12 +46,12 @@ public final class BaseQueryExport {
     }
 
     BaseQueryExportColumn column(
-            int selectionIndex,
+            BaseQueryExportSelection selection,
             List<RealTable.Key> tableKeys,
             String name,
             boolean foreignKeyInBaseQuery
     ) {
-        return selectionExport(selectionIndex).column(
+        return selectionExport(selection.getIndex()).column(
                 tableKeys,
                 name,
                 foreignKeyInBaseQuery,
@@ -56,12 +60,12 @@ public final class BaseQueryExport {
     }
 
     BaseQueryExportColumn joinKeyColumn(
-            int selectionIndex,
+            BaseQueryExportSelection selection,
             List<RealTable.Key> tableKeys,
             String name,
             boolean foreignKeyInBaseQuery
     ) {
-        return selectionExport(selectionIndex).column(
+        return selectionExport(selection.getIndex()).column(
                 tableKeys,
                 name,
                 foreignKeyInBaseQuery,
@@ -70,11 +74,11 @@ public final class BaseQueryExport {
     }
 
     BaseQueryExportColumn formula(
-            int selectionIndex,
+            BaseQueryExportSelection selection,
             List<RealTable.Key> tableKeys,
             FormulaTemplate formula
     ) {
-        return selectionExport(selectionIndex).formula(tableKeys, formula);
+        return selectionExport(selection.getIndex()).formula(tableKeys, formula);
     }
 
     Collection<BaseQueryExportColumn> columns(int selectionIndex) {
@@ -94,6 +98,18 @@ public final class BaseQueryExport {
         return selectionExportMap.computeIfAbsent(
                 selectionIndex,
                 it -> new SelectionExport()
+        );
+    }
+
+    private BaseQueryExportSelection selection(int selectionIndex) {
+        return selectionMap.computeIfAbsent(
+                selectionIndex,
+                it -> {
+                    Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor())
+                            .getSelections()
+                            .get(it);
+                    return new BaseQueryExportSelection(this, it, selection);
+                }
         );
     }
 

@@ -1,26 +1,22 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
-import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
 public class BaseSelectionMapper {
 
     private final BaseQueryExport export;
 
-    private final int selectionIndex;
+    private final BaseQueryExportSelection selection;
 
     int expressionIndex;
 
-    BaseSelectionMapper(BaseQueryExport export, int selectionIndex) {
+    BaseSelectionMapper(BaseQueryExport export, BaseQueryExportSelection selection) {
         this.export = export;
-        this.selectionIndex = selectionIndex;
+        this.selection = selection;
     }
 
     public String getAlias() {
@@ -28,44 +24,23 @@ public class BaseSelectionMapper {
     }
 
     public int columnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
-        AstContext ctx = export.astContext();
-        Selection<?> selection = ((BaseTableImplementor) export
-                .getRealBaseTable()
-                .getTableLikeImplementor())
-                .getSelections()
-                .get(selectionIndex);
-        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
-        List<RealTable.Key> keys = keys(realTable, alias);
+        List<RealTable.Key> keys = selection.tableKeys(alias);
         return export
-                .column(selectionIndex, keys, columnName, foreignKeyInBaseQuery)
+                .column(selection, keys, columnName, foreignKeyInBaseQuery)
                 .getIndex();
     }
 
     public int joinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
-        AstContext ctx = export.astContext();
-        Selection<?> selection = ((BaseTableImplementor) export
-                .getRealBaseTable()
-                .getTableLikeImplementor())
-                .getSelections()
-                .get(selectionIndex);
-        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
-        List<RealTable.Key> keys = keys(realTable, alias);
+        List<RealTable.Key> keys = selection.tableKeys(alias);
         return export
-                .joinKeyColumn(selectionIndex, keys, columnName, foreignKeyInBaseQuery)
+                .joinKeyColumn(selection, keys, columnName, foreignKeyInBaseQuery)
                 .getIndex();
     }
 
     public int formulaIndex(String alias, FormulaTemplate formula) {
-        AstContext ctx = export.astContext();
-        Selection<?> selection = ((BaseTableImplementor) export
-                .getRealBaseTable()
-                .getTableLikeImplementor())
-                .getSelections()
-                .get(selectionIndex);
-        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx);
-        List<RealTable.Key> keys = keys(realTable, alias);
+        List<RealTable.Key> keys = selection.tableKeys(alias);
         return export
-                .formula(selectionIndex, keys, formula)
+                .formula(selection, keys, formula)
                 .getIndex();
     }
 
@@ -76,26 +51,7 @@ public class BaseSelectionMapper {
         return expressionIndex;
     }
 
-    private List<RealTable.Key> keys(RealTable table, String alias) {
-        List<RealTable.Key> keys = new ArrayList<>();
-        keys0(table, alias, keys);
-        return keys;
-    }
-
-    private void keys0(RealTable table, String alias, List<RealTable.Key> keys) {
-        if (table.getAlias().equals(alias)) {
-            return;
-        }
-        RealTable realTable =
-                (table.getTableLikeImplementor())
-                        .realTable(export.astContext().getJoinTypeMergeScope());
-        for (RealTable childTable : realTable) {
-            keys.add(childTable.getKey());
-            keys0(childTable, alias, keys);
-        }
-    }
-
     Collection<BaseQueryExportColumn> columns() {
-        return export.columns(selectionIndex);
+        return export.columns(selection.getIndex());
     }
 }
