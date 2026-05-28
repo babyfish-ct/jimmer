@@ -12,8 +12,6 @@ public class BaseSelectionMapper {
 
     private final BaseQueryExportSelection selection;
 
-    int expressionIndex;
-
     BaseSelectionMapper(BaseQueryExport export, BaseQueryExportSelection selection) {
         this.export = export;
         this.selection = selection;
@@ -28,6 +26,11 @@ public class BaseSelectionMapper {
         return export
                 .column(selection, keys, columnName, foreignKeyInBaseQuery)
                 .getIndex();
+    }
+
+    public Integer columnIndexOrNull(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+        List<RealTable.Key> keys = selection.tableKeys(alias);
+        return export.columnIndexOrNull(selection, keys, columnName, foreignKeyInBaseQuery);
     }
 
     public int joinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
@@ -45,10 +48,11 @@ public class BaseSelectionMapper {
     }
 
     public int expressionIndex() {
-        if (expressionIndex == 0) {
-            expressionIndex = export.nextColumnIndex();
-        }
-        return expressionIndex;
+        return export.expressionIndex(selection);
+    }
+
+    public boolean isRootTable(RealTable table) {
+        return selection.isRootTable(table);
     }
 
     Collection<BaseQueryExportColumn> columns() {

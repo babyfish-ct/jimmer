@@ -23,6 +23,10 @@ public class UseTableVisitor extends AstVisitor {
         super(ctx);
     }
 
+    public UseTableVisitor(AstContext ctx, QueryAnalysis queryAnalysis) {
+        super(ctx, queryAnalysis);
+    }
+
     public void allocateAliases() {
         for (RealTable rootTable : rootTables) {
             rootTable.allocateAliases();
@@ -52,7 +56,7 @@ public class UseTableVisitor extends AstVisitor {
             BaseTableOwner owner = tableImplementor.getBaseTableOwner();
             if (owner != null) {
                 BaseTableImplementor baseTableImplementor = getAstContext().resolveBaseTable(owner.getBaseTable());
-                use(baseTableImplementor.realTable(getAstContext()));
+                use(realTable(baseTableImplementor));
             }
         }
     }
@@ -69,9 +73,15 @@ public class UseTableVisitor extends AstVisitor {
     @Override
     public void visitStatement(AbstractMutableStatementImpl statement) {
         AstContext ctx = getAstContext();
-        RealTable table = ctx.getStatement().getTableLikeImplementor().realTable(ctx);
+        RealTable table = realTable(ctx.getStatement().getTableLikeImplementor());
         rootTables.add(table);
         table.use(this);
+    }
+
+    private RealTable realTable(TableLikeImplementor<?> tableLikeImplementor) {
+        return getQueryRenderContext() != null ?
+                tableLikeImplementor.realTable(getQueryRenderContext()) :
+                tableLikeImplementor.realTable(getAstContext());
     }
 
     private void use(RealTable table) {

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
@@ -102,6 +103,10 @@ public interface ValueGetter {
             props.add(0, pei.getDeepestProp());
         }
         Table<?> table = propExpressionImplementor.getTable();
+        BaseTableOwner baseTableOwner = BaseTableOwner.of(propExpression);
+        if (baseTableOwner == null) {
+            baseTableOwner = BaseTableOwner.of(table);
+        }
         boolean rawId = propExpressionImplementor.isRawId();
         if (props.get(0).isId()) {
             ImmutableProp joinProp;
@@ -132,13 +137,17 @@ public interface ValueGetter {
                 rawId = false;
             }
         }
-        return AbstractValueGetter.createValueGetters(
+        List<ValueGetter> getters = AbstractValueGetter.createValueGetters(
                 sqlClient,
                 table,
                 rawId,
                 props,
                 value
         );
+        if (baseTableOwner != null) {
+            return BaseTableValueGetter.wrap(baseTableOwner, propExpressionImplementor, getters);
+        }
+        return getters;
     }
 
     static List<ValueGetter> valueGetters(
@@ -185,5 +194,4 @@ public interface ValueGetter {
         return aliasGetters;
     }
 }
-
 

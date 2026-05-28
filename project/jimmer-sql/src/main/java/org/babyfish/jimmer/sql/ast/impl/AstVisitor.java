@@ -2,6 +2,9 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
@@ -12,17 +15,31 @@ public abstract class AstVisitor {
 
     private final AstContext ctx;
 
+    private final QueryRenderContext queryRenderContext;
+
     public AstVisitor(AstContext ctx) {
+        this(ctx, null);
+    }
+
+    public AstVisitor(AstContext ctx, @Nullable QueryAnalysis queryAnalysis) {
         this.ctx = ctx;
+        this.queryRenderContext = queryAnalysis != null ? new QueryRenderContext(ctx, queryAnalysis) : null;
     }
 
     public AstContext getAstContext() {
         return ctx;
     }
 
+    @Nullable
+    public QueryRenderContext getQueryRenderContext() {
+        return queryRenderContext;
+    }
+
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {}
 
     public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {}
+
+    public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {}
 
     public void visitStatement(AbstractMutableStatementImpl statement) {}
 

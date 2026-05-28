@@ -148,16 +148,24 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
+        return of(expr, new BaseTableOwner(baseTable, index));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> PropExpression<T> of(
+            PropExpression<T> expr,
+            BaseTableOwner owner
+    ) {
         if (expr instanceof AbstractTypedEmbeddedPropExpression<?>) {
             return (PropExpression<T>) ((AbstractTypedEmbeddedPropExpression<?>)expr)
-                    .__baseTableOwner(new BaseTableOwner(baseTable, index));
+                    .__baseTableOwner(owner);
         }
         if (expr instanceof PropExpression.Cmp<?>) {
-            return (PropExpression<T>) of((PropExpression.Cmp<?>)expr, baseTable, index);
+            return (PropExpression<T>) of((PropExpression.Cmp<?>)expr, owner);
         }
         return new BaseTablePropExpression<>(
                 (PropExpressionImplementor<T>) expr,
-                new BaseTableOwner(baseTable, index)
+                owner
         );
     }
 
@@ -167,7 +175,14 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner(baseTable, index);
+        return of(expr, new BaseTableOwner(baseTable, index));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T extends Comparable<?>> PropExpression.Cmp<T> of(
+            PropExpression.Cmp<T> expr,
+            BaseTableOwner owner
+    ) {
         if (expr instanceof PropExpression.Str) {
             return (PropExpression.Cmp<T>) new BaseTablePropExpression.Str((PropExpressionImplementor<String>) expr, owner);
         }

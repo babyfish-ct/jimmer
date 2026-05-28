@@ -23,6 +23,8 @@ public class BaseQueryScope {
 
     private int colNoSequence;
 
+    private boolean frozen;
+
     public BaseQueryScope(AstContext astContext) {
         this.astContext = astContext;
     }
@@ -30,16 +32,45 @@ public class BaseQueryScope {
     public BaseSelectionMapper mapper(BaseTableOwner baseTableOwner) {
         BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
         RealTable realBaseTable = baseTable.realTable(astContext);
-        return exportMap
-                .computeIfAbsent(
-                        realBaseTable,
-                        it -> new BaseQueryExport(this, it)
-                )
-                .mapper(baseTableOwner.index);
+        BaseQueryExport export = exportMap.get(realBaseTable);
+        if (export == null) {
+            if (frozen) {
+                throw unresolved(baseTableOwner);
+            }
+            export = new BaseQueryExport(this, realBaseTable);
+            exportMap.put(realBaseTable, export);
+        }
+        BaseSelectionMapper mapper = export.mapperOrNull(baseTableOwner.index);
+        if (mapper == null) {
+            if (frozen) {
+                throw unresolved(baseTableOwner);
+            }
+            mapper = export.mapper(baseTableOwner.index);
+        }
+        return mapper;
     }
 
     int colNo() {
         return ++colNoSequence;
+    }
+
+    public void freeze() {
+        if (!frozen) {
+            frozen = true;
+            for (BaseQueryExport export : exportMap.values()) {
+                export.freeze();
+            }
+        }
+    }
+
+    boolean isFrozen() {
+        return frozen;
+    }
+
+    private IllegalStateException unresolved(BaseTableOwner baseTableOwner) {
+        return new IllegalStateException(
+                "Base query export is requested after QueryAnalysis has been frozen: " + baseTableOwner
+        );
     }
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
@@ -73,7 +104,7 @@ public class BaseQueryScope {
                 builder.separator();
                 ((Ast) selection).renderTo(builder);
                 if (!cte) {
-                    builder.sql(" c").sql(Integer.toString(mapper.expressionIndex));
+                    builder.sql(" c").sql(Integer.toString(mapper.expressionIndex()));
                 }
                 return;
             }
@@ -114,7 +145,7 @@ public class BaseQueryScope {
                 BaseSelectionMapper mapper = exportMap.get(realBaseTable).mapperOrNull(i);
                 Selection<?> selection = selections.get(i);
                 if (selection instanceof Expression<?>) {
-                    builder.separator().sql("c").sql(Integer.toString(mapper.expressionIndex));
+                    builder.separator().sql("c").sql(Integer.toString(mapper.expressionIndex()));
                 } else {
                     for (BaseQueryExportColumn column : mapper.columns()) {
                         builder.separator().sql("c").sql(Integer.toString(column.getIndex()));

@@ -33,6 +33,10 @@ final class BaseQueryExportSelection {
         return selection;
     }
 
+    boolean isRootTable(RealTable table) {
+        return path(rootRealTable()).equals(path(table));
+    }
+
     List<RealTable.Key> tableKeys(String alias) {
         RealTable rootRealTable = rootRealTable();
         List<RealTable.Key> keys = new ArrayList<>();
@@ -62,5 +66,13 @@ final class BaseQueryExportSelection {
             keys.add(childTable.getKey());
             collectKeys(childTable, alias, keys);
         }
+    }
+
+    private static List<RealTable.Key> path(RealTable table) {
+        List<RealTable.Key> keys = new ArrayList<>();
+        for (RealTable current = table; current.getParent() != null; current = current.getParent()) {
+            keys.add(0, current.getKey());
+        }
+        return keys;
     }
 }

@@ -319,6 +319,12 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         throw new IllegalStateException("No rendered real base table");
     }
 
+    public void freezeBaseQueryScopes() {
+        for (BaseQueryScope scope : baseQueryScopeMap.values()) {
+            scope.freeze();
+        }
+    }
+
     public void visitRecursiveQuery(MergedBaseQueryImpl<?> query, Runnable runnable) {
         if (!query.isRecursive()) {
             runnable.run();

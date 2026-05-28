@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
@@ -189,20 +190,31 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     }
 
     @Override
+    public final RealTableImpl realTable(AstContext ctx) {
+        return realTable0(ctx.getJoinTypeMergeScope(), parent, null);
+    }
+
+    @Override
+    public final RealTableImpl realTable(QueryRenderContext ctx) {
+        return realTable0(ctx.getAstContext().getJoinTypeMergeScope(), parent, ctx.getRequiredJoinType(this));
+    }
+
+    @Override
     public final RealTableImpl realTable(JoinTypeMergeScope scope) {
-        return realTable0(scope, parent);
+        return realTable0(scope, parent, null);
     }
 
     private RealTableImpl realTable0(
             JoinTypeMergeScope scope,
-            TableImpl<?> parent
+            TableImpl<?> parent,
+            @Nullable JoinType requiredJoinType
     ) {
         RealTableImpl realTable = this.realTable;
         if (realTable == null) {
             if (parent == null) {
                 realTable = new RealTableImpl(this);
             } else {
-                realTable = parent.realTable(scope).child(scope, this);
+                realTable = parent.realTable(scope).child(scope, this, requiredJoinType);
             }
             this.realTable = realTable;
         }
@@ -705,12 +717,20 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(realTable(visitor.getAstContext()), null, false);
+        RealTableImpl realTable =
+                visitor.getQueryRenderContext() != null ?
+                        realTable(visitor.getQueryRenderContext()) :
+                        realTable(visitor.getAstContext());
+        visitor.visitTableReference(realTable, null, false);
     }
 
     @Override
     public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
-        realTable(builder.getAstContext()).renderJoinAsFrom(builder, mode);
+        RealTableImpl realTable =
+                builder.getQueryRenderContext() != null ?
+                        realTable(builder.getQueryRenderContext()) :
+                        realTable(builder.getAstContext());
+        realTable.renderJoinAsFrom(builder, mode);
     }
 
     @Override
@@ -721,7 +741,11 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         } else {
             astContext = null;
         }
-        realTable(astContext).renderTo(builder, false);
+        RealTableImpl realTable =
+                builder instanceof SqlBuilder && ((SqlBuilder) builder).getQueryRenderContext() != null ?
+                        realTable(((SqlBuilder) builder).getQueryRenderContext()) :
+                        realTable((JoinTypeMergeScope) null);
+        realTable.renderTo(builder, false);
     }
 
     @Override
@@ -739,7 +763,13 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         } else {
             scope = null;
         }
-        realTable(scope).renderSelection(
+        RealTableImpl realTable =
+                builder instanceof SqlBuilder ?
+                        ((SqlBuilder) builder).getQueryRenderContext() != null ?
+                                realTable(((SqlBuilder) builder).getQueryRenderContext()) :
+                                realTable(scope) :
+                        realTable(scope);
+        realTable.renderSelection(
                 prop,
                 rawId,
                 builder,

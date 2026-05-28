@@ -7,12 +7,15 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
@@ -35,6 +38,8 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
     private final boolean nonNullVariableOnly;
 
     private final SqlFormatter formatter;
+
+    private QueryRenderContext queryRenderContext;
 
     private final List<Object> variables = new ArrayList<>();
 
@@ -82,6 +87,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         }
         this.nonNullVariableOnly = nonNullVariableOnly;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
+        this.queryRenderContext = parent.queryRenderContext;
         if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
             this.variablePositions = new ArrayList<>();
         } else {
@@ -109,6 +115,18 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
 
     public AstContext getAstContext() {
         return ctx;
+    }
+
+    public @Nullable QueryRenderContext getQueryRenderContext() {
+        return queryRenderContext;
+    }
+
+    public boolean hasQueryRenderContext() {
+        return queryRenderContext != null;
+    }
+
+    public void setQueryAnalysis(QueryAnalysis queryAnalysis) {
+        this.queryRenderContext = new QueryRenderContext(ctx, queryAnalysis);
     }
 
     public SqlBuilder from() {
@@ -476,7 +494,9 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
     }
 
     public SqlBuilder createTempBuilder() {
-        return new SqlBuilder(ctx, true);
+        SqlBuilder builder = new SqlBuilder(ctx, true);
+        builder.queryRenderContext = queryRenderContext;
+        return builder;
     }
 
     public SqlBuilder abort() {

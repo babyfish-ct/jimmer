@@ -125,15 +125,25 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     public RealTableImpl child(JoinTypeMergeScope scope, TableImpl<?> owner) {
+        return child(scope, owner, null);
+    }
+
+    public RealTableImpl child(
+            JoinTypeMergeScope scope,
+            TableImpl<?> owner,
+            @Nullable JoinType requiredJoinType
+    ) {
         Key key = new Key(scope, owner.isInverse, owner.joinProp, owner.weakJoinHandle);
+        JoinType joinType = requiredJoinType != null ? requiredJoinType : owner.getJoinType();
         RealTableImpl child = (RealTableImpl) getValue(key);
         if (child != null) {
-            if (child.joinType != owner.getJoinType()) {
+            if (child.joinType != joinType) {
                 child.joinType = JoinType.INNER;
             }
             return child;
         }
         child = new RealTableImpl(key, owner, this);
+        child.joinType = joinType;
         putValue(key, child, RealTableImpl::lessThan);
         return child;
     }
@@ -647,9 +657,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder instanceof SqlBuilder ?
                         ((SqlBuilder)builder).getAstContext().getBaseSelectionMapper(owner.getBaseTableOwner()) :
                         null;
+        if (mapper != null && !mapper.isRootTable(this)) {
+            mapper = null;
+        }
+        boolean baseOwnedNonRoot = owner.getBaseTableOwner() != null && mapper == null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+        if (!baseOwnedNonRoot &&
+                prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
                 (rawId || TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {

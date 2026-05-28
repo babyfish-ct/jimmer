@@ -2,11 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
@@ -14,7 +11,6 @@ import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
 
@@ -42,21 +38,6 @@ public class ComparisonPredicates {
                 Object value = ((LiteralExpressionImplementor<?>) right).getValue();
                 List<ValueGetter> valueGetters =
                         ValueGetter.valueGetters(builder.sqlClient(), (Expression<Object>) left, value);
-                if (builder instanceof SqlBuilder) {
-                    BaseTableOwner owner = BaseTableOwner.of(propExpressionImplementor.getTable());
-                    BaseSelectionMapper mapper = ((SqlBuilder) builder).getAstContext().getBaseSelectionMapper(owner);
-                    String alias = TableProxies.resolve(
-                            propExpressionImplementor.getTable(),
-                            ((SqlBuilder)builder).getAstContext()
-                    ).realTable(
-                            ((SqlBuilder) builder).getAstContext()
-                    ).getFinalAlias(
-                            propExpressionImplementor.getProp(),
-                            propExpressionImplementor.isRawId(),
-                            builder.sqlClient()
-                    );
-                    valueGetters = ValueGetter.alias(mapper, alias, valueGetters);
-                }
                 renderCmp(operator, valueGetters, value, builder);
                 return;
             }

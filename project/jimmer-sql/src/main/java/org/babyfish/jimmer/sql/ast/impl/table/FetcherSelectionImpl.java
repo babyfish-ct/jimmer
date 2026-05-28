@@ -132,18 +132,21 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     private void accept(Table<?> table, AstVisitor visitor) {
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(visitor.getAstContext().getSqlClient());
         if (embeddedRawReferenceProp != null) {
+            TableImplementor<?> tableImplementor = TableProxies.resolve(TableUtils.parent(table), visitor.getAstContext());
             visitor.visitTableReference(
-                    TableProxies
-                            .resolve(TableUtils.parent(table), visitor.getAstContext())
-                            .realTable(visitor.getAstContext()),
+                    visitor.getQueryRenderContext() != null ?
+                            tableImplementor.realTable(visitor.getQueryRenderContext()) :
+                            tableImplementor.realTable(visitor.getAstContext()),
                     embeddedRawReferenceProp,
                     true
             );
             return;
         }
-        RealTable realTable = TableProxies
-                .resolve(table, visitor.getAstContext())
-                .realTable(visitor.getAstContext());
+        TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
+        RealTable realTable =
+                visitor.getQueryRenderContext() != null ?
+                        tableImplementor.realTable(visitor.getQueryRenderContext()) :
+                        tableImplementor.realTable(visitor.getAstContext());
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() ||
@@ -164,7 +167,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(builder.sqlClient());
         RealTable realTable = TableProxies
                 .resolve(table, builder.getAstContext())
-                .realTable(builder.getAstContext());
+                .realTable(builder.getQueryRenderContext());
         new JoinFetchFieldVisitor(builder.sqlClient()) {
 
             private RealTable table = realTable;
@@ -177,7 +180,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
                     this.table = tableImplementor
                             .joinFetchImplementor(field.getProp(), oldTable.getBaseTableOwner())
-                            .realTable(ctx);
+                            .realTable(builder.getQueryRenderContext());
                 }
                 return oldTable;
             }

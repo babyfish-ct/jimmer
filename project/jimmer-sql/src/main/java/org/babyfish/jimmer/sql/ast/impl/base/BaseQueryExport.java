@@ -25,6 +25,8 @@ public final class BaseQueryExport {
     private final Map<Integer, BaseQueryExportSelection> selectionMap =
             new LinkedHashMap<>();
 
+    private boolean frozen;
+
     BaseQueryExport(BaseQueryScope scope, RealTable realBaseTable) {
         this.scope = scope;
         this.realBaseTable = realBaseTable;
@@ -59,6 +61,20 @@ public final class BaseQueryExport {
         );
     }
 
+    Integer columnIndexOrNull(
+            BaseQueryExportSelection selection,
+            List<RealTable.Key> tableKeys,
+            String name,
+            boolean foreignKeyInBaseQuery
+    ) {
+        SelectionExport export = selectionExportMap.get(selection.getIndex());
+        if (export == null) {
+            return null;
+        }
+        BaseQueryExportColumn column = export.columnOrNull(tableKeys, name, foreignKeyInBaseQuery);
+        return column != null ? column.getIndex() : null;
+    }
+
     BaseQueryExportColumn joinKeyColumn(
             BaseQueryExportSelection selection,
             List<RealTable.Key> tableKeys,
@@ -86,6 +102,19 @@ public final class BaseQueryExport {
         return export != null ? export.columns() : java.util.Collections.emptyList();
     }
 
+    int expressionIndex(BaseQueryExportSelection selection) {
+        return selectionExport(selection.getIndex()).expressionIndex();
+    }
+
+    void freeze() {
+        if (!frozen) {
+            frozen = true;
+            for (SelectionExport export : selectionExportMap.values()) {
+                export.freeze();
+            }
+        }
+    }
+
     AstContext astContext() {
         return scope.astContext;
     }
@@ -95,10 +124,15 @@ public final class BaseQueryExport {
     }
 
     private SelectionExport selectionExport(int selectionIndex) {
-        return selectionExportMap.computeIfAbsent(
-                selectionIndex,
-                it -> new SelectionExport()
-        );
+        SelectionExport export = selectionExportMap.get(selectionIndex);
+        if (export == null) {
+            if (frozen || scope.isFrozen()) {
+                throw unresolved(selectionIndex);
+            }
+            export = new SelectionExport(selectionIndex);
+            selectionExportMap.put(selectionIndex, export);
+        }
+        return export;
     }
 
     private BaseQueryExportSelection selection(int selectionIndex) {
@@ -113,10 +147,30 @@ public final class BaseQueryExport {
         );
     }
 
+    private IllegalStateException unresolved(int selectionIndex) {
+        return new IllegalStateException(
+                "Base query export selection #" +
+                        selectionIndex +
+                        " of " +
+                        realBaseTable +
+                        " was not resolved during QueryAnalysis"
+        );
+    }
+
     private final class SelectionExport {
+
+        private final int selectionIndex;
 
         private final Map<BaseQueryExportColumn.Key, BaseQueryExportColumn> columnMap =
                 new LinkedHashMap<>();
+
+        private Integer expressionIndex;
+
+        private boolean frozen;
+
+        private SelectionExport(int selectionIndex) {
+            this.selectionIndex = selectionIndex;
+        }
 
         BaseQueryExportColumn column(
                 List<RealTable.Key> tableKeys,
@@ -126,16 +180,33 @@ public final class BaseQueryExport {
         ) {
             BaseQueryExportColumn.Key key =
                     new BaseQueryExportColumn.Key(tableKeys, name, null, foreignKeyInBaseQuery);
-            return columnMap.computeIfAbsent(
-                    key,
-                    it -> new BaseQueryExportColumn(
-                            tableKeys,
-                            name,
-                            foreignKeyInBaseQuery,
-                            role,
-                            nextColumnIndex()
-                    )
-            );
+            BaseQueryExportColumn column = columnMap.get(key);
+            if (column == null) {
+                column = compatibleColumn(tableKeys, name);
+            }
+            if (column == null) {
+                checkNotFrozen();
+                column = new BaseQueryExportColumn(
+                        tableKeys,
+                        name,
+                        foreignKeyInBaseQuery,
+                        role,
+                        nextColumnIndex()
+                );
+                columnMap.put(key, column);
+            }
+            return column;
+        }
+
+        BaseQueryExportColumn columnOrNull(
+                List<RealTable.Key> tableKeys,
+                String name,
+                boolean foreignKeyInBaseQuery
+        ) {
+            BaseQueryExportColumn.Key key =
+                    new BaseQueryExportColumn.Key(tableKeys, name, null, foreignKeyInBaseQuery);
+            BaseQueryExportColumn column = columnMap.get(key);
+            return column != null ? column : compatibleColumn(tableKeys, name);
         }
 
         BaseQueryExportColumn formula(
@@ -144,18 +215,51 @@ public final class BaseQueryExport {
         ) {
             BaseQueryExportColumn.Key key =
                     new BaseQueryExportColumn.Key(tableKeys, null, formula, false);
-            return columnMap.computeIfAbsent(
-                    key,
-                    it -> new BaseQueryExportColumn(
-                            tableKeys,
-                            formula,
-                            nextColumnIndex()
-                    )
-            );
+            BaseQueryExportColumn column = columnMap.get(key);
+            if (column == null) {
+                checkNotFrozen();
+                column = new BaseQueryExportColumn(
+                        tableKeys,
+                        formula,
+                        nextColumnIndex()
+                );
+                columnMap.put(key, column);
+            }
+            return column;
+        }
+
+        int expressionIndex() {
+            Integer index = expressionIndex;
+            if (index == null) {
+                checkNotFrozen();
+                expressionIndex = index = nextColumnIndex();
+            }
+            return index;
+        }
+
+        void freeze() {
+            frozen = true;
         }
 
         Collection<BaseQueryExportColumn> columns() {
             return columnMap.values();
+        }
+
+        private BaseQueryExportColumn compatibleColumn(List<RealTable.Key> tableKeys, String name) {
+            for (BaseQueryExportColumn column : columnMap.values()) {
+                if (column.getFormula() == null &&
+                        column.getTableKeys().equals(tableKeys) &&
+                        name.equals(column.getName())) {
+                    return column;
+                }
+            }
+            return null;
+        }
+
+        private void checkNotFrozen() {
+            if (frozen || BaseQueryExport.this.frozen || scope.isFrozen()) {
+                throw unresolved(selectionIndex);
+            }
         }
     }
 }
