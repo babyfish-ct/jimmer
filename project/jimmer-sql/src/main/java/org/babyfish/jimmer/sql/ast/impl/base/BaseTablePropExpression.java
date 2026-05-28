@@ -114,11 +114,11 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement(baseTableOwner.getBaseTable().getQuery().getMutableQuery());
         try {
-            BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
-            assert mapper != null;
+            BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(baseTableOwner);
+            assert exportSelection != null;
             RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(ctx);
-            if (mapper.isRootTable(realTable)) {
-                renderExportedProp(builder, mapper, realTable, ignoreBrackets);
+            if (exportSelection.isRootTable(realTable)) {
+                renderExportedProp(builder, exportSelection, realTable, ignoreBrackets);
                 return;
             }
         } finally {
@@ -133,17 +133,20 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
 
     private void renderExportedProp(
             AbstractSqlBuilder<?> builder,
-            BaseSelectionMapper mapper,
+            BaseQueryExportSelection exportSelection,
             RealTable realTable,
             boolean ignoreBrackets
     ) {
         SqlTemplate template = raw.getProp().getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            renderExportedColumn(builder, mapper.formulaIndex(realTable.getAlias(), (FormulaTemplate) template));
+            renderExportedColumn(builder, exportSelection, exportSelection.formulaIndex(realTable.getAlias(), (FormulaTemplate) template));
             return;
         }
         if (!raw.getProp().isColumnDefinition()) {
-            builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(mapper.expressionIndex()));
+            builder
+                    .sql(exportSelection.getAlias())
+                    .sql(".c")
+                    .sql(Integer.toString(exportSelection.expressionIndex()));
             return;
         }
         ColumnDefinition definition = raw.getProp().getStorage(
@@ -151,16 +154,16 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         );
         if (!ignoreBrackets && definition.size() > 1) {
             builder.enter(SqlBuilder.ScopeType.TUPLE);
-            renderExportedColumns(builder, mapper, realTable, definition);
+            renderExportedColumns(builder, exportSelection, realTable, definition);
             builder.leave();
         } else {
-            renderExportedColumns(builder, mapper, realTable, definition);
+            renderExportedColumns(builder, exportSelection, realTable, definition);
         }
     }
 
     private void renderExportedColumns(
             AbstractSqlBuilder<?> builder,
-            BaseSelectionMapper mapper,
+            BaseQueryExportSelection exportSelection,
             RealTable realTable,
             ColumnDefinition definition
     ) {
@@ -172,20 +175,18 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
             }
             renderExportedColumn(
                     builder,
-                    mapper.columnIndex(alias, definition.name(i), false)
+                    exportSelection,
+                    exportSelection.columnIndex(alias, definition.name(i), false)
             );
         }
     }
 
-    private void renderExportedColumn(AbstractSqlBuilder<?> builder, int index) {
-        builder.sql(mapperAlias(builder)).sql(".c").sql(Integer.toString(index));
-    }
-
-    private String mapperAlias(AbstractSqlBuilder<?> builder) {
-        AstContext ctx = builder.assertSimple().getAstContext();
-        BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
-        assert mapper != null;
-        return mapper.getAlias();
+    private void renderExportedColumn(
+            AbstractSqlBuilder<?> builder,
+            BaseQueryExportSelection exportSelection,
+            int index
+    ) {
+        builder.sql(exportSelection.getAlias()).sql(".c").sql(Integer.toString(index));
     }
 
     @Override

@@ -41,7 +41,7 @@ public final class QueryAnalysis {
 
             @Override
             public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
-                getAstContext().getBaseSelectionMapper(baseTableOwner).expressionIndex();
+                getAstContext().getBaseQueryExportSelection(baseTableOwner).expressionIndex();
             }
         };
         ast.accept(visitor);

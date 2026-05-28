@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
@@ -93,28 +93,28 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement(owner.getBaseTable().getQuery().getMutableQuery());
         try {
-            BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(owner);
+            BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(owner);
             RealTable realTable = TableProxies
                     .resolve(expression.getTable(), ctx)
                     .realTable(ctx);
             String columnName = getColumnName();
-            if (mapper != null && columnName != null) {
+            if (exportSelection != null && columnName != null) {
                 String alias = realTable.getFinalAlias(
                         expression.getProp(),
                         expression.isRawId(),
                         builder.sqlClient()
                 );
-                Integer index = mapper.columnIndexOrNull(alias, columnName, isForeignKey());
+                Integer index = exportSelection.columnIndexOrNull(alias, columnName, isForeignKey());
                 if (index == null && realTable.getParent() != null) {
                     columnName = foreignKeyColumnName(realTable, columnName, builder);
-                    index = mapper.columnIndexOrNull(
+                    index = exportSelection.columnIndexOrNull(
                             realTable.getParent().getAlias(),
                             columnName,
                             false
                     );
                 }
                 if (index != null) {
-                    builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(index));
+                    builder.sql(exportSelection.getAlias()).sql(".c").sql(Integer.toString(index));
                     return;
                 }
             }

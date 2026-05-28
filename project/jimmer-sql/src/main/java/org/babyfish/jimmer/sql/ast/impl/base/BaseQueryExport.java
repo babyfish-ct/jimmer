@@ -16,9 +16,6 @@ public final class BaseQueryExport {
 
     private final RealTable realBaseTable;
 
-    private final Map<Integer, BaseSelectionMapper> selectionMapperMap =
-            new LinkedHashMap<>();
-
     private final Map<Integer, SelectionExport> selectionExportMap =
             new LinkedHashMap<>();
 
@@ -36,15 +33,23 @@ public final class BaseQueryExport {
         return realBaseTable;
     }
 
-    public BaseSelectionMapper mapper(int selectionIndex) {
-        return selectionMapperMap.computeIfAbsent(
+    public BaseQueryExportSelection selection(int selectionIndex) {
+        return selectionMap.computeIfAbsent(
                 selectionIndex,
-                it -> new BaseSelectionMapper(this, selection(it))
+                it -> {
+                    Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor())
+                            .getSelections()
+                            .get(it);
+                    return new BaseQueryExportSelection(this, it, selection);
+                }
         );
     }
 
-    public BaseSelectionMapper mapperOrNull(int selectionIndex) {
-        return selectionMapperMap.get(selectionIndex);
+    public BaseQueryExportSelection selectionOrNull(int selectionIndex) {
+        if (!selectionExportMap.containsKey(selectionIndex)) {
+            return null;
+        }
+        return selection(selectionIndex);
     }
 
     BaseQueryExportColumn column(
@@ -133,18 +138,6 @@ public final class BaseQueryExport {
             selectionExportMap.put(selectionIndex, export);
         }
         return export;
-    }
-
-    private BaseQueryExportSelection selection(int selectionIndex) {
-        return selectionMap.computeIfAbsent(
-                selectionIndex,
-                it -> {
-                    Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor())
-                            .getSelections()
-                            .get(it);
-                    return new BaseQueryExportSelection(this, it, selection);
-                }
-        );
     }
 
     private IllegalStateException unresolved(int selectionIndex) {

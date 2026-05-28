@@ -48,9 +48,12 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
-        assert mapper != null;
-        builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(mapper.expressionIndex()));
+        BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(baseTableOwner);
+        assert exportSelection != null;
+        builder
+                .sql(exportSelection.getAlias())
+                .sql(".c")
+                .sql(Integer.toString(exportSelection.expressionIndex()));
         ctx.popStatement();
     }
 

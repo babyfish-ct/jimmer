@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -297,9 +297,9 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     public T definition(
             String tableAlias,
             ColumnDefinition definition,
-            BaseSelectionMapper mapper
+            BaseQueryExportSelection exportSelection
     ) {
-        return definition(tableAlias, definition, false, null, mapper);
+        return definition(tableAlias, definition, false, null, exportSelection);
     }
 
     @SuppressWarnings("unchecked")
@@ -308,7 +308,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
             Function<Integer, String> asBlock,
-            BaseSelectionMapper mapper
+            BaseQueryExportSelection exportSelection
     ) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return definition(definition);
@@ -316,10 +316,10 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         preAppend();
         if (definition instanceof SingleColumn) {
             String columnName = ((SingleColumn)definition).getName();
-            if (mapper != null) {
-                builder.append(mapper.getAlias())
+            if (exportSelection != null) {
+                builder.append(exportSelection.getAlias())
                         .append(".c")
-                        .append(mapper.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
+                        .append(exportSelection.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
             } else {
                 builder.append(tableAlias).append('.').append(columnName);
                 if (asBlock != null) {
@@ -333,10 +333,10 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                     builder.append(", ");
                 }
                 String columnName = definition.name(i);
-                if (mapper != null) {
-                    builder.append(mapper.getAlias())
+                if (exportSelection != null) {
+                    builder.append(exportSelection.getAlias())
                             .append(".c")
-                            .append(mapper.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
+                            .append(exportSelection.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {

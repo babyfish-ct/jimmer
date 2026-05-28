@@ -5,11 +5,13 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 
-final class BaseQueryExportSelection {
+public final class BaseQueryExportSelection {
 
     private final BaseQueryExport export;
 
@@ -33,11 +35,45 @@ final class BaseQueryExportSelection {
         return selection;
     }
 
-    boolean isRootTable(RealTable table) {
+    public String getAlias() {
+        return export.getRealBaseTable().getAlias();
+    }
+
+    public boolean isRootTable(RealTable table) {
         return path(rootRealTable()).equals(path(table));
     }
 
-    List<RealTable.Key> tableKeys(String alias) {
+    public int columnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+        return export
+                .column(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
+                .getIndex();
+    }
+
+    public Integer columnIndexOrNull(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+        return export.columnIndexOrNull(this, tableKeys(alias), columnName, foreignKeyInBaseQuery);
+    }
+
+    public int joinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+        return export
+                .joinKeyColumn(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
+                .getIndex();
+    }
+
+    public int formulaIndex(String alias, FormulaTemplate formula) {
+        return export
+                .formula(this, tableKeys(alias), formula)
+                .getIndex();
+    }
+
+    public int expressionIndex() {
+        return export.expressionIndex(this);
+    }
+
+    public Collection<BaseQueryExportColumn> columns() {
+        return export.columns(index);
+    }
+
+    private List<RealTable.Key> tableKeys(String alias) {
         RealTable rootRealTable = rootRealTable();
         List<RealTable.Key> keys = new ArrayList<>();
         collectKeys(rootRealTable, alias, keys);

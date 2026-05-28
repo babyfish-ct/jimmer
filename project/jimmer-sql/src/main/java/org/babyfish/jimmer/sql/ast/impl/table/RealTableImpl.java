@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
@@ -591,20 +591,20 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 break;
         }
         if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
-            BaseSelectionMapper mapper = null;
+            BaseQueryExportSelection exportSelection = null;
             if (owner instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
                 BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-                mapper = builder.getAstContext().getBaseSelectionMapper(baseTableOwner);
+                exportSelection = builder.getAstContext().getBaseQueryExportSelection(baseTableOwner);
             }
             int size = previousDefinition.size();
             builder.enter(SqlBuilder.ScopeType.AND);
             for (int i = 0; i < size; i++) {
                 builder.separator();
-                if (mapper != null) {
-                    int index = mapper.columnIndex(previousAlias, previousDefinition.name(i), false);
+                if (exportSelection != null) {
+                    int index = exportSelection.columnIndex(previousAlias, previousDefinition.name(i), false);
                     builder
-                            .sql(mapper.getAlias())
+                            .sql(exportSelection.getAlias())
                             .sql(".c")
                             .sql(Integer.toString(index));
                 } else {
@@ -653,14 +653,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             Function<Integer, String> asBlock
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
-        BaseSelectionMapper mapper =
+        BaseQueryExportSelection exportSelection =
                 builder instanceof SqlBuilder ?
-                        ((SqlBuilder)builder).getAstContext().getBaseSelectionMapper(owner.getBaseTableOwner()) :
+                        ((SqlBuilder)builder).getAstContext().getBaseQueryExportSelection(owner.getBaseTableOwner()) :
                         null;
-        if (mapper != null && !mapper.isRootTable(this)) {
-            mapper = null;
+        if (exportSelection != null && !exportSelection.isRootTable(this)) {
+            exportSelection = null;
         }
-        boolean baseOwnedNonRoot = owner.getBaseTableOwner() != null && mapper == null;
+        boolean baseOwnedNonRoot = owner.getBaseTableOwner() != null && exportSelection == null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         if (!baseOwnedNonRoot &&
@@ -722,7 +722,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                             joinProp.getStorage(strategy),
                             true,
                             asBlock,
-                            mapper
+                            exportSelection
                     );
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
@@ -761,7 +761,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     definition,
                     false,
                     asBlock,
-                    mapper
+                    exportSelection
             );
         }
     }

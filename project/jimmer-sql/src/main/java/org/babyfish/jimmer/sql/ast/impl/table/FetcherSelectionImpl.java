@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
@@ -197,9 +197,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 }
                 ImmutableProp prop = field.getProp();
                 String alias = table.getAlias();
-                BaseSelectionMapper mapper =
+                BaseQueryExportSelection exportSelection =
                         depth == 0 ?
-                                builder.getAstContext().getBaseSelectionMapper(table.getBaseTableOwner()) :
+                                builder.getAstContext().getBaseQueryExportSelection(table.getBaseTableOwner()) :
                                 null;
                 if (embeddedPropExpression != null) {
                     String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
@@ -210,22 +210,22 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                     ((PropExpressionImplementor<?>) embeddedPropExpression).getProp().getStorage(strategy),
                             field.getChildFetcher(),
                             path != null ? path + '.' + field.getProp().getName() : field.getProp().getName(),
-                            mapper,
+                            exportSelection,
                             builder
                     );
                 } else {
                     Storage storage = prop.getStorage(strategy);
                     SqlTemplate template = prop.getSqlTemplate();
                     if (storage instanceof EmbeddedColumns) {
-                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", mapper, builder);
+                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", exportSelection, builder);
                     } else if (storage instanceof ColumnDefinition) {
-                        builder.separator().definition(alias, (ColumnDefinition) storage, mapper);
+                        builder.separator().definition(alias, (ColumnDefinition) storage, exportSelection);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
-                        if (mapper != null) {
-                            builder.sql(mapper.getAlias())
+                        if (exportSelection != null) {
+                            builder.sql(exportSelection.getAlias())
                                     .sql(".c")
-                                    .sql(Integer.toString(mapper.formulaIndex(alias, (FormulaTemplate) template)));
+                                    .sql(Integer.toString(exportSelection.formulaIndex(alias, (FormulaTemplate) template)));
                         } else {
                             builder.sql(((FormulaTemplate) template).toSql(alias));
                         }
@@ -238,7 +238,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     EmbeddedColumns columns,
                     Fetcher<?> childFetcher,
                     String path,
-                    BaseSelectionMapper mapper,
+                    BaseQueryExportSelection exportSelection,
                     SqlBuilder builder
             ) {
                 RealTable realTable;
@@ -257,11 +257,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                             columnName = joinColumns.name(joinColumns.referencedIndex(columnName));
                         }
                         builder.separator();
-                        if (mapper != null) {
+                        if (exportSelection != null) {
                             builder
-                                    .sql(mapper.getAlias())
+                                    .sql(exportSelection.getAlias())
                                     .sql(".c")
-                                    .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName, false)));
+                                    .sql(Integer.toString(exportSelection.columnIndex(realTable.getAlias(), columnName, false)));
                         } else {
                             builder
                                     .sql(realTable.getAlias()).sql(".")
@@ -280,7 +280,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                 columns,
                                 field.getChildFetcher(),
                                 path.isEmpty() ? propName : path + '.' + propName,
-                                mapper,
+                                exportSelection,
                                 builder
                         );
                     }

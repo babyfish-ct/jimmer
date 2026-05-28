@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryScope;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -38,24 +38,24 @@ final class BaseQueryExportAnalysis {
             boolean rawId,
             AstContext ctx
     ) {
-        BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(table.getBaseTableOwner());
-        if (mapper == null) {
+        BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(table.getBaseTableOwner());
+        if (exportSelection == null) {
             return;
         }
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (!(implementor instanceof TableImplementor<?>)) {
             return;
         }
-        if (!mapper.isRootTable(table)) {
+        if (!exportSelection.isRootTable(table)) {
             return;
         }
         TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
         if (prop == null) {
             for (ImmutableProp selectableProp : tableImplementor.getImmutableType().getSelectableProps().values()) {
-                analyzeProp(table, tableImplementor, selectableProp, false, mapper, ctx);
+                analyzeProp(table, tableImplementor, selectableProp, false, exportSelection, ctx);
             }
         } else {
-            analyzeProp(table, tableImplementor, prop, rawId, mapper, ctx);
+            analyzeProp(table, tableImplementor, prop, rawId, exportSelection, ctx);
         }
     }
 
@@ -87,13 +87,13 @@ final class BaseQueryExportAnalysis {
             }
             Table<?> table = (Table<?>) selection;
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
-            BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(tableImplementor.getBaseTableOwner());
-            if (mapper == null) {
+            BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(tableImplementor.getBaseTableOwner());
+            if (exportSelection == null) {
                 continue;
             }
             RealTable realTable = tableImplementor.realTable(ctx);
             for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
-                analyzeProp(realTable, tableImplementor, prop, false, mapper, ctx);
+                analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
             }
             for (RealTable childTable : realTable) {
                 if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
@@ -117,7 +117,7 @@ final class BaseQueryExportAnalysis {
                 ColumnDefinition definition = prop.getStorage(ctx.getSqlClient().getMetadataStrategy());
                 int size = definition.size();
                 for (int i = 0; i < size; i++) {
-                    mapper.joinKeyColumnIndex(realTable.getAlias(), definition.name(i), false);
+                    exportSelection.joinKeyColumnIndex(realTable.getAlias(), definition.name(i), false);
                 }
             }
         }
@@ -128,12 +128,12 @@ final class BaseQueryExportAnalysis {
             TableImplementor<?> tableImplementor,
             ImmutableProp prop,
             boolean rawId,
-            BaseSelectionMapper mapper,
+            BaseQueryExportSelection exportSelection,
             AstContext ctx
     ) {
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            mapper.formulaIndex(table.getAlias(), (FormulaTemplate) template);
+            exportSelection.formulaIndex(table.getAlias(), (FormulaTemplate) template);
             return;
         }
         if (!prop.isColumnDefinition()) {
@@ -149,23 +149,23 @@ final class BaseQueryExportAnalysis {
                 !joinProp.isMiddleTableDefinition() &&
                 table.getParent() != null) {
             ColumnDefinition definition = joinProp.getStorage(strategy);
-            analyzeColumns(table.getParent().getAlias(), definition, true, mapper);
+            analyzeColumns(table.getParent().getAlias(), definition, true, exportSelection);
             return;
         }
         ColumnDefinition definition = prop.getStorage(strategy);
         String alias = table.getFinalAlias(prop, rawId, ctx.getSqlClient());
-        analyzeColumns(alias, definition, false, mapper);
+        analyzeColumns(alias, definition, false, exportSelection);
     }
 
     private static void analyzeColumns(
             String alias,
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
-            BaseSelectionMapper mapper
+            BaseQueryExportSelection exportSelection
     ) {
         int size = definition.size();
         for (int i = 0; i < size; i++) {
-            mapper.columnIndex(alias, definition.name(i), foreignKeyInBaseQuery);
+            exportSelection.columnIndex(alias, definition.name(i), foreignKeyInBaseQuery);
         }
     }
 }

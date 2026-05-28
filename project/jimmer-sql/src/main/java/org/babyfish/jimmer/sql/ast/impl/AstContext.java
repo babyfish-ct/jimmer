@@ -276,7 +276,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     }
 
     @Nullable
-    public BaseSelectionMapper getBaseSelectionMapper(BaseTableOwner baseTableOwner) {
+    public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
         if (baseTableOwner == null) {
             return null;
         }
@@ -292,10 +292,10 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
                 if (mergedBy != null) {
                     for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                        scope.mapper(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
+                        scope.exportSelection(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
                     }
                 }
-                return scope.mapper(baseTableOwner);
+                return scope.exportSelection(baseTableOwner);
             }
         }
         return null;

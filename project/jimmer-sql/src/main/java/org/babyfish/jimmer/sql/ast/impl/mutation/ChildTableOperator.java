@@ -407,7 +407,6 @@ class ChildTableOperator extends AbstractAssociationOperator {
             ComparisonPredicates.renderIn(
                     false,
                     ValueGetter.alias(
-                            null,
                             alias,
                             this == args.caller ? targetGetters : sourceGetters
                     ),
@@ -422,7 +421,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
             Tuple2<Object, Collection<Object>> tuple = retainedIdPairs.entries().iterator().next();
             ComparisonPredicates.renderCmp(
                     "=",
-                    ValueGetter.alias(null, alias, sourceGetters),
+                    ValueGetter.alias(alias, sourceGetters),
                     tuple.get_1(),
                     builder
             );
@@ -430,7 +429,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
                 builder.separator();
                 ComparisonPredicates.renderIn(
                         true,
-                        ValueGetter.alias(null, alias, targetGetters),
+                        ValueGetter.alias(alias, targetGetters),
                         tuple.get_2(),
                         builder
                 );
@@ -439,8 +438,8 @@ class ChildTableOperator extends AbstractAssociationOperator {
         }
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
-                ValueGetter.alias(null, alias, sourceGetters),
-                ValueGetter.alias(null, alias, targetGetters),
+                ValueGetter.alias(alias, sourceGetters),
+                ValueGetter.alias(alias, targetGetters),
                 retainedIdPairs
         );
     }
