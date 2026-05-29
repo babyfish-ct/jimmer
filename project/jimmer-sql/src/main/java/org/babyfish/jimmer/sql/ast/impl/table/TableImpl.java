@@ -892,7 +892,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             return neighbor;
         }
         TableImpl<?> neighborParent = null;
-        if (parent != null && baseTableOwner != null) {
+        if (parent != null) {
             neighborParent = parent.baseTableOwner(baseTableOwner);
         }
         neighbor = new TableImpl<>(this, neighborParent, baseTableOwner);

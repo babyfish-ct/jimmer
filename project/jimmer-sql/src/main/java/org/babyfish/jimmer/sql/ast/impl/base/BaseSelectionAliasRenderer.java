@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -30,7 +31,7 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         RealTable realBaseTable = builder.getAstContext().getRenderedRealBaseTable();
         BaseQueryExport export = exportMap.get(realBaseTable);
         BaseQueryExportSelection exportSelection = export != null ?
-                export.selectionOrNull(index, rootRealTable(selection, builder.getAstContext())) :
+                export.selectionOrNull(index, rootRealTable(selection, builder)) :
                 null;
         if (exportSelection == null) {
             return;
@@ -45,7 +46,7 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
             return;
         }
         RealTable realTable = TableProxies.resolve((Table<?>) selection, builder.getAstContext())
-                .realTable(builder.getAstContext());
+                .realTable(builder.getQueryRenderContext());
         for (BaseQueryExportColumn column : exportSelection.columns()) {
             RealTable childTable = childTableByKeys(realTable, column.getTableKeys());
             if (column.isForeignKeyInBaseQuery()) {
@@ -81,7 +82,7 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
             Selection<?> selection = selections.get(i);
             BaseQueryExportSelection exportSelection = exportMap
                     .get(realBaseTable)
-                    .selectionOrNull(i, rootRealTable(selection, builder.getAstContext()));
+                    .selectionOrNull(i, rootRealTable(selection, builder));
             if (selection instanceof Expression<?>) {
                 builder.separator().sql("c").sql(Integer.toString(exportSelection.expressionIndex()));
             } else {
@@ -93,13 +94,15 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         builder.leave();
     }
 
-    private static RealTable rootRealTable(Selection<?> selection, AstContext astContext) {
+    private static RealTable rootRealTable(Selection<?> selection, SqlBuilder builder) {
         if (!(selection instanceof Table<?>)) {
             return null;
         }
-        return TableProxies
-                .resolve((Table<?>) selection, astContext)
-                .realTable(astContext);
+        AstContext astContext = builder.getAstContext();
+        QueryRenderContext renderContext = builder.getQueryRenderContext();
+        return renderContext != null ?
+                TableProxies.resolve((Table<?>) selection, astContext).realTable(renderContext) :
+                TableProxies.resolve((Table<?>) selection, astContext).realTable(astContext);
     }
 
     private static RealTable childTableByKeys(RealTable table, List<RealTable.Key> keys) {

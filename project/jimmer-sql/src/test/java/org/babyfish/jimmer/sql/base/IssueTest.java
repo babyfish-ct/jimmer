@@ -103,14 +103,14 @@ public class IssueTest extends AbstractQueryTest {
                                     "--->where tb_2_.NODE_ID = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_4_.NODE_ID, tb_4_.NAME, tb_4_.PARENT_ID " +
-                                    "--->from TREE_NODE tb_4_ " +
-                                    "--->inner join tb_1_ on tb_4_.PARENT_ID = tb_1_.c1" +
+                                    "--->--->tb_3_.NODE_ID, tb_3_.NAME, tb_3_.PARENT_ID " +
+                                    "--->from TREE_NODE tb_3_ " +
+                                    "--->inner join tb_1_ on tb_3_.PARENT_ID = tb_1_.c1" +
                                     ") " +
                                     "select tb_1_.c1, tb_1_.c2, tb_1_.c3 " +
                                     "from tb_1_ " +
-                                    "inner join TREE_NODE tb_5_ on tb_1_.c3 = tb_5_.NODE_ID " +
-                                    "where tb_5_.NAME ilike ?"
+                                    "inner join TREE_NODE tb_4_ on tb_1_.c3 = tb_4_.NODE_ID " +
+                                    "where tb_4_.NAME ilike ?"
                     );
                     ctx.variables(1L, "%e%");
                 }

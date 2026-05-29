@@ -98,7 +98,7 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
             BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(owner);
             RealTable realTable = TableProxies
                     .resolve(expression.getTable(), ctx)
-                    .realTable(ctx);
+                    .realTable(renderContext);
             String columnName = getColumnName();
             if (exportSelection != null && columnName != null) {
                 Integer index = exportSelection.columnIndexOrNull(realTable, columnName, isForeignKey());

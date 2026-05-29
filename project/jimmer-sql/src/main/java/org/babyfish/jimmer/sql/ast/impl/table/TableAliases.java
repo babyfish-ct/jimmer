@@ -77,7 +77,7 @@ public final class TableAliases {
             Map<RealTable, TableUsedState> tableStateMap
     ) {
         TableUsedState state = tableStateMap.get(table);
-        return state != null && state != TableUsedState.NONE;
+        return state == TableUsedState.USED;
     }
 
     private static String allocateMiddleAlias(

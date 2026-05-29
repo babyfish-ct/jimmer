@@ -118,7 +118,7 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         try {
             BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(baseTableOwner);
             assert exportSelection != null;
-            RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(ctx);
+            RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(renderContext);
             if (exportSelection.isRootTable(realTable)) {
                 renderExportedProp(builder, exportSelection, realTable, ignoreBrackets);
                 return;
