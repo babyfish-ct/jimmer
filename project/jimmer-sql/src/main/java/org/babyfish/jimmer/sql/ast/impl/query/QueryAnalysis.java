@@ -15,10 +15,7 @@ public final class QueryAnalysis {
 
     private final QueryAnalysisModel model;
 
-    QueryAnalysis(
-            AstContext astContext,
-            QueryAnalysisModel model
-    ) {
+    QueryAnalysis(AstContext astContext, QueryAnalysisModel model) {
         this.astContext = astContext;
         this.model = model;
     }

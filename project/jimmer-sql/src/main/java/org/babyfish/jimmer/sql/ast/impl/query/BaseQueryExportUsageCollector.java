@@ -10,8 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 final class BaseQueryExportUsageCollector extends AstVisitor {
 
-    private final BaseQueryExportUsages.Builder builder =
-            new BaseQueryExportUsages.Builder();
+    private final BaseQueryExportUsages.Builder builder = new BaseQueryExportUsages.Builder();
 
     private BaseQueryExportUsageCollector(AstContext ctx, QueryAnalysis queryAnalysis) {
         super(ctx, queryAnalysis);

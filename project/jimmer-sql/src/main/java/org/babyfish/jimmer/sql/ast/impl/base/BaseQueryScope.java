@@ -11,8 +11,7 @@ final class BaseQueryScope {
 
     final QueryAnalysisContext ctx;
 
-    private final Map<RealTable, BaseQueryExport> exportMap =
-            new LinkedHashMap<>();
+    private final Map<RealTable, BaseQueryExport> exportMap = new LinkedHashMap<>();
 
     private int colNoSequence;
 

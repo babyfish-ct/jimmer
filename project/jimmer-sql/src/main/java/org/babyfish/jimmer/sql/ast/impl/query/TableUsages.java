@@ -13,8 +13,7 @@ import java.util.Map;
 
 public final class TableUsages {
 
-    static final TableUsages EMPTY =
-            new TableUsages(Collections.emptyList(), Collections.emptyMap());
+    static final TableUsages EMPTY = new TableUsages(Collections.emptyList(), Collections.emptyMap());
 
     private final List<RealTable> rootTables;
 

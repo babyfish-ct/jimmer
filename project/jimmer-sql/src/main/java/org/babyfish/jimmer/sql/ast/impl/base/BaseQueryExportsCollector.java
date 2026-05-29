@@ -15,14 +15,11 @@ public final class BaseQueryExportsCollector {
 
     private final QueryAnalysisContext ctx;
 
-    private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap =
-            new IdentityHashMap<>();
+    private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap = new IdentityHashMap<>();
 
-    private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery =
-            new IdentityHashMap<>();
+    private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery = new IdentityHashMap<>();
 
-    private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable =
-            new IdentityHashMap<>();
+    private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable = new IdentityHashMap<>();
 
     public BaseQueryExportsCollector(QueryAnalysisContext ctx) {
         this.ctx = ctx;
@@ -61,29 +58,22 @@ public final class BaseQueryExportsCollector {
 
     public BaseQueryExports toExports() {
         Map<BaseQueryScope, BaseQueryExportResolver> resolverMap = new IdentityHashMap<>();
-        Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery =
-                new IdentityHashMap<>();
+        Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery = new IdentityHashMap<>();
         for (Map.Entry<ConfigurableBaseQuery<?>, BaseQueryScope> e : scopeMapByQuery.entrySet()) {
             resolverMapByQuery.put(e.getKey(), resolver(e.getValue(), resolverMap));
         }
-        Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable =
-                new IdentityHashMap<>();
+        Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable = new IdentityHashMap<>();
         for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : scopeMapByBaseTable.entrySet()) {
             resolverMapByBaseTable.put(e.getKey(), resolver(e.getValue(), resolverMap));
         }
-        return new BaseQueryExports(
-                resolverMapByQuery,
-                resolverMapByBaseTable
-        );
+        return new BaseQueryExports(resolverMapByQuery, resolverMapByBaseTable);
     }
 
     private void register(TableLikeImplementor<?> tableLikeImplementor, BaseQueryScope scope) {
         if (tableLikeImplementor instanceof BaseTableImplementor) {
             register(((BaseTableImplementor) tableLikeImplementor).toSymbol(), scope);
         } else if (tableLikeImplementor.hasBaseTable()) {
-            Iterable<TableLikeImplementor<?>> children =
-                    (Iterable<TableLikeImplementor<?>>) tableLikeImplementor;
-            for (TableLikeImplementor<?> child : children) {
+            for (TableLikeImplementor<?> child : (Iterable<TableLikeImplementor<?>>) tableLikeImplementor) {
                 register(child, scope);
             }
         }
@@ -104,10 +94,7 @@ public final class BaseQueryExportsCollector {
     }
 
     private BaseQueryScope scope(AbstractMutableStatementImpl statement) {
-        return scopeMap.computeIfAbsent(
-                statement,
-                it -> new BaseQueryScope(ctx)
-        );
+        return scopeMap.computeIfAbsent(statement, it -> new BaseQueryScope(ctx));
     }
 
     private static BaseQueryExportResolver resolver(

@@ -13,8 +13,7 @@ import java.util.Map;
 
 public final class TableAliases {
 
-    public static final TableAliases EMPTY =
-            new TableAliases(Collections.emptyMap());
+    public static final TableAliases EMPTY = new TableAliases(Collections.emptyMap());
 
     private final Map<RealTable, Alias> aliasMap;
 

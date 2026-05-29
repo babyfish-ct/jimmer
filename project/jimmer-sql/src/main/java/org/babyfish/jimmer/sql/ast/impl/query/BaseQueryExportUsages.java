@@ -8,8 +8,7 @@ import java.util.Set;
 
 final class BaseQueryExportUsages {
 
-    static final BaseQueryExportUsages EMPTY =
-            new BaseQueryExportUsages(Collections.emptySet());
+    static final BaseQueryExportUsages EMPTY = new BaseQueryExportUsages(Collections.emptySet());
 
     private final Set<BaseTableOwner> fullRowExports;
 

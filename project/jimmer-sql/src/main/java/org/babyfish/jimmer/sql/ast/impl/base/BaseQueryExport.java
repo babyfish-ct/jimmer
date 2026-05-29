@@ -14,11 +14,9 @@ public final class BaseQueryExport {
 
     private final RealTable realBaseTable;
 
-    private final Map<Integer, SelectionExport> selectionExportMap =
-            new LinkedHashMap<>();
+    private final Map<Integer, SelectionExport> selectionExportMap = new LinkedHashMap<>();
 
-    private final Map<Integer, BaseQueryExportSelection> selectionMap =
-            new LinkedHashMap<>();
+    private final Map<Integer, BaseQueryExportSelection> selectionMap = new LinkedHashMap<>();
 
     BaseQueryExport(BaseQueryScope scope, RealTable realBaseTable) {
         this.scope = scope;
@@ -153,8 +151,7 @@ public final class BaseQueryExport {
 
     private final class SelectionExport {
 
-        private final Map<BaseQueryExportColumn.Key, BaseQueryExportColumn> columnMap =
-                new LinkedHashMap<>();
+        private final Map<BaseQueryExportColumn.Key, BaseQueryExportColumn> columnMap = new LinkedHashMap<>();
 
         private Integer expressionIndex;
 
@@ -197,28 +194,18 @@ public final class BaseQueryExport {
             return column != null ? column : compatibleColumn(tableKeys, name);
         }
 
-        BaseQueryExportColumn formula(
-                List<RealTable.Key> tableKeys,
-                FormulaTemplate formula
-        ) {
+        BaseQueryExportColumn formula(List<RealTable.Key> tableKeys, FormulaTemplate formula) {
             BaseQueryExportColumn.Key key =
                     new BaseQueryExportColumn.Key(tableKeys, null, formula, false);
             BaseQueryExportColumn column = columnMap.get(key);
             if (column == null) {
-                column = new BaseQueryExportColumn(
-                        tableKeys,
-                        formula,
-                        nextColumnIndex()
-                );
+                column = new BaseQueryExportColumn(tableKeys, formula, nextColumnIndex());
                 columnMap.put(key, column);
             }
             return column;
         }
 
-        BaseQueryExportColumn formulaOrNull(
-                List<RealTable.Key> tableKeys,
-                FormulaTemplate formula
-        ) {
+        BaseQueryExportColumn formulaOrNull(List<RealTable.Key> tableKeys, FormulaTemplate formula) {
             BaseQueryExportColumn.Key key =
                     new BaseQueryExportColumn.Key(tableKeys, null, formula, false);
             return columnMap.get(key);

@@ -47,5 +47,4 @@ public final class QueryAnalysisContext {
     public RealTable realTable(TableLikeImplementor<?> tableLikeImplementor) {
         return tableLikeImplementor.realTable(astContext);
     }
-
 }
