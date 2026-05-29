@@ -19,6 +19,10 @@ public class TableUsageCollector extends TableUsageVisitor {
         super(ctx);
     }
 
+    public TableUsageCollector(AstContext ctx, QueryAnalysis queryAnalysis) {
+        super(ctx, queryAnalysis);
+    }
+
     public TableUsages toTableUsages() {
         return new TableUsages(rootTables, tableStateMap);
     }

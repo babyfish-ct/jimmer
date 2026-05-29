@@ -44,7 +44,12 @@ final class QueryAnalysisBuilder {
 
     private QueryAnalysis analyze(Ast ast) {
         analyzeJoinRequirements(ast);
-        TableUsageCollector visitor = new TableUsageCollector(astContext) {
+        QueryAnalysis joinAwareAnalysis = new QueryAnalysis(
+                astContext,
+                baseQueryExportsCollector.toExports(),
+                joinRequirementPlan
+        );
+        TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
                 super.visitStatement(statement);
