@@ -4,9 +4,13 @@ import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.Map;
 
 public final class BaseQueryExports {
+
+    public static final BaseQueryExports EMPTY =
+            new BaseQueryExports(Collections.emptyMap(), Collections.emptyMap());
 
     private final Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery;
 

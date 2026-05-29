@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -14,18 +13,14 @@ public final class QueryAnalysis {
 
     private final AstContext astContext;
 
-    private final BaseQueryExports baseQueryExports;
-
-    private final JoinRequirements joinRequirements;
+    private final QueryAnalysisModel model;
 
     QueryAnalysis(
             AstContext astContext,
-            BaseQueryExports baseQueryExports,
-            JoinRequirements joinRequirements
+            QueryAnalysisModel model
     ) {
         this.astContext = astContext;
-        this.baseQueryExports = baseQueryExports;
-        this.joinRequirements = joinRequirements;
+        this.model = model;
     }
 
     public AstContext getAstContext() {
@@ -34,16 +29,16 @@ public final class QueryAnalysis {
 
     @Nullable
     public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
-        return baseQueryExports.exportSelection(baseTableOwner);
+        return model.getBaseQueryExports().exportSelection(baseTableOwner);
     }
 
     @Nullable
     public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        return baseQueryExports.baseSelectionRender(query);
+        return model.getBaseQueryExports().baseSelectionRender(query);
     }
 
     @Nullable
     public JoinType getRequiredJoinType(TableImplementor<?> table) {
-        return joinRequirements.get(table);
+        return model.getJoinRequirements().get(table);
     }
 }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportsCollector;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
@@ -45,13 +46,65 @@ final class QueryAnalysisBuilder {
     }
 
     private QueryAnalysis analyze(Ast ast) {
-        analyzeJoinRequirements(ast);
-        QueryAnalysis joinAwareAnalysis = new QueryAnalysis(
-                astContext,
-                baseQueryExportsCollector.toExports(),
-                joinRequirements
+        collectJoinRequirements(ast);
+        QueryAnalysis joinAwareAnalysis = analysisFor(
+                joinRequirements,
+                BaseQueryExportUsages.EMPTY,
+                TableUsages.EMPTY,
+                BaseQueryExports.EMPTY
         );
-        baseQueryExportUsages = BaseQueryExportUsageCollector.collect(astContext, ast, joinAwareAnalysis);
+        baseQueryExportUsages = collectBaseQueryExportUsages(ast, joinAwareAnalysis);
+        TableUsages tableUsages = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
+        BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
+        QueryAnalysisModel model = new QueryAnalysisModel(
+                joinRequirements,
+                baseQueryExportUsages,
+                tableUsages,
+                baseQueryExports
+        );
+        materialize(tableUsages);
+        return new QueryAnalysis(astContext, model);
+    }
+
+    private QueryAnalysis analysisFor(
+            JoinRequirements joinRequirements,
+            BaseQueryExportUsages baseQueryExportUsages,
+            TableUsages tableUsages,
+            BaseQueryExports baseQueryExports
+    ) {
+        return new QueryAnalysis(
+                astContext,
+                new QueryAnalysisModel(
+                        joinRequirements,
+                        baseQueryExportUsages,
+                        tableUsages,
+                        baseQueryExports
+                )
+        );
+    }
+
+    private void collectJoinRequirements(Ast ast) {
+        if (!(ast instanceof AbstractConfigurableTypedQueryImpl)) {
+            return;
+        }
+        AbstractConfigurableTypedQueryImpl query = (AbstractConfigurableTypedQueryImpl) ast;
+        analysisContext.pushStatement(query.getMutableQuery());
+        try {
+            for (Selection<?> selection : query.getSelections()) {
+                if (selection instanceof Table<?>) {
+                    analyzeSelectionJoinRequirement((Table<?>) selection);
+                }
+            }
+        } finally {
+            analysisContext.popStatement();
+        }
+    }
+
+    private BaseQueryExportUsages collectBaseQueryExportUsages(Ast ast, QueryAnalysis joinAwareAnalysis) {
+        return BaseQueryExportUsageCollector.collect(astContext, ast, joinAwareAnalysis);
+    }
+
+    private TableUsages collectTableUsagesAndBaseExports(Ast ast, QueryAnalysis joinAwareAnalysis) {
         TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
@@ -77,31 +130,12 @@ final class QueryAnalysisBuilder {
             }
         };
         ast.accept(visitor);
-        TableUsages tableUsages = visitor.toTableUsages();
-        tableUsages.applyTo(astContext);
-        tableUsages.allocateAliases();
-        return new QueryAnalysis(
-                astContext,
-                baseQueryExportsCollector.toExports(),
-                joinRequirements
-        );
+        return visitor.toTableUsages();
     }
 
-    private void analyzeJoinRequirements(Ast ast) {
-        if (!(ast instanceof AbstractConfigurableTypedQueryImpl)) {
-            return;
-        }
-        AbstractConfigurableTypedQueryImpl query = (AbstractConfigurableTypedQueryImpl) ast;
-        analysisContext.pushStatement(query.getMutableQuery());
-        try {
-            for (Selection<?> selection : query.getSelections()) {
-                if (selection instanceof Table<?>) {
-                    analyzeSelectionJoinRequirement((Table<?>) selection);
-                }
-            }
-        } finally {
-            analysisContext.popStatement();
-        }
+    private void materialize(TableUsages tableUsages) {
+        tableUsages.applyTo(astContext);
+        tableUsages.allocateAliases();
     }
 
     private void analyzeSelectionJoinRequirement(Table<?> table) {

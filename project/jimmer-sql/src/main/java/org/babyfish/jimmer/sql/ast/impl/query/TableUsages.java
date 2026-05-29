@@ -12,6 +12,9 @@ import java.util.Map;
 
 public final class TableUsages {
 
+    static final TableUsages EMPTY =
+            new TableUsages(Collections.emptyList(), Collections.emptyMap());
+
     private final List<RealTable> rootTables;
 
     private final Map<RealTable, TableUsedState> tableStateMap;
