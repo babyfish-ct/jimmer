@@ -123,7 +123,7 @@ final class BaseQueryExportAnalysis {
                 ColumnDefinition definition = prop.getStorage(ctx.getSqlClient().getMetadataStrategy());
                 int size = definition.size();
                 for (int i = 0; i < size; i++) {
-                    exportSelection.joinKeyColumnIndex(realTable.getAlias(), definition.name(i), false);
+                    exportSelection.requireJoinKeyColumnIndex(realTable.getAlias(), definition.name(i), false);
                 }
             }
         }
@@ -139,7 +139,7 @@ final class BaseQueryExportAnalysis {
     ) {
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            exportSelection.formulaIndex(table.getAlias(), (FormulaTemplate) template);
+            exportSelection.requireFormulaIndex(table.getAlias(), (FormulaTemplate) template);
             return;
         }
         if (!prop.isColumnDefinition()) {
@@ -171,7 +171,7 @@ final class BaseQueryExportAnalysis {
     ) {
         int size = definition.size();
         for (int i = 0; i < size; i++) {
-            exportSelection.columnIndex(alias, definition.name(i), foreignKeyInBaseQuery);
+            exportSelection.requireColumnIndex(alias, definition.name(i), foreignKeyInBaseQuery);
         }
     }
 }

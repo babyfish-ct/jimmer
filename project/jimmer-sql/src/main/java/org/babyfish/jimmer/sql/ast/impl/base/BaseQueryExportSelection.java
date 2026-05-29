@@ -53,12 +53,6 @@ public class BaseQueryExportSelection {
         return export.columnIndexOrNull(this, tableKeys(alias), columnName, foreignKeyInBaseQuery);
     }
 
-    public int joinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
-        return export
-                .column(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
-                .getIndex();
-    }
-
     public int formulaIndex(String alias, FormulaTemplate formula) {
         return export
                 .formula(this, tableKeys(alias), formula)

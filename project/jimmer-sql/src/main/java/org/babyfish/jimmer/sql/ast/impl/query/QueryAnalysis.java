@@ -52,7 +52,7 @@ public final class QueryAnalysis {
 
             @Override
             public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
-                analysis.requireBaseQueryExportSelection(baseTableOwner).expressionIndex();
+                analysis.requireBaseQueryExportSelection(baseTableOwner).requireExpressionIndex();
             }
         };
         ast.accept(visitor);
