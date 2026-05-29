@@ -19,6 +19,9 @@ public final class BaseQueryExportsCollector {
     private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery =
             new IdentityHashMap<>();
 
+    private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable =
+            new IdentityHashMap<>();
+
     public BaseQueryExportsCollector(AstContext astContext) {
         this.astContext = astContext;
     }
@@ -34,12 +37,14 @@ public final class BaseQueryExportsCollector {
             return null;
         }
         BaseQueryScope scope = scope(statement);
+        scopeMapByBaseTable.put(baseTable, scope);
         scopeMapByQuery.put(baseTable.getQuery(), scope);
         MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
         if (mergedBy != null) {
             boolean cte = baseTable.isCte();
             for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
                 BaseTableSymbol itemBaseTable = (BaseTableSymbol) itemQuery.asBaseTable(null, cte);
+                scopeMapByBaseTable.put(itemBaseTable, scope);
                 scopeMapByQuery.put(itemBaseTable.getQuery(), scope);
                 scope.requireExportSelection(new BaseTableOwner(itemBaseTable, baseTableOwner.getIndex()));
             }
@@ -50,8 +55,8 @@ public final class BaseQueryExportsCollector {
     public BaseQueryExports toExports() {
         return new BaseQueryExports(
                 astContext,
-                new IdentityHashMap<>(scopeMap),
-                new IdentityHashMap<>(scopeMapByQuery)
+                new IdentityHashMap<>(scopeMapByQuery),
+                new IdentityHashMap<>(scopeMapByBaseTable)
         );
     }
 

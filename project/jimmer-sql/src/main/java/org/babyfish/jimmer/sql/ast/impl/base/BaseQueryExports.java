@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
@@ -11,18 +10,18 @@ public final class BaseQueryExports {
 
     private final AstContext astContext;
 
-    private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap;
-
     private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery;
+
+    private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable;
 
     BaseQueryExports(
             AstContext astContext,
-            Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap,
-            Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery
+            Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery,
+            Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable
     ) {
         this.astContext = astContext;
-        this.scopeMap = scopeMap;
         this.scopeMapByQuery = scopeMapByQuery;
+        this.scopeMapByBaseTable = scopeMapByBaseTable;
     }
 
     @Nullable
@@ -35,11 +34,7 @@ public final class BaseQueryExports {
             baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        AbstractMutableStatementImpl statement = astContext.findBaseQueryStatement(baseTable);
-        if (statement == null) {
-            return null;
-        }
-        BaseQueryScope scope = scopeMap.get(statement);
+        BaseQueryScope scope = scopeMapByBaseTable.get(baseTable);
         return scope != null ? scope.exportSelectionOrNull(baseTableOwner) : null;
     }
 
