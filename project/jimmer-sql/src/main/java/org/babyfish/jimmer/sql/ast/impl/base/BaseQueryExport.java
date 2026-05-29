@@ -1,11 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -33,37 +29,29 @@ public final class BaseQueryExport {
         return realBaseTable;
     }
 
-    public BaseQueryExportSelection selection(int selectionIndex) {
+    public BaseQueryExportSelection selection(int selectionIndex, RealTable rootRealTable) {
         return selectionMap.computeIfAbsent(
                 selectionIndex,
-                it -> {
-                    Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor())
-                            .getSelections()
-                            .get(it);
-                    return new BaseQueryExportSelection(this, it, rootRealTable(selection));
-                }
+                it -> new BaseQueryExportSelection(this, it, rootRealTable)
         );
     }
 
-    BaseQueryExportCollectorSelection requireSelection(int selectionIndex) {
-        BaseQueryExportSelection selection = selection(selectionIndex);
+    BaseQueryExportCollectorSelection requireSelection(int selectionIndex, RealTable rootRealTable) {
+        BaseQueryExportSelection selection = selection(selectionIndex, rootRealTable);
         if (selection instanceof BaseQueryExportCollectorSelection) {
             return (BaseQueryExportCollectorSelection) selection;
         }
-        Selection<?> rawSelection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor())
-                .getSelections()
-                .get(selectionIndex);
         BaseQueryExportCollectorSelection collectorSelection =
-                new BaseQueryExportCollectorSelection(this, selectionIndex, rootRealTable(rawSelection));
+                new BaseQueryExportCollectorSelection(this, selectionIndex, rootRealTable);
         selectionMap.put(selectionIndex, collectorSelection);
         return collectorSelection;
     }
 
-    public BaseQueryExportSelection selectionOrNull(int selectionIndex) {
+    public BaseQueryExportSelection selectionOrNull(int selectionIndex, RealTable rootRealTable) {
         if (!selectionExportMap.containsKey(selectionIndex)) {
             return null;
         }
-        return selection(selectionIndex);
+        return selection(selectionIndex, rootRealTable);
     }
 
     BaseQueryExportColumn column(
@@ -150,21 +138,8 @@ public final class BaseQueryExport {
         return requireSelectionExport(selection.getIndex()).requireExpressionIndex();
     }
 
-    AstContext astContext() {
-        return scope.astContext;
-    }
-
     int nextColumnIndex() {
         return scope.colNo();
-    }
-
-    private RealTable rootRealTable(Selection<?> selection) {
-        if (!(selection instanceof Table<?>)) {
-            return null;
-        }
-        return TableProxies
-                .resolve((Table<?>) selection, astContext())
-                .realTable(astContext());
     }
 
     private SelectionExport requireSelectionExport(int selectionIndex) {

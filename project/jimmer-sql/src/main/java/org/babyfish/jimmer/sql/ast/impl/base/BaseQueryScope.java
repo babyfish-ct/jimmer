@@ -35,18 +35,30 @@ public class BaseQueryScope {
             export = new BaseQueryExport(this, realBaseTable);
             exportMap.put(realBaseTable, export);
         }
-        return export.requireSelection(baseTableOwner.index);
+        return export.requireSelection(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index));
     }
 
     BaseQueryExportSelection exportSelectionOrNull(BaseTableOwner baseTableOwner) {
         BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
         RealTable realBaseTable = baseTable.realTable(astContext);
         BaseQueryExport export = exportMap.get(realBaseTable);
-        return export != null ? export.selectionOrNull(baseTableOwner.index) : null;
+        return export != null ?
+                export.selectionOrNull(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index)) :
+                null;
     }
 
     int colNo() {
         return ++colNoSequence;
+    }
+
+    RealTable rootRealTable(BaseTableImplementor baseTable, int selectionIndex) {
+        Selection<?> selection = baseTable.getSelections().get(selectionIndex);
+        if (!(selection instanceof Table<?>)) {
+            return null;
+        }
+        return TableProxies
+                .resolve((Table<?>) selection, astContext)
+                .realTable(astContext);
     }
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
@@ -71,7 +83,9 @@ public class BaseQueryScope {
         public void render(int index, Selection<?> selection, SqlBuilder builder) {
             RealTable realBaseTable = builder.getAstContext().getRenderedRealBaseTable();
             BaseQueryExport export = exportMap.get(realBaseTable);
-            BaseQueryExportSelection exportSelection = export != null ? export.selectionOrNull(index) : null;
+            BaseQueryExportSelection exportSelection = export != null ?
+                    export.selectionOrNull(index, rootRealTable(selection, builder.getAstContext())) :
+                    null;
             if (exportSelection == null) {
                 return;
             }
@@ -118,8 +132,10 @@ public class BaseQueryScope {
             int size = selections.size();
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (int i = 0; i < size; i++) {
-                BaseQueryExportSelection exportSelection = exportMap.get(realBaseTable).selectionOrNull(i);
                 Selection<?> selection = selections.get(i);
+                BaseQueryExportSelection exportSelection = exportMap
+                        .get(realBaseTable)
+                        .selectionOrNull(i, rootRealTable(selection, builder.getAstContext()));
                 if (selection instanceof Expression<?>) {
                     builder.separator().sql("c").sql(Integer.toString(exportSelection.expressionIndex()));
                 } else {
@@ -129,6 +145,15 @@ public class BaseQueryScope {
                 }
             }
             builder.leave();
+        }
+
+        private static RealTable rootRealTable(Selection<?> selection, AstContext astContext) {
+            if (!(selection instanceof Table<?>)) {
+                return null;
+            }
+            return TableProxies
+                    .resolve((Table<?>) selection, astContext)
+                    .realTable(astContext);
         }
     }
 
