@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,18 +7,14 @@ import java.util.Map;
 
 public final class BaseQueryExports {
 
-    private final AstContext astContext;
-
     private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery;
 
     private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable;
 
     BaseQueryExports(
-            AstContext astContext,
             Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery,
             Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable
     ) {
-        this.astContext = astContext;
         this.scopeMapByQuery = scopeMapByQuery;
         this.scopeMapByBaseTable = scopeMapByBaseTable;
     }

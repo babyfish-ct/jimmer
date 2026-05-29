@@ -61,7 +61,6 @@ public final class BaseQueryExportsCollector {
 
     public BaseQueryExports toExports() {
         return new BaseQueryExports(
-                astContext,
                 new IdentityHashMap<>(scopeMapByQuery),
                 new IdentityHashMap<>(scopeMapByBaseTable)
         );

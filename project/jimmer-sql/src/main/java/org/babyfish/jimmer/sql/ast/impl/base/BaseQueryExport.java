@@ -170,7 +170,7 @@ public final class BaseQueryExport {
     private SelectionExport requireSelectionExport(int selectionIndex) {
         SelectionExport export = selectionExportMap.get(selectionIndex);
         if (export == null) {
-            export = new SelectionExport(selectionIndex);
+            export = new SelectionExport();
             selectionExportMap.put(selectionIndex, export);
         }
         return export;
@@ -183,7 +183,7 @@ public final class BaseQueryExport {
 
         private Integer expressionIndex;
 
-        private SelectionExport(int selectionIndex) {
+        private SelectionExport() {
         }
 
         BaseQueryExportColumn column(
