@@ -10,7 +10,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-final class TableUsages {
+public final class TableUsages {
 
     private final List<RealTable> rootTables;
 
@@ -21,7 +21,7 @@ final class TableUsages {
         this.tableStateMap = new IdentityHashMap<>(tableStateMap);
     }
 
-    void applyTo(AstContext astContext) {
+    public void applyTo(AstContext astContext) {
         for (Map.Entry<RealTable, TableUsedState> e : tableStateMap.entrySet()) {
             if (e.getValue() == TableUsedState.USED) {
                 astContext.useTable(e.getKey());
@@ -31,7 +31,7 @@ final class TableUsages {
         }
     }
 
-    void allocateAliases() {
+    public void allocateAliases() {
         for (RealTable rootTable : rootTables) {
             rootTable.allocateAliases();
         }

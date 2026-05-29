@@ -7,7 +7,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
@@ -128,12 +129,14 @@ public class MutableDeleteImpl
         deleteQuery.freeze(astContext);
         astContext.pushStatement(deleteQuery);
         try {
-            UseTableVisitor visitor = new UseTableVisitor(astContext);
+            TableUsageCollector visitor = new TableUsageCollector(astContext);
             visitor.visitStatement(this);
             for (Predicate predicate : deleteQuery.unfrozenPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
-            visitor.allocateAliases();
+            TableUsages tableUsages = visitor.toTableUsages();
+            tableUsages.applyTo(astContext);
+            tableUsages.allocateAliases();
         } finally {
             astContext.popStatement();
         }

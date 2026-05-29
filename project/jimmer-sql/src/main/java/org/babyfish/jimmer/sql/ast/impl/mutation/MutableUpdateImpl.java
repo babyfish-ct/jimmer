@@ -9,7 +9,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -288,7 +289,9 @@ public class MutableUpdateImpl
             Dialect dialect = getSqlClient().getDialect();
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
             this.accept(visitor);
-            visitor.allocateAliases();
+            TableUsages tableUsages = visitor.toTableUsages();
+            tableUsages.applyTo(astContext);
+            tableUsages.allocateAliases();
             builder
                     .sql("update ")
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
@@ -321,7 +324,9 @@ public class MutableUpdateImpl
         try {
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
-            visitor.allocateAliases();
+            TableUsages tableUsages = visitor.toTableUsages();
+            tableUsages.applyTo(astContext);
+            tableUsages.allocateAliases();
             TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.enter(SqlBuilder.ScopeType.SELECT);
@@ -537,7 +542,7 @@ public class MutableUpdateImpl
         }
     }
 
-    private static class VisitorImpl extends UseTableVisitor {
+    private static class VisitorImpl extends TableUsageCollector {
 
         private final Dialect dialect;
 
@@ -555,7 +560,7 @@ public class MutableUpdateImpl
         }
 
         private void validateTable(RealTable table) {
-            if (getAstContext().getTableUsedState(table) == TableUsedState.USED) {
+            if (getTableUsedState(table) == TableUsedState.USED) {
                 if (table.getParent() != null && dialect.getUpdateJoin() == null) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +

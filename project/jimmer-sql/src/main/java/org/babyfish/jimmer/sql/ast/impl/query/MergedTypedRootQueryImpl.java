@@ -164,9 +164,11 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
-        UseTableVisitor visitor = new UseTableVisitor(builder.getAstContext());
+        TableUsageCollector visitor = new TableUsageCollector(builder.getAstContext());
         accept(visitor);
-        visitor.allocateAliases();
+        TableUsages tableUsages = visitor.toTableUsages();
+        tableUsages.applyTo(builder.getAstContext());
+        tableUsages.allocateAliases();
         renderTo(builder);
         return builder.build();
     }

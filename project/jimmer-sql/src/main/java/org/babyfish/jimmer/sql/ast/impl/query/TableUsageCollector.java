@@ -9,17 +9,17 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-class TableUsageCollector extends TableUsageVisitor {
+public class TableUsageCollector extends TableUsageVisitor {
 
     private final List<RealTable> rootTables = new ArrayList<>();
 
     private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>();
 
-    TableUsageCollector(AstContext ctx) {
+    public TableUsageCollector(AstContext ctx) {
         super(ctx);
     }
 
-    TableUsages toTableUsages() {
+    public TableUsages toTableUsages() {
         return new TableUsages(rootTables, tableStateMap);
     }
 
@@ -36,5 +36,10 @@ class TableUsageCollector extends TableUsageVisitor {
     @Override
     protected void useTable(RealTable table) {
         tableStateMap.put(table, TableUsedState.USED);
+    }
+
+    protected final TableUsedState getTableUsedState(RealTable table) {
+        TableUsedState state = tableStateMap.get(table);
+        return state != null ? state : TableUsedState.NONE;
     }
 }
