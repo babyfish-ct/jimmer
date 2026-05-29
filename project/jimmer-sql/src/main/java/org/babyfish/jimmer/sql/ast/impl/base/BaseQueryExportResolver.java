@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysisContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.LinkedHashMap;
@@ -11,18 +10,18 @@ import java.util.Map;
 
 final class BaseQueryExportResolver {
 
-    private final AstContext astContext;
+    private final QueryAnalysisContext ctx;
 
     private final Map<RealTable, BaseQueryExport> exportMap;
 
-    BaseQueryExportResolver(AstContext astContext, Map<RealTable, BaseQueryExport> exportMap) {
-        this.astContext = astContext;
+    BaseQueryExportResolver(QueryAnalysisContext ctx, Map<RealTable, BaseQueryExport> exportMap) {
+        this.ctx = ctx;
         this.exportMap = new LinkedHashMap<>(exportMap);
     }
 
     BaseQueryExportSelection exportSelectionOrNull(BaseTableOwner baseTableOwner) {
-        BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
-        RealTable realBaseTable = baseTable.realTable(astContext);
+        BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableOwner.getBaseTable());
+        RealTable realBaseTable = ctx.realTable(baseTable);
         BaseQueryExport export = exportMap.get(realBaseTable);
         return export != null ?
                 export.selectionOrNull(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index)) :
@@ -38,8 +37,6 @@ final class BaseQueryExportResolver {
         if (!(selection instanceof Table<?>)) {
             return null;
         }
-        return TableProxies
-                .resolve((Table<?>) selection, astContext)
-                .realTable(astContext);
+        return ctx.realTable(ctx.resolve((Table<?>) selection));
     }
 }

@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportsCollector;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,21 +18,24 @@ final class QueryAnalysisBuilder {
 
     private final AstContext astContext;
 
+    private final QueryAnalysisContext analysisContext;
+
     private final BaseQueryExportsCollector baseQueryExportsCollector;
 
     private final JoinRequirementPlan joinRequirementPlan = new JoinRequirementPlan();
 
     private QueryAnalysisBuilder(AstContext astContext) {
         this.astContext = astContext;
-        this.baseQueryExportsCollector = new BaseQueryExportsCollector(astContext);
+        this.analysisContext = new QueryAnalysisContext(astContext);
+        this.baseQueryExportsCollector = new BaseQueryExportsCollector(analysisContext);
     }
 
     static QueryAnalysis analyze(AstContext astContext, Ast ast) {
         return new QueryAnalysisBuilder(astContext).analyze(ast);
     }
 
-    AstContext getAstContext() {
-        return astContext;
+    QueryAnalysisContext getAnalysisContext() {
+        return analysisContext;
     }
 
     BaseQueryExportCollectorSelection requireBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
@@ -82,7 +84,7 @@ final class QueryAnalysisBuilder {
             return;
         }
         AbstractConfigurableTypedQueryImpl query = (AbstractConfigurableTypedQueryImpl) ast;
-        astContext.pushStatement(query.getMutableQuery());
+        analysisContext.pushStatement(query.getMutableQuery());
         try {
             for (Selection<?> selection : query.getSelections()) {
                 if (selection instanceof Table<?>) {
@@ -90,12 +92,12 @@ final class QueryAnalysisBuilder {
                 }
             }
         } finally {
-            astContext.popStatement();
+            analysisContext.popStatement();
         }
     }
 
     private void analyzeSelectionJoinRequirement(Table<?> table) {
-        TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
+        TableImplementor<?> tableImplementor = analysisContext.resolve(table);
         if (tableImplementor.getBaseTableOwner() == null) {
             return;
         }

@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysisContext;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
@@ -13,7 +13,7 @@ import java.util.Map;
 
 public final class BaseQueryExportsCollector {
 
-    private final AstContext astContext;
+    private final QueryAnalysisContext ctx;
 
     private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap =
             new IdentityHashMap<>();
@@ -24,8 +24,8 @@ public final class BaseQueryExportsCollector {
     private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable =
             new IdentityHashMap<>();
 
-    public BaseQueryExportsCollector(AstContext astContext) {
-        this.astContext = astContext;
+    public BaseQueryExportsCollector(QueryAnalysisContext ctx) {
+        this.ctx = ctx;
     }
 
     public void registerStatement(AbstractMutableStatementImpl statement) {
@@ -106,7 +106,7 @@ public final class BaseQueryExportsCollector {
     private BaseQueryScope scope(AbstractMutableStatementImpl statement) {
         return scopeMap.computeIfAbsent(
                 statement,
-                it -> new BaseQueryScope(astContext)
+                it -> new BaseQueryScope(ctx)
         );
     }
 

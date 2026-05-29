@@ -3,14 +3,12 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -37,7 +35,7 @@ final class BaseQueryExportAnalysis {
             boolean rawId,
             QueryAnalysisBuilder analysis
     ) {
-        AstContext ctx = analysis.getAstContext();
+        QueryAnalysisContext ctx = analysis.getAnalysisContext();
         BaseTableOwner baseTableOwner = table.getBaseTableOwner();
         if (baseTableOwner == null) {
             return;
@@ -83,20 +81,20 @@ final class BaseQueryExportAnalysis {
             BaseTableImplementor baseTableImplementor,
             QueryAnalysisBuilder analysis
     ) {
-        AstContext ctx = analysis.getAstContext();
+        QueryAnalysisContext ctx = analysis.getAnalysisContext();
         for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
             if (!(selection instanceof Table<?>)) {
                 continue;
             }
             Table<?> table = (Table<?>) selection;
-            TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
+            TableImplementor<?> tableImplementor = ctx.resolve(table);
             BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
             if (baseTableOwner == null) {
                 continue;
             }
             BaseQueryExportCollectorSelection exportSelection =
                     analysis.requireBaseQueryExportSelection(baseTableOwner);
-            RealTable realTable = tableImplementor.realTable(ctx);
+            RealTable realTable = ctx.realTable(tableImplementor);
             for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
                 analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
             }
@@ -119,10 +117,10 @@ final class BaseQueryExportAnalysis {
                 if (!prop.isColumnDefinition()) {
                     continue;
                 }
-                ColumnDefinition definition = prop.getStorage(ctx.getSqlClient().getMetadataStrategy());
+                ColumnDefinition definition = prop.getStorage(ctx.getMetadataStrategy());
                 int size = definition.size();
                 for (int i = 0; i < size; i++) {
-                    exportSelection.requireJoinKeyColumnIndex(realTable.getAlias(), definition.name(i), false);
+                    exportSelection.requireJoinKeyColumnIndex(ctx.alias(realTable), definition.name(i), false);
                 }
             }
         }
@@ -134,17 +132,17 @@ final class BaseQueryExportAnalysis {
             ImmutableProp prop,
             boolean rawId,
             BaseQueryExportCollectorSelection exportSelection,
-            AstContext ctx
+            QueryAnalysisContext ctx
     ) {
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            exportSelection.requireFormulaIndex(table.getAlias(), (FormulaTemplate) template);
+            exportSelection.requireFormulaIndex(ctx.alias(table), (FormulaTemplate) template);
             return;
         }
         if (!prop.isColumnDefinition()) {
             return;
         }
-        MetadataStrategy strategy = ctx.getSqlClient().getMetadataStrategy();
+        MetadataStrategy strategy = ctx.getMetadataStrategy();
         ImmutableProp joinProp = tableImplementor.getJoinProp();
         if (prop.isId() &&
                 joinProp != null &&
@@ -154,7 +152,7 @@ final class BaseQueryExportAnalysis {
                 !joinProp.isMiddleTableDefinition() &&
                 table.getParent() != null) {
             ColumnDefinition definition = joinProp.getStorage(strategy);
-            analyzeColumns(table.getParent().getAlias(), definition, true, exportSelection);
+            analyzeColumns(ctx.alias(table.getParent()), definition, true, exportSelection);
             return;
         }
         ColumnDefinition definition = prop.getStorage(strategy);
