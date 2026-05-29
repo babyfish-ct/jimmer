@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -38,7 +40,7 @@ public final class BaseQueryExport {
                     Selection<?> selection = ((BaseTableImplementor) realBaseTable.getTableLikeImplementor())
                             .getSelections()
                             .get(it);
-                    return new BaseQueryExportSelection(this, it, selection);
+                    return new BaseQueryExportSelection(this, it, rootRealTable(selection));
                 }
         );
     }
@@ -52,7 +54,7 @@ public final class BaseQueryExport {
                 .getSelections()
                 .get(selectionIndex);
         BaseQueryExportCollectorSelection collectorSelection =
-                new BaseQueryExportCollectorSelection(this, selectionIndex, rawSelection);
+                new BaseQueryExportCollectorSelection(this, selectionIndex, rootRealTable(rawSelection));
         selectionMap.put(selectionIndex, collectorSelection);
         return collectorSelection;
     }
@@ -154,6 +156,15 @@ public final class BaseQueryExport {
 
     int nextColumnIndex() {
         return scope.colNo();
+    }
+
+    private RealTable rootRealTable(Selection<?> selection) {
+        if (!(selection instanceof Table<?>)) {
+            return null;
+        }
+        return TableProxies
+                .resolve((Table<?>) selection, astContext())
+                .realTable(astContext());
     }
 
     private SelectionExport requireSelectionExport(int selectionIndex) {

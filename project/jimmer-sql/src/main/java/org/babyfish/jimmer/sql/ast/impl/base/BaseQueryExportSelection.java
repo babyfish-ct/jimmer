@@ -1,10 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
-import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
 import java.util.Collection;
@@ -17,22 +13,16 @@ public class BaseQueryExportSelection {
 
     private final int index;
 
-    private final Selection<?> selection;
+    private final RealTable rootRealTable;
 
-    private RealTable rootRealTable;
-
-    BaseQueryExportSelection(BaseQueryExport export, int index, Selection<?> selection) {
+    BaseQueryExportSelection(BaseQueryExport export, int index, RealTable rootRealTable) {
         this.export = export;
         this.index = index;
-        this.selection = selection;
+        this.rootRealTable = rootRealTable;
     }
 
     int getIndex() {
         return index;
-    }
-
-    Selection<?> getSelection() {
-        return selection;
     }
 
     public String getAlias() {
@@ -40,7 +30,7 @@ public class BaseQueryExportSelection {
     }
 
     public boolean isRootTable(RealTable table) {
-        return path(rootRealTable()).equals(path(table));
+        return path(rootRealTable).equals(path(table));
     }
 
     public int columnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
@@ -68,31 +58,16 @@ public class BaseQueryExportSelection {
     }
 
     protected List<RealTable.Key> tableKeys(String alias) {
-        RealTable rootRealTable = rootRealTable();
         List<RealTable.Key> keys = new ArrayList<>();
         collectKeys(rootRealTable, alias, keys);
         return keys;
-    }
-
-    private RealTable rootRealTable() {
-        RealTable realTable = rootRealTable;
-        if (realTable == null) {
-            AstContext ctx = export.astContext();
-            rootRealTable = realTable = TableProxies
-                    .resolve((Table<?>) selection, ctx)
-                    .realTable(ctx);
-        }
-        return realTable;
     }
 
     private void collectKeys(RealTable table, String alias, List<RealTable.Key> keys) {
         if (table.getAlias().equals(alias)) {
             return;
         }
-        RealTable realTable =
-                table.getTableLikeImplementor()
-                        .realTable(export.astContext().getJoinTypeMergeScope());
-        for (RealTable childTable : realTable) {
+        for (RealTable childTable : table) {
             keys.add(childTable.getKey());
             collectKeys(childTable, alias, keys);
         }

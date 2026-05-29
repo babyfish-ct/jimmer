@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
-import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
 public final class BaseQueryExportCollectorSelection extends BaseQueryExportSelection {
 
-    BaseQueryExportCollectorSelection(BaseQueryExport export, int index, Selection<?> selection) {
-        super(export, index, selection);
+    BaseQueryExportCollectorSelection(BaseQueryExport export, int index, RealTable rootRealTable) {
+        super(export, index, rootRealTable);
     }
 
     public int requireColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
