@@ -41,6 +41,7 @@ public final class QueryAnalysis {
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
                 super.visitStatement(statement);
+                analysis.baseQueryExportsCollector.registerStatement(statement);
                 BaseQueryExportAnalysis.analyze(statement, analysis);
             }
 

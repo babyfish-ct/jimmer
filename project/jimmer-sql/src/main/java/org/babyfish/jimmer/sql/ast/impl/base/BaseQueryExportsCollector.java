@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
+import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -26,26 +28,31 @@ public final class BaseQueryExportsCollector {
         this.astContext = astContext;
     }
 
+    public void registerStatement(AbstractMutableStatementImpl statement) {
+        TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
+        if (!TableUtils.hasBaseTable(tableLikeImplementor)) {
+            return;
+        }
+        BaseQueryScope scope = scope(statement);
+        register(tableLikeImplementor, scope);
+    }
+
     public BaseQueryExportCollectorSelection exportSelection(BaseTableOwner baseTableOwner) {
         BaseTableSymbol recursive = baseTableOwner.getBaseTable().getRecursive();
         if (recursive != null) {
             baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        AbstractMutableStatementImpl statement = astContext.findBaseQueryStatement(baseTable);
-        if (statement == null) {
+        BaseQueryScope scope = scopeMapByBaseTable.get(baseTable);
+        if (scope == null) {
             return null;
         }
-        BaseQueryScope scope = scope(statement);
-        scopeMapByBaseTable.put(baseTable, scope);
-        scopeMapByQuery.put(baseTable.getQuery(), scope);
         MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
         if (mergedBy != null) {
             boolean cte = baseTable.isCte();
             for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
                 BaseTableSymbol itemBaseTable = (BaseTableSymbol) itemQuery.asBaseTable(null, cte);
-                scopeMapByBaseTable.put(itemBaseTable, scope);
-                scopeMapByQuery.put(itemBaseTable.getQuery(), scope);
+                register(itemBaseTable, scope);
                 scope.requireExportSelection(new BaseTableOwner(itemBaseTable, baseTableOwner.getIndex()));
             }
         }
@@ -58,6 +65,32 @@ public final class BaseQueryExportsCollector {
                 new IdentityHashMap<>(scopeMapByQuery),
                 new IdentityHashMap<>(scopeMapByBaseTable)
         );
+    }
+
+    private void register(TableLikeImplementor<?> tableLikeImplementor, BaseQueryScope scope) {
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            register(((BaseTableImplementor) tableLikeImplementor).toSymbol(), scope);
+        } else if (tableLikeImplementor.hasBaseTable()) {
+            Iterable<TableLikeImplementor<?>> children =
+                    (Iterable<TableLikeImplementor<?>>) tableLikeImplementor;
+            for (TableLikeImplementor<?> child : children) {
+                register(child, scope);
+            }
+        }
+    }
+
+    private void register(BaseTableSymbol baseTable, BaseQueryScope scope) {
+        scopeMapByBaseTable.put(baseTable, scope);
+        scopeMapByQuery.put(baseTable.getQuery(), scope);
+        MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
+        if (mergedBy != null) {
+            boolean cte = baseTable.isCte();
+            for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
+                BaseTableSymbol itemBaseTable = (BaseTableSymbol) itemQuery.asBaseTable(null, cte);
+                scopeMapByBaseTable.put(itemBaseTable, scope);
+                scopeMapByQuery.put(itemBaseTable.getQuery(), scope);
+            }
+        }
     }
 
     private BaseQueryScope scope(AbstractMutableStatementImpl statement) {
