@@ -799,6 +799,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
     }
 
+    @Override
+    public final void applyAliases(TableAliases tableAliases) {
+        TableAliases.Alias alias = tableAliases.get(this);
+        if (alias != null) {
+            this.aliases = new Aliases(alias.value, alias.middleValue);
+        }
+        for (RealTable childTable : this) {
+            childTable.applyAliases(tableAliases);
+        }
+    }
+
     private void allocateAliasImpl() {
         if (aliases != null) {
             return;

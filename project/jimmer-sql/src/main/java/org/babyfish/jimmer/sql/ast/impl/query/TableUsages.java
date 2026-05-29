@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
 import java.util.ArrayList;
@@ -34,9 +35,11 @@ public final class TableUsages {
         }
     }
 
-    public void allocateAliases() {
+    public TableAliases allocateAliases() {
+        TableAliases aliases = TableAliases.allocate(rootTables, tableStateMap);
         for (RealTable rootTable : rootTables) {
-            rootTable.allocateAliases();
+            rootTable.applyAliases(aliases);
         }
+        return aliases;
     }
 }

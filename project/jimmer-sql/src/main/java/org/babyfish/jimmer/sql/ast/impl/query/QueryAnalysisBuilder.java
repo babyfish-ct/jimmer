@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportsCollector;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.jetbrains.annotations.Nullable;
@@ -56,13 +57,14 @@ final class QueryAnalysisBuilder {
         baseQueryExportUsages = collectBaseQueryExportUsages(ast, joinAwareAnalysis);
         TableUsages tableUsages = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
         BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
+        TableAliases tableAliases = materialize(tableUsages);
         QueryAnalysisModel model = new QueryAnalysisModel(
                 joinRequirements,
                 baseQueryExportUsages,
                 tableUsages,
+                tableAliases,
                 baseQueryExports
         );
-        materialize(tableUsages);
         return new QueryAnalysis(astContext, model);
     }
 
@@ -78,6 +80,7 @@ final class QueryAnalysisBuilder {
                         joinRequirements,
                         baseQueryExportUsages,
                         tableUsages,
+                        TableAliases.EMPTY,
                         baseQueryExports
                 )
         );
@@ -133,9 +136,9 @@ final class QueryAnalysisBuilder {
         return visitor.toTableUsages();
     }
 
-    private void materialize(TableUsages tableUsages) {
+    private TableAliases materialize(TableUsages tableUsages) {
         tableUsages.applyTo(astContext);
-        tableUsages.allocateAliases();
+        return tableUsages.allocateAliases();
     }
 
     private void analyzeSelectionJoinRequirement(Table<?> table) {

@@ -36,6 +36,8 @@ public interface RealTable extends Iterable<RealTable> {
 
     void allocateAliases();
 
+    void applyAliases(TableAliases aliases);
+
     void use(TableUsageVisitor visitor);
 
     void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean cte);
