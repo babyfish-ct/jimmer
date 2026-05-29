@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -218,7 +218,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     @Override
-    public void use(UseTableVisitor visitor) {
+    public void use(TableUsageVisitor visitor) {
         if (joinPredicate != null) {
             ((Ast)joinPredicate).accept(visitor);
         }

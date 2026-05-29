@@ -42,7 +42,7 @@ final class QueryAnalysisBuilder {
 
     private QueryAnalysis analyze(Ast ast) {
         analyzeJoinRequirements(ast);
-        UseTableVisitor visitor = new UseTableVisitor(astContext) {
+        TableUsageCollector visitor = new TableUsageCollector(astContext) {
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
                 super.visitStatement(statement);
@@ -67,7 +67,9 @@ final class QueryAnalysisBuilder {
             }
         };
         ast.accept(visitor);
-        visitor.allocateAliases();
+        TableUsages tableUsages = visitor.toTableUsages();
+        tableUsages.applyTo(astContext);
+        tableUsages.allocateAliases();
         return new QueryAnalysis(
                 astContext,
                 baseQueryExportsCollector.toExports(),
