@@ -188,7 +188,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             for (RealTable cteTable : cteTables) {
                 builder.separator();
                 BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
-                BaseSelectionAliasRender cteRender = builder.getAstContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
+                BaseSelectionAliasRender cteRender = builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
                 assert cteRender != null;
                 builder.sql(cteTable.getAlias());
                 cteRender.renderCteColumns(cteTable, builder);

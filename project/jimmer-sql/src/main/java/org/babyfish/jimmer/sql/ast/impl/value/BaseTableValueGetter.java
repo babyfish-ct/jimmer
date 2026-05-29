@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -91,9 +92,10 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
     @Override
     public void renderTo(AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
+        QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
         ctx.pushStatement(owner.getBaseTable().getQuery().getMutableQuery());
         try {
-            BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(owner);
+            BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(owner);
             RealTable realTable = TableProxies
                     .resolve(expression.getTable(), ctx)
                     .realTable(ctx);

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -112,9 +113,10 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
 
     private void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets, boolean simpleCall) {
         AstContext ctx = builder.assertSimple().getAstContext();
+        QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
         ctx.pushStatement(baseTableOwner.getBaseTable().getQuery().getMutableQuery());
         try {
-            BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(baseTableOwner);
+            BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(baseTableOwner);
             assert exportSelection != null;
             RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(ctx);
             if (exportSelection.isRootTable(realTable)) {

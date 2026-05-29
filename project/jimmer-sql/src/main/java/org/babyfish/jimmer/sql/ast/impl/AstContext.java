@@ -4,15 +4,11 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
-import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
@@ -28,9 +24,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     private final JSqlClientImplementor sqlClient;
 
     private StatementFrame statementFrame;
-
-    private final Map<AbstractMutableStatementImpl, BaseQueryScope> baseQueryScopeMap =
-            new IdentityHashMap<>();
 
     private JoinTypeMergeFrame joinTypeMergeFrame;
 
@@ -270,42 +263,20 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     }
 
     @Nullable
-    public BaseQueryScope getBaseQueryScope() {
-        StatementFrame frame = statementFrame;
-        return frame != null && frame.usingBaseQuery ? frame.baseQueryScope() : null;
-    }
-
-    @Nullable
-    public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
-        if (baseTableOwner == null) {
-            return null;
-        }
-        BaseTableSymbol recursive = baseTableOwner.getBaseTable().getRecursive();
-        if (recursive != null) {
-            baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
-        }
-        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        boolean cte = baseTable.isCte();
+    public AbstractMutableStatementImpl findBaseQueryStatement(BaseTableSymbol baseTable) {
         for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
             if (BaseTableSymbols.contains(frame.statement.getTable(), baseTable)) {
-                BaseQueryScope scope = frame.baseQueryScope();
-                MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
-                if (mergedBy != null) {
-                    for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                        scope.exportSelection(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
-                    }
-                }
-                return scope.exportSelection(baseTableOwner);
+                return frame.statement;
             }
         }
         return null;
     }
 
     @Nullable
-    public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
+    public AbstractMutableStatementImpl findCurrentStatementUsingBaseQuery() {
         for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
             if (TableUtils.hasBaseTable(frame.statement.getTableLikeImplementor())) {
-                return frame.baseQueryScope().toBaseSelectionRender(query);
+                return frame.statement;
             }
         }
         return null;
@@ -317,12 +288,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             return frame.realTable;
         }
         throw new IllegalStateException("No rendered real base table");
-    }
-
-    public void freezeBaseQueryScopes() {
-        for (BaseQueryScope scope : baseQueryScopeMap.values()) {
-            scope.freeze();
-        }
     }
 
     public void visitRecursiveQuery(MergedBaseQueryImpl<?> query, Runnable runnable) {
@@ -412,15 +377,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             this.vpFrame = vpFrame.parent;
         }
 
-        public BaseQueryScope baseQueryScope() {
-            if (!usingBaseQuery) {
-                return null;
-            }
-            return baseQueryScopeMap.computeIfAbsent(
-                    statement,
-                    it -> new BaseQueryScope(AstContext.this)
-            );
-        }
     }
 
     private class VirtualPredicateFrame extends AbstractDataManager<VirtualPredicate, VirtualPredicateMergedResult> {

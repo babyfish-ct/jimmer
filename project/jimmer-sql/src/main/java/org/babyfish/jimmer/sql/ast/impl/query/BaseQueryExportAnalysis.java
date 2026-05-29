@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryScope;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
@@ -24,21 +23,22 @@ final class BaseQueryExportAnalysis {
 
     private BaseQueryExportAnalysis() {}
 
-    static void analyze(AbstractMutableStatementImpl statement, AstContext ctx) {
-        BaseQueryScope scope = ctx.getBaseQueryScope();
-        if (scope == null) {
+    static void analyze(AbstractMutableStatementImpl statement, QueryAnalysis analysis) {
+        AstContext ctx = analysis.getAstContext();
+        if (ctx.findCurrentStatementUsingBaseQuery() == null) {
             return;
         }
-        analyze(statement.getTableLikeImplementor(), ctx);
+        analyze(statement.getTableLikeImplementor(), analysis);
     }
 
     static void analyzeTableReference(
             RealTable table,
             @Nullable ImmutableProp prop,
             boolean rawId,
-            AstContext ctx
+            QueryAnalysis analysis
     ) {
-        BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(table.getBaseTableOwner());
+        AstContext ctx = analysis.getAstContext();
+        BaseQueryExportSelection exportSelection = analysis.getBaseQueryExportSelection(table.getBaseTableOwner());
         if (exportSelection == null) {
             return;
         }
@@ -61,17 +61,17 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             TableLikeImplementor<?> tableLikeImplementor,
-            AstContext ctx
+            QueryAnalysis analysis
     ) {
         if (tableLikeImplementor instanceof BaseTableImplementor) {
-            analyze((BaseTableImplementor) tableLikeImplementor, ctx);
+            analyze((BaseTableImplementor) tableLikeImplementor, analysis);
         } else {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
             if (tableImplementor.hasBaseTable()) {
                 Iterable<TableLikeImplementor<?>> children =
                         (Iterable<TableLikeImplementor<?>>) tableImplementor;
                 for (TableLikeImplementor<?> child : children) {
-                    analyze(child, ctx);
+                    analyze(child, analysis);
                 }
             }
         }
@@ -79,15 +79,16 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             BaseTableImplementor baseTableImplementor,
-            AstContext ctx
+            QueryAnalysis analysis
     ) {
+        AstContext ctx = analysis.getAstContext();
         for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
             if (!(selection instanceof Table<?>)) {
                 continue;
             }
             Table<?> table = (Table<?>) selection;
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
-            BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(tableImplementor.getBaseTableOwner());
+            BaseQueryExportSelection exportSelection = analysis.getBaseQueryExportSelection(tableImplementor.getBaseTableOwner());
             if (exportSelection == null) {
                 continue;
             }

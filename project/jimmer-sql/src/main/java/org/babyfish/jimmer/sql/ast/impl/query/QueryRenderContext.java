@@ -1,8 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
 
 public final class QueryRenderContext {
@@ -22,6 +26,16 @@ public final class QueryRenderContext {
 
     public QueryAnalysis getAnalysis() {
         return analysis;
+    }
+
+    @Nullable
+    public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
+        return analysis.getBaseQueryExportSelection(baseTableOwner);
+    }
+
+    @Nullable
+    public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
+        return analysis.getBaseSelectionRender(query);
     }
 
     @Nullable

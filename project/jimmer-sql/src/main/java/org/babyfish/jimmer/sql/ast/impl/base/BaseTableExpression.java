@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +49,8 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        BaseQueryExportSelection exportSelection = ctx.getBaseQueryExportSelection(baseTableOwner);
+        QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
+        BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(baseTableOwner);
         assert exportSelection != null;
         builder
                 .sql(exportSelection.getAlias())

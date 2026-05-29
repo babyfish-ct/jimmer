@@ -595,7 +595,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (owner instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
                 BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-                exportSelection = builder.getAstContext().getBaseQueryExportSelection(baseTableOwner);
+                exportSelection = builder.getQueryRenderContext().getBaseQueryExportSelection(baseTableOwner);
             }
             int size = previousDefinition.size();
             builder.enter(SqlBuilder.ScopeType.AND);
@@ -654,8 +654,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         BaseQueryExportSelection exportSelection =
-                builder instanceof SqlBuilder ?
-                        ((SqlBuilder)builder).getAstContext().getBaseQueryExportSelection(owner.getBaseTableOwner()) :
+                builder instanceof SqlBuilder && ((SqlBuilder) builder).getQueryRenderContext() != null ?
+                        ((SqlBuilder)builder).getQueryRenderContext().getBaseQueryExportSelection(owner.getBaseTableOwner()) :
                         null;
         if (exportSelection != null && !exportSelection.isRootTable(this)) {
             exportSelection = null;

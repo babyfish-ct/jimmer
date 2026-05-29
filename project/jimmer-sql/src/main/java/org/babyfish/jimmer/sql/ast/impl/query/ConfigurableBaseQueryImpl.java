@@ -161,7 +161,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
         SqlBuilder builder = abstractBuilder.assertSimple();
-        renderTo(builder, builder.getAstContext().getBaseSelectionRender(this));
+        renderTo(builder, builder.getQueryRenderContext().getBaseSelectionRender(this));
     }
 
     @Override

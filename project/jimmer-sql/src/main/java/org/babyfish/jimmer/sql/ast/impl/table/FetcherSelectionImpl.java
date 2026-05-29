@@ -199,7 +199,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 String alias = table.getAlias();
                 BaseQueryExportSelection exportSelection =
                         depth == 0 ?
-                                builder.getAstContext().getBaseQueryExportSelection(table.getBaseTableOwner()) :
+                                builder.getQueryRenderContext().getBaseQueryExportSelection(table.getBaseTableOwner()) :
                                 null;
                 if (embeddedPropExpression != null) {
                     String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
