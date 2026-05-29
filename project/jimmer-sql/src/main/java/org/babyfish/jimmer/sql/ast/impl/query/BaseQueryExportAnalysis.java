@@ -95,8 +95,10 @@ final class BaseQueryExportAnalysis {
             BaseQueryExportCollectorSelection exportSelection =
                     analysis.requireBaseQueryExportSelection(baseTableOwner);
             RealTable realTable = ctx.realTable(tableImplementor);
-            for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
-                analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
+            if (baseTableImplementor.isCte() || analysis.isFullRowExportRequired(baseTableOwner)) {
+                for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
+                    analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
+                }
             }
             for (RealTable childTable : realTable) {
                 if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {

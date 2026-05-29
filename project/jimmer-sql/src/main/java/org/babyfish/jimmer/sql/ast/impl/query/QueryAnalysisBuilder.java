@@ -22,7 +22,9 @@ final class QueryAnalysisBuilder {
 
     private final BaseQueryExportsCollector baseQueryExportsCollector;
 
-    private final JoinRequirementPlan joinRequirementPlan = new JoinRequirementPlan();
+    private final JoinRequirements joinRequirements = new JoinRequirements();
+
+    private BaseQueryExportUsages baseQueryExportUsages = BaseQueryExportUsages.EMPTY;
 
     private QueryAnalysisBuilder(AstContext astContext) {
         this.astContext = astContext;
@@ -47,8 +49,9 @@ final class QueryAnalysisBuilder {
         QueryAnalysis joinAwareAnalysis = new QueryAnalysis(
                 astContext,
                 baseQueryExportsCollector.toExports(),
-                joinRequirementPlan
+                joinRequirements
         );
+        baseQueryExportUsages = BaseQueryExportUsageCollector.collect(astContext, ast, joinAwareAnalysis);
         TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
@@ -80,7 +83,7 @@ final class QueryAnalysisBuilder {
         return new QueryAnalysis(
                 astContext,
                 baseQueryExportsCollector.toExports(),
-                joinRequirementPlan
+                joinRequirements
         );
     }
 
@@ -108,7 +111,11 @@ final class QueryAnalysisBuilder {
         }
         ImmutableProp joinProp = tableImplementor.getJoinProp();
         if (joinProp != null && joinProp.isNullable()) {
-            joinRequirementPlan.require(tableImplementor, JoinType.LEFT);
+            joinRequirements.require(tableImplementor, JoinType.LEFT);
         }
+    }
+
+    boolean isFullRowExportRequired(BaseTableOwner baseTableOwner) {
+        return baseQueryExportUsages.isFullRowExportRequired(baseTableOwner);
     }
 }

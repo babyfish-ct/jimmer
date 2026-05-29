@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-final class JoinRequirementPlan {
+final class JoinRequirements {
 
     private final Map<TableImplementor<?>, JoinType> map = new IdentityHashMap<>();
 

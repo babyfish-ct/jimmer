@@ -16,16 +16,16 @@ public final class QueryAnalysis {
 
     private final BaseQueryExports baseQueryExports;
 
-    private final JoinRequirementPlan joinRequirementPlan;
+    private final JoinRequirements joinRequirements;
 
     QueryAnalysis(
             AstContext astContext,
             BaseQueryExports baseQueryExports,
-            JoinRequirementPlan joinRequirementPlan
+            JoinRequirements joinRequirements
     ) {
         this.astContext = astContext;
         this.baseQueryExports = baseQueryExports;
-        this.joinRequirementPlan = joinRequirementPlan;
+        this.joinRequirements = joinRequirements;
     }
 
     public AstContext getAstContext() {
@@ -44,6 +44,6 @@ public final class QueryAnalysis {
 
     @Nullable
     public JoinType getRequiredJoinType(TableImplementor<?> table) {
-        return joinRequirementPlan.get(table);
+        return joinRequirements.get(table);
     }
 }
