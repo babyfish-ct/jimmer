@@ -24,8 +24,7 @@ final class BaseQueryExportAnalysis {
 
     private BaseQueryExportAnalysis() {}
 
-    static void analyze(AbstractMutableStatementImpl statement, QueryAnalysis analysis) {
-        AstContext ctx = analysis.getAstContext();
+    static void analyze(AbstractMutableStatementImpl statement, QueryAnalysisBuilder analysis) {
         if (!TableUtils.hasBaseTable(statement.getTableLikeImplementor())) {
             return;
         }
@@ -36,7 +35,7 @@ final class BaseQueryExportAnalysis {
             RealTable table,
             @Nullable ImmutableProp prop,
             boolean rawId,
-            QueryAnalysis analysis
+            QueryAnalysisBuilder analysis
     ) {
         AstContext ctx = analysis.getAstContext();
         BaseTableOwner baseTableOwner = table.getBaseTableOwner();
@@ -64,7 +63,7 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             TableLikeImplementor<?> tableLikeImplementor,
-            QueryAnalysis analysis
+            QueryAnalysisBuilder analysis
     ) {
         if (tableLikeImplementor instanceof BaseTableImplementor) {
             analyze((BaseTableImplementor) tableLikeImplementor, analysis);
@@ -82,7 +81,7 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             BaseTableImplementor baseTableImplementor,
-            QueryAnalysis analysis
+            QueryAnalysisBuilder analysis
     ) {
         AstContext ctx = analysis.getAstContext();
         for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
