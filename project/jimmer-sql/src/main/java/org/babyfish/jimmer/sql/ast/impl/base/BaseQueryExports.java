@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
 
@@ -7,16 +8,16 @@ import java.util.Map;
 
 public final class BaseQueryExports {
 
-    private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery;
+    private final Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery;
 
-    private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable;
+    private final Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable;
 
     BaseQueryExports(
-            Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery,
-            Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable
+            Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery,
+            Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable
     ) {
-        this.scopeMapByQuery = scopeMapByQuery;
-        this.scopeMapByBaseTable = scopeMapByBaseTable;
+        this.resolverMapByQuery = resolverMapByQuery;
+        this.resolverMapByBaseTable = resolverMapByBaseTable;
     }
 
     @Nullable
@@ -29,13 +30,15 @@ public final class BaseQueryExports {
             baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
         }
         BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        BaseQueryScope scope = scopeMapByBaseTable.get(baseTable);
-        return scope != null ? scope.exportSelectionOrNull(baseTableOwner) : null;
+        BaseQueryExportResolver resolver = resolverMapByBaseTable.get(baseTable);
+        return resolver != null ? resolver.exportSelectionOrNull(baseTableOwner) : null;
     }
 
     @Nullable
     public BaseSelectionAliasRender baseSelectionRender(ConfigurableBaseQuery<?> query) {
-        BaseQueryScope scope = scopeMapByQuery.get(query);
-        return scope != null ? scope.toBaseSelectionRender(query) : null;
+        BaseQueryExportResolver resolver = resolverMapByQuery.get(query);
+        return resolver != null ?
+                resolver.baseSelectionRender((BaseTableSymbol) ((ConfigurableBaseQueryImpl<?>) query).getBaseTable()) :
+                null;
     }
 }

@@ -60,9 +60,20 @@ public final class BaseQueryExportsCollector {
     }
 
     public BaseQueryExports toExports() {
+        Map<BaseQueryScope, BaseQueryExportResolver> resolverMap = new IdentityHashMap<>();
+        Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery =
+                new IdentityHashMap<>();
+        for (Map.Entry<ConfigurableBaseQuery<?>, BaseQueryScope> e : scopeMapByQuery.entrySet()) {
+            resolverMapByQuery.put(e.getKey(), resolver(e.getValue(), resolverMap));
+        }
+        Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable =
+                new IdentityHashMap<>();
+        for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : scopeMapByBaseTable.entrySet()) {
+            resolverMapByBaseTable.put(e.getKey(), resolver(e.getValue(), resolverMap));
+        }
         return new BaseQueryExports(
-                new IdentityHashMap<>(scopeMapByQuery),
-                new IdentityHashMap<>(scopeMapByBaseTable)
+                resolverMapByQuery,
+                resolverMapByBaseTable
         );
     }
 
@@ -97,5 +108,12 @@ public final class BaseQueryExportsCollector {
                 statement,
                 it -> new BaseQueryScope(astContext)
         );
+    }
+
+    private static BaseQueryExportResolver resolver(
+            BaseQueryScope scope,
+            Map<BaseQueryScope, BaseQueryExportResolver> resolverMap
+    ) {
+        return resolverMap.computeIfAbsent(scope, BaseQueryScope::toResolver);
     }
 }

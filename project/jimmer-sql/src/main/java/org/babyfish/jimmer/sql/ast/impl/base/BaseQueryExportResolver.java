@@ -6,30 +6,18 @@ import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-final class BaseQueryScope {
+final class BaseQueryExportResolver {
 
-    final AstContext astContext;
+    private final AstContext astContext;
 
-    private final Map<RealTable, BaseQueryExport> exportMap =
-            new LinkedHashMap<>();
+    private final Map<RealTable, BaseQueryExport> exportMap;
 
-    private int colNoSequence;
-
-    BaseQueryScope(AstContext astContext) {
+    BaseQueryExportResolver(AstContext astContext, Map<RealTable, BaseQueryExport> exportMap) {
         this.astContext = astContext;
-    }
-
-    BaseQueryExportCollectorSelection requireExportSelection(BaseTableOwner baseTableOwner) {
-        BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
-        RealTable realBaseTable = baseTable.realTable(astContext);
-        BaseQueryExport export = exportMap.get(realBaseTable);
-        if (export == null) {
-            export = new BaseQueryExport(this, realBaseTable);
-            exportMap.put(realBaseTable, export);
-        }
-        return export.requireSelection(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index));
+        this.exportMap = new LinkedHashMap<>(exportMap);
     }
 
     BaseQueryExportSelection exportSelectionOrNull(BaseTableOwner baseTableOwner) {
@@ -41,11 +29,11 @@ final class BaseQueryScope {
                 null;
     }
 
-    int colNo() {
-        return ++colNoSequence;
+    BaseSelectionAliasRender baseSelectionRender(BaseTableSymbol baseTableSymbol) {
+        return new BaseSelectionAliasRenderer(exportMap, baseTableSymbol);
     }
 
-    RealTable rootRealTable(BaseTableImplementor baseTable, int selectionIndex) {
+    private RealTable rootRealTable(BaseTableImplementor baseTable, int selectionIndex) {
         Selection<?> selection = baseTable.getSelections().get(selectionIndex);
         if (!(selection instanceof Table<?>)) {
             return null;
@@ -53,9 +41,5 @@ final class BaseQueryScope {
         return TableProxies
                 .resolve((Table<?>) selection, astContext)
                 .realTable(astContext);
-    }
-
-    BaseQueryExportResolver toResolver() {
-        return new BaseQueryExportResolver(astContext, exportMap);
     }
 }
