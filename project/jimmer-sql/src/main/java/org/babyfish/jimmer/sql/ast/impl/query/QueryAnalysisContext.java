@@ -48,7 +48,4 @@ public final class QueryAnalysisContext {
         return tableLikeImplementor.realTable(astContext);
     }
 
-    public String alias(RealTable table) {
-        return table.getAlias();
-    }
 }

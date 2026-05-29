@@ -120,7 +120,7 @@ final class BaseQueryExportAnalysis {
                 ColumnDefinition definition = prop.getStorage(ctx.getMetadataStrategy());
                 int size = definition.size();
                 for (int i = 0; i < size; i++) {
-                    exportSelection.requireJoinKeyColumnIndex(ctx.alias(realTable), definition.name(i), false);
+                    exportSelection.requireJoinKeyColumnIndex(realTable, definition.name(i), false);
                 }
             }
         }
@@ -136,7 +136,7 @@ final class BaseQueryExportAnalysis {
     ) {
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            exportSelection.requireFormulaIndex(ctx.alias(table), (FormulaTemplate) template);
+            exportSelection.requireFormulaIndex(table, (FormulaTemplate) template);
             return;
         }
         if (!prop.isColumnDefinition()) {
@@ -152,23 +152,22 @@ final class BaseQueryExportAnalysis {
                 !joinProp.isMiddleTableDefinition() &&
                 table.getParent() != null) {
             ColumnDefinition definition = joinProp.getStorage(strategy);
-            analyzeColumns(ctx.alias(table.getParent()), definition, true, exportSelection);
+            analyzeColumns(table.getParent(), definition, true, exportSelection);
             return;
         }
         ColumnDefinition definition = prop.getStorage(strategy);
-        String alias = table.getFinalAlias(prop, rawId, ctx.getSqlClient());
-        analyzeColumns(alias, definition, false, exportSelection);
+        analyzeColumns(table, definition, false, exportSelection);
     }
 
     private static void analyzeColumns(
-            String alias,
+            RealTable table,
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
             BaseQueryExportCollectorSelection exportSelection
     ) {
         int size = definition.size();
         for (int i = 0; i < size; i++) {
-            exportSelection.requireColumnIndex(alias, definition.name(i), foreignKeyInBaseQuery);
+            exportSelection.requireColumnIndex(table, definition.name(i), foreignKeyInBaseQuery);
         }
     }
 }

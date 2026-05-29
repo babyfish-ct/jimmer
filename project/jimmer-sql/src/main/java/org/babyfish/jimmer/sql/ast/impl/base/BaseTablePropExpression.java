@@ -141,7 +141,7 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
     ) {
         SqlTemplate template = raw.getProp().getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            renderExportedColumn(builder, exportSelection, exportSelection.formulaIndex(realTable.getAlias(), (FormulaTemplate) template));
+            renderExportedColumn(builder, exportSelection, exportSelection.formulaIndex(realTable, (FormulaTemplate) template));
             return;
         }
         if (!raw.getProp().isColumnDefinition()) {
@@ -169,7 +169,6 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
             RealTable realTable,
             ColumnDefinition definition
     ) {
-        String alias = realTable.getFinalAlias(raw.getProp(), raw.isRawId(), builder.sqlClient());
         int size = definition.size();
         for (int i = 0; i < size; i++) {
             if (i != 0) {
@@ -178,7 +177,7 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
             renderExportedColumn(
                     builder,
                     exportSelection,
-                    exportSelection.columnIndex(alias, definition.name(i), false)
+                    exportSelection.columnIndex(realTable, definition.name(i), false)
             );
         }
     }

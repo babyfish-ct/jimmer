@@ -399,6 +399,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         builder,
                         joinType,
                         parent.aliases().value,
+                        parent,
                         joinProp.getStorage(strategy),
                         immutableType.getTableName(strategy),
                         aliases().value,
@@ -420,10 +421,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
 
         if (middleTable != null) {
-            renderJoinImpl(
+                renderJoinImpl(
                     builder,
                     joinType,
                     parent.aliases().value,
+                    parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
                     aliases().middleValue,
@@ -443,6 +445,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         builder,
                         joinType,
                         aliases().middleValue,
+                        this,
                         middleTable.getTargetColumnDefinition(),
                         immutableType.getTableName(strategy),
                         aliases().value,
@@ -455,6 +458,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     builder,
                     joinType,
                     parent.aliases().value,
+                    parent,
                     joinProp.getStorage(strategy),
                     immutableType.getTableName(strategy),
                     aliases().value,
@@ -486,6 +490,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     builder,
                     joinType,
                     parent.aliases().value,
+                    parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
                     aliases().middleValue,
@@ -505,6 +510,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         builder,
                         joinType,
                         aliases().middleValue,
+                        this,
                         middleTable.getColumnDefinition(),
                         immutableType.getTableName(strategy),
                         aliases().value,
@@ -517,6 +523,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     builder,
                     joinType,
                     parent.aliases().value,
+                    parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     immutableType.getTableName(strategy),
                     aliases().value,
@@ -565,6 +572,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             SqlBuilder builder,
             JoinType joinType,
             String previousAlias,
+            RealTable previousTable,
             ColumnDefinition previousDefinition,
             String newTableName,
             String newAlias,
@@ -602,7 +610,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             for (int i = 0; i < size; i++) {
                 builder.separator();
                 if (exportSelection != null) {
-                    int index = exportSelection.columnIndex(previousAlias, previousDefinition.name(i), false);
+                    int index = exportSelection.columnIndex(previousTable, previousDefinition.name(i), false);
                     builder
                             .sql(exportSelection.getAlias())
                             .sql(".c")
@@ -718,7 +726,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (!isInverse) {
                 if (optionalDefinition == null) {
                     builder.definition(
-                            withPrefix ? parent.aliases().value : null,
+                            withPrefix ? parent : null,
                             joinProp.getStorage(strategy),
                             true,
                             asBlock,
@@ -757,7 +765,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     optionalDefinition :
                     prop.getStorage(strategy);
             builder.definition(
-                    withPrefix ? aliases().value : null,
+                    withPrefix ? this : null,
                     definition,
                     false,
                     asBlock,

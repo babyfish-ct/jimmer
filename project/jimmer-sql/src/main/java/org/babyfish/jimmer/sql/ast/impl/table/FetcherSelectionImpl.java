@@ -196,7 +196,6 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     return;
                 }
                 ImmutableProp prop = field.getProp();
-                String alias = table.getAlias();
                 BaseQueryExportSelection exportSelection =
                         depth == 0 ?
                                 builder.getQueryRenderContext().getBaseQueryExportSelection(table.getBaseTableOwner()) :
@@ -219,15 +218,15 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     if (storage instanceof EmbeddedColumns) {
                         renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", exportSelection, builder);
                     } else if (storage instanceof ColumnDefinition) {
-                        builder.separator().definition(alias, (ColumnDefinition) storage, exportSelection);
+                        builder.separator().definition(table, (ColumnDefinition) storage, exportSelection);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         if (exportSelection != null) {
                             builder.sql(exportSelection.getAlias())
                                     .sql(".c")
-                                    .sql(Integer.toString(exportSelection.formulaIndex(alias, (FormulaTemplate) template)));
+                                    .sql(Integer.toString(exportSelection.formulaIndex(table, (FormulaTemplate) template)));
                         } else {
-                            builder.sql(((FormulaTemplate) template).toSql(alias));
+                            builder.sql(((FormulaTemplate) template).toSql(table.getAlias()));
                         }
                     }
                 }
@@ -261,7 +260,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                             builder
                                     .sql(exportSelection.getAlias())
                                     .sql(".c")
-                                    .sql(Integer.toString(exportSelection.columnIndex(realTable.getAlias(), columnName, false)));
+                                    .sql(Integer.toString(exportSelection.columnIndex(realTable, columnName, false)));
                         } else {
                             builder
                                     .sql(realTable.getAlias()).sql(".")

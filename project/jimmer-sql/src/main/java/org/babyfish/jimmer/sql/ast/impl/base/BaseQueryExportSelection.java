@@ -3,8 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class BaseQueryExportSelection {
@@ -30,22 +30,25 @@ public class BaseQueryExportSelection {
     }
 
     public boolean isRootTable(RealTable table) {
+        if (rootRealTable == null) {
+            return false;
+        }
         return path(rootRealTable).equals(path(table));
     }
 
-    public int columnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+    public int columnIndex(RealTable table, String columnName, boolean foreignKeyInBaseQuery) {
         return export
-                .column(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
+                .column(this, tableKeys(table), columnName, foreignKeyInBaseQuery)
                 .getIndex();
     }
 
-    public Integer columnIndexOrNull(String alias, String columnName, boolean foreignKeyInBaseQuery) {
-        return export.columnIndexOrNull(this, tableKeys(alias), columnName, foreignKeyInBaseQuery);
+    public Integer columnIndexOrNull(RealTable table, String columnName, boolean foreignKeyInBaseQuery) {
+        return export.columnIndexOrNull(this, tableKeys(table), columnName, foreignKeyInBaseQuery);
     }
 
-    public int formulaIndex(String alias, FormulaTemplate formula) {
+    public int formulaIndex(RealTable table, FormulaTemplate formula) {
         return export
-                .formula(this, tableKeys(alias), formula)
+                .formula(this, tableKeys(table), formula)
                 .getIndex();
     }
 
@@ -57,20 +60,27 @@ public class BaseQueryExportSelection {
         return export.columns(index);
     }
 
-    protected List<RealTable.Key> tableKeys(String alias) {
-        List<RealTable.Key> keys = new ArrayList<>();
-        collectKeys(rootRealTable, alias, keys);
-        return keys;
+    protected List<RealTable.Key> tableKeys(RealTable table) {
+        if (rootRealTable == null) {
+            throw new IllegalStateException("Current base-query selection is not table-backed");
+        }
+        List<RealTable.Key> rootPath = path(rootRealTable);
+        List<RealTable.Key> tablePath = path(table);
+        if (isAncestorPath(tablePath, rootPath)) {
+            // Foreign-key id-view exports can be selected from a joined table while
+            // their physical columns are stored on that table's parent. They still
+            // belong to the selected row export, whose structured path is empty.
+            return new ArrayList<>();
+        }
+        if (tablePath.size() < rootPath.size() || !tablePath.subList(0, rootPath.size()).equals(rootPath)) {
+            throw new IllegalArgumentException("The table is not inside the current base-query selection");
+        }
+        return new ArrayList<>(tablePath.subList(rootPath.size(), tablePath.size()));
     }
 
-    private void collectKeys(RealTable table, String alias, List<RealTable.Key> keys) {
-        if (table.getAlias().equals(alias)) {
-            return;
-        }
-        for (RealTable childTable : table) {
-            keys.add(childTable.getKey());
-            collectKeys(childTable, alias, keys);
-        }
+    private static boolean isAncestorPath(List<RealTable.Key> tablePath, List<RealTable.Key> rootPath) {
+        return rootPath.size() >= tablePath.size() &&
+                rootPath.subList(0, tablePath.size()).equals(tablePath);
     }
 
     private static List<RealTable.Key> path(RealTable table) {

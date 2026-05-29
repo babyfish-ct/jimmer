@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -299,12 +300,50 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             ColumnDefinition definition,
             BaseQueryExportSelection exportSelection
     ) {
-        return definition(tableAlias, definition, false, null, exportSelection);
+        return definition(tableAlias, null, definition, false, null, exportSelection);
+    }
+
+    public T definition(
+            RealTable table,
+            ColumnDefinition definition,
+            BaseQueryExportSelection exportSelection
+    ) {
+        return definition(table.getAlias(), table, definition, false, null, exportSelection);
     }
 
     @SuppressWarnings("unchecked")
     public T definition(
             String tableAlias,
+            ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
+            Function<Integer, String> asBlock,
+            BaseQueryExportSelection exportSelection
+    ) {
+        return definition(tableAlias, null, definition, foreignKeyInBaseQuery, asBlock, exportSelection);
+    }
+
+    @SuppressWarnings("unchecked")
+    public T definition(
+            RealTable table,
+            ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
+            Function<Integer, String> asBlock,
+            BaseQueryExportSelection exportSelection
+    ) {
+        return definition(
+                table != null ? table.getAlias() : null,
+                table,
+                definition,
+                foreignKeyInBaseQuery,
+                asBlock,
+                exportSelection
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private T definition(
+            String tableAlias,
+            RealTable table,
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
             Function<Integer, String> asBlock,
@@ -319,7 +358,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             if (exportSelection != null) {
                 builder.append(exportSelection.getAlias())
                         .append(".c")
-                        .append(exportSelection.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
+                        .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
             } else {
                 builder.append(tableAlias).append('.').append(columnName);
                 if (asBlock != null) {
@@ -336,7 +375,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 if (exportSelection != null) {
                     builder.append(exportSelection.getAlias())
                             .append(".c")
-                            .append(exportSelection.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
+                            .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {

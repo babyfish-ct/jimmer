@@ -9,21 +9,21 @@ public final class BaseQueryExportCollectorSelection extends BaseQueryExportSele
         super(export, index, rootRealTable);
     }
 
-    public int requireColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+    public int requireColumnIndex(RealTable table, String columnName, boolean foreignKeyInBaseQuery) {
         return export
-                .requireColumn(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
+                .requireColumn(this, tableKeys(table), columnName, foreignKeyInBaseQuery)
                 .getIndex();
     }
 
-    public int requireJoinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
+    public int requireJoinKeyColumnIndex(RealTable table, String columnName, boolean foreignKeyInBaseQuery) {
         return export
-                .requireJoinKeyColumn(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
+                .requireJoinKeyColumn(this, tableKeys(table), columnName, foreignKeyInBaseQuery)
                 .getIndex();
     }
 
-    public int requireFormulaIndex(String alias, FormulaTemplate formula) {
+    public int requireFormulaIndex(RealTable table, FormulaTemplate formula) {
         return export
-                .requireFormula(this, tableKeys(alias), formula)
+                .requireFormula(this, tableKeys(table), formula)
                 .getIndex();
     }
 
