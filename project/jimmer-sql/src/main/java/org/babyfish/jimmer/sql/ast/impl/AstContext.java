@@ -272,16 +272,6 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return null;
     }
 
-    @Nullable
-    public AbstractMutableStatementImpl findCurrentStatementUsingBaseQuery() {
-        for (StatementFrame frame = statementFrame; frame != null && frame.usingBaseQuery; frame = frame.parent) {
-            if (TableUtils.hasBaseTable(frame.statement.getTableLikeImplementor())) {
-                return frame.statement;
-            }
-        }
-        return null;
-    }
-
     public RealTable getRenderedRealBaseTable() {
         BaseTableRenderFrame frame = baseTableRenderFrame;
         if (frame != null && frame.realTable != null) {

@@ -26,7 +26,7 @@ final class BaseQueryExportAnalysis {
 
     static void analyze(AbstractMutableStatementImpl statement, QueryAnalysis analysis) {
         AstContext ctx = analysis.getAstContext();
-        if (ctx.findCurrentStatementUsingBaseQuery() == null) {
+        if (!TableUtils.hasBaseTable(statement.getTableLikeImplementor())) {
             return;
         }
         analyze(statement.getTableLikeImplementor(), analysis);

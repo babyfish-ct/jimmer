@@ -13,12 +13,16 @@ public final class BaseQueryExports {
 
     private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap;
 
+    private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery;
+
     BaseQueryExports(
             AstContext astContext,
-            Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap
+            Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap,
+            Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery
     ) {
         this.astContext = astContext;
         this.scopeMap = scopeMap;
+        this.scopeMapByQuery = scopeMapByQuery;
     }
 
     @Nullable
@@ -41,11 +45,7 @@ public final class BaseQueryExports {
 
     @Nullable
     public BaseSelectionAliasRender baseSelectionRender(ConfigurableBaseQuery<?> query) {
-        AbstractMutableStatementImpl statement = astContext.findCurrentStatementUsingBaseQuery();
-        if (statement == null) {
-            return null;
-        }
-        BaseQueryScope scope = scopeMap.get(statement);
+        BaseQueryScope scope = scopeMapByQuery.get(query);
         return scope != null ? scope.toBaseSelectionRender(query) : null;
     }
 }

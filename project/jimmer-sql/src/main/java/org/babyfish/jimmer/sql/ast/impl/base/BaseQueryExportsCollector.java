@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -13,6 +14,9 @@ public final class BaseQueryExportsCollector {
     private final AstContext astContext;
 
     private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap =
+            new IdentityHashMap<>();
+
+    private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery =
             new IdentityHashMap<>();
 
     public BaseQueryExportsCollector(AstContext astContext) {
@@ -30,18 +34,25 @@ public final class BaseQueryExportsCollector {
             return null;
         }
         BaseQueryScope scope = scope(statement);
+        scopeMapByQuery.put(baseTable.getQuery(), scope);
         MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
         if (mergedBy != null) {
             boolean cte = baseTable.isCte();
             for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                scope.requireExportSelection(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
+                BaseTableSymbol itemBaseTable = (BaseTableSymbol) itemQuery.asBaseTable(null, cte);
+                scopeMapByQuery.put(itemBaseTable.getQuery(), scope);
+                scope.requireExportSelection(new BaseTableOwner(itemBaseTable, baseTableOwner.getIndex()));
             }
         }
         return scope.requireExportSelection(baseTableOwner);
     }
 
     public BaseQueryExports toExports() {
-        return new BaseQueryExports(astContext, new IdentityHashMap<>(scopeMap));
+        return new BaseQueryExports(
+                astContext,
+                new IdentityHashMap<>(scopeMap),
+                new IdentityHashMap<>(scopeMapByQuery)
+        );
     }
 
     private BaseQueryScope scope(AbstractMutableStatementImpl statement) {
