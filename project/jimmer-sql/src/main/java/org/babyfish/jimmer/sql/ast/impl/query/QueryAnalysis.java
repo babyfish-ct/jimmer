@@ -3,8 +3,10 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportPlan;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportsCollector;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -21,13 +23,15 @@ public final class QueryAnalysis {
 
     private final AstContext astContext;
 
-    private final BaseQueryExportPlan baseQueryExportPlan;
+    private final BaseQueryExportsCollector baseQueryExportsCollector;
+
+    private BaseQueryExports baseQueryExports;
 
     private final JoinRequirementPlan joinRequirementPlan = new JoinRequirementPlan();
 
     private QueryAnalysis(AstContext astContext) {
         this.astContext = astContext;
-        this.baseQueryExportPlan = new BaseQueryExportPlan(astContext);
+        this.baseQueryExportsCollector = new BaseQueryExportsCollector(astContext);
     }
 
     public static QueryAnalysis analyze(AstContext astContext, Ast ast) {
@@ -48,12 +52,12 @@ public final class QueryAnalysis {
 
             @Override
             public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
-                analysis.getBaseQueryExportSelection(baseTableOwner).expressionIndex();
+                analysis.requireBaseQueryExportSelection(baseTableOwner).expressionIndex();
             }
         };
         ast.accept(visitor);
         visitor.allocateAliases();
-        analysis.baseQueryExportPlan.freeze();
+        analysis.baseQueryExports = analysis.baseQueryExportsCollector.toExports();
         return analysis;
     }
 
@@ -89,14 +93,18 @@ public final class QueryAnalysis {
         return astContext;
     }
 
+    BaseQueryExportCollectorSelection requireBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
+        return baseQueryExportsCollector.exportSelection(baseTableOwner);
+    }
+
     @Nullable
     public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
-        return baseQueryExportPlan.exportSelection(baseTableOwner);
+        return baseQueryExports.exportSelection(baseTableOwner);
     }
 
     @Nullable
     public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        return baseQueryExportPlan.baseSelectionRender(query);
+        return baseQueryExports.baseSelectionRender(query);
     }
 
     @Nullable

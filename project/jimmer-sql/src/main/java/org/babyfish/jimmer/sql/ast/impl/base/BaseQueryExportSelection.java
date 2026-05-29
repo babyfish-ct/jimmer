@@ -11,9 +11,9 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class BaseQueryExportSelection {
+public class BaseQueryExportSelection {
 
-    private final BaseQueryExport export;
+    protected final BaseQueryExport export;
 
     private final int index;
 
@@ -55,7 +55,7 @@ public final class BaseQueryExportSelection {
 
     public int joinKeyColumnIndex(String alias, String columnName, boolean foreignKeyInBaseQuery) {
         return export
-                .joinKeyColumn(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
+                .column(this, tableKeys(alias), columnName, foreignKeyInBaseQuery)
                 .getIndex();
     }
 
@@ -73,7 +73,7 @@ public final class BaseQueryExportSelection {
         return export.columns(index);
     }
 
-    private List<RealTable.Key> tableKeys(String alias) {
+    protected List<RealTable.Key> tableKeys(String alias) {
         RealTable rootRealTable = rootRealTable();
         List<RealTable.Key> keys = new ArrayList<>();
         collectKeys(rootRealTable, alias, keys);

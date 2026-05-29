@@ -4,7 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -38,10 +39,12 @@ final class BaseQueryExportAnalysis {
             QueryAnalysis analysis
     ) {
         AstContext ctx = analysis.getAstContext();
-        BaseQueryExportSelection exportSelection = analysis.getBaseQueryExportSelection(table.getBaseTableOwner());
-        if (exportSelection == null) {
+        BaseTableOwner baseTableOwner = table.getBaseTableOwner();
+        if (baseTableOwner == null) {
             return;
         }
+        BaseQueryExportCollectorSelection exportSelection =
+                analysis.requireBaseQueryExportSelection(baseTableOwner);
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (!(implementor instanceof TableImplementor<?>)) {
             return;
@@ -88,10 +91,12 @@ final class BaseQueryExportAnalysis {
             }
             Table<?> table = (Table<?>) selection;
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
-            BaseQueryExportSelection exportSelection = analysis.getBaseQueryExportSelection(tableImplementor.getBaseTableOwner());
-            if (exportSelection == null) {
+            BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
+            if (baseTableOwner == null) {
                 continue;
             }
+            BaseQueryExportCollectorSelection exportSelection =
+                    analysis.requireBaseQueryExportSelection(baseTableOwner);
             RealTable realTable = tableImplementor.realTable(ctx);
             for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
                 analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
@@ -129,7 +134,7 @@ final class BaseQueryExportAnalysis {
             TableImplementor<?> tableImplementor,
             ImmutableProp prop,
             boolean rawId,
-            BaseQueryExportSelection exportSelection,
+            BaseQueryExportCollectorSelection exportSelection,
             AstContext ctx
     ) {
         SqlTemplate template = prop.getSqlTemplate();
@@ -162,7 +167,7 @@ final class BaseQueryExportAnalysis {
             String alias,
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
-            BaseQueryExportSelection exportSelection
+            BaseQueryExportCollectorSelection exportSelection
     ) {
         int size = definition.size();
         for (int i = 0; i < size; i++) {

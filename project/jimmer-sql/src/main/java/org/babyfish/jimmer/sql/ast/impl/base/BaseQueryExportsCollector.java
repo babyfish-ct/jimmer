@@ -4,28 +4,22 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-public final class BaseQueryExportPlan {
+public final class BaseQueryExportsCollector {
 
     private final AstContext astContext;
 
     private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap =
             new IdentityHashMap<>();
 
-    public BaseQueryExportPlan(AstContext astContext) {
+    public BaseQueryExportsCollector(AstContext astContext) {
         this.astContext = astContext;
     }
 
-    @Nullable
-    public BaseQueryExportSelection exportSelection(BaseTableOwner baseTableOwner) {
-        if (baseTableOwner == null) {
-            return null;
-        }
+    public BaseQueryExportCollectorSelection exportSelection(BaseTableOwner baseTableOwner) {
         BaseTableSymbol recursive = baseTableOwner.getBaseTable().getRecursive();
         if (recursive != null) {
             baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
@@ -40,24 +34,14 @@ public final class BaseQueryExportPlan {
         if (mergedBy != null) {
             boolean cte = baseTable.isCte();
             for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
-                scope.exportSelection(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
+                scope.requireExportSelection(new BaseTableOwner(itemQuery.asBaseTable(null, cte), baseTableOwner.getIndex()));
             }
         }
-        return scope.exportSelection(baseTableOwner);
+        return scope.requireExportSelection(baseTableOwner);
     }
 
-    @Nullable
-    public BaseSelectionAliasRender baseSelectionRender(ConfigurableBaseQuery<?> query) {
-        AbstractMutableStatementImpl statement = astContext.findCurrentStatementUsingBaseQuery();
-        return statement != null ?
-                scope(statement).toBaseSelectionRender(query) :
-                null;
-    }
-
-    public void freeze() {
-        for (BaseQueryScope scope : scopeMap.values()) {
-            scope.freeze();
-        }
+    public BaseQueryExports toExports() {
+        return new BaseQueryExports(astContext, new IdentityHashMap<>(scopeMap));
     }
 
     private BaseQueryScope scope(AbstractMutableStatementImpl statement) {

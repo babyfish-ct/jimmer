@@ -23,54 +23,30 @@ public class BaseQueryScope {
 
     private int colNoSequence;
 
-    private boolean frozen;
-
     public BaseQueryScope(AstContext astContext) {
         this.astContext = astContext;
     }
 
-    public BaseQueryExportSelection exportSelection(BaseTableOwner baseTableOwner) {
+    BaseQueryExportCollectorSelection requireExportSelection(BaseTableOwner baseTableOwner) {
         BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
         RealTable realBaseTable = baseTable.realTable(astContext);
         BaseQueryExport export = exportMap.get(realBaseTable);
         if (export == null) {
-            if (frozen) {
-                throw unresolved(baseTableOwner);
-            }
             export = new BaseQueryExport(this, realBaseTable);
             exportMap.put(realBaseTable, export);
         }
-        BaseQueryExportSelection selection = export.selectionOrNull(baseTableOwner.index);
-        if (selection == null) {
-            if (frozen) {
-                throw unresolved(baseTableOwner);
-            }
-            selection = export.selection(baseTableOwner.index);
-        }
-        return selection;
+        return export.requireSelection(baseTableOwner.index);
+    }
+
+    BaseQueryExportSelection exportSelectionOrNull(BaseTableOwner baseTableOwner) {
+        BaseTableImplementor baseTable = astContext.resolveBaseTable(baseTableOwner.getBaseTable());
+        RealTable realBaseTable = baseTable.realTable(astContext);
+        BaseQueryExport export = exportMap.get(realBaseTable);
+        return export != null ? export.selectionOrNull(baseTableOwner.index) : null;
     }
 
     int colNo() {
         return ++colNoSequence;
-    }
-
-    public void freeze() {
-        if (!frozen) {
-            frozen = true;
-            for (BaseQueryExport export : exportMap.values()) {
-                export.freeze();
-            }
-        }
-    }
-
-    boolean isFrozen() {
-        return frozen;
-    }
-
-    private IllegalStateException unresolved(BaseTableOwner baseTableOwner) {
-        return new IllegalStateException(
-                "Base query export is requested after QueryAnalysis has been frozen: " + baseTableOwner
-        );
     }
 
     public BaseSelectionAliasRender toBaseSelectionRender(ConfigurableBaseQuery<?> query) {
