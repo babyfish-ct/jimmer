@@ -4,12 +4,12 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
@@ -133,17 +133,20 @@ class EmbeddedValueGetter extends AbstractValueGetter {
     @Override
     public void renderTo(AbstractSqlBuilder<?> builder) {
         if (table != null && builder instanceof SqlBuilder) {
-            AstContext astContext = ((SqlBuilder)builder).getAstContext();
+            SqlBuilder sqlBuilder = (SqlBuilder) builder;
+            AstContext astContext = sqlBuilder.getAstContext();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
             if (join && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
-                String middleTableAlias = tableImplementor.realTable(astContext).getMiddleTableAlias();
+                String middleTableAlias = realTable(sqlBuilder, tableImplementor).getMiddleTableAlias();
                 if (middleTableAlias != null) {
                     builder.sql(middleTableAlias);
                 } else {
-                    builder.sql(tableImplementor.getParent().realTable(astContext).getAlias());
+                    TableImplementor<?> parent = tableImplementor.getParent();
+                    builder.sql(realTable(sqlBuilder, parent).getAlias());
                 }
             } else {
-                builder.sql(tableImplementor.realTable(astContext).getAlias());
+                RealTable realTable = realTable(sqlBuilder, tableImplementor);
+                builder.sql(realTable.getAlias());
             }
             builder.sql(".");
         }
