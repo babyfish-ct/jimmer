@@ -222,11 +222,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         if (exportSelection != null) {
-                            builder.sql(exportSelection.getAlias())
+                            builder.sql(exportSelection.getAlias(builder))
                                     .sql(".c")
                                     .sql(Integer.toString(exportSelection.formulaIndex(table, (FormulaTemplate) template)));
                         } else {
-                            builder.sql(((FormulaTemplate) template).toSql(table.getAlias()));
+                            builder.sql(((FormulaTemplate) template).toSql(builder.alias(table)));
                         }
                     }
                 }
@@ -258,12 +258,12 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         builder.separator();
                         if (exportSelection != null) {
                             builder
-                                    .sql(exportSelection.getAlias())
+                                    .sql(exportSelection.getAlias(builder))
                                     .sql(".c")
                                     .sql(Integer.toString(exportSelection.columnIndex(realTable, columnName, false)));
                         } else {
                             builder
-                                    .sql(realTable.getAlias()).sql(".")
+                                    .sql(builder.alias(realTable)).sql(".")
                                     .sql(columnName);
                         }
                     }

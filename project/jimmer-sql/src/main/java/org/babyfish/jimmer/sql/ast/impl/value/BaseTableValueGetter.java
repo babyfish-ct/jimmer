@@ -105,7 +105,7 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
             if (exportSelection != null && columnName != null) {
                 if (!exportSelection.isTableBacked()) {
                     builder
-                            .sql(exportSelection.getAlias())
+                            .sql(exportSelection.getAlias(builder.assertSimple()))
                             .sql(".c")
                             .sql(Integer.toString(exportSelection.expressionIndex()));
                     return;
@@ -124,7 +124,7 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
                     );
                 }
                 if (index != null) {
-                    builder.sql(exportSelection.getAlias()).sql(".c").sql(Integer.toString(index));
+                    builder.sql(exportSelection.getAlias(builder.assertSimple())).sql(".c").sql(Integer.toString(index));
                     return;
                 }
             }

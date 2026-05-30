@@ -55,7 +55,7 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
                     childTable = newChildTable;
                 }
             }
-            String alias = childTable.getAlias();
+            String alias = builder.alias(childTable);
             builder.separator();
             if (column.getFormula() != null) {
                 builder.sql(column.getFormula().toSql(alias));

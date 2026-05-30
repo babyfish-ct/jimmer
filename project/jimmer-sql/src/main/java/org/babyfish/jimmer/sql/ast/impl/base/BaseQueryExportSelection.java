@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,8 +26,8 @@ public class BaseQueryExportSelection {
         return index;
     }
 
-    public String getAlias() {
-        return export.getRealBaseTable().getAlias();
+    public String getAlias(SqlBuilder builder) {
+        return builder.alias(export.getRealBaseTable());
     }
 
     public boolean isTableBacked() {

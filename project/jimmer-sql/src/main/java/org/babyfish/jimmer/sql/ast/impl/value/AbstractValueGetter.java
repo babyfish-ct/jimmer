@@ -87,6 +87,14 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 table.realTable(builder.getAstContext());
     }
 
+    static String alias(SqlBuilder builder, RealTable table) {
+        return builder.alias(table);
+    }
+
+    static String middleTableAlias(SqlBuilder builder, RealTable table) {
+        return builder.middleTableAlias(table);
+    }
+
     static List<ValueGetter> createValueGetters(
             JSqlClientImplementor sqlClient,
             ImmutableProp prop,

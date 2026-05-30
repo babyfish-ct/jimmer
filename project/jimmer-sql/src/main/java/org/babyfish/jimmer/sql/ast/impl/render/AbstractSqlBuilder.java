@@ -308,7 +308,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             ColumnDefinition definition,
             BaseQueryExportSelection exportSelection
     ) {
-        return definition(table.getAlias(), table, definition, false, null, exportSelection);
+        return definition(alias(table), table, definition, false, null, exportSelection);
     }
 
     @SuppressWarnings("unchecked")
@@ -331,12 +331,30 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             BaseQueryExportSelection exportSelection
     ) {
         return definition(
-                table != null ? table.getAlias() : null,
+                table != null ? alias(table) : null,
                 table,
                 definition,
                 foreignKeyInBaseQuery,
                 asBlock,
                 exportSelection
+        );
+    }
+
+    private String alias(RealTable table) {
+        if (this instanceof SqlBuilder) {
+            return ((SqlBuilder) this).alias(table);
+        }
+        throw new IllegalStateException(
+                "Table alias rendering requires " + SqlBuilder.class.getName()
+        );
+    }
+
+    private String exportAlias(BaseQueryExportSelection exportSelection) {
+        if (this instanceof SqlBuilder) {
+            return exportSelection.getAlias((SqlBuilder) this);
+        }
+        throw new IllegalStateException(
+                "Base-query export alias rendering requires " + SqlBuilder.class.getName()
         );
     }
 
@@ -356,7 +374,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (definition instanceof SingleColumn) {
             String columnName = ((SingleColumn)definition).getName();
             if (exportSelection != null) {
-                builder.append(exportSelection.getAlias())
+                builder.append(exportAlias(exportSelection))
                         .append(".c")
                         .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
             } else {
@@ -373,7 +391,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 }
                 String columnName = definition.name(i);
                 if (exportSelection != null) {
-                    builder.append(exportSelection.getAlias())
+                    builder.append(exportAlias(exportSelection))
                             .append(".c")
                             .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
                 } else {

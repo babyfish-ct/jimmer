@@ -13,7 +13,6 @@ final class MutationRender {
     }
 
     static String alias(SqlBuilder builder, RealTable table) {
-        table.applyAliasesIfNecessary(builder.getAstContext().getTableAliasScope());
-        return builder.getAstContext().getTableAliasScope().getAlias(table);
+        return builder.alias(table);
     }
 }

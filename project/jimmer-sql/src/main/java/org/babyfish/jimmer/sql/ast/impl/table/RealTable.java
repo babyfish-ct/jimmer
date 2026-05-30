@@ -21,10 +21,6 @@ public interface RealTable extends Iterable<RealTable> {
 
     RealTable child(Key key);
 
-    String getAlias();
-
-    String getMiddleTableAlias();
-
     String getFinalAlias(
             ImmutableProp prop,
             boolean rawId,

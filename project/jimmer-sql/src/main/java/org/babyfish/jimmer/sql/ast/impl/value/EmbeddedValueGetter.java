@@ -137,16 +137,16 @@ class EmbeddedValueGetter extends AbstractValueGetter {
             AstContext astContext = sqlBuilder.getAstContext();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
             if (join && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
-                String middleTableAlias = realTable(sqlBuilder, tableImplementor).getMiddleTableAlias();
+                String middleTableAlias = middleTableAlias(sqlBuilder, realTable(sqlBuilder, tableImplementor));
                 if (middleTableAlias != null) {
                     builder.sql(middleTableAlias);
                 } else {
                     TableImplementor<?> parent = tableImplementor.getParent();
-                    builder.sql(realTable(sqlBuilder, parent).getAlias());
+                    builder.sql(alias(sqlBuilder, realTable(sqlBuilder, parent)));
                 }
             } else {
                 RealTable realTable = realTable(sqlBuilder, tableImplementor);
-                builder.sql(realTable.getAlias());
+                builder.sql(alias(sqlBuilder, realTable));
             }
             builder.sql(".");
         }

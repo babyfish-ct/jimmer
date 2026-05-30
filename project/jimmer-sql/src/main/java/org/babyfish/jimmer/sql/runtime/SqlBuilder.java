@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -131,6 +132,24 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
 
     public void restoreQueryRenderContext(@Nullable QueryRenderContext queryRenderContext) {
         this.queryRenderContext = queryRenderContext;
+    }
+
+    public String alias(RealTable table) {
+        String alias = ctx.getTableAliasScope().getAliasIfBound(table);
+        if (alias == null) {
+            table.applyAliasesIfNecessary(ctx.getTableAliasScope());
+            alias = ctx.getTableAliasScope().getAlias(table);
+        }
+        return alias;
+    }
+
+    public @Nullable String middleTableAlias(RealTable table) {
+        String alias = ctx.getTableAliasScope().getMiddleTableAliasIfBound(table);
+        if (alias == null) {
+            table.applyAliasesIfNecessary(ctx.getTableAliasScope());
+            alias = ctx.getTableAliasScope().getMiddleTableAlias(table);
+        }
+        return alias;
     }
 
     public SqlBuilder from() {

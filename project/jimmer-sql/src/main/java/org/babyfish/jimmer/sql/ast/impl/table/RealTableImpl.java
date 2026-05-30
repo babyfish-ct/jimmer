@@ -169,16 +169,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     @Override
-    public final String getAlias() {
-        return aliases().value();
-    }
-
-    @Override
-    public final String getMiddleTableAlias() {
-        return aliases().middleValue();
-    }
-
-    @Override
     public String getFinalAlias(
             ImmutableProp prop,
             boolean rawId,
@@ -616,7 +606,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 if (exportSelection != null) {
                     int index = exportSelection.columnIndex(previousTable, previousDefinition.name(i), false);
                     builder
-                            .sql(exportSelection.getAlias())
+                            .sql(exportSelection.getAlias(builder))
                             .sql(".c")
                             .sql(Integer.toString(index));
                 } else {

@@ -153,7 +153,7 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         }
         if (!raw.getProp().isColumnDefinition()) {
             builder
-                    .sql(exportSelection.getAlias())
+                    .sql(exportSelection.getAlias(builder.assertSimple()))
                     .sql(".c")
                     .sql(Integer.toString(exportSelection.expressionIndex()));
             return;
@@ -194,7 +194,7 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
             BaseQueryExportSelection exportSelection,
             int index
     ) {
-        builder.sql(exportSelection.getAlias()).sql(".c").sql(Integer.toString(index));
+        builder.sql(exportSelection.getAlias(builder.assertSimple())).sql(".c").sql(Integer.toString(index));
     }
 
     @Override

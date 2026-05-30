@@ -250,7 +250,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery()),
                     "No base-selection render is available for CTE " + baseTableImplementor.toSymbol()
             );
-            builder.sql(cteTable.getAlias());
+            builder.sql(builder.alias(cteTable));
             cteRender.renderCteColumns(cteTable, builder);
             builder.sql(" as ");
             cteTable.renderTo(builder, true);

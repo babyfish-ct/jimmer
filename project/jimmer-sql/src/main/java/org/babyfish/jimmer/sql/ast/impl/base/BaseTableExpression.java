@@ -60,7 +60,7 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
                     "No base-query export selection is available for " + baseTableOwner
             );
             builder
-                    .sql(exportSelection.getAlias())
+                    .sql(exportSelection.getAlias(builder.assertSimple()))
                     .sql(".c")
                     .sql(Integer.toString(exportSelection.expressionIndex()));
         } finally {
