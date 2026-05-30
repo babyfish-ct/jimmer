@@ -603,7 +603,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (owner instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
                 BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-                exportSelection = builder.getQueryRenderContext().getBaseQueryExportSelection(baseTableOwner);
+                if (baseTableOwner != null && builder.getQueryRenderContext() != null) {
+                    exportSelection = builder.getQueryRenderContext().getBaseQueryExportSelection(baseTableOwner);
+                }
             }
             int size = previousDefinition.size();
             builder.enter(SqlBuilder.ScopeType.AND);
