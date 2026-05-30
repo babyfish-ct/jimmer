@@ -120,19 +120,54 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             @NotNull AbstractSqlBuilder<?> abstractBuilder,
             @Nullable BaseSelectionAliasRender render
     ) {
+        renderTo(abstractBuilder, render, true);
+    }
+
+    @Override
+    public final void renderAsMergedOperand(@NotNull AbstractSqlBuilder<?> abstractBuilder, boolean leading) {
+        if (leading && renderLeadingCteForMergedOperand(abstractBuilder)) {
+            abstractBuilder.sql("(");
+            renderTo(abstractBuilder, null, false);
+            abstractBuilder.sql(")");
+        } else {
+            TypedQueryImplementor.super.renderAsMergedOperand(abstractBuilder, leading);
+        }
+    }
+
+    private boolean renderLeadingCteForMergedOperand(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
+        AstContext astContext = builder.getAstContext();
+        astContext.pushStatement(getMutableQuery());
+        try {
+            List<RealTable> cteTables = getCteTables(astContext);
+            if (cteTables.isEmpty()) {
+                return false;
+            }
+            renderCte(builder, cteTables);
+            return true;
+        } finally {
+            astContext.popStatement();
+        }
+    }
+
+    private void renderTo(
+            @NotNull AbstractSqlBuilder<?> abstractBuilder,
+            @Nullable BaseSelectionAliasRender render,
+            boolean renderCte
+    ) {
         SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {
             if (data.withoutSortingAndPaging || (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
-                renderWithoutPaging(builder, null, render);
+                renderWithoutPaging(builder, null, render, renderCte);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
                 if (idPropExpr != null) {
                     renderIdOnlyQuery(idPropExpr, builder);
                 } else {
                     SqlBuilder subBuilder = builder.createChildBuilder();
-                    renderWithoutPaging(subBuilder, null, render);
+                    renderWithoutPaging(subBuilder, null, render, renderCte);
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
                                 getMutableQuery().getSqlClient().getSqlFormatter(),
@@ -170,41 +205,42 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     private void renderWithoutPaging(
             SqlBuilder builder,
             PropExpressionImplementor<?> idPropExpr,
-            BaseSelectionAliasRender render
+            BaseSelectionAliasRender render,
+            boolean renderCte
     ) {
         List<RealTable> cteTables = getCteTables(builder.getAstContext());
-        if (cteTables.isEmpty()) {
+        if (!renderCte || cteTables.isEmpty()) {
             renderWithoutPagingImpl(builder, idPropExpr, render);
         } else {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
-            builder.sql("with ");
-            for (RealTable cteTable : cteTables) {
-                if (((BaseTableImplementor)cteTable.getTableLikeImplementor()).isRecursiveCte()) {
-                    builder.sql("recursive ");
-                    break;
-                }
-            }
-            builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
-            for (RealTable cteTable : cteTables) {
-                builder.separator();
-                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
-                BaseSelectionAliasRender cteRender = Objects.requireNonNull(
-                        builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery()),
-                        "No base-selection render is available for CTE " + baseTableImplementor.toSymbol()
-                );
-                builder.sql(cteTable.getAlias());
-                cteRender.renderCteColumns(cteTable, builder);
-                builder.sql(" as ");
-                cteTable.renderTo(builder, true);
-            }
-            builder.leave().sql(" ");
+            renderCte(builder, cteTables);
             builder.appendTempBuilder(tmpBuilder);
         }
     }
 
-    final boolean hasCteTables(AstContext ctx) {
-        return !getCteTables(ctx).isEmpty();
+    private void renderCte(SqlBuilder builder, List<RealTable> cteTables) {
+        builder.sql("with ");
+        for (RealTable cteTable : cteTables) {
+            if (((BaseTableImplementor)cteTable.getTableLikeImplementor()).isRecursiveCte()) {
+                builder.sql("recursive ");
+                break;
+            }
+        }
+        builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
+        for (RealTable cteTable : cteTables) {
+            builder.separator();
+            BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
+            BaseSelectionAliasRender cteRender = Objects.requireNonNull(
+                    builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery()),
+                    "No base-selection render is available for CTE " + baseTableImplementor.toSymbol()
+            );
+            builder.sql(cteTable.getAlias());
+            cteRender.renderCteColumns(cteTable, builder);
+            builder.sql(" as ");
+            cteTable.renderTo(builder, true);
+        }
+        builder.leave().sql(" ");
     }
 
     private List<RealTable> getCteTables(AstContext ctx) {
@@ -329,7 +365,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         builder.leave();
         builder.from().enter(SqlBuilder.ScopeType.SUB_QUERY);
         SqlBuilder subBuilder = builder.createChildBuilder();
-        renderWithoutPaging(subBuilder, idPropExpr, null);
+        renderWithoutPaging(subBuilder, idPropExpr, null, true);
         subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
                     getMutableQuery().getSqlClient().getSqlFormatter(),

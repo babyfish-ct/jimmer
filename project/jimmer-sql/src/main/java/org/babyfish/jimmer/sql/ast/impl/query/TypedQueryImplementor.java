@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -16,4 +18,10 @@ public interface TypedQueryImplementor extends Ast {
     }
 
     JSqlClientImplementor getSqlClient();
+
+    default void renderAsMergedOperand(@NotNull AbstractSqlBuilder<?> builder, boolean leading) {
+        builder.sql("(");
+        renderTo(builder);
+        builder.sql(")");
+    }
 }

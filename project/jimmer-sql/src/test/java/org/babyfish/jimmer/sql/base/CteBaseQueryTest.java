@@ -1202,10 +1202,17 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                         getSqlClient()
                                 .createQuery(cte)
                                 .where(cte.get_1().name().eq("GraphQL in Action"))
+                                .orderBy(cte.get_1().name())
                                 .select(cte.get_1()),
                         getSqlClient()
                                 .createQuery(table)
                                 .where(table.name().eq("Learning GraphQL"))
+                                .orderBy(table.name())
+                                .select(table),
+                        getSqlClient()
+                                .createQuery(table)
+                                .where(table.name().eq("Effective TypeScript"))
+                                .orderBy(table.name())
                                 .select(table)
                 ),
                 ctx -> {
@@ -1215,15 +1222,23 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                     "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID " +
                                     "--->from BOOK tb_2_" +
                                     ") " +
-                                    "select " +
+                                    "(select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
                                     "from tb_1_ " +
                                     "where tb_1_.c2 = ? " +
+                                    "order by tb_1_.c2 asc) " +
                                     "union all " +
                                     "(select " +
                                     "--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID " +
                                     "from BOOK tb_3_ " +
-                                    "where tb_3_.NAME = ?)"
+                                    "where tb_3_.NAME = ? " +
+                                    "order by tb_3_.NAME asc) " +
+                                    "union all " +
+                                    "(select " +
+                                    "--->tb_4_.ID, tb_4_.NAME, tb_4_.EDITION, tb_4_.PRICE, tb_4_.STORE_ID " +
+                                    "from BOOK tb_4_ " +
+                                    "where tb_4_.NAME = ? " +
+                                    "order by tb_4_.NAME asc)"
                     );
                 }
         );
