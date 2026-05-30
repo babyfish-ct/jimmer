@@ -658,7 +658,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,
-            Function<Integer, String> asBlock
+            Function<Integer, String> asBlock,
+            boolean idViewAllowed
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         BaseQueryExportSelection exportSelection =
@@ -672,14 +673,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 !(prop.isId() &&
                         joinProp != null &&
                         !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                        (rawId || TableUtils.isRawIdAllowed(owner, builder.sqlClient())) &&
+                        (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient())) &&
                         !owner.isInverse &&
                         parent != null &&
                         exportSelection.containsTable(parent))) {
             exportSelection = null;
         }
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
+                (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {
                 middleTable = joinProp.getStorage(strategy);

@@ -297,7 +297,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 .getSelectableProps();
         for (ImmutableProp prop : selectableProps.values()) {
             builder.separator();
-            table.renderSelection(prop, true, builder, null);
+            table.renderSelection(prop, !prop.isId(), builder, null, true, null, false);
         }
     }
 

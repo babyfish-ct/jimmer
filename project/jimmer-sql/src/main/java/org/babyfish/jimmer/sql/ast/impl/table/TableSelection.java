@@ -29,7 +29,7 @@ public interface TableSelection extends TableTypeProvider {
             ColumnDefinition optionalDefinition,
             boolean withPrefix
     ) {
-        renderSelection(prop, rawId, builder, optionalDefinition, withPrefix, null);
+        renderSelection(prop, rawId, builder, optionalDefinition, withPrefix, null, true);
     }
 
     void renderSelection(
@@ -38,6 +38,18 @@ public interface TableSelection extends TableTypeProvider {
             AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,
-            Function<Integer, String> asBlock
+            Function<Integer, String> asBlock,
+            boolean idViewAllowed
     );
+
+    default void renderSelection(
+            ImmutableProp prop,
+            boolean rawId,
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition optionalDefinition,
+            boolean withPrefix,
+            Function<Integer, String> asBlock
+    ) {
+        renderSelection(prop, rawId, builder, optionalDefinition, withPrefix, asBlock, true);
+    }
 }

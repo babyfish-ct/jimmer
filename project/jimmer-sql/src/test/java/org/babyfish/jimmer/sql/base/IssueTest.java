@@ -197,14 +197,14 @@ public class IssueTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
-                                    "--->tb_1_.c6, tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
+                                    "--->tb_1_.c6, tb_1_.c8, tb_1_.c9, tb_1_.c10 " +
                                     "from (" +
                                     "--->select " +
                                     "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, " +
-                                    "--->--->tb_2_.STORE_ID c6, tb_3_.NAME c7, tb_3_.WEBSITE c8, tb_3_.VERSION c9 " +
+                                    "--->--->tb_3_.ID c6, tb_2_.STORE_ID c7, tb_3_.NAME c8, tb_3_.WEBSITE c9, tb_3_.VERSION c10 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->inner join BOOK_STORE tb_3_ on tb_2_.STORE_ID = tb_3_.ID" +
-                                    ") tb_1_ where tb_1_.c6 = ?"
+                                    ") tb_1_ where tb_1_.c7 = ?"
                     );
                     ctx.rows(
                             "[" +
@@ -278,14 +278,14 @@ public class IssueTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, tb_1_.c6, " +
-                                    "--->tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
+                                    "--->tb_1_.c7, tb_1_.c8, tb_1_.c11 " +
                                     "from (" +
                                     "--->select " +
                                     "--->--->tb_2_.ORDER_ITEM_A c1, tb_2_.ORDER_ITEM_B c2, tb_2_.ORDER_ITEM_C c3, tb_2_.NAME c4, tb_2_.FK_ORDER_X c5, tb_2_.FK_ORDER_Y c6, " +
-                                    "--->--->tb_2_.FK_ORDER_X c7, tb_2_.FK_ORDER_Y c8, tb_3_.NAME c9 " +
+                                    "--->--->tb_3_.ORDER_X c7, tb_3_.ORDER_Y c8, tb_2_.FK_ORDER_X c9, tb_2_.FK_ORDER_Y c10, tb_3_.NAME c11 " +
                                     "--->from ORDER_ITEM tb_2_ " +
                                     "--->inner join ORDER_ tb_3_ on tb_2_.FK_ORDER_X = tb_3_.ORDER_X and tb_2_.FK_ORDER_Y = tb_3_.ORDER_Y" +
-                                    ") tb_1_ where (tb_1_.c7, tb_1_.c8) = (?, ?)"
+                                    ") tb_1_ where (tb_1_.c9, tb_1_.c10) = (?, ?)"
                     );
                     ctx.rows(
                             "[{" +

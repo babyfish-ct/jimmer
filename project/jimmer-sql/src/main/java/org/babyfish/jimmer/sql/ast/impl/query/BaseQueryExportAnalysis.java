@@ -119,7 +119,7 @@ final class BaseQueryExportAnalysis {
             boolean fullRow = analysis.isFullRowExportRequired(baseTableOwner);
             for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
                 if (fullRow) {
-                    analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
+                    analyzeProp(realTable, tableImplementor, prop, false, false, exportSelection, ctx);
                 }
                 for (int i = 0; i < usages.size(); i++) {
                     BaseQueryExportUsages.TableReferenceUsage usage = usages.get(i);
@@ -256,7 +256,7 @@ final class BaseQueryExportAnalysis {
             BaseQueryExportCollectorSelection exportSelection,
             QueryAnalysisContext ctx
     ) {
-        analyzeProp(table, tableImplementor, prop, rawId, null, exportSelection, ctx);
+        analyzeProp(table, tableImplementor, prop, rawId, true, null, exportSelection, ctx);
     }
 
     private static void analyzeProp(
@@ -264,6 +264,31 @@ final class BaseQueryExportAnalysis {
             TableImplementor<?> tableImplementor,
             ImmutableProp prop,
             boolean rawId,
+            boolean idViewAllowed,
+            BaseQueryExportCollectorSelection exportSelection,
+            QueryAnalysisContext ctx
+    ) {
+        analyzeProp(table, tableImplementor, prop, rawId, idViewAllowed, null, exportSelection, ctx);
+    }
+
+    private static void analyzeProp(
+            RealTable table,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp prop,
+            boolean rawId,
+            @Nullable java.util.List<String> columnNames,
+            BaseQueryExportCollectorSelection exportSelection,
+            QueryAnalysisContext ctx
+    ) {
+        analyzeProp(table, tableImplementor, prop, rawId, true, columnNames, exportSelection, ctx);
+    }
+
+    private static void analyzeProp(
+            RealTable table,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp prop,
+            boolean rawId,
+            boolean idViewAllowed,
             @Nullable java.util.List<String> columnNames,
             BaseQueryExportCollectorSelection exportSelection,
             QueryAnalysisContext ctx
@@ -286,7 +311,7 @@ final class BaseQueryExportAnalysis {
         if (prop.isId() &&
                 joinProp != null &&
                 !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || TableUtils.isRawIdAllowed(tableImplementor, ctx.getSqlClient())) &&
+                (rawId || idViewAllowed && TableUtils.isRawIdAllowed(tableImplementor, ctx.getSqlClient())) &&
                 !tableImplementor.isInverse() &&
                 !joinProp.isMiddleTableDefinition() &&
                 table.getParent() != null) {

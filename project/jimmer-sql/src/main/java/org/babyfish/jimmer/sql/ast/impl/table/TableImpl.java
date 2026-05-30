@@ -755,7 +755,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,
-            Function<Integer, String> asBlock
+            Function<Integer, String> asBlock,
+            boolean idViewAllowed
     ) {
         JoinTypeMergeScope scope;
         if (builder instanceof SqlBuilder) {
@@ -775,7 +776,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                 builder,
                 optionalDefinition,
                 withPrefix,
-                asBlock
+                asBlock,
+                idViewAllowed
         );
     }
 
