@@ -104,7 +104,7 @@ public class BaseQueryExportSelection {
 
     private static List<RealTable.Key> path(RealTable table) {
         List<RealTable.Key> keys = new ArrayList<>();
-        for (RealTable current = table; current.getParent() != null; current = current.getParent()) {
+        for (RealTable current = table; current != null; current = current.getParent()) {
             keys.add(0, current.getKey());
         }
         return keys;

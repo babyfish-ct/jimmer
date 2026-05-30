@@ -9,8 +9,10 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -108,6 +110,10 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
                             .sql(Integer.toString(exportSelection.expressionIndex()));
                     return;
                 }
+                if (!canReadExportColumn(exportSelection, realTable, builder)) {
+                    raw.metadata().renderTo(builder);
+                    return;
+                }
                 Integer index = exportSelection.columnIndexOrNull(realTable, columnName, isForeignKey());
                 if (index == null && realTable.getParent() != null) {
                     columnName = foreignKeyColumnName(realTable, columnName, builder);
@@ -126,6 +132,30 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
         } finally {
             ctx.popStatement();
         }
+    }
+
+    private boolean canReadExportColumn(
+            BaseQueryExportSelection exportSelection,
+            RealTable realTable,
+            AbstractSqlBuilder<?> builder
+    ) {
+        if (exportSelection.isRootTable(realTable)) {
+            return true;
+        }
+        if (!isForeignKey() ||
+                realTable.getParent() == null ||
+                !(realTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+            return false;
+        }
+        TableImplementor<?> table = (TableImplementor<?>) realTable.getTableLikeImplementor();
+        ImmutableProp joinProp = table.getJoinProp();
+        return getValueProp().isId() &&
+                joinProp != null &&
+                !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+                TableUtils.isRawIdAllowed(table, builder.sqlClient()) &&
+                !table.isInverse() &&
+                !joinProp.isMiddleTableDefinition() &&
+                exportSelection.containsTable(realTable.getParent());
     }
 
     private String foreignKeyColumnName(

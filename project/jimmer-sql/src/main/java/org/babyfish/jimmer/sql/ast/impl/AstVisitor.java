@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.Field;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class AstVisitor {
@@ -36,6 +37,10 @@ public abstract class AstVisitor {
     }
 
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {}
+
+    public void visitTableFetcherField(RealTable table, Field field) {
+        visitTableReference(table, field.getProp(), field.isRawId());
+    }
 
     public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {}
 

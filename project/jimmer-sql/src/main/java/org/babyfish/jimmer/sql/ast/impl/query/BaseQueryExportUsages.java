@@ -7,8 +7,9 @@ import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ final class BaseQueryExportUsages {
     }
 
     Set<BaseTableOwner> owners() {
-        Set<BaseTableOwner> owners = new HashSet<>();
+        Set<BaseTableOwner> owners = new LinkedHashSet<>();
         owners.addAll(fullRowExports);
         owners.addAll(expressionExports);
         owners.addAll(tableReferenceUsageMap.keySet());
@@ -58,9 +59,9 @@ final class BaseQueryExportUsages {
 
     static final class Builder {
 
-        private final Set<BaseTableOwner> fullRowExports = new HashSet<>();
+        private final Set<BaseTableOwner> fullRowExports = new LinkedHashSet<>();
 
-        private final Set<BaseTableOwner> expressionExports = new HashSet<>();
+        private final Set<BaseTableOwner> expressionExports = new LinkedHashSet<>();
 
         private final Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap = new LinkedHashMap<>();
 
@@ -73,11 +74,24 @@ final class BaseQueryExportUsages {
         }
 
         void requireTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
+            requireTableReference(table, prop, rawId, null);
+        }
+
+        void requireTableColumns(RealTable table, ImmutableProp prop, Collection<String> columnNames) {
+            requireTableReference(table, prop, false, columnNames);
+        }
+
+        private void requireTableReference(
+                RealTable table,
+                ImmutableProp prop,
+                boolean rawId,
+                @Nullable Collection<String> columnNames
+        ) {
             BaseTableOwner baseTableOwner = table.getBaseTableOwner();
             if (baseTableOwner == null) {
                 return;
             }
-            TableReferenceUsage usage = new TableReferenceUsage(table, prop, rawId);
+            TableReferenceUsage usage = new TableReferenceUsage(table, prop, rawId, columnNames);
             for (BaseTableOwner owner : expandedOwners(baseTableOwner)) {
                 tableReferenceUsageMap
                         .computeIfAbsent(owner, it -> new ArrayList<>())
@@ -94,8 +108,8 @@ final class BaseQueryExportUsages {
                 tableReferenceUsageMap.put(e.getKey(), new ArrayList<>(e.getValue()));
             }
             return new BaseQueryExportUsages(
-                    new HashSet<>(fullRowExports),
-                    new HashSet<>(expressionExports),
+                    new LinkedHashSet<>(fullRowExports),
+                    new LinkedHashSet<>(expressionExports),
                     tableReferenceUsageMap
             );
         }
@@ -129,10 +143,19 @@ final class BaseQueryExportUsages {
 
         final boolean rawId;
 
-        TableReferenceUsage(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
+        @Nullable
+        final List<String> columnNames;
+
+        TableReferenceUsage(
+                RealTable table,
+                @Nullable ImmutableProp prop,
+                boolean rawId,
+                @Nullable Collection<String> columnNames
+        ) {
             this.table = table;
             this.prop = prop;
             this.rawId = rawId;
+            this.columnNames = columnNames != null ? new ArrayList<>(columnNames) : null;
         }
     }
 }

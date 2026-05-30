@@ -12,10 +12,12 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.Nullable;
 
 final class BaseQueryExportAnalysis {
@@ -111,13 +113,37 @@ final class BaseQueryExportAnalysis {
                 return;
             }
             RealTable realTable = ctx.realTable(tableImplementor);
-            if (analysis.isFullRowExportRequired(baseTableOwner)) {
-                for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
+            java.util.List<BaseQueryExportUsages.TableReferenceUsage> usages =
+                    analysis.tableReferenceUsages(baseTableOwner);
+            boolean[] consumedUsages = new boolean[usages.size()];
+            boolean fullRow = analysis.isFullRowExportRequired(baseTableOwner);
+            for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
+                if (fullRow) {
                     analyzeProp(realTable, tableImplementor, prop, false, exportSelection, ctx);
                 }
+                for (int i = 0; i < usages.size(); i++) {
+                    BaseQueryExportUsages.TableReferenceUsage usage = usages.get(i);
+                    if (consumedUsages[i] ||
+                            usage.prop != prop ||
+                            !exportSelection.isRootTable(usage.table)) {
+                        continue;
+                    }
+                    analyzeProp(
+                            realTable,
+                            tableImplementor,
+                            usage.prop,
+                            usage.rawId,
+                            usage.columnNames,
+                            exportSelection,
+                            ctx
+                    );
+                    consumedUsages[i] = true;
+                }
             }
-            for (BaseQueryExportUsages.TableReferenceUsage usage : analysis.tableReferenceUsages(baseTableOwner)) {
-                analyzeTableReference(usage, exportSelection, ctx);
+            for (int i = 0; i < usages.size(); i++) {
+                if (!consumedUsages[i]) {
+                    analyzeTableReference(usages.get(i), exportSelection, ctx);
+                }
             }
             for (RealTable childTable : realTable) {
                 if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
@@ -197,6 +223,7 @@ final class BaseQueryExportAnalysis {
                 (TableImplementor<?>) implementor,
                 usage.prop,
                 usage.rawId,
+                usage.columnNames,
                 exportSelection,
                 ctx
         );
@@ -229,12 +256,29 @@ final class BaseQueryExportAnalysis {
             BaseQueryExportCollectorSelection exportSelection,
             QueryAnalysisContext ctx
     ) {
+        analyzeProp(table, tableImplementor, prop, rawId, null, exportSelection, ctx);
+    }
+
+    private static void analyzeProp(
+            RealTable table,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp prop,
+            boolean rawId,
+            @Nullable java.util.List<String> columnNames,
+            BaseQueryExportCollectorSelection exportSelection,
+            QueryAnalysisContext ctx
+    ) {
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
             exportSelection.requireFormulaIndex(table, (FormulaTemplate) template);
             return;
         }
-        if (!prop.isColumnDefinition()) {
+        Storage storage = prop.getStorage(ctx.getMetadataStrategy());
+        if (storage instanceof EmbeddedColumns && columnNames != null) {
+            analyzeColumns(table, columnNames, false, exportSelection);
+            return;
+        }
+        if (!(storage instanceof ColumnDefinition)) {
             return;
         }
         MetadataStrategy strategy = ctx.getMetadataStrategy();
@@ -250,7 +294,7 @@ final class BaseQueryExportAnalysis {
             analyzeColumns(table.getParent(), definition, true, exportSelection);
             return;
         }
-        ColumnDefinition definition = prop.getStorage(strategy);
+        ColumnDefinition definition = (ColumnDefinition) storage;
         analyzeColumns(table, definition, false, exportSelection);
     }
 
@@ -263,6 +307,17 @@ final class BaseQueryExportAnalysis {
         int size = definition.size();
         for (int i = 0; i < size; i++) {
             exportSelection.requireColumnIndex(table, definition.name(i), foreignKeyInBaseQuery);
+        }
+    }
+
+    private static void analyzeColumns(
+            RealTable table,
+            java.util.List<String> columnNames,
+            boolean foreignKeyInBaseQuery,
+            BaseQueryExportCollectorSelection exportSelection
+    ) {
+        for (String columnName : columnNames) {
+            exportSelection.requireColumnIndex(table, columnName, foreignKeyInBaseQuery);
         }
     }
 }

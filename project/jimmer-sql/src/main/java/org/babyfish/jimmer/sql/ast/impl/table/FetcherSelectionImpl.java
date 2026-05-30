@@ -152,7 +152,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             if (prop.isColumnDefinition() ||
                     prop.getSqlTemplate() instanceof FormulaTemplate ||
                     JoinFetchFieldVisitor.isJoinField(field, visitor.getAstContext().getSqlClient())) {
-                visitor.visitTableReference(realTable, prop, field.isRawId());
+                visitor.visitTableFetcherField(realTable, field);
             }
         }
         visitor.visitTableFetcher(realTable, fetcher);
