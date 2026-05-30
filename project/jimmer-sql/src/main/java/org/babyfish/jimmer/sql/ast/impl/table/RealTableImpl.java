@@ -41,7 +41,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private JoinType joinType;
 
-    private Aliases aliases;
+    private TableAliasScope aliasScope;
+
+    private TableAliasScope.AliasBinding aliasBinding;
 
     RealTableImpl(TableLikeImplementor<?> owner) {
         this(
@@ -801,13 +803,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     @Override
     public final void applyAliasesIfNecessary(TableAliasScope scope) {
-        if (aliases != null && aliases.scope == scope) {
+        if (aliasScope == scope && aliasBinding != null) {
             return;
         }
         if (parent != null) {
             parent.applyAliasesIfNecessary(scope);
         }
-        if (aliases == null || aliases.scope != scope) {
+        if (aliasScope != scope || aliasBinding == null) {
             applyAlias(scope);
         }
     }
@@ -816,11 +818,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     public final void applyAliases(TableAliases tableAliases, TableAliasScope scope) {
         TableAliases.Alias alias = tableAliases.get(this);
         if (alias != null) {
-            scope.reserveTableAlias(alias.value);
-            scope.reserveTableAlias(alias.middleValue);
-            this.aliases = new Aliases(alias.value, alias.middleValue, scope);
-        } else if (aliases != null && aliases.scope != scope) {
-            this.aliases = null;
+            aliasScope = scope;
+            aliasBinding = scope.bind(this, alias.value, alias.middleValue);
+        } else if (aliasScope != scope) {
+            aliasScope = null;
+            aliasBinding = null;
         }
         for (RealTable childTable : this) {
             childTable.applyAliases(tableAliases, scope);
@@ -835,100 +837,43 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (recursive != null) {
                 RealTableImpl recursiveTable = (RealTableImpl) recursive.realTable(key.scope);
                 recursiveTable.applyAliasesIfNecessary(scope);
-                this.aliases = recursiveTable.aliases;
+                aliasScope = scope;
+                aliasBinding = recursiveTable.aliasBinding;
                 return;
             }
         }
         ImmutableProp joinProp = owner instanceof TableImplementor<?> ?
                 ((TableImplementor<?>)owner).getJoinProp() :
                 null;
-        String middleAlias;
-        if (joinProp != null && joinProp.isMiddleTableDefinition()) {
-            middleAlias = scope.allocateTableAlias(owner);
-        } else {
-            middleAlias = null;
-        }
-        this.aliases = new Aliases(
-                middleAlias == null ? scope.allocateTableAlias(owner) : null,
-                middleAlias,
-                scope,
+        boolean middleTableDefinition = joinProp != null && joinProp.isMiddleTableDefinition();
+        aliasScope = scope;
+        aliasBinding = scope.bindLazy(
+                this,
                 owner,
-                middleAlias != null
+                middleTableDefinition,
+                middleTableDefinition
         );
     }
 
-    private Aliases aliases() {
-        Aliases aliases = this.aliases;
-        if (aliases == null) {
+    private TableAliasScope.AliasBinding aliases() {
+        TableAliasScope.AliasBinding binding = this.aliasBinding;
+        if (binding == null) {
             if (parent != null) {
-                applyAliasesIfNecessary(parent.aliases().scope);
-                aliases = this.aliases;
-                if (aliases != null) {
-                    return aliases;
+                TableAliasScope scope = parent.aliasScope;
+                if (scope == null) {
+                    parent.aliases();
+                    scope = parent.aliasScope;
+                }
+                applyAliasesIfNecessary(scope);
+                binding = this.aliasBinding;
+                if (binding != null) {
+                    return binding;
                 }
             }
             throw new IllegalStateException(
-                    "Table aliases have not been allocated for " + this
+                "Table aliases have not been allocated for " + this
             );
         }
-        return aliases;
-    }
-
-    private static class Aliases {
-
-        private String value;
-
-        private String middleValue;
-
-        final TableAliasScope scope;
-
-        private final TableLikeImplementor<?> owner;
-
-        private final boolean middleTableDefinition;
-
-        Aliases(String value, String middleValue, TableAliasScope scope) {
-            this(value, middleValue, scope, null, middleValue != null);
-        }
-
-        Aliases(
-                String value,
-                String middleValue,
-                TableAliasScope scope,
-                TableLikeImplementor<?> owner,
-                boolean middleTableDefinition
-        ) {
-            this.value = value;
-            this.middleValue = middleValue;
-            this.scope = scope;
-            this.owner = owner;
-            this.middleTableDefinition = middleTableDefinition;
-        }
-
-        String value() {
-            String value = this.value;
-            if (value == null) {
-                value = this.value = scope.allocateTableAlias(owner);
-            }
-            return value;
-        }
-
-        String middleValue() {
-            if (!middleTableDefinition) {
-                return null;
-            }
-            String middleValue = this.middleValue;
-            if (middleValue == null) {
-                middleValue = this.middleValue = scope.allocateTableAlias(owner);
-            }
-            return middleValue;
-        }
-
-        @Override
-        public String toString() {
-            return "Aliases{" +
-                    "value='" + value + '\'' +
-                    ", middleValue='" + middleValue + '\'' +
-                    '}';
-        }
+        return binding;
     }
 }
