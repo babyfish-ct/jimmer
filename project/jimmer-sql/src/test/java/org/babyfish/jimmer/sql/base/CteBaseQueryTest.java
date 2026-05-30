@@ -1189,6 +1189,45 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testMergedRootQueryWithLeadingCteBaseQuery() {
+        BookTable table = BookTable.$;
+        BaseTable1<BookTable> cte = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                TypedRootQuery.unionAll(
+                        getSqlClient()
+                                .createQuery(cte)
+                                .where(cte.get_1().name().eq("GraphQL in Action"))
+                                .select(cte.get_1()),
+                        getSqlClient()
+                                .createQuery(table)
+                                .where(table.name().eq("Learning GraphQL"))
+                                .select(table)
+                ),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID " +
+                                    "--->from BOOK tb_2_" +
+                                    ") " +
+                                    "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from tb_1_ " +
+                                    "where tb_1_.c2 = ? " +
+                                    "union all " +
+                                    "(select " +
+                                    "--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID " +
+                                    "from BOOK tb_3_ " +
+                                    "where tb_3_.NAME = ?)"
+                    );
+                }
+        );
+    }
     
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 

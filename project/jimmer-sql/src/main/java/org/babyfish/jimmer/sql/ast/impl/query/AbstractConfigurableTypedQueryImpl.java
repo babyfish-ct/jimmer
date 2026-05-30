@@ -203,6 +203,10 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         }
     }
 
+    final boolean hasCteTables(AstContext ctx) {
+        return !getCteTables(ctx).isEmpty();
+    }
+
     private List<RealTable> getCteTables(AstContext ctx) {
         TableLikeImplementor<?> tableLikeImplementor = getMutableQuery().getTableLikeImplementor();
         if (!tableLikeImplementor.hasBaseTable()) {

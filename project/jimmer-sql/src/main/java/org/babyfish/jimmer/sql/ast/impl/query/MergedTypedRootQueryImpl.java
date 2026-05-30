@@ -179,13 +179,31 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter('?' + operator + '?');
-        for (TypedQueryImplementor query : queries) {
+        for (int i = 0; i < queries.length; i++) {
+            TypedQueryImplementor query = queries[i];
             builder.separator();
-            builder.sql("(");
+            boolean parenthesized = !canRenderAsLeadingWithQuery(i, query, builder);
+            if (parenthesized) {
+                builder.sql("(");
+            }
             query.renderTo(builder);
-            builder.sql(")");
+            if (parenthesized) {
+                builder.sql(")");
+            }
         }
         builder.leave();
+    }
+
+    private static boolean canRenderAsLeadingWithQuery(
+            int index,
+            TypedQueryImplementor query,
+            AbstractSqlBuilder<?> builder
+    ) {
+        return index == 0 &&
+                query instanceof AbstractConfigurableTypedQueryImpl &&
+                ((AbstractConfigurableTypedQueryImpl) query).hasCteTables(
+                        builder.assertSimple().getAstContext()
+                );
     }
 
     @Override
