@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
@@ -188,8 +189,10 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             for (RealTable cteTable : cteTables) {
                 builder.separator();
                 BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
-                BaseSelectionAliasRender cteRender = builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
-                assert cteRender != null;
+                BaseSelectionAliasRender cteRender = Objects.requireNonNull(
+                        builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery()),
+                        "No base-selection render is available for CTE " + baseTableImplementor.toSymbol()
+                );
                 builder.sql(cteTable.getAlias());
                 cteRender.renderCteColumns(cteTable, builder);
                 builder.sql(" as ");

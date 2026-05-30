@@ -42,24 +42,30 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
         AstContext ctx = visitor.getAstContext();
         visitor.visitBaseTableExpression(baseTableOwner);
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        ((Ast) this.raw).accept(visitor);
-        ctx.popStatement();
+        try {
+            ((Ast) this.raw).accept(visitor);
+        } finally {
+            ctx.popStatement();
+        }
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
-        BaseQueryExportSelection exportSelection = Objects.requireNonNull(
-                renderContext.getBaseQueryExportSelection(baseTableOwner),
-                "No base-query export selection is available for " + baseTableOwner
-        );
-        builder
-                .sql(exportSelection.getAlias())
-                .sql(".c")
-                .sql(Integer.toString(exportSelection.expressionIndex()));
-        ctx.popStatement();
+        try {
+            QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
+            BaseQueryExportSelection exportSelection = Objects.requireNonNull(
+                    renderContext.getBaseQueryExportSelection(baseTableOwner),
+                    "No base-query export selection is available for " + baseTableOwner
+            );
+            builder
+                    .sql(exportSelection.getAlias())
+                    .sql(".c")
+                    .sql(Integer.toString(exportSelection.expressionIndex()));
+        } finally {
+            ctx.popStatement();
+        }
     }
 
     @Override

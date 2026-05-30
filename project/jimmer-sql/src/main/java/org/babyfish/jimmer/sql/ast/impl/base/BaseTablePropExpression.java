@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
+import java.util.Objects;
 
 class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
 
@@ -116,8 +117,10 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
         ctx.pushStatement(baseTableOwner.getBaseTable().getQuery().getMutableQuery());
         try {
-            BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(baseTableOwner);
-            assert exportSelection != null;
+            BaseQueryExportSelection exportSelection = Objects.requireNonNull(
+                    renderContext.getBaseQueryExportSelection(baseTableOwner),
+                    "No base-query export selection is available for " + baseTableOwner
+            );
             RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(renderContext);
             if (exportSelection.isRootTable(realTable)) {
                 renderExportedProp(builder, exportSelection, realTable, ignoreBrackets);
