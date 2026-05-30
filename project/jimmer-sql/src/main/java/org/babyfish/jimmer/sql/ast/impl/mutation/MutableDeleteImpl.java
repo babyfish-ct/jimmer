@@ -255,7 +255,7 @@ public class MutableDeleteImpl
         } else {
             builder.sql("delete");
             if (getSqlClient().getDialect().isDeletedAliasRequired()) {
-                builder.sql(" ").sql(table.realTable(builder.getAstContext()).getAlias());
+                builder.sql(" ").sql(MutationRender.alias(builder, table));
             }
             builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
             if (getSqlClient().getDialect().isDeleteNeedsAsKeyword()) {
@@ -263,7 +263,7 @@ public class MutableDeleteImpl
             } else {
                 builder.sql(" ");
             }
-            builder.sql(table.realTable(builder.getAstContext()).getAlias());
+            builder.sql(MutationRender.alias(builder, table));
             if (predicate != null) {
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 ((Ast) predicate).renderTo(builder);

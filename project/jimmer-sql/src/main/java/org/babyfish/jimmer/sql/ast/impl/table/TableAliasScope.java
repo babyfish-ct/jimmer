@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import java.util.IdentityHashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public final class TableAliasScope implements TableAliasAllocator {
@@ -54,6 +55,17 @@ public final class TableAliasScope implements TableAliasAllocator {
         AliasBinding binding = new AliasBinding(value, middleValue, owner, middleTableDefinition);
         aliasBindings.put(table, binding);
         return binding;
+    }
+
+    public String getAlias(RealTable table) {
+        return binding(table).value();
+    }
+
+    private AliasBinding binding(RealTable table) {
+        return Objects.requireNonNull(
+                aliasBindings.get(table),
+                "Table alias has not been bound for " + table
+        );
     }
 
     final class AliasBinding {

@@ -278,7 +278,7 @@ public class MutableUpdateImpl
         } else {
             builder.sql(" ");
         }
-        builder.sql(getTableLikeImplementor().realTable(builder.getAstContext()).getAlias());
+        builder.sql(MutationRender.alias(builder, getTableLikeImplementor()));
     }
 
     private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
@@ -332,7 +332,7 @@ public class MutableUpdateImpl
             builder.enter(SqlBuilder.ScopeType.SELECT);
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
                 builder.separator().definition(
-                        table.realTable(astContext).getAlias(),
+                        MutationRender.alias(builder, table),
                         prop.getStorage(strategy),
                         null
                 );
@@ -348,7 +348,7 @@ public class MutableUpdateImpl
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 NativePredicates.renderPredicates(
                         false,
-                        table.realTable(astContext).getAlias(),
+                        MutationRender.alias(builder, table),
                         table.getImmutableType().getIdProp().getStorage(strategy),
                         ids,
                         builder
@@ -463,7 +463,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             NativePredicates.renderPredicates(
                     false,
-                    table.realTable(builder.getAstContext()).getAlias(),
+                    MutationRender.alias(builder, table),
                     table.getImmutableType().getIdProp().getStorage(getSqlClient().getMetadataStrategy()),
                     ids,
                     builder
