@@ -204,7 +204,7 @@ public class ConfigurableSubQueryImpl<R>
         SqlBuilder sqlBuilder = builder.assertSimple();
         QueryRenderContext oldRenderContext = sqlBuilder.getQueryRenderContext();
         if (oldRenderContext == null) {
-            sqlBuilder.setQueryAnalysis(QueryAnalysisBuilder.analyze(sqlBuilder.getAstContext(), this));
+            sqlBuilder.setQueryAnalysis(QueryAnalysisBuilder.analyze(sqlBuilder.getAstContext(), this, false));
         }
         builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
         try {

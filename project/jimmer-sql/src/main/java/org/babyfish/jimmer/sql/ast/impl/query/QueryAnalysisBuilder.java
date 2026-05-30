@@ -30,16 +30,23 @@ final class QueryAnalysisBuilder {
 
     private final JoinRequirements joinRequirements = new JoinRequirements();
 
+    private final boolean materializeAliases;
+
     private BaseQueryExportUsages baseQueryExportUsages = BaseQueryExportUsages.EMPTY;
 
-    private QueryAnalysisBuilder(AstContext astContext) {
+    private QueryAnalysisBuilder(AstContext astContext, boolean materializeAliases) {
         this.astContext = astContext;
+        this.materializeAliases = materializeAliases;
         this.analysisContext = new QueryAnalysisContext(astContext);
         this.baseQueryExportsCollector = new BaseQueryExportsCollector(analysisContext);
     }
 
     static QueryAnalysis analyze(AstContext astContext, Ast ast) {
-        return new QueryAnalysisBuilder(astContext).analyze(ast);
+        return analyze(astContext, ast, true);
+    }
+
+    static QueryAnalysis analyze(AstContext astContext, Ast ast, boolean materializeAliases) {
+        return new QueryAnalysisBuilder(astContext, materializeAliases).analyze(ast);
     }
 
     QueryAnalysisContext getAnalysisContext() {
@@ -60,7 +67,7 @@ final class QueryAnalysisBuilder {
         );
         TableUsages tableUsages = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
         BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
-        TableAliases tableAliases = materialize(tableUsages);
+        TableAliases tableAliases = materializeAliases ? materialize(tableUsages) : TableAliases.EMPTY;
         QueryAnalysisModel model = new QueryAnalysisModel(
                 joinRequirements,
                 baseQueryExportUsages,

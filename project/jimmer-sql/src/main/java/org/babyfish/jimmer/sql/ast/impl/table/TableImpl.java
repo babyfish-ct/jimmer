@@ -196,7 +196,13 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public final RealTableImpl realTable(QueryRenderContext ctx) {
-        return realTable0(ctx.getAstContext().getJoinTypeMergeScope(), parent, ctx.getRequiredJoinType(this));
+        RealTableImpl realTable = realTable0(
+                ctx.getAstContext().getJoinTypeMergeScope(),
+                parent,
+                ctx.getRequiredJoinType(this)
+        );
+        ctx.applyAliases(realTable);
+        return realTable;
     }
 
     @Override
