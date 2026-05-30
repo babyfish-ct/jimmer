@@ -129,6 +129,10 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         this.queryRenderContext = new QueryRenderContext(ctx, queryAnalysis);
     }
 
+    public void restoreQueryRenderContext(@Nullable QueryRenderContext queryRenderContext) {
+        this.queryRenderContext = queryRenderContext;
+    }
+
     public SqlBuilder from() {
         preAppend();
         space('?');

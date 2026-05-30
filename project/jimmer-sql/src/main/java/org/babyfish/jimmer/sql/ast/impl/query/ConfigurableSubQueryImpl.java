@@ -201,9 +201,23 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        SqlBuilder sqlBuilder = builder.assertSimple();
+        QueryRenderContext oldRenderContext = sqlBuilder.getQueryRenderContext();
+        if (oldRenderContext == null) {
+            sqlBuilder.setQueryAnalysis(QueryAnalysisBuilder.analyze(sqlBuilder.getAstContext(), this));
+        }
         builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
-        super.renderTo(builder);
-        builder.leave();
+        try {
+            super.renderTo(builder);
+        } finally {
+            try {
+                builder.leave();
+            } finally {
+                if (oldRenderContext == null) {
+                    sqlBuilder.restoreQueryRenderContext(null);
+                }
+            }
+        }
     }
 
     @Override
