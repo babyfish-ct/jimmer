@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
+import java.util.Objects;
 
 class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
@@ -50,8 +51,10 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
         QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
-        BaseQueryExportSelection exportSelection = renderContext.getBaseQueryExportSelection(baseTableOwner);
-        assert exportSelection != null;
+        BaseQueryExportSelection exportSelection = Objects.requireNonNull(
+                renderContext.getBaseQueryExportSelection(baseTableOwner),
+                "No base-query export selection is available for " + baseTableOwner
+        );
         builder
                 .sql(exportSelection.getAlias())
                 .sql(".c")

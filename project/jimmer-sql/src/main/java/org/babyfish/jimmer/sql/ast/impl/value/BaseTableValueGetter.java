@@ -101,13 +101,20 @@ class BaseTableValueGetter implements ValueGetter, GetterMetadata {
                     .realTable(renderContext);
             String columnName = getColumnName();
             if (exportSelection != null && columnName != null) {
+                if (!exportSelection.isTableBacked()) {
+                    builder
+                            .sql(exportSelection.getAlias())
+                            .sql(".c")
+                            .sql(Integer.toString(exportSelection.expressionIndex()));
+                    return;
+                }
                 Integer index = exportSelection.columnIndexOrNull(realTable, columnName, isForeignKey());
                 if (index == null && realTable.getParent() != null) {
                     columnName = foreignKeyColumnName(realTable, columnName, builder);
                     index = exportSelection.columnIndexOrNull(
                             realTable.getParent(),
                             columnName,
-                            false
+                            isForeignKey()
                     );
                 }
                 if (index != null) {

@@ -133,7 +133,9 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             return null;
         }
         BaseTableImplementor baseTableImplementor = resolveBaseTable(statement, baseTableOwner.getBaseTable());
-        return baseTableImplementor.getQuery().resolveRootTable(table);
+        return baseTableImplementor != null ?
+                baseTableImplementor.getQuery().resolveRootTable(table) :
+                null;
     }
 
     public BaseTableImplementor resolveBaseTable(BaseTableSymbol baseTable) {
@@ -158,7 +160,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         TableLikeImplementor<?> parentImplementor =
                 parent instanceof BaseTableSymbol ?
                         resolveBaseTable(statement, (BaseTableSymbol) parent) :
-                        TableProxies.resolve((Table<?>) parent, this);
+                        resolveTable(statement, (Table<?>) parent);
         if (parentImplementor == null) {
             return null;
         }
@@ -167,6 +169,26 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 resolveBaseTable(recursive) :
                 null;
         return BaseTableImpl.of(baseTable, parentImplementor, recursiveImplementor);
+    }
+
+    private TableImplementor<?> resolveTable(AbstractMutableStatementImpl statement, Table<?> table) {
+        TableLike<?> stmtTable = statement.getTable();
+        if (stmtTable instanceof BaseTableSymbol) {
+            TableImplementor<?> resolved = resolve(statement, (BaseTableSymbol) stmtTable, table);
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+        if (baseTableOwner != null && baseTableOwner.getBaseTable().getParent() != null) {
+            TableImplementor<?> resolved = resolve(statement, baseTableOwner.getBaseTable(), table);
+            if (resolved != null) {
+                return resolved.baseTableOwner(baseTableOwner);
+            }
+        }
+        return AbstractTypedTable.__refEquals(stmtTable, table) ?
+                (TableImplementor<?>) statement.getTableLikeImplementor() :
+                null;
     }
 
     public AbstractMutableStatementImpl getStatement() {

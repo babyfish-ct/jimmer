@@ -21,6 +21,9 @@ final class BaseQueryScope {
 
     BaseQueryExportCollectorSelection requireExportSelection(BaseTableOwner baseTableOwner) {
         BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableOwner.getBaseTable());
+        if (baseTable == null) {
+            return null;
+        }
         RealTable realBaseTable = ctx.realTable(baseTable);
         BaseQueryExport export = exportMap.get(realBaseTable);
         if (export == null) {
@@ -30,13 +33,28 @@ final class BaseQueryScope {
         return export.requireSelection(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index));
     }
 
-    BaseQueryExportSelection exportSelectionOrNull(BaseTableOwner baseTableOwner) {
-        BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableOwner.getBaseTable());
-        RealTable realBaseTable = ctx.realTable(baseTable);
-        BaseQueryExport export = exportMap.get(realBaseTable);
-        return export != null ?
-                export.selectionOrNull(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index)) :
-                null;
+    void synchronizeMergedExports(List<BaseTableSymbol> baseTables) {
+        BaseQueryExport canonical = null;
+        for (BaseTableSymbol baseTable : baseTables) {
+            BaseQueryExport export = exportOrNull(baseTable);
+            if (export == null) {
+                continue;
+            }
+            if (canonical == null) {
+                canonical = export;
+            } else {
+                canonical.copyMissingFrom(export);
+            }
+        }
+        if (canonical == null) {
+            return;
+        }
+        for (BaseTableSymbol baseTable : baseTables) {
+            BaseQueryExport export = export(baseTable);
+            if (export != null) {
+                export.overwriteFrom(canonical);
+            }
+        }
     }
 
     int colNo() {
@@ -49,6 +67,25 @@ final class BaseQueryScope {
             return null;
         }
         return ctx.realTable(ctx.resolve((Table<?>) selection));
+    }
+
+    private BaseQueryExport export(BaseTableSymbol baseTableSymbol) {
+        BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableSymbol);
+        if (baseTable == null) {
+            return null;
+        }
+        RealTable realBaseTable = ctx.realTable(baseTable);
+        BaseQueryExport export = exportMap.get(realBaseTable);
+        if (export == null) {
+            export = new BaseQueryExport(this, realBaseTable);
+            exportMap.put(realBaseTable, export);
+        }
+        return export;
+    }
+
+    private BaseQueryExport exportOrNull(BaseTableSymbol baseTableSymbol) {
+        BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableSymbol);
+        return baseTable != null ? exportMap.get(ctx.realTable(baseTable)) : null;
     }
 
     BaseQueryExportResolver toResolver() {

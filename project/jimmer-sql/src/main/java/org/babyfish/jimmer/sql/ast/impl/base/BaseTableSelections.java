@@ -56,9 +56,6 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        if (expr instanceof PropExpression<?>) {
-            return of((PropExpression<T>) expr, baseTable, index);
-        }
         if (expr instanceof ComparableExpression<?>) {
             return (Expression<T>) of((ComparableExpression<?>)expr, baseTable, index);
         }
@@ -71,9 +68,6 @@ public class BaseTableSelections {
             BaseTable baseTable,
             int index
     ) {
-        if (expr instanceof PropExpression<?>) {
-            return of((PropExpression.Cmp<T>) expr, baseTable, index);
-        }
         BaseTableOwner owner = new BaseTableOwner(baseTable, index);
         if (expr instanceof StringExpression) {
             return (ComparableExpression<T>) new BaseTableExpression.Str((StringExpressionImplementor) expr, owner);
@@ -97,9 +91,6 @@ public class BaseTableSelections {
             int index
     ) {
         BaseTableOwner owner = new BaseTableOwner(baseTable, index);
-        if (expr instanceof PropExpression.Str) {
-            return new BaseTablePropExpression.Str((PropExpressionImplementor<String>) expr, owner);
-        }
         return new BaseTableExpression.Str((StringExpressionImplementor) expr, owner);
     }
 
@@ -110,9 +101,6 @@ public class BaseTableSelections {
             int index
     ) {
         BaseTableOwner owner = new BaseTableOwner(baseTable, index);
-        if (expr instanceof PropExpression.Num<?>) {
-            return new BaseTablePropExpression.Num<>((PropExpressionImplementor<N>) expr, owner);
-        }
         return new BaseTableExpression.Num<>((NumericExpressionImplementor<N>) expr, owner);
     }
 
@@ -123,9 +111,6 @@ public class BaseTableSelections {
             int index
     ) {
         BaseTableOwner owner = new BaseTableOwner(baseTable, index);
-        if (expr instanceof PropExpression.Dt<?>) {
-            return new BaseTablePropExpression.Dt<>((PropExpressionImplementor<T>) expr, owner);
-        }
         return new BaseTableExpression.Dt<>((DateExpressionImplementor<T>) expr, owner);
     }
 
@@ -136,9 +121,6 @@ public class BaseTableSelections {
             int index
     ) {
         BaseTableOwner owner = new BaseTableOwner(baseTable, index);
-        if (expr instanceof PropExpression.Tp<?>) {
-            return new BaseTablePropExpression.Tp<>((PropExpressionImplementor<T>) expr, owner);
-        }
         return new BaseTableExpression.Tp<>((TemporalExpressionImplementor<T>) expr, owner);
     }
 

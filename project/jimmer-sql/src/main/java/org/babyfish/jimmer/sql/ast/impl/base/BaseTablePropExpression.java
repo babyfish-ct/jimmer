@@ -123,6 +123,10 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
                 renderExportedProp(builder, exportSelection, realTable, ignoreBrackets);
                 return;
             }
+            if (baseTableOwner.equals(BaseTableOwner.of(raw.getTable())) && exportSelection.isTableBacked()) {
+                renderExportedProp(builder, exportSelection, exportSelection.getRootRealTable(), ignoreBrackets);
+                return;
+            }
         } finally {
             ctx.popStatement();
         }

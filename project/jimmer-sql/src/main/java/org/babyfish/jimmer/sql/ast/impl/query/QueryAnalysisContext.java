@@ -36,6 +36,10 @@ public final class QueryAnalysisContext {
         astContext.popStatement();
     }
 
+    public AbstractMutableStatementImpl getStatement() {
+        return astContext.getStatement();
+    }
+
     public TableImplementor<?> resolve(Table<?> table) {
         return TableProxies.resolve(table, astContext);
     }

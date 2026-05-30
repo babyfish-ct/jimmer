@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -15,6 +18,9 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>();
 
+    private final BaseQueryExportUsages.Builder baseQueryExportUsagesBuilder =
+            new BaseQueryExportUsages.Builder();
+
     public TableUsageCollector(AstContext ctx) {
         super(ctx);
     }
@@ -25,6 +31,10 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     public TableUsages toTableUsages() {
         return new TableUsages(rootTables, tableStateMap);
+    }
+
+    public BaseQueryExportUsages toBaseQueryExportUsages() {
+        return baseQueryExportUsagesBuilder.build();
     }
 
     @Override
@@ -40,6 +50,25 @@ public class TableUsageCollector extends TableUsageVisitor {
     @Override
     protected void useTable(RealTable table) {
         tableStateMap.put(table, TableUsedState.USED);
+    }
+
+    @Override
+    protected void visitBaseTableReference(
+            BaseTableOwner baseTableOwner,
+            RealTable table,
+            @Nullable ImmutableProp prop,
+            boolean rawId
+    ) {
+        if (prop == null) {
+            baseQueryExportUsagesBuilder.requireFullRowExport(baseTableOwner);
+        } else {
+            baseQueryExportUsagesBuilder.requireTableReference(table, prop, rawId);
+        }
+    }
+
+    @Override
+    public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
+        baseQueryExportUsagesBuilder.requireExpressionExport(baseTableOwner);
     }
 
     protected final TableUsedState getTableUsedState(RealTable table) {

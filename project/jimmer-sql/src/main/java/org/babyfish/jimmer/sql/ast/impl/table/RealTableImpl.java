@@ -665,14 +665,20 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder instanceof SqlBuilder && ((SqlBuilder) builder).getQueryRenderContext() != null ?
                         ((SqlBuilder)builder).getQueryRenderContext().getBaseQueryExportSelection(owner.getBaseTableOwner()) :
                         null;
-        if (exportSelection != null && !exportSelection.isRootTable(this)) {
-            exportSelection = null;
-        }
-        boolean baseOwnedNonRoot = owner.getBaseTableOwner() != null && exportSelection == null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        if (!baseOwnedNonRoot &&
-                prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+        if (exportSelection != null &&
+                !exportSelection.isRootTable(this) &&
+                !(prop.isId() &&
+                        joinProp != null &&
+                        !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+                        (rawId || TableUtils.isRawIdAllowed(owner, builder.sqlClient())) &&
+                        !owner.isInverse &&
+                        parent != null &&
+                        exportSelection.containsTable(parent))) {
+            exportSelection = null;
+        }
+        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
                 (rawId || TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {

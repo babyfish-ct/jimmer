@@ -1297,6 +1297,37 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testOuterJoinedExpressionDoesNotExpandCteRow() {
+        TreeNodeTable table = TreeNodeTable.$;
+        BaseTable1<TreeNodeTable> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .where(table.parentId().isNotNull())
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_1().parent().name().like("Home"))
+                        .select(baseTable.get_1().fetch(TreeNodeFetcher.$.name())),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2, c3) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.NODE_ID, tb_2_.NAME, tb_2_.PARENT_ID " +
+                                    "--->from TREE_NODE tb_2_ " +
+                                    "--->where tb_2_.PARENT_ID is not null" +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c2 " +
+                                    "from tb_1_ " +
+                                    "inner join TREE_NODE tb_3_ on tb_1_.c3 = tb_3_.NODE_ID " +
+                                    "where tb_3_.NAME like ?"
+                    );
+                    ctx.variables("%Home%");
+                }
+        );
+    }
     
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 

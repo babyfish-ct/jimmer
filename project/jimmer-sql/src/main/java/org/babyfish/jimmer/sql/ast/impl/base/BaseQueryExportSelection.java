@@ -29,11 +29,30 @@ public class BaseQueryExportSelection {
         return export.getRealBaseTable().getAlias();
     }
 
+    public boolean isTableBacked() {
+        return rootRealTable != null;
+    }
+
+    public RealTable getRootRealTable() {
+        return rootRealTable;
+    }
+
     public boolean isRootTable(RealTable table) {
         if (rootRealTable == null) {
             return false;
         }
         return path(rootRealTable).equals(path(table));
+    }
+
+    public boolean containsTable(RealTable table) {
+        if (rootRealTable == null) {
+            return false;
+        }
+        List<RealTable.Key> rootPath = path(rootRealTable);
+        List<RealTable.Key> tablePath = path(table);
+        return isAncestorPath(tablePath, rootPath) ||
+                tablePath.size() >= rootPath.size() &&
+                        tablePath.subList(0, rootPath.size()).equals(rootPath);
     }
 
     public int columnIndex(RealTable table, String columnName, boolean foreignKeyInBaseQuery) {

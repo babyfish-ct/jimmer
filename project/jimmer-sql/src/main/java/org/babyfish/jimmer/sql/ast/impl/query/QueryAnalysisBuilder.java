@@ -10,11 +10,15 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportsCollector;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 
 final class QueryAnalysisBuilder {
 
@@ -54,7 +58,6 @@ final class QueryAnalysisBuilder {
                 TableUsages.EMPTY,
                 BaseQueryExports.EMPTY
         );
-        baseQueryExportUsages = collectBaseQueryExportUsages(ast, joinAwareAnalysis);
         TableUsages tableUsages = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
         BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
         TableAliases tableAliases = materialize(tableUsages);
@@ -103,36 +106,30 @@ final class QueryAnalysisBuilder {
         }
     }
 
-    private BaseQueryExportUsages collectBaseQueryExportUsages(Ast ast, QueryAnalysis joinAwareAnalysis) {
-        return BaseQueryExportUsageCollector.collect(astContext, ast, joinAwareAnalysis);
-    }
-
     private TableUsages collectTableUsagesAndBaseExports(Ast ast, QueryAnalysis joinAwareAnalysis) {
+        List<AbstractMutableStatementImpl> statements = new ArrayList<>();
+        Set<AbstractMutableStatementImpl> statementSet = Collections.newSetFromMap(new IdentityHashMap<>());
         TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
                 super.visitStatement(statement);
-                baseQueryExportsCollector.registerStatement(statement);
-                BaseQueryExportAnalysis.analyze(statement, QueryAnalysisBuilder.this);
-            }
-
-            @Override
-            public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
-                super.visitTableReference(table, prop, rawId);
-                BaseQueryExportAnalysis.analyzeTableReference(
-                        table,
-                        prop,
-                        rawId,
-                        QueryAnalysisBuilder.this
-                );
-            }
-
-            @Override
-            public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
-                requireBaseQueryExportSelection(baseTableOwner).requireExpressionIndex();
+                if (statementSet.add(statement)) {
+                    statements.add(statement);
+                }
             }
         };
         ast.accept(visitor);
+        baseQueryExportUsages = visitor.toBaseQueryExportUsages();
+        for (AbstractMutableStatementImpl statement : statements) {
+            analysisContext.pushStatement(statement);
+            try {
+                baseQueryExportsCollector.registerStatement(statement);
+                BaseQueryExportAnalysis.analyze(statement, QueryAnalysisBuilder.this);
+                BaseQueryExportAnalysis.analyzeUsages(QueryAnalysisBuilder.this);
+            } finally {
+                analysisContext.popStatement();
+            }
+        }
         return visitor.toTableUsages();
     }
 
@@ -154,5 +151,17 @@ final class QueryAnalysisBuilder {
 
     boolean isFullRowExportRequired(BaseTableOwner baseTableOwner) {
         return baseQueryExportUsages.isFullRowExportRequired(baseTableOwner);
+    }
+
+    boolean isExpressionExportRequired(BaseTableOwner baseTableOwner) {
+        return baseQueryExportUsages.isExpressionExportRequired(baseTableOwner);
+    }
+
+    List<BaseQueryExportUsages.TableReferenceUsage> tableReferenceUsages(BaseTableOwner baseTableOwner) {
+        return baseQueryExportUsages.tableReferenceUsages(baseTableOwner);
+    }
+
+    Set<BaseTableOwner> baseQueryExportOwners() {
+        return baseQueryExportUsages.owners();
     }
 }

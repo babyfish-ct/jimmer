@@ -52,6 +52,14 @@ public final class BaseQueryExport {
         return selection(selectionIndex, rootRealTable);
     }
 
+    BaseQueryExportSelection selectionOrNull(int selectionIndex) {
+        if (!selectionExportMap.containsKey(selectionIndex)) {
+            return null;
+        }
+        BaseQueryExportSelection selection = selectionMap.get(selectionIndex);
+        return selection != null ? selection : selection(selectionIndex, null);
+    }
+
     BaseQueryExportColumn column(
             BaseQueryExportSelection selection,
             List<RealTable.Key> tableKeys,
@@ -140,6 +148,18 @@ public final class BaseQueryExport {
         return scope.colNo();
     }
 
+    void copyMissingFrom(BaseQueryExport source) {
+        for (Map.Entry<Integer, SelectionExport> e : source.selectionExportMap.entrySet()) {
+            requireSelectionExport(e.getKey()).copyMissingFrom(e.getValue());
+        }
+    }
+
+    void overwriteFrom(BaseQueryExport source) {
+        for (Map.Entry<Integer, SelectionExport> e : source.selectionExportMap.entrySet()) {
+            requireSelectionExport(e.getKey()).overwriteFrom(e.getValue());
+        }
+    }
+
     private SelectionExport requireSelectionExport(int selectionIndex) {
         SelectionExport export = selectionExportMap.get(selectionIndex);
         if (export == null) {
@@ -225,6 +245,22 @@ public final class BaseQueryExport {
 
         Collection<BaseQueryExportColumn> columns() {
             return columnMap.values();
+        }
+
+        void copyMissingFrom(SelectionExport source) {
+            for (BaseQueryExportColumn column : source.columnMap.values()) {
+                columnMap.putIfAbsent(column.key(), column);
+            }
+            if (expressionIndex == null) {
+                expressionIndex = source.expressionIndex;
+            }
+        }
+
+        void overwriteFrom(SelectionExport source) {
+            for (BaseQueryExportColumn column : source.columnMap.values()) {
+                columnMap.put(column.key(), column);
+            }
+            expressionIndex = source.expressionIndex;
         }
 
         private BaseQueryExportColumn compatibleColumn(List<RealTable.Key> tableKeys, String name) {

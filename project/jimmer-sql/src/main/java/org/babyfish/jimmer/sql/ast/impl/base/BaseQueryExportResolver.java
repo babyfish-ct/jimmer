@@ -39,4 +39,5 @@ final class BaseQueryExportResolver {
         }
         return ctx.realTable(ctx.resolve((Table<?>) selection));
     }
+
 }

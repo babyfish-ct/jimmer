@@ -34,6 +34,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     private T baseTable;
 
+    private Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> derivedItemBaseTables;
+
+    private Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> cteItemBaseTables;
+
     private MergedBaseQueryImpl<T> mergedBy;
 
     private final boolean recursive;
@@ -240,6 +244,31 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     public ConfigurableBaseQueryImpl<T> firstQuery() {
         return expandedQueries[0];
+    }
+
+    public BaseTableSymbol itemBaseTable(ConfigurableBaseQueryImpl<?> itemQuery, boolean cte) {
+        upgrade();
+        Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> itemBaseTables;
+        if (cte) {
+            itemBaseTables = cteItemBaseTables;
+            if (itemBaseTables == null) {
+                cteItemBaseTables = itemBaseTables = new IdentityHashMap<>();
+            }
+        } else {
+            itemBaseTables = derivedItemBaseTables;
+            if (itemBaseTables == null) {
+                derivedItemBaseTables = itemBaseTables = new IdentityHashMap<>();
+            }
+        }
+        return itemBaseTables.computeIfAbsent(
+                itemQuery,
+                it -> BaseTableSymbols.of(
+                        it,
+                        it.getSelections(),
+                        null,
+                        recursive ? BaseTableKind.RECURSIVE_CTE : cte ? BaseTableKind.CTE : BaseTableKind.DERIVED
+                )
+        );
     }
 
     @Override

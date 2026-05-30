@@ -47,6 +47,7 @@ public abstract class TableUsageVisitor extends AstVisitor {
             }
             BaseTableOwner owner = tableImplementor.getBaseTableOwner();
             if (owner != null) {
+                visitBaseTableReference(owner, table, prop, rawId);
                 BaseTableImplementor baseTableImplementor = getAstContext().resolveBaseTable(owner.getBaseTable());
                 use(realTable(baseTableImplementor));
             }
@@ -75,6 +76,13 @@ public abstract class TableUsageVisitor extends AstVisitor {
     protected abstract void useTableId(RealTable table);
 
     protected abstract void useTable(RealTable table);
+
+    protected void visitBaseTableReference(
+            BaseTableOwner owner,
+            RealTable table,
+            @Nullable ImmutableProp prop,
+            boolean rawId
+    ) {}
 
     protected final RealTable realTable(TableLikeImplementor<?> tableLikeImplementor) {
         return getQueryRenderContext() != null ?

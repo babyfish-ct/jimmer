@@ -80,9 +80,11 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
         for (int i = 0; i < size; i++) {
             Selection<?> selection = selections.get(i);
-            BaseQueryExportSelection exportSelection = exportMap
-                    .get(realBaseTable)
-                    .selectionOrNull(i, rootRealTable(selection, builder));
+            BaseQueryExport export = exportMap.get(realBaseTable);
+            BaseQueryExportSelection exportSelection = export != null ? export.selectionOrNull(i) : null;
+            if (exportSelection == null) {
+                continue;
+            }
             if (selection instanceof Expression<?>) {
                 builder.separator().sql("c").sql(Integer.toString(exportSelection.expressionIndex()));
             } else {
