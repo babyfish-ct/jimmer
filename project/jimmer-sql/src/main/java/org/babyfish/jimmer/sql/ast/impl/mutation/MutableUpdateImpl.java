@@ -291,7 +291,7 @@ public class MutableUpdateImpl
             this.accept(visitor);
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyTo(astContext);
-            tableUsages.allocateAliases();
+            tableUsages.allocateAliases(astContext);
             builder
                     .sql("update ")
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
@@ -326,7 +326,7 @@ public class MutableUpdateImpl
             accept(visitor, false);
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyTo(astContext);
-            tableUsages.allocateAliases();
+            tableUsages.allocateAliases(astContext);
             TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.enter(SqlBuilder.ScopeType.SELECT);

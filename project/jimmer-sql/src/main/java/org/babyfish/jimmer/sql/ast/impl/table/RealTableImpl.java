@@ -799,81 +799,71 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         return builder.toString();
     }
 
-    public final void allocateAliases() {
-
-        allocateAliasImpl();
-
-        for (RealTable childTable : this) {
-            childTable.allocateAliases();
+    @Override
+    public final void applyAliasesIfNecessary(TableAliasScope scope) {
+        if (aliases != null && aliases.scope == scope) {
+            return;
+        }
+        if (parent != null) {
+            parent.applyAliasesIfNecessary(scope);
+        }
+        if (aliases == null || aliases.scope != scope) {
+            applyAlias(scope);
         }
     }
 
     @Override
-    public final void applyAliases(TableAliases tableAliases) {
+    public final void applyAliases(TableAliases tableAliases, TableAliasScope scope) {
         TableAliases.Alias alias = tableAliases.get(this);
         if (alias != null) {
-            this.aliases = new Aliases(alias.value, alias.middleValue);
+            scope.reserveTableAlias(alias.value);
+            scope.reserveTableAlias(alias.middleValue);
+            this.aliases = new Aliases(alias.value, alias.middleValue, scope);
+        } else if (aliases != null && aliases.scope != scope) {
+            this.aliases = null;
         }
         for (RealTable childTable : this) {
-            childTable.applyAliases(tableAliases);
+            childTable.applyAliases(tableAliases, scope);
         }
     }
 
-    private void allocateAliasImpl() {
-        if (aliases != null) {
-            return;
-        }
+    private void applyAlias(TableAliasScope scope) {
         TableLikeImplementor<?> owner = this.owner;
         if (owner instanceof BaseTableImplementor) {
             BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
             BaseTableImplementor recursive = baseTableImplementor.getRecursive();
             if (recursive != null) {
+                RealTableImpl recursiveTable = (RealTableImpl) recursive.realTable(key.scope);
+                recursiveTable.applyAliasesIfNecessary(scope);
+                this.aliases = recursiveTable.aliases;
                 return;
             }
         }
-        AbstractMutableStatementImpl statement = owner.getStatement();
-        StatementContext stmtCtx = statement.getContext();
         ImmutableProp joinProp = owner instanceof TableImplementor<?> ?
                 ((TableImplementor<?>)owner).getJoinProp() :
                 null;
         String middleAlias;
-        if (joinProp != null) {
-            if (joinProp.isMiddleTableDefinition()) {
-                middleAlias = stmtCtx.allocateTableAlias();
-            } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
-                middleAlias = null;
-            } else {
-                middleAlias = null;
-            }
+        if (joinProp != null && joinProp.isMiddleTableDefinition()) {
+            middleAlias = scope.allocateTableAlias(owner);
         } else {
             middleAlias = null;
         }
-        this.aliases = new Aliases(stmtCtx.allocateTableAlias(), middleAlias);
-    }
-
-    private Aliases allocateAliasesIfNecessary() {
-        if (aliases != null) {
-            return aliases;
-        }
-        if (parent != null) {
-            parent.allocateAliasesIfNecessary();
-        }
-        allocateAliases();
-        return aliases;
+        this.aliases = new Aliases(scope.allocateTableAlias(owner), middleAlias, scope);
     }
 
     private Aliases aliases() {
         Aliases aliases = this.aliases;
         if (aliases == null) {
-            RealTableImpl realTableImpl;
-            if (owner instanceof BaseTableImplementor) {
-                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) owner;
-                BaseTableImplementor recursive = baseTableImplementor.getRecursive();
-                realTableImpl = (RealTableImpl) (recursive != null ? recursive : baseTableImplementor).realTable(key.scope);
-            } else {
-                realTableImpl = (RealTableImpl) ((TableImplementor<?>) owner).baseTableOwner(null).realTable(key.scope);
+            if (parent != null) {
+                applyAliasesIfNecessary(parent.aliases().scope);
+                aliases = this.aliases;
+                if (aliases != null) {
+                    return aliases;
+                }
             }
-            this.aliases = aliases = realTableImpl.allocateAliasesIfNecessary();
+            throw new IllegalStateException(
+                    "Table aliases have not been allocated for " + this
+            );
         }
         return aliases;
     }
@@ -884,9 +874,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
         final String middleValue;
 
-        Aliases(String value, String middleValue) {
+        final TableAliasScope scope;
+
+        Aliases(String value, String middleValue, TableAliasScope scope) {
             this.value = value;
             this.middleValue = middleValue;
+            this.scope = scope;
         }
 
         @Override

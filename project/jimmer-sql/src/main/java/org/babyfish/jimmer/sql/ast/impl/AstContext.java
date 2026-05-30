@@ -31,6 +31,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private int modCount;
 
+    private TableAliasScope tableAliasScope;
+
     private Set<MergedBaseQueryImpl<?>> visitingRecursiveMergedQueries;
 
     public AstContext(JSqlClientImplementor sqlClient) {
@@ -57,6 +59,14 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     public TableUsedState getTableUsedState(RealTable table) {
         TableUsedState state = getValue(table);
         return state != null ? state : TableUsedState.NONE;
+    }
+
+    public TableAliasScope beginTableAliasScope() {
+        return tableAliasScope = new TableAliasScope();
+    }
+
+    public TableAliasScope getTableAliasScope() {
+        return tableAliasScope;
     }
 
     public void pushStatement(AbstractMutableStatementImpl statement) {

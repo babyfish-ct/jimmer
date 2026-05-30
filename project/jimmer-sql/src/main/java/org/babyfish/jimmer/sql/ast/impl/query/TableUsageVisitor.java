@@ -86,7 +86,7 @@ public abstract class TableUsageVisitor extends AstVisitor {
 
     protected final RealTable realTable(TableLikeImplementor<?> tableLikeImplementor) {
         return getQueryRenderContext() != null ?
-                tableLikeImplementor.realTable(getQueryRenderContext()) :
+                tableLikeImplementor.realTableForAnalysis(getQueryRenderContext()) :
                 tableLikeImplementor.realTable(getAstContext());
     }
 

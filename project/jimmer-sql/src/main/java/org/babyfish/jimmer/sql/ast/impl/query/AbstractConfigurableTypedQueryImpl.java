@@ -88,7 +88,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         if (tableLikeImplementor instanceof BaseTableImplementor) {
             RealTable realBaseTable =
                     visitor.getQueryRenderContext() != null ?
-                            tableLikeImplementor.realTable(visitor.getQueryRenderContext()) :
+                            tableLikeImplementor.realTableForAnalysis(visitor.getQueryRenderContext()) :
                             tableLikeImplementor.realTable(visitor.getAstContext());
             visitBaseTableImpl(realBaseTable, visitor);
         } else {

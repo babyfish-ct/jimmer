@@ -142,7 +142,7 @@ final class QueryAnalysisBuilder {
 
     private TableAliases materialize(TableUsages tableUsages) {
         tableUsages.applyTo(astContext);
-        return tableUsages.allocateAliases();
+        return tableUsages.allocateAliases(astContext);
     }
 
     private void analyzeSelectionJoinRequirement(Table<?> table) {

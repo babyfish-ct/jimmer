@@ -30,7 +30,8 @@ public final class TableAliases {
 
     public static TableAliases allocate(
             Collection<RealTable> rootTables,
-            Map<RealTable, TableUsedState> tableStateMap
+            Map<RealTable, TableUsedState> tableStateMap,
+            TableAliasAllocator allocator
     ) {
         if (rootTables.isEmpty()) {
             return EMPTY;
@@ -38,7 +39,7 @@ public final class TableAliases {
         Map<RealTable, Alias> aliasMap = new IdentityHashMap<>();
         Map<AliasKey, Alias> aliasMapByKey = new HashMap<>();
         for (RealTable rootTable : rootTables) {
-            allocate(rootTable, true, tableStateMap, aliasMap, aliasMapByKey);
+            allocate(rootTable, true, tableStateMap, aliasMap, aliasMapByKey, allocator);
         }
         return new TableAliases(aliasMap, aliasMapByKey);
     }
@@ -54,32 +55,39 @@ public final class TableAliases {
             boolean root,
             Map<RealTable, TableUsedState> tableStateMap,
             Map<RealTable, Alias> aliasMap,
-            Map<AliasKey, Alias> aliasMapByKey
+            Map<AliasKey, Alias> aliasMapByKey,
+            TableAliasAllocator allocator
     ) {
         if (aliasMap.containsKey(table)) {
             return;
         }
         if (!root && !isUsed(table, tableStateMap)) {
             for (RealTable childTable : table) {
-                allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey);
+                allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey, allocator);
             }
             return;
         }
         TableLikeImplementor<?> owner = table.getTableLikeImplementor();
         if (owner instanceof BaseTableImplementor) {
             BaseTableImplementor baseTable = (BaseTableImplementor) owner;
-            if (baseTable.getRecursive() != null) {
+            BaseTableImplementor recursive = baseTable.getRecursive();
+            if (recursive != null) {
+                RealTable recursiveTable = recursive.realTable(table.getKey().scope);
+                allocate(recursiveTable, true, tableStateMap, aliasMap, aliasMapByKey, allocator);
+                Alias recursiveAlias = aliasMap.get(recursiveTable);
+                if (recursiveAlias != null) {
+                    aliasMap.put(table, recursiveAlias);
+                    aliasMapByKey.put(AliasKey.of(table), recursiveAlias);
+                }
                 return;
             }
         }
-        AbstractMutableStatementImpl statement = owner.getStatement();
-        StatementContext stmtCtx = statement.getContext();
-        String middleAlias = allocateMiddleAlias(owner, stmtCtx);
-        Alias alias = new Alias(stmtCtx.allocateTableAlias(), middleAlias);
+        String middleAlias = allocateMiddleAlias(owner, allocator);
+        Alias alias = new Alias(allocator.allocateTableAlias(owner), middleAlias);
         aliasMap.put(table, alias);
         aliasMapByKey.put(AliasKey.of(table), alias);
         for (RealTable childTable : table) {
-            allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey);
+            allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey, allocator);
         }
     }
 
@@ -93,13 +101,13 @@ public final class TableAliases {
 
     private static String allocateMiddleAlias(
             TableLikeImplementor<?> owner,
-            StatementContext stmtCtx
+            TableAliasAllocator allocator
     ) {
         ImmutableProp joinProp = owner instanceof TableImplementor<?> ?
                 ((TableImplementor<?>) owner).getJoinProp() :
                 null;
         return joinProp != null && joinProp.isMiddleTableDefinition() ?
-                stmtCtx.allocateTableAlias() :
+                allocator.allocateTableAlias(owner) :
                 null;
     }
 

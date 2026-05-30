@@ -202,7 +202,17 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                 ctx.getRequiredJoinType(this)
         );
         ctx.applyAliases(realTable);
+        realTable.applyAliasesIfNecessary(ctx.getTableAliasScope());
         return realTable;
+    }
+
+    @Override
+    public final RealTableImpl realTableForAnalysis(QueryRenderContext ctx) {
+        return realTable0(
+                ctx.getAstContext().getJoinTypeMergeScope(),
+                parent,
+                ctx.getRequiredJoinType(this)
+        );
     }
 
     @Override
@@ -725,7 +735,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     public void accept(@NotNull AstVisitor visitor) {
         RealTableImpl realTable =
                 visitor.getQueryRenderContext() != null ?
-                        realTable(visitor.getQueryRenderContext()) :
+                        realTableForAnalysis(visitor.getQueryRenderContext()) :
                         realTable(visitor.getAstContext());
         visitor.visitTableReference(realTable, null, false);
     }

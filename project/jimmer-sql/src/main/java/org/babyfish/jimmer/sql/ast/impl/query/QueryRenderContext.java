@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
@@ -29,6 +30,10 @@ public final class QueryRenderContext {
         return analysis;
     }
 
+    public TableAliasScope getTableAliasScope() {
+        return astContext.getTableAliasScope();
+    }
+
     @Nullable
     public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
         return analysis.getBaseQueryExportSelection(baseTableOwner);
@@ -45,6 +50,6 @@ public final class QueryRenderContext {
     }
 
     public void applyAliases(RealTable table) {
-        analysis.applyAliases(table);
+        analysis.applyAliases(table, getTableAliasScope());
     }
 }

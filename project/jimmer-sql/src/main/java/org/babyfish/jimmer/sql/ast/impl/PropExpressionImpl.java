@@ -189,7 +189,7 @@ public class PropExpressionImpl<T>
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
         visitor.visitTableReference(
                 visitor.getQueryRenderContext() != null ?
-                        tableImplementor.realTable(visitor.getQueryRenderContext()) :
+                        tableImplementor.realTableForAnalysis(visitor.getQueryRenderContext()) :
                         tableImplementor.realTable(visitor.getAstContext()),
                 prop,
                 rawId

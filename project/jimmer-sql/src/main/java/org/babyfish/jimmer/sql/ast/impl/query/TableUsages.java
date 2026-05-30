@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
@@ -34,10 +35,11 @@ public final class TableUsages {
         }
     }
 
-    public TableAliases allocateAliases() {
-        TableAliases aliases = TableAliases.allocate(rootTables, tableStateMap);
+    public TableAliases allocateAliases(AstContext astContext) {
+        TableAliasScope aliasScope = astContext.beginTableAliasScope();
+        TableAliases aliases = TableAliases.allocate(rootTables, tableStateMap, aliasScope);
         for (RealTable rootTable : rootTables) {
-            rootTable.applyAliases(aliases);
+            rootTable.applyAliases(aliases, aliasScope);
         }
         return aliases;
     }

@@ -110,23 +110,23 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "and " +
                                     "--->not exists(" +
                                     "--->--->select 1 " +
-                                    "--->--->from BOOK_STORE tb_3_ " +
-                                    "--->--->inner join BOOK tb_4_ on tb_3_.ID = tb_4_.STORE_ID " +
-                                    "--->--->where tb_4_.ID = tb_1_.ID and tb_3_.ID in (?, ?)" +
+                                    "--->--->from BOOK_STORE tb_2_ " +
+                                    "--->--->inner join BOOK tb_6_ on tb_2_.ID = tb_6_.STORE_ID " +
+                                    "--->--->where tb_6_.ID = tb_1_.ID and tb_2_.ID in (?, ?)" +
                                     "--->) " +
                                     "and " +
                                     "--->exists(" +
                                     "--->--->select 1 " +
-                                    "--->--->from AUTHOR tb_5_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.AUTHOR_ID " +
-                                    "--->--->where tb_6_.BOOK_ID = tb_1_.ID and tb_5_.ID in (?, ?, ?)" +
+                                    "--->--->from AUTHOR tb_3_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_3_.ID = tb_7_.AUTHOR_ID " +
+                                    "--->--->where tb_7_.BOOK_ID = tb_1_.ID and tb_3_.ID in (?, ?, ?)" +
                                     "--->) " +
                                     "and " +
                                     "--->not exists(" +
                                     "--->--->select 1 " +
-                                    "--->--->from AUTHOR tb_8_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID " +
-                                    "--->--->where tb_9_.BOOK_ID = tb_1_.ID and tb_8_.ID in (?, ?)" +
+                                    "--->--->from AUTHOR tb_4_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_4_.ID = tb_9_.AUTHOR_ID " +
+                                    "--->--->where tb_9_.BOOK_ID = tb_1_.ID and tb_4_.ID in (?, ?)" +
                                     "--->) " +
                                     "order by tb_1_.ID asc"
                     ).variables(
@@ -429,11 +429,11 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "--->and tb_2_.NAME ilike ? " +
                                     "--->and exists(" +
                                     "--->--->select 1 " +
-                                    "--->--->from AUTHOR tb_4_ " +
+                                    "--->--->from AUTHOR tb_3_ " +
                                     "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
-                                    "--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->--->on tb_3_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->where tb_2_.ID = tb_5_.BOOK_ID " +
-                                    "--->--->and tb_4_.FIRST_NAME ilike ?" +
+                                    "--->--->and tb_3_.FIRST_NAME ilike ?" +
                                     "--->)" +
                                     ")"
                     );
