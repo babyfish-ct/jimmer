@@ -7,14 +7,10 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     private int sequence;
 
-    private Set<String> aliases;
+    private final Set<String> aliases = new HashSet<>();
 
     @Override
     public String allocateTableAlias(TableLikeImplementor<?> owner) {
-        Set<String> aliases = this.aliases;
-        if (aliases == null) {
-            this.aliases = aliases = new HashSet<>();
-        }
         String alias;
         do {
             alias = "tb_" + ++sequence + '_';
@@ -24,13 +20,8 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     @Override
     public void reserveTableAlias(String alias) {
-        if (alias == null) {
-            return;
+        if (alias != null) {
+            aliases.add(alias);
         }
-        Set<String> aliases = this.aliases;
-        if (aliases == null) {
-            this.aliases = aliases = new HashSet<>();
-        }
-        aliases.add(alias);
     }
 }
