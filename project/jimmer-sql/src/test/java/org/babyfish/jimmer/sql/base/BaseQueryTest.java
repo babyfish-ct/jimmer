@@ -314,8 +314,8 @@ public class BaseQueryTest extends AbstractQueryTest {
                             "c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, (select count(1) from AUTHOR tb_3_ inner join BOOK_AUTHOR_MAPPING tb_7_ " +
                             "on tb_3_.ID = tb_7_.AUTHOR_ID where tb_7_.BOOK_ID = tb_2_.ID) c6 from BOOK tb_2_ where tb_2_.NAME = ? and " +
                             "tb_2_.EDITION = ? union all select tb_5_.ID c1, tb_5_.NAME c2, tb_5_.EDITION c3, tb_5_.PRICE c4, " +
-                            "tb_5_.STORE_ID c5, (select count(1) from AUTHOR tb_6_ inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_6_.ID = " +
-                            "tb_9_.AUTHOR_ID where tb_9_.BOOK_ID = tb_5_.ID) c6 from BOOK_STORE tb_4_ inner join BOOK tb_5_ on tb_4_.ID = " +
+                            "tb_5_.STORE_ID c5, (select count(1) from AUTHOR tb_6_ inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_6_.ID = " +
+                            "tb_8_.AUTHOR_ID where tb_8_.BOOK_ID = tb_5_.ID) c6 from BOOK_STORE tb_4_ inner join BOOK tb_5_ on tb_4_.ID = " +
                             "tb_5_.STORE_ID where tb_4_.NAME = ? and tb_5_.EDITION = ?) tb_1_ where tb_1_.c6 > ?"
                     );
                     ctx.rows(
@@ -386,7 +386,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                             "tb_3_ inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_3_.ID = tb_8_.AUTHOR_ID where tb_8_.BOOK_ID = tb_2_.ID) c6 " +
                             "from BOOK tb_2_ where tb_2_.NAME = ? and tb_2_.EDITION = ? union all select tb_5_.ID c1, tb_5_.NAME c2, " +
                             "tb_5_.EDITION c3, tb_5_.PRICE c4, tb_5_.STORE_ID c5, (select count(1) from AUTHOR tb_6_ inner join " +
-                            "BOOK_AUTHOR_MAPPING tb_10_ on tb_6_.ID = tb_10_.AUTHOR_ID where tb_10_.BOOK_ID = tb_5_.ID) c6 from BOOK_STORE " +
+                            "BOOK_AUTHOR_MAPPING tb_9_ on tb_6_.ID = tb_9_.AUTHOR_ID where tb_9_.BOOK_ID = tb_5_.ID) c6 from BOOK_STORE " +
                             "tb_4_ inner join BOOK tb_5_ on tb_4_.ID = tb_5_.STORE_ID where tb_4_.NAME = ? and tb_5_.EDITION = ?) tb_1_ " +
                             "left join BOOK_STORE tb_7_ on tb_1_.c5 = tb_7_.ID where tb_1_.c6 > ?"
                     );
@@ -469,7 +469,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                             "tb_2_.STORE_ID c4, (select count(1) from AUTHOR tb_3_ inner join BOOK_AUTHOR_MAPPING tb_10_ on tb_3_.ID = " +
                             "tb_10_.AUTHOR_ID where tb_10_.BOOK_ID = tb_2_.ID) c5 from BOOK tb_2_ where tb_2_.NAME = ? and tb_2_.EDITION = " +
                             "? union all select tb_5_.ID c1, tb_5_.NAME c2, tb_5_.EDITION c3, tb_5_.STORE_ID c4, (select count(1) from " +
-                            "AUTHOR tb_8_ inner join BOOK_AUTHOR_MAPPING tb_12_ on tb_8_.ID = tb_12_.AUTHOR_ID where tb_12_.BOOK_ID = " +
+                            "AUTHOR tb_8_ inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_8_.ID = tb_11_.AUTHOR_ID where tb_11_.BOOK_ID = " +
                             "tb_5_.ID) c5 from BOOK_STORE tb_4_ inner join BOOK tb_5_ on tb_4_.ID = tb_5_.STORE_ID inner join " +
                             "BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.BOOK_ID inner join AUTHOR tb_7_ on tb_6_.AUTHOR_ID = tb_7_.ID " +
                             "where tb_4_.NAME = ? and tb_5_.EDITION = ? and tb_7_.GENDER = ?) tb_1_ left join BOOK_STORE tb_9_ on tb_1_.c4 " +

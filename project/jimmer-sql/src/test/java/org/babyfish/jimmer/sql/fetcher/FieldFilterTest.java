@@ -105,8 +105,8 @@ public class FieldFilterTest extends AbstractQueryTest {
                                     "(tb_1_.NAME, tb_1_.EDITION) in (" +
                                     "--->select tb_2_.NAME, max(tb_2_.EDITION) " +
                                     "--->from BOOK tb_2_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_2_.ID = tb_5_.BOOK_ID " +
-                                    "--->where tb_5_.AUTHOR_ID in (?, ?, ?, ?, ?) " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.ID = tb_4_.BOOK_ID " +
+                                    "--->where tb_4_.AUTHOR_ID in (?, ?, ?, ?, ?) " +
                                     "--->group by tb_2_.NAME" +
                                     ")"
                     );

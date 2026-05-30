@@ -125,8 +125,8 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "--->not exists(" +
                                     "--->--->select 1 " +
                                     "--->--->from AUTHOR tb_4_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_4_.ID = tb_9_.AUTHOR_ID " +
-                                    "--->--->where tb_9_.BOOK_ID = tb_1_.ID and tb_4_.ID in (?, ?)" +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_4_.ID = tb_8_.AUTHOR_ID " +
+                                    "--->--->where tb_8_.BOOK_ID = tb_1_.ID and tb_4_.ID in (?, ?)" +
                                     "--->) " +
                                     "order by tb_1_.ID asc"
                     ).variables(

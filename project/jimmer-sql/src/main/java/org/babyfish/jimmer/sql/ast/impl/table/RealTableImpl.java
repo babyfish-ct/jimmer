@@ -168,12 +168,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     @Override
     public final String getAlias() {
-        return aliases().value;
+        return aliases().value();
     }
 
     @Override
     public final String getMiddleTableAlias() {
-        return aliases().middleValue;
+        return aliases().middleValue();
     }
 
     @Override
@@ -183,7 +183,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             JSqlClientImplementor sqlClient
     ) {
         if (!(owner instanceof TableImpl<?>)) {
-            return aliases().value;
+            return aliases().value();
         }
         TableImpl<?> tableImpl = (TableImpl<?>) owner;
         ImmutableProp joinProp = tableImpl.joinProp;
@@ -198,13 +198,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             }
             boolean isInverse = tableImpl.isInverse;
             if (middleTable != null) {
-                return aliases().middleValue;
+                return aliases().middleValue();
             }
             if (!isInverse) {
-                return parent.aliases().value;
+                return parent.aliases().value();
             }
         }
-        return aliases().value;
+        return aliases().value();
     }
 
     @Override
@@ -297,7 +297,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         .from()
                         .sql(tableImplementor.getImmutableType().getTableName(builder.getAstContext().getSqlClient().getMetadataStrategy()))
                         .sql(" ")
-                        .sql(aliases().value);
+                        .sql(aliases().value());
                 filterPredicate = null;
             }
             if (filterPredicate != null) {
@@ -318,13 +318,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         }
         if (aliasOnly) {
-            builder.sql(aliases().value);
+            builder.sql(aliases().value());
         } else {
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             baseTableImpl.renderBaseQueryCore(builder);
             builder.leave();
             if (!baseTableImpl.isCte()) {
-                builder.sql(" ").sql(aliases().value);
+                builder.sql(" ").sql(aliases().value());
             }
         }
         for (Selection<?> selection : baseTableImpl.getSelections()) {
@@ -375,7 +375,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         .join(joinType)
                         .sql(owner.immutableType.getTableName(strategy))
                         .sql(" ")
-                        .sql(aliases().value)
+                        .sql(aliases().value())
                         .on();
                 if (joinPredicate == null) {
                     builder.sql("1 = 1");
@@ -398,17 +398,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 renderJoinImpl(
                         builder,
                         joinType,
-                        parent.aliases().value,
+                        parent.aliases().value(),
                         parent,
                         joinProp.getStorage(strategy),
                         immutableType.getTableName(strategy),
-                        aliases().value,
+                        aliases().value(),
                         immutableType.getIdProp().getStorage(strategy),
                         mode
                 );
                 renderMiddleTableFilters(
                         ((AssociationProp)joinProp).getDeclaringType().getMiddleTable(strategy),
-                        parent.aliases().value,
+                        parent.aliases().value(),
                         builder
                 );
             }
@@ -424,17 +424,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 renderJoinImpl(
                     builder,
                     joinType,
-                    parent.aliases().value,
+                    parent.aliases().value(),
                     parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
-                    aliases().middleValue,
+                    aliases().middleValue(),
                     middleTable.getColumnDefinition(),
                     mode
             );
             renderMiddleTableFilters(
                     middleTable,
-                    aliases().middleValue,
+                    aliases().middleValue(),
                     builder
             );
             if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
@@ -444,11 +444,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 renderJoinImpl(
                         builder,
                         joinType,
-                        aliases().middleValue,
+                        aliases().middleValue(),
                         this,
                         middleTable.getTargetColumnDefinition(),
                         immutableType.getTableName(strategy),
-                        aliases().value,
+                        aliases().value(),
                         immutableType.getIdProp().getStorage(strategy),
                         TableImplementor.RenderMode.NORMAL
                 );
@@ -457,11 +457,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             renderJoinImpl(
                     builder,
                     joinType,
-                    parent.aliases().value,
+                    parent.aliases().value(),
                     parent,
                     joinProp.getStorage(strategy),
                     immutableType.getTableName(strategy),
-                    aliases().value,
+                    aliases().value(),
                     immutableType.getIdProp().getStorage(strategy),
                     mode
             );
@@ -489,17 +489,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             renderJoinImpl(
                     builder,
                     joinType,
-                    parent.aliases().value,
+                    parent.aliases().value(),
                     parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
-                    aliases().middleValue,
+                    aliases().middleValue(),
                     middleTable.getTargetColumnDefinition(),
                     mode
             );
             renderMiddleTableFilters(
                     middleTable,
-                    aliases().middleValue,
+                    aliases().middleValue(),
                     builder
             );
             if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
@@ -509,11 +509,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 renderJoinImpl(
                         builder,
                         joinType,
-                        aliases().middleValue,
+                        aliases().middleValue(),
                         this,
                         middleTable.getColumnDefinition(),
                         immutableType.getTableName(strategy),
-                        aliases().value,
+                        aliases().value(),
                         immutableType.getIdProp().getStorage(strategy),
                         TableImplementor.RenderMode.NORMAL
                 );
@@ -522,11 +522,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             renderJoinImpl(
                     builder,
                     joinType,
-                    parent.aliases().value,
+                    parent.aliases().value(),
                     parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     immutableType.getTableName(strategy),
-                    aliases().value,
+                    aliases().value(),
                     joinProp.getStorage(strategy),
                     mode
             );
@@ -548,21 +548,21 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                             .join(joinType)
                             .sql(immutableType.getTableName(strategy))
                             .sql(" ")
-                            .sql(aliases().value)
+                            .sql(aliases().value())
                             .on();
                     break;
                 case FROM_ONLY:
                     builder
                             .sql(immutableType.getTableName(strategy))
                             .sql(" ")
-                            .sql(aliases().value);
+                            .sql(aliases().value());
                     break;
             }
             if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
                 if (owner.isInverse) {
-                    builder.sql(joinTemplate.toSql(aliases().value, parent.aliases().value));
+                    builder.sql(joinTemplate.toSql(aliases().value(), parent.aliases().value()));
                 } else {
-                    builder.sql(joinTemplate.toSql(parent.aliases().value, aliases().value));
+                    builder.sql(joinTemplate.toSql(parent.aliases().value(), aliases().value()));
                 }
             }
         }
@@ -694,7 +694,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 if (optionalDefinition == null) {
                     if (isInverse) {
                         builder.definition(
-                                withPrefix ? aliases().middleValue : null,
+                                withPrefix ? aliases().middleValue() : null,
                                 middleTable.getColumnDefinition(),
                                 false,
                                 asBlock,
@@ -702,7 +702,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         );
                     } else {
                         builder.definition(
-                                withPrefix ? aliases().middleValue : null,
+                                withPrefix ? aliases().middleValue() : null,
                                 middleTable.getTargetColumnDefinition(),
                                 false,
                                 asBlock,
@@ -722,7 +722,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
                         if (withPrefix) {
-                            builder.sql(aliases().middleValue).sql(".");
+                            builder.sql(aliases().middleValue()).sql(".");
                         }
                         builder.sql(parentColumnName);
                         if (asBlock != null) {
@@ -752,7 +752,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
                         if (withPrefix) {
-                            builder.sql(parent.aliases().value).sql(".");
+                            builder.sql(parent.aliases().value()).sql(".");
                         }
                         builder.sql(parentColumnName);
                         if (asBlock != null) {
@@ -765,7 +765,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            builder.sql(((FormulaTemplate)template).toSql(aliases().value));
+            builder.sql(((FormulaTemplate)template).toSql(aliases().value()));
             if (asBlock != null) {
                 builder.sql(" ").sql(asBlock.apply(0));
             }
@@ -848,7 +848,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         } else {
             middleAlias = null;
         }
-        this.aliases = new Aliases(scope.allocateTableAlias(owner), middleAlias, scope);
+        this.aliases = new Aliases(
+                middleAlias == null ? scope.allocateTableAlias(owner) : null,
+                middleAlias,
+                scope,
+                owner,
+                middleAlias != null
+        );
     }
 
     private Aliases aliases() {
@@ -870,16 +876,51 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private static class Aliases {
 
-        final String value;
+        private String value;
 
-        final String middleValue;
+        private String middleValue;
 
         final TableAliasScope scope;
 
+        private final TableLikeImplementor<?> owner;
+
+        private final boolean middleTableDefinition;
+
         Aliases(String value, String middleValue, TableAliasScope scope) {
+            this(value, middleValue, scope, null, middleValue != null);
+        }
+
+        Aliases(
+                String value,
+                String middleValue,
+                TableAliasScope scope,
+                TableLikeImplementor<?> owner,
+                boolean middleTableDefinition
+        ) {
             this.value = value;
             this.middleValue = middleValue;
             this.scope = scope;
+            this.owner = owner;
+            this.middleTableDefinition = middleTableDefinition;
+        }
+
+        String value() {
+            String value = this.value;
+            if (value == null) {
+                value = this.value = scope.allocateTableAlias(owner);
+            }
+            return value;
+        }
+
+        String middleValue() {
+            if (!middleTableDefinition) {
+                return null;
+            }
+            String middleValue = this.middleValue;
+            if (middleValue == null) {
+                middleValue = this.middleValue = scope.allocateTableAlias(owner);
+            }
+            return middleValue;
         }
 
         @Override

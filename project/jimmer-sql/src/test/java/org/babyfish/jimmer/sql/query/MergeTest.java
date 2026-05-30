@@ -52,9 +52,9 @@ public class MergeTest extends AbstractQueryTest {
                                     "from BOOK tb_3_ " +
                                     "where tb_3_.NAME ilike ? " +
                                     "and tb_3_.ID in (" +
-                                        "select tb_7_.BOOK_ID " +
+                                        "select tb_6_.BOOK_ID " +
                                         "from AUTHOR tb_4_ " +
-                                        "inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_4_.ID = tb_7_.AUTHOR_ID " +
+                                        "inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_4_.ID = tb_6_.AUTHOR_ID " +
                                         "where tb_4_.FIRST_NAME like ?" +
                                     "))"
                     );
@@ -108,9 +108,9 @@ public class MergeTest extends AbstractQueryTest {
                                     "--->) minus (" +
                                     "--->--->select 1 " +
                                     "--->--->from AUTHOR tb_3_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ " +
-                                    "--->--->--->on tb_3_.ID = tb_6_.AUTHOR_ID " +
-                                    "--->--->where tb_6_.BOOK_ID = tb_1_.ID " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->--->--->on tb_3_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->where tb_5_.BOOK_ID = tb_1_.ID " +
                                     "--->--->--->and tb_3_.LAST_NAME = ?" +
                                     "--->)" +
                                     ") " +

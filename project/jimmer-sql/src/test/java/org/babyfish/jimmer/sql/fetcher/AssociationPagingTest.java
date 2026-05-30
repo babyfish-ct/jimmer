@@ -119,30 +119,30 @@ public class AssociationPagingTest extends AbstractQueryTest {
                                     "--->where tb_7_.BOOK_ID = ? " +
                                     "--->limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_9_.BOOK_ID, tb_2_.ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER " +
+                                    "--->select tb_8_.BOOK_ID, tb_2_.ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER " +
                                     "--->from AUTHOR tb_2_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_2_.ID = tb_9_.AUTHOR_ID " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_2_.ID = tb_8_.AUTHOR_ID " +
+                                    "--->where tb_8_.BOOK_ID = ? limit ? offset ?" +
+                                    ") union all (" +
+                                    "--->select tb_9_.BOOK_ID, tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
+                                    "--->from AUTHOR tb_3_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_3_.ID = tb_9_.AUTHOR_ID " +
                                     "--->where tb_9_.BOOK_ID = ? limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_11_.BOOK_ID, tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "--->from AUTHOR tb_3_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_3_.ID = tb_11_.AUTHOR_ID " +
+                                    "--->select tb_10_.BOOK_ID, tb_4_.ID, tb_4_.FIRST_NAME, tb_4_.LAST_NAME, tb_4_.GENDER " +
+                                    "--->from AUTHOR tb_4_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_10_ on tb_4_.ID = tb_10_.AUTHOR_ID " +
+                                    "--->where tb_10_.BOOK_ID = ? limit ? offset ?" +
+                                    ") union all (" +
+                                    "--->select tb_11_.BOOK_ID, tb_5_.ID, tb_5_.FIRST_NAME, tb_5_.LAST_NAME, tb_5_.GENDER " +
+                                    "--->from AUTHOR tb_5_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_5_.ID = tb_11_.AUTHOR_ID " +
                                     "--->where tb_11_.BOOK_ID = ? limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_13_.BOOK_ID, tb_4_.ID, tb_4_.FIRST_NAME, tb_4_.LAST_NAME, tb_4_.GENDER " +
-                                    "--->from AUTHOR tb_4_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_13_ on tb_4_.ID = tb_13_.AUTHOR_ID " +
-                                    "--->where tb_13_.BOOK_ID = ? limit ? offset ?" +
-                                    ") union all (" +
-                                    "--->select tb_15_.BOOK_ID, tb_5_.ID, tb_5_.FIRST_NAME, tb_5_.LAST_NAME, tb_5_.GENDER " +
-                                    "--->from AUTHOR tb_5_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_15_ on tb_5_.ID = tb_15_.AUTHOR_ID " +
-                                    "--->where tb_15_.BOOK_ID = ? limit ? offset ?" +
-                                    ") union all (" +
-                                    "--->select tb_17_.BOOK_ID, tb_6_.ID, tb_6_.FIRST_NAME, tb_6_.LAST_NAME, tb_6_.GENDER " +
+                                    "--->select tb_12_.BOOK_ID, tb_6_.ID, tb_6_.FIRST_NAME, tb_6_.LAST_NAME, tb_6_.GENDER " +
                                     "--->from AUTHOR tb_6_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_17_ on tb_6_.ID = tb_17_.AUTHOR_ID " +
-                                    "--->where tb_17_.BOOK_ID = ? limit ? offset ?" +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_12_ on tb_6_.ID = tb_12_.AUTHOR_ID " +
+                                    "--->where tb_12_.BOOK_ID = ? limit ? offset ?" +
                                     ")"
                     )
                     .variables(

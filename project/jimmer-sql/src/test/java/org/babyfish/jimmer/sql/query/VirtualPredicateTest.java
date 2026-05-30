@@ -100,9 +100,9 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                                     "--->exists(" +
                                     "--->--->select 1 " +
                                     "--->--->from AUTHOR tb_3_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_3_.ID = tb_6_.AUTHOR_ID " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->where " +
-                                    "--->--->--->tb_6_.BOOK_ID = tb_1_.ID " +
+                                    "--->--->--->tb_5_.BOOK_ID = tb_1_.ID " +
                                     "--->--->and (" +
                                     "--->--->--->--->tb_3_.FIRST_NAME ilike ? " +
                                     "--->--->--->or " +
