@@ -177,6 +177,13 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     @Override
+    public void collectSelectionJoinRequirements(SelectionJoinRequirementCollector collector) {
+        for (TypedQueryImplementor query : queries) {
+            query.collectSelectionJoinRequirements(collector);
+        }
+    }
+
+    @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter('?' + operator + '?');
         for (int i = 0; i < queries.length; i++) {

@@ -124,6 +124,21 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     @Override
+    public final void collectSelectionJoinRequirements(SelectionJoinRequirementCollector collector) {
+        QueryAnalysisContext analysisContext = collector.analysisContext();
+        analysisContext.pushStatement(getMutableQuery());
+        try {
+            for (Selection<?> selection : getSelections()) {
+                if (selection instanceof Table<?>) {
+                    collector.require((Table<?>) selection);
+                }
+            }
+        } finally {
+            analysisContext.popStatement();
+        }
+    }
+
+    @Override
     public final void renderAsMergedOperand(@NotNull AbstractSqlBuilder<?> abstractBuilder, boolean leading) {
         if (leading && renderLeadingCteForMergedOperand(abstractBuilder)) {
             abstractBuilder.sql("(");

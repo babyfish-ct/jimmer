@@ -1243,6 +1243,60 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testMergedRootQueryWithLeadingCteBaseQueryAndSelectedAssociation() {
+        BookTable table = BookTable.$;
+        BaseTable1<BookTable> cte = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                TypedRootQuery.unionAll(
+                        getSqlClient()
+                                .createQuery(cte)
+                                .where(cte.get_1().name().eq("GraphQL in Action"))
+                                .select(cte.get_1(), cte.get_1().store()),
+                        getSqlClient()
+                                .createQuery(table)
+                                .where(table.name().eq("Learning GraphQL"))
+                                .select(table, table.store()),
+                        getSqlClient()
+                                .createQuery(table)
+                                .where(table.name().eq("Effective TypeScript"))
+                                .select(table, table.store())
+                ),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2, c3, c4, c5) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID " +
+                                    "--->from BOOK tb_2_" +
+                                    ") " +
+                                    "(select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
+                                    "--->tb_7_.ID, tb_7_.NAME, tb_7_.WEBSITE, tb_7_.VERSION " +
+                                    "from tb_1_ " +
+                                    "left join BOOK_STORE tb_7_ on tb_1_.c5 = tb_7_.ID " +
+                                    "where tb_1_.c2 = ?) " +
+                                    "union all " +
+                                    "(select " +
+                                    "--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, " +
+                                    "--->tb_4_.ID, tb_4_.NAME, tb_4_.WEBSITE, tb_4_.VERSION " +
+                                    "from BOOK tb_3_ " +
+                                    "inner join BOOK_STORE tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
+                                    "where tb_3_.NAME = ?) " +
+                                    "union all " +
+                                    "(select " +
+                                    "--->tb_5_.ID, tb_5_.NAME, tb_5_.EDITION, tb_5_.PRICE, tb_5_.STORE_ID, " +
+                                    "--->tb_6_.ID, tb_6_.NAME, tb_6_.WEBSITE, tb_6_.VERSION " +
+                                    "from BOOK tb_5_ " +
+                                    "inner join BOOK_STORE tb_6_ on tb_5_.STORE_ID = tb_6_.ID " +
+                                    "where tb_5_.NAME = ?)"
+                    );
+                }
+        );
+    }
     
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 

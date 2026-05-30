@@ -5,10 +5,16 @@ import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.util.List;
+
 public interface TypedBaseQueryImplementor<T extends BaseTable>
         extends TypedBaseQuery<T>, TypedQueryImplementor {
 
     TableImplementor<?> resolveRootTable(Table<?> table);
+
+    ConfigurableBaseQueryImpl<?> firstConfigurableQuery();
+
+    void collectConfigurableQueries(List<ConfigurableBaseQueryImpl<?>> queries);
 
     MergedBaseQueryImpl<T> getMergedBy();
 

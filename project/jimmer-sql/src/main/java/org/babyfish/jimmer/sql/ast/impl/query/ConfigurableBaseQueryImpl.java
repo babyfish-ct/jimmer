@@ -173,6 +173,16 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     }
 
     @Override
+    public ConfigurableBaseQueryImpl<?> firstConfigurableQuery() {
+        return this;
+    }
+
+    @Override
+    public void collectConfigurableQueries(List<ConfigurableBaseQueryImpl<?>> queries) {
+        queries.add(this);
+    }
+
+    @Override
     public MergedBaseQueryImpl<T> getMergedBy() {
         return mergedBy;
     }

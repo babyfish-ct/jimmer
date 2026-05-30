@@ -2,9 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
@@ -20,7 +18,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-final class QueryAnalysisBuilder {
+final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinRequirementCollector {
 
     private final AstContext astContext;
 
@@ -41,12 +39,17 @@ final class QueryAnalysisBuilder {
         this.baseQueryExportsCollector = new BaseQueryExportsCollector(analysisContext);
     }
 
-    static QueryAnalysis analyze(AstContext astContext, Ast ast) {
+    static QueryAnalysis analyze(AstContext astContext, TypedQueryImplementor ast) {
         return analyze(astContext, ast, true);
     }
 
-    static QueryAnalysis analyze(AstContext astContext, Ast ast, boolean materializeAliases) {
+    static QueryAnalysis analyze(AstContext astContext, TypedQueryImplementor ast, boolean materializeAliases) {
         return new QueryAnalysisBuilder(astContext, materializeAliases).analyze(ast);
+    }
+
+    @Override
+    public QueryAnalysisContext analysisContext() {
+        return analysisContext;
     }
 
     QueryAnalysisContext getAnalysisContext() {
@@ -57,7 +60,7 @@ final class QueryAnalysisBuilder {
         return baseQueryExportsCollector.exportSelection(baseTableOwner);
     }
 
-    private QueryAnalysis analyze(Ast ast) {
+    private QueryAnalysis analyze(TypedQueryImplementor ast) {
         collectJoinRequirements(ast);
         QueryAnalysis joinAwareAnalysis = analysisFor(
                 joinRequirements,
@@ -96,24 +99,11 @@ final class QueryAnalysisBuilder {
         );
     }
 
-    private void collectJoinRequirements(Ast ast) {
-        if (!(ast instanceof AbstractConfigurableTypedQueryImpl)) {
-            return;
-        }
-        AbstractConfigurableTypedQueryImpl query = (AbstractConfigurableTypedQueryImpl) ast;
-        analysisContext.pushStatement(query.getMutableQuery());
-        try {
-            for (Selection<?> selection : query.getSelections()) {
-                if (selection instanceof Table<?>) {
-                    analyzeSelectionJoinRequirement((Table<?>) selection);
-                }
-            }
-        } finally {
-            analysisContext.popStatement();
-        }
+    private void collectJoinRequirements(TypedQueryImplementor ast) {
+        ast.collectSelectionJoinRequirements(this);
     }
 
-    private TableUsages collectTableUsagesAndBaseExports(Ast ast, QueryAnalysis joinAwareAnalysis) {
+    private TableUsages collectTableUsagesAndBaseExports(TypedQueryImplementor ast, QueryAnalysis joinAwareAnalysis) {
         List<AbstractMutableStatementImpl> statements = new ArrayList<>();
         Set<AbstractMutableStatementImpl> statementSet = Collections.newSetFromMap(new IdentityHashMap<>());
         TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
@@ -145,7 +135,8 @@ final class QueryAnalysisBuilder {
         return tableUsages.allocateAliases(astContext);
     }
 
-    private void analyzeSelectionJoinRequirement(Table<?> table) {
+    @Override
+    public void require(Table<?> table) {
         TableImplementor<?> tableImplementor = analysisContext.resolve(table);
         if (tableImplementor.getBaseTableOwner() == null) {
             return;
