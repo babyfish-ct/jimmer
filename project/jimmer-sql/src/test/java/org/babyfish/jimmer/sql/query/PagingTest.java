@@ -138,12 +138,12 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                        "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
-                                        "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
-                                    "from BOOK tb_1_ " +
-                                    "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
-                                    "where tb_1_.PRICE between ? and ? " +
-                                    "order by tb_1_.NAME asc " +
+                                        "tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, " +
+                                        "tb_3_.ID, tb_3_.NAME, tb_3_.WEBSITE, tb_3_.VERSION " +
+                                    "from BOOK tb_2_ " +
+                                    "left join BOOK_STORE tb_3_ on tb_2_.STORE_ID = tb_3_.ID " +
+                                    "where tb_2_.PRICE between ? and ? " +
+                                    "order by tb_2_.NAME asc " +
                                     "limit ? " +
                                     "offset ?"
                     );
@@ -184,12 +184,12 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
-                                    "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
-                                    "from BOOK tb_1_ " +
-                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
-                                    "where tb_1_.PRICE between ? and ? " +
-                                    "order by tb_1_.NAME asc " +
+                                    "tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, " +
+                                    "tb_4_.ID, tb_4_.NAME, tb_4_.WEBSITE, tb_4_.VERSION " +
+                                    "from BOOK tb_3_ " +
+                                    "inner join BOOK_STORE tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
+                                    "where tb_3_.PRICE between ? and ? " +
+                                    "order by tb_3_.NAME asc " +
                                     "limit ? " +
                                     "offset ?"
                     );
