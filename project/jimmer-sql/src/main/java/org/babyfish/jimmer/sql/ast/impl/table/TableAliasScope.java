@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,9 +23,9 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     private final Map<RealTable, AliasBinding> aliasBindings = new IdentityHashMap<>();
 
-    private final Map<List<RealTable.Key>, AliasBinding> aliasBindingsByPath = new HashMap<>();
+    private final Map<AliasKey, AliasBinding> aliasBindingsByKey = new HashMap<>();
 
-    private final Set<List<RealTable.Key>> ambiguousAliasPaths = new HashSet<>();
+    private final Set<AliasKey> ambiguousAliasKeys = new HashSet<>();
 
     @Override
     public String allocateTableAlias(TableLikeImplementor<?> owner) {
@@ -148,14 +149,14 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     private void bind(RealTable table, AliasBinding binding) {
         aliasBindings.put(table, binding);
-        List<RealTable.Key> path = path(table);
-        if (ambiguousAliasPaths.contains(path)) {
+        AliasKey key = AliasKey.of(table);
+        if (ambiguousAliasKeys.contains(key)) {
             return;
         }
-        AliasBinding existing = aliasBindingsByPath.putIfAbsent(path, binding);
+        AliasBinding existing = aliasBindingsByKey.putIfAbsent(key, binding);
         if (existing != null && existing != binding) {
-            aliasBindingsByPath.remove(path);
-            ambiguousAliasPaths.add(path);
+            aliasBindingsByKey.remove(key);
+            ambiguousAliasKeys.add(key);
         }
     }
 
@@ -171,16 +172,48 @@ public final class TableAliasScope implements TableAliasAllocator {
         if (binding != null) {
             return binding;
         }
-        List<RealTable.Key> path = path(table);
-        return ambiguousAliasPaths.contains(path) ? null : aliasBindingsByPath.get(path);
+        AliasKey key = AliasKey.of(table);
+        return ambiguousAliasKeys.contains(key) ? null : aliasBindingsByKey.get(key);
     }
 
-    private static List<RealTable.Key> path(RealTable table) {
-        List<RealTable.Key> path = new ArrayList<>();
-        for (RealTable t = table; t != null; t = t.getParent()) {
-            path.add(0, t.getKey());
+    private static final class AliasKey {
+
+        private final AbstractMutableStatementImpl statement;
+
+        private final List<RealTable.Key> path;
+
+        private AliasKey(AbstractMutableStatementImpl statement, List<RealTable.Key> path) {
+            this.statement = statement;
+            this.path = path;
         }
-        return Collections.unmodifiableList(path);
+
+        static AliasKey of(RealTable table) {
+            List<RealTable.Key> path = new ArrayList<>();
+            for (RealTable t = table; t != null; t = t.getParent()) {
+                path.add(0, t.getKey());
+            }
+            return new AliasKey(
+                    table.getTableLikeImplementor().getStatement(),
+                    Collections.unmodifiableList(path)
+            );
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof AliasKey)) {
+                return false;
+            }
+            AliasKey other = (AliasKey) o;
+            return statement == other.statement && path.equals(other.path);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * System.identityHashCode(statement) + path.hashCode();
+        }
     }
 
     final class AliasBinding {
