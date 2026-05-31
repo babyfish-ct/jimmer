@@ -215,6 +215,18 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     }
 
     @Override
+    public final RealTableImpl realTableForRender(AbstractSqlBuilder<?> builder) {
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (queryRenderContext != null) {
+            return realTable(queryRenderContext);
+        }
+        AstContext astContext = builder.getAstContext();
+        return astContext != null ?
+                realTable(astContext) :
+                realTable((JoinTypeMergeScope) null);
+    }
+
+    @Override
     public final RealTableImpl realTable(JoinTypeMergeScope scope) {
         return realTable0(scope, parent, null);
     }
@@ -731,29 +743,18 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        RealTableImpl realTable =
-                visitor.getQueryRenderContext() != null ?
-                        realTableForAnalysis(visitor.getQueryRenderContext()) :
-                        realTable(visitor.getAstContext());
+        RealTable realTable = visitor.realTableForAnalysis(this);
         visitor.visitTableReference(realTable, null, false);
     }
 
     @Override
     public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
-        RealTableImpl realTable =
-                builder.getQueryRenderContext() != null ?
-                        realTable(builder.getQueryRenderContext()) :
-                        realTable(builder.getAstContext());
-        realTable.renderJoinAsFrom(builder, mode);
+        realTableForRender(builder).renderJoinAsFrom(builder, mode);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        RealTableImpl realTable =
-                builder instanceof SqlBuilder && ((SqlBuilder) builder).getQueryRenderContext() != null ?
-                        realTable(((SqlBuilder) builder).getQueryRenderContext()) :
-                        realTable((JoinTypeMergeScope) null);
-        realTable.renderTo(builder, false);
+        realTableForRender(builder).renderTo(builder, false);
     }
 
     @Override
@@ -766,19 +767,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             Function<Integer, String> asBlock,
             boolean idViewAllowed
     ) {
-        JoinTypeMergeScope scope;
-        if (builder instanceof SqlBuilder) {
-            scope = ((SqlBuilder)builder).getAstContext().getJoinTypeMergeScope();
-        } else {
-            scope = null;
-        }
-        RealTableImpl realTable =
-                builder instanceof SqlBuilder ?
-                        ((SqlBuilder) builder).getQueryRenderContext() != null ?
-                                realTable(((SqlBuilder) builder).getQueryRenderContext()) :
-                                realTable(scope) :
-                        realTable(scope);
-        realTable.renderSelection(
+        realTableForRender(builder).renderSelection(
                 prop,
                 rawId,
                 builder,

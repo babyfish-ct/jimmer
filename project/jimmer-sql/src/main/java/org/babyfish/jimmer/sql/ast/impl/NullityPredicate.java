@@ -48,9 +48,7 @@ class NullityPredicate extends AbstractPredicate {
             if (partial != null) {
                 TableImplementor<?> tableImplementor = TableProxies.resolve(
                         propExpr.getTable(),
-                        builder instanceof SqlBuilder ?
-                                ((SqlBuilder)builder).getAstContext() :
-                                null
+                        builder.getAstContext()
                 );
                 ImmutableProp prop = propExpr.getProp();
                 builder.enter(SqlBuilder.ScopeType.AND);

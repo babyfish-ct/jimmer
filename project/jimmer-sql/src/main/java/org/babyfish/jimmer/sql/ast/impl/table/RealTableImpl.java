@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
@@ -572,11 +573,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
         if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
             BaseQueryExportSelection exportSelection = null;
+            QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
             if (owner instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
                 BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-                if (baseTableOwner != null && builder.getQueryRenderContext() != null) {
-                    exportSelection = builder.getQueryRenderContext().getBaseQueryExportSelection(baseTableOwner);
+                if (baseTableOwner != null && queryRenderContext != null) {
+                    exportSelection = queryRenderContext.getBaseQueryExportSelection(baseTableOwner);
                 }
             }
             int size = previousDefinition.size();
@@ -636,9 +638,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             boolean idViewAllowed
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
         BaseQueryExportSelection exportSelection =
-                builder instanceof SqlBuilder && ((SqlBuilder) builder).getQueryRenderContext() != null ?
-                        ((SqlBuilder)builder).getQueryRenderContext().getBaseQueryExportSelection(owner.getBaseTableOwner()) :
+                queryRenderContext != null ?
+                        queryRenderContext.getBaseQueryExportSelection(owner.getBaseTableOwner()) :
                         null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();

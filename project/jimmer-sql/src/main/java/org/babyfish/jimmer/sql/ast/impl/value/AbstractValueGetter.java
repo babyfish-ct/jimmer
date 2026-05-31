@@ -7,7 +7,6 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ScalarProviderUtils;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
@@ -81,10 +80,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
     protected abstract Object getRaw(Object value);
 
     static RealTable realTable(SqlBuilder builder, TableImplementor<?> table) {
-        QueryRenderContext renderContext = builder.getQueryRenderContext();
-        return renderContext != null ?
-                table.realTable(renderContext) :
-                table.realTable(builder.getAstContext());
+        return table.realTableForRender(builder);
     }
 
     static String alias(SqlBuilder builder, RealTable table) {

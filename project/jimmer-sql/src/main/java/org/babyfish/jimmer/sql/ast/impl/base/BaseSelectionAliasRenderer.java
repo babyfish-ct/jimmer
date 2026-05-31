@@ -101,10 +101,9 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
             return null;
         }
         AstContext astContext = builder.getAstContext();
-        QueryRenderContext renderContext = builder.getQueryRenderContext();
-        return renderContext != null ?
-                TableProxies.resolve((Table<?>) selection, astContext).realTable(renderContext) :
-                TableProxies.resolve((Table<?>) selection, astContext).realTable(astContext);
+        return TableProxies
+                .resolve((Table<?>) selection, astContext)
+                .realTableForRender(builder);
     }
 
     private static RealTable childTableByKeys(RealTable table, List<RealTable.Key> keys) {

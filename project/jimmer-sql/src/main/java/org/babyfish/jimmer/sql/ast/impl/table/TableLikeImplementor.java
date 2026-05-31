@@ -32,6 +32,17 @@ public interface TableLikeImplementor<E> extends TableLike<E> {
         return realTable(ctx.getAstContext().getJoinTypeMergeScope());
     }
 
+    default RealTable realTableForRender(AbstractSqlBuilder<?> builder) {
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (queryRenderContext != null) {
+            return realTable(queryRenderContext);
+        }
+        AstContext astContext = builder.getAstContext();
+        return astContext != null ?
+                realTable(astContext) :
+                realTable((JoinTypeMergeScope) null);
+    }
+
     RealTable realTable(JoinTypeMergeScope scope);
 
     void accept(AstVisitor visitor);

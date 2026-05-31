@@ -324,7 +324,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
                     depth
             );
         } else {
-            addPredicatesImpl((SqlBuilder) builder, args, depth);
+            addPredicatesImpl(builder.assertSimple(), args, depth);
         }
         if (disconnectingType != DisconnectingType.PHYSICAL_DELETE) {
             LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();

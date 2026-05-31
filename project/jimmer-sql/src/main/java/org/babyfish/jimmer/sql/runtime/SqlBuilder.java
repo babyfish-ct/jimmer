@@ -112,10 +112,12 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         return scopeManager;
     }
 
+    @Override
     public AstContext getAstContext() {
         return ctx;
     }
 
+    @Override
     public @Nullable QueryRenderContext getQueryRenderContext() {
         return queryRenderContext;
     }

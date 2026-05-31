@@ -3,9 +3,11 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
@@ -35,6 +37,16 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     protected abstract ScopeManager scopeManager();
 
     public abstract JSqlClientImplementor sqlClient();
+
+    @Nullable
+    public AstContext getAstContext() {
+        return null;
+    }
+
+    @Nullable
+    public QueryRenderContext getQueryRenderContext() {
+        return null;
+    }
 
     @SuppressWarnings("unchecked")
     public T sql(String sql) {

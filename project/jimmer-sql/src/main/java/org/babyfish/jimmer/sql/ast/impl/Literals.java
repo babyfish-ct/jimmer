@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
@@ -228,7 +227,7 @@ public class Literals {
             if (builder instanceof BatchSqlBuilder) {
                 ((BatchSqlBuilder) builder).rawVariable(finalValue(builder.sqlClient()));
             } else {
-                ((SqlBuilder) builder).variable(finalValue(builder.sqlClient()));
+                builder.assertSimple().variable(finalValue(builder.sqlClient()));
             }
         }
 

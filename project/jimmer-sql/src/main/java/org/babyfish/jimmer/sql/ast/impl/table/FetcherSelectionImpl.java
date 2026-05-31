@@ -134,19 +134,14 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         if (embeddedRawReferenceProp != null) {
             TableImplementor<?> tableImplementor = TableProxies.resolve(TableUtils.parent(table), visitor.getAstContext());
             visitor.visitTableReference(
-                    visitor.getQueryRenderContext() != null ?
-                            tableImplementor.realTableForAnalysis(visitor.getQueryRenderContext()) :
-                            tableImplementor.realTable(visitor.getAstContext()),
+                    visitor.realTableForAnalysis(tableImplementor),
                     embeddedRawReferenceProp,
                     true
             );
             return;
         }
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
-        RealTable realTable =
-                visitor.getQueryRenderContext() != null ?
-                        tableImplementor.realTableForAnalysis(visitor.getQueryRenderContext()) :
-                        tableImplementor.realTable(visitor.getAstContext());
+        RealTable realTable = visitor.realTableForAnalysis(tableImplementor);
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() ||

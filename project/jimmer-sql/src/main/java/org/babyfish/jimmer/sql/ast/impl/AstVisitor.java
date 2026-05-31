@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
@@ -37,6 +38,12 @@ public abstract class AstVisitor {
     }
 
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {}
+
+    public final RealTable realTableForAnalysis(TableLikeImplementor<?> tableLikeImplementor) {
+        return queryRenderContext != null ?
+                tableLikeImplementor.realTableForAnalysis(queryRenderContext) :
+                tableLikeImplementor.realTable(ctx);
+    }
 
     public void visitTableFetcherField(RealTable table, Field field) {
         visitTableReference(table, field.getProp(), field.isRawId());

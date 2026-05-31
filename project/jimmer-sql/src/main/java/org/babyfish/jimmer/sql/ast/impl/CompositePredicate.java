@@ -167,8 +167,8 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
         @Override
         public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-            if (builder instanceof SqlBuilder) {
-                AstContext astContext = ((SqlBuilder) builder).getAstContext();
+            AstContext astContext = builder.getAstContext();
+            if (astContext != null) {
                 builder.enter(scopeType());
                 int size = predicates.length;
                 for (int i = 0; i < size; i++) {

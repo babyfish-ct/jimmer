@@ -87,11 +87,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     @SuppressWarnings("unchecked")
     private void visitBaseTable(TableLikeImplementor<?> tableLikeImplementor, AstVisitor visitor) {
         if (tableLikeImplementor instanceof BaseTableImplementor) {
-            RealTable realBaseTable =
-                    visitor.getQueryRenderContext() != null ?
-                            tableLikeImplementor.realTableForAnalysis(visitor.getQueryRenderContext()) :
-                            tableLikeImplementor.realTable(visitor.getAstContext());
-            visitBaseTableImpl(realBaseTable, visitor);
+            visitBaseTableImpl(visitor.realTableForAnalysis(tableLikeImplementor), visitor);
         } else {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
             if (tableImplementor.hasBaseTable()) {
