@@ -1,19 +1,15 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public final class TableAliases {
 
@@ -21,9 +17,9 @@ public final class TableAliases {
 
     private final Map<RealTable, Alias> aliasMap;
 
-    private final Map<AliasKey, Alias> aliasMapByKey;
+    private final Map<TableAliasKey, Alias> aliasMapByKey;
 
-    private TableAliases(Map<RealTable, Alias> aliasMap, Map<AliasKey, Alias> aliasMapByKey) {
+    private TableAliases(Map<RealTable, Alias> aliasMap, Map<TableAliasKey, Alias> aliasMapByKey) {
         this.aliasMap = Collections.unmodifiableMap(aliasMap);
         this.aliasMapByKey = Collections.unmodifiableMap(aliasMapByKey);
     }
@@ -37,7 +33,7 @@ public final class TableAliases {
             return EMPTY;
         }
         Map<RealTable, Alias> aliasMap = new IdentityHashMap<>();
-        Map<AliasKey, Alias> aliasMapByKey = new HashMap<>();
+        Map<TableAliasKey, Alias> aliasMapByKey = new HashMap<>();
         for (RealTable rootTable : rootTables) {
             allocate(rootTable, true, tableStateMap, aliasMap, aliasMapByKey, allocator);
         }
@@ -47,7 +43,7 @@ public final class TableAliases {
     @Nullable
     Alias get(RealTable table) {
         Alias alias = aliasMap.get(table);
-        return alias != null ? alias : aliasMapByKey.get(AliasKey.of(table));
+        return alias != null ? alias : aliasMapByKey.get(TableAliasKey.of(table));
     }
 
     private static void allocate(
@@ -55,7 +51,7 @@ public final class TableAliases {
             boolean root,
             Map<RealTable, TableUsedState> tableStateMap,
             Map<RealTable, Alias> aliasMap,
-            Map<AliasKey, Alias> aliasMapByKey,
+            Map<TableAliasKey, Alias> aliasMapByKey,
             TableAliasAllocator allocator
     ) {
         if (aliasMap.containsKey(table)) {
@@ -77,7 +73,7 @@ public final class TableAliases {
                 Alias recursiveAlias = aliasMap.get(recursiveTable);
                 if (recursiveAlias != null) {
                     aliasMap.put(table, recursiveAlias);
-                    aliasMapByKey.put(AliasKey.of(table), recursiveAlias);
+                    aliasMapByKey.put(TableAliasKey.of(table), recursiveAlias);
                 }
                 return;
             }
@@ -85,7 +81,7 @@ public final class TableAliases {
         String middleAlias = allocateMiddleAlias(owner, allocator);
         Alias alias = new Alias(allocator.allocateTableAlias(owner), middleAlias);
         aliasMap.put(table, alias);
-        aliasMapByKey.put(AliasKey.of(table), alias);
+        aliasMapByKey.put(TableAliasKey.of(table), alias);
         for (RealTable childTable : table) {
             allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey, allocator);
         }
@@ -123,40 +119,4 @@ public final class TableAliases {
         }
     }
 
-    private static final class AliasKey {
-
-        private final AbstractMutableStatementImpl statement;
-
-        private final List<RealTable.Key> path;
-
-        private AliasKey(AbstractMutableStatementImpl statement, List<RealTable.Key> path) {
-            this.statement = statement;
-            this.path = path;
-        }
-
-        static AliasKey of(RealTable table) {
-            List<RealTable.Key> path = new ArrayList<>();
-            for (RealTable t = table; t != null; t = t.getParent()) {
-                path.add(0, t.getKey());
-            }
-            return new AliasKey(table.getTableLikeImplementor().getStatement(), path);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof AliasKey)) {
-                return false;
-            }
-            AliasKey other = (AliasKey) o;
-            return statement == other.statement && path.equals(other.path);
-        }
-
-        @Override
-        public int hashCode() {
-            return 31 * System.identityHashCode(statement) + Objects.hash(path);
-        }
-    }
 }
