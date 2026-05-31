@@ -65,6 +65,19 @@ public final class TableAliasScope implements TableAliasAllocator {
         return binding;
     }
 
+    public boolean isIdentityBound(RealTable table) {
+        return aliasBindings.containsKey(table);
+    }
+
+    void bindAlias(RealTable table, String value, String middleValue) {
+        bind(table, value, middleValue);
+    }
+
+    void bindAlias(RealTable table, RealTable source) {
+        AliasBinding binding = binding(source);
+        bind(table, binding);
+    }
+
     public String getAlias(RealTable table) {
         return binding(table).value();
     }

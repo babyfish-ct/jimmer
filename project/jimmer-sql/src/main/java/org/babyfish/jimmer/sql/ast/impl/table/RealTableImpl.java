@@ -40,10 +40,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private JoinType joinType;
 
-    private TableAliasScope aliasScope;
-
-    private TableAliasScope.AliasBinding aliasBinding;
-
     RealTableImpl(TableLikeImplementor<?> owner) {
         this(
                 new Key(null, false, null, null),
@@ -777,13 +773,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     @Override
     public final void applyAliasesIfNecessary(TableAliasScope scope) {
-        if (aliasScope == scope && aliasBinding != null) {
+        if (scope.isIdentityBound(this)) {
             return;
         }
         if (parent != null) {
             parent.applyAliasesIfNecessary(scope);
         }
-        if (aliasScope != scope || aliasBinding == null) {
+        if (!scope.isIdentityBound(this)) {
             applyAlias(scope);
         }
     }
@@ -792,11 +788,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     public final void applyAliases(TableAliases tableAliases, TableAliasScope scope) {
         TableAliases.Alias alias = tableAliases.get(this);
         if (alias != null) {
-            aliasScope = scope;
-            aliasBinding = scope.bind(this, alias.value, alias.middleValue);
-        } else if (aliasScope != scope) {
-            aliasScope = null;
-            aliasBinding = null;
+            scope.bindAlias(this, alias.value, alias.middleValue);
         }
         for (RealTable childTable : this) {
             childTable.applyAliases(tableAliases, scope);
@@ -811,8 +803,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (recursive != null) {
                 RealTableImpl recursiveTable = (RealTableImpl) recursive.realTable(key.scope);
                 recursiveTable.applyAliasesIfNecessary(scope);
-                aliasScope = scope;
-                aliasBinding = recursiveTable.aliasBinding;
+                scope.bindAlias(this, recursiveTable);
                 return;
             }
         }
@@ -820,8 +811,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 ((TableImplementor<?>)owner).getJoinProp() :
                 null;
         boolean middleTableDefinition = joinProp != null && joinProp.isMiddleTableDefinition();
-        aliasScope = scope;
-        aliasBinding = scope.bindLazy(
+        scope.bindLazy(
                 this,
                 owner,
                 middleTableDefinition,
