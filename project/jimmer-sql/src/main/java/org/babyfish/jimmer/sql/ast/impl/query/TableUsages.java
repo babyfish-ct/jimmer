@@ -39,7 +39,7 @@ public final class TableUsages {
         TableAliasScope aliasScope = astContext.beginTableAliasScope();
         TableAliases aliases = TableAliases.allocate(rootTables, tableStateMap, aliasScope);
         for (RealTable rootTable : rootTables) {
-            rootTable.applyAliases(aliases, aliasScope);
+            aliasScope.applyAliases(rootTable, aliases);
         }
         return aliases;
     }

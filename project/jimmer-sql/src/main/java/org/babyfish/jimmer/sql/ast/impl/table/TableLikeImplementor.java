@@ -24,7 +24,7 @@ public interface TableLikeImplementor<E> extends TableLike<E> {
     default RealTable realTable(QueryRenderContext ctx) {
         RealTable realTable = realTable(ctx.getAstContext().getJoinTypeMergeScope());
         ctx.applyAliases(realTable);
-        realTable.applyAliasesIfNecessary(ctx.getTableAliasScope());
+        ctx.getTableAliasScope().ensureAlias(realTable);
         return realTable;
     }
 

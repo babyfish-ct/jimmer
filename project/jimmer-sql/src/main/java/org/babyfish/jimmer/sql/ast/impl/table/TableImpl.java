@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
@@ -202,7 +201,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                 ctx.getRequiredJoinType(this)
         );
         ctx.applyAliases(realTable);
-        realTable.applyAliasesIfNecessary(ctx.getTableAliasScope());
+        ctx.getTableAliasScope().ensureAlias(realTable);
         return realTable;
     }
 
@@ -286,7 +285,6 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         return this.get(immutableType.getIdProp().getName()).count(distinct);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <X> PropExpression<X> get(String prop) {
         return get(immutableType.getProp(prop));
@@ -751,12 +749,6 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        AstContext astContext;
-        if (builder instanceof SqlBuilder) {
-            astContext = ((SqlBuilder)builder).getAstContext();
-        } else {
-            astContext = null;
-        }
         RealTableImpl realTable =
                 builder instanceof SqlBuilder && ((SqlBuilder) builder).getQueryRenderContext() != null ?
                         realTable(((SqlBuilder) builder).getQueryRenderContext()) :

@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -40,7 +42,30 @@ public final class TableAliasScope implements TableAliasAllocator {
         }
     }
 
-    AliasBinding bind(RealTable table, String value, String middleValue) {
+    public void ensureAlias(RealTable table) {
+        if (isIdentityBound(table)) {
+            return;
+        }
+        RealTable parent = table.getParent();
+        if (parent != null) {
+            ensureAlias(parent);
+        }
+        if (!isIdentityBound(table)) {
+            bindFallback(table);
+        }
+    }
+
+    public void applyAliases(RealTable table, TableAliases aliases) {
+        TableAliases.Alias alias = aliases.get(table);
+        if (alias != null) {
+            bind(table, alias.value, alias.middleValue);
+        }
+        for (RealTable childTable : table) {
+            applyAliases(childTable, aliases);
+        }
+    }
+
+    private AliasBinding bind(RealTable table, String value, String middleValue) {
         reserveTableAlias(value);
         reserveTableAlias(middleValue);
         AliasBinding binding = new AliasBinding(value, middleValue, null, middleValue != null);
@@ -48,7 +73,7 @@ public final class TableAliasScope implements TableAliasAllocator {
         return binding;
     }
 
-    AliasBinding bindLazy(
+    private AliasBinding bindLazy(
             RealTable table,
             TableLikeImplementor<?> owner,
             boolean middleTableDefinition,
@@ -71,13 +96,33 @@ public final class TableAliasScope implements TableAliasAllocator {
         return aliasBindings.containsKey(table);
     }
 
-    void bindAlias(RealTable table, String value, String middleValue) {
-        bind(table, value, middleValue);
-    }
-
-    void bindAlias(RealTable table, RealTable source) {
+    private void bindAlias(RealTable table, RealTable source) {
         AliasBinding binding = binding(source);
         bind(table, binding);
+    }
+
+    private void bindFallback(RealTable table) {
+        TableLikeImplementor<?> owner = table.getTableLikeImplementor();
+        if (owner instanceof BaseTableImplementor) {
+            BaseTableImplementor baseTable = (BaseTableImplementor) owner;
+            BaseTableImplementor recursive = baseTable.getRecursive();
+            if (recursive != null) {
+                RealTable recursiveTable = recursive.realTable(table.getKey().scope);
+                ensureAlias(recursiveTable);
+                bindAlias(table, recursiveTable);
+                return;
+            }
+        }
+        ImmutableProp joinProp = owner instanceof TableImplementor<?> ?
+                ((TableImplementor<?>) owner).getJoinProp() :
+                null;
+        boolean middleTableDefinition = joinProp != null && joinProp.isMiddleTableDefinition();
+        bindLazy(
+                table,
+                owner,
+                middleTableDefinition,
+                middleTableDefinition
+        );
     }
 
     public String getAlias(RealTable table) {

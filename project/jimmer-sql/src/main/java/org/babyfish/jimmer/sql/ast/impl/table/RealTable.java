@@ -23,10 +23,6 @@ public interface RealTable extends Iterable<RealTable> {
     @Nullable
     BaseTableOwner getBaseTableOwner();
 
-    void applyAliasesIfNecessary(TableAliasScope scope);
-
-    void applyAliases(TableAliases aliases, TableAliasScope scope);
-
     void use(TableUsageVisitor visitor);
 
     void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean cte);

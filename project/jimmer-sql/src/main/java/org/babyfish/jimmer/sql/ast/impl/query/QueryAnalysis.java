@@ -43,7 +43,7 @@ public final class QueryAnalysis {
 
     public void applyAliases(RealTable table, TableAliasScope aliasScope) {
         if (aliasScope != null) {
-            table.applyAliases(model.getTableAliases(), aliasScope);
+            aliasScope.applyAliases(table, model.getTableAliases());
         }
     }
 }
