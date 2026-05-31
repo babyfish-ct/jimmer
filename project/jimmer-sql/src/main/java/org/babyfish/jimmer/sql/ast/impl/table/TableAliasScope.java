@@ -97,7 +97,7 @@ public final class TableAliasScope implements TableAliasAllocator {
         return aliasBindings.containsKey(table);
     }
 
-    private void bindAlias(RealTable table, RealTable source) {
+    public void bindAlias(RealTable table, RealTable source) {
         AliasBinding binding = binding(source);
         bind(table, binding);
     }

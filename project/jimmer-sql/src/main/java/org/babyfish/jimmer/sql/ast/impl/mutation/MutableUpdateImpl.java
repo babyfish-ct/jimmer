@@ -40,6 +40,8 @@ public class MutableUpdateImpl
 
     private final Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
 
+    private TableLikeImplementor<?> aliasSource;
+
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
@@ -247,6 +249,10 @@ public class MutableUpdateImpl
         renderTo(builder, null);
     }
 
+    void shareRootAliasWith(TableLikeImplementor<?> source) {
+        this.aliasSource = source;
+    }
+
     @Override
     public TableImplementor<?> getTableLikeImplementor() {
         return (TableImplementor<?>) super.getTableLikeImplementor();
@@ -292,6 +298,12 @@ public class MutableUpdateImpl
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyTo(astContext);
             tableUsages.allocateAliases(astContext);
+            if (aliasSource != null) {
+                astContext.getTableAliasScope().bindAlias(
+                        aliasSource.realTable(astContext),
+                        getTableLikeImplementor().realTable(astContext)
+                );
+            }
             builder
                     .sql("update ")
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
