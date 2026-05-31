@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +67,7 @@ public final class TableAliasScope implements TableAliasAllocator {
         return binding;
     }
 
-    public boolean isIdentityBound(RealTable table) {
+    boolean isIdentityBound(RealTable table) {
         return aliasBindings.containsKey(table);
     }
 
@@ -82,15 +84,18 @@ public final class TableAliasScope implements TableAliasAllocator {
         return binding(table).value();
     }
 
+    @Nullable
     public String getAliasIfBound(RealTable table) {
         AliasBinding binding = bindingOrNull(table);
         return binding != null ? binding.value() : null;
     }
 
+    @Nullable
     public String getMiddleTableAlias(RealTable table) {
         return binding(table).middleValue();
     }
 
+    @Nullable
     public String getMiddleTableAliasIfBound(RealTable table) {
         AliasBinding binding = bindingOrNull(table);
         return binding != null ? binding.middleValue() : null;
