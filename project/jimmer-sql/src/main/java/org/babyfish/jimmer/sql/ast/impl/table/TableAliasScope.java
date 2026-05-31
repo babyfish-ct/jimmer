@@ -145,7 +145,7 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     private void bind(RealTable table, AliasBinding binding) {
         aliasBindings.put(table, binding);
-        TableAliasKey key = TableAliasKey.of(table);
+        TableAliasKey key = table.getAliasKey();
         if (ambiguousAliasKeys.contains(key)) {
             return;
         }
@@ -168,7 +168,7 @@ public final class TableAliasScope implements TableAliasAllocator {
         if (binding != null) {
             return binding;
         }
-        TableAliasKey key = TableAliasKey.of(table);
+        TableAliasKey key = table.getAliasKey();
         if (ambiguousAliasKeys.contains(key)) {
             return null;
         }

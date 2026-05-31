@@ -43,7 +43,7 @@ public final class TableAliases {
     @Nullable
     Alias get(RealTable table) {
         Alias alias = aliasMap.get(table);
-        return alias != null ? alias : aliasMapByKey.get(TableAliasKey.of(table));
+        return alias != null ? alias : aliasMapByKey.get(table.getAliasKey());
     }
 
     private static void allocate(
@@ -73,7 +73,7 @@ public final class TableAliases {
                 Alias recursiveAlias = aliasMap.get(recursiveTable);
                 if (recursiveAlias != null) {
                     aliasMap.put(table, recursiveAlias);
-                    aliasMapByKey.put(TableAliasKey.of(table), recursiveAlias);
+                    aliasMapByKey.put(table.getAliasKey(), recursiveAlias);
                 }
                 return;
             }
@@ -81,7 +81,7 @@ public final class TableAliases {
         String middleAlias = allocateMiddleAlias(owner, allocator);
         Alias alias = new Alias(allocator.allocateTableAlias(owner), middleAlias);
         aliasMap.put(table, alias);
-        aliasMapByKey.put(TableAliasKey.of(table), alias);
+        aliasMapByKey.put(table.getAliasKey(), alias);
         for (RealTable childTable : table) {
             allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey, allocator);
         }

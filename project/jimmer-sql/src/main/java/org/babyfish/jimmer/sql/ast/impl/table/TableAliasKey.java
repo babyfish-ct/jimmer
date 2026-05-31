@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-final class TableAliasKey {
+public final class TableAliasKey {
 
     private final AbstractMutableStatementImpl statement;
 
@@ -20,7 +20,7 @@ final class TableAliasKey {
         this.hashCode = 31 * System.identityHashCode(statement) + path.hashCode();
     }
 
-    static TableAliasKey of(RealTable table) {
+    static TableAliasKey create(RealTable table) {
         List<RealTable.Key> path = new ArrayList<>();
         for (RealTable t = table; t != null; t = t.getParent()) {
             path.add(t.getKey());

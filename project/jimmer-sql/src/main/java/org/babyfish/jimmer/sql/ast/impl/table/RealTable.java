@@ -18,6 +18,8 @@ public interface RealTable extends Iterable<RealTable> {
 
     Key getKey();
 
+    TableAliasKey getAliasKey();
+
     RealTable child(Key key);
 
     @Nullable
