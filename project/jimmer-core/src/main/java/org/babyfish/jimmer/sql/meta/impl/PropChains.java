@@ -36,6 +36,7 @@ public class PropChains {
             MetadataStrategy strategy,
             Map<String, List<ImmutableProp>> outputMap
     ) {
+        ImmutableType declaringType = prop.getDeclaringType();
         Storage storage = prop.getStorage(strategy);
         if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
             MultipleJoinColumns multipleJoinColumns = null;
@@ -72,9 +73,10 @@ public class PropChains {
                             String referencedName = multipleJoinColumns.referencedName(index);
                             if (DatabaseIdentifiers.comparableIdentifier(referencedName).equals(cmpName)) {
                                 addInto(
-                                        prop.getDeclaringType(),
+                                        declaringType,
                                         multipleJoinColumns.name(index),
                                         Collections.unmodifiableList(chain),
+                                        strategy,
                                         outputMap
                                 );
                                 break;
@@ -88,9 +90,10 @@ public class PropChains {
                         }
                     } else {
                         addInto(
-                                prop.getDeclaringType(),
+                                declaringType,
                                 cmpName,
                                 Collections.unmodifiableList(chain),
+                                strategy,
                                 outputMap
                         );
                     }
@@ -99,9 +102,10 @@ public class PropChains {
         } else if (storage instanceof SingleColumn) {
             String cmpName = DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName());
             addInto(
-                    prop.getDeclaringType(),
+                    declaringType,
                     cmpName,
                     Collections.singletonList(prop),
+                    strategy,
                     outputMap
             );
         }
@@ -111,10 +115,19 @@ public class PropChains {
             ImmutableType type,
             String columnName,
             List<ImmutableProp> chain,
+            MetadataStrategy strategy,
             Map<String, List<ImmutableProp>> outputMap
     ) {
-        List<ImmutableProp> conflictChain = outputMap.put(columnName, chain);
+        List<ImmutableProp> conflictChain = outputMap.get(columnName);
         if (conflictChain == null) {
+            outputMap.put(columnName, chain);
+            return;
+        }
+        if (isMappedIdConflict(type, columnName, conflictChain, chain, strategy)) {
+            outputMap.put(columnName, chain);
+            return;
+        }
+        if (isMappedIdConflict(type, columnName, chain, conflictChain, strategy)) {
             return;
         }
         ImmutableProp targetIdProp = null;
@@ -154,6 +167,47 @@ public class PropChains {
                     "\"";
         }
         throw new ModelException(message);
+    }
+
+    private static boolean isMappedIdConflict(
+            ImmutableType type,
+            String columnName,
+            List<ImmutableProp> mappedIdChain,
+            List<ImmutableProp> idChain,
+            MetadataStrategy strategy
+    ) {
+        if (mappedIdChain.isEmpty() || idChain.isEmpty()) {
+            return false;
+        }
+        ImmutableProp mappedIdProp = mappedIdChain.get(0);
+        MappedId mappedId = null;
+        for (MappedId item : type.getMappedIds()) {
+            if (item.getProp() == mappedIdProp) {
+                mappedId = item;
+                break;
+            }
+        }
+        if (mappedId == null || idChain.get(0) != mappedId.getIdProp()) {
+            return false;
+        }
+        List<ImmutableProp> idPath = mappedId.getIdPath();
+        if (!idPath.isEmpty()) {
+            if (idChain.size() < idPath.size() + 1) {
+                return false;
+            }
+            for (int i = 0; i < idPath.size(); i++) {
+                if (idChain.get(i + 1) != idPath.get(i)) {
+                    return false;
+                }
+            }
+        }
+        String comparableColumnName = DatabaseIdentifiers.comparableIdentifier(columnName);
+        for (MappedId.Column column : mappedId.getColumns(strategy)) {
+            if (DatabaseIdentifiers.comparableIdentifier(column.getSourceName()).equals(comparableColumnName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String chainPath(List<ImmutableProp> chain) {

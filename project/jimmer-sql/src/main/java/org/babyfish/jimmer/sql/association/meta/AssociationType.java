@@ -271,6 +271,12 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         return KeyMatcher.EMPTY;
     }
 
+    @NotNull
+    @Override
+    public List<MappedId> getMappedIds() {
+        return Collections.emptyList();
+    }
+
     @Override
     public String getMicroServiceName() {
         return baseProp.getDeclaringType().getMicroServiceName();

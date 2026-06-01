@@ -119,6 +119,9 @@ public interface ImmutableType {
     KeyMatcher getKeyMatcher();
 
     @NotNull
+    List<MappedId> getMappedIds();
+
+    @NotNull
     Map<String, ImmutableProp> getProps();
 
     @NotNull
