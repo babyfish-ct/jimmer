@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
+import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentFetcher;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentTable;
+import org.babyfish.jimmer.sql.model.mapsid.TenantFetcher;
 import org.junit.jupiter.api.Test;
 
 public class MapsIdJoinOptimizationTest extends AbstractQueryTest {
@@ -85,6 +88,25 @@ public class MapsIdJoinOptimizationTest extends AbstractQueryTest {
                     );
                     ctx.variables(1L);
                 }
+        );
+    }
+
+    @Test
+    public void testMappedIdAssociationIdOnlyJoinFetcherDoesNotJoinTargetTable() {
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(TenantDocumentTable.$)
+                        .select(
+                                TenantDocumentTable.$.fetch(
+                                        TenantDocumentFetcher.$
+                                                .name()
+                                                .tenant(ReferenceFetchType.JOIN_ALWAYS, TenantFetcher.$)
+                                )
+                        ),
+                ctx -> ctx.sql(
+                        "select tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID, tb_1_.NAME, tb_1_.TENANT_ID " +
+                                "from TENANT_DOCUMENT tb_1_"
+                )
         );
     }
 }
