@@ -65,4 +65,26 @@ public class MapsIdJoinOptimizationTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testMappedIdAssociationIdUsagesDoNotJoinTargetTable() {
+        executeAndExpect(
+                getLambdaClient().createQuery(TenantDocumentTable.class, (q, document) -> {
+                    q.where(document.asTableEx().tenant().id().eq(1L));
+                    q.groupBy(document.asTableEx().tenant().id());
+                    q.orderBy(document.asTableEx().tenant().id().asc());
+                    return q.select(document.asTableEx().tenant().id());
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.TENANT_ID " +
+                                    "from TENANT_DOCUMENT tb_1_ " +
+                                    "where tb_1_.TENANT_ID = ? " +
+                                    "group by tb_1_.TENANT_ID " +
+                                    "order by tb_1_.TENANT_ID asc"
+                    );
+                    ctx.variables(1L);
+                }
+        );
+    }
 }
