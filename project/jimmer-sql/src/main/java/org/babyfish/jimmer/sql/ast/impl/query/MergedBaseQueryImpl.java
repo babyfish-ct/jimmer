@@ -194,9 +194,38 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         builder.enter('?' + operator + '?');
         for (TypedQueryImplementor query : getQueries()) {
             builder.separator();
+            boolean wrap = requiresSubQuery(query, builder);
+            if (wrap) {
+                builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+            }
             query.renderTo(builder);
+            if (wrap) {
+                builder.leave();
+            }
         }
         builder.leave();
+    }
+
+    private static boolean requiresSubQuery(TypedQueryImplementor query, AbstractSqlBuilder<?> builder) {
+        if (query instanceof MergedBaseQueryImpl<?>) {
+            for (TypedQueryImplementor childQuery : ((MergedBaseQueryImpl<?>) query).getQueries()) {
+                if (requiresSubQuery(childQuery, builder)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (!(query instanceof AbstractConfigurableTypedQueryImpl)) {
+            return false;
+        }
+        AbstractConfigurableTypedQueryImpl configurableQuery = (AbstractConfigurableTypedQueryImpl) query;
+        TypedQueryData data = configurableQuery.getData();
+        if (data.limit != Integer.MAX_VALUE || data.offset != 0) {
+            return true;
+        }
+        return !data.withoutSortingAndPaging &&
+                !builder.assertSimple().getAstContext().isQueryWithoutSortingAndPaging() &&
+                !configurableQuery.getMutableQuery().getOrders().isEmpty();
     }
 
     @Override
