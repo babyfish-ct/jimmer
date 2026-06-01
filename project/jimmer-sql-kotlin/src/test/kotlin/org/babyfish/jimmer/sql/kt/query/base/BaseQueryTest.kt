@@ -1145,6 +1145,34 @@ class BaseQueryTest : AbstractQueryTest() {
         }
     }
 
+    @Test
+    fun testNullableTableSelection() {
+        val baseTable = baseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.id eq 1L)
+                selections.add(table.outerJoinReference(Book::store))
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                select(table._1)
+            }
+        ) {
+            sql(
+                """select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 
+                    |from (
+                    |--->select tb_2_.STORE_ID c1, tb_3_.NAME c2, tb_3_.VERSION c3, tb_3_.WEBSITE c4 
+                    |--->from BOOK tb_2_ 
+                    |--->left join BOOK_STORE tb_3_ on tb_2_.STORE_ID = tb_3_.ID 
+                    |--->where tb_2_.ID = ?
+                    |) tb_1_""".trimMargin()
+            )
+            rows(
+                """[{"id":1,"name":"O'REILLY","version":0,"website":null}]"""
+            )
+        }
+    }
+
     private class BaseBookAuthorJoin : KPropsWeakJoin<
         KNonNullBaseTable1<KNonNullTable<Book>, KNullableTable<Book>>,
         KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>
