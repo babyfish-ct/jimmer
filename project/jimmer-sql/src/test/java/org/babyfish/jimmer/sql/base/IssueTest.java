@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.OrderIdDraft;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderTable;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
