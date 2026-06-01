@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.model.mapsid.MapsIdPrincipal;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfileDraft;
 import org.babyfish.jimmer.sql.model.mapsid.Tenant;
+import org.babyfish.jimmer.sql.model.mapsid.TenantDraft;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocument;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDraft;
 import org.junit.jupiter.api.Test;
@@ -225,6 +226,59 @@ public class MapsIdMutationTest extends AbstractMutationTest {
                                     "--->\"name\":\"Child\"," +
                                     "--->\"left\":{\"id\":10,\"name\":\"Left\"}," +
                                     "--->\"right\":{\"id\":20,\"name\":\"Right\"}" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
+    public void testMappedIdBackReferenceDoesNotRequireTransferCheckSelect() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                TenantDraft.$.produce(tenant -> {
+                                    tenant.setId(10L);
+                                    tenant.setName("Tenant");
+                                    tenant.addIntoDocuments(document -> {
+                                        document.applyId(id -> id.setDocumentId(30L));
+                                        document.setName("Spec");
+                                    });
+                                })
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("merge into TENANT(ID, NAME) key(ID) values(?, ?)");
+                        it.variables(10L, "Tenant");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("merge into TENANT_DOCUMENT(TENANT_ID, DOCUMENT_ID, NAME) key(TENANT_ID, DOCUMENT_ID) values(?, ?, ?)");
+                        it.variables(10L, 30L, "Spec");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID " +
+                                        "from TENANT_DOCUMENT tb_1_ " +
+                                        "where tb_1_.TENANT_ID = ? and " +
+                                        "(tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID) <> (?, ?) limit ?"
+                        );
+                        it.variables(10L, 10L, 30L, 1);
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Tenant.class), 1);
+                    ctx.rowCount(AffectedTable.of(TenantDocument.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":10," +
+                                    "--->\"name\":\"Tenant\"," +
+                                    "--->\"documents\":[" +
+                                    "--->--->{" +
+                                    "--->--->--->\"id\":{\"tenantId\":10,\"documentId\":30}," +
+                                    "--->--->--->\"name\":\"Spec\"," +
+                                    "--->--->--->\"tenant\":{\"id\":10}" +
+                                    "--->--->}" +
+                                    "--->]" +
                                     "}"
                     ));
                 }
