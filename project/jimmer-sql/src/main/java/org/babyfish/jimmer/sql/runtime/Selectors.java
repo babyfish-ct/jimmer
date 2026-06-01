@@ -16,7 +16,8 @@ public class Selectors {
 
     private static final AtomicLong CURSOR_ID_SEQUENCE = new AtomicLong();
 
-    private Selectors() {}
+    private Selectors() {
+    }
 
     @SuppressWarnings("unchecked")
     public static <R> List<R> select(
@@ -46,7 +47,7 @@ public class Selectors {
                                 List<R> results = new ArrayList<>();
                                 try (ResultSet resultSet = stmt.executeQuery()) {
                                     while (resultSet.next()) {
-                                        results.add((R)reader.read(resultSet, ctx));
+                                        results.add((R) reader.read(resultSet, ctx));
                                         ctx.resetCol();
                                     }
                                 }
@@ -57,6 +58,21 @@ public class Selectors {
         );
         FetcherUtil.fetch(sqlClient, con, selections, tupleCreator, rows);
         return rows;
+    }
+
+    public static <R> List<R> select(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            String sql,
+            List<Object> variables,
+            @Nullable List<Integer> variablePositions,
+            List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
+            ExecutionPurpose purpose,
+            boolean forUpdate) {
+        return sqlClient.getSlaveConnectionManager(forUpdate).execute(con, conn ->
+                select(sqlClient, conn, sql, variables, variablePositions, selections, tupleCreator, purpose)
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -70,8 +86,7 @@ public class Selectors {
             TupleCreator<?> tupleCreator,
             ExecutionPurpose purpose,
             int batchSize,
-            Consumer<R> consumer
-    ) {
+            Consumer<R> consumer) {
         Executor executor = sqlClient.getExecutor();
         long cursorId = CURSOR_ID_SEQUENCE.incrementAndGet();
         Executor.Args<Void> args = new Executor.Args<>(
@@ -117,5 +132,25 @@ public class Selectors {
         } finally {
             Cursors.setCurrentCursorId(oldCursorId);
         }
+    }
+
+    public static <R> void forEach(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            String sql,
+            List<Object> variables,
+            @Nullable List<Integer> variablePositions,
+            List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
+            ExecutionPurpose purpose,
+            int batchSize,
+            Consumer<R> consumer,
+            boolean forUpdate) {
+        sqlClient.getSlaveConnectionManager(forUpdate).execute(con, conn -> {
+                    forEach(sqlClient, conn, sql, variables, variablePositions, selections,
+                            tupleCreator, purpose, batchSize, consumer);
+                    return null;
+                }
+        );
     }
 }
