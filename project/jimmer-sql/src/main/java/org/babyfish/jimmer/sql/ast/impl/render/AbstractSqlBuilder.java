@@ -353,12 +353,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     }
 
     private String alias(RealTable table) {
-        if (this instanceof SqlBuilder) {
-            return ((SqlBuilder) this).alias(table);
-        }
-        throw new IllegalStateException(
-                "Table alias rendering requires " + SqlBuilder.class.getName()
-        );
+        return assertSimple().alias(table);
     }
 
     private String exportAlias(BaseQueryExportSelection exportSelection) {

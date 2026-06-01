@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class IssueTest extends AbstractQueryTest {
 
     @Test
@@ -89,8 +91,8 @@ public class IssueTest extends AbstractQueryTest {
                     );
                     ctx.rows(it -> {
                         Page<Book> page = (Page<Book>) it.get(0);
-                        Assertions.assertEquals(2, page.getRows().size());
-                        Assertions.assertEquals(3, page.getTotalRowCount());
+                        assertEquals(2, page.getRows().size());
+                        assertEquals(3, page.getTotalRowCount());
                     });
                 }
         );
