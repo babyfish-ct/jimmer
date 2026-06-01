@@ -69,8 +69,8 @@ class QueryTest : AbstractQueryTest() {
                         "and " +
                         "--->exists(" +
                         "--->--->select 1 " +
-                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                         "--->) " +
                         "order by tb_1_.ID asc"
                 )
@@ -82,8 +82,8 @@ class QueryTest : AbstractQueryTest() {
                         "and " +
                         "--->exists(" +
                         "--->--->select 1 " +
-                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                         "--->) " +
                         "order by tb_1_.ID asc")
                 )
@@ -95,8 +95,8 @@ class QueryTest : AbstractQueryTest() {
                         "and " +
                         "--->exists(" +
                         "--->--->select 1 " +
-                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                         "--->) " +
                         "order by tb_1_.ID asc")
                 )
@@ -108,8 +108,8 @@ class QueryTest : AbstractQueryTest() {
                         "and " +
                         "--->exists(" +
                         "--->--->select 1 " +
-                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                         "--->) " +
                         "order by tb_1_.ID asc")
                 )
@@ -121,8 +121,8 @@ class QueryTest : AbstractQueryTest() {
                         "and " +
                         "--->exists(" +
                         "--->--->select 1 " +
-                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                         "--->) " +
                         "order by tb_1_.ID asc")
                 )
@@ -134,8 +134,8 @@ class QueryTest : AbstractQueryTest() {
                         "and " +
                         "--->exists(" +
                         "--->--->select 1 " +
-                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                         "--->) " +
                         "order by tb_1_.ID asc")
                 )

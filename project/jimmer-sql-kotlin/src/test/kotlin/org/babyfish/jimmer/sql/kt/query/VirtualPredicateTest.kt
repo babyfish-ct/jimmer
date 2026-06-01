@@ -109,29 +109,20 @@ class VirtualPredicateTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
-                    |where 
-                    |--->exists(
-                    |--->--->select 1 
-                    |--->--->from AUTHOR tb_2_ 
-                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
-                    |--->--->where 
-                    |--->--->--->tb_3_.BOOK_ID = tb_1_.ID 
-                    |--->--->and 
-                    |--->--->--->tb_2_.GENDER = ?
-                    |--->) 
-                    |and 
-                    |--->exists(
-                    |--->--->select 1 from AUTHOR tb_5_ 
-                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.AUTHOR_ID 
-                    |--->--->where 
-                    |--->--->--->tb_6_.BOOK_ID = tb_1_.ID 
-                    |--->--->and (
-                    |--->--->--->--->lower(tb_5_.FIRST_NAME) like ? 
-                    |--->--->--->or 
-                    |--->--->--->--->lower(tb_5_.LAST_NAME) like ?
-                    |--->--->)
+                    |where exists(
+                    |--->select 1 
+                    |--->from AUTHOR tb_2_ 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.ID = tb_4_.AUTHOR_ID 
+                    |--->where tb_4_.BOOK_ID = tb_1_.ID and tb_2_.GENDER = ?
+                    |) 
+                    |and exists(
+                    |--->select 1 
+                    |--->from AUTHOR tb_3_ inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID 
+                    |--->where tb_5_.BOOK_ID = tb_1_.ID and (
+                    |--->--->lower(tb_3_.FIRST_NAME) like ? or lower(tb_3_.LAST_NAME) like ?)
                     |--->)""".trimMargin()
             )
         }
@@ -156,27 +147,24 @@ class VirtualPredicateTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
                     |from BOOK_STORE tb_1_ 
-                    |where 
-                    |--->exists(
-                    |--->--->select 1 from BOOK tb_2_ 
-                    |--->--->where 
-                    |--->--->--->tb_2_.STORE_ID = tb_1_.ID 
-                    |--->--->and 
-                    |--->--->--->tb_2_.NAME = ? 
-                    |--->--->and 
-                    |--->--->--->exists(
-                    |--->--->--->--->select 1 from AUTHOR tb_4_ 
-                    |--->--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID 
-                    |--->--->--->--->where 
-                    |--->--->--->--->--->tb_5_.BOOK_ID = tb_2_.ID 
-                    |--->--->--->--->and (
-                    |--->--->--->--->--->--->lower(tb_4_.FIRST_NAME) like ? 
-                    |--->--->--->--->--->or 
-                    |--->--->--->--->--->--->lower(tb_4_.LAST_NAME) like ?
-                    |--->--->--->--->)
-                    |--->--->--->)
+                    |where exists(
+                    |--->select 1 
+                    |--->from BOOK tb_2_ 
+                    |--->where 
+                    |--->--->tb_2_.STORE_ID = tb_1_.ID and tb_2_.NAME = ? 
+                    |--->and 
+                    |--->--->exists(
+                    |--->--->--->select 1 
+                    |--->--->--->from AUTHOR tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID 
+                    |--->--->--->where 
+                    |--->--->--->--->tb_5_.BOOK_ID = tb_2_.ID 
+                    |--->--->--->and 
+                    |--->--->--->--->(lower(tb_3_.FIRST_NAME) like ? or lower(tb_3_.LAST_NAME) like ?)
+                    |--->--->)
                     |--->)""".trimMargin()
             )
         }
@@ -204,27 +192,23 @@ class VirtualPredicateTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
                     |from BOOK_STORE tb_1_ 
-                    |where 
-                    |--->exists(
-                    |--->--->select 1 from BOOK tb_2_ 
+                    |where exists(
+                    |--->select 1 
+                    |--->from BOOK tb_2_ 
+                    |--->where 
+                    |--->--->tb_2_.STORE_ID = tb_1_.ID and tb_2_.NAME = ? 
+                    |--->and exists(
+                    |--->--->select 1 
+                    |--->--->from AUTHOR tb_3_ 
+                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID 
                     |--->--->where 
-                    |--->--->--->tb_2_.STORE_ID = tb_1_.ID 
+                    |--->--->--->tb_5_.BOOK_ID = tb_2_.ID 
                     |--->--->and 
-                    |--->--->--->tb_2_.NAME = ? 
-                    |--->--->and 
-                    |--->--->--->exists(
-                    |--->--->--->--->select 1 from AUTHOR tb_4_ 
-                    |--->--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID 
-                    |--->--->--->--->where 
-                    |--->--->--->--->--->tb_5_.BOOK_ID = tb_2_.ID 
-                    |--->--->--->--->and (
-                    |--->--->--->--->--->--->lower(tb_4_.FIRST_NAME) like ? 
-                    |--->--->--->--->--->or 
-                    |--->--->--->--->--->--->lower(tb_4_.LAST_NAME) like ?
-                    |--->--->--->--->)
-                    |--->--->--->)
+                    |--->--->--->(lower(tb_3_.FIRST_NAME) like ? or lower(tb_3_.LAST_NAME) like ?)
+                    |--->--->)
                     |--->)""".trimMargin()
             )
         }
@@ -301,25 +285,23 @@ class VirtualPredicateTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK tb_1_ 
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from 
+                    |BOOK tb_1_ 
                     |where exists(
                     |--->select 1 
                     |--->from AUTHOR tb_2_ 
-                    |--->inner join BOOK_AUTHOR_MAPPING tb_3_ 
-                    |--->--->on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.ID = tb_4_.AUTHOR_ID 
                     |--->where 
-                    |--->--->tb_3_.BOOK_ID = tb_1_.ID 
+                    |--->--->tb_4_.BOOK_ID = tb_1_.ID 
                     |--->and 
                     |--->--->exists(
                     |--->--->--->select 1 
-                    |--->--->--->from BOOK tb_5_ 
-                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ 
-                    |--->--->--->on tb_5_.ID = tb_6_.BOOK_ID 
-                    |--->--->--->where tb_5_.NAME like ? 
-                    |--->--->--->and tb_2_.ID = tb_6_.AUTHOR_ID
+                    |--->--->--->from BOOK tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.BOOK_ID 
+                    |--->--->--->where tb_3_.NAME like ? and tb_2_.ID = tb_5_.AUTHOR_ID
                     |--->--->)
-                    |)""".trimMargin()
+                    |--->)""".trimMargin()
             )
             rows(
                 """[
@@ -350,25 +332,23 @@ class VirtualPredicateTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
                     |where exists(
                     |--->select 1 
                     |--->from AUTHOR tb_2_ 
-                    |--->inner join BOOK_AUTHOR_MAPPING tb_3_ 
-                    |--->--->on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.ID = tb_4_.AUTHOR_ID 
                     |--->where 
-                    |--->--->tb_3_.BOOK_ID = tb_1_.ID 
+                    |--->--->tb_4_.BOOK_ID = tb_1_.ID 
                     |--->and 
                     |--->--->exists(
                     |--->--->--->select 1 
-                    |--->--->--->from BOOK tb_5_ 
-                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ 
-                    |--->--->--->on tb_5_.ID = tb_6_.BOOK_ID 
-                    |--->--->--->where tb_5_.NAME like ? 
-                    |--->--->--->and tb_2_.ID = tb_6_.AUTHOR_ID
+                    |--->--->--->from BOOK tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.BOOK_ID 
+                    |--->--->--->where tb_3_.NAME like ? and tb_2_.ID = tb_5_.AUTHOR_ID
                     |--->--->)
-                    |)""".trimMargin()
+                    |--->)""".trimMargin()
             )
             rows(
                 """[

@@ -100,7 +100,7 @@ internal class OrPredicate(
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
         if (builder is SqlBuilder) {
-            val astContext = builder.astContext
+            val astContext = builder.astContext!!
             builder.enter(scopeType())
             for (i in predicates.indices) {
                 builder.separator()

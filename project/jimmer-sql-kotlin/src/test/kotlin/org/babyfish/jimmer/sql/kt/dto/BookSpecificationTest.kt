@@ -87,9 +87,7 @@ class BookSpecificationTest : AbstractQueryTest() {
                     |--->tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
                     |where 
-                    |--->tb_1_.NAME = ? 
-                    |and 
-                    |--->tb_1_.EDITION = ? 
+                    |--->tb_1_.NAME = ? and tb_1_.EDITION = ? 
                     |and 
                     |--->tb_1_.ID in (?, ?, ?, ?, ?, ?) 
                     |and 
@@ -101,23 +99,24 @@ class BookSpecificationTest : AbstractQueryTest() {
                     |and 
                     |--->not exists(
                     |--->--->select 1 
-                    |--->--->from BOOK_STORE tb_3_ 
-                    |--->--->inner join BOOK tb_4_ on tb_3_.ID = tb_4_.STORE_ID 
-                    |--->--->where tb_4_.ID = tb_1_.ID and tb_3_.ID in (?, ?)
+                    |--->--->from BOOK_STORE tb_2_ 
+                    |--->--->inner join BOOK tb_6_ on tb_2_.ID = tb_6_.STORE_ID 
+                    |--->--->where tb_6_.ID = tb_1_.ID and tb_2_.ID in (?, ?)
                     |--->) 
                     |and 
                     |--->exists(
                     |--->--->select 1 
-                    |--->--->from AUTHOR tb_5_ 
-                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.AUTHOR_ID 
-                    |--->--->where tb_6_.BOOK_ID = tb_1_.ID and tb_5_.ID in (?, ?, ?)
-                    |--->) 
+                    |--->--->from AUTHOR tb_3_ 
+                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_3_.ID = tb_7_.AUTHOR_ID 
+                    |--->--->where tb_7_.BOOK_ID = tb_1_.ID and tb_3_.ID in (?, ?, ?)
+                    |) 
                     |and 
                     |--->not exists(
-                    |--->--->select 1 from AUTHOR tb_8_ 
-                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID 
-                    |--->--->where tb_9_.BOOK_ID = tb_1_.ID and tb_8_.ID in (?, ?)
-                    |--->)""".trimMargin()
+                    |--->--->select 1 
+                    |--->--->from AUTHOR tb_4_ 
+                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_4_.ID = tb_8_.AUTHOR_ID 
+                    |--->--->where tb_8_.BOOK_ID = tb_1_.ID and tb_4_.ID in (?, ?))
+                    |""".trimMargin()
             ).variables(
                 "GraphQL in Action",
                 3,
@@ -334,26 +333,27 @@ class BookSpecificationTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                """select 
+                    |--->tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
                     |from BOOK_STORE tb_1_ 
-                    |where lower(tb_1_.NAME) like ? and 
-                    |exists(
-                    |--->select 1 
-                    |--->from BOOK tb_2_ 
-                    |--->where 
-                    |--->--->tb_1_.ID = tb_2_.STORE_ID 
-                    |--->and 
-                    |--->--->lower(tb_2_.NAME) like ? 
-                    |--->and 
-                    |--->--->exists(
+                    |where 
+                    |--->lower(tb_1_.NAME) like ? 
+                    |and 
+                    |--->exists(
+                    |--->--->select 1 
+                    |--->--->from BOOK tb_2_ 
+                    |--->--->where 
+                    |--->--->--->tb_1_.ID = tb_2_.STORE_ID 
+                    |--->--->and 
+                    |--->--->--->lower(tb_2_.NAME) like ? 
+                    |--->--->and exists(
                     |--->--->--->select 1 
-                    |--->--->--->from AUTHOR tb_4_ 
-                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ 
-                    |--->--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID 
+                    |--->--->--->from AUTHOR tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID 
                     |--->--->--->where tb_2_.ID = tb_5_.BOOK_ID 
-                    |--->--->--->and lower(tb_4_.FIRST_NAME) like ?
+                    |--->--->--->and lower(tb_3_.FIRST_NAME) like ?
                     |--->--->)
-                    |)""".trimMargin()
+                    |--->)""".trimMargin()
             ).variables("%e%", "%g%", "%a%")
             rows(
                 "[{\"id\":1,\"name\":\"O'REILLY\",\"version\":0,\"website\":null}]"

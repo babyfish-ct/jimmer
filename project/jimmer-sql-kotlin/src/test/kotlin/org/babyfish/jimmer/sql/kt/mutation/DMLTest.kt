@@ -224,9 +224,9 @@ class DMLTest : AbstractMutationTest() {
                 sql(
                     """select distinct tb_1_.ID from BOOK tb_1_ 
                         |where tb_1_.STORE_ID in (
-                        |--->select tb_3_.ID 
-                        |--->from BOOK_STORE tb_3_ 
-                        |--->where tb_3_.NAME = ?
+                        |--->select tb_2_.ID 
+                        |--->from BOOK_STORE tb_2_ 
+                        |--->where tb_2_.NAME = ?
                         |)""".trimMargin()
                 )
             }

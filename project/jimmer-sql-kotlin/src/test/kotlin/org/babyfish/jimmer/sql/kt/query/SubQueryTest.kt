@@ -90,9 +90,9 @@ class SubQueryTest : AbstractQueryTest() {
                     |tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID in (
-                    |--->select tb_3_.ID 
-                    |--->from BOOK_STORE tb_3_ 
-                    |--->where tb_3_.NAME like ?
+                    |--->select tb_2_.ID 
+                    |--->from BOOK_STORE tb_2_ 
+                    |--->where tb_2_.NAME like ?
                     |)""".trimMargin()
             )
             variables("MAN%")

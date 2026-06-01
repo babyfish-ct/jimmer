@@ -110,21 +110,23 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
-                    "--->select tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, " +
-                    "--->(" +
-                    "--->--->select count(1) from AUTHOR tb_3_ " +
-                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
-                    "--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
-                    "--->) " +
-                    "--->from BOOK tb_2_" +
-                    ") " +
-                    "select " +
-                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_6_.ID, " +
-                    "--->tb_6_.NAME, tb_6_.VERSION, tb_6_.WEBSITE " +
-                    "from tb_1_ " +
-                    "left join BOOK_STORE tb_6_ on tb_1_.c5 = tb_6_.ID " +
-                    "where tb_1_.c6 > ?"
+                """with tb_1_(c1, c2, c3, c4, c5, c6) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID 
+                    |--->--->--->where tb_5_.BOOK_ID = tb_2_.ID
+                    |--->--->) 
+                    |--->from BOOK tb_2_
+                    |) 
+                    |select 
+                    |--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, 
+                    |--->tb_4_.ID, tb_4_.NAME, tb_4_.VERSION, tb_4_.WEBSITE 
+                    |from tb_1_ 
+                    |left join BOOK_STORE tb_4_ on tb_1_.c5 = tb_4_.ID 
+                    |where tb_1_.c6 > ?""".trimMargin()
             )
             rows(
                 "[" +
@@ -237,25 +239,23 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
-                    "--->select " +
-                    "--->--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, " +
-                    "--->--->(" +
-                    "--->--->--->select count(1) " +
-                    "--->--->--->from AUTHOR tb_4_ " +
-                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
-                    "--->--->--->where tb_5_.BOOK_ID = tb_3_.ID" +
-                    "--->--->) " +
-                    "--->from BOOK_STORE tb_2_ " +
-                    "--->inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID where " +
-                    "--->tb_2_.NAME = ? and tb_3_.EDITION = ?" +
-                    ") " +
-                    "select " +
-                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                    "--->tb_7_.ID, tb_7_.NAME, tb_7_.VERSION, tb_7_.WEBSITE " +
-                    "from tb_1_ " +
-                    "left join BOOK_STORE tb_7_ on tb_1_.c5 = tb_7_.ID " +
-                    "where tb_1_.c6 > ?"
+                """with tb_1_(c1, c2, c3, c4, c5, c6) as (
+                    |--->select 
+                    |--->--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_4_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_4_.ID = tb_6_.AUTHOR_ID 
+                    |--->--->--->where tb_6_.BOOK_ID = tb_3_.ID
+                    |--->--->) 
+                    |--->--->from BOOK_STORE tb_2_ 
+                    |--->--->inner join BOOK tb_3_ on tb_2_.ID = tb_3_.STORE_ID 
+                    |--->--->where tb_2_.NAME = ? and tb_3_.EDITION = ?
+                    |--->) 
+                    |select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_5_.ID, tb_5_.NAME, tb_5_.VERSION, tb_5_.WEBSITE 
+                    |from tb_1_ 
+                    |left join BOOK_STORE tb_5_ on tb_1_.c5 = tb_5_.ID 
+                    |where tb_1_.c6 > ?""".trimMargin()
             )
             rows(
                 "[{" +
@@ -308,41 +308,33 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
-                    "--->select " +
-                    "--->--->tb_2_.ID, " +
-                    "--->--->tb_2_.NAME, " +
-                    "--->--->tb_2_.EDITION, " +
-                    "--->--->tb_2_.PRICE, " +
-                    "--->--->tb_2_.STORE_ID, " +
-                    "--->--->(" +
-                    "--->--->--->select count(1) " +
-                    "--->--->--->from AUTHOR tb_3_ " +
-                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
-                    "--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
-                    "--->--->) " +
-                    "--->from BOOK tb_2_ " +
-                    "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
-                    "--->union all " +
-                    "--->select " +
-                    "--->--->tb_7_.ID, " +
-                    "--->--->tb_7_.NAME, " +
-                    "--->--->tb_7_.EDITION, " +
-                    "--->--->tb_7_.PRICE, " +
-                    "--->--->tb_7_.STORE_ID, " +
-                    "--->--->(" +
-                    "--->--->--->select count(1) " +
-                    "--->--->--->from AUTHOR tb_8_ " +
-                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID " +
-                    "--->--->--->where tb_9_.BOOK_ID = tb_7_.ID" +
-                    "--->--->) " +
-                    "--->from BOOK_STORE tb_6_ " +
-                    "--->inner join BOOK tb_7_ on tb_6_.ID = tb_7_.STORE_ID " +
-                    "--->where tb_6_.NAME = ? and tb_7_.EDITION = ?" +
-                    ") " +
-                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
-                    "from tb_1_ " +
-                    "where tb_1_.c6 > ?"
+                """with tb_1_(c1, c2, c3, c4, c5, c6) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_3_.ID = tb_7_.AUTHOR_ID 
+                    |--->--->--->where tb_7_.BOOK_ID = tb_2_.ID
+                    |--->--->) 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.NAME = ? and tb_2_.EDITION = ? 
+                    |--->union all 
+                    |--->select 
+                    |--->--->tb_5_.ID, tb_5_.NAME, tb_5_.EDITION, tb_5_.PRICE, tb_5_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_6_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_6_.ID = tb_8_.AUTHOR_ID 
+                    |--->--->--->where tb_8_.BOOK_ID = tb_5_.ID
+                    |--->--->) 
+                    |--->from BOOK_STORE tb_4_ 
+                    |--->inner join BOOK tb_5_ on tb_4_.ID = tb_5_.STORE_ID 
+                    |--->where tb_4_.NAME = ? and tb_5_.EDITION = ?
+                    |) 
+                    |select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 
+                    |from tb_1_ 
+                    |where tb_1_.c6 > ?""".trimMargin()
             )
             rows(
                 "[{" +
@@ -403,36 +395,36 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c1, c2, c3, c4, c5, c6) as (" +
-                    "--->select " +
-                    "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, " +
-                    "--->--->(" +
-                    "--->--->--->select count(1) " +
-                    "--->--->--->from AUTHOR tb_3_ " +
-                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ " +
-                    "--->--->--->on tb_3_.ID = tb_4_.AUTHOR_ID where tb_4_.BOOK_ID = tb_2_.ID" +
-                    "--->--->) " +
-                    "--->from BOOK tb_2_ " +
-                    "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
-                    "--->union all " +
-                    "--->select " +
-                    "--->--->tb_7_.ID, tb_7_.NAME, tb_7_.EDITION, tb_7_.PRICE, tb_7_.STORE_ID, " +
-                    "--->--->(" +
-                    "--->--->--->select count(1) " +
-                    "--->--->--->from AUTHOR tb_8_ " +
-                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.AUTHOR_ID " +
-                    "--->--->--->where tb_9_.BOOK_ID = tb_7_.ID" +
-                    "--->--->) " +
-                    "--->from BOOK_STORE tb_6_ " +
-                    "--->inner join BOOK tb_7_ on tb_6_.ID = tb_7_.STORE_ID " +
-                    "--->where tb_6_.NAME = ? and tb_7_.EDITION = ?" +
-                    ") " +
-                    "select " +
-                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                    "--->tb_11_.ID, tb_11_.NAME, tb_11_.VERSION, tb_11_.WEBSITE " +
-                    "from tb_1_ " +
-                    "left join BOOK_STORE tb_11_ on tb_1_.c5 = tb_11_.ID " +
-                    "where tb_1_.c6 > ?"
+                """with tb_1_(c1, c2, c3, c4, c5, c6) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_3_.ID = tb_8_.AUTHOR_ID 
+                    |--->--->--->where tb_8_.BOOK_ID = tb_2_.ID
+                    |--->--->) 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.NAME = ? and tb_2_.EDITION = ? 
+                    |--->union all 
+                    |--->select 
+                    |--->--->tb_5_.ID, tb_5_.NAME, tb_5_.EDITION, tb_5_.PRICE, tb_5_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_6_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_6_.ID = tb_9_.AUTHOR_ID 
+                    |--->--->--->where tb_9_.BOOK_ID = tb_5_.ID
+                    |--->--->) 
+                    |--->from BOOK_STORE tb_4_ 
+                    |--->inner join BOOK tb_5_ on tb_4_.ID = tb_5_.STORE_ID 
+                    |--->where tb_4_.NAME = ? and tb_5_.EDITION = ?
+                    |) 
+                    |select 
+                    |--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, 
+                    |--->tb_7_.ID, tb_7_.NAME, tb_7_.VERSION, tb_7_.WEBSITE 
+                    |from tb_1_ 
+                    |left join BOOK_STORE tb_7_ on tb_1_.c5 = tb_7_.ID 
+                    |where tb_1_.c6 > ?""".trimMargin()
             )
             rows(
                 "[{" +
@@ -505,36 +497,36 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c1, c2, c3, c5, c4) as (" +
-                    "--->select " +
-                    "--->--->tb_2_.ID, tb_2_.NAME, tb_2_.STORE_ID, tb_2_.EDITION, " +
-                    "--->--->(" +
-                    "--->--->--->select count(1) " +
-                    "--->--->--->from AUTHOR tb_3_ " +
-                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
-                    "--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
-                    "--->--->) " +
-                    "--->from BOOK tb_2_ " +
-                    "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
-                    "--->union all " +
-                    "--->select tb_7_.ID, tb_7_.NAME, tb_7_.STORE_ID, tb_7_.EDITION, " +
-                    "--->(" +
-                    "--->--->select count(1) " +
-                    "--->--->from AUTHOR tb_10_ " +
-                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_10_.ID = tb_11_.AUTHOR_ID " +
-                    "--->--->where tb_11_.BOOK_ID = tb_7_.ID" +
-                    "--->) " +
-                    "--->from BOOK_STORE tb_6_ " +
-                    "--->inner join BOOK tb_7_ on tb_6_.ID = tb_7_.STORE_ID " +
-                    "--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_7_.ID = tb_8_.BOOK_ID " +
-                    "--->inner join AUTHOR tb_9_ on tb_8_.AUTHOR_ID = tb_9_.ID " +
-                    "--->where tb_6_.NAME = ? and tb_7_.EDITION = ? and tb_9_.GENDER = ?" +
-                    ") " +
-                    "select " +
-                    "--->tb_1_.c1, tb_1_.c2, tb_13_.ID, tb_13_.NAME " +
-                    "from tb_1_ " +
-                    "left join BOOK_STORE tb_13_ on tb_1_.c3 = tb_13_.ID " +
-                    "where tb_1_.c4 > ? and (tb_1_.c5 between ? and ?)"
+                """with tb_1_(c1, c2, c3, c4, c5) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_3_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_10_ on tb_3_.ID = tb_10_.AUTHOR_ID 
+                    |--->--->--->where tb_10_.BOOK_ID = tb_2_.ID
+                    |--->--->) 
+                    |--->from BOOK tb_2_ 
+                    |--->where tb_2_.NAME = ? and tb_2_.EDITION = ? 
+                    |--->union all 
+                    |--->select 
+                    |--->--->tb_5_.ID, tb_5_.NAME, tb_5_.EDITION, tb_5_.STORE_ID, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from AUTHOR tb_8_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_8_.ID = tb_11_.AUTHOR_ID 
+                    |--->--->--->where tb_11_.BOOK_ID = tb_5_.ID
+                    |--->--->) 
+                    |--->--->from BOOK_STORE tb_4_ 
+                    |--->--->inner join BOOK tb_5_ on tb_4_.ID = tb_5_.STORE_ID 
+                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.BOOK_ID 
+                    |--->--->inner join AUTHOR tb_7_ on tb_6_.AUTHOR_ID = tb_7_.ID 
+                    |--->--->where tb_4_.NAME = ? and tb_5_.EDITION = ? and tb_7_.GENDER = ?
+                    |) 
+                    |select tb_1_.c1, tb_1_.c2, tb_9_.ID, tb_9_.NAME 
+                    |from tb_1_ 
+                    |left join BOOK_STORE tb_9_ on tb_1_.c4 = tb_9_.ID 
+                    |where tb_1_.c5 > ? and (tb_1_.c3 between ? and ?)""".trimMargin()
             )
             rows(
                 "[{" +
@@ -883,29 +875,22 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c5, c1, c2) as (" +
-                    "--->select " +
-                    "--->--->tb_3_.PRICE, " +
-                    "--->--->tb_3_.ID, tb_3_.NAME " +
-                    "--->from BOOK tb_3_ " +
-                    "--->where tb_3_.ID = ?" +
-                    "), " +
-                    "tb_2_(c6, c3, c4) as (" +
-                    "--->select " +
-                    "--->--->tb_4_.GENDER, " +
-                    "--->--->tb_4_.ID, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) " +
-                    "--->from AUTHOR tb_4_ " +
-                    "--->where tb_4_.ID = ?" +
-                    ") " +
-                    "select " +
-                    "--->tb_1_.c1, tb_1_.c2, " +
-                    "--->tb_2_.c3, tb_2_.c4 " +
-                    "from tb_1_ " +
-                    "inner join BOOK_AUTHOR_MAPPING tb_5_ " +
-                    "--->on tb_1_.c1 = tb_5_.BOOK_ID " +
-                    "inner join tb_2_ " +
-                    "--->on tb_5_.AUTHOR_ID = tb_2_.c3 " +
-                    "where tb_1_.c5 > ? and tb_2_.c6 = ?"
+                """with 
+                    |--->tb_1_(c1, c2, c3) as (
+                    |--->--->select tb_3_.PRICE, tb_3_.ID, tb_3_.NAME 
+                    |--->--->from BOOK tb_3_ 
+                    |--->--->where tb_3_.ID = ?
+                    |--->), 
+                    |--->tb_2_(c6, c4, c5) as (
+                    |--->--->select tb_4_.GENDER, tb_4_.ID, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) 
+                    |--->--->from AUTHOR tb_4_ 
+                    |--->--->where tb_4_.ID = ?
+                    |--->) 
+                    |select tb_1_.c2, tb_1_.c3, tb_2_.c4, tb_2_.c5 
+                    |from tb_1_ 
+                    |inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_1_.c2 = tb_5_.BOOK_ID 
+                    |inner join tb_2_ on tb_5_.AUTHOR_ID = tb_2_.c4 
+                    |where tb_1_.c1 > ? and tb_2_.c6 = ?""".trimMargin()
             )
         }
     }
@@ -949,40 +934,30 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "with tb_1_(c5, c1, c2) as (" +
-                    "--->select " +
-                    "--->--->tb_3_.PRICE, tb_3_.ID, tb_3_.NAME " +
-                    "--->from BOOK tb_3_ " +
-                    "--->where tb_3_.ID = ? " +
-                    "--->union all " +
-                    "--->select " +
-                    "--->--->tb_4_.PRICE, tb_4_.ID, tb_4_.NAME " +
-                    "--->from BOOK tb_4_ " +
-                    "--->where tb_4_.ID = ?" +
-                    "), " +
-                    "tb_2_(c6, c3, c4) as (" +
-                    "--->select " +
-                    "--->--->tb_5_.GENDER, tb_5_.ID, " +
-                    "--->--->concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) " +
-                    "--->from AUTHOR tb_5_ " +
-                    "--->where tb_5_.ID = ? " +
-                    "--->union all " +
-                    "--->select " +
-                    "--->--->tb_6_.GENDER, tb_6_.ID, " +
-                    "--->--->concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) " +
-                    "--->from AUTHOR tb_6_ " +
-                    "--->where tb_6_.ID = ?" +
-                    ") " +
-                    "select " +
-                    "--->tb_1_.c1, tb_1_.c2, " +
-                    "--->tb_2_.c3, tb_2_.c4 " +
-                    "from tb_1_ " +
-                    "inner join BOOK_AUTHOR_MAPPING tb_7_ " +
-                    "--->on tb_1_.c1 = tb_7_.BOOK_ID " +
-                    "inner join tb_2_ " +
-                    "--->on tb_7_.AUTHOR_ID = tb_2_.c3 " +
-                    "where tb_1_.c5 > ? " +
-                    "and tb_2_.c6 = ?"
+                """with 
+                    |--->tb_1_(c1, c2, c3) as (
+                    |--->--->select tb_3_.PRICE, tb_3_.ID, tb_3_.NAME 
+                    |--->--->from BOOK tb_3_ 
+                    |--->--->where tb_3_.ID = ? 
+                    |--->--->union all 
+                    |--->--->select tb_4_.PRICE, tb_4_.ID, tb_4_.NAME 
+                    |--->--->from BOOK tb_4_ 
+                    |--->--->where tb_4_.ID = ?
+                    |--->), 
+                    |--->tb_2_(c6, c4, c5) as (
+                    |--->--->select tb_5_.GENDER, tb_5_.ID, concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) 
+                    |--->--->from AUTHOR tb_5_ 
+                    |--->--->where tb_5_.ID = ? 
+                    |--->--->union all 
+                    |--->--->select tb_6_.GENDER, tb_6_.ID, concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) 
+                    |--->--->from AUTHOR tb_6_ 
+                    |--->--->where tb_6_.ID = ?
+                    |--->) 
+                    |select tb_1_.c2, tb_1_.c3, tb_2_.c4, tb_2_.c5 
+                    |from tb_1_ 
+                    |inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_1_.c2 = tb_7_.BOOK_ID 
+                    |inner join tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c4 
+                    |where tb_1_.c1 > ? and tb_2_.c6 = ?""".trimMargin()
             )
         }
     }
