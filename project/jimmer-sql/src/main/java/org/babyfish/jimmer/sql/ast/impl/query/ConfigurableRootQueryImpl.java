@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.dialect.MySql5Dialect;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -344,7 +343,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
                 data.tupleCreator,
-                getMutableQuery().getPurpose()
+                getMutableQuery().getPurpose(),
+                data.forUpdate != null
         );
         return (Long)rows.get(0);
     }
@@ -361,7 +361,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
                 data.tupleCreator,
-                getMutableQuery().getPurpose()
+                getMutableQuery().getPurpose(),
+                getForUpdate() != null
         );
         return !rows.isEmpty();
     }
@@ -381,7 +382,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_3(),
                 data.selections,
                 data.tupleCreator,
-                getMutableQuery().getPurpose()
+                getMutableQuery().getPurpose(),
+                data.forUpdate != null
         );
     }
 
@@ -429,7 +431,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 getData().tupleCreator,
                 getMutableQuery().getPurpose(),
                 batchSize,
-                consumer
+                consumer,
+                getForUpdate() != null
         );
     }
 

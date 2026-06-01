@@ -1,15 +1,19 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.PageFactory;
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -138,8 +142,8 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                        "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
-                                        "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
+                                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
+                                    "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
                                     "from BOOK tb_1_ " +
                                     "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
@@ -276,12 +280,12 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select * from (" +
-                                        "select core__.*, rownum rn__ " +
-                                        "from (" +
-                                            "select distinct tb_1_.NAME " +
-                                            "from BOOK tb_1_ " +
-                                            "order by tb_1_.NAME asc" +
-                                        ") core__ where rownum <= ?" +
+                                    "select core__.*, rownum rn__ " +
+                                    "from (" +
+                                    "select distinct tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "order by tb_1_.NAME asc" +
+                                    ") core__ where rownum <= ?" +
                                     ") limited__ where rn__ > ?"
                     );
                     ctx.variables(3L, 1L);
@@ -582,12 +586,12 @@ public class PagingTest extends AbstractQueryTest {
     public void testIssue1192() {
         BookTable table = BookTable.$;
         connectAndExpect(con ->
-                getSqlClient(it -> it.setReverseSortOptimizationEnabled(true))
-                        .createQuery(table)
-                        .orderBy(table.name().asc(), table.edition().desc())
-                        .select(table.fetch(BookFetcher.$.name()))
-                        .setReverseSortOptimizationEnabled(false)
-                        .fetchPage(5, 2, con),
+                        getSqlClient(it -> it.setReverseSortOptimizationEnabled(true))
+                                .createQuery(table)
+                                .orderBy(table.name().asc(), table.edition().desc())
+                                .select(table.fetch(BookFetcher.$.name()))
+                                .setReverseSortOptimizationEnabled(false)
+                                .fetchPage(5, 2, con),
                 ctx -> {
                     ctx.sql("select count(1) from BOOK tb_1_");
                     ctx.statement(1).sql(
@@ -596,6 +600,45 @@ public class PagingTest extends AbstractQueryTest {
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                                     "limit ? offset ?"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testBaseQueryPagingQuery() {
+        BookTable table = BookTable.$;
+        connectAndExpect(
+                con -> {
+                    JSqlClient client = getSqlClient(it -> it.setReverseSortOptimizationEnabled(true)
+                            .setConnectionManager(ConnectionManager.singleConnectionManager(con)));
+                    BaseTable1<BookTable> baseTable = TypedBaseQuery.unionAll(client.createBaseQuery(table)
+                            .addSelect(table), client.createBaseQuery(table).addSelect(table)
+                    ).asBaseTable();
+                    return client
+                            .createQuery(baseTable)
+                            .select(baseTable.get_1()).fetchPage(0, 2);
+                },
+                ctx -> {
+                    ctx.sql("select count(1) " +
+                            "from (" +
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                            "from (" +
+                            "select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5 " +
+                            "from BOOK tb_2_ " +
+                            "union all " +
+                            "select tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
+                            "from BOOK tb_3_) tb_1_) tb_simple_count__");
+                    ctx.statement(1)
+                            .sql("select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3," +
+                                    " tb_2_.PRICE c4, tb_2_.STORE_ID c5 " +
+                                    "from BOOK tb_2_ " +
+                                    "union all " +
+                                    "select tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3," +
+                                    " tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
+                                    "from BOOK tb_3_) tb_1_ limit ?")
+                            .variables(2);
                 }
         );
     }
