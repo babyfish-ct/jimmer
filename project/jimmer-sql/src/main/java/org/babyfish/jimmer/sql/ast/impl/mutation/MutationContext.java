@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.MappedId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
@@ -248,6 +249,17 @@ class MutationContext {
                         "\" is illegal, the " +
                         catalog +
                         " is embeddable type but the its value is incomplete"
+        );
+    }
+
+    SaveException.InconsistentMappedId createInconsistentMappedId(MappedId mappedId, String reason) {
+        return new SaveException.InconsistentMappedId(
+                path,
+                "The property \"" +
+                        mappedId.getProp() +
+                        "\" decorated by @MapsId is inconsistent, " +
+                        reason,
+                mappedId.getProp()
         );
     }
 

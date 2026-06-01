@@ -7,6 +7,10 @@ create schema if not exists D;
 drop table issue1125_mp_role_perm if exists;
 drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
+drop table tenant_document if exists;
+drop table tenant if exists;
+drop table maps_id_profile if exists;
+drop table maps_id_principal if exists;
 drop table time_row if exists;
 drop table issue888_item if exists;
 drop table issue888_structure if exists;
@@ -1567,4 +1571,37 @@ create table issue1125_sys_role (
   id bigint generated always as identity(start with 1 increment by 1) not null,
   deleted_at timestamp(0),
   constraint sys_role_pkey primary key (id)
+);
+
+create table maps_id_principal(
+    a bigint not null,
+    b bigint not null,
+    name varchar(50) not null,
+    constraint pk_maps_id_principal primary key(a, b)
+);
+
+create table maps_id_profile(
+    a bigint not null,
+    b bigint not null,
+    nickname varchar(50) not null,
+    constraint pk_maps_id_profile primary key(a, b),
+    constraint fk_maps_id_profile__principal
+        foreign key(a, b)
+            references maps_id_principal(a, b)
+);
+
+create table tenant(
+    id bigint not null,
+    name varchar(50) not null,
+    constraint pk_tenant primary key(id)
+);
+
+create table tenant_document(
+    tenant_id bigint not null,
+    document_id bigint not null,
+    name varchar(50) not null,
+    constraint pk_tenant_document primary key(tenant_id, document_id),
+    constraint fk_tenant_document__tenant
+        foreign key(tenant_id)
+            references tenant(id)
 );

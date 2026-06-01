@@ -1,0 +1,123 @@
+package org.babyfish.jimmer.sql.mutation;
+
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.exception.SaveException;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdPrincipal;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfileDraft;
+import org.babyfish.jimmer.sql.model.mapsid.Tenant;
+import org.babyfish.jimmer.sql.model.mapsid.TenantDocument;
+import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDraft;
+import org.junit.jupiter.api.Test;
+
+public class MapsIdMutationTest extends AbstractMutationTest {
+
+    @Test
+    public void testSaveFullMappedId() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                MapsIdProfileDraft.$.produce(profile -> {
+                                    profile.setNickname("Alex");
+                                    profile.applyPrincipal(principal -> {
+                                        principal.applyId(id -> id.setA(1L).setB(2L));
+                                        principal.setName("Root");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_PRINCIPAL(A, B, NAME) values(?, ?, ?)");
+                        it.variables(1L, 2L, "Root");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_PROFILE(A, B, NICKNAME) values(?, ?, ?)");
+                        it.variables(1L, 2L, "Alex");
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(MapsIdPrincipal.class), 1);
+                    ctx.rowCount(AffectedTable.of(MapsIdProfile.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":{\"a\":1,\"b\":2}," +
+                                    "--->\"nickname\":\"Alex\"," +
+                                    "--->\"principal\":{\"id\":{\"a\":1,\"b\":2},\"name\":\"Root\"}" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
+    public void testSavePartialMappedId() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                TenantDocumentDraft.$.produce(document -> {
+                                    document.applyId(id -> id.setDocumentId(10L));
+                                    document.setName("Spec");
+                                    document.applyTenant(tenant -> {
+                                        tenant.setId(3L);
+                                        tenant.setName("Tenant");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT(ID, NAME) values(?, ?)");
+                        it.variables(3L, "Tenant");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT_DOCUMENT(TENANT_ID, DOCUMENT_ID, NAME) values(?, ?, ?)");
+                        it.variables(3L, 10L, "Spec");
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Tenant.class), 1);
+                    ctx.rowCount(AffectedTable.of(TenantDocument.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":{\"tenantId\":3,\"documentId\":10}," +
+                                    "--->\"name\":\"Spec\"," +
+                                    "--->\"tenant\":{\"id\":3,\"name\":\"Tenant\"}" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
+    public void testConflictingMappedId() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                MapsIdProfileDraft.$.produce(profile -> {
+                                    profile.applyId(id -> id.setA(9L).setB(9L));
+                                    profile.setNickname("Alex");
+                                    profile.applyPrincipal(principal -> {
+                                        principal.applyId(id -> id.setA(1L).setB(2L));
+                                        principal.setName("Root");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_PRINCIPAL(A, B, NAME) values(?, ?, ?)");
+                        it.variables(1L, 2L, "Root");
+                    });
+                    ctx.throwable(it -> it.type(SaveException.InconsistentMappedId.class));
+                }
+        );
+    }
+}
