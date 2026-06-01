@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
+import java.util.Objects;
 
 class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
@@ -38,19 +40,32 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         AstContext ctx = visitor.getAstContext();
+        visitor.visitBaseTableExpression(baseTableOwner);
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        ((Ast) this.raw).accept(visitor);
-        ctx.popStatement();
+        try {
+            ((Ast) this.raw).accept(visitor);
+        } finally {
+            ctx.popStatement();
+        }
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
-        assert mapper != null;
-        builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(mapper.expressionIndex()));
-        ctx.popStatement();
+        try {
+            QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
+            BaseQueryExportSelection exportSelection = Objects.requireNonNull(
+                    renderContext.getBaseQueryExportSelection(baseTableOwner),
+                    "No base-query export selection is available for " + baseTableOwner
+            );
+            builder
+                    .sql(exportSelection.getAlias(builder.assertSimple()))
+                    .sql(".c")
+                    .sql(Integer.toString(exportSelection.expressionIndex()));
+        } finally {
+            ctx.popStatement();
+        }
     }
 
     @Override

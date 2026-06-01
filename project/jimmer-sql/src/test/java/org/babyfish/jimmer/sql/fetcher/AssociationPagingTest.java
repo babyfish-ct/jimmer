@@ -38,9 +38,9 @@ public class AssociationPagingTest extends AbstractQueryTest {
                                     "--->where tb_1_.STORE_ID = ? " +
                                     "--->limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                                    "--->from BOOK tb_1_ " +
-                                    "--->where tb_1_.STORE_ID = ? " +
+                                    "--->select tb_2_.STORE_ID, tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_2_.STORE_ID = ? " +
                                     "--->limit ? offset ?" +
                                     ")"
                     ).variables(Constants.manningId, 2, 2L, Constants.oreillyId, 2, 2L);
@@ -113,36 +113,36 @@ public class AssociationPagingTest extends AbstractQueryTest {
                     );
                     ctx.statement(1).sql(
                             "(" +
-                                    "--->select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "--->select tb_7_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                     "--->from AUTHOR tb_1_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "--->where tb_2_.BOOK_ID = ? " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_1_.ID = tb_7_.AUTHOR_ID " +
+                                    "--->where tb_7_.BOOK_ID = ? " +
                                     "--->limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "--->from AUTHOR tb_1_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "--->where tb_2_.BOOK_ID = ? limit ? offset ?" +
+                                    "--->select tb_8_.BOOK_ID, tb_2_.ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER " +
+                                    "--->from AUTHOR tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_8_ on tb_2_.ID = tb_8_.AUTHOR_ID " +
+                                    "--->where tb_8_.BOOK_ID = ? limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "--->from AUTHOR tb_1_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "--->where tb_2_.BOOK_ID = ? limit ? offset ?" +
+                                    "--->select tb_9_.BOOK_ID, tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
+                                    "--->from AUTHOR tb_3_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_3_.ID = tb_9_.AUTHOR_ID " +
+                                    "--->where tb_9_.BOOK_ID = ? limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "--->from AUTHOR tb_1_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "--->where tb_2_.BOOK_ID = ? limit ? offset ?" +
+                                    "--->select tb_10_.BOOK_ID, tb_4_.ID, tb_4_.FIRST_NAME, tb_4_.LAST_NAME, tb_4_.GENDER " +
+                                    "--->from AUTHOR tb_4_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_10_ on tb_4_.ID = tb_10_.AUTHOR_ID " +
+                                    "--->where tb_10_.BOOK_ID = ? limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "--->from AUTHOR tb_1_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "--->where tb_2_.BOOK_ID = ? limit ? offset ?" +
+                                    "--->select tb_11_.BOOK_ID, tb_5_.ID, tb_5_.FIRST_NAME, tb_5_.LAST_NAME, tb_5_.GENDER " +
+                                    "--->from AUTHOR tb_5_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_5_.ID = tb_11_.AUTHOR_ID " +
+                                    "--->where tb_11_.BOOK_ID = ? limit ? offset ?" +
                                     ") union all (" +
-                                    "--->select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "--->from AUTHOR tb_1_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "--->where tb_2_.BOOK_ID = ? limit ? offset ?" +
+                                    "--->select tb_12_.BOOK_ID, tb_6_.ID, tb_6_.FIRST_NAME, tb_6_.LAST_NAME, tb_6_.GENDER " +
+                                    "--->from AUTHOR tb_6_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_12_ on tb_6_.ID = tb_12_.AUTHOR_ID " +
+                                    "--->where tb_12_.BOOK_ID = ? limit ? offset ?" +
                                     ")"
                     )
                     .variables(

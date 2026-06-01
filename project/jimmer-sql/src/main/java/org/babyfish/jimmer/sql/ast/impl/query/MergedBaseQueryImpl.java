@@ -9,11 +9,9 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +31,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     private ConfigurableBaseQueryImpl<T>[] expandedQueries;
 
     private T baseTable;
+
+    private Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> derivedItemBaseTables;
+
+    private Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> cteItemBaseTables;
 
     private MergedBaseQueryImpl<T> mergedBy;
 
@@ -110,7 +112,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         this.queries = queryArr;
 
         List<ConfigurableBaseQueryImpl<?>> realQueries = new ArrayList<>();
-        collectRealQueries(this, realQueries);
+        collectConfigurableQueries(realQueries);
         this.expandedQueries = (ConfigurableBaseQueryImpl<T>[]) realQueries.toArray(EMPTY_QUERIES);
 
         this.recursive = recursiveBaseQueryCreators != null;
@@ -139,7 +141,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         this.recursiveBaseQueryCreators = null;
         this.queries = newQueryArr;
         List<ConfigurableBaseQueryImpl<?>> realQueries = new ArrayList<>();
-        collectRealQueries(this, realQueries);
+        collectConfigurableQueries(realQueries);
         this.expandedQueries = (ConfigurableBaseQueryImpl<T>[]) realQueries.toArray(EMPTY_QUERIES);
     }
 
@@ -272,17 +274,47 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @Override
+    public ConfigurableBaseQueryImpl<?> firstConfigurableQuery() {
+        return firstQuery();
+    }
+
+    @Override
+    public void collectConfigurableQueries(List<ConfigurableBaseQueryImpl<?>> queries) {
+        upgrade();
+        for (TypedBaseQueryImplementor<T> query : this.queries) {
+            query.collectConfigurableQueries(queries);
+        }
+    }
+
+    public BaseTableSymbol itemBaseTable(ConfigurableBaseQueryImpl<?> itemQuery, boolean cte) {
+        upgrade();
+        Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> itemBaseTables;
+        if (cte) {
+            itemBaseTables = cteItemBaseTables;
+            if (itemBaseTables == null) {
+                cteItemBaseTables = itemBaseTables = new IdentityHashMap<>();
+            }
+        } else {
+            itemBaseTables = derivedItemBaseTables;
+            if (itemBaseTables == null) {
+                derivedItemBaseTables = itemBaseTables = new IdentityHashMap<>();
+            }
+        }
+        return itemBaseTables.computeIfAbsent(
+                itemQuery,
+                it -> BaseTableSymbols.of(
+                        it,
+                        it.getSelections(),
+                        null,
+                        recursive ? BaseTableKind.RECURSIVE_CTE : cte ? BaseTableKind.CTE : BaseTableKind.DERIVED
+                )
+        );
+    }
+
+    @Override
     public TableImplementor<?> resolveRootTable(Table<?> table) {
         for (TypedBaseQueryImplementor<?> query : this.getQueries()) {
-            TableImplementor<?> tableImplementor;
-            if (query instanceof MergedBaseQueryImpl<?>) {
-                tableImplementor = ((MergedBaseQueryImpl<?>)query).getQueries()[0].resolveRootTable(table);
-            } else {
-                MutableBaseQueryImpl mutableQuery = ((ConfigurableBaseQueryImpl<?>) query).getMutableQuery();
-                tableImplementor = AbstractTypedTable.__refEquals(mutableQuery.getTable(), table) ?
-                        (TableImplementor<?>) mutableQuery.getTableLikeImplementor() :
-                        null;
-            }
+            TableImplementor<?> tableImplementor = query.resolveRootTable(table);
             if (tableImplementor != null) {
                 return tableImplementor;
             }
@@ -345,20 +377,6 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                                                 BaseTableKind.DERIVED
                         );
         return baseTable;
-    }
-
-    private static void collectRealQueries(
-            TypedBaseQueryImplementor<?> query,
-            List<ConfigurableBaseQueryImpl<?>> results
-    ) {
-        if (query instanceof ConfigurableBaseQuery<?>) {
-            results.add((ConfigurableBaseQueryImpl<?>) query);
-        } else {
-            MergedBaseQueryImpl<?> mq = (MergedBaseQueryImpl<?>)query;
-            for (TypedBaseQueryImplementor<?> sq : mq.getQueries()) {
-                collectRealQueries(sq, results);
-            }
-        }
     }
 
     public static MergedBaseQueryImpl<?> from(TypedBaseQueryImplementor<?> query) {

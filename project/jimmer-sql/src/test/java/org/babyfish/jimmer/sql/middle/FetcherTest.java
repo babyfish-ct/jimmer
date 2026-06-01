@@ -33,36 +33,36 @@ public class FetcherTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.shop_id, tb_1_.customer_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join CUSTOMER tb_3_ on " +
-                                    "--->tb_1_.customer_id = tb_3_.ID " +
+                                    "inner join CUSTOMER tb_2_ on " +
+                                    "--->tb_1_.customer_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "where tb_1_.shop_id in (?, ?) " +
-                                    "order by tb_3_.NAME asc"
+                                    "order by tb_2_.NAME asc"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.shop_id, tb_1_.customer_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join CUSTOMER tb_3_ on " +
-                                    "--->tb_1_.customer_id = tb_3_.ID " +
+                                    "inner join CUSTOMER tb_2_ on " +
+                                    "--->tb_1_.customer_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "and " +
                                     "--->tb_1_.type = ? " +
                                     "where tb_1_.shop_id in (?, ?) " +
-                                    "order by tb_3_.NAME asc"
+                                    "order by tb_2_.NAME asc"
                     );
                     ctx.statement(3).sql(
                             "select tb_1_.shop_id, tb_1_.customer_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join CUSTOMER tb_3_ on " +
-                                    "--->tb_1_.customer_id = tb_3_.ID " +
+                                    "inner join CUSTOMER tb_2_ on " +
+                                    "--->tb_1_.customer_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "and " +
                                     "--->tb_1_.type = ? " +
                                     "where tb_1_.shop_id in (?, ?) " +
-                                    "order by tb_3_.NAME asc"
+                                    "order by tb_2_.NAME asc"
                     );
                     ctx.rows(
                             "[" +
@@ -202,36 +202,36 @@ public class FetcherTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.customer_id, tb_1_.shop_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join SHOP tb_3_ on " +
-                                    "--->tb_1_.shop_id = tb_3_.ID " +
+                                    "inner join SHOP tb_2_ on " +
+                                    "--->tb_1_.shop_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "where tb_1_.customer_id in (?, ?, ?, ?, ?, ?) " +
-                                    "order by tb_3_.NAME asc"
+                                    "order by tb_2_.NAME asc"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.customer_id, tb_1_.shop_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join SHOP tb_3_ on " +
-                                    "--->tb_1_.shop_id = tb_3_.ID " +
+                                    "inner join SHOP tb_2_ on " +
+                                    "--->tb_1_.shop_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "and " +
                                     "--->tb_1_.type = ? " +
                                     "where tb_1_.customer_id in (?, ?, ?, ?, ?, ?) " +
-                                    "order by tb_3_.NAME asc"
+                                    "order by tb_2_.NAME asc"
                     );
                     ctx.statement(3).sql(
                             "select tb_1_.customer_id, tb_1_.shop_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join SHOP tb_3_ on " +
-                                    "--->tb_1_.shop_id = tb_3_.ID " +
+                                    "inner join SHOP tb_2_ on " +
+                                    "--->tb_1_.shop_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "and " +
                                     "--->tb_1_.type = ? " +
                                     "where tb_1_.customer_id in (?, ?, ?, ?, ?, ?) " +
-                                    "order by tb_3_.NAME asc"
+                                    "order by tb_2_.NAME asc"
                     );
                     ctx.rows(
                             "[" +

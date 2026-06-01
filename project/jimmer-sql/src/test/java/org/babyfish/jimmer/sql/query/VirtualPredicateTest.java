@@ -91,22 +91,22 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                                     "where exists(" +
                                     "--->select 1 " +
                                     "--->from AUTHOR tb_2_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.ID = tb_4_.AUTHOR_ID " +
                                     "--->where " +
-                                    "--->--->tb_3_.BOOK_ID = tb_1_.ID " +
+                                    "--->--->tb_4_.BOOK_ID = tb_1_.ID " +
                                     "--->and " +
                                     "--->--->tb_2_.GENDER = ?" +
                                     ") and (" +
                                     "--->exists(" +
                                     "--->--->select 1 " +
-                                    "--->--->from AUTHOR tb_5_ " +
-                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.AUTHOR_ID " +
+                                    "--->--->from AUTHOR tb_3_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->where " +
-                                    "--->--->--->tb_6_.BOOK_ID = tb_1_.ID " +
+                                    "--->--->--->tb_5_.BOOK_ID = tb_1_.ID " +
                                     "--->--->and (" +
-                                    "--->--->--->--->tb_5_.FIRST_NAME ilike ? " +
+                                    "--->--->--->--->tb_3_.FIRST_NAME ilike ? " +
                                     "--->--->--->or " +
-                                    "--->--->--->--->tb_5_.LAST_NAME ilike ?" +
+                                    "--->--->--->--->tb_3_.LAST_NAME ilike ?" +
                                     "--->--->)" +
                                     "--->)" +
                                     ")"
@@ -148,12 +148,12 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                                     "--->--->--->tb_2_.NAME ilike ? " +
                                     "--->--->and exists(" +
                                     "--->--->--->select 1 " +
-                                    "--->--->--->from AUTHOR tb_4_ " +
-                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->--->from AUTHOR tb_3_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->--->where " +
                                     "--->--->--->--->tb_5_.BOOK_ID = tb_2_.ID " +
                                     "--->--->--->and " +
-                                    "--->--->--->--->(tb_4_.FIRST_NAME ilike ? or tb_4_.LAST_NAME ilike ?)" +
+                                    "--->--->--->--->(tb_3_.FIRST_NAME ilike ? or tb_3_.LAST_NAME ilike ?)" +
                                     "--->)" +
                                     ")"
                     );
@@ -199,12 +199,12 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                                     "--->--->--->tb_2_.NAME ilike ? " +
                                     "--->--->and exists(" +
                                     "--->--->--->select 1 " +
-                                    "--->--->--->from AUTHOR tb_4_ " +
-                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->--->from AUTHOR tb_3_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_3_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->--->where " +
                                     "--->--->--->--->tb_5_.BOOK_ID = tb_2_.ID " +
                                     "--->--->--->and " +
-                                    "--->--->--->--->(tb_4_.FIRST_NAME ilike ? or tb_4_.LAST_NAME ilike ?)" +
+                                    "--->--->--->--->(tb_3_.FIRST_NAME ilike ? or tb_3_.LAST_NAME ilike ?)" +
                                     "--->)" +
                                     ")"
                     );

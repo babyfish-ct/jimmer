@@ -14,8 +14,6 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.OrderIdDraft;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderTable;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -157,7 +155,6 @@ public class IssueTest extends AbstractQueryTest {
 
     @Test
     public void testIssue1244() {
-        Assumptions.abort("It is hard to resolve this bug");
         TreeNodeTable table = TreeNodeTable.$;
         BaseTable1<TreeNodeTable> baseTable = TypedBaseQuery.unionAllRecursively(
                 getSqlClient()
@@ -176,14 +173,30 @@ public class IssueTest extends AbstractQueryTest {
                         .where(baseTable.get_1().parent().name().ilike("e"))
                         .select(baseTable.get_1()),
                 ctx -> {
-
+                    ctx.sql(
+                            "with recursive tb_1_(c1, c2, c3) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.NODE_ID, tb_2_.NAME, tb_2_.PARENT_ID " +
+                                    "--->from TREE_NODE tb_2_ " +
+                                    "--->where tb_2_.NODE_ID = ? " +
+                                    "--->union all " +
+                                    "--->select " +
+                                    "--->--->tb_3_.NODE_ID, tb_3_.NAME, tb_3_.PARENT_ID " +
+                                    "--->from TREE_NODE tb_3_ " +
+                                    "--->inner join tb_1_ on tb_3_.PARENT_ID = tb_1_.c1" +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3 " +
+                                    "from tb_1_ " +
+                                    "inner join TREE_NODE tb_4_ on tb_1_.c3 = tb_4_.NODE_ID " +
+                                    "where tb_4_.NAME ilike ?"
+                    );
+                    ctx.variables(1L, "%e%");
                 }
         );
     }
 
     @Test
     public void testNewIssue() {
-        Assumptions.abort("It is hard to resolve this bug");
         TreeNodeTable table = TreeNodeTable.$;
         BaseTable1<TreeNodeTable> baseTable = getSqlClient()
                 .createBaseQuery(table)
@@ -197,15 +210,24 @@ public class IssueTest extends AbstractQueryTest {
                         .select(baseTable.get_1()),
                 ctx -> {
                     ctx.sql(
-                            ""
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.NODE_ID c1, tb_2_.NAME c2, tb_2_.PARENT_ID c3 " +
+                                    "--->from TREE_NODE tb_2_ " +
+                                    "--->where tb_2_.PARENT_ID is null" +
+                                    ") tb_1_ " +
+                                    "inner join TREE_NODE tb_3_ on tb_1_.c3 = tb_3_.NODE_ID " +
+                                    "where tb_3_.NAME like ?"
                     );
+                    ctx.variables("%shirt%");
+                    ctx.rows("[]");
                 }
         );
     }
 
     @Test
     public void testIssue1258() {
-        Assumptions.abort("It is hard to resolve this bug");
         BookTable table = BookTable.$;
         BaseTable1<BookTable> baseTable =
                 getSqlClient()
@@ -218,7 +240,19 @@ public class IssueTest extends AbstractQueryTest {
                         .where(baseTable.get_1().storeId().eq(Constants.manningId))
                         .select(baseTable.get_1(), baseTable.get_1().store()),
                 ctx -> {
-
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
+                                    "--->tb_3_.ID, tb_3_.NAME, tb_3_.WEBSITE, tb_3_.VERSION " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5 " +
+                                    "--->from BOOK tb_2_" +
+                                    ") tb_1_ " +
+                                    "left join BOOK_STORE tb_3_ on tb_1_.c5 = tb_3_.ID " +
+                                    "where tb_1_.c5 = ?"
+                    );
+                    ctx.variables(Constants.manningId);
                 }
         );
     }
@@ -241,14 +275,14 @@ public class IssueTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
-                                    "--->tb_1_.c6, tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
+                                    "--->tb_1_.c6, tb_1_.c8, tb_1_.c9, tb_1_.c10 " +
                                     "from (" +
                                     "--->select " +
                                     "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, tb_2_.STORE_ID c5, " +
-                                    "--->--->tb_2_.STORE_ID c6, tb_3_.NAME c7, tb_3_.WEBSITE c8, tb_3_.VERSION c9 " +
+                                    "--->--->tb_3_.ID c6, tb_2_.STORE_ID c7, tb_3_.NAME c8, tb_3_.WEBSITE c9, tb_3_.VERSION c10 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->inner join BOOK_STORE tb_3_ on tb_2_.STORE_ID = tb_3_.ID" +
-                                    ") tb_1_ where tb_1_.c6 = ?"
+                                    ") tb_1_ where tb_1_.c7 = ?"
                     );
                     ctx.rows(
                             "[" +
@@ -322,14 +356,14 @@ public class IssueTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, tb_1_.c6, " +
-                                    "--->tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
+                                    "--->tb_1_.c7, tb_1_.c8, tb_1_.c11 " +
                                     "from (" +
                                     "--->select " +
                                     "--->--->tb_2_.ORDER_ITEM_A c1, tb_2_.ORDER_ITEM_B c2, tb_2_.ORDER_ITEM_C c3, tb_2_.NAME c4, tb_2_.FK_ORDER_X c5, tb_2_.FK_ORDER_Y c6, " +
-                                    "--->--->tb_2_.FK_ORDER_X c7, tb_2_.FK_ORDER_Y c8, tb_3_.NAME c9 " +
+                                    "--->--->tb_3_.ORDER_X c7, tb_3_.ORDER_Y c8, tb_2_.FK_ORDER_X c9, tb_2_.FK_ORDER_Y c10, tb_3_.NAME c11 " +
                                     "--->from ORDER_ITEM tb_2_ " +
                                     "--->inner join ORDER_ tb_3_ on tb_2_.FK_ORDER_X = tb_3_.ORDER_X and tb_2_.FK_ORDER_Y = tb_3_.ORDER_Y" +
-                                    ") tb_1_ where (tb_1_.c7, tb_1_.c8) = (?, ?)"
+                                    ") tb_1_ where (tb_1_.c9, tb_1_.c10) = (?, ?)"
                     );
                     ctx.rows(
                             "[{" +

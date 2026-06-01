@@ -467,13 +467,13 @@ public class JoinTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.shop_id, tb_1_.customer_id " +
                                     "from shop_customer_mapping tb_1_ " +
-                                    "inner join CUSTOMER tb_3_ on " +
-                                    "--->tb_1_.customer_id = tb_3_.ID " +
+                                    "inner join CUSTOMER tb_2_ on " +
+                                    "--->tb_1_.customer_id = tb_2_.ID " +
                                     "and " +
                                     "--->tb_1_.deleted_millis = ? " +
                                     "and " +
                                     "--->tb_1_.type = ? " +
-                                    "where tb_3_.NAME = ?"
+                                    "where tb_2_.NAME = ?"
                     );
                     ctx.rows("[{\"_1\":2,\"_2\":3}]");
                 }

@@ -689,7 +689,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                             false,
                             sourceGetters,
                             args.deletedIds,
-                            (SqlBuilder) builder
+                            builder.assertSimple()
                     );
                 }
             } else {

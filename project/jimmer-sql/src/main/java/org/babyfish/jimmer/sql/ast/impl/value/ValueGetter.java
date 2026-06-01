@@ -8,14 +8,13 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,6 +101,10 @@ public interface ValueGetter {
             props.add(0, pei.getDeepestProp());
         }
         Table<?> table = propExpressionImplementor.getTable();
+        BaseTableOwner baseTableOwner = BaseTableOwner.of(propExpression);
+        if (baseTableOwner == null) {
+            baseTableOwner = BaseTableOwner.of(table);
+        }
         boolean rawId = propExpressionImplementor.isRawId();
         if (props.get(0).isId()) {
             ImmutableProp joinProp;
@@ -132,13 +135,17 @@ public interface ValueGetter {
                 rawId = false;
             }
         }
-        return AbstractValueGetter.createValueGetters(
+        List<ValueGetter> getters = AbstractValueGetter.createValueGetters(
                 sqlClient,
                 table,
                 rawId,
                 props,
                 value
         );
+        if (baseTableOwner != null) {
+            return BaseTableValueGetter.wrap(baseTableOwner, propExpressionImplementor, getters);
+        }
+        return getters;
     }
 
     static List<ValueGetter> valueGetters(
@@ -174,16 +181,14 @@ public interface ValueGetter {
         return getters;
     }
 
-    static List<ValueGetter> alias(@Nullable BaseSelectionMapper mapper, String alias, List<ValueGetter> getters) {
+    static List<ValueGetter> alias(String alias, List<ValueGetter> getters) {
         if (alias == null) {
             return getters;
         }
         List<ValueGetter> aliasGetters = new ArrayList<>(getters.size());
         for (int i = 0; i < getters.size(); i++) {
-            aliasGetters.add(new AliasValueGetter(mapper, alias, getters.get(i)));
+            aliasGetters.add(new AliasValueGetter(alias, getters.get(i)));
         }
         return aliasGetters;
     }
 }
-
-

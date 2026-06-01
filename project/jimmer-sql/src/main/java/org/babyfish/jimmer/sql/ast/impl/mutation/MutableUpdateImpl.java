@@ -9,7 +9,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -38,6 +39,8 @@ public class MutableUpdateImpl
     private final boolean triggerIgnored;
 
     private final Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
+
+    private TableLikeImplementor<?> aliasSource;
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
@@ -246,6 +249,10 @@ public class MutableUpdateImpl
         renderTo(builder, null);
     }
 
+    void shareRootAliasWith(TableLikeImplementor<?> source) {
+        this.aliasSource = source;
+    }
+
     @Override
     public TableImplementor<?> getTableLikeImplementor() {
         return (TableImplementor<?>) super.getTableLikeImplementor();
@@ -277,7 +284,7 @@ public class MutableUpdateImpl
         } else {
             builder.sql(" ");
         }
-        builder.sql(getTableLikeImplementor().realTable(builder.getAstContext()).getAlias());
+        builder.sql(MutationRender.alias(builder, getTableLikeImplementor()));
     }
 
     private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
@@ -288,7 +295,15 @@ public class MutableUpdateImpl
             Dialect dialect = getSqlClient().getDialect();
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
             this.accept(visitor);
-            visitor.allocateAliases();
+            TableUsages tableUsages = visitor.toTableUsages();
+            tableUsages.applyTo(astContext);
+            tableUsages.allocateAliases(astContext);
+            if (aliasSource != null) {
+                astContext.getTableAliasScope().bindAlias(
+                        aliasSource.realTable(astContext),
+                        getTableLikeImplementor().realTable(astContext)
+                );
+            }
             builder
                     .sql("update ")
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
@@ -321,13 +336,15 @@ public class MutableUpdateImpl
         try {
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
-            visitor.allocateAliases();
+            TableUsages tableUsages = visitor.toTableUsages();
+            tableUsages.applyTo(astContext);
+            tableUsages.allocateAliases(astContext);
             TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.enter(SqlBuilder.ScopeType.SELECT);
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
                 builder.separator().definition(
-                        table.realTable(astContext).getAlias(),
+                        MutationRender.alias(builder, table),
                         prop.getStorage(strategy),
                         null
                 );
@@ -343,7 +360,7 @@ public class MutableUpdateImpl
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 NativePredicates.renderPredicates(
                         false,
-                        table.realTable(astContext).getAlias(),
+                        MutationRender.alias(builder, table),
                         table.getImmutableType().getIdProp().getStorage(strategy),
                         ids,
                         builder
@@ -458,7 +475,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             NativePredicates.renderPredicates(
                     false,
-                    table.realTable(builder.getAstContext()).getAlias(),
+                    MutationRender.alias(builder, table),
                     table.getImmutableType().getIdProp().getStorage(getSqlClient().getMetadataStrategy()),
                     ids,
                     builder
@@ -537,7 +554,7 @@ public class MutableUpdateImpl
         }
     }
 
-    private static class VisitorImpl extends UseTableVisitor {
+    private static class VisitorImpl extends TableUsageCollector {
 
         private final Dialect dialect;
 
@@ -555,7 +572,7 @@ public class MutableUpdateImpl
         }
 
         private void validateTable(RealTable table) {
-            if (getAstContext().getTableUsedState(table) == TableUsedState.USED) {
+            if (getTableUsedState(table) == TableUsedState.USED) {
                 if (table.getParent() != null && dialect.getUpdateJoin() == null) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +

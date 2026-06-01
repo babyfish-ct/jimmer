@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
@@ -86,9 +87,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     @SuppressWarnings("unchecked")
     private void visitBaseTable(TableLikeImplementor<?> tableLikeImplementor, AstVisitor visitor) {
         if (tableLikeImplementor instanceof BaseTableImplementor) {
-            RealTable realBaseTable =
-                    tableLikeImplementor.realTable(visitor.getAstContext());
-            visitBaseTableImpl(realBaseTable, visitor);
+            visitBaseTableImpl(visitor.realTableForAnalysis(tableLikeImplementor), visitor);
         } else {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
             if (tableImplementor.hasBaseTable()) {
@@ -117,20 +116,70 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             @NotNull AbstractSqlBuilder<?> abstractBuilder,
             @Nullable BaseSelectionAliasRender render
     ) {
+        renderTo(abstractBuilder, render, true);
+    }
+
+    @Override
+    public final void collectSelectionJoinRequirements(SelectionJoinRequirementCollector collector) {
+        QueryAnalysisContext analysisContext = collector.analysisContext();
+        analysisContext.pushStatement(getMutableQuery());
+        try {
+            for (Selection<?> selection : getSelections()) {
+                if (selection instanceof Table<?>) {
+                    collector.require((Table<?>) selection);
+                }
+            }
+        } finally {
+            analysisContext.popStatement();
+        }
+    }
+
+    @Override
+    public final void renderAsMergedOperand(@NotNull AbstractSqlBuilder<?> abstractBuilder, boolean leading) {
+        if (leading && renderLeadingCteForMergedOperand(abstractBuilder)) {
+            abstractBuilder.sql("(");
+            renderTo(abstractBuilder, null, false);
+            abstractBuilder.sql(")");
+        } else {
+            TypedQueryImplementor.super.renderAsMergedOperand(abstractBuilder, leading);
+        }
+    }
+
+    private boolean renderLeadingCteForMergedOperand(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
+        AstContext astContext = builder.getAstContext();
+        astContext.pushStatement(getMutableQuery());
+        try {
+            List<RealTable> cteTables = getCteTables(astContext);
+            if (cteTables.isEmpty()) {
+                return false;
+            }
+            renderCte(builder, cteTables);
+            return true;
+        } finally {
+            astContext.popStatement();
+        }
+    }
+
+    private void renderTo(
+            @NotNull AbstractSqlBuilder<?> abstractBuilder,
+            @Nullable BaseSelectionAliasRender render,
+            boolean renderCte
+    ) {
         SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {
             if (data.withoutSortingAndPaging || astContext.isQueryWithoutSortingAndPaging() ||
                     (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
-                renderWithoutPaging(builder, null, render);
+                renderWithoutPaging(builder, null, render, renderCte);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
                 if (idPropExpr != null) {
                     renderIdOnlyQuery(idPropExpr, builder);
                 } else {
                     SqlBuilder subBuilder = builder.createChildBuilder();
-                    renderWithoutPaging(subBuilder, null, render);
+                    renderWithoutPaging(subBuilder, null, render, renderCte);
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
                                 getMutableQuery().getSqlClient().getSqlFormatter(),
@@ -168,35 +217,42 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     private void renderWithoutPaging(
             SqlBuilder builder,
             PropExpressionImplementor<?> idPropExpr,
-            BaseSelectionAliasRender render
+            BaseSelectionAliasRender render,
+            boolean renderCte
     ) {
         List<RealTable> cteTables = getCteTables(builder.getAstContext());
-        if (cteTables.isEmpty()) {
+        if (!renderCte || cteTables.isEmpty()) {
             renderWithoutPagingImpl(builder, idPropExpr, render);
         } else {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
-            builder.sql("with ");
-            for (RealTable cteTable : cteTables) {
-                if (((BaseTableImplementor)cteTable.getTableLikeImplementor()).isRecursiveCte()) {
-                    builder.sql("recursive ");
-                    break;
-                }
-            }
-            builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
-            for (RealTable cteTable : cteTables) {
-                builder.separator();
-                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
-                BaseSelectionAliasRender cteRender = builder.getAstContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery());
-                assert cteRender != null;
-                builder.sql(cteTable.getAlias());
-                cteRender.renderCteColumns(cteTable, builder);
-                builder.sql(" as ");
-                cteTable.renderTo(builder, true);
-            }
-            builder.leave().sql(" ");
+            renderCte(builder, cteTables);
             builder.appendTempBuilder(tmpBuilder);
         }
+    }
+
+    private void renderCte(SqlBuilder builder, List<RealTable> cteTables) {
+        builder.sql("with ");
+        for (RealTable cteTable : cteTables) {
+            if (((BaseTableImplementor)cteTable.getTableLikeImplementor()).isRecursiveCte()) {
+                builder.sql("recursive ");
+                break;
+            }
+        }
+        builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
+        for (RealTable cteTable : cteTables) {
+            builder.separator();
+            BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
+            BaseSelectionAliasRender cteRender = Objects.requireNonNull(
+                    builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery()),
+                    "No base-selection render is available for CTE " + baseTableImplementor.toSymbol()
+            );
+            builder.sql(builder.alias(cteTable));
+            cteRender.renderCteColumns(cteTable, builder);
+            builder.sql(" as ");
+            cteTable.renderTo(builder, true);
+        }
+        builder.leave().sql(" ");
     }
 
     private List<RealTable> getCteTables(AstContext ctx) {
@@ -255,7 +311,6 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             );
         } else {
             renderSelections(builder);
-            fakeRenderExportedForeignKeys(mutableQuery.getTableLikeImplementor(),builder);
         }
         builder.leave();
         mutableQuery.renderTo(
@@ -288,67 +343,6 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void fakeRenderExportedForeignKeys(
-            TableLikeImplementor<?> tableLikeImplementor,
-            SqlBuilder builder
-    ) {
-        if (tableLikeImplementor instanceof BaseTableImplementor) {
-            fakeRenderExportedForeignKeysImpl((BaseTableImplementor) tableLikeImplementor, builder);
-        } else {
-            TableImplementor<?> tableImplementor = (TableImplementor<?>) tableLikeImplementor;
-            if (tableImplementor.hasBaseTable()) {
-                Iterable<TableLikeImplementor<?>> children =
-                        (Iterable<TableLikeImplementor<?>>) tableImplementor;
-                for (TableLikeImplementor<?> child : children) {
-                    fakeRenderExportedForeignKeys(child, builder);
-                }
-            }
-        }
-    }
-
-    private void fakeRenderExportedForeignKeysImpl(
-            BaseTableImplementor baseTableImplementor,
-            SqlBuilder builder
-    ) {
-        AstContext ctx = builder.getAstContext();
-        for (Selection<?> selection : baseTableImplementor.toSymbol().getSelections()) {
-            if (selection instanceof Table<?>) {
-                Table<?> table = (Table<?>) selection;
-                TableImplementor<?> tableImplementor = TableProxies.resolve(table, ctx);
-                BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(tableImplementor.getBaseTableOwner());
-                assert mapper != null;
-                RealTable realTable = tableImplementor.realTable(ctx);
-                for (RealTable childTable : realTable) {
-                    if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
-                        continue;
-                    }
-                    TableImplementor<?> childTableImplementor =
-                            (TableImplementor<?>) childTable.getTableLikeImplementor();
-                    ImmutableProp prop = childTableImplementor.getJoinProp();
-                    if (prop == null) {
-                        break;
-                    }
-                    if (childTableImplementor.isInverse()) {
-                        prop = prop.getOpposite();
-                        if (prop == null) {
-                            continue;
-                        }
-                    }
-                    if (!prop.isColumnDefinition()) {
-                        continue;
-                    }
-                    ColumnDefinition definition = prop.getStorage(builder.sqlClient().getMetadataStrategy());
-                    int size = definition.size();
-                    for (int i = 0; i < size; i++) {
-                        // Fake render, only call `columnIndex`, not render it
-                        mapper.columnIndex(realTable.getAlias(), definition.name(i), false);
-                    }
-                }
-            }
-        }
-    }
-
     private PropExpressionImplementor<?> idOnlyPropExprByOffset() {
         if (data.offset >= mutableQuery.getSqlClient().getOffsetOptimizingThreshold()) {
             return data.getIdOnlyExpression();
@@ -362,7 +356,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 .getSelectableProps();
         for (ImmutableProp prop : selectableProps.values()) {
             builder.separator();
-            table.renderSelection(prop, true, builder, null);
+            table.renderSelection(prop, !prop.isId(), builder, null, true, null, false);
         }
     }
 
@@ -387,7 +381,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         builder.leave();
         builder.from().enter(SqlBuilder.ScopeType.SUB_QUERY);
         SqlBuilder subBuilder = builder.createChildBuilder();
-        renderWithoutPaging(subBuilder, idPropExpr, null);
+        renderWithoutPaging(subBuilder, idPropExpr, null, true);
         subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
                     getMutableQuery().getSqlClient().getSqlFormatter(),
