@@ -881,16 +881,16 @@ class CteBaseQueryTest : AbstractQueryTest() {
                     |--->--->from BOOK tb_3_ 
                     |--->--->where tb_3_.ID = ?
                     |--->), 
-                    |--->tb_2_(c6, c4, c5) as (
+                    |--->tb_2_(c4, c5, c6) as (
                     |--->--->select tb_4_.GENDER, tb_4_.ID, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) 
                     |--->--->from AUTHOR tb_4_ 
                     |--->--->where tb_4_.ID = ?
                     |--->) 
-                    |select tb_1_.c2, tb_1_.c3, tb_2_.c4, tb_2_.c5 
+                    |select tb_1_.c2, tb_1_.c3, tb_2_.c5, tb_2_.c6 
                     |from tb_1_ 
                     |inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_1_.c2 = tb_5_.BOOK_ID 
-                    |inner join tb_2_ on tb_5_.AUTHOR_ID = tb_2_.c4 
-                    |where tb_1_.c1 > ? and tb_2_.c6 = ?""".trimMargin()
+                    |inner join tb_2_ on tb_5_.AUTHOR_ID = tb_2_.c5 
+                    |where tb_1_.c1 > ? and tb_2_.c4 = ?""".trimMargin()
             )
         }
     }
@@ -944,7 +944,7 @@ class CteBaseQueryTest : AbstractQueryTest() {
                     |--->--->from BOOK tb_4_ 
                     |--->--->where tb_4_.ID = ?
                     |--->), 
-                    |--->tb_2_(c6, c4, c5) as (
+                    |--->tb_2_(c4, c5, c6) as (
                     |--->--->select tb_5_.GENDER, tb_5_.ID, concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) 
                     |--->--->from AUTHOR tb_5_ 
                     |--->--->where tb_5_.ID = ? 
@@ -953,11 +953,11 @@ class CteBaseQueryTest : AbstractQueryTest() {
                     |--->--->from AUTHOR tb_6_ 
                     |--->--->where tb_6_.ID = ?
                     |--->) 
-                    |select tb_1_.c2, tb_1_.c3, tb_2_.c4, tb_2_.c5 
+                    |select tb_1_.c2, tb_1_.c3, tb_2_.c5, tb_2_.c6 
                     |from tb_1_ 
                     |inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_1_.c2 = tb_7_.BOOK_ID 
-                    |inner join tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c4 
-                    |where tb_1_.c1 > ? and tb_2_.c6 = ?""".trimMargin()
+                    |inner join tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c5 
+                    |where tb_1_.c1 > ? and tb_2_.c4 = ?""".trimMargin()
             )
         }
     }
@@ -1005,8 +1005,8 @@ class CteBaseQueryTest : AbstractQueryTest() {
                     |from BOOK tb_1_ 
                     |inner join (
                     |--->tb_2_ 
-                    |--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.c1 = tb_4_.AUTHOR_ID
-                    |) on tb_1_.ID = tb_4_.BOOK_ID 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_2_.c1 = tb_5_.AUTHOR_ID
+                    |) on tb_1_.ID = tb_5_.BOOK_ID 
                     |where tb_2_.c5 < ?""".trimMargin()
             )
         }

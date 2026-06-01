@@ -172,12 +172,24 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return null;
     }
 
+    public BaseTableOwner resolveBaseTableOwner(BaseTableOwner baseTableOwner) {
+        if (baseTableOwner == null) {
+            return null;
+        }
+        BaseTableImplementor baseTable = resolveBaseTable(baseTableOwner.getBaseTable());
+        return baseTable != null ? new BaseTableOwner(baseTable, baseTableOwner.getIndex()) : baseTableOwner;
+    }
+
     private BaseTableImplementor resolveBaseTable(AbstractMutableStatementImpl statement, BaseTableSymbol baseTable) {
         TableLike<?> parent = baseTable.getParent();
         if (parent == null) {
             TableLikeImplementor<?> implementor = statement.getTableLikeImplementor();
             if (implementor instanceof BaseTableImplementor) {
-                return (BaseTableImplementor) implementor;
+                BaseTableImplementor baseTableImplementor = (BaseTableImplementor) implementor;
+                if (baseTableImplementor.getQuery() == baseTable.getQuery() &&
+                        baseTableImplementor.isCte() == baseTable.isCte()) {
+                    return baseTableImplementor;
+                }
             }
             return null;
         }

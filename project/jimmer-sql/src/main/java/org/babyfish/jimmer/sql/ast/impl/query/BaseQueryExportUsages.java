@@ -77,8 +77,21 @@ final class BaseQueryExportUsages {
             requireTableReference(table, prop, rawId, null);
         }
 
+        void requireTableReference(BaseTableOwner baseTableOwner, RealTable table, ImmutableProp prop, boolean rawId) {
+            requireTableReference(baseTableOwner, table, prop, rawId, null);
+        }
+
         void requireTableColumns(RealTable table, ImmutableProp prop, Collection<String> columnNames) {
             requireTableReference(table, prop, false, columnNames);
+        }
+
+        void requireTableColumns(
+                BaseTableOwner baseTableOwner,
+                RealTable table,
+                ImmutableProp prop,
+                Collection<String> columnNames
+        ) {
+            requireTableReference(baseTableOwner, table, prop, false, columnNames);
         }
 
         private void requireTableReference(
@@ -91,6 +104,16 @@ final class BaseQueryExportUsages {
             if (baseTableOwner == null) {
                 return;
             }
+            requireTableReference(baseTableOwner, table, prop, rawId, columnNames);
+        }
+
+        private void requireTableReference(
+                BaseTableOwner baseTableOwner,
+                RealTable table,
+                ImmutableProp prop,
+                boolean rawId,
+                @Nullable Collection<String> columnNames
+        ) {
             TableReferenceUsage usage = new TableReferenceUsage(table, prop, rawId, columnNames);
             for (BaseTableOwner owner : expandedOwners(baseTableOwner)) {
                 tableReferenceUsageMap

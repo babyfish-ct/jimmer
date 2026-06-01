@@ -104,7 +104,7 @@ internal abstract class KTableExImpl<E: Any>(
             (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
             javaTable,
             handle,
-            JoinType.LEFT,
+            JoinType.INNER,
             null
         )
         return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT

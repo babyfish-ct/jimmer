@@ -28,7 +28,11 @@ public final class QueryAnalysis {
 
     @Nullable
     public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
-        return model.getBaseQueryExports().exportSelection(baseTableOwner);
+        BaseQueryExportSelection selection = model.getBaseQueryExports().exportSelection(baseTableOwner);
+        if (selection != null) {
+            return selection;
+        }
+        return model.getBaseQueryExports().exportSelection(astContext.resolveBaseTableOwner(baseTableOwner));
     }
 
     @Nullable

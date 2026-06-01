@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -60,23 +61,25 @@ public class TableUsageCollector extends TableUsageVisitor {
     @Override
     public void visitTableFetcherField(RealTable table, Field field) {
         BaseTableOwner baseTableOwner = table.getBaseTableOwner();
-        if (baseTableOwner == null || field.getChildFetcher() == null) {
+        if (baseTableOwner == null) {
             super.visitTableFetcherField(table, field);
             return;
         }
         ImmutableProp prop = field.getProp();
         Storage storage = prop.getStorage(getAstContext().getSqlClient().getMetadataStrategy());
-        if (!(storage instanceof EmbeddedColumns)) {
-            super.visitTableFetcherField(table, field);
+        if (storage instanceof EmbeddedColumns && field.getChildFetcher() != null) {
+            use(table);
+            baseQueryExportUsagesBuilder.requireTableColumns(
+                    canonicalTableOwner(baseTableOwner),
+                    table,
+                    prop,
+                    embeddedColumnNames((EmbeddedColumns) storage, field.getChildFetcher())
+            );
+            useResolvedBaseTable(baseTableOwner);
             return;
         }
-        use(table);
-        baseQueryExportUsagesBuilder.requireTableColumns(
-                table,
-                prop,
-                embeddedColumnNames((EmbeddedColumns) storage, field.getChildFetcher())
-        );
-        use(realTable(getAstContext().resolveBaseTable(baseTableOwner.getBaseTable())));
+        baseQueryExportUsagesBuilder.requireTableReference(canonicalTableOwner(baseTableOwner), table, prop, false);
+        useResolvedBaseTable(baseTableOwner);
     }
 
     @Override
@@ -87,20 +90,31 @@ public class TableUsageCollector extends TableUsageVisitor {
             boolean rawId
     ) {
         if (prop == null) {
-            baseQueryExportUsagesBuilder.requireFullRowExport(baseTableOwner);
+            baseQueryExportUsagesBuilder.requireFullRowExport(canonicalTableOwner(baseTableOwner));
         } else {
-            baseQueryExportUsagesBuilder.requireTableReference(table, prop, rawId);
+            baseQueryExportUsagesBuilder.requireTableReference(canonicalTableOwner(baseTableOwner), table, prop, rawId);
         }
     }
 
     @Override
     public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
-        baseQueryExportUsagesBuilder.requireExpressionExport(baseTableOwner);
+        baseQueryExportUsagesBuilder.requireExpressionExport(canonicalTableOwner(baseTableOwner));
     }
 
     protected final TableUsedState getTableUsedState(RealTable table) {
         TableUsedState state = tableStateMap.get(table);
         return state != null ? state : TableUsedState.NONE;
+    }
+
+    private BaseTableOwner canonicalTableOwner(BaseTableOwner baseTableOwner) {
+        return getAstContext().resolveBaseTableOwner(baseTableOwner);
+    }
+
+    private void useResolvedBaseTable(BaseTableOwner baseTableOwner) {
+        BaseTableImplementor baseTable = getAstContext().resolveBaseTable(baseTableOwner.getBaseTable());
+        if (baseTable != null) {
+            use(realTable(baseTable));
+        }
     }
 
     private static Collection<String> embeddedColumnNames(EmbeddedColumns columns, Fetcher<?> fetcher) {
