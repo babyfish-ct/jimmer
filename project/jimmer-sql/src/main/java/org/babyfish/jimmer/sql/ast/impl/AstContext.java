@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderMode;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
@@ -29,6 +30,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private BaseTableRenderFrame baseTableRenderFrame;
 
+    private final QueryRenderMode queryRenderMode;
+
     private int modCount;
 
     private TableAliasScope tableAliasScope;
@@ -36,7 +39,12 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     private Set<MergedBaseQueryImpl<?>> visitingRecursiveMergedQueries;
 
     public AstContext(JSqlClientImplementor sqlClient) {
+        this(sqlClient, QueryRenderMode.NORMAL);
+    }
+
+    public AstContext(JSqlClientImplementor sqlClient, QueryRenderMode queryRenderMode) {
         this.sqlClient = sqlClient;
+        this.queryRenderMode = queryRenderMode;
     }
 
     public JSqlClientImplementor getSqlClient() {
@@ -86,6 +94,12 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public void popRenderedBaseTable() {
         this.baseTableRenderFrame = baseTableRenderFrame.parent;
+    }
+
+    public boolean isQueryWithoutSortingAndPaging() {
+        return queryRenderMode == QueryRenderMode.WITHOUT_SORTING_AND_PAGING ||
+                queryRenderMode == QueryRenderMode.WITHOUT_NESTED_BASE_TABLE_SORTING_AND_PAGING &&
+                        baseTableRenderFrame != null;
     }
 
     @SuppressWarnings("unchecked")

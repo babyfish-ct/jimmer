@@ -124,7 +124,8 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
                 sqlResult.get_3(),
                 selections,
                 tupleCreator,
-                ExecutionPurpose.QUERY
+                ExecutionPurpose.QUERY,
+                forUpdate != null
         );
     }
 
@@ -159,7 +160,8 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
                 tupleCreator,
                 ExecutionPurpose.QUERY,
                 batchSize,
-                consumer
+                consumer,
+                forUpdate != null
         );
     }
 

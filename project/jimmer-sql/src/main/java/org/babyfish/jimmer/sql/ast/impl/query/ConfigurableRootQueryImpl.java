@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.dialect.MySql5Dialect;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -333,9 +332,19 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     }
 
     private long simpleCount(Connection con) {
+        return getMutableQuery()
+                .getSqlClient()
+                .getSlaveConnectionManager(getData().forUpdate != null)
+                .execute(con, this::simpleCountImpl);
+    }
+
+    private long simpleCountImpl(Connection con) {
         TypedQueryData data = getData();
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(
+                sqlClient,
+                QueryRenderMode.WITHOUT_SORTING_AND_PAGING
+        );
         List<Object> rows = Selectors.select(
                 sqlClient,
                 con,
@@ -344,15 +353,26 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
                 data.tupleCreator,
-                getMutableQuery().getPurpose()
+                getMutableQuery().getPurpose(),
+                data.forUpdate != null
         );
         return (Long)rows.get(0);
     }
 
     private boolean simpleExists(Connection con) {
+        return getMutableQuery()
+                .getSqlClient()
+                .getSlaveConnectionManager(getData().forUpdate != null)
+                .execute(con, this::simpleExistsImpl);
+    }
+
+    private boolean simpleExistsImpl(Connection con) {
         TypedQueryData data = getData();
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(
+                sqlClient,
+                QueryRenderMode.WITHOUT_NESTED_BASE_TABLE_SORTING_AND_PAGING
+        );
         List<Object> rows = Selectors.select(
                 sqlClient,
                 con,
@@ -361,7 +381,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
                 data.tupleCreator,
-                getMutableQuery().getPurpose()
+                getMutableQuery().getPurpose(),
+                getForUpdate() != null
         );
         return !rows.isEmpty();
     }
@@ -372,7 +393,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
             return Collections.emptyList();
         }
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(sqlClient);
         return Selectors.select(
                 sqlClient,
                 con,
@@ -381,7 +402,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_3(),
                 data.selections,
                 data.tupleCreator,
-                getMutableQuery().getPurpose()
+                getMutableQuery().getPurpose(),
+                data.forUpdate != null
         );
     }
 
@@ -418,7 +440,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(sqlClient);
         Selectors.forEach(
                 sqlClient,
                 con,
@@ -429,14 +451,24 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 getData().tupleCreator,
                 getMutableQuery().getPurpose(),
                 batchSize,
-                consumer
+                consumer,
+                getForUpdate() != null
         );
     }
 
-    private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
+    private Tuple3<String, List<Object>, List<Integer>> preExecute(JSqlClientImplementor sqlClient) {
+        return preExecute(sqlClient, QueryRenderMode.NORMAL);
+    }
+
+    private Tuple3<String, List<Object>, List<Integer>> preExecute(
+            JSqlClientImplementor sqlClient,
+            QueryRenderMode mode
+    ) {
+        AstContext astContext = new AstContext(sqlClient, mode);
+        SqlBuilder builder = new SqlBuilder(astContext);
         if (!getMutableQuery().isFrozen()) {
-            getMutableQuery().applyVirtualPredicates(builder.getAstContext());
-            getMutableQuery().applyGlobalFilters(builder.getAstContext(), getMutableQuery().getContext().getFilterLevel(), getData().selections);
+            getMutableQuery().applyVirtualPredicates(astContext);
+            getMutableQuery().applyGlobalFilters(astContext, getMutableQuery().getContext().getFilterLevel(), getData().selections);
         }
         builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
         renderTo(builder);
