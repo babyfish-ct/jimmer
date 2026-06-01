@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
+import org.babyfish.jimmer.sql.model.mapsid.DualParentChildFetcher;
+import org.babyfish.jimmer.sql.model.mapsid.DualParentChildTable;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentFetcher;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentTable;
 import org.babyfish.jimmer.sql.model.mapsid.TenantFetcher;
@@ -106,6 +108,52 @@ public class MapsIdJoinOptimizationTest extends AbstractQueryTest {
                 ctx -> ctx.sql(
                         "select tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID, tb_1_.NAME, tb_1_.TENANT_ID " +
                                 "from TENANT_DOCUMENT tb_1_"
+                )
+        );
+    }
+
+    @Test
+    public void testMultiplePartialMappedIdAssociationIdUsagesDoNotJoinTargetTables() {
+        executeAndExpect(
+                getLambdaClient().createQuery(DualParentChildTable.class, (q, child) -> {
+                    q.where(child.asTableEx().left().id().eq(10L));
+                    q.where(child.asTableEx().right().id().eq(20L));
+                    q.orderBy(child.asTableEx().left().id().asc());
+                    return q.select(
+                            child.asTableEx().left().id(),
+                            child.asTableEx().right().id(),
+                            child.id().localId()
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.LEFT_ID, tb_1_.RIGHT_ID, tb_1_.LOCAL_ID " +
+                                    "from DUAL_PARENT_CHILD tb_1_ " +
+                                    "where tb_1_.LEFT_ID = ? and tb_1_.RIGHT_ID = ? " +
+                                    "order by tb_1_.LEFT_ID asc"
+                    );
+                    ctx.variables(10L, 20L);
+                }
+        );
+    }
+
+    @Test
+    public void testMultiplePartialMappedIdAssociationIdOnlyJoinFetcherDoesNotJoinTargetTables() {
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(DualParentChildTable.$)
+                        .select(
+                                DualParentChildTable.$.fetch(
+                                        DualParentChildFetcher.$
+                                                .name()
+                                                .left(ReferenceFetchType.JOIN_ALWAYS, TenantFetcher.$)
+                                                .right(ReferenceFetchType.JOIN_ALWAYS, TenantFetcher.$)
+                                )
+                        ),
+                ctx -> ctx.sql(
+                        "select tb_1_.LEFT_ID, tb_1_.RIGHT_ID, tb_1_.LOCAL_ID, " +
+                                "tb_1_.NAME, tb_1_.LEFT_ID, tb_1_.RIGHT_ID " +
+                                "from DUAL_PARENT_CHILD tb_1_"
                 )
         );
     }
