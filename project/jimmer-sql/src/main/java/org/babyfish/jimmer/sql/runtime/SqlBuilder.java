@@ -139,6 +139,10 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         return alias;
     }
 
+    public SqlBuilder sqlAlias(RealTable table) {
+        return sql(alias(table));
+    }
+
     public @Nullable String middleTableAlias(RealTable table) {
         String alias = ctx.getTableAliasScope().getMiddleTableAliasIfBound(table);
         if (alias == null) {
@@ -146,6 +150,16 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
             alias = ctx.getTableAliasScope().getMiddleTableAlias(table);
         }
         return alias;
+    }
+
+    public SqlBuilder sqlMiddleTableAlias(RealTable table) {
+        String alias = middleTableAlias(table);
+        if (alias == null) {
+            throw new IllegalStateException(
+                    "Middle-table alias is not available for \"" + table + "\""
+            );
+        }
+        return sql(alias);
     }
 
     public SqlBuilder from() {
