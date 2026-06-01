@@ -332,9 +332,19 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     }
 
     private long simpleCount(Connection con) {
+        return getMutableQuery()
+                .getSqlClient()
+                .getSlaveConnectionManager(getData().forUpdate != null)
+                .execute(con, this::simpleCountImpl);
+    }
+
+    private long simpleCountImpl(Connection con) {
         TypedQueryData data = getData();
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(
+                sqlClient,
+                QueryRenderMode.WITHOUT_SORTING_AND_PAGING
+        );
         List<Object> rows = Selectors.select(
                 sqlClient,
                 con,
@@ -350,9 +360,19 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     }
 
     private boolean simpleExists(Connection con) {
+        return getMutableQuery()
+                .getSqlClient()
+                .getSlaveConnectionManager(getData().forUpdate != null)
+                .execute(con, this::simpleExistsImpl);
+    }
+
+    private boolean simpleExistsImpl(Connection con) {
         TypedQueryData data = getData();
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(
+                sqlClient,
+                QueryRenderMode.WITHOUT_NESTED_BASE_TABLE_SORTING_AND_PAGING
+        );
         List<Object> rows = Selectors.select(
                 sqlClient,
                 con,
@@ -373,7 +393,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
             return Collections.emptyList();
         }
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(sqlClient);
         return Selectors.select(
                 sqlClient,
                 con,
@@ -420,7 +440,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
         JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(sqlClient);
         Selectors.forEach(
                 sqlClient,
                 con,
@@ -436,15 +456,24 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         );
     }
 
-    private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
+    private Tuple3<String, List<Object>, List<Integer>> preExecute(JSqlClientImplementor sqlClient) {
+        return preExecute(sqlClient, QueryRenderMode.NORMAL);
+    }
+
+    private Tuple3<String, List<Object>, List<Integer>> preExecute(
+            JSqlClientImplementor sqlClient,
+            QueryRenderMode mode
+    ) {
+        AstContext astContext = new AstContext(sqlClient, mode);
+        SqlBuilder builder = new SqlBuilder(astContext);
         if (!getMutableQuery().isFrozen()) {
-            getMutableQuery().applyVirtualPredicates(builder.getAstContext());
-            getMutableQuery().applyGlobalFilters(builder.getAstContext(), getMutableQuery().getContext().getFilterLevel(), getData().selections);
+            getMutableQuery().applyVirtualPredicates(astContext);
+            getMutableQuery().applyGlobalFilters(astContext, getMutableQuery().getContext().getFilterLevel(), getData().selections);
         }
-        UseTableVisitor visitor = new UseTableVisitor(builder.getAstContext());
+        UseTableVisitor visitor = new UseTableVisitor(astContext);
         accept(visitor);
         visitor.allocateAliases();
-        renderTo(builder);
+        renderTo(builder, null);
         return builder.build();
     }
 
