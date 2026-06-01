@@ -278,6 +278,11 @@ public class AssociationType extends AbstractImmutableTypeImpl {
     }
 
     @Override
+    public boolean isMappedIdProp(ImmutableProp prop) {
+        return false;
+    }
+
+    @Override
     public String getMicroServiceName() {
         return baseProp.getDeclaringType().getMicroServiceName();
     }

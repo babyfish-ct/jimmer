@@ -94,6 +94,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private List<MappedId> mappedIds;
 
+    private Set<ImmutableProp> mappedIdProps;
+
     private final String microServiceName;
 
     private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
@@ -288,6 +290,25 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             this.mappedIds = mappedIds = MappedId.resolve(this);
         }
         return mappedIds;
+    }
+
+    @Override
+    public boolean isMappedIdProp(ImmutableProp prop) {
+        Set<ImmutableProp> mappedIdProps = this.mappedIdProps;
+        if (mappedIdProps == null) {
+            List<MappedId> mappedIds = getMappedIds();
+            if (mappedIds.isEmpty()) {
+                mappedIdProps = Collections.emptySet();
+            } else {
+                mappedIdProps = new HashSet<>(mappedIds.size());
+                for (MappedId mappedId : mappedIds) {
+                    mappedIdProps.add(mappedId.getProp());
+                }
+                mappedIdProps = Collections.unmodifiableSet(mappedIdProps);
+            }
+            this.mappedIdProps = mappedIdProps;
+        }
+        return mappedIdProps.contains(prop);
     }
 
     @NotNull

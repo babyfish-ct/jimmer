@@ -283,7 +283,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     }
                 }
             }
-            if (ctx.backReferenceFrozen && !isMappedId(ctx.backReferenceProp)) {
+            if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
                 fetcherImplementor = fetcherImplementor.add(ctx.backReferenceProp.getName(), IdOnlyFetchType.RAW);
             }
             this.originalFetcher = oldFetcher = fetcherImplementor;
@@ -295,7 +295,7 @@ abstract class AbstractPreHandler implements PreHandler {
         if (ctx.trigger != null) {
             return QueryReason.TRIGGER;
         }
-        if (ctx.backReferenceFrozen && !isMappedId(ctx.backReferenceProp)) {
+        if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
             return QueryReason.TARGET_NOT_TRANSFERABLE;
         }
         if (interceptor != null) {
@@ -421,15 +421,6 @@ abstract class AbstractPreHandler implements PreHandler {
             return;
         }
         processor.beforeSave(draft);
-    }
-
-    private static boolean isMappedId(ImmutableProp prop) {
-        for (MappedId mappedId : prop.getDeclaringType().getMappedIds()) {
-            if (mappedId.getProp() == prop) {
-                return true;
-            }
-        }
-        return false;
     }
 
     final void callInterceptor(List<DraftInterceptor.Item<Object, DraftSpi>> items) {
