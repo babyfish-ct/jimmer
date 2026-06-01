@@ -519,8 +519,11 @@ public class ImmutableProp implements BaseProp {
         if (jsonConverter == null) {
             final ImmutableProp idViewBaseProp = getIdViewBaseProp();
             if (idViewBaseProp != null) {
-                autoApply = true;
-                jsonConverter = RecursiveAnnotations.of(idViewBaseProp.declaringType.getIdProp().executableElement, JsonConverter.class.getName());
+                ImmutableProp idProp = idViewBaseProp.declaringType.getIdProp();
+                if (idProp != null) {
+                    autoApply = true;
+                    jsonConverter = RecursiveAnnotations.of(idProp.executableElement, JsonConverter.class.getName());
+                }
             }
         }
 
