@@ -100,6 +100,52 @@ public class MapsIdMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testSavePartialMappedIdFromInverseSide() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                TenantDraft.$.produce(tenant -> {
+                                    tenant.setId(4L);
+                                    tenant.setName("Tenant");
+                                    tenant.addIntoDocuments(document -> {
+                                        document.applyId(id -> id.setDocumentId(11L));
+                                        document.setName("Spec");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT(ID, NAME) values(?, ?)");
+                        it.variables(4L, "Tenant");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT_DOCUMENT(TENANT_ID, DOCUMENT_ID, NAME) values(?, ?, ?)");
+                        it.variables(4L, 11L, "Spec");
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Tenant.class), 1);
+                    ctx.rowCount(AffectedTable.of(TenantDocument.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":4," +
+                                    "--->\"name\":\"Tenant\"," +
+                                    "--->\"documents\":[" +
+                                    "--->--->{" +
+                                    "--->--->--->\"id\":{\"tenantId\":4,\"documentId\":11}," +
+                                    "--->--->--->\"name\":\"Spec\"," +
+                                    "--->--->--->\"tenant\":{\"id\":4}" +
+                                    "--->--->}" +
+                                    "--->]" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
     public void testBatchSaveFullMappedId() {
         executeAndExpectResult(
                 getSqlClient()
