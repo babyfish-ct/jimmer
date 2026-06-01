@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -21,6 +22,8 @@ public interface RealTable extends Iterable<RealTable> {
     TableAliasKey getAliasKey();
 
     RealTable child(Key key);
+
+    boolean isOptimizableBridgeTo(RealTable child, AstContext ctx);
 
     @Nullable
     BaseTableOwner getBaseTableOwner();

@@ -91,7 +91,20 @@ public abstract class TableUsageVisitor extends AstVisitor {
     protected final void use(RealTable table) {
         if (table != null) {
             useTable(table);
-            use(table.getParent());
+            useParent(table);
+        }
+    }
+
+    private void useParent(RealTable table) {
+        RealTable parent = table.getParent();
+        if (parent == null) {
+            return;
+        }
+        if (parent.isOptimizableBridgeTo(table, getAstContext())) {
+            useTableId(parent);
+            use(parent.getParent());
+        } else {
+            use(parent);
         }
     }
 

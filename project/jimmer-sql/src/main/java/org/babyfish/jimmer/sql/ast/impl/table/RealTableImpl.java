@@ -164,6 +164,29 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     @Override
+    public boolean isOptimizableBridgeTo(RealTable child, AstContext ctx) {
+        if (parent == null ||
+                !(owner instanceof TableImplementor<?>) ||
+                !(child.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+            return false;
+        }
+        TableImplementor<?> bridgeImplementor = (TableImplementor<?>) owner;
+        TableImplementor<?> childImplementor = (TableImplementor<?>) child.getTableLikeImplementor();
+        ImmutableProp bridgeProp = bridgeImplementor.getJoinProp();
+        ImmutableProp childProp = childImplementor.getJoinProp();
+        return bridgeImplementor.getWeakJoinHandle() == null &&
+                childImplementor.getWeakJoinHandle() == null &&
+                !bridgeImplementor.isInverse() &&
+                childImplementor.isInverse() &&
+                bridgeImplementor.getJoinType() == JoinType.INNER &&
+                childImplementor.getJoinType() == JoinType.INNER &&
+                bridgeProp != null &&
+                bridgeProp.isMappedId() &&
+                childProp == bridgeProp &&
+                bridgeImplementor.getStatement().getFilterPredicate(bridgeImplementor, ctx) == null;
+    }
+
+    @Override
     public TableAliasKey getAliasKey() {
         return aliasKey;
     }
@@ -483,6 +506,20 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         TableImplementor.RenderMode.NORMAL
                 );
             }
+        } else if (isMappedIdBridgeJoin(builder)) {
+            RealTableImpl bridge = parent;
+            TableImpl<?> bridgeOwner = (TableImpl<?>) bridge.owner;
+            renderJoinImpl(
+                    builder,
+                    joinType,
+                    builder.alias(bridge.parent),
+                    bridge.parent,
+                    bridgeOwner.joinProp.getStorage(strategy),
+                    immutableType.getTableName(strategy),
+                    builder.alias(this),
+                    joinProp.getStorage(strategy),
+                    mode
+            );
         } else { // One-to-many join cannot be optimized by "used"
             renderJoinImpl(
                     builder,
@@ -496,6 +533,16 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     mode
             );
         }
+    }
+
+    private boolean isMappedIdBridgeJoin(SqlBuilder builder) {
+        if (parent == null || parent.parent == null) {
+            return false;
+        }
+        if (builder.getAstContext().getTableUsedState(parent) != TableUsedState.ID_ONLY) {
+            return false;
+        }
+        return parent.isOptimizableBridgeTo(this, builder.getAstContext());
     }
 
     private void renderJoinBySql(
