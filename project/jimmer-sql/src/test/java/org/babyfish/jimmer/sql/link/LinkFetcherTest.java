@@ -35,9 +35,9 @@ public class LinkFetcherTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.STUDENT_ID, tb_1_.ID, tb_1_.COURSE_ID " +
                                     "from LEARNING_LINK tb_1_ " +
-                                    "inner join COURSE tb_3_ on tb_1_.COURSE_ID = tb_3_.ID " +
+                                    "inner join COURSE tb_2_ on tb_1_.COURSE_ID = tb_2_.ID " +
                                     "where tb_1_.STUDENT_ID in (?, ?) " +
-                                    "order by tb_3_.NAME desc"
+                                    "order by tb_2_.NAME desc"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME from COURSE tb_1_ " +

@@ -11,16 +11,16 @@ import java.util.Date;
 
 public interface PropExpression<T> extends Expression<T> {
 
-    interface Str extends PropExpression<String>, StringExpressionImplementor {
+    interface Str extends Cmp<String>, StringExpressionImplementor {
     }
 
-    interface Num<N extends Number & Comparable<N>> extends PropExpression<N>, NumericExpressionImplementor<N> {
+    interface Num<N extends Number & Comparable<N>> extends Cmp<N>, NumericExpressionImplementor<N> {
     }
 
-    interface Dt<T extends Date & Comparable<Date>> extends PropExpression<T>, DateExpressionImplementor<T> {
+    interface Dt<T extends Date & Comparable<Date>> extends Cmp<T>, DateExpressionImplementor<T> {
     }
 
-    interface Tp<T extends Temporal & Comparable<?>> extends PropExpression<T>, TemporalExpressionImplementor<T> {
+    interface Tp<T extends Temporal & Comparable<?>> extends Cmp<T>, TemporalExpressionImplementor<T> {
     }
 
     interface Cmp<T extends Comparable<?>> extends PropExpression<T>, ComparableExpressionImplementor<T> {

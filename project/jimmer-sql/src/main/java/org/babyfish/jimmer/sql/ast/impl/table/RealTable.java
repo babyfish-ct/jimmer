@@ -2,9 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,24 +18,14 @@ public interface RealTable extends Iterable<RealTable> {
 
     Key getKey();
 
+    TableAliasKey getAliasKey();
+
     RealTable child(Key key);
-
-    String getAlias();
-
-    String getMiddleTableAlias();
-
-    String getFinalAlias(
-            ImmutableProp prop,
-            boolean rawId,
-            JSqlClientImplementor sqlClient
-    );
 
     @Nullable
     BaseTableOwner getBaseTableOwner();
 
-    void allocateAliases();
-
-    void use(UseTableVisitor visitor);
+    void use(TableUsageVisitor visitor);
 
     void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean cte);
 

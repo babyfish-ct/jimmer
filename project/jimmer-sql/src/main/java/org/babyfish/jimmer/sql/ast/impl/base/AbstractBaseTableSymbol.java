@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
@@ -86,10 +85,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     @Override
     public ConfigurableBaseQueryImpl<?> getQuery() {
-        if (query instanceof MergedBaseQueryImpl<?>) {
-            return ((MergedBaseQueryImpl<?>) query).firstQuery();
-        }
-        return (ConfigurableBaseQueryImpl<?>) query;
+        return query.firstConfigurableQuery();
     }
 
     @Override

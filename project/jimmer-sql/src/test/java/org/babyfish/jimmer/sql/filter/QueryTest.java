@@ -84,8 +84,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         "--->) " +
                                         "order by tb_1_.ID asc"
                         );
@@ -97,8 +97,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         "--->) " +
                                         "order by tb_1_.ID asc"
                         );
@@ -110,8 +110,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         "--->) " +
                                         "order by tb_1_.ID asc"
                         );
@@ -123,8 +123,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         "--->) " +
                                         "order by tb_1_.ID asc"
                         );
@@ -136,8 +136,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         "--->) " +
                                         "order by tb_1_.ID asc"
                         );
@@ -149,8 +149,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         "--->) " +
                                         "order by tb_1_.ID asc"
                         );
@@ -388,14 +388,14 @@ public class QueryTest extends AbstractQueryTest {
                                         "--->select 1 from FILE tb_2_ " +
                                         "--->where tb_2_.PARENT_ID = tb_1_.ID and tb_2_.NAME ilike ? and exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_4_ " +
-                                        "--->--->where tb_4_.FILE_ID = " +
-                                        "--->--->tb_2_.ID and tb_4_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
+                                        "--->--->where tb_3_.FILE_ID = " +
+                                        "--->--->tb_2_.ID and tb_3_.USER_ID = ?" +
                                         "--->)" +
                                         ") and exists(" +
                                         "--->select 1 from " +
-                                        "--->--->FILE_USER_MAPPING tb_7_ " +
-                                        "--->--->where tb_7_.FILE_ID = tb_1_.ID and tb_7_.USER_ID = ?" +
+                                        "--->--->FILE_USER_MAPPING tb_4_ " +
+                                        "--->--->where tb_4_.FILE_ID = tb_1_.ID and tb_4_.USER_ID = ?" +
                                         ")"
                         ).variables("%a%", 2L, 2L);
                         ctx.rows(
@@ -437,8 +437,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "and " +
                                         "--->exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_6_ " +
-                                        "--->--->where tb_6_.FILE_ID = tb_2_.ID and tb_6_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_4_ " +
+                                        "--->--->where tb_4_.FILE_ID = tb_2_.ID and tb_4_.USER_ID = ?" +
                                         ")"
                         ).variables(40L, 2L, 2L);
                         ctx.rows(
@@ -468,8 +468,8 @@ public class QueryTest extends AbstractQueryTest {
                                         "from FILE tb_1_ " +
                                         "where tb_1_.PARENT_ID = ? and exists(" +
                                         "--->select 1 " +
-                                        "--->from FILE_USER_MAPPING tb_3_ " +
-                                        "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->from FILE_USER_MAPPING tb_2_ " +
+                                        "--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
                                         ")"
                         ).variables(40L, 2L);
                         ctx.rows(

@@ -40,10 +40,10 @@ public class FieldFilterTest extends AbstractQueryTest {
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID in (?, ?) " +
                                     "and (tb_1_.NAME, tb_1_.EDITION) in (" +
-                                        "select tb_3_.NAME, max(tb_3_.EDITION) " +
-                                        "from BOOK tb_3_ " +
-                                        "where tb_3_.STORE_ID in (?, ?) " +
-                                        "group by tb_3_.NAME" +
+                                        "select tb_2_.NAME, max(tb_2_.EDITION) " +
+                                        "from BOOK tb_2_ " +
+                                        "where tb_2_.STORE_ID in (?, ?) " +
+                                        "group by tb_2_.NAME" +
                                     ")");
                     ctx.rows(
                             "[" +
@@ -96,18 +96,18 @@ public class FieldFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR tb_1_");
                     ctx.statement(1).sql(
-                            "select tb_2_.AUTHOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                            "select tb_3_.AUTHOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                     "from BOOK tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_1_.ID = tb_3_.BOOK_ID " +
                                     "where " +
-                                    "--->tb_2_.AUTHOR_ID in (?, ?, ?, ?, ?) " +
+                                    "--->tb_3_.AUTHOR_ID in (?, ?, ?, ?, ?) " +
                                     "and " +
                                     "(tb_1_.NAME, tb_1_.EDITION) in (" +
-                                    "--->select tb_4_.NAME, max(tb_4_.EDITION) " +
-                                    "--->from BOOK tb_4_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.BOOK_ID " +
-                                    "--->where tb_5_.AUTHOR_ID in (?, ?, ?, ?, ?) " +
-                                    "--->group by tb_4_.NAME" +
+                                    "--->select tb_2_.NAME, max(tb_2_.EDITION) " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.ID = tb_4_.BOOK_ID " +
+                                    "--->where tb_4_.AUTHOR_ID in (?, ?, ?, ?, ?) " +
+                                    "--->group by tb_2_.NAME" +
                                     ")"
                     );
                     ctx.rows(System.out::println);

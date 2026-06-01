@@ -166,9 +166,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
-        UseTableVisitor visitor = new UseTableVisitor(builder.getAstContext());
-        accept(visitor);
-        visitor.allocateAliases();
+        builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
         renderTo(builder);
         return builder.build();
     }
@@ -181,13 +179,19 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     @Override
+    public void collectSelectionJoinRequirements(SelectionJoinRequirementCollector collector) {
+        for (TypedQueryImplementor query : queries) {
+            query.collectSelectionJoinRequirements(collector);
+        }
+    }
+
+    @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter('?' + operator + '?');
-        for (TypedQueryImplementor query : queries) {
+        for (int i = 0; i < queries.length; i++) {
+            TypedQueryImplementor query = queries[i];
             builder.separator();
-            builder.sql("(");
-            query.renderTo(builder);
-            builder.sql(")");
+            query.renderAsMergedOperand(builder, i == 0);
         }
         builder.leave();
     }

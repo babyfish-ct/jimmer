@@ -9,8 +9,6 @@ public class StatementContext {
 
     private final FilterLevel filterLevel;
 
-    private int tableAliasSequence;
-
     public StatementContext(ExecutionPurpose purpose) {
         this.purpose = purpose;
         this.filterLevel = FilterLevel.DEFAULT;
@@ -25,10 +23,6 @@ public class StatementContext {
         return purpose;
     }
 
-    public String allocateTableAlias() {
-        return "tb_" + ++tableAliasSequence + '_';
-    }
-
     public FilterLevel getFilterLevel() {
         return filterLevel;
     }
@@ -38,7 +32,6 @@ public class StatementContext {
         return "StatementContext{" +
                 "purpose=" + purpose +
                 ", filterLevel=" + filterLevel +
-                ", tableAliasSequence=" + tableAliasSequence +
                 '}';
     }
 }

@@ -470,10 +470,8 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
             getMutableQuery().applyVirtualPredicates(astContext);
             getMutableQuery().applyGlobalFilters(astContext, getMutableQuery().getContext().getFilterLevel(), getData().selections);
         }
-        UseTableVisitor visitor = new UseTableVisitor(astContext);
-        accept(visitor);
-        visitor.allocateAliases();
-        renderTo(builder, null);
+        builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
+        renderTo(builder);
         return builder.build();
     }
 

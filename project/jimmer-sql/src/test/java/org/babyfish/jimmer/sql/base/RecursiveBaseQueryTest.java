@@ -55,10 +55,10 @@ public class RecursiveBaseQueryTest extends AbstractQueryTest {
                                     "--->where tb_2_.PARENT_ID is null " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_4_.NODE_ID, tb_4_.NAME, " +
+                                    "--->--->tb_3_.NODE_ID, tb_3_.NAME, " +
                                     "--->--->tb_1_.c3 + 1 " +
-                                    "--->from TREE_NODE tb_4_ " +
-                                    "--->inner join tb_1_ on tb_4_.PARENT_ID = tb_1_.c1" +
+                                    "--->from TREE_NODE tb_3_ " +
+                                    "--->inner join tb_1_ on tb_3_.PARENT_ID = tb_1_.c1" +
                                     ") " +
                                     "select " +
                                     "--->tb_1_.c1, tb_1_.c2, " +

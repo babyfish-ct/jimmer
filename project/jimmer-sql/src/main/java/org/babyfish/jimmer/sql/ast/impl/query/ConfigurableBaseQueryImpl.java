@@ -161,7 +161,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
         SqlBuilder builder = abstractBuilder.assertSimple();
-        renderTo(builder, builder.getAstContext().getBaseSelectionRender(this));
+        renderTo(builder, builder.getQueryRenderContext().getBaseSelectionRender(this));
     }
 
     @Override
@@ -170,6 +170,16 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
         return AbstractTypedTable.__refEquals(mutableQuery.getTable(), table) ?
                 (TableImplementor<?>) mutableQuery.getTableLikeImplementor() :
                 null;
+    }
+
+    @Override
+    public ConfigurableBaseQueryImpl<?> firstConfigurableQuery() {
+        return this;
+    }
+
+    @Override
+    public void collectConfigurableQueries(List<ConfigurableBaseQueryImpl<?>> queries) {
+        queries.add(this);
     }
 
     @Override

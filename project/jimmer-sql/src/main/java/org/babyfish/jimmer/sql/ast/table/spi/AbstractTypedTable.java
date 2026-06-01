@@ -622,7 +622,22 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     @Override
     public @Nullable BaseTableOwner __baseTableOwner() {
-        return baseTableOwner;
+        if (baseTableOwner != null) {
+            return baseTableOwner;
+        }
+        if (raw != null) {
+            return raw.getBaseTableOwner();
+        }
+        if (delayedOperation != null) {
+            Table<?> parent = delayedOperation.parent();
+            if (parent instanceof TableProxy<?>) {
+                return ((TableProxy<?>) parent).__baseTableOwner();
+            }
+            if (parent instanceof TableImplementor<?>) {
+                return ((TableImplementor<?>) parent).getBaseTableOwner();
+            }
+        }
+        return null;
     }
 
     public interface DelayedOperation<E> {

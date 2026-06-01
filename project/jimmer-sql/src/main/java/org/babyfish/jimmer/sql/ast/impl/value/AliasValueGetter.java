@@ -1,21 +1,16 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 class AliasValueGetter implements ValueGetter, GetterMetadata {
 
-    @Nullable
-    private final BaseSelectionMapper mapper;
-
     private final String alias;
 
     private final ValueGetter raw;
 
-    AliasValueGetter(@Nullable BaseSelectionMapper mapper, String alias, ValueGetter raw) {
-        this.mapper = mapper;
+    AliasValueGetter(String alias, ValueGetter raw) {
         this.alias = alias;
         this.raw = raw;
     }
@@ -77,11 +72,6 @@ class AliasValueGetter implements ValueGetter, GetterMetadata {
 
     @Override
     public void renderTo(AbstractSqlBuilder<?> builder) {
-        if (mapper != null) {
-            int index = mapper.columnIndex(alias, metadata().getColumnName(), metadata().isForeignKey());
-            builder.sql(mapper.getAlias()).sql(".c").sql(Integer.toString(index));
-        } else {
-            builder.sql(alias).sql(".").sql(metadata().getColumnName());
-        }
+        builder.sql(alias).sql(".").sql(metadata().getColumnName());
     }
 }

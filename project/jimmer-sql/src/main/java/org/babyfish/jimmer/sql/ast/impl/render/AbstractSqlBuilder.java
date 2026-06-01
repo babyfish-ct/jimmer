@@ -3,9 +3,12 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -34,6 +37,16 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     protected abstract ScopeManager scopeManager();
 
     public abstract JSqlClientImplementor sqlClient();
+
+    @Nullable
+    public AstContext getAstContext() {
+        return null;
+    }
+
+    @Nullable
+    public QueryRenderContext getQueryRenderContext() {
+        return null;
+    }
 
     @SuppressWarnings("unchecked")
     public T sql(String sql) {
@@ -297,9 +310,17 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     public T definition(
             String tableAlias,
             ColumnDefinition definition,
-            BaseSelectionMapper mapper
+            BaseQueryExportSelection exportSelection
     ) {
-        return definition(tableAlias, definition, false, null, mapper);
+        return definition(tableAlias, null, definition, false, null, exportSelection);
+    }
+
+    public T definition(
+            RealTable table,
+            ColumnDefinition definition,
+            BaseQueryExportSelection exportSelection
+    ) {
+        return definition(alias(table), table, definition, false, null, exportSelection);
     }
 
     @SuppressWarnings("unchecked")
@@ -308,7 +329,55 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
             Function<Integer, String> asBlock,
-            BaseSelectionMapper mapper
+            BaseQueryExportSelection exportSelection
+    ) {
+        return definition(tableAlias, null, definition, foreignKeyInBaseQuery, asBlock, exportSelection);
+    }
+
+    @SuppressWarnings("unchecked")
+    public T definition(
+            RealTable table,
+            ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
+            Function<Integer, String> asBlock,
+            BaseQueryExportSelection exportSelection
+    ) {
+        return definition(
+                table != null ? alias(table) : null,
+                table,
+                definition,
+                foreignKeyInBaseQuery,
+                asBlock,
+                exportSelection
+        );
+    }
+
+    private String alias(RealTable table) {
+        if (this instanceof SqlBuilder) {
+            return ((SqlBuilder) this).alias(table);
+        }
+        throw new IllegalStateException(
+                "Table alias rendering requires " + SqlBuilder.class.getName()
+        );
+    }
+
+    private String exportAlias(BaseQueryExportSelection exportSelection) {
+        if (this instanceof SqlBuilder) {
+            return exportSelection.getAlias((SqlBuilder) this);
+        }
+        throw new IllegalStateException(
+                "Base-query export alias rendering requires " + SqlBuilder.class.getName()
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private T definition(
+            String tableAlias,
+            RealTable table,
+            ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
+            Function<Integer, String> asBlock,
+            BaseQueryExportSelection exportSelection
     ) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return definition(definition);
@@ -316,10 +385,10 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         preAppend();
         if (definition instanceof SingleColumn) {
             String columnName = ((SingleColumn)definition).getName();
-            if (mapper != null) {
-                builder.append(mapper.getAlias())
+            if (exportSelection != null) {
+                builder.append(exportAlias(exportSelection))
                         .append(".c")
-                        .append(mapper.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
+                        .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
             } else {
                 builder.append(tableAlias).append('.').append(columnName);
                 if (asBlock != null) {
@@ -333,10 +402,10 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                     builder.append(", ");
                 }
                 String columnName = definition.name(i);
-                if (mapper != null) {
-                    builder.append(mapper.getAlias())
+                if (exportSelection != null) {
+                    builder.append(exportAlias(exportSelection))
                             .append(".c")
-                            .append(mapper.columnIndex(tableAlias, columnName, foreignKeyInBaseQuery));
+                            .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {
