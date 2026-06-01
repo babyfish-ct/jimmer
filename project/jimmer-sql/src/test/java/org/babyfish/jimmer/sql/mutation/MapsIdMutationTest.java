@@ -13,6 +13,8 @@ import org.babyfish.jimmer.sql.model.mapsid.TenantDocument;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDraft;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 public class MapsIdMutationTest extends AbstractMutationTest {
 
     @Test
@@ -88,6 +90,63 @@ public class MapsIdMutationTest extends AbstractMutationTest {
                                     "--->\"id\":{\"tenantId\":3,\"documentId\":10}," +
                                     "--->\"name\":\"Spec\"," +
                                     "--->\"tenant\":{\"id\":3,\"name\":\"Tenant\"}" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
+    public void testBatchSaveFullMappedId() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(
+                                        MapsIdProfileDraft.$.produce(profile -> {
+                                            profile.setNickname("Alex");
+                                            profile.applyPrincipal(principal -> {
+                                                principal.applyId(id -> id.setA(1L).setB(2L));
+                                                principal.setName("Root");
+                                            });
+                                        }),
+                                        MapsIdProfileDraft.$.produce(profile -> {
+                                            profile.setNickname("Bob");
+                                            profile.applyPrincipal(principal -> {
+                                                principal.applyId(id -> id.setA(3L).setB(4L));
+                                                principal.setName("Branch");
+                                            });
+                                        })
+                                )
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_PRINCIPAL(A, B, NAME) values(?, ?, ?)");
+                        it.batchVariables(0, 1L, 2L, "Root");
+                        it.batchVariables(1, 3L, 4L, "Branch");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_PROFILE(A, B, NICKNAME) values(?, ?, ?)");
+                        it.batchVariables(0, 1L, 2L, "Alex");
+                        it.batchVariables(1, 3L, 4L, "Bob");
+                    });
+                    ctx.totalRowCount(4);
+                    ctx.rowCount(AffectedTable.of(MapsIdPrincipal.class), 2);
+                    ctx.rowCount(AffectedTable.of(MapsIdProfile.class), 2);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":{\"a\":1,\"b\":2}," +
+                                    "--->\"nickname\":\"Alex\"," +
+                                    "--->\"principal\":{\"id\":{\"a\":1,\"b\":2},\"name\":\"Root\"}" +
+                                    "}"
+                    ));
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":{\"a\":3,\"b\":4}," +
+                                    "--->\"nickname\":\"Bob\"," +
+                                    "--->\"principal\":{\"id\":{\"a\":3,\"b\":4},\"name\":\"Branch\"}" +
                                     "}"
                     ));
                 }
