@@ -7,7 +7,6 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ScalarProviderUtils;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -15,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,18 +76,6 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
     }
 
     protected abstract Object getRaw(Object value);
-
-    static RealTable realTable(SqlBuilder builder, TableImplementor<?> table) {
-        return table.realTableForRender(builder);
-    }
-
-    static String alias(SqlBuilder builder, RealTable table) {
-        return builder.alias(table);
-    }
-
-    static String middleTableAlias(SqlBuilder builder, RealTable table) {
-        return builder.middleTableAlias(table);
-    }
 
     static List<ValueGetter> createValueGetters(
             JSqlClientImplementor sqlClient,
