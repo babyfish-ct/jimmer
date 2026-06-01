@@ -957,10 +957,10 @@ public class BaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.c2, tb_1_.c3, tb_2_.c4, tb_2_.c5 from (select tb_3_.PRICE c1, tb_3_.ID c2, tb_3_.NAME c3 from " +
+                            "select tb_1_.c2, tb_1_.c3, tb_2_.c5, tb_2_.c6 from (select tb_3_.PRICE c1, tb_3_.ID c2, tb_3_.NAME c3 from " +
                             "BOOK tb_3_ where tb_3_.ID = ?) tb_1_ inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_1_.c2 = tb_5_.BOOK_ID inner " +
-                            "join (select tb_4_.GENDER c6, tb_4_.ID c4, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) c5 from AUTHOR tb_4_ " +
-                            "where tb_4_.ID = ?) tb_2_ on tb_5_.AUTHOR_ID = tb_2_.c4 where tb_1_.c1 > ? and tb_2_.c6 = ?"
+                            "join (select tb_4_.GENDER c4, tb_4_.ID c5, concat(tb_4_.FIRST_NAME, ' ', tb_4_.LAST_NAME) c6 from AUTHOR tb_4_ " +
+                            "where tb_4_.ID = ?) tb_2_ on tb_5_.AUTHOR_ID = tb_2_.c5 where tb_1_.c1 > ? and tb_2_.c4 = ?"
                     );
                 }
         );
@@ -1014,12 +1014,12 @@ public class BaseQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.c2, tb_1_.c3, tb_2_.c4, tb_2_.c5 from (select tb_3_.PRICE c1, tb_3_.ID c2, tb_3_.NAME c3 from " +
+                            "select tb_1_.c2, tb_1_.c3, tb_2_.c5, tb_2_.c6 from (select tb_3_.PRICE c1, tb_3_.ID c2, tb_3_.NAME c3 from " +
                             "BOOK tb_3_ where tb_3_.ID = ? union all select tb_4_.PRICE c1, tb_4_.ID c2, tb_4_.NAME c3 from BOOK tb_4_ " +
                             "where tb_4_.ID = ?) tb_1_ inner join BOOK_AUTHOR_MAPPING tb_7_ on tb_1_.c2 = tb_7_.BOOK_ID inner join (select " +
-                            "tb_5_.GENDER c6, tb_5_.ID c4, concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) c5 from AUTHOR tb_5_ where " +
-                            "tb_5_.ID = ? union all select tb_6_.GENDER c6, tb_6_.ID c4, concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) c5 " +
-                            "from AUTHOR tb_6_ where tb_6_.ID = ?) tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c4 where tb_1_.c1 > ? and tb_2_.c6 = ?"
+                            "tb_5_.GENDER c4, tb_5_.ID c5, concat(tb_5_.FIRST_NAME, ' ', tb_5_.LAST_NAME) c6 from AUTHOR tb_5_ where " +
+                            "tb_5_.ID = ? union all select tb_6_.GENDER c4, tb_6_.ID c5, concat(tb_6_.FIRST_NAME, ' ', tb_6_.LAST_NAME) c6 " +
+                            "from AUTHOR tb_6_ where tb_6_.ID = ?) tb_2_ on tb_7_.AUTHOR_ID = tb_2_.c5 where tb_1_.c1 > ? and tb_2_.c4 = ?"
                     );
                 }
         );
@@ -1072,8 +1072,8 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->--->from AUTHOR tb_3_ " +
                                     "--->--->where tb_3_.GENDER = ?" +
                                     "--->) tb_2_ " +
-                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_2_.c1 = tb_4_.AUTHOR_ID" +
-                                    ") on tb_1_.ID = tb_4_.BOOK_ID " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_2_.c1 = tb_5_.AUTHOR_ID" +
+                                    ") on tb_1_.ID = tb_5_.BOOK_ID " +
                                     "where tb_2_.c5 < ?"
                     );
                 }
