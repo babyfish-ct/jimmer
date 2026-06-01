@@ -7,6 +7,7 @@ create schema if not exists D;
 drop table issue1125_mp_role_perm if exists;
 drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
+drop table dual_parent_child if exists;
 drop table tenant_document if exists;
 drop table tenant if exists;
 drop table maps_id_profile if exists;
@@ -1603,5 +1604,19 @@ create table tenant_document(
     constraint pk_tenant_document primary key(tenant_id, document_id),
     constraint fk_tenant_document__tenant
         foreign key(tenant_id)
+            references tenant(id)
+);
+
+create table dual_parent_child(
+    left_id bigint not null,
+    right_id bigint not null,
+    local_id bigint not null,
+    name varchar(50) not null,
+    constraint pk_dual_parent_child primary key(left_id, right_id, local_id),
+    constraint fk_dual_parent_child__left
+        foreign key(left_id)
+            references tenant(id),
+    constraint fk_dual_parent_child__right
+        foreign key(right_id)
             references tenant(id)
 );

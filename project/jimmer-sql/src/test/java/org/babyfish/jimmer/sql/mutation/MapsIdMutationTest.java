@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.SaveException;
+import org.babyfish.jimmer.sql.model.mapsid.DualParentChild;
+import org.babyfish.jimmer.sql.model.mapsid.DualParentChildDraft;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdPrincipal;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfileDraft;
@@ -176,6 +178,55 @@ public class MapsIdMutationTest extends AbstractMutationTest {
                         it.variables(1L, 2L, "Root");
                     });
                     ctx.throwable(it -> it.type(SaveException.InconsistentMappedId.class));
+                }
+        );
+    }
+
+    @Test
+    public void testSaveMultiplePartialMappedIds() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                DualParentChildDraft.$.produce(child -> {
+                                    child.applyId(id -> id.setLocalId(30L));
+                                    child.setName("Child");
+                                    child.applyLeft(left -> {
+                                        left.setId(10L);
+                                        left.setName("Left");
+                                    });
+                                    child.applyRight(right -> {
+                                        right.setId(20L);
+                                        right.setName("Right");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT(ID, NAME) values(?, ?)");
+                        it.variables(10L, "Left");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT(ID, NAME) values(?, ?)");
+                        it.variables(20L, "Right");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into DUAL_PARENT_CHILD(LEFT_ID, RIGHT_ID, LOCAL_ID, NAME) values(?, ?, ?, ?)");
+                        it.variables(10L, 20L, 30L, "Child");
+                    });
+                    ctx.totalRowCount(3);
+                    ctx.rowCount(AffectedTable.of(Tenant.class), 2);
+                    ctx.rowCount(AffectedTable.of(DualParentChild.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":{\"leftId\":10,\"rightId\":20,\"localId\":30}," +
+                                    "--->\"name\":\"Child\"," +
+                                    "--->\"left\":{\"id\":10,\"name\":\"Left\"}," +
+                                    "--->\"right\":{\"id\":20,\"name\":\"Right\"}" +
+                                    "}"
+                    ));
                 }
         );
     }

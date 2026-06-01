@@ -4,13 +4,14 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.MappedId;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.model.mapsid.DualParentChild;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocument;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,6 +53,54 @@ public class MapsIdMetadataTest extends AbstractQueryTest {
         assertEquals(
                 "[TENANT_ID->ID]",
                 mappedId.getColumns(((JSqlClientImplementor) getSqlClient()).getMetadataStrategy())
+                        .stream()
+                        .map(it -> it.getSourceName() + "->" + it.getTargetName())
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+    }
+
+    @Test
+    public void testMultiplePartialEmbeddedIdMappings() {
+        ImmutableType type = ImmutableType.get(DualParentChild.class);
+        List<MappedId> mappedIds = type.getMappedIds();
+
+        assertEquals(2, mappedIds.size());
+        Map<String, MappedId> mappedIdMap = mappedIds
+                .stream()
+                .collect(Collectors.toMap(it -> it.getProp().getName(), it -> it));
+        assertEquals("[left, right]", mappedIds.stream().map(it -> it.getProp().getName()).collect(Collectors.toList()).toString());
+        assertEquals(
+                "[leftId]",
+                mappedIdMap.get("left")
+                        .getIdPath()
+                        .stream()
+                        .map(ImmutableProp::getName)
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+        assertEquals(
+                "[rightId]",
+                mappedIdMap.get("right")
+                        .getIdPath()
+                        .stream()
+                        .map(ImmutableProp::getName)
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+        assertEquals(
+                "[LEFT_ID->ID]",
+                mappedIdMap.get("left")
+                        .getColumns(((JSqlClientImplementor) getSqlClient()).getMetadataStrategy())
+                        .stream()
+                        .map(it -> it.getSourceName() + "->" + it.getTargetName())
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+        assertEquals(
+                "[RIGHT_ID->ID]",
+                mappedIdMap.get("right")
+                        .getColumns(((JSqlClientImplementor) getSqlClient()).getMetadataStrategy())
                         .stream()
                         .map(it -> it.getSourceName() + "->" + it.getTargetName())
                         .collect(Collectors.toList())

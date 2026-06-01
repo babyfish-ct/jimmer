@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemDraft;
 import org.babyfish.jimmer.sql.model.embedded.TransformDraft;
+import org.babyfish.jimmer.sql.model.mapsid.DualParentChildDraft;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfileDraft;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDraft;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -155,6 +156,35 @@ public class ShapeTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[TENANT_ID, DOCUMENT_ID, NAME]",
+                shape.getColumnDefinitionGetters().stream()
+                        .map(it -> it.metadata().getColumnName())
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+    }
+
+    @Test
+    public void testMultiplePartialMappedIdReferencesAreNotWritableShape() {
+        ImmutableSpi child = (ImmutableSpi) DualParentChildDraft.$.produce(draft -> {
+            draft.applyId(id -> id.setLeftId(1L).setRightId(2L).setLocalId(3L));
+            draft.setName("Child");
+            draft.applyLeft(left -> {
+                left.setId(1L);
+                left.setName("Left");
+            });
+            draft.applyRight(right -> {
+                right.setId(2L);
+                right.setName("Right");
+            });
+        });
+        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), child, ImmutableProp::isColumnDefinition);
+
+        Assertions.assertEquals(
+                "[id.leftId, id.rightId, id.localId, name]",
+                shape.toString()
+        );
+        Assertions.assertEquals(
+                "[LEFT_ID, RIGHT_ID, LOCAL_ID, NAME]",
                 shape.getColumnDefinitionGetters().stream()
                         .map(it -> it.metadata().getColumnName())
                         .collect(Collectors.toList())
