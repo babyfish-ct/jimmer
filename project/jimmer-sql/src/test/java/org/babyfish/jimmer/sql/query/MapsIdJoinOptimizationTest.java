@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChildFetcher;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChildTable;
+import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentTable;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDetailFetcher;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDetailTable;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentFetcher;
@@ -89,6 +90,24 @@ public class MapsIdJoinOptimizationTest extends AbstractQueryTest {
                                     "where tb_1_.TENANT_ID = ? " +
                                     "group by tb_1_.TENANT_ID " +
                                     "order by tb_1_.TENANT_ID asc"
+                    );
+                    ctx.variables(1L);
+                }
+        );
+    }
+
+    @Test
+    public void testMappedSuperclassAssociationIdUsageDoesNotJoinTargetTable() {
+        executeAndExpect(
+                getLambdaClient().createQuery(MappedTenantDocumentTable.class, (q, document) -> {
+                    q.where(document.asTableEx().tenant().id().eq(1L));
+                    return q.select(document.asTableEx().tenant().id());
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.TENANT_ID " +
+                                    "from MAPPED_TENANT_DOCUMENT tb_1_ " +
+                                    "where tb_1_.TENANT_ID = ?"
                     );
                     ctx.variables(1L);
                 }

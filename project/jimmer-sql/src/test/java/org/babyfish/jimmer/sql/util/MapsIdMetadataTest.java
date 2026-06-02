@@ -5,6 +5,9 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.MappedId;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChild;
+import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocument;
+import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentBase;
+import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentIdBase;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocument;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -45,6 +48,34 @@ public class MapsIdMetadataTest extends AbstractQueryTest {
         assertEquals(1, mappedIds.size());
         MappedId mappedId = mappedIds.get(0);
         assertEquals("tenant", mappedId.getProp().getName());
+        assertFalse(mappedId.isFull());
+        assertEquals(
+                "[tenantId]",
+                mappedId.getIdPath().stream().map(ImmutableProp::getName).collect(Collectors.toList()).toString()
+        );
+        assertEquals(
+                "[TENANT_ID->ID]",
+                mappedId.getColumns(((JSqlClientImplementor) getSqlClient()).getMetadataStrategy())
+                        .stream()
+                        .map(it -> it.getSourceName() + "->" + it.getTargetName())
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+    }
+
+    @Test
+    public void testMappedSuperclassMapping() {
+        ImmutableType type = ImmutableType.get(MappedTenantDocument.class);
+        List<MappedId> mappedIds = type.getMappedIds();
+
+        assertEquals(1, mappedIds.size());
+        MappedId mappedId = mappedIds.get(0);
+        assertEquals("tenant", mappedId.getProp().getName());
+        assertNotNull(ImmutableType.get(MappedTenantDocumentBase.class).getProp("tenant"));
+        assertNotNull(ImmutableType.get(MappedTenantDocumentIdBase.class).getProp("id"));
+        assertEquals(MappedTenantDocument.class, mappedId.getProp().getDeclaringType().getJavaClass());
+        assertEquals("id", mappedId.getIdProp().getName());
+        assertEquals(MappedTenantDocument.class, mappedId.getIdProp().getDeclaringType().getJavaClass());
         assertFalse(mappedId.isFull());
         assertEquals(
                 "[tenantId]",

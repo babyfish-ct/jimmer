@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChild;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChildDraft;
+import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocument;
+import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentDraft;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdPrincipal;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfileDraft;
@@ -93,6 +95,46 @@ public class MapsIdMutationTest extends AbstractMutationTest {
                                     "--->\"id\":{\"tenantId\":3,\"documentId\":10}," +
                                     "--->\"name\":\"Spec\"," +
                                     "--->\"tenant\":{\"id\":3,\"name\":\"Tenant\"}" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
+    public void testSaveMappedIdDeclaredByMappedSuperclass() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                MappedTenantDocumentDraft.$.produce(document -> {
+                                    document.applyId(id -> id.setDocumentId(10L));
+                                    document.setName("Spec");
+                                    document.applyTenant(tenant -> {
+                                        tenant.setId(3L);
+                                        tenant.setName("Tenant");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TENANT(ID, NAME) values(?, ?)");
+                        it.variables(3L, "Tenant");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPPED_TENANT_DOCUMENT(TENANT_ID, DOCUMENT_ID, NAME) values(?, ?, ?)");
+                        it.variables(3L, 10L, "Spec");
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Tenant.class), 1);
+                    ctx.rowCount(AffectedTable.of(MappedTenantDocument.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"id\":{\"tenantId\":3,\"documentId\":10}," +
+                                    "--->\"tenant\":{\"id\":3,\"name\":\"Tenant\"}," +
+                                    "--->\"name\":\"Spec\"" +
                                     "}"
                     ));
                 }

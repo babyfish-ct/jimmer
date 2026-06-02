@@ -16,10 +16,13 @@ public final class MappedId {
 
     private final ImmutableProp prop;
 
+    private final ImmutableProp idProp;
+
     private final List<ImmutableProp> idPath;
 
-    private MappedId(ImmutableProp prop, List<ImmutableProp> idPath) {
+    private MappedId(ImmutableProp prop, ImmutableProp idProp, List<ImmutableProp> idPath) {
         this.prop = prop;
+        this.idProp = idProp;
         this.idPath = idPath;
     }
 
@@ -30,7 +33,7 @@ public final class MappedId {
 
     @NotNull
     public ImmutableProp getIdProp() {
-        return prop.getDeclaringType().getIdProp();
+        return idProp;
     }
 
     @NotNull
@@ -171,7 +174,7 @@ public final class MappedId {
         for (ImmutableProp prop : type.getProps().values()) {
             MapsId mapsId = prop.getAnnotation(MapsId.class);
             if (mapsId != null) {
-                mappedIds.add(of(prop, mapsId));
+                mappedIds.add(of(type, prop, mapsId));
             }
         }
         if (mappedIds.isEmpty()) {
@@ -181,11 +184,11 @@ public final class MappedId {
         return Collections.unmodifiableList(mappedIds);
     }
 
-    private static MappedId of(ImmutableProp prop, MapsId mapsId) {
+    private static MappedId of(ImmutableType ownerType, ImmutableProp prop, MapsId mapsId) {
         validateAssociation(prop);
-        ImmutableProp idProp = prop.getDeclaringType().getIdProp();
+        ImmutableProp idProp = ownerType.getIdProp();
         if (idProp == null) {
-            throw illegal(prop, "the declaring type has no id property");
+            throw illegal(prop, "the owner type has no id property");
         }
         ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
         if (targetIdProp == null) {
@@ -210,7 +213,7 @@ public final class MappedId {
         if (idProp.getAnnotation(org.babyfish.jimmer.sql.GeneratedValue.class) != null) {
             throw illegal(prop, "the declaring id property \"" + idProp + "\" is generated");
         }
-        return new MappedId(prop, path);
+        return new MappedId(prop, idProp, path);
     }
 
     private static void validateAssociation(ImmutableProp prop) {
