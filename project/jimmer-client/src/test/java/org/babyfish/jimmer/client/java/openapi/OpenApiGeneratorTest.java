@@ -119,6 +119,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_TargetIsNotTransferable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_InconsistentMappedId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_UnloadedFrozenBackReference'\n" +
@@ -162,6 +163,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_TargetIsNotTransferable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_InconsistentMappedId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_UnloadedFrozenBackReference'\n" +
@@ -205,6 +207,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_TargetIsNotTransferable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_InconsistentMappedId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_UnloadedFrozenBackReference'\n" +
@@ -674,6 +677,7 @@ public class OpenApiGeneratorTest {
                         "            - UNSTRUCTURED_ASSOCIATION\n" +
                         "            - TARGET_IS_NOT_TRANSFERABLE\n" +
                         "            - INCOMPLETE_PROPERTY\n" +
+                        "            - INCONSISTENT_MAPPED_ID\n" +
                         "            - NOT_UNIQUE\n" +
                         "            - ILLEGAL_TARGET_ID\n" +
                         "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
@@ -712,6 +716,46 @@ public class OpenApiGeneratorTest {
                         "            - UNSTRUCTURED_ASSOCIATION\n" +
                         "            - TARGET_IS_NOT_TRANSFERABLE\n" +
                         "            - INCOMPLETE_PROPERTY\n" +
+                        "            - INCONSISTENT_MAPPED_ID\n" +
+                        "            - NOT_UNIQUE\n" +
+                        "            - ILLEGAL_TARGET_ID\n" +
+                        "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_InconsistentMappedId:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [INCONSISTENT_MAPPED_ID]\n" +
+                        "        saveErrorCode:\n" +
+                        "          type: string\n" +
+                        "          enum:\n" +
+                        "            - READONLY_MIDDLE_TABLE\n" +
+                        "            - NULL_TARGET\n" +
+                        "            - CANNOT_DISSOCIATE_TARGETS\n" +
+                        "            - NO_ID_GENERATOR\n" +
+                        "            - ILLEGAL_ID_GENERATOR\n" +
+                        "            - ILLEGAL_GENERATED_ID\n" +
+                        "            - ILLEGAL_INTERCEPTOR_BEHAVIOR\n" +
+                        "            - EMPTY_OBJECT\n" +
+                        "            - NO_KEY_PROPS\n" +
+                        "            - NO_KEY_PROP\n" +
+                        "            - NO_NON_ID_PROPS\n" +
+                        "            - NO_VERSION\n" +
+                        "            - OPTIMISTIC_LOCK_ERROR\n" +
+                        "            - ALREADY_EXISTS\n" +
+                        "            - NEITHER_ID_NOR_KEY\n" +
+                        "            - REVERSED_REMOTE_ASSOCIATION\n" +
+                        "            - LONG_REMOTE_ASSOCIATION\n" +
+                        "            - FAILED_REMOTE_VALIDATION\n" +
+                        "            - UNSTRUCTURED_ASSOCIATION\n" +
+                        "            - TARGET_IS_NOT_TRANSFERABLE\n" +
+                        "            - INCOMPLETE_PROPERTY\n" +
+                        "            - INCONSISTENT_MAPPED_ID\n" +
                         "            - NOT_UNIQUE\n" +
                         "            - ILLEGAL_TARGET_ID\n" +
                         "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
@@ -750,6 +794,7 @@ public class OpenApiGeneratorTest {
                         "            - UNSTRUCTURED_ASSOCIATION\n" +
                         "            - TARGET_IS_NOT_TRANSFERABLE\n" +
                         "            - INCOMPLETE_PROPERTY\n" +
+                        "            - INCONSISTENT_MAPPED_ID\n" +
                         "            - NOT_UNIQUE\n" +
                         "            - ILLEGAL_TARGET_ID\n" +
                         "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
