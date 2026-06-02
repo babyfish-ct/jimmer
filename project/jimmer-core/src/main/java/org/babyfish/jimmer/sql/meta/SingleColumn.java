@@ -68,6 +68,13 @@ public class SingleColumn implements ColumnDefinition {
     }
 
     @Override
+    public int indexByComparableIdentifier(String identifier) {
+        return DatabaseIdentifiers
+                .comparableIdentifier(this.name)
+                .equals(DatabaseIdentifiers.comparableIdentifier(identifier)) ? 0 : -1;
+    }
+
+    @Override
     public Set<String> toColumnNames() {
         return Collections.singleton(DatabaseIdentifiers.comparableIdentifier(name));
     }

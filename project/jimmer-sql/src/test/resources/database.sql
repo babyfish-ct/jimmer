@@ -11,6 +11,7 @@ drop table dual_parent_child if exists;
 drop table tenant_document_detail if exists;
 drop table mapped_tenant_document if exists;
 drop table tenant_document if exists;
+drop table long_maps_id_profile if exists;
 drop table tenant if exists;
 drop table maps_id_profile if exists;
 drop table maps_id_principal if exists;
@@ -1597,6 +1598,15 @@ create table tenant(
     id bigint not null,
     name varchar(50) not null,
     constraint pk_tenant primary key(id)
+);
+
+create table long_maps_id_profile(
+    id bigint not null,
+    nickname varchar(50) not null,
+    constraint pk_long_maps_id_profile primary key(id),
+    constraint fk_long_maps_id_profile__tenant
+        foreign key(id)
+            references tenant(id)
 );
 
 create table tenant_document(

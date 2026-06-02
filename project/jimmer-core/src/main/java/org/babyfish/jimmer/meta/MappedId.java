@@ -82,7 +82,7 @@ public final class MappedId {
         List<Column> columns = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             String targetColumnName = referencedColumnName(joinDefinition, i, targetDefinition);
-            int targetIndex = targetDefinition.index(targetColumnName);
+            int targetIndex = targetDefinition.indexByComparableIdentifier(targetColumnName);
             if (targetIndex == -1) {
                 throw illegal(
                         "the referenced column \"" +
@@ -93,7 +93,8 @@ public final class MappedId {
                 );
             }
             String sourceColumnName = joinDefinition.name(i);
-            if (sourceDefinition.index(sourceColumnName) == -1) {
+            int sourceIndex = sourceDefinition.indexByComparableIdentifier(sourceColumnName);
+            if (sourceIndex == -1) {
                 throw illegal(
                         "the join column \"" +
                                 sourceColumnName +
@@ -108,7 +109,7 @@ public final class MappedId {
                             targetColumnName,
                             idProp.getStorage(strategy),
                             targetDefinition,
-                            sourceDefinition.index(sourceColumnName),
+                            sourceIndex,
                             targetIndex
                     )
             );
