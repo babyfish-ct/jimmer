@@ -187,6 +187,22 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     @Override
+    public boolean isMappedIdColumnSource(AstContext ctx) {
+        if (parent == null || !(owner instanceof TableImpl<?>)) {
+            return false;
+        }
+        TableImpl<?> tableOwner = (TableImpl<?>) owner;
+        ImmutableProp joinProp = tableOwner.joinProp;
+        return joinProp != null &&
+                joinProp.isMappedId() &&
+                !tableOwner.isInverse &&
+                tableOwner.weakJoinHandle == null &&
+                !joinProp.isMiddleTableDefinition() &&
+                !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+                tableOwner.getStatement().getFilterPredicate(tableOwner, ctx) == null;
+    }
+
+    @Override
     public TableAliasKey getAliasKey() {
         return aliasKey;
     }
@@ -749,10 +765,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             }
             if (!isInverse) {
                 if (optionalDefinition == null) {
-                    builder.definition(
-                            withPrefix ? parent : null,
+                    renderDefinition(
+                            builder,
+                            (RealTableImpl) parent,
                             joinProp.getStorage(strategy),
                             true,
+                            withPrefix,
                             asBlock,
                             exportSelection
                     );
@@ -766,10 +784,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         }
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
-                        if (withPrefix) {
-                            builder.sql(builder.assertSimple().alias(parent)).sql(".");
-                        }
-                        builder.sql(parentColumnName);
+                        renderColumn(builder, (RealTableImpl) parent, parentColumnName, true, withPrefix, exportSelection);
                         if (asBlock != null) {
                             builder.sql(" ").sql(asBlock.apply(i));
                         }
@@ -788,13 +803,116 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             ColumnDefinition definition = optionalDefinition != null ?
                     optionalDefinition :
                     prop.getStorage(strategy);
-            builder.definition(
-                    withPrefix ? this : null,
+            renderDefinition(
+                    builder,
+                    this,
                     definition,
                     false,
+                    withPrefix,
                     asBlock,
                     exportSelection
             );
+        }
+    }
+
+    @Override
+    public void renderColumn(
+            AbstractSqlBuilder<?> builder,
+            String columnName,
+            boolean foreignKeyInBaseQuery,
+            BaseQueryExportSelection exportSelection
+    ) {
+        renderColumn(builder, this, columnName, foreignKeyInBaseQuery, true, exportSelection);
+    }
+
+    private void renderDefinition(
+            AbstractSqlBuilder<?> builder,
+            RealTableImpl table,
+            ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
+            boolean withPrefix,
+            Function<Integer, String> asBlock,
+            BaseQueryExportSelection exportSelection
+    ) {
+        int size = definition.size();
+        for (int i = 0; i < size; i++) {
+            if (i != 0) {
+                builder.sql(", ");
+            }
+            renderColumn(builder, table, definition.name(i), foreignKeyInBaseQuery, withPrefix, exportSelection);
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(i));
+            }
+        }
+    }
+
+    private void renderColumn(
+            AbstractSqlBuilder<?> builder,
+            RealTableImpl table,
+            String columnName,
+            boolean foreignKeyInBaseQuery,
+            boolean withPrefix,
+            BaseQueryExportSelection exportSelection
+    ) {
+        ColumnMapping mapping = mappedIdParentColumn(builder, table, columnName);
+        if (mapping != null) {
+            renderColumn(
+                    builder,
+                    mapping.table,
+                    mapping.columnName,
+                    foreignKeyInBaseQuery,
+                    withPrefix,
+                    exportSelection
+            );
+            return;
+        }
+        if (withPrefix && exportSelection != null) {
+            int index = exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery);
+            builder
+                    .sql(exportSelection.getAlias(builder.assertSimple()))
+                    .sql(".c")
+                    .sql(Integer.toString(index));
+        } else {
+            if (withPrefix) {
+                builder.sql(builder.assertSimple().alias(table)).sql(".");
+            }
+            builder.sql(columnName);
+        }
+    }
+
+    @Nullable
+    private ColumnMapping mappedIdParentColumn(
+            AbstractSqlBuilder<?> builder,
+            RealTableImpl table,
+            String columnName
+    ) {
+        if (table == null ||
+                table.parent == null ||
+                builder.getAstContext().getTableUsedState(table) == TableUsedState.USED ||
+                !table.isMappedIdColumnSource(builder.getAstContext())) {
+            return null;
+        }
+        TableImpl<?> tableOwner = (TableImpl<?>) table.owner;
+        ImmutableProp joinProp = tableOwner.joinProp;
+        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
+        ColumnDefinition idDefinition = tableOwner.immutableType.getIdProp().getStorage(strategy);
+        int index = idDefinition.index(columnName);
+        if (index == -1) {
+            return null;
+        }
+        ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
+        return new ColumnMapping((RealTableImpl) table.parent, parentDefinition.name(index));
+    }
+
+    private static class ColumnMapping {
+
+        final RealTableImpl table;
+
+        final String columnName;
+
+        ColumnMapping(RealTableImpl table, String columnName) {
+            this.table = table;
+            this.columnName = columnName;
         }
     }
 

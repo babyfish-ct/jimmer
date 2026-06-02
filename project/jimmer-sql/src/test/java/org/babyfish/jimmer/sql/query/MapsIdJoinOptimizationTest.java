@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChildFetcher;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChildTable;
+import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDetailFetcher;
+import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentDetailTable;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentFetcher;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocumentTable;
 import org.babyfish.jimmer.sql.model.mapsid.TenantFetcher;
@@ -154,6 +156,55 @@ public class MapsIdJoinOptimizationTest extends AbstractQueryTest {
                         "select tb_1_.LEFT_ID, tb_1_.RIGHT_ID, tb_1_.LOCAL_ID, " +
                                 "tb_1_.NAME, tb_1_.LEFT_ID, tb_1_.RIGHT_ID " +
                                 "from DUAL_PARENT_CHILD tb_1_"
+                )
+        );
+    }
+
+    @Test
+    public void testMappedIdAssociationIdChainDoesNotJoinIntermediateTargetTables() {
+        executeAndExpect(
+                getLambdaClient().createQuery(TenantDocumentDetailTable.class, (q, detail) -> {
+                    q.where(detail.asTableEx().document().tenant().id().eq(10L));
+                    q.orderBy(detail.asTableEx().document().tenant().id().asc());
+                    return q.select(
+                            detail.asTableEx().document().id(),
+                            detail.asTableEx().document().tenant().id()
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID, tb_1_.TENANT_ID " +
+                                    "from TENANT_DOCUMENT_DETAIL tb_1_ " +
+                                    "where tb_1_.TENANT_ID = ? " +
+                                    "order by tb_1_.TENANT_ID asc"
+                    );
+                    ctx.variables(10L);
+                }
+        );
+    }
+
+    @Test
+    public void testMappedIdAssociationIdOnlyJoinFetcherChainDoesNotJoinIntermediateTargetTables() {
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(TenantDocumentDetailTable.$)
+                        .select(
+                                TenantDocumentDetailTable.$.fetch(
+                                        TenantDocumentDetailFetcher.$
+                                                .description()
+                                                .document(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        TenantDocumentFetcher.$.tenant(
+                                                                ReferenceFetchType.JOIN_ALWAYS,
+                                                                TenantFetcher.$
+                                                        )
+                                                )
+                                )
+                        ),
+                ctx -> ctx.sql(
+                        "select tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID, tb_1_.DESCRIPTION, " +
+                                "tb_1_.TENANT_ID, tb_1_.DOCUMENT_ID, tb_1_.TENANT_ID " +
+                                "from TENANT_DOCUMENT_DETAIL tb_1_"
                 )
         );
     }

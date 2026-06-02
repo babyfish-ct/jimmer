@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -25,12 +26,21 @@ public interface RealTable extends Iterable<RealTable> {
 
     boolean isOptimizableBridgeTo(RealTable child, AstContext ctx);
 
+    boolean isMappedIdColumnSource(AstContext ctx);
+
     @Nullable
     BaseTableOwner getBaseTableOwner();
 
     void use(TableUsageVisitor visitor);
 
     void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean cte);
+
+    void renderColumn(
+            AbstractSqlBuilder<?> builder,
+            String columnName,
+            boolean foreignKeyInBaseQuery,
+            BaseQueryExportSelection exportSelection
+    );
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
 
