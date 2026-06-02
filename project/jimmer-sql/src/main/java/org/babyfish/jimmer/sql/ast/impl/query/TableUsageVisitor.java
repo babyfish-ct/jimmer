@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
@@ -41,7 +42,7 @@ public abstract class TableUsageVisitor extends AstVisitor {
                     rawId || TableUtils.isRawIdAllowed(tableImplementor, getAstContext().getSqlClient()))
             ) {
                 useTableId(table);
-                use(table.getParent());
+                useColumnSource(table.getParent());
             } else {
                 use(table);
             }
@@ -91,7 +92,32 @@ public abstract class TableUsageVisitor extends AstVisitor {
     protected final void use(RealTable table) {
         if (table != null) {
             useTable(table);
-            use(table.getParent());
+            useParent(table);
+        }
+    }
+
+    private void useParent(RealTable table) {
+        RealTable parent = table.getParent();
+        if (parent == null) {
+            return;
+        }
+        if (parent.isOptimizableBridgeTo(table, getAstContext())) {
+            useTableId(parent);
+            use(parent.getParent());
+        } else {
+            use(parent);
+        }
+    }
+
+    private void useColumnSource(RealTable table) {
+        if (table == null) {
+            return;
+        }
+        if (table.isMappedIdColumnSource(getAstContext())) {
+            useTableId(table);
+            useColumnSource(table.getParent());
+        } else {
+            use(table);
         }
     }
 
@@ -112,7 +138,12 @@ public abstract class TableUsageVisitor extends AstVisitor {
             TableImplementor<?> oldTableImplementor = this.tableImplementor;
             TableImplementor<?> newTableImplementor =
                     oldTableImplementor.joinFetchImplementor(field.getProp(), oldTableImplementor.getBaseTableOwner());
-            useTable(newTableImplementor.realTable(ctx));
+            RealTable realTable = newTableImplementor.realTable(ctx);
+            if (isIdOnlyJoinFetch(field)) {
+                useTableId(realTable);
+            } else {
+                useTable(realTable);
+            }
             this.tableImplementor = newTableImplementor;
             return oldTableImplementor;
         }
@@ -120,6 +151,33 @@ public abstract class TableUsageVisitor extends AstVisitor {
         @Override
         protected void leave(Field field, Object enterValue) {
             this.tableImplementor = (TableImplementor<?>) enterValue;
+        }
+
+        private boolean isIdOnlyJoinFetch(Field field) {
+            if (field.getFilter() != null || field.getRecursionStrategy() != null) {
+                return false;
+            }
+            if (ctx.getSqlClient().getFilters().getTargetFilter(field.getProp()) != null) {
+                return false;
+            }
+            Fetcher<?> childFetcher = field.getChildFetcher();
+            return childFetcher != null && isIdOnlyFetcher(childFetcher);
+        }
+
+        private boolean isIdOnlyFetcher(Fetcher<?> fetcher) {
+            for (Field field : fetcher.getFieldMap().values()) {
+                ImmutableProp prop = field.getProp();
+                if (prop.isId()) {
+                    continue;
+                }
+                if (!prop.isMappedId() ||
+                        !prop.isAssociation(TargetLevel.PERSISTENT) ||
+                        prop.isReferenceList(TargetLevel.PERSISTENT) ||
+                        !isIdOnlyJoinFetch(field)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

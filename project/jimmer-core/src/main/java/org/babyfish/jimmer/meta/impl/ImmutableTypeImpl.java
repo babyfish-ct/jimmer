@@ -92,6 +92,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private KeyMatcher keyMatcher = KeyMatcher.EMPTY;
 
+    private List<MappedId> mappedIds;
+
+    private Set<ImmutableProp> mappedIdProps;
+
     private final String microServiceName;
 
     private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
@@ -277,6 +281,34 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     @Override
     public KeyMatcher getKeyMatcher() {
         return keyMatcher;
+    }
+
+    @Override
+    public List<MappedId> getMappedIds() {
+        List<MappedId> mappedIds = this.mappedIds;
+        if (mappedIds == null) {
+            this.mappedIds = mappedIds = MappedId.resolve(this);
+        }
+        return mappedIds;
+    }
+
+    @Override
+    public boolean isMappedIdProp(ImmutableProp prop) {
+        Set<ImmutableProp> mappedIdProps = this.mappedIdProps;
+        if (mappedIdProps == null) {
+            List<MappedId> mappedIds = getMappedIds();
+            if (mappedIds.isEmpty()) {
+                mappedIdProps = Collections.emptySet();
+            } else {
+                mappedIdProps = new HashSet<>(mappedIds.size());
+                for (MappedId mappedId : mappedIds) {
+                    mappedIdProps.add(mappedId.getProp());
+                }
+                mappedIdProps = Collections.unmodifiableSet(mappedIdProps);
+            }
+            this.mappedIdProps = mappedIdProps;
+        }
+        return mappedIdProps.contains(prop);
     }
 
     @NotNull

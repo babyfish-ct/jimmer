@@ -117,6 +117,10 @@ public interface ImmutableProp {
 
     boolean isLogicalDeleted();
 
+    default boolean isMappedId() {
+        return getDeclaringType().isMappedIdProp(this);
+    }
+
     ImmutableType getTargetType();
 
     List<OrderedItem> getOrderedItems();

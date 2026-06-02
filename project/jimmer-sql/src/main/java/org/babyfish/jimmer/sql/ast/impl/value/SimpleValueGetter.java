@@ -96,15 +96,15 @@ class SimpleValueGetter extends AbstractValueGetter {
                 RealTable realTable = tableImplementor.realTableForRender(builder);
                 String middleTableAlias = sqlBuilder.middleTableAlias(realTable);
                 if (middleTableAlias != null) {
-                    builder.sql(middleTableAlias);
+                    builder.sql(middleTableAlias).sql(".").sql(columnName);
                 } else {
                     TableImplementor<?> parent = tableImplementor.getParent();
-                    sqlBuilder.sqlAlias(parent.realTableForRender(builder));
+                    parent.realTableForRender(builder).renderColumn(builder, columnName, true, null);
                 }
             } else {
-                sqlBuilder.sqlAlias(tableImplementor.realTableForRender(builder));
+                tableImplementor.realTableForRender(builder).renderColumn(builder, columnName, false, null);
             }
-            builder.sql(".");
+            return;
         }
         builder.sql(columnName);
     }

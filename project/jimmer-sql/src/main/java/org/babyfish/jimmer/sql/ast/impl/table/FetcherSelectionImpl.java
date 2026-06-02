@@ -213,7 +213,8 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     if (storage instanceof EmbeddedColumns) {
                         renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", exportSelection, builder);
                     } else if (storage instanceof ColumnDefinition) {
-                        builder.separator().definition(table, (ColumnDefinition) storage, exportSelection);
+                        builder.separator();
+                        renderColumnDefinition(table, (ColumnDefinition) storage, exportSelection, builder);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         if (exportSelection != null) {
@@ -257,9 +258,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                     .sql(".c")
                                     .sql(Integer.toString(exportSelection.columnIndex(realTable, columnName, false)));
                         } else {
-                            builder
-                                    .sql(builder.alias(realTable)).sql(".")
-                                    .sql(columnName);
+                            realTable.renderColumn(builder, columnName, false, null);
                         }
                     }
                 } else {
@@ -281,6 +280,21 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 }
             }
         }.visit(fetcher);
+    }
+
+    private static void renderColumnDefinition(
+            RealTable table,
+            ColumnDefinition definition,
+            BaseQueryExportSelection exportSelection,
+            SqlBuilder builder
+    ) {
+        int size = definition.size();
+        for (int i = 0; i < size; i++) {
+            if (i != 0) {
+                builder.sql(", ");
+            }
+            table.renderColumn(builder, definition.name(i), false, exportSelection);
+        }
     }
 
     private ImmutableProp getEmbeddedRawReferenceProp(JSqlClientImplementor sqlClient) {

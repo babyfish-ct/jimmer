@@ -283,7 +283,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     }
                 }
             }
-            if (ctx.backReferenceFrozen) {
+            if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
                 fetcherImplementor = fetcherImplementor.add(ctx.backReferenceProp.getName(), IdOnlyFetchType.RAW);
             }
             this.originalFetcher = oldFetcher = fetcherImplementor;
@@ -295,7 +295,7 @@ abstract class AbstractPreHandler implements PreHandler {
         if (ctx.trigger != null) {
             return QueryReason.TRIGGER;
         }
-        if (ctx.backReferenceFrozen) {
+        if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
             return QueryReason.TARGET_NOT_TRANSFERABLE;
         }
         if (interceptor != null) {
@@ -1059,4 +1059,3 @@ class NonIdempotentUpsertHandler extends UpsertPreHandler {
         return true;
     }
 }
-

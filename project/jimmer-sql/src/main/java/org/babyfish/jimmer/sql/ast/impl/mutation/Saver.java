@@ -132,6 +132,7 @@ public class Saver {
                 savePreAssociation(prop, drafts);
             }
         }
+        new MappedIdResolver(ctx).resolve(drafts);
 
         PreHandler preHandler = PreHandler.of(ctx);
         for (DraftSpi draft : drafts) {
