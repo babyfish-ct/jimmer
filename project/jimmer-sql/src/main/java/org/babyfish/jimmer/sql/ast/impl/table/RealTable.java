@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +39,13 @@ public interface RealTable extends Iterable<RealTable> {
     void renderColumn(
             AbstractSqlBuilder<?> builder,
             String columnName,
+            boolean foreignKeyInBaseQuery,
+            BaseQueryExportSelection exportSelection
+    );
+
+    void renderDefinition(
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
             BaseQueryExportSelection exportSelection
     );

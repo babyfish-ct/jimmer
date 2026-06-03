@@ -436,7 +436,8 @@ public class Storages {
         }
         if (joinColumns.length == 1) {
             String ref = joinColumns[0].referencedColumnName;
-            if (!ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
+            if (!ref.isEmpty() &&
+                    targetIdDefinition.indexByComparableIdentifier(ref) == -1) {
                 throw new ReferenceNothing(ref);
             }
             if (joinColumns[0].name.isEmpty()) {
@@ -456,19 +457,22 @@ public class Storages {
             if (ref.isEmpty()) {
                 throw new NoReference();
             }
-            if (targetIdDefinition.index(ref) == -1) {
+            String comparableRef = DatabaseIdentifiers.comparableIdentifier(ref);
+            if (targetIdDefinition.indexByComparableIdentifier(ref) == -1) {
                 throw new ReferenceNothing(ref);
             }
-            if (columnMap.put(ref, joinColumn.name) != null) {
+            if (columnMap.put(comparableRef, joinColumn.name) != null) {
                 throw new TargetConflict(ref);
             }
         }
         Map<String, String> referencedColumnMap = new LinkedHashMap<>();
+        Set<String> sourceColumnNames = new HashSet<>();
         for (String targetColumnName : targetIdDefinition) {
-            String name = columnMap.get(targetColumnName);
-            if (referencedColumnMap.put(name, targetColumnName) != null) {
+            String name = columnMap.get(DatabaseIdentifiers.comparableIdentifier(targetColumnName));
+            if (!sourceColumnNames.add(DatabaseIdentifiers.comparableIdentifier(name))) {
                 throw new SourceConflict(name);
             }
+            referencedColumnMap.put(name, targetColumnName);
         }
         return new MultipleJoinColumns(
                 referencedColumnMap,

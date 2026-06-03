@@ -9,7 +9,9 @@ drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
 drop table dual_parent_child if exists;
 drop table tenant_document_detail if exists;
+drop table mapped_tenant_document if exists;
 drop table tenant_document if exists;
+drop table long_maps_id_profile if exists;
 drop table tenant if exists;
 drop table maps_id_profile if exists;
 drop table maps_id_principal if exists;
@@ -1598,12 +1600,31 @@ create table tenant(
     constraint pk_tenant primary key(id)
 );
 
+create table long_maps_id_profile(
+    id bigint not null,
+    nickname varchar(50) not null,
+    constraint pk_long_maps_id_profile primary key(id),
+    constraint fk_long_maps_id_profile__tenant
+        foreign key(id)
+            references tenant(id)
+);
+
 create table tenant_document(
     tenant_id bigint not null,
     document_id bigint not null,
     name varchar(50) not null,
     constraint pk_tenant_document primary key(tenant_id, document_id),
     constraint fk_tenant_document__tenant
+        foreign key(tenant_id)
+            references tenant(id)
+);
+
+create table mapped_tenant_document(
+    tenant_id bigint not null,
+    document_id bigint not null,
+    name varchar(50) not null,
+    constraint pk_mapped_tenant_document primary key(tenant_id, document_id),
+    constraint fk_mapped_tenant_document__tenant
         foreign key(tenant_id)
             references tenant(id)
 );
