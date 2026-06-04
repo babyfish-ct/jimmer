@@ -14,10 +14,6 @@ public interface JsonCodec<JT> {
         return JsonCodecDetector.JSON_CODEC;
     }
 
-    static JsonCodec<?> jsonCodecWithoutImmutableModule() {
-        return JsonCodecDetector.JSON_CODEC_WITHOUT_IMMUTABLE_MODULE;
-    }
-
     JsonCodec<JT> withCustomizations(JsonCodecCustomization... customizations);
 
     JsonConverter converter();

@@ -3,10 +3,10 @@ package org.babyfish.jimmer.support;
 import org.babyfish.jimmer.jackson.codec.JsonReader;
 import org.junit.jupiter.api.Assertions;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule;
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 
 public class JsonAssertions {
-    private static final JsonReader<?> READER = jsonCodecWithoutImmutableModule().treeReader();
+    private static final JsonReader<?> READER = jsonCodec().treeReader();
 
     public static void assertJsonEquals(String expected, String actual) {
         try {

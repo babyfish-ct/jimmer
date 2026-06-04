@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule;
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 
 public class BookVIewTest extends Tests {
 
@@ -24,7 +24,7 @@ public class BookVIewTest extends Tests {
                         "--->\"name\":\"Programming TypeScript\"," +
                         "--->\"price\":59.99" +
                         "}",
-                jsonCodecWithoutImmutableModule().writer().writeAsString(view)
+                jsonCodec().writer().writeAsString(view)
         );
     }
 }
