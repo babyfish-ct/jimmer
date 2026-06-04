@@ -12,7 +12,7 @@ abstract class AbstractKRemoteValueBinder<K, V>(
     type: ImmutableType?,
     prop: ImmutableProp?,
     tracker: CacheTracker?,
-    jsonCodec: JsonCodec<*>?,
+    jsonCodec: JsonCodec<*>,
     keyPrefixProvider: RemoteKeyPrefixProvider?,
     duration: Duration,
     randomPercent: Int
