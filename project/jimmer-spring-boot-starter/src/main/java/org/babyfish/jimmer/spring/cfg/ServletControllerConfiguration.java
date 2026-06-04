@@ -71,6 +71,6 @@ public class ServletControllerConfiguration {
             @Autowired(required = false) KSqlClient kSqlClient
     ) {
         JSqlClient sqlClient = jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient();
-        return new MicroServiceExporterController(sqlClient, sqlClient.getJsonCodec());
+        return new MicroServiceExporterController(sqlClient);
     }
 }
