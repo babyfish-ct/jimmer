@@ -7,11 +7,11 @@ import org.babyfish.jimmer.sql.model.dto.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule;
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 
 public class InputModifierPropTest extends Tests {
     private static final JsonReader<MixedBookInput> MIXED_BOOK_INPUT_READER =
-            jsonCodecWithoutImmutableModule().readerFor(MixedBookInput.class);
+            jsonCodec().readerFor(MixedBookInput.class);
 
     @Test
     public void testAllProperties() throws Exception {
@@ -340,7 +340,7 @@ public class InputModifierPropTest extends Tests {
             String dtoJson,
             String entityJson
     ) throws Exception {
-        T input = jsonCodecWithoutImmutableModule().readerFor(inputType).read(json);
+        T input = jsonCodec().readerFor(inputType).read(json);
         assertContentEquals(dtoJson, input);
         assertContentEquals(entityJson, input.toEntity());
     }

@@ -15,21 +15,40 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.UUID;
 
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class BinLogTest {
 
     private final BinLogParser parser =
-            new BinLogParser().initialize(
-                    (JSqlClientImplementor) JSqlClient.newBuilder()
-                            .build(),
-                    null,
+            new BinLogParser(
+                    jsonCodec(),
                     Collections.emptyMap(),
                     Collections.emptyMap()
+            ).initialize(
+                    (JSqlClientImplementor) JSqlClient.newBuilder()
+                            .build()
             );
 
     @Test
     public void testTreeNode() {
+        String json = "{\"Node_Id\": 2, \"[Name]\": 3, \"`Parent_Id`\": 1}";
+        TreeNode treeNode = parser.parseEntity(TreeNode.class, json);
+        Assertions.assertEquals(
+                "{\"id\":2,\"name\":\"3\",\"parent\":{\"id\":1}}",
+                treeNode.toString()
+        );
+    }
+
+    @Test
+    public void testTreeNodeWithImmutableModuleJsonCodec() {
+        BinLogParser parser = new BinLogParser(
+                jsonCodec(),
+                Collections.emptyMap(),
+                Collections.emptyMap()
+        ).initialize(
+                (JSqlClientImplementor) JSqlClient.newBuilder().build()
+        );
         String json = "{\"Node_Id\": 2, \"[Name]\": 3, \"`Parent_Id`\": 1}";
         TreeNode treeNode = parser.parseEntity(TreeNode.class, json);
         Assertions.assertEquals(

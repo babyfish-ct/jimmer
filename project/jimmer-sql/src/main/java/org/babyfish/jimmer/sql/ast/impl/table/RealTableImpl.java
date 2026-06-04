@@ -825,6 +825,16 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         renderColumn(builder, this, columnName, foreignKeyInBaseQuery, true, exportSelection);
     }
 
+    @Override
+    public void renderDefinition(
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition definition,
+            boolean foreignKeyInBaseQuery,
+            BaseQueryExportSelection exportSelection
+    ) {
+        renderDefinition(builder, this, definition, foreignKeyInBaseQuery, true, null, exportSelection);
+    }
+
     private void renderDefinition(
             AbstractSqlBuilder<?> builder,
             RealTableImpl table,

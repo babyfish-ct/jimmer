@@ -127,6 +127,8 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     Caches getCaches();
 
+    JsonCodec<?> getJsonCodec();
+
     Filters getFilters();
 
     BinLog getBinLog();
@@ -370,6 +372,9 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
         @OldChain
         Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
+
+        @OldChain
+        Builder setJsonCodec(JsonCodec<?> jsonCodec);
 
         @OldChain
         Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec);

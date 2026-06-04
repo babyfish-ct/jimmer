@@ -40,9 +40,9 @@ public class MicroServiceExporterController {
 
     private final JsonCodec<?> jsonCodec;
 
-    public MicroServiceExporterController(JSqlClient sqlClient, JsonCodec<?> jsonCodec) {
+    public MicroServiceExporterController(JSqlClient sqlClient) {
         this.exporter = new MicroServiceExporter(sqlClient);
-        this.jsonCodec = jsonCodec;
+        this.jsonCodec = sqlClient.getJsonCodec();
     }
 
     @GetMapping(value = BY_IDS, produces = MediaType.APPLICATION_JSON_VALUE)

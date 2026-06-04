@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.sql.kt.model.hr.dto.DepartmentView2
 import org.babyfish.jimmer.sql.kt.model.hr.dto.EmployeeInput
 import kotlin.test.Test
@@ -22,7 +23,7 @@ class JacksonTest {
 
     private fun testOutputImpl(registerKtMode: Boolean) {
         val department = DepartmentView2(id = "00A", name = "Develop")
-        val json = jsonCodecWithoutImmutableModule().writer().writeAsString(department)
+        val json = jsonCodec().writer().writeAsString(department)
         expect(
             "{\"id\":\"00A\",\"name\":\"Efwfmpq\"}"
         ) {
@@ -31,13 +32,13 @@ class JacksonTest {
         expect(
             "DepartmentView2(id=00A, name=Develop)"
         ) {
-            jsonCodecWithoutImmutableModule().readerFor(DepartmentView2::class.java).read(json).toString()
+            jsonCodec().readerFor(DepartmentView2::class.java).read(json).toString()
         }
     }
 
     private fun testInputForIssue807Impl(registerKtMode: Boolean) {
         val employee = EmployeeInput("001", "Rossi")
-        val json = jsonCodecWithoutImmutableModule().writer().writeAsString(employee)
+        val json = jsonCodec().writer().writeAsString(employee)
         expect(
             "{\"id\":\"001\",\"name\":\"Spttj\"}"
         ) {
@@ -46,7 +47,7 @@ class JacksonTest {
         expect(
             "EmployeeInput(id=001, name=Rossi)"
         ) {
-            jsonCodecWithoutImmutableModule().readerFor(EmployeeInput::class.java).read(json).toString()
+            jsonCodec().readerFor(EmployeeInput::class.java).read(json).toString()
         }
     }
 }

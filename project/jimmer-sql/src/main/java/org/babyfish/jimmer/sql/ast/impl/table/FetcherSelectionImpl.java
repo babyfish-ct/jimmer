@@ -214,7 +214,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", exportSelection, builder);
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator();
-                        renderColumnDefinition(table, (ColumnDefinition) storage, exportSelection, builder);
+                        table.renderDefinition(builder, (ColumnDefinition) storage, false, exportSelection);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         if (exportSelection != null) {
@@ -280,21 +280,6 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 }
             }
         }.visit(fetcher);
-    }
-
-    private static void renderColumnDefinition(
-            RealTable table,
-            ColumnDefinition definition,
-            BaseQueryExportSelection exportSelection,
-            SqlBuilder builder
-    ) {
-        int size = definition.size();
-        for (int i = 0; i < size; i++) {
-            if (i != 0) {
-                builder.sql(", ");
-            }
-            table.renderColumn(builder, definition.name(i), false, exportSelection);
-        }
     }
 
     private ImmutableProp getEmbeddedRawReferenceProp(JSqlClientImplementor sqlClient) {

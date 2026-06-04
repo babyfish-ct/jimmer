@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -364,6 +365,22 @@ public class ImmutableObjects {
     }
 
     /**
+     * Convert an object to a JSON string with an explicit JSON codec.
+     * If the object is jimmer immutable object, unspecified properties can be automatically ignored.
+     *
+     * @param immutable Any object
+     * @param jsonCodec JSON codec
+     * @return JSON string
+     */
+    public static String toString(Object immutable, @NotNull JsonCodec<?> jsonCodec) {
+        try {
+            return jsonCodec.writer().writeAsString(immutable);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Can't serialize object", e);
+        }
+    }
+
+    /**
      * Convert a JSON string to an object.
      *
      * @param type Object type, can be interface type.
@@ -377,9 +394,9 @@ public class ImmutableObjects {
         }
     }
 
-    public static <I> I fromString(Class<I> type, String json, @Nullable JsonCodec<?> jsonCodec) {
+    public static <I> I fromString(Class<I> type, String json, @NotNull JsonCodec<?> jsonCodec) {
         try {
-            return (jsonCodec != null ? jsonCodec : jsonCodec()).readerFor(type).read(json);
+            return jsonCodec.readerFor(type).read(json);
         } catch (Exception e) {
             throw new IllegalArgumentException("Can't deserialize object ", e);
         }

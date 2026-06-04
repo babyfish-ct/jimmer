@@ -16,6 +16,11 @@ class BinLogDeserializersV2 extends Deserializers.Base {
     }
 
     @Override
+    public boolean hasDeserializerFor(DeserializationConfig config, Class<?> valueType) {
+        return ImmutableType.tryGet(valueType) != null;
+    }
+
+    @Override
     public JsonDeserializer<?> findBeanDeserializer(
             JavaType type,
             DeserializationConfig config,

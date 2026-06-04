@@ -18,8 +18,6 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
-
 abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder<K> implements LockableBinder<K, V> {
 
     final JsonCodec<?> jsonCodec;
@@ -38,13 +36,13 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
-            @Nullable JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec<?> jsonCodec,
             @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             Duration duration,
             int randomPercent
     ) {
         super(type, prop, tracker);
-        this.jsonCodec = jsonCodec != null ? jsonCodec : jsonCodec();
+        this.jsonCodec = jsonCodec;
         this.keyPrefixProvider = keyPrefixProvider != null ? keyPrefixProvider : RemoteKeyPrefixProvider.DEFAULT;
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop cannot be same");
@@ -107,25 +105,20 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
         protected final ImmutableType type;
         protected final ImmutableProp prop;
         protected CacheTracker tracker;
-        protected JsonCodec<?> jsonCodec;
+        protected final JsonCodec<?> jsonCodec;
         protected RemoteKeyPrefixProvider keyPrefixProvider;
         protected Duration duration = Duration.ofMinutes(30);
         protected int randomPercent = 30;
 
-        protected AbstractBuilder(ImmutableType type, ImmutableProp prop) {
+        protected AbstractBuilder(ImmutableType type, ImmutableProp prop, @NotNull JsonCodec<?> jsonCodec) {
             this.type = type;
             this.prop = prop;
+            this.jsonCodec = jsonCodec;
         }
 
         @SuppressWarnings("unchecked")
         public B publish(CacheTracker tracker) {
             this.tracker = tracker;
-            return (B) this;
-        }
-
-        @SuppressWarnings("unchecked")
-        public B jsonCodec(JsonCodec<?> jsonCodec) {
-            this.jsonCodec = jsonCodec;
             return (B) this;
         }
 
