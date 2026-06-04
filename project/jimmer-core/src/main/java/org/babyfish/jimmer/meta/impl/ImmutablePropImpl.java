@@ -40,7 +40,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 }
             };
 
-    private static Lock META_LOCK = new ReentrantLock();
+    private static final Lock META_LOCK = new ReentrantLock();
 
     private static final Ref<Object> NIL_REF = Ref.of(null);
 
