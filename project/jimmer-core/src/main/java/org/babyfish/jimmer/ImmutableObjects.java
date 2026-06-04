@@ -364,6 +364,22 @@ public class ImmutableObjects {
     }
 
     /**
+     * Convert an object to a JSON string with an explicit JSON codec.
+     * If the object is jimmer immutable object, unspecified properties can be automatically ignored.
+     *
+     * @param immutable Any object
+     * @param jsonCodec JSON codec
+     * @return JSON string
+     */
+    public static String toString(Object immutable, JsonCodec<?> jsonCodec) {
+        try {
+            return jsonCodec.writer().writeAsString(immutable);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Can't serialize object", e);
+        }
+    }
+
+    /**
      * Convert a JSON string to an object.
      *
      * @param type Object type, can be interface type.
