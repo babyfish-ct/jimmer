@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
@@ -30,53 +29,37 @@ public class CacheImpl<T> implements Cache<Object, T> {
     private final Consumer<Collection<String>> onDelete;
 
     public CacheImpl(ImmutableType type) {
-        this(type, JsonCodec.jsonCodec());
-    }
-
-    public CacheImpl(ImmutableType type, JsonCodec<?> jsonCodec) {
         this.type = type;
         this.prop = null;
         this.map = new HashMap<>();
-        valueSerializer = new ValueSerializer<>(type, jsonCodec);
+        valueSerializer = new ValueSerializer<>(type);
         logPrefix = null;
         onDelete = null;
     }
 
     public CacheImpl(ImmutableType type, Map<Object, byte[]> map) {
-        this(type, map, JsonCodec.jsonCodec());
-    }
-
-    public CacheImpl(ImmutableType type, Map<Object, byte[]> map, JsonCodec<?> jsonCodec) {
         this.type = type;
         this.prop = null;
         this.map = map != null ? map : new HashMap<>();
-        valueSerializer = new ValueSerializer<>(type, jsonCodec);
+        valueSerializer = new ValueSerializer<>(type);
         logPrefix = null;
         onDelete = null;
     }
 
     public CacheImpl(ImmutableProp prop) {
-        this(prop, JsonCodec.jsonCodec());
-    }
-
-    public CacheImpl(ImmutableProp prop, JsonCodec<?> jsonCodec) {
         this.type = prop.getDeclaringType();
         this.prop = prop;
         this.map = new HashMap<>();
-        valueSerializer = new ValueSerializer<>(prop, jsonCodec);
+        valueSerializer = new ValueSerializer<>(prop);
         logPrefix = null;
         this.onDelete = null;
     }
 
     public CacheImpl(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
-        this(prop, JsonCodec.jsonCodec(), onDelete);
-    }
-
-    public CacheImpl(ImmutableProp prop, JsonCodec<?> jsonCodec, Consumer<Collection<String>> onDelete) {
         this.type = prop.getDeclaringType();
         this.prop = prop;
         map = new HashMap<>();
-        valueSerializer = new ValueSerializer<>(prop, jsonCodec);
+        valueSerializer = new ValueSerializer<>(prop);
         logPrefix = prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
         this.onDelete = onDelete;
     }
