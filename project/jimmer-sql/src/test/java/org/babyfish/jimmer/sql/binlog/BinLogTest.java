@@ -21,12 +21,13 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 public class BinLogTest {
 
     private final BinLogParser parser =
-            new BinLogParser().initialize(
-                    (JSqlClientImplementor) JSqlClient.newBuilder()
-                            .build(),
-                    null,
+            new BinLogParser(
+                    jsonCodec(),
                     Collections.emptyMap(),
                     Collections.emptyMap()
+            ).initialize(
+                    (JSqlClientImplementor) JSqlClient.newBuilder()
+                            .build()
             );
 
     @Test
@@ -41,11 +42,12 @@ public class BinLogTest {
 
     @Test
     public void testTreeNodeWithImmutableModuleJsonCodec() {
-        BinLogParser parser = new BinLogParser().initialize(
-                (JSqlClientImplementor) JSqlClient.newBuilder().build(),
+        BinLogParser parser = new BinLogParser(
                 jsonCodec(),
                 Collections.emptyMap(),
                 Collections.emptyMap()
+        ).initialize(
+                (JSqlClientImplementor) JSqlClient.newBuilder().build()
         );
         String json = "{\"Node_Id\": 2, \"[Name]\": 3, \"`Parent_Id`\": 1}";
         TreeNode treeNode = parser.parseEntity(TreeNode.class, json);

@@ -186,6 +186,10 @@ class KSqlClientDsl constructor(
         javaBuilder.addPropScalarProviderFactory(factory)
     }
 
+    fun setJsonCodec(jsonCodec: JsonCodec<*>) {
+        javaBuilder.setJsonCodec(jsonCodec)
+    }
+
     fun setDefaultSerializedTypeJsonCodec(jsonCodec: JsonCodec<*>) {
         javaBuilder.setDefaultSerializedTypeJsonCodec(jsonCodec)
     }

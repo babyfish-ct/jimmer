@@ -23,43 +23,47 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule;
-
 public class BinLogParser {
 
     private final Map<String, BinLogPropReader> readerMap = new HashMap<>();
 
-    private final Map<Class<?>, BinLogPropReader> typeReaderMap = new HashMap<>();
+    private final Map<Class<?>, BinLogPropReader> typeReaderMap;
 
     private final PropCache<BinLogPropReader> readerCache = new PropCache<>(this::createReader, true);
 
-    private JsonCodec<?> jsonCodec;
+    private final JsonCodec<?> jsonCodec;
+
+    private final Map<ImmutableProp, BinLogPropReader> configuredReaderMap;
 
     private JSqlClientImplementor sqlClient;
 
+    public BinLogParser(
+            @NotNull JsonCodec<?> jsonCodec,
+            @NotNull Map<ImmutableProp, BinLogPropReader> propReaderMap,
+            @NotNull Map<Class<?>, BinLogPropReader> typePropReaderMap
+    ) {
+        this.jsonCodec = jsonCodec.withCustomizations(new BinLogModuleCustomization(this));
+        this.configuredReaderMap = propReaderMap;
+        this.typeReaderMap = typePropReaderMap;
+    }
+
     public BinLogParser initialize(
-            JSqlClientImplementor sqlClient,
-            @Nullable JsonCodec<?> jsonCodec,
-            Map<ImmutableProp, BinLogPropReader> propReaderMap,
-            Map<Class<?>, BinLogPropReader> typePropReaderMap
+            JSqlClientImplementor sqlClient
     ) {
         if (sqlClient == null) {
             throw new IllegalArgumentException("`sqlClient` cannot be null");
         }
-        JsonCodec<?> codec = jsonCodec != null ? jsonCodec : jsonCodecWithoutImmutableModule();
-        this.jsonCodec = codec.withCustomizations(new BinLogModuleCustomization(this));
         this.sqlClient = sqlClient;
         Map<String, BinLogPropReader> propNameReaderMap = new HashMap<>();
         for (ImmutableType type : sqlClient.getEntityManager().getAllTypes(sqlClient.getMicroServiceName())) {
             for (ImmutableProp prop : type.getEntityProps().values()) {
-                BinLogPropReader reader = reader(prop, propReaderMap);
+                BinLogPropReader reader = reader(prop, configuredReaderMap);
                 if (reader != null) {
                     propNameReaderMap.put(prop.toString(), reader);
                 }
             }
         }
         this.readerMap.putAll(propNameReaderMap);
-        this.typeReaderMap.putAll(typePropReaderMap);
         return this;
     }
 
@@ -69,6 +73,10 @@ public class BinLogParser {
 
     public BinLogPropReader reader(ImmutableProp prop) {
         return readerCache.get(prop);
+    }
+
+    JsonCodec<?> codec() {
+        return jsonCodec();
     }
 
     public <T> T parseEntity(@NotNull Class<T> type, String json) {
@@ -125,11 +133,11 @@ public class BinLogParser {
             String columnName = e.getKey();
             String comparableColumnName = DatabaseIdentifiers.comparableIdentifier(columnName);
             if (comparableColumnName.equals(deletedColumnName)) {
-                deleted = deletedInfo.isDeleted(ValueParser.valueOrError(e.getValue(), deletedInfo.getType()));
+                deleted = deletedInfo.isDeleted(ValueParser.valueOrError(this.codec(), e.getValue(), deletedInfo.getType()));
                 continue;
             }
             if (comparableColumnName.equals(filteredColumnName)) {
-                filteredValue = ValueParser.valueOrError(e.getValue(), filterInfo.getType());
+                filteredValue = ValueParser.valueOrError(this.codec(), e.getValue(), filterInfo.getType());
                 continue;
             }
             List<ImmutableProp> chain = associationType.getPropChain(e.getKey(), strategy, true);

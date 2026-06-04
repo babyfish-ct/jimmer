@@ -195,7 +195,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         }
         builder
                 .setDatabaseValidationMode(properties.getDatabaseValidation().getMode())
-                .setDefaultSerializedTypeJsonCodec(jsonCodec)
+                .setJsonCodec(jsonCodec)
                 .setCacheFactory(cacheFactory)
                 .setCacheOperator(cacheOperator)
                 .addCacheAbandonedCallbacks(callbacks);

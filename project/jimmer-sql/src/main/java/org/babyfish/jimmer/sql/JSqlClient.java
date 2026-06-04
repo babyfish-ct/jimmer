@@ -372,6 +372,9 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
 
         @OldChain
+        Builder setJsonCodec(JsonCodec<?> jsonCodec);
+
+        @OldChain
         Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec);
 
         @OldChain

@@ -1019,6 +1019,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private PropScalarProviderFactory propScalarProviderFactory;
 
+        private JsonCodec<?> jsonCodec;
+
+        private JsonCodec<?> serializedJsonCodec;
+
         private final Map<Class<?>, JsonCodec<?>> serializedTypeJsonCodecMap = new HashMap<>();
 
         private final Map<ImmutableProp, JsonCodec<?>> serializedPropJsonCodecMap = new HashMap<>();
@@ -1379,16 +1383,26 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setJsonCodec(JsonCodec<?> jsonCodec) {
+            this.jsonCodec = jsonCodec;
+            return this;
+        }
+
+        @Override
         public Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec) {
-            return setSerializedTypeJsonCodec(Object.class, jsonCodec);
+            this.serializedJsonCodec = jsonCodec;
+            return this;
         }
 
         @Override
         public Builder setSerializedTypeJsonCodec(Class<?> type, JsonCodec<?> jsonCodec) {
+            if (type == null || type == Object.class) {
+                return setDefaultSerializedTypeJsonCodec(jsonCodec);
+            }
             if (jsonCodec != null) {
-                serializedTypeJsonCodecMap.put(type != null ? type : Object.class, jsonCodec);
+                serializedTypeJsonCodecMap.put(type, jsonCodec);
             } else {
-                serializedTypeJsonCodecMap.remove(type != null ? type : Object.class);
+                serializedTypeJsonCodecMap.remove(type);
             }
             return this;
         }
@@ -1850,10 +1864,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
             } else {
                 foreignKeyStrategy = ForeignKeyStrategy.FAKE;
             }
+            JsonCodec<?> resolvedApplicationJsonCodec =
+                    jsonCodec != null ? jsonCodec : JsonCodec.jsonCodec();
+            JsonCodec<?> resolvedSerializedJsonCodec =
+                    serializedJsonCodec != null ? serializedJsonCodec : resolvedApplicationJsonCodec;
+            JsonCodec<?> resolvedBinLogJsonCodec =
+                    binLogJsonCodec != null ? binLogJsonCodec : resolvedApplicationJsonCodec;
             ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
                     typeScalarProviderMap,
                     propScalarProviderMap,
                     propScalarProviderFactory,
+                    resolvedSerializedJsonCodec,
                     serializedTypeJsonCodecMap,
                     serializedPropJsonCodecMap,
                     defaultJsonProviderCreator,
@@ -1883,7 +1904,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     triggers,
                     filterManager
             );
-            BinLogParser binLogParser = new BinLogParser();
+            BinLogParser binLogParser = new BinLogParser(
+                    resolvedBinLogJsonCodec,
+                    binLogPropReaderMap,
+                    typeBinLogPropReaderMap
+            );
             BinLog binLog = new BinLogImpl(
                     entityManager(),
                     microServiceName,
@@ -1944,7 +1969,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             );
             CachesImpl.initialize(caches, sqlClient);
             filterManager.initialize(sqlClient);
-            binLogParser.initialize(sqlClient, binLogJsonCodec, binLogPropReaderMap, typeBinLogPropReaderMap);
+            binLogParser.initialize(sqlClient);
             transientResolverManager.initialize(sqlClient);
             triggers.initialize(sqlClient);
             if (transactionTriggers != null && transactionTriggers != triggers) {
