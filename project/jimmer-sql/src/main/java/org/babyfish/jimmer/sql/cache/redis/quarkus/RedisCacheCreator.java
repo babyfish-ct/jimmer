@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheCreator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -26,10 +27,10 @@ import java.util.Objects;
 public class RedisCacheCreator extends AbstractCacheCreator {
 
     public RedisCacheCreator(RedisDataSource redisDataSource) {
-        this(redisDataSource, null);
+        this(redisDataSource, JsonCodec.jsonCodec());
     }
 
-    public RedisCacheCreator(RedisDataSource redisDataSource, JsonCodec<?> jsonCodec) {
+    public RedisCacheCreator(RedisDataSource redisDataSource, @NotNull JsonCodec<?> jsonCodec) {
         super(new Root(redisDataSource, jsonCodec));
     }
 
@@ -156,7 +157,7 @@ public class RedisCacheCreator extends AbstractCacheCreator {
 
         final JsonCodec<?> jsonCodec;
 
-        private Root(RedisDataSource redisDataSource, JsonCodec<?> jsonCodec) {
+        private Root(RedisDataSource redisDataSource, @NotNull JsonCodec<?> jsonCodec) {
             super(null);
             this.redisDataSource = Objects.requireNonNull(redisDataSource, "redisDataSource cannot be null");
             this.jsonCodec = jsonCodec;

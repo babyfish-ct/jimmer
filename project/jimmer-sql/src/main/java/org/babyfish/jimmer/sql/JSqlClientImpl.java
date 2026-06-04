@@ -79,6 +79,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final SqlFormatter sqlFormatter;
 
+    private final JsonCodec<?> jsonCodec;
+
     private final ReferenceFetchType defaultReferenceFetchType;
 
     private final int maxJoinFetchDepth;
@@ -164,6 +166,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Executor executor,
             List<String> executorContextPrefixes,
             SqlFormatter sqlFormatter,
+            JsonCodec<?> jsonCodec,
             ReferenceFetchType defaultReferenceFetchType,
             int maxJoinFetchDepth,
             ZoneId zoneId,
@@ -216,6 +219,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         Collections.unmodifiableList(executorContextPrefixes) :
                         null;
         this.sqlFormatter = sqlFormatter;
+        this.jsonCodec = jsonCodec;
         this.defaultReferenceFetchType = defaultReferenceFetchType;
         this.maxJoinFetchDepth = maxJoinFetchDepth;
         this.zoneId = zoneId != null ? zoneId : ZoneId.systemDefault();
@@ -295,6 +299,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public SqlFormatter getSqlFormatter() {
         return sqlFormatter;
+    }
+
+    @Override
+    public JsonCodec<?> getJsonCodec() {
+        return jsonCodec;
     }
 
     @SuppressWarnings("unchecked")
@@ -685,6 +694,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -741,6 +751,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -792,6 +803,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -846,6 +858,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -1930,6 +1943,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     executor,
                     executorContextPrefixes,
                     sqlFormatter,
+                    resolvedApplicationJsonCodec,
                     defaultReferenceFetchType,
                     maxJoinFetchDepth,
                     zoneId,

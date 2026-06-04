@@ -127,6 +127,8 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     Caches getCaches();
 
+    JsonCodec<?> getJsonCodec();
+
     Filters getFilters();
 
     BinLog getBinLog();

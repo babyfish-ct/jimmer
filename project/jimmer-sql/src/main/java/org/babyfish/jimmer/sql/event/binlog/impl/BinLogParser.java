@@ -76,7 +76,7 @@ public class BinLogParser {
     }
 
     JsonCodec<?> codec() {
-        return jsonCodec();
+        return jsonCodec;
     }
 
     public <T> T parseEntity(@NotNull Class<T> type, String json) {
@@ -84,7 +84,7 @@ public class BinLogParser {
             return null;
         }
         try {
-            return jsonCodec().readerFor(type).read(json);
+            return jsonCodec.readerFor(type).read(json);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Illegal json: " + json, ex);
         }
@@ -191,7 +191,7 @@ public class BinLogParser {
         }
         Node data;
         try {
-            data = jsonCodec().treeReader().read(json);
+            data = jsonCodec.treeReader().read(json);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Illegal json: " + json, ex);
         }
@@ -252,14 +252,4 @@ public class BinLogParser {
         return typeReaderMap.get(prop.getElementClass());
     }
 
-    private JsonCodec<?> jsonCodec() {
-        JsonCodec<?> jsonCodec = this.jsonCodec;
-        if (jsonCodec == null) {
-            throw new IllegalStateException(
-                    "The binlog is not ready because the initialization of sqlClient is 'MANUAL' " +
-                            "but the sqlClient is not initialized"
-            );
-        }
-        return jsonCodec;
-    }
 }
