@@ -674,18 +674,20 @@ public class EntityManager {
                 }
             }
 
+            Set<Key> rawKeys = new HashSet<>(typeMap.keySet());
+            Set<Key> ambiguousAliasKeys = new HashSet<>();
             for (ImmutableType type : map.keySet()) {
                 if (!type.isEntity()) {
                     continue;
                 }
                 String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
-                extendRawTypeMap(type.getMicroServiceName(), tableName, typeMap);
+                extendRawTypeMap(type.getMicroServiceName(), tableName, typeMap, rawKeys, ambiguousAliasKeys);
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isMiddleTableDefinition()) {
                         String middleTableName = DatabaseIdentifiers.comparableIdentifier(
                                 prop.<MiddleTable>getStorage(strategy).getTableName()
                         );
-                        extendRawTypeMap(type.getMicroServiceName(), middleTableName, typeMap);
+                        extendRawTypeMap(type.getMicroServiceName(), middleTableName, typeMap, rawKeys, ambiguousAliasKeys);
                     }
                 }
             }
@@ -699,10 +701,6 @@ public class EntityManager {
                     continue;
                 }
                 String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
-                int lastDotIndex = tableName.lastIndexOf('.');
-                if (lastDotIndex != -1) {
-                    tableName = tableName.substring(lastDotIndex + 1);
-                }
                 String microServiceName = type.getMicroServiceName();
                 Key key = new Key(microServiceName, tableName);
                 Map<List<Object>, ImmutableType> subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
@@ -718,10 +716,6 @@ public class EntityManager {
                                 middleTable.getFilterInfo().getValues() :
                                 null;
                         String middleTableName = DatabaseIdentifiers.comparableIdentifier(middleTable.getTableName());
-                        lastDotIndex = middleTableName.lastIndexOf('.');
-                        if (lastDotIndex != -1) {
-                            middleTableName = middleTableName.substring(lastDotIndex + 1);
-                        }
                         key = new Key(microServiceName, middleTableName);
                         subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
                         if (filteredValues != null) {
@@ -848,24 +842,34 @@ public class EntityManager {
         }
     }
 
-    private static void extendRawTypeMap(String microServiceName, String tableName, Map<Key, Map<List<Object>, ImmutableType>> map) {
-        int lastDotIndex = tableName.lastIndexOf('.');
-        if (lastDotIndex == -1) {
+    private static void extendRawTypeMap(
+            String microServiceName,
+            String tableName,
+            Map<Key, Map<List<Object>, ImmutableType>> map,
+            Set<Key> rawKeys,
+            Set<Key> ambiguousAliasKeys
+    ) {
+        if (tableName.indexOf('.') == -1) {
             return;
         }
-        Map<List<Object>, ImmutableType> subMap = map.get(
-                new Key(
-                        microServiceName,
-                        tableName.substring(lastDotIndex + 1)
-                )
-        );
+        Map<List<Object>, ImmutableType> subMap = map.get(new Key(microServiceName, tableName));
         if (subMap == null) {
             return;
         }
         int index;
         while ((index = tableName.indexOf('.')) != -1) {
-            map.put(new Key(microServiceName, tableName), subMap);
             tableName = tableName.substring(index + 1);
+            Key key = new Key(microServiceName, tableName);
+            if (ambiguousAliasKeys.contains(key)) {
+                continue;
+            }
+            Map<List<Object>, ImmutableType> conflictMap = map.putIfAbsent(key, subMap);
+            if (conflictMap != null && conflictMap != subMap) {
+                if (!rawKeys.contains(key)) {
+                    map.remove(key);
+                }
+                ambiguousAliasKeys.add(key);
+            }
         }
     }
 }
