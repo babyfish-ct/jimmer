@@ -172,7 +172,8 @@ public class H2Dialect extends DefaultDialect {
 
         ctx.enter(AbstractSqlBuilder.ScopeType.AND);
         for (ValueGetter getter : ctx.getConflictGetters()) {
-            ctx.separator().sql("tb_1_.").sql(getter).sql(" = tb_2_.").sql(getter);
+            ctx.separator().sql("tb_1_.").sql(getter).sql(" = ");
+            appendConflictValueFromSource(ctx, getter);
         }
         ctx.leave();
         if (!ctx.isUpdateIgnored() && (ctx.hasGeneratedId()) || ctx.hasUpdatedColumns()) {
@@ -204,6 +205,20 @@ public class H2Dialect extends DefaultDialect {
                 .appendInsertedColumns("tb_2_.")
                 .leave()
                 .leave();
+    }
+
+    private void appendConflictValueFromSource(UpsertContext ctx, ValueGetter getter) {
+        ctx.sql("tb_2_.").sql(getter);
+        if (Classes.boxTypeOf(getter.metadata().getSqlType()) != Boolean.class) {
+            return;
+        }
+        String sqlTypeName = getter.metadata().getSqlTypeName();
+        if (sqlTypeName == null) {
+            sqlTypeName = sqlType(Classes.primitiveTypeOf(getter.metadata().getSqlType()));
+        }
+        if (sqlTypeName != null) {
+            ctx.sql("::").sql(sqlTypeName);
+        }
     }
 
     @Override
