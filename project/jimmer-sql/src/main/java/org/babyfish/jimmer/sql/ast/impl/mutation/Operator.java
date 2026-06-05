@@ -1054,6 +1054,10 @@ class Operator {
                                 .variable(getter);
                     }
                 }
+                LogicalDeletedInfo logicalDeletedInfo = shape.getType().getLogicalDeletedInfo();
+                if (logicalDeletedInfo != null) {
+                    builder.separator().logicalDeleteFilter(logicalDeletedInfo, null);
+                }
             } else {
                 for (PropertyGetter getter : shape.getIdGetters()) {
                     builder.separator()

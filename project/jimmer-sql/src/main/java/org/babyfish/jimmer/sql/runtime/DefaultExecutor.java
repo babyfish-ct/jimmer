@@ -239,6 +239,11 @@ public class DefaultExecutor implements Executor {
             Reader<?> idReader = sqlClient.getReader(generatedIdProp);
             try (ResultSet rs = statement.getGeneratedKeys()) {
                 while (rs.next()) {
+                    if (index == batchCount) {
+                        throw new ExecutionException(
+                                "Too many generated ids for batch SQL statement: " + sql
+                        );
+                    }
                     Object id = idReader.read(rs, new Reader.Context(null, sqlClient));
                     ids[index++] = id;
                 }
