@@ -622,7 +622,6 @@ public class EntityManager {
             return typeMapCache.get(strategy);
         }
 
-        @SuppressWarnings("unchecked")
         private Map<Key, Map<List<Object>, ImmutableType>> createTypeMap(MetadataStrategy strategy) {
             Map<Key, Map<List<Object>, ImmutableType>> typeMap = createRawTypeMap(strategy);
             for (Map.Entry<Key, Map<List<Object>, ImmutableType>> e : typeMap.entrySet()) {
@@ -674,23 +673,7 @@ public class EntityManager {
                 }
             }
 
-            Set<Key> rawKeys = new HashSet<>(typeMap.keySet());
-            Set<Key> ambiguousAliasKeys = new HashSet<>();
-            for (ImmutableType type : map.keySet()) {
-                if (!type.isEntity()) {
-                    continue;
-                }
-                String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
-                extendRawTypeMap(type.getMicroServiceName(), tableName, typeMap, rawKeys, ambiguousAliasKeys);
-                for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.isMiddleTableDefinition()) {
-                        String middleTableName = DatabaseIdentifiers.comparableIdentifier(
-                                prop.<MiddleTable>getStorage(strategy).getTableName()
-                        );
-                        extendRawTypeMap(type.getMicroServiceName(), middleTableName, typeMap, rawKeys, ambiguousAliasKeys);
-                    }
-                }
-            }
+            typeMap.putAll(createAliasTypeMap(typeMap));
             return typeMap;
         }
 
@@ -842,34 +825,40 @@ public class EntityManager {
         }
     }
 
-    private static void extendRawTypeMap(
-            String microServiceName,
-            String tableName,
-            Map<Key, Map<List<Object>, ImmutableType>> map,
-            Set<Key> rawKeys,
+    private static Map<Key, Map<List<Object>, ImmutableType>> createAliasTypeMap(
+            Map<Key, Map<List<Object>, ImmutableType>> rawTypeMap
+    ) {
+        Map<Key, Map<List<Object>, ImmutableType>> aliasTypeMap = new LinkedHashMap<>();
+        Set<Key> ambiguousAliasKeys = new HashSet<>();
+        for (Map.Entry<Key, Map<List<Object>, ImmutableType>> e : rawTypeMap.entrySet()) {
+            addAliasTypeMap(e.getKey(), e.getValue(), rawTypeMap, aliasTypeMap, ambiguousAliasKeys);
+        }
+        return aliasTypeMap;
+    }
+
+    private static void addAliasTypeMap(
+            Key rawKey,
+            Map<List<Object>, ImmutableType> subMap,
+            Map<Key, Map<List<Object>, ImmutableType>> rawTypeMap,
+            Map<Key, Map<List<Object>, ImmutableType>> aliasTypeMap,
             Set<Key> ambiguousAliasKeys
     ) {
-        if (tableName.indexOf('.') == -1) {
-            return;
-        }
-        Map<List<Object>, ImmutableType> subMap = map.get(new Key(microServiceName, tableName));
-        if (subMap == null) {
-            return;
-        }
+        String tableName = rawKey.tableName;
         int index;
         while ((index = tableName.indexOf('.')) != -1) {
             tableName = tableName.substring(index + 1);
-            Key key = new Key(microServiceName, tableName);
-            if (ambiguousAliasKeys.contains(key)) {
+            Key aliasKey = new Key(rawKey.microServiceName, tableName);
+            if (ambiguousAliasKeys.contains(aliasKey)) {
                 continue;
             }
-            Map<List<Object>, ImmutableType> conflictMap = map.putIfAbsent(key, subMap);
+            Map<List<Object>, ImmutableType> conflictMap = rawTypeMap.get(aliasKey);
             if (conflictMap != null && conflictMap != subMap) {
-                if (rawKeys.contains(key)) {
-                    tableSharedBy(key, firstType(conflictMap), firstType(subMap), null);
-                }
-                map.remove(key);
-                ambiguousAliasKeys.add(key);
+                tableSharedBy(aliasKey, firstType(conflictMap), firstType(subMap), null);
+            }
+            conflictMap = aliasTypeMap.putIfAbsent(aliasKey, subMap);
+            if (conflictMap != null && conflictMap != subMap) {
+                aliasTypeMap.remove(aliasKey);
+                ambiguousAliasKeys.add(aliasKey);
             }
         }
     }
