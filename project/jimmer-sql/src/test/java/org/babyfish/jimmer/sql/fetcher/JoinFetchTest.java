@@ -402,7 +402,9 @@ public class JoinFetchTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, " +
                                     "tb_2_.ID, tb_2_.NAME " +
                                     "from ADMINISTRATOR tb_1_ " +
-                                    "left join ADMINISTRATOR_METADATA tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "left join ADMINISTRATOR_METADATA tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "--->and tb_2_.DELETED <> ? " +
                                     "where tb_1_.DELETED <> ?"
                     );
                     ctx.rows(

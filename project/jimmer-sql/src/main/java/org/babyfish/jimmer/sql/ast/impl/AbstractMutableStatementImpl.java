@@ -20,6 +20,9 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -486,6 +489,17 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             }
         }
 
+        @Override
+        public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {
+            TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+            if (implementor instanceof TableImplementor<?>) {
+                new ApplyJoinFetcherFilterVisitor(
+                        getAstContext().getSqlClient(),
+                        (TableImplementor<?>) implementor
+                ).visit(fetcher);
+            }
+        }
+
         public boolean isApplied(AbstractMutableStatementImpl statement, Selection<?> selection) {
             return appliedSet.has(statement, selection);
         }
@@ -508,6 +522,36 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
         public void apply(AbstractMutableStatementImpl statement, Order order) {
             appliedSet.add(statement, order);
+        }
+
+        private class ApplyJoinFetcherFilterVisitor extends JoinFetchFieldVisitor {
+
+            private TableImplementor<?> tableImplementor;
+
+            ApplyJoinFetcherFilterVisitor(JSqlClientImplementor sqlClient, TableImplementor<?> tableImplementor) {
+                super(sqlClient);
+                this.tableImplementor = tableImplementor;
+            }
+
+            @Override
+            protected Object enter(Field field) {
+                TableImplementor<?> oldTableImplementor = tableImplementor;
+                TableImplementor<?> newTableImplementor =
+                        oldTableImplementor.joinFetchImplementor(
+                                field.getProp(),
+                                oldTableImplementor.getBaseTableOwner()
+                        );
+                newTableImplementor
+                        .getStatement()
+                        .applyGlobalFilerImpl(ApplyFilterVisitor.this, newTableImplementor);
+                tableImplementor = newTableImplementor;
+                return oldTableImplementor;
+            }
+
+            @Override
+            protected void leave(Field field, Object enterValue) {
+                tableImplementor = (TableImplementor<?>) enterValue;
+            }
         }
     }
 }

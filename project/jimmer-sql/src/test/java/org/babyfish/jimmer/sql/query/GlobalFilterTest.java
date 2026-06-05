@@ -2,8 +2,12 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
+import org.babyfish.jimmer.sql.model.hr.DepartmentFetcher;
+import org.babyfish.jimmer.sql.model.hr.EmployeeFetcher;
+import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +27,46 @@ public class GlobalFilterTest extends AbstractQueryTest {
         });
         lambdaClient = new LambdaClient(sqlClient);
         lambdaClientForDeletedData = new LambdaClient(sqlClientForDeletedData);
+    }
+
+    @Test
+    public void testJoinFetchAppliesLogicalDeletedFilterToJoinedReference() {
+        EmployeeTable table = EmployeeTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table.fetch(
+                                        EmployeeFetcher.$
+                                                .name()
+                                                .department(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        DepartmentFetcher.$.name()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_2_.ID, tb_2_.NAME " +
+                                    "from EMPLOYEE tb_1_ " +
+                                    "left join DEPARTMENT tb_2_ " +
+                                    "--->on tb_1_.DEPARTMENT_ID = tb_2_.ID " +
+                                    "--->and tb_2_.DELETED_MILLIS = ? " +
+                                    "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
+                    );
+                    ctx.variables(0L, 1L, 0L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"1\"," +
+                                    "--->--->\"name\":\"Sam\"," +
+                                    "--->--->\"department\":{\"id\":\"1\",\"name\":\"Market\"}" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
     }
 
     @Test
