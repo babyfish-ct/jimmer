@@ -9,6 +9,9 @@ import org.babyfish.jimmer.sql.model.mapsid.DualParentChild;
 import org.babyfish.jimmer.sql.model.mapsid.DualParentChildDraft;
 import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocument;
 import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentDraft;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdMessage;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdMessageDelivery;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdMessageDeliveryDraft;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdPrincipal;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfileDraft;
@@ -55,6 +58,46 @@ public class MapsIdMutationTest extends AbstractMutationTest {
                                     "--->\"id\":{\"a\":1,\"b\":2}," +
                                     "--->\"nickname\":\"Alex\"," +
                                     "--->\"principal\":{\"id\":{\"a\":1,\"b\":2},\"name\":\"Root\"}" +
+                                    "}"
+                    ));
+                }
+        );
+    }
+
+    @Test
+    public void testSaveFullScalarMappedIdWithAssociationIdName() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                MapsIdMessageDeliveryDraft.$.produce(delivery -> {
+                                    delivery.setMessageId(101L);
+                                    delivery.setStatus("READ");
+                                    delivery.applyMessage(message -> {
+                                        message.setId(101L);
+                                        message.setText("Hi");
+                                    });
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_MESSAGE(ID, TEXT) values(?, ?)");
+                        it.variables(101L, "Hi");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into MAPS_ID_MESSAGE_DELIVERY(MESSAGE_ID, STATUS) values(?, ?)");
+                        it.variables(101L, "READ");
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(MapsIdMessage.class), 1);
+                    ctx.rowCount(AffectedTable.of(MapsIdMessageDelivery.class), 1);
+                    ctx.entity(it -> it.modified(
+                            "{" +
+                                    "--->\"messageId\":101," +
+                                    "--->\"status\":\"READ\"," +
+                                    "--->\"message\":{\"id\":101,\"text\":\"Hi\"}" +
                                     "}"
                     ));
                 }

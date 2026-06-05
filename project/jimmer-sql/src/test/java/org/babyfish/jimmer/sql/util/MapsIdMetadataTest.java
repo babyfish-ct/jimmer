@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.model.mapsid.DualParentChild;
 import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocument;
 import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentBase;
 import org.babyfish.jimmer.sql.model.mapsid.MappedTenantDocumentIdBase;
+import org.babyfish.jimmer.sql.model.mapsid.MapsIdMessageDelivery;
 import org.babyfish.jimmer.sql.model.mapsid.LongMapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.MapsIdProfile;
 import org.babyfish.jimmer.sql.model.mapsid.TenantDocument;
@@ -54,6 +55,29 @@ public class MapsIdMetadataTest extends AbstractQueryTest {
         assertTrue(mappedId.isFull());
         assertEquals(
                 "[id->ID]",
+                mappedId.getColumns(((JSqlClientImplementor) getSqlClient()).getMetadataStrategy())
+                        .stream()
+                        .map(it -> it.getSourceName() + "->" + it.getTargetName())
+                        .collect(Collectors.toList())
+                        .toString()
+        );
+    }
+
+    @Test
+    public void testWholeScalarIdMappingWithAssociationIdName() {
+        ImmutableType type = ImmutableType.get(MapsIdMessageDelivery.class);
+        List<MappedId> mappedIds = type.getMappedIds();
+
+        assertEquals("messageId", type.getIdProp().getName());
+        assertNull(type.getProp("messageId").getIdViewBaseProp());
+        assertEquals(1, mappedIds.size());
+        MappedId mappedId = mappedIds.get(0);
+        assertEquals("message", mappedId.getProp().getName());
+        assertEquals("messageId", mappedId.getIdProp().getName());
+        assertEquals("id", mappedId.getTargetIdProp().getName());
+        assertTrue(mappedId.isFull());
+        assertEquals(
+                "[MESSAGE_ID->ID]",
                 mappedId.getColumns(((JSqlClientImplementor) getSqlClient()).getMetadataStrategy())
                         .stream()
                         .map(it -> it.getSourceName() + "->" + it.getTargetName())

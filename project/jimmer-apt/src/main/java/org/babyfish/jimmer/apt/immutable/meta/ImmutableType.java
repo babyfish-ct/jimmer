@@ -672,6 +672,9 @@ public class ImmutableType implements BaseType {
                 String expectedPropName = prop.getName() + "Id";
                 ImmutableProp expectedProp = getProps().get(expectedPropName);
                 if (expectedProp != null) {
+                    if (isExplicitMappedIdProp(prop, expectedProp)) {
+                        continue;
+                    }
                     throw new MetaException(
                             expectedProp.toElement(),
                             "It looks like @IdView of association \"" +
@@ -684,6 +687,26 @@ public class ImmutableType implements BaseType {
             this.idPropNameMap = map;
         }
         return map;
+    }
+
+    private boolean isExplicitMappedIdProp(ImmutableProp associationProp, ImmutableProp expectedProp) {
+        MapsId mapsId = associationProp.getAnnotation(MapsId.class);
+        if (mapsId == null || !mapsId.value().isEmpty()) {
+            return false;
+        }
+        if (associationProp.isReverse() || associationProp.isTransient()) {
+            return false;
+        }
+        if (expectedProp != idProp || !expectedProp.isId()) {
+            return false;
+        }
+        ImmutableType targetType = associationProp.getTargetType();
+        if (targetType == null || targetType.getIdProp() == null) {
+            return false;
+        }
+        return expectedProp.getElementTypeName().box().equals(
+                targetType.getIdProp().getElementTypeName().box()
+        );
     }
 
     public List<ImmutableProp> getPropsOrderById() {

@@ -1,0 +1,11 @@
+export org.babyfish.jimmer.sql.model.mapsid.MapsIdMessageDelivery
+    -> package org.babyfish.jimmer.sql.model.mapsid.dto
+
+MapsIdMessageDeliveryView {
+    messageId
+    status
+    message {
+        id
+        text
+    }
+}
