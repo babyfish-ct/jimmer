@@ -865,11 +865,16 @@ public class EntityManager {
             }
             Map<List<Object>, ImmutableType> conflictMap = map.putIfAbsent(key, subMap);
             if (conflictMap != null && conflictMap != subMap) {
-                if (!rawKeys.contains(key)) {
-                    map.remove(key);
+                if (rawKeys.contains(key)) {
+                    tableSharedBy(key, firstType(conflictMap), firstType(subMap), null);
                 }
+                map.remove(key);
                 ambiguousAliasKeys.add(key);
             }
         }
+    }
+
+    private static ImmutableType firstType(Map<List<Object>, ImmutableType> subMap) {
+        return subMap.values().iterator().next();
     }
 }

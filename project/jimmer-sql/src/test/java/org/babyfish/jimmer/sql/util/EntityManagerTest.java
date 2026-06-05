@@ -126,4 +126,40 @@ public class EntityManagerTest {
                 entityManager.getTypeMapByServiceAndTable("", "MY_TABLE", strategy).isEmpty()
         );
     }
+
+    @Test
+    public void testImplicitAndExplicitSchemaConflict() {
+        MetadataStrategy strategy = new MetadataStrategy(
+                DatabaseSchemaStrategy.IMPLICIT,
+                DefaultDatabaseNamingStrategy.UPPER_CASE,
+                ForeignKeyStrategy.REAL,
+                new H2Dialect(),
+                new ScalarTypeStrategy() {
+                    @Override
+                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
+                        return null;
+                    }
+                },
+                it -> {
+                    if ("SCHEMA_A".equals(it)) {
+                        return "";
+                    }
+                    if ("SCHEMA_B".equals(it)) {
+                        return "SCHEMA_A";
+                    }
+                    return it;
+                }
+        );
+        IllegalArgumentException ex = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityManager(SchemaATable.class, SchemaBTable.class).validate(strategy)
+        );
+
+        Assertions.assertEquals(
+                "Illegal entity manager, the table \"MY_TABLE\" is shared by both " +
+                        "\"org.babyfish.jimmer.sql.model.schema.SchemaATable\" and " +
+                        "\"org.babyfish.jimmer.sql.model.schema.SchemaBTable\"",
+                ex.getMessage()
+        );
+    }
 }
