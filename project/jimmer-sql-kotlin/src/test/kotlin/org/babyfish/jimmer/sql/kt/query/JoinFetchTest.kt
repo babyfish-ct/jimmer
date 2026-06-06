@@ -272,7 +272,8 @@ class JoinFetchTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_2_.ID, tb_2_.NAME 
                     |from ADMINISTRATOR tb_1_ 
-                    |left join ADMINISTRATOR_METADATA tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID 
+                    |left join ADMINISTRATOR_METADATA tb_2_ 
+                    |on tb_1_.ID = tb_2_.ADMINISTRATOR_ID and tb_2_.DELETED <> ? 
                     |where tb_1_.DELETED <> ?""".trimMargin()
             )
             rows(
@@ -302,6 +303,7 @@ class JoinFetchTest : AbstractQueryTest() {
                 """select tb_1_.ID, tb_1_.NAME, tb_2_.ID, tb_2_.NAME 
                     |from EMPLOYEE tb_1_ 
                     |left join DEPARTMENT tb_2_ on tb_1_.DEPARTMENT_ID = tb_2_.ID 
+                    |and tb_2_.DELETED_TIME is null 
                     |where tb_1_.DELETED_UUID is null""".trimMargin()
             )
             rows(
