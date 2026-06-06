@@ -13,6 +13,8 @@ drop table mapped_tenant_document if exists;
 drop table tenant_document if exists;
 drop table long_maps_id_profile if exists;
 drop table tenant if exists;
+drop table maps_id_message_delivery if exists;
+drop table maps_id_message if exists;
 drop table maps_id_profile if exists;
 drop table maps_id_principal if exists;
 drop table time_row if exists;
@@ -1608,6 +1610,24 @@ create table long_maps_id_profile(
         foreign key(id)
             references tenant(id)
 );
+
+create table maps_id_message(
+    id bigint not null,
+    text varchar(50) not null,
+    constraint pk_maps_id_message primary key(id)
+);
+
+create table maps_id_message_delivery(
+    message_id bigint not null,
+    status varchar(50) not null,
+    constraint pk_maps_id_message_delivery primary key(message_id),
+    constraint fk_maps_id_message_delivery__message
+        foreign key(message_id)
+            references maps_id_message(id)
+);
+
+insert into maps_id_message(id, text) values(100, 'Hello');
+insert into maps_id_message_delivery(message_id, status) values(100, 'SENT');
 
 create table tenant_document(
     tenant_id bigint not null,

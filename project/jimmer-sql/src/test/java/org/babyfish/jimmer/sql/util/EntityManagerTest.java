@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.model.schema.SchemaATable;
+import org.babyfish.jimmer.sql.model.schema.SchemaBTable;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.junit.jupiter.api.Assertions;
@@ -90,6 +92,74 @@ public class EntityManagerTest {
         Assertions.assertEquals(
                 AssociationType.of(AdministratorProps.ROLES),
                 EntityManager.fromResources(null, null).getTypeMapByServiceAndTable("", "`Administrator_Role_Mapping`", strategy).get(null)
+        );
+    }
+
+    @Test
+    public void testSameTableNameInDifferentSchemas() {
+        MetadataStrategy strategy = new MetadataStrategy(
+                DatabaseSchemaStrategy.IMPLICIT,
+                DefaultDatabaseNamingStrategy.UPPER_CASE,
+                ForeignKeyStrategy.REAL,
+                new H2Dialect(),
+                new ScalarTypeStrategy() {
+                    @Override
+                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
+                        return null;
+                    }
+                },
+                MetaStringResolver.NO_OP
+        );
+        EntityManager entityManager = new EntityManager(SchemaATable.class, SchemaBTable.class);
+
+        entityManager.validate(strategy);
+
+        Assertions.assertEquals(
+                ImmutableType.get(SchemaATable.class),
+                entityManager.getTypeMapByServiceAndTable("", "SCHEMA_A.MY_TABLE", strategy).get(null)
+        );
+        Assertions.assertEquals(
+                ImmutableType.get(SchemaBTable.class),
+                entityManager.getTypeMapByServiceAndTable("", "SCHEMA_B.MY_TABLE", strategy).get(null)
+        );
+        Assertions.assertTrue(
+                entityManager.getTypeMapByServiceAndTable("", "MY_TABLE", strategy).isEmpty()
+        );
+    }
+
+    @Test
+    public void testImplicitAndExplicitSchemaConflict() {
+        MetadataStrategy strategy = new MetadataStrategy(
+                DatabaseSchemaStrategy.IMPLICIT,
+                DefaultDatabaseNamingStrategy.UPPER_CASE,
+                ForeignKeyStrategy.REAL,
+                new H2Dialect(),
+                new ScalarTypeStrategy() {
+                    @Override
+                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
+                        return null;
+                    }
+                },
+                it -> {
+                    if ("SCHEMA_A".equals(it)) {
+                        return "";
+                    }
+                    if ("SCHEMA_B".equals(it)) {
+                        return "SCHEMA_A";
+                    }
+                    return it;
+                }
+        );
+        IllegalArgumentException ex = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityManager(SchemaATable.class, SchemaBTable.class).validate(strategy)
+        );
+
+        Assertions.assertEquals(
+                "Illegal entity manager, the table \"MY_TABLE\" is shared by both " +
+                        "\"org.babyfish.jimmer.sql.model.schema.SchemaATable\" and " +
+                        "\"org.babyfish.jimmer.sql.model.schema.SchemaBTable\"",
+                ex.getMessage()
         );
     }
 }
