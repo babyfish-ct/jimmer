@@ -96,6 +96,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return packageName;
     }
 
+    @Nullable
     public String getDoc() {
         return doc;
     }
@@ -117,6 +118,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return name;
     }
 
+    @NotNull
     public DtoFile getDtoFile() {
         return dtoFile;
     }
@@ -169,7 +171,6 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return list;
     }
 
-    @SuppressWarnings("unchecked")
     public List<DtoProp<T, P>> getHiddenFlatProps() {
         List<DtoProp<T, P>> hfps = this.hiddenFlatProps;
         if (hfps == null) {

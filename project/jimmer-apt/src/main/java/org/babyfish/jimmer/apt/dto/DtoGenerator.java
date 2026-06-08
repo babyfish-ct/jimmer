@@ -839,7 +839,6 @@ public class DtoGenerator {
         cb.add("$<$<\n)");
     }
 
-    @SuppressWarnings("unchecked")
     private void addField(AbstractProp prop) {
         if (prop instanceof UserProp) {
             addField((UserProp) prop);
@@ -924,7 +923,6 @@ public class DtoGenerator {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private void addAccessors(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String getterName = getterName(prop);
@@ -1061,7 +1059,6 @@ public class DtoGenerator {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private String doc(AbstractProp prop, boolean contentOnly) {
         String doc = document.get(prop);
         if (doc == null & prop instanceof DtoProp<?, ?>) {
@@ -1176,7 +1173,6 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    @SuppressWarnings("unchecked")
     private void addApplyToDraft() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__applyTo")
@@ -1567,7 +1563,6 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    @SuppressWarnings("unchecked")
     public TypeName getPropTypeName(AbstractProp prop) {
         if (prop instanceof DtoProp<?, ?>) {
             return getPropTypeName(asDtoProp(prop));
@@ -1854,7 +1849,7 @@ public class DtoGenerator {
         for (AbstractProp prop : dtoType.getProps()) {
             String stateFieldName = stateFieldName(prop, false);
             boolean fuzzy = prop instanceof DtoProp<?, ?> &&
-                    ((DtoProp<?, ?>) prop).getInputModifier() == DtoModifier.FUZZY &&
+                    prop.getInputModifier() == DtoModifier.FUZZY &&
                     prop.isNullable();
             if (stateFieldName != null) {
                 builder.beginControlFlow("if ($L)", stateFieldName);
@@ -2163,7 +2158,6 @@ public class DtoGenerator {
         }
     }
 
-    @SuppressWarnings("unchecked")
     String getterName(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String suffix = prop.getAlias();
@@ -2179,7 +2173,6 @@ public class DtoGenerator {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private String setterName(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String suffix = prop.getAlias();
@@ -2278,10 +2271,7 @@ public class DtoGenerator {
                 }
             }
             if (baseTypeDoc != null && baseProp != null) {
-                String doc = baseTypeDoc.getParameterValueMap().get(baseProp.getName());
-                if (doc != null) {
-                    return doc;
-                }
+                return baseTypeDoc.getParameterValueMap().get(baseProp.getName());
             }
             return null;
         }
@@ -2319,7 +2309,7 @@ public class DtoGenerator {
 
     private static boolean isFieldNullable(AbstractProp prop) {
         if (prop instanceof DtoProp<?, ?>) {
-            String funcName = ((DtoProp<?, ?>) prop).getFuncName();
+            String funcName = prop.getFuncName();
             return !"null".equals(funcName) && !"notNull".equals(funcName);
         }
         return true;

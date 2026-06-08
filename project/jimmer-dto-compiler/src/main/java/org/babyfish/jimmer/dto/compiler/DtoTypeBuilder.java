@@ -596,7 +596,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return dtoType;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, AbstractProp> resolveDeclaredProps() {
         if (this.declaredProps != null) {
             return this.declaredProps;
