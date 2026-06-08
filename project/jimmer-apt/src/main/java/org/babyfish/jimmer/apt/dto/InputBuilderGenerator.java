@@ -70,17 +70,11 @@ public class InputBuilderGenerator {
     }
 
     private void addMembers() {
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+        for (AbstractProp prop : dtoType.getProps()) {
             addField(prop);
             addStateField(prop);
         }
-        for (UserProp prop : dtoType.getUserProps()) {
-            addField(prop);
-        }
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            addSetter(prop);
-        }
-        for (UserProp prop : dtoType.getUserProps()) {
+        for (AbstractProp prop : dtoType.getProps()) {
             addSetter(prop);
         }
         addBuild();
@@ -140,7 +134,6 @@ public class InputBuilderGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    @SuppressWarnings("unchecked")
     private void addJacksonAnnotations(
             AbstractProp prop,
             MethodSpec.Builder builder
@@ -151,9 +144,9 @@ public class InputBuilderGenerator {
                 builder.addAnnotation(DtoGenerator.annotationOf(anno));
             }
         }
-        if (prop instanceof DtoProp<?, ?>) {
-            DtoProp<?, ImmutableProp> dtoProp = (DtoProp<?, ImmutableProp>) prop;
-            for (AnnotationMirror mirror : dtoProp.toTailProp().getBaseProp().getAnnotations()) {
+        ImmutableProp baseProp = (ImmutableProp) prop.getBasePropOrNull();
+        if (baseProp != null) {
+            for (AnnotationMirror mirror : baseProp.getAnnotations()) {
                 String qualifiedName = ((TypeElement) mirror.getAnnotationType()
                         .asElement())
                         .getQualifiedName()
@@ -172,7 +165,8 @@ public class InputBuilderGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(dtoClassName);
         builder.addStatement("$T _input = new $T()", dtoClassName, dtoClassName);
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+        for (AbstractProp prop : dtoType.getProps()) {
+            DtoModifier inputModifier = prop.getInputModifier();
             if (!prop.isNullable()) {
                 builder.beginControlFlow("if ($L == null)", prop.getName());
                 builder.addStatement(
@@ -188,9 +182,9 @@ public class InputBuilderGenerator {
                         setterName(prop),
                         prop.getName()
                 );
-            } else {
+            } else if (inputModifier != null) {
                 String stateFieldName = parentGenerator.stateFieldName(prop, true);
-                switch (prop.getInputModifier()) {
+                switch (inputModifier) {
                     case FIXED:
                         builder.beginControlFlow("if (!$L)", stateFieldName);
                         builder.addStatement(
@@ -227,25 +221,38 @@ public class InputBuilderGenerator {
                         builder.endControlFlow();
                         break;
                 }
+            } else if (prop instanceof UserProp) {
+                builder.addStatement(
+                        "_input.$L($L)",
+                        setterName((UserProp) prop),
+                        prop.getName()
+                );
+            } else {
+                if (!prop.isNullable()) {
+                    builder.beginControlFlow("if ($L == null)", prop.getName());
+                    builder.addStatement(
+                            "throw $T.$L($T.class, $S)",
+                            Constants.INPUT_CLASS_NAME,
+                            "unknownNonNullProperty",
+                            dtoClassName,
+                            prop.getName()
+                    );
+                    builder.endControlFlow();
+                }
+                builder.addStatement(
+                        "_input.$L($L)",
+                        setterName(prop),
+                        prop.getName()
+                );
             }
-        }
-        for (UserProp prop : dtoType.getUserProps()) {
-            builder.addStatement(
-                    "_input.$L($L)",
-                    setterName(prop),
-                    prop.getName()
-            );
         }
         builder.addStatement("return _input");
         typeBuilder.addMethod(builder.build());
     }
 
     private static boolean isFieldNullable(AbstractProp prop) {
-        if (prop instanceof DtoProp<?, ?>) {
-            String funcName = ((DtoProp<?, ?>) prop).getFuncName();
-            return !"null".equals(funcName) && !"notNull".equals(funcName);
-        }
-        return true;
+        String funcName = prop.getFuncName();
+        return !"null".equals(funcName) && !"notNull".equals(funcName);
     }
 
     private static boolean isJacksonQualifiedName(String qualifiedName) {
@@ -257,17 +264,6 @@ public class InputBuilderGenerator {
         return false;
     }
 
-    private static String setterName(DtoProp<?, ImmutableProp> prop) {
-        String name = prop.getName();
-        if (name.length() > 2 &&
-                name.startsWith("is") &&
-                Character.isUpperCase(name.charAt(2)) &&
-                prop.toTailProp().getBaseProp().getTypeName().equals(TypeName.BOOLEAN)) {
-            return StringUtil.identifier("set", prop.getName().substring(2));
-        }
-        return StringUtil.identifier("set", prop.getName());
-    }
-
     private static String setterName(UserProp prop) {
         String name = prop.getName();
         if (name.length() > 2 &&
@@ -276,6 +272,10 @@ public class InputBuilderGenerator {
                 TypeRef.TN_BOOLEAN.equals(prop.getTypeRef().getTypeName())) {
             return StringUtil.identifier("set", prop.getName().substring(2));
         }
+        return StringUtil.identifier("set", prop.getName());
+    }
+
+    private static String setterName(AbstractProp prop) {
         return StringUtil.identifier("set", prop.getName());
     }
 }

@@ -5,7 +5,11 @@ import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.dto.BookInput;
 import org.babyfish.jimmer.sql.model.dto.BookInput2;
 import org.babyfish.jimmer.sql.model.dto.BookInput3;
+import org.babyfish.jimmer.sql.model.dto.BookDynamicFoldInput;
+import org.babyfish.jimmer.sql.model.dto.BookFixedFoldInput;
 import org.babyfish.jimmer.sql.model.dto.BookFoldInput;
+import org.babyfish.jimmer.sql.model.dto.BookFuzzyFoldInput;
+import org.babyfish.jimmer.sql.model.dto.BookStaticFoldInput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -126,5 +130,51 @@ public class BookInputTest extends Tests {
                 book
         );
         Assertions.assertEquals(input, new BookFoldInput(book));
+    }
+
+    @Test
+    public void testBookFoldInputStrategies() {
+        BookFixedFoldInput fixed = new BookFixedFoldInput();
+        fixed.setId(UUID.fromString("66eee693-4b80-4d28-98b9-5e3aafca8d05"));
+        BookFixedFoldInput.TargetOf_summary fixedSummary = new BookFixedFoldInput.TargetOf_summary();
+        fixedSummary.setName("SQL in Action");
+        fixedSummary.setEdition(1);
+        fixed.setSummary(fixedSummary);
+        assertBookFoldEntity(fixed.toEntity());
+
+        BookStaticFoldInput statik = new BookStaticFoldInput();
+        statik.setId(UUID.fromString("66eee693-4b80-4d28-98b9-5e3aafca8d05"));
+        BookStaticFoldInput.TargetOf_summary staticSummary = new BookStaticFoldInput.TargetOf_summary();
+        staticSummary.setName("SQL in Action");
+        staticSummary.setEdition(1);
+        statik.setSummary(staticSummary);
+        assertBookFoldEntity(statik.toEntity());
+
+        BookDynamicFoldInput dynamic = new BookDynamicFoldInput();
+        dynamic.setId(UUID.fromString("66eee693-4b80-4d28-98b9-5e3aafca8d05"));
+        BookDynamicFoldInput.TargetOf_summary dynamicSummary = new BookDynamicFoldInput.TargetOf_summary();
+        dynamicSummary.setName("SQL in Action");
+        dynamicSummary.setEdition(1);
+        dynamic.setSummary(dynamicSummary);
+        assertBookFoldEntity(dynamic.toEntity());
+
+        BookFuzzyFoldInput fuzzy = new BookFuzzyFoldInput();
+        fuzzy.setId(UUID.fromString("66eee693-4b80-4d28-98b9-5e3aafca8d05"));
+        BookFuzzyFoldInput.TargetOf_summary fuzzySummary = new BookFuzzyFoldInput.TargetOf_summary();
+        fuzzySummary.setName("SQL in Action");
+        fuzzySummary.setEdition(1);
+        fuzzy.setSummary(fuzzySummary);
+        assertBookFoldEntity(fuzzy.toEntity());
+    }
+
+    private void assertBookFoldEntity(Book book) {
+        assertContentEquals(
+                "{" +
+                        "--->\"id\":\"66eee693-4b80-4d28-98b9-5e3aafca8d05\"," +
+                        "--->\"name\":\"SQL in Action\"," +
+                        "--->\"edition\":1" +
+                        "}",
+                book
+        );
     }
 }

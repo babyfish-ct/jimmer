@@ -15,6 +15,11 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     P getBaseProp();
 
     @Override
+    default P getBasePropOrNull() {
+        return getBaseProp();
+    }
+
+    @Override
     Map<String, P> getBasePropMap();
 
     String getBasePath();

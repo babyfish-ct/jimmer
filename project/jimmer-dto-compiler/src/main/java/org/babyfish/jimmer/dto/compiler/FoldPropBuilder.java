@@ -74,6 +74,7 @@ class FoldPropBuilder<T extends BaseType, P extends BaseProp> implements Abstrac
                 nullable,
                 annotations,
                 doc,
+                null,
                 targetTypeBuilder.build()
         );
     }

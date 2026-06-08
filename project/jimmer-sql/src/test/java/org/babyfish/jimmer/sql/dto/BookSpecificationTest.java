@@ -574,12 +574,31 @@ public class BookSpecificationTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testFoldSpecification() {
+    public void testFoldSpecificationWithoutValues() {
+        BookFoldSpecification spec = new BookFoldSpecification();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(spec)
+                        .orderBy(table.id())
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "order by tb_1_.ID asc"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFoldSpecificationWithValues() {
         BookFoldSpecification spec = new BookFoldSpecification();
         BookFoldSpecification.TargetOf_summary summary = new BookFoldSpecification.TargetOf_summary();
         summary.setName("GraphQL");
-        summary.setMinPrice(new BigDecimal("40"));
-        summary.setMaxPrice(new BigDecimal("60"));
+        summary.setMinPrice(new BigDecimal("70"));
+        summary.setMaxPrice(new BigDecimal("90"));
         spec.setSummary(summary);
         executeAndExpect(
                 getSqlClient()
@@ -593,6 +612,27 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.NAME ilike ? and tb_1_.PRICE >= ? and tb_1_.PRICE <= ? " +
                                     "order by tb_1_.ID asc"
+                    ).variables("%graphql%", new BigDecimal("70"), new BigDecimal("90"));
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"name\":\"GraphQL in Action\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":80.00," +
+                                    "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                    "},{" +
+                                    "--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                    "--->\"name\":\"GraphQL in Action\"," +
+                                    "--->\"edition\":1," +
+                                    "--->\"price\":80.00," +
+                                    "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                    "},{" +
+                                    "--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
+                                    "--->\"name\":\"GraphQL in Action\"," +
+                                    "--->\"edition\":2," +
+                                    "--->\"price\":81.00," +
+                                    "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                    "}]"
                     );
                 }
         );

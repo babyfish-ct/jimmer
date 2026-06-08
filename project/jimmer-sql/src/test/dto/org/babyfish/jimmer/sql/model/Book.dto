@@ -314,6 +314,18 @@ BookFoldView {
     }
 }
 
+BookNestedFoldView {
+    id
+    name
+    fold(summary) {
+        name
+        fold(detail) {
+            name
+            edition
+        }
+    }
+}
+
 BookFoldInsideFlatView {
     id
     flat(store) {
@@ -324,6 +336,38 @@ BookFoldInsideFlatView {
 }
 
 input BookFoldInput {
+    id
+    fold(summary) {
+        name
+        edition
+    }
+}
+
+fixed input BookFixedFoldInput {
+    id
+    fold(summary) {
+        name
+        edition
+    }
+}
+
+static input BookStaticFoldInput {
+    id
+    fold(summary) {
+        name
+        edition
+    }
+}
+
+dynamic input BookDynamicFoldInput {
+    id
+    fold(summary) {
+        name
+        edition
+    }
+}
+
+fuzzy input BookFuzzyFoldInput {
     id
     fold(summary) {
         name

@@ -343,7 +343,7 @@ class DtoGenerator private constructor(
         for (prop in dtoType.props) {
             addProp(prop)
             if (prop is DtoProp<*, *>) {
-                addStateProp(prop as DtoProp<ImmutableType, ImmutableProp>)
+                addStateProp(prop.asDtoProp())
             }
         }
         if (isSpecification) {
@@ -373,6 +373,9 @@ class DtoGenerator private constructor(
                         addMetadata()
                         for (prop in dtoType.dtoProps) {
                             addAccessorField(prop)
+                        }
+                        for (prop in dtoType.foldProps) {
+                            addFoldNullGuardAccessorField(prop)
                         }
                     }
                     .build()
@@ -812,7 +815,7 @@ class DtoGenerator private constructor(
                                 .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
                                 .apply {
                                     addMember("%S", prop.name)
-                                    if (!prop.isNullable) {
+                                    if (!isGeneratedNullable(prop)) {
                                         addMember("required = true")
                                     }
                                 }
@@ -820,7 +823,7 @@ class DtoGenerator private constructor(
                         )
                     }
                     if (prop is DtoProp<*, *>) {
-                        val dtoProp = prop as DtoProp<ImmutableType, ImmutableProp>
+                        val dtoProp = prop.asDtoProp()
                         if (dtoType.modifiers.contains(DtoModifier.INPUT) && dtoProp.inputModifier == DtoModifier.FIXED) {
                             addAnnotation(FIXED_INPUT_FIELD_CLASS_NAME)
                         }
@@ -885,7 +888,7 @@ class DtoGenerator private constructor(
                         addParameter(
                             ParameterSpec.builder(prop.name, propTypeName(prop))
                                 .apply {
-                                    if (prop.isNullable) {
+                                    if (isGeneratedNullable(prop)) {
                                         defaultValue("null")
                                     } else if (propTypeName(prop) == BOOLEAN) {
                                         defaultValue("false")
@@ -943,15 +946,26 @@ class DtoGenerator private constructor(
                         .add("\n")
                         .apply {
                             if (prop is FoldProp<*, *>) {
-                                add("%T(base)", propTypeName(prop).copy(nullable = false))
+                                val foldProp = prop.asFoldProp()
+                                if (foldProp.nullGuardProp != null) {
+                                    add(
+                                        "%L.get<%T>(base)?.let { %T(base) }",
+                                        foldNullGuardAccessorFieldName(foldProp),
+                                        ANY.copy(nullable = true),
+                                        propTypeName(foldProp).copy(nullable = false)
+                                    )
+                                } else {
+                                    add("%T(base)", propTypeName(foldProp).copy(nullable = false))
+                                }
                             } else if (prop is DtoProp<*, *>) {
-                                if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
-                                    add("base.%L", prop.baseProp.name)
-                                } else if (!prop.isNullable && prop.isBaseNullable) {
+                                val dtoProp = prop.asDtoProp()
+                                if (isSimpleProp(dtoProp)) {
+                                    add("base.%L", dtoProp.baseProp.name)
+                                } else if (!dtoProp.isNullable && dtoProp.isBaseNullable) {
                                     add(
                                         "%L.get<%T>(\n",
-                                        StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
-                                        propTypeName(prop)
+                                        accessorFieldName(dtoProp.name),
+                                        propTypeName(dtoProp)
                                     )
                                     indent()
                                     add("base,\n")
@@ -959,28 +973,28 @@ class DtoGenerator private constructor(
                                         "%S\n",
                                         "Cannot convert \"${dtoType.baseType.className}\" to " +
                                                 "\"${getDtoClassName()}\" because the cannot get non-null " +
-                                                "value for \"${prop.name}\""
+                                                "value for \"${dtoProp.name}\""
                                     )
                                     unindent()
                                     add(")")
                                 } else {
                                     add(
                                         "%L.get<%T>(base)",
-                                        StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
-                                        propTypeName(prop)
+                                        accessorFieldName(dtoProp.name),
+                                        propTypeName(dtoProp)
                                     )
                                 }
-                                statePropName(prop, false)?.let {
-                                    if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
+                                statePropName(dtoProp, false)?.let {
+                                    if (isSimpleProp(dtoProp)) {
                                         add(
                                             ",\n%T.%L.isLoaded(base)",
                                             dtoType.baseType.propsClassName,
-                                            StringUtil.snake(prop.baseProp.name, SnakeCase.UPPER)
+                                            StringUtil.snake(dtoProp.baseProp.name, SnakeCase.UPPER)
                                         )
                                     } else {
                                         add(
                                             ",\n%L.isLoaded(base)\n",
-                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER)
+                                            accessorFieldName(dtoProp.name)
                                         )
                                     }
                                 }
@@ -1119,7 +1133,7 @@ class DtoGenerator private constructor(
                                 }
                             }
                             is DtoProp<*, *> -> {
-                                val dtoProp = prop as DtoProp<ImmutableType, ImmutableProp>
+                                val dtoProp = prop.asDtoProp()
                                 val baseProp = dtoProp.toTailProp().baseProp
                                 if (baseProp.isKotlinFormula) {
                                     continue
@@ -1148,13 +1162,13 @@ class DtoGenerator private constructor(
             if (prop.isNullable && baseProp.let { it.isList && it.isAssociation(true) }) {
                 addStatement(
                     "%L.set(_draft, %L)",
-                    StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                    accessorFieldName(prop.name),
                     valueExpr
                 )
             } else {
                 addStatement(
                     "%L.set(_draft, %L)",
-                    StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                    accessorFieldName(prop.name),
                     valueExpr
                 )
             }
@@ -1203,7 +1217,7 @@ class DtoGenerator private constructor(
                         when (prop) {
                             is FoldProp<*, *> -> {
                                 stack = addStackOperations(stack, emptyList())
-                                if (prop.isNullable) {
+                                if (isGeneratedNullable(prop)) {
                                     if (dtoType.baseType.isEntity) {
                                         addStatement("this.%L?.applyTo(args)", prop.name)
                                     } else {
@@ -1218,7 +1232,7 @@ class DtoGenerator private constructor(
                                 }
                             }
                             is DtoProp<*, *> -> {
-                                val dtoProp = prop as DtoProp<ImmutableType, ImmutableProp>
+                                val dtoProp = prop.asDtoProp()
                                 val newStack = mutableListOf<ImmutableProp>()
                                 val tailProp = dtoProp.toTailProp()
                                 var p: DtoProp<ImmutableType, ImmutableProp>? = dtoProp
@@ -1354,9 +1368,32 @@ class DtoGenerator private constructor(
         if (isSimpleProp(prop)) {
             return
         }
+        addAccessorField(
+            prop,
+            accessorFieldName(prop.name),
+            accessorAcceptsNull(prop),
+            true
+        )
+    }
 
+    private fun TypeSpec.Builder.addFoldNullGuardAccessorField(prop: FoldProp<ImmutableType, ImmutableProp>) {
+        val nullGuardProp = prop.nullGuardProp ?: return
+        addAccessorField(
+            nullGuardProp,
+            foldNullGuardAccessorFieldName(prop),
+            true,
+            false
+        )
+    }
+
+    private fun TypeSpec.Builder.addAccessorField(
+        prop: DtoProp<ImmutableType, ImmutableProp>,
+        fieldName: String,
+        acceptNull: Boolean,
+        withConverters: Boolean,
+    ) {
         val builder = PropertySpec.builder(
-            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+            fieldName,
             DTO_PROP_ACCESSOR,
             KModifier.PRIVATE
         ).initializer(
@@ -1366,16 +1403,7 @@ class DtoGenerator private constructor(
                     add("%T(", DTO_PROP_ACCESSOR)
                     indent()
 
-                    if (prop.isNullable() && (!prop.toTailProp().getBaseProp().isNullable ||
-                                dtoType.modifiers.contains(DtoModifier.SPECIFICATION) ||
-                                dtoType.modifiers.contains(DtoModifier.FUZZY) ||
-                                prop.inputModifier == DtoModifier.FUZZY
-                                )
-                    ) {
-                        add("\nfalse")
-                    } else {
-                        add("\ntrue")
-                    }
+                    add("\n%L", acceptNull)
 
                     if (prop.nextProp === null) {
                         add(
@@ -1404,7 +1432,7 @@ class DtoGenerator private constructor(
 
                     val tailProp = prop.toTailProp()
                     val tailBaseProp = tailProp.baseProp
-                    if (prop.isIdOnly) {
+                    if (withConverters && prop.isIdOnly) {
                         if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
@@ -1425,7 +1453,7 @@ class DtoGenerator private constructor(
                             addConverterLoading(prop, false)
                             add(")")
                         }
-                    } else if (tailProp.targetType != null) {
+                    } else if (withConverters && tailProp.targetType != null) {
                         if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
@@ -1456,7 +1484,7 @@ class DtoGenerator private constructor(
                             unindent()
                             add("\n}")
                         }
-                    } else if (prop.enumType !== null) {
+                    } else if (withConverters && prop.enumType !== null) {
                         val enumType = prop.enumType!!
                         val enumTypeName = tailBaseProp.targetTypeName(overrideNullable = false)
                         if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
@@ -1477,7 +1505,7 @@ class DtoGenerator private constructor(
                         addValueToEnum(prop)
                         unindent()
                         add("}")
-                    } else if (prop.dtoConverterMetadata != null) {
+                    } else if (withConverters && prop.dtoConverterMetadata != null) {
                         add(",\n{ ")
                         addConverterLoading(prop, true)
                         add(".output(it) }")
@@ -1493,6 +1521,14 @@ class DtoGenerator private constructor(
         )
         addProperty(builder.build())
     }
+
+    private fun accessorAcceptsNull(prop: DtoProp<ImmutableType, ImmutableProp>): Boolean =
+        !(prop.isNullable() && (!prop.toTailProp().getBaseProp().isNullable ||
+                dtoType.modifiers.contains(DtoModifier.SPECIFICATION) ||
+                dtoType.modifiers.contains(DtoModifier.FUZZY) ||
+                prop.inputModifier == DtoModifier.FUZZY
+                )
+        )
 
     private fun TypeSpec.Builder.addSpecificationConverter(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!isSpecificationConverterRequired(prop)) {
@@ -1597,14 +1633,26 @@ class DtoGenerator private constructor(
     @Suppress("UNCHECKED_CAST")
     fun propTypeName(prop: AbstractProp): TypeName =
         when (prop) {
-            is FoldProp<*, *> -> propTypeName(prop as FoldProp<ImmutableType, ImmutableProp>)
-            is DtoProp<*, *> -> propTypeName(prop as DtoProp<ImmutableType, ImmutableProp>)
+            is FoldProp<*, *> -> propTypeName(prop.asFoldProp())
+            is DtoProp<*, *> -> propTypeName(prop.asDtoProp())
             is UserProp -> typeName(prop.typeRef)
             else -> error("Internal bug")
         }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun AbstractProp.asDtoProp(): DtoProp<ImmutableType, ImmutableProp> =
+        this as DtoProp<ImmutableType, ImmutableProp>
+
+    @Suppress("UNCHECKED_CAST")
+    private fun AbstractProp.asFoldProp(): FoldProp<ImmutableType, ImmutableProp> =
+        this as FoldProp<ImmutableType, ImmutableProp>
+
     private fun propTypeName(prop: FoldProp<ImmutableType, ImmutableProp>): TypeName =
-        getDtoClassName(targetSimpleName(prop)).copy(nullable = prop.isNullable)
+        getDtoClassName(targetSimpleName(prop)).copy(nullable = isGeneratedNullable(prop))
+
+    private fun isGeneratedNullable(prop: AbstractProp): Boolean =
+        prop.isNullable ||
+            (prop is FoldProp<*, *> && dtoType.modifiers.contains(DtoModifier.SPECIFICATION))
 
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
 
@@ -1702,6 +1750,12 @@ class DtoGenerator private constructor(
 
     private fun targetSimpleName(prop: FoldProp<ImmutableType, ImmutableProp>): String =
         standardTargetSimpleName("TargetOf_${prop.name}")
+
+    private fun accessorFieldName(propName: String): String =
+        StringUtil.snake("${propName}Accessor", SnakeCase.UPPER)
+
+    private fun foldNullGuardAccessorFieldName(prop: FoldProp<ImmutableType, ImmutableProp>): String =
+        StringUtil.snake("${prop.name}NullGuardAccessor", SnakeCase.UPPER)
 
     private fun standardTargetSimpleName(targetSimpleName: String): String {
         var conflict = false
@@ -2103,7 +2157,6 @@ class DtoGenerator private constructor(
     internal fun statePropName(prop: AbstractProp, builder: Boolean): String? =
         when {
             !prop.isNullable -> null
-            prop !is DtoProp<*, *> -> null
             !dtoType.modifiers.contains(DtoModifier.INPUT) -> null
             else -> prop.inputModifier?.takeIf {
                 (it == DtoModifier.FIXED && builder) || it == DtoModifier.DYNAMIC

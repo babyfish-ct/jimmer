@@ -5,12 +5,19 @@ import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookDynamicFoldInput
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFixedFoldInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldInsideFlatView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFuzzyFoldInput
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNestedFoldView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookStaticFoldInput
+import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import org.junit.Test
 import java.math.BigDecimal
+import kotlin.test.assertNull
 
 class BookFoldTest : AbstractQueryTest() {
 
@@ -30,6 +37,32 @@ class BookFoldTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testNestedFoldView() {
+        val view = BookNestedFoldView(
+            id = 12L,
+            name = "GraphQL in Action",
+            summary = BookNestedFoldView.TargetOf_summary(
+                name = "GraphQL in Action",
+                detail = BookNestedFoldView.TargetOf_summary.TargetOf_detail(
+                    name = "GraphQL in Action",
+                    edition = 3
+                )
+            )
+        )
+        assertContent(
+            """{
+                |--->"id":12,
+                |--->"name":"GraphQL in Action",
+                |--->"summary":{
+                |--->--->"name":"GraphQL in Action",
+                |--->--->"detail":{"name":"GraphQL in Action","edition":3}
+                |--->}
+                |}""".trimMargin(),
+            jsonCodec().writer().writeAsString(view)
+        )
+    }
+
+    @Test
     fun testFoldInsideFlatView() {
         val view = BookFoldInsideFlatView(
             id = 1L,
@@ -41,6 +74,20 @@ class BookFoldTest : AbstractQueryTest() {
             """{"id":1,"storeKey":{"name":"MANNING"}}""",
             jsonCodec().writer().writeAsString(view)
         )
+    }
+
+    @Test
+    fun testFoldInsideFlatViewFromEntityWithNullFlatHead() {
+        val book = Book {
+            id = 1L
+            name = "Programming TypeScript"
+            edition = 2
+            price = BigDecimal("59.99")
+        }
+
+        val view = BookFoldInsideFlatView(book)
+
+        assertNull(view.storeKey)
     }
 
     @Test
@@ -63,12 +110,72 @@ class BookFoldTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testFoldSpecification() {
+    fun testFoldInputStrategies() {
+        assertBookFoldEntity(
+            BookFixedFoldInput(
+                id = 1L,
+                summary = BookFixedFoldInput.TargetOf_summary(
+                    name = "SQL in Action",
+                    edition = 1
+                )
+            ).toEntity()
+        )
+        assertBookFoldEntity(
+            BookStaticFoldInput(
+                id = 1L,
+                summary = BookStaticFoldInput.TargetOf_summary(
+                    name = "SQL in Action",
+                    edition = 1
+                )
+            ).toEntity()
+        )
+        assertBookFoldEntity(
+            BookDynamicFoldInput(
+                id = 1L,
+                summary = BookDynamicFoldInput.TargetOf_summary(
+                    name = "SQL in Action",
+                    edition = 1
+                )
+            ).toEntity()
+        )
+        assertBookFoldEntity(
+            BookFuzzyFoldInput(
+                id = 1L,
+                summary = BookFuzzyFoldInput.TargetOf_summary(
+                    name = "SQL in Action",
+                    edition = 1
+                )
+            ).toEntity()
+        )
+    }
+
+    @Test
+    fun testFoldSpecificationWithoutValues() {
+        val specification = BookFoldSpecification()
+        executeAndExpect(
+            sqlClient {
+                setDialect(H2Dialect())
+            }.createQuery(Book::class) {
+                where(specification)
+                orderBy(table.id)
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |order by tb_1_.ID asc""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFoldSpecificationWithValues() {
         val specification = BookFoldSpecification(
             summary = BookFoldSpecification.TargetOf_summary(
                 name = "GraphQL",
-                minPrice = BigDecimal("40"),
-                maxPrice = BigDecimal("60")
+                minPrice = BigDecimal("70"),
+                maxPrice = BigDecimal("90")
             )
         )
         executeAndExpect(
@@ -76,14 +183,33 @@ class BookFoldTest : AbstractQueryTest() {
                 setDialect(H2Dialect())
             }.createQuery(Book::class) {
                 where(specification)
+                orderBy(table.id)
                 select(table)
             }
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
-                    |where tb_1_.NAME ilike ? and tb_1_.PRICE >= ? and tb_1_.PRICE <= ?""".trimMargin()
-            )
+                    |where tb_1_.NAME ilike ? and tb_1_.PRICE >= ? and tb_1_.PRICE <= ? 
+                    |order by tb_1_.ID asc""".trimMargin()
+            ).variables("%graphql%", BigDecimal("70"), BigDecimal("90"))
+            rows {
+                assertContent(
+                    """[
+                        |--->{"id":10,"name":"GraphQL in Action","edition":1,"price":80.00,"storeId":2}, 
+                        |--->{"id":11,"name":"GraphQL in Action","edition":2,"price":81.00,"storeId":2}, 
+                        |--->{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00,"storeId":2}
+                        |]""".trimMargin(),
+                    it
+                )
+            }
         }
+    }
+
+    private fun assertBookFoldEntity(book: Book) {
+        assertContent(
+            """{"id":1,"name":"SQL in Action","edition":1}""",
+            book
+        )
     }
 }

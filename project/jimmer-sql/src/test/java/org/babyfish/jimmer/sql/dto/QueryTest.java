@@ -3,13 +3,129 @@ package org.babyfish.jimmer.sql.dto;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.model.dto.BookFoldInsideFlatView;
+import org.babyfish.jimmer.sql.model.dto.BookNestedFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookView;
+import org.babyfish.jimmer.sql.model.dto.TreeNodeFoldInsideFlatView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 public class QueryTest extends AbstractQueryTest {
+
+    @Test
+    public void testFoldInsideFlatViewQuery() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().eq("GraphQL in Action"))
+                        .orderBy(table.edition().desc())
+                        .select(
+                                table.fetch(BookFoldInsideFlatView.class)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.NAME = ? " +
+                                    "order by tb_1_.EDITION desc"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        assertContentEquals(
+                                "[" +
+                                        "--->BookFoldInsideFlatView(" +
+                                        "--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
+                                        "--->--->storeKey=BookFoldInsideFlatView.TargetOf_storeKey(name=MANNING)" +
+                                        "--->), " +
+                                        "--->BookFoldInsideFlatView(" +
+                                        "--->--->id=e37a8344-73bb-4b23-ba76-82eac11f03e6, " +
+                                        "--->--->storeKey=BookFoldInsideFlatView.TargetOf_storeKey(name=MANNING)" +
+                                        "--->), " +
+                                        "--->BookFoldInsideFlatView(" +
+                                        "--->--->id=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
+                                        "--->--->storeKey=BookFoldInsideFlatView.TargetOf_storeKey(name=MANNING)" +
+                                        "--->)" +
+                                        "]",
+                                rows
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testTreeNodeFoldInsideFlatViewQueryWithNullFlatHead() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(table.fetch(TreeNodeFoldInsideFlatView.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        assertContentEquals(
+                                "[" +
+                                        "--->TreeNodeFoldInsideFlatView(" +
+                                        "--->--->id=1, " +
+                                        "--->--->name=Home, " +
+                                        "--->--->parentKey=null" +
+                                        "--->)" +
+                                        "]",
+                                rows
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testNestedFoldViewQuery() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(Constants.graphQLInActionId3))
+                        .select(table.fetch(BookNestedFoldView.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        assertContentEquals(
+                                "[" +
+                                        "--->BookNestedFoldView(" +
+                                        "--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
+                                        "--->--->name=GraphQL in Action, " +
+                                        "--->--->summary=BookNestedFoldView.TargetOf_summary(" +
+                                        "--->--->--->name=GraphQL in Action, " +
+                                        "--->--->--->detail=BookNestedFoldView.TargetOf_summary.TargetOf_detail(" +
+                                        "--->--->--->--->name=GraphQL in Action, " +
+                                        "--->--->--->--->edition=3" +
+                                        "--->--->--->)" +
+                                        "--->--->)" +
+                                        "--->)" +
+                                        "]",
+                                rows
+                        );
+                    });
+                }
+        );
+    }
 
     @Test
     public void testQuery() {
@@ -204,4 +320,5 @@ public class QueryTest extends AbstractQueryTest {
                 }
         );
     }
+
 }

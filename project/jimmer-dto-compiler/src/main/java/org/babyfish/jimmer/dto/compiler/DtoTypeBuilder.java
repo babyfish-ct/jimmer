@@ -717,7 +717,25 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         String name = renameFold ?
                 AliasPattern.join(head.getBaseProp().getName(), foldProp.getName()) :
                 foldProp.getName();
-        return new FoldProp<>(foldProp, name, head.isNullable() || foldProp.isNullable(), targetType);
+        DtoProp<T, P> nullGuardProp;
+        if (head.isNullable()) {
+            nullGuardProp = head;
+        } else if (foldProp.getNullGuardProp() != null) {
+            nullGuardProp = new DtoPropImpl<>(
+                    head,
+                    foldProp.getNullGuardProp(),
+                    aliasPattern
+            );
+        } else {
+            nullGuardProp = null;
+        }
+        return new FoldProp<>(
+                foldProp,
+                name,
+                head.isNullable() || foldProp.isNullable(),
+                nullGuardProp,
+                targetType
+        );
     }
 
     private boolean isExcluded(String alias) {

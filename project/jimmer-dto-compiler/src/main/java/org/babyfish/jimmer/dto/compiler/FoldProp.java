@@ -21,6 +21,9 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
     @Nullable
     private final String doc;
 
+    @Nullable
+    private final DtoProp<T, P> nullGuardProp;
+
     private final DtoType<T, P> targetType;
 
     FoldProp(
@@ -30,6 +33,7 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
             boolean nullable,
             List<Anno> annotations,
             @Nullable String doc,
+            @Nullable DtoProp<T, P> nullGuardProp,
             DtoType<T, P> targetType
     ) {
         this.name = name;
@@ -38,6 +42,7 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
         this.nullable = nullable;
         this.annotations = annotations;
         this.doc = doc;
+        this.nullGuardProp = nullGuardProp;
         this.targetType = targetType;
     }
 
@@ -45,6 +50,7 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
             FoldProp<T, P> original,
             String name,
             boolean nullable,
+            @Nullable DtoProp<T, P> nullGuardProp,
             DtoType<T, P> targetType
     ) {
         this.name = name;
@@ -53,6 +59,7 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
         this.nullable = nullable;
         this.annotations = original.annotations;
         this.doc = original.doc;
+        this.nullGuardProp = nullGuardProp;
         this.targetType = targetType;
     }
 
@@ -94,6 +101,11 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
 
     public DtoType<T, P> getTargetType() {
         return targetType;
+    }
+
+    @Nullable
+    public DtoProp<T, P> getNullGuardProp() {
+        return nullGuardProp;
     }
 
     @Override
