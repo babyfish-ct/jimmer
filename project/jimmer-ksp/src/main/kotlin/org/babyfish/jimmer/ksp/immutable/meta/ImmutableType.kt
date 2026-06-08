@@ -383,15 +383,34 @@ class ImmutableType(
                     continue
                 }
                 val expectedPropName = "${prop.name}Id"
-                properties[expectedPropName]?.let {
+                val expectedProp = properties[expectedPropName]
+                if (expectedProp != null) {
+                    if (isExplicitMappedIdNameConflictAllowed(prop, expectedProp)) {
+                        continue
+                    }
                     throw MetaException(
-                        it.propDeclaration,
-                        "It looks like @IdView of association \"${it}\", please add the @IdView annotation"
+                        expectedProp.propDeclaration,
+                        "It looks like @IdView of association \"${prop}\", please add the @IdView annotation"
                     )
                 }
                 map[prop.name] = expectedPropName
             }
         }
+    }
+
+    private fun isExplicitMappedIdNameConflictAllowed(
+        associationProp: ImmutableProp,
+        expectedProp: ImmutableProp
+    ): Boolean {
+        val mapsId = associationProp.annotation(MapsId::class)
+        val ownerIdProp = idProp
+        return mapsId != null &&
+            (mapsId[MapsId::value] ?: "").isEmpty() &&
+            !associationProp.isReverse &&
+            !associationProp.isTransient &&
+            ownerIdProp != null &&
+            expectedProp.isId &&
+            expectedProp.name == ownerIdProp.name
     }
 
     fun getIdPropName(prop: String): String? =
