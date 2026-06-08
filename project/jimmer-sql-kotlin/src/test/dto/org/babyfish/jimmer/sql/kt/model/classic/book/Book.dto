@@ -277,6 +277,14 @@ BookFoldView {
     }
 }
 
+BookNullableFoldView {
+    id
+    fold(summary)? {
+        name
+        edition
+    }
+}
+
 BookNestedFoldView {
     id
     name
@@ -301,6 +309,14 @@ BookFoldInsideFlatView {
 input BookFoldInput {
     id
     fold(summary) {
+        name
+        edition
+    }
+}
+
+input BookNullableFoldInput {
+    id
+    fold(summary)? {
         name
         edition
     }

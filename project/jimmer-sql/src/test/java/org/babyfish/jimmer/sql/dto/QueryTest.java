@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.dto.BookFoldInsideFlatView;
+import org.babyfish.jimmer.sql.model.dto.BookNullableFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookNestedFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookView;
 import org.babyfish.jimmer.sql.model.dto.TreeNodeFoldInsideFlatView;
@@ -82,6 +83,38 @@ public class QueryTest extends AbstractQueryTest {
                                         "--->--->id=1, " +
                                         "--->--->name=Home, " +
                                         "--->--->parentKey=null" +
+                                        "--->)" +
+                                        "]",
+                                rows
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testNullableFoldViewQuery() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(Constants.graphQLInActionId3))
+                        .select(table.fetch(BookNullableFoldView.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        assertContentEquals(
+                                "[" +
+                                        "--->BookNullableFoldView(" +
+                                        "--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
+                                        "--->--->summary=BookNullableFoldView.TargetOf_summary(" +
+                                        "--->--->--->name=GraphQL in Action, " +
+                                        "--->--->--->edition=3" +
+                                        "--->--->)" +
                                         "--->)" +
                                         "]",
                                 rows

@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.model.id
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldInsideFlatView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNestedFoldView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableFoldView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookView
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
@@ -85,6 +86,36 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->id=1, 
                         |--->--->name=Home, 
                         |--->--->parentKey=null
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testNullableFoldView() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.id eq 12L)
+                select(table.fetch(BookNullableFoldView::class))
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                    "from BOOK tb_1_ " +
+                    "where tb_1_.ID = ?"
+            )
+            rows {
+                assertContent(
+                    """[
+                        |--->BookNullableFoldView(
+                        |--->--->id=12, 
+                        |--->--->summary=BookNullableFoldView.TargetOf_summary(
+                        |--->--->--->name=GraphQL in Action, 
+                        |--->--->--->edition=3
+                        |--->--->)
                         |--->)
                         |]""".trimMargin(),
                     it

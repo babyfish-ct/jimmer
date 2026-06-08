@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookDraft;
 import org.babyfish.jimmer.sql.model.dto.BookFoldInsideFlatView;
+import org.babyfish.jimmer.sql.model.dto.BookNullableFoldInput;
+import org.babyfish.jimmer.sql.model.dto.BookNullableFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookNestedFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookViewForIssue843;
@@ -46,6 +48,19 @@ public class BookVIewTest extends Tests {
                 "{" +
                         "--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
                         "--->\"summary\":{\"name\":\"Programming TypeScript\",\"edition\":2}" +
+                        "}",
+                jsonCodec().writer().writeAsString(view)
+        );
+    }
+
+    @Test
+    public void testNullableFoldView() throws Exception {
+        BookNullableFoldView view = new BookNullableFoldView();
+        view.setId(Constants.programmingTypeScriptId2);
+        assertContentEquals(
+                "{" +
+                        "--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
+                        "--->\"summary\":null" +
                         "}",
                 jsonCodec().writer().writeAsString(view)
         );
@@ -106,5 +121,17 @@ public class BookVIewTest extends Tests {
         BookFoldInsideFlatView view = new BookFoldInsideFlatView(book);
 
         assertNull(view.getStoreKey());
+    }
+
+    @Test
+    public void testNullableFoldInputWithoutSummary() {
+        BookNullableFoldInput input = new BookNullableFoldInput();
+        input.setId(Constants.programmingTypeScriptId2);
+        assertContentEquals(
+                "{" +
+                        "--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"" +
+                        "}",
+                input.toEntity()
+        );
     }
 }

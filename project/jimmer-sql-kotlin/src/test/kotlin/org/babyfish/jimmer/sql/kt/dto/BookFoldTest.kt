@@ -13,6 +13,8 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFuzzyFoldInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNestedFoldView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableFoldInput
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableFoldView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookStaticFoldInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import org.junit.Test
@@ -32,6 +34,18 @@ class BookFoldTest : AbstractQueryTest() {
         )
         assertContent(
             """{"id":1,"summary":{"name":"Programming TypeScript","edition":2}}""",
+            jsonCodec().writer().writeAsString(view)
+        )
+    }
+
+    @Test
+    fun testNullableFoldView() {
+        val view = BookNullableFoldView(
+            id = 1L,
+            summary = null
+        )
+        assertContent(
+            """{"id":1,"summary":null}""",
             jsonCodec().writer().writeAsString(view)
         )
     }
@@ -88,6 +102,18 @@ class BookFoldTest : AbstractQueryTest() {
         val view = BookFoldInsideFlatView(book)
 
         assertNull(view.storeKey)
+    }
+
+    @Test
+    fun testNullableFoldInputWithoutSummary() {
+        val input = BookNullableFoldInput(
+            id = 1L,
+            summary = null
+        )
+        assertContent(
+            """{"id":1}""",
+            input.toEntity()
+        )
     }
 
     @Test
