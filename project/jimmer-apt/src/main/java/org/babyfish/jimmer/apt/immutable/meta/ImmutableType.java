@@ -5,7 +5,6 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
-import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -90,7 +89,7 @@ public class ImmutableType implements BaseType {
     private final boolean acrossMicroServices;
 
     private final String microServiceName;
-    
+
     public ImmutableType(
             Context context,
             TypeElement typeElement
@@ -672,7 +671,7 @@ public class ImmutableType implements BaseType {
                 String expectedPropName = prop.getName() + "Id";
                 ImmutableProp expectedProp = getProps().get(expectedPropName);
                 if (expectedProp != null) {
-                    if (isExplicitMappedIdProp(prop, expectedProp)) {
+                    if (isExplicitMappedIdNameConflictAllowed(prop, expectedProp)) {
                         continue;
                     }
                     throw new MetaException(
@@ -689,24 +688,16 @@ public class ImmutableType implements BaseType {
         return map;
     }
 
-    private boolean isExplicitMappedIdProp(ImmutableProp associationProp, ImmutableProp expectedProp) {
+    private boolean isExplicitMappedIdNameConflictAllowed(ImmutableProp associationProp,
+                                                          ImmutableProp expectedProp) {
         MapsId mapsId = associationProp.getAnnotation(MapsId.class);
-        if (mapsId == null || !mapsId.value().isEmpty()) {
-            return false;
-        }
-        if (associationProp.isReverse() || associationProp.isTransient()) {
-            return false;
-        }
-        if (expectedProp != idProp || !expectedProp.isId()) {
-            return false;
-        }
-        ImmutableType targetType = associationProp.getTargetType();
-        if (targetType == null || targetType.getIdProp() == null) {
-            return false;
-        }
-        return expectedProp.getElementTypeName().box().equals(
-                targetType.getIdProp().getElementTypeName().box()
-        );
+        return mapsId != null &&
+                mapsId.value().isEmpty() &&
+                !associationProp.isReverse() &&
+                !associationProp.isTransient() &&
+                idProp != null &&
+                expectedProp.isId() &&
+                expectedProp.getName().equals(idProp.getName());
     }
 
     public List<ImmutableProp> getPropsOrderById() {

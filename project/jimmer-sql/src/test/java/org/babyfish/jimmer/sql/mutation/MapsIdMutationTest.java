@@ -96,8 +96,8 @@ public class MapsIdMutationTest extends AbstractMutationTest {
                     ctx.entity(it -> it.modified(
                             "{" +
                                     "--->\"messageId\":101," +
-                                    "--->\"status\":\"READ\"," +
-                                    "--->\"message\":{\"id\":101,\"text\":\"Hi\"}" +
+                                    "--->\"message\":{\"id\":101,\"text\":\"Hi\"}," +
+                                    "--->\"status\":\"READ\"" +
                                     "}"
                     ));
                 }
