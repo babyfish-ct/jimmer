@@ -54,7 +54,19 @@ dtoBody
 
 explicitProp
     :
-    aliasGroup | positiveProp | negativeProp | userProp
+    aliasGroup | foldProp | positiveProp | negativeProp | userProp
+    ;
+
+foldProp
+    :
+    (doc = DocComment)?
+    (annotations += annotation)*
+    'fold' '(' name = Identifier ')'
+    (optional = '?')?
+    (childDoc = DocComment)?
+    (bodyAnnotations += annotation)*
+    ('implements' bodySuperInterfaces += typeRef (',' bodySuperInterfaces += typeRef)*)?
+    dtoBody
     ;
 
 macro

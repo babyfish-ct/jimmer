@@ -384,6 +384,77 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFold() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    id\n" +
+                        "    fold(summary) {\n" +
+                        "        name\n" +
+                        "        edition\n" +
+                        "    }\n" +
+                        "    fold(details)? {\n" +
+                        "        price\n" +
+                        "        fold(audit) {\n" +
+                        "            tenant\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->id, " +
+                        "--->fold(summary): {" +
+                        "--->--->name, " +
+                        "--->--->edition" +
+                        "--->}, " +
+                        "--->@optional fold(details): {" +
+                        "--->--->price, " +
+                        "--->--->fold(audit): {" +
+                        "--->--->--->tenant" +
+                        "--->--->}" +
+                        "--->}" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+        Assertions.assertEquals(2, dtoTypes.get(0).getFoldProps().size());
+        Assertions.assertFalse(dtoTypes.get(0).getFoldProps().get(0).isNullable());
+        Assertions.assertTrue(dtoTypes.get(0).getFoldProps().get(1).isNullable());
+        Assertions.assertEquals(
+                "audit",
+                dtoTypes.get(0)
+                        .getFoldProps()
+                        .get(1)
+                        .getTargetType()
+                        .getFoldProps()
+                        .get(0)
+                        .getName()
+        );
+    }
+
+    @Test
+    public void testFlatInsideFold() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    fold(storeInfo) {\n" +
+                        "        flat(store) {\n" +
+                        "            name as storeName\n" +
+                        "            website\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->fold(storeInfo): {" +
+                        "--->--->@optional store.name as storeName, " +
+                        "--->--->@optional store.website" +
+                        "--->}" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testFlat2() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "FlatTreeNode {\n" +

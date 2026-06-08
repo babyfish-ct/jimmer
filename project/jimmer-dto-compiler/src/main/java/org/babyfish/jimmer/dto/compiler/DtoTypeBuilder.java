@@ -134,6 +134,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
             if (prop.aliasGroup() != null) {
                 handleAliasGroup(prop.aliasGroup());
+            } else if (prop.foldProp() != null) {
+                handleFoldProp(prop.foldProp());
             } else if (prop.positiveProp() != null) {
                 handlePositiveProp(prop.positiveProp());
             } else if (prop.negativeProp() != null) {
@@ -141,6 +143,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             } else {
                 handleUserProp(prop.userProp());
             }
+        }
+    }
+
+    private void handleFoldProp(DtoParser.FoldPropContext prop) {
+        FoldPropBuilder<T, P> builder = new FoldPropBuilder<>(this, prop);
+        if (currentAliasGroup != null) {
+            throw ctx.exception(
+                    prop.start.getLine(),
+                    prop.start.getCharPositionInLine(),
+                    "Fold property cannot be declared in alias group"
+            );
+        }
+        if (aliasPositivePropMap.put(builder.getAlias(), builder) != null) {
+            throw ctx.exception(
+                    prop.name.getLine(),
+                    prop.name.getCharPositionInLine(),
+                    "Duplicated property alias \"" +
+                            prop.name.getText() +
+                            "\""
+            );
         }
     }
 
