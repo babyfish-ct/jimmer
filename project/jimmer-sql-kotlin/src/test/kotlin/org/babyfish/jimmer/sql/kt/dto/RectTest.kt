@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.embedded.Rect
 import org.babyfish.jimmer.sql.kt.model.embedded.Transform
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectFlatView
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectFoldView
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectView
 import org.babyfish.jimmer.sql.kt.model.embedded.source
 import org.babyfish.jimmer.sql.kt.model.embedded.target
@@ -53,6 +54,32 @@ class RectTest : AbstractQueryTest() {
         val view = RectFlatView(rect)
         assertContent(
             """RectFlatView(ltX=1, ltY=4, rbX=9, rbY=16)""".trimMargin(),
+            view
+        )
+        assertContent(
+            """{"leftTop":{"x":1,"y":4},"rightBottom":{"x":9,"y":16}}""",
+            view.toImmutable()
+        )
+    }
+
+    @Test
+    fun testRectFoldView() {
+        val rect = Rect {
+            leftTop {
+                x = 1
+                y = 4
+            }
+            rightBottom {
+                x = 9
+                y = 16
+            }
+        }
+        val view = RectFoldView(rect)
+        assertContent(
+            """RectFoldView(
+                |--->leftTopPoint=RectFoldView.TargetOf_leftTopPoint(x=1, y=4), 
+                |--->rightBottomPoint=RectFoldView.TargetOf_rightBottomPoint(x=9, y=16)
+                |)""".trimMargin(),
             view
         )
         assertContent(

@@ -41,6 +41,21 @@ public class FoldProp<T extends BaseType, P extends BaseProp> implements Abstrac
         this.targetType = targetType;
     }
 
+    FoldProp(
+            FoldProp<T, P> original,
+            String name,
+            boolean nullable,
+            DtoType<T, P> targetType
+    ) {
+        this.name = name;
+        this.line = original.line;
+        this.col = original.col;
+        this.nullable = nullable;
+        this.annotations = original.annotations;
+        this.doc = original.doc;
+        this.targetType = targetType;
+    }
+
     @Override
     public String getName() {
         return name;

@@ -572,4 +572,29 @@ public class BookSpecificationTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testFoldSpecification() {
+        BookFoldSpecification spec = new BookFoldSpecification();
+        BookFoldSpecification.TargetOf_summary summary = new BookFoldSpecification.TargetOf_summary();
+        summary.setName("GraphQL");
+        summary.setMinPrice(new BigDecimal("40"));
+        summary.setMaxPrice(new BigDecimal("60"));
+        spec.setSummary(summary);
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(spec)
+                        .orderBy(table.id())
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.NAME ilike ? and tb_1_.PRICE >= ? and tb_1_.PRICE <= ? " +
+                                    "order by tb_1_.ID asc"
+                    );
+                }
+        );
+    }
 }

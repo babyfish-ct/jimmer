@@ -455,6 +455,27 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFoldInsideFlat() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    flat(store) {\n" +
+                        "        fold(key) {\n" +
+                        "            name\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->@optional fold(storeKey): {" +
+                        "--->--->@optional store.name" +
+                        "--->}" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testFlat2() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "FlatTreeNode {\n" +

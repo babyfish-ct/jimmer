@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.dto.BookInput;
 import org.babyfish.jimmer.sql.model.dto.BookInput2;
 import org.babyfish.jimmer.sql.model.dto.BookInput3;
+import org.babyfish.jimmer.sql.model.dto.BookFoldInput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -105,5 +106,25 @@ public class BookInputTest extends Tests {
                 book
         );
         Assertions.assertEquals(input, new BookInput3(book));
+    }
+
+    @Test
+    public void testBookFoldInput() {
+        BookFoldInput input = new BookFoldInput();
+        input.setId(UUID.fromString("66eee693-4b80-4d28-98b9-5e3aafca8d05"));
+        BookFoldInput.TargetOf_summary summary = new BookFoldInput.TargetOf_summary();
+        summary.setName("SQL in Action");
+        summary.setEdition(1);
+        input.setSummary(summary);
+        Book book = input.toEntity();
+        assertContentEquals(
+                "{" +
+                        "--->\"id\":\"66eee693-4b80-4d28-98b9-5e3aafca8d05\"," +
+                        "--->\"name\":\"SQL in Action\"," +
+                        "--->\"edition\":1" +
+                        "}",
+                book
+        );
+        Assertions.assertEquals(input, new BookFoldInput(book));
     }
 }

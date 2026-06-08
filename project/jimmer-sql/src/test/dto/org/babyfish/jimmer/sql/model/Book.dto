@@ -305,3 +305,36 @@ BookViewWithConfiguration2 {
 specification BookSpecificationForIssue1108 {
     associatedIdIn(authors) as authorIds
 }
+
+BookFoldView {
+    id
+    fold(summary) {
+        name
+        edition
+    }
+}
+
+BookFoldInsideFlatView {
+    id
+    flat(store) {
+        fold(key) {
+            name
+        }
+    }
+}
+
+input BookFoldInput {
+    id
+    fold(summary) {
+        name
+        edition
+    }
+}
+
+specification BookFoldSpecification {
+    fold(summary) {
+        like/i(name)
+        ge(price)
+        le(price)
+    }
+}
