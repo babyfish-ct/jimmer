@@ -113,6 +113,8 @@ create table D.TABLE_D(
     created_time datetime
 );
 
+insert into C.TABLE_C(id, deleted_time) values(1, null);
+
 create table book_store(
     id uuid not null,
     name varchar(50) not null,
