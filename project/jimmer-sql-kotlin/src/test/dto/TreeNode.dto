@@ -23,3 +23,13 @@ FlatTreeNode {
         id(parent) as grandParentId
     }
 }
+
+TreeNodeFoldInsideFlatView {
+    id
+    name
+    flat(parent) {
+        fold(key) {
+            name
+        }
+    }
+}

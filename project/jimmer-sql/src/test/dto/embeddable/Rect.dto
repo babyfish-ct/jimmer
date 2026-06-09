@@ -31,3 +31,16 @@ RectFlatView {
         }
     }
 }
+
+RectFoldView {
+    fold(leftTopPoint) {
+        flat(leftTop) {
+            #allScalars
+        }
+    }
+    fold(rightBottomPoint) {
+        flat(rightBottom) {
+            #allScalars
+        }
+    }
+}

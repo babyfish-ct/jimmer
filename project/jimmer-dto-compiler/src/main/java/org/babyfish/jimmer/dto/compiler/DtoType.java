@@ -36,6 +36,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private List<UserProp> userProps;
 
+    private List<FoldProp<T, P>> foldProps;
+
     private List<DtoProp<T, P>> hiddenFlatProps;
 
     DtoType(
@@ -94,6 +96,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return packageName;
     }
 
+    @Nullable
     public String getDoc() {
         return doc;
     }
@@ -115,6 +118,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return name;
     }
 
+    @NotNull
     public DtoFile getDtoFile() {
         return dtoFile;
     }
@@ -153,6 +157,20 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     }
 
     @SuppressWarnings("unchecked")
+    public List<FoldProp<T, P>> getFoldProps() {
+        List<FoldProp<T, P>> list = foldProps;
+        if (list == null) {
+            list = new ArrayList<>();
+            for (AbstractProp prop : props) {
+                if (prop instanceof FoldProp<?, ?>) {
+                    list.add((FoldProp<T, P>) prop);
+                }
+            }
+            foldProps = list;
+        }
+        return list;
+    }
+
     public List<DtoProp<T, P>> getHiddenFlatProps() {
         List<DtoProp<T, P>> hfps = this.hiddenFlatProps;
         if (hfps == null) {

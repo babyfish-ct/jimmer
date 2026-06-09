@@ -134,6 +134,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
             if (prop.aliasGroup() != null) {
                 handleAliasGroup(prop.aliasGroup());
+            } else if (prop.foldProp() != null) {
+                handleFoldProp(prop.foldProp());
             } else if (prop.positiveProp() != null) {
                 handlePositiveProp(prop.positiveProp());
             } else if (prop.negativeProp() != null) {
@@ -141,6 +143,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             } else {
                 handleUserProp(prop.userProp());
             }
+        }
+    }
+
+    private void handleFoldProp(DtoParser.FoldPropContext prop) {
+        FoldPropBuilder<T, P> builder = new FoldPropBuilder<>(this, prop);
+        if (currentAliasGroup != null) {
+            throw ctx.exception(
+                    prop.start.getLine(),
+                    prop.start.getCharPositionInLine(),
+                    "Fold property cannot be declared in alias group"
+            );
+        }
+        if (aliasPositivePropMap.put(builder.getAlias(), builder) != null) {
+            throw ctx.exception(
+                    prop.name.getLine(),
+                    prop.name.getCharPositionInLine(),
+                    "Duplicated property alias \"" +
+                            prop.name.getText() +
+                            "\""
+            );
         }
     }
 
@@ -574,7 +596,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return dtoType;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, AbstractProp> resolveDeclaredProps() {
         if (this.declaredProps != null) {
             return this.declaredProps;
@@ -604,18 +625,16 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                             "User defined property cannot be declared under flat type"
                     );
                 }
-                DtoProp<T, P> deeperDtoProp = (DtoProp<T, P>) deeperProp;
-                String alias = deeperDtoProp.getAlias();
-                DtoProp<T, P> dtoProp = new DtoPropImpl<>(head, deeperDtoProp, null);
-                if (isExcluded(alias)) {
+                AbstractProp flatProp = flatProp(head, deeperProp, null, true);
+                if (isExcluded(flatProp.getAlias())) {
                     continue;
                 }
-                if (declaredPropMap.put(alias, dtoProp) != null) {
+                if (declaredPropMap.put(flatProp.getAlias(), flatProp) != null) {
                     throw ctx.exception(
-                            dtoProp.getAliasLine(),
-                            dtoProp.getAliasColumn(),
+                            flatProp.getAliasLine(),
+                            flatProp.getAliasColumn(),
                             "Duplicated property alias \"" +
-                                    alias +
+                                    flatProp.getAlias() +
                                     "\""
                     );
                 }
@@ -629,7 +648,12 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         AbstractProp prop = propBuilder.build(dtoType);
         if (prop instanceof DtoProp<?, ?> && ((DtoProp<?, ?>)prop).isFlat()) {
             for (AbstractProp deeperProp : ((DtoProp<?, ?>)prop).getTargetType().getProps()) {
-                DtoProp<T, P> flattedProp = new DtoPropImpl<>((DtoPropImpl<T, P>) prop, (DtoPropImpl<T, P>)deeperProp, propBuilder.getAliasPattern());
+                AbstractProp flattedProp = flatProp(
+                        (DtoProp<T, P>) prop,
+                        deeperProp,
+                        propBuilder.getAliasPattern(),
+                        true
+                );
                 if (outMap.put(flattedProp.getAlias(), flattedProp) != null) {
                     throw ctx.exception(
                             flattedProp.getAliasLine(),
@@ -649,6 +673,68 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                             "\""
             );
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private AbstractProp flatProp(
+            DtoProp<T, P> head,
+            AbstractProp deeperProp,
+            AliasPattern aliasPattern,
+            boolean renameFold
+    ) {
+        if (deeperProp instanceof UserProp) {
+            UserProp userProp = (UserProp) deeperProp;
+            throw ctx.exception(
+                    userProp.getAliasLine(),
+                    userProp.getAliasColumn(),
+                    "User defined property cannot be declared under flat type"
+            );
+        }
+        if (deeperProp instanceof DtoProp<?, ?>) {
+            return new DtoPropImpl<>(
+                    (DtoProp<T, P>) head,
+                    (DtoProp<T, P>) deeperProp,
+                    aliasPattern
+            );
+        }
+        FoldProp<T, P> foldProp = (FoldProp<T, P>) deeperProp;
+        List<AbstractProp> props = new ArrayList<>();
+        for (AbstractProp prop : foldProp.getTargetType().getProps()) {
+            props.add(flatProp(head, prop, aliasPattern, false));
+        }
+        DtoType<T, P> targetType = new DtoType<>(
+                dtoType.getBaseType(),
+                dtoType.getPackageName(),
+                dtoType.getModifiers(),
+                foldProp.getTargetType().getAnnotations(),
+                foldProp.getTargetType().getSuperInterfaces(),
+                null,
+                dtoType.getDtoFile(),
+                foldProp.getTargetType().getDoc()
+        );
+        targetType.setProps(Collections.unmodifiableList(props));
+        String name = renameFold ?
+                AliasPattern.join(head.getBaseProp().getName(), foldProp.getName()) :
+                foldProp.getName();
+        DtoProp<T, P> nullGuardProp;
+        if (head.isNullable()) {
+            nullGuardProp = head;
+        } else if (foldProp.getNullGuardProp() != null) {
+            nullGuardProp = new DtoPropImpl<>(
+                    head,
+                    foldProp.getNullGuardProp(),
+                    aliasPattern
+            );
+        } else {
+            nullGuardProp = null;
+        }
+        return new FoldProp<>(
+                foldProp,
+                name,
+                head.isNullable() || foldProp.isNullable(),
+                nullGuardProp,
+                targetType
+        );
     }
 
     private boolean isExcluded(String alias) {

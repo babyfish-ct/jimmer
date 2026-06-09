@@ -4,7 +4,13 @@ import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContent
+import org.babyfish.jimmer.sql.kt.model.TreeNode
+import org.babyfish.jimmer.sql.kt.model.dto.TreeNodeFoldInsideFlatView
+import org.babyfish.jimmer.sql.kt.model.id
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookFoldInsideFlatView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNestedFoldView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableFoldView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookView
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
@@ -15,6 +21,142 @@ import org.junit.Test
 import kotlin.test.expect
 
 class QueryTest : AbstractQueryTest() {
+
+    @Test
+    fun testFoldInsideFlatView() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.name eq "GraphQL in Action")
+                orderBy(table.edition.desc())
+                select(
+                    table.fetch(BookFoldInsideFlatView::class)
+                )
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.STORE_ID " +
+                    "from BOOK tb_1_ " +
+                    "where tb_1_.NAME = ? " +
+                    "order by tb_1_.EDITION desc"
+            )
+            statement(1).sql(
+                "select tb_1_.ID, tb_1_.NAME " +
+                    "from BOOK_STORE tb_1_ " +
+                    "where tb_1_.ID = ?"
+            )
+            rows {
+                assertContent(
+                    """[
+                        |--->BookFoldInsideFlatView(
+                        |--->--->id=12, 
+                        |--->--->storeKey=BookFoldInsideFlatView.TargetOf_storeKey(name=MANNING)
+                        |--->), 
+                        |--->BookFoldInsideFlatView(
+                        |--->--->id=11, 
+                        |--->--->storeKey=BookFoldInsideFlatView.TargetOf_storeKey(name=MANNING)
+                        |--->), 
+                        |--->BookFoldInsideFlatView(
+                        |--->--->id=10, 
+                        |--->--->storeKey=BookFoldInsideFlatView.TargetOf_storeKey(name=MANNING)
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testTreeNodeFoldInsideFlatViewWithNullFlatHead() {
+        executeAndExpect(
+            sqlClient.createQuery(TreeNode::class) {
+                where(table.id eq 1L)
+                select(table.fetch(TreeNodeFoldInsideFlatView::class))
+            }
+        ) {
+            sql(
+                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                    "from TREE_NODE tb_1_ " +
+                    "where tb_1_.NODE_ID = ?"
+            )
+            rows {
+                assertContent(
+                    """[
+                        |--->TreeNodeFoldInsideFlatView(
+                        |--->--->id=1, 
+                        |--->--->name=Home, 
+                        |--->--->parentKey=null
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testNullableFoldView() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.id eq 12L)
+                select(table.fetch(BookNullableFoldView::class))
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                    "from BOOK tb_1_ " +
+                    "where tb_1_.ID = ?"
+            )
+            rows {
+                assertContent(
+                    """[
+                        |--->BookNullableFoldView(
+                        |--->--->id=12, 
+                        |--->--->summary=BookNullableFoldView.TargetOf_summary(
+                        |--->--->--->name=GraphQL in Action, 
+                        |--->--->--->edition=3
+                        |--->--->)
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testNestedFoldView() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.id eq 12L)
+                select(table.fetch(BookNestedFoldView::class))
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                    "from BOOK tb_1_ " +
+                    "where tb_1_.ID = ?"
+            )
+            rows {
+                assertContent(
+                    """[
+                        |--->BookNestedFoldView(
+                        |--->--->id=12, 
+                        |--->--->name=GraphQL in Action, 
+                        |--->--->summary=BookNestedFoldView.TargetOf_summary(
+                        |--->--->--->name=GraphQL in Action, 
+                        |--->--->--->detail=BookNestedFoldView.TargetOf_summary.TargetOf_detail(
+                        |--->--->--->--->name=GraphQL in Action, 
+                        |--->--->--->--->edition=3
+                        |--->--->--->)
+                        |--->--->)
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
+        }
+    }
 
     @Test
     fun testBookView() {
@@ -174,4 +316,5 @@ class QueryTest : AbstractQueryTest() {
             }
         }
     }
+
 }
