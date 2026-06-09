@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -58,6 +59,13 @@ public class MutableSubQueryImpl
     public MutableSubQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table
+    ) {
+        super(sqlClient, table);
+    }
+
+    public MutableSubQueryImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable table
     ) {
         super(sqlClient, table);
     }
