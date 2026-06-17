@@ -807,6 +807,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public boolean hasConflictPredicate() {
+            return false;
+        }
+
+        @Override
         public List<ValueGetter> getConflictGetters() {
             return getters;
         }
@@ -860,6 +865,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             for (ValueGetter getter : getters) {
                 builder.separator().sql(getter);
             }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendConflictPredicate(String alias) {
             return this;
         }
 

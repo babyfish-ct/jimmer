@@ -304,6 +304,16 @@ public enum QueryReason {
     NULL_NOT_DISTINCT_REQUIRED,
 
     /**
+     * The current entity type uses {@link KeyUniqueConstraint} and a boolean
+     * logical-deleted property, but the current dialect cannot express
+     * key-based upsert with the active logical-delete predicate.
+     *
+     * <p>In this case, Jimmer executes an additional select statement instead
+     * of silently changing the expected database uniqueness target.</p>
+     */
+    LOGICAL_DELETED_CONFLICT_PREDICATE_UNSUPPORTED,
+
+    /**
      * Attempting to save an object without
      * {@link org.babyfish.jimmer.sql.Id} property, but
      * the corresponding entity has not been configured

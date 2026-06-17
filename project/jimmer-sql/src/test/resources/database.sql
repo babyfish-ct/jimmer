@@ -24,6 +24,7 @@ drop table post_2_category_2_mapping if exists;
 drop table post2_item if exists;
 drop table post_2 if exists;
 drop table category_2 if exists;
+drop table bool_key_file if exists;
 drop table sys_user if exists;
 drop table players if exists;
 drop table teams if exists;
@@ -1431,6 +1432,16 @@ alter table category_2
     add constraint uq_category
         unique(name);
 
+create table bool_key_file(
+    id bigint auto_increment(100) not null,
+    path varchar(50) not null,
+    name varchar(50) not null,
+    deleted boolean not null
+);
+alter table bool_key_file
+    add constraint pk_bool_key_file
+        primary key(id);
+
 create table post_2_category_2_mapping(
     post_id bigint not null,
     category_id bigint not null,
@@ -1453,6 +1464,10 @@ insert into category_2(id, name, deleted_millis) values
     (3, 'category-3', 0),
     (4, 'category-4', 0),
     (5, 'category-5', 0);
+
+insert into bool_key_file(id, path, name, deleted) values
+    (1, '/active', 'old-active', false),
+    (2, '/deleted', 'old-deleted', true);
 
 insert into post_2_category_2_mapping(post_id, category_id, deleted_uuid) values
     (1, 2, x'00000000000000000000000000000000'), (1, 3, x'00000000000000000000000000000000'),

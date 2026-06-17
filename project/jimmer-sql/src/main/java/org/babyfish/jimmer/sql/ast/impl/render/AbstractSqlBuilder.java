@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
@@ -140,6 +141,52 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             sql(assignedName).sql(" is not null");
         }
         return (T)this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T logicalDeleteConflictPredicate(LogicalDeletedInfo logicalDeletedInfo, String alias) {
+        String assignedName = logicalDeletedInfo.getColumnName();
+        if (assignedName == null) {
+            assignedName = logicalDeletedInfo
+                    .getProp()
+                    .<SingleColumn>getStorage(sqlClient().getMetadataStrategy())
+                    .getName();
+        }
+        if (alias != null) {
+            assignedName = alias + '.' + assignedName;
+        }
+        LogicalDeletedInfo.Action action = logicalDeletedInfo.getAction();
+        if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+            sql(assignedName).sql(" is null");
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+            sql(assignedName).sql(" is not null");
+        } else {
+            Object value = logicalDeletedInfo.allocateInitializedValue();
+            if (value == null) {
+                sql(assignedName).sql(" is null");
+            } else {
+                value = Variables.process(value, logicalDeletedInfo.getProp(), sqlClient());
+                sql(assignedName).sql(" = ");
+                renderLiteral(value);
+            }
+        }
+        return (T)this;
+    }
+
+    private void renderLiteral(Object value) {
+        if (value instanceof DbLiteral.DbNull) {
+            sql("null");
+        } else if (value instanceof DbLiteral) {
+            StringBuilder builder = new StringBuilder();
+            ((DbLiteral) value).renderValue(builder);
+            sql(builder.toString());
+        } else if (value instanceof Number) {
+            sql(value.toString());
+        } else if (value instanceof Boolean) {
+            sql((Boolean) value ? "true" : "false");
+        } else {
+            sql("'").sql(value.toString().replace("'", "''")).sql("'");
+        }
     }
 
     public abstract T rawVariable(Object value);

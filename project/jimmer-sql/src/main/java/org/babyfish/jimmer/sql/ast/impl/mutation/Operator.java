@@ -442,15 +442,18 @@ class Operator {
 
         List<ImmutableProp> conflictProps;
         List<PropertyGetter> conflictGetters;
+        LogicalDeletedInfo conflictPredicate;
         if (!batch.shape().getIdGetters().isEmpty()) {
             conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
             conflictGetters = batch.shape().getIdGetters();
+            conflictPredicate = null;
         } else {
             Set<ImmutableProp> keyProps = batch.shape().keyProps(
                     ctx.options.getKeyMatcher(ctx.path.getType())
             );
             conflictProps = new ArrayList<>(keyProps);
             LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
+            boolean filteredLogicalDeletedKey = isFilteredLogicalDeletedKey(batch.shape().getType());
             if (logicalDeletedInfo != null) {
                 conflictProps.add(logicalDeletedInfo.getProp());
             }
@@ -458,12 +461,12 @@ class Operator {
             for (PropertyGetter getter : fullShape.getGetters()) {
                 if (keyProps.contains(getter.prop())) {
                     conflictGetters.add(getter);
-                } else if (getter.prop().isLogicalDeleted()) {
+                } else if (!filteredLogicalDeletedKey && getter.prop().isLogicalDeleted()) {
                     conflictGetters.add(getter);
                 }
             }
+            conflictPredicate = filteredLogicalDeletedKey ? logicalDeletedInfo : null;
         }
-
         UpsertMask<?> upsertMask = ctx.options.getUpsertMask(batch.shape().getType());
         List<PropertyGetter> insertedGetters = new ArrayList<>();
         for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
@@ -499,6 +502,7 @@ class Operator {
                 sequenceIdGenerator,
                 insertedGetters,
                 conflictGetters,
+                conflictPredicate,
                 updatedGetters,
                 ignoreUpdate,
                 userOptimisticLockPredicate,
@@ -507,6 +511,11 @@ class Operator {
         sqlClient.getDialect().upsert(upsertContext);
         int rowCount = execute(builder, batch, true, ignoreUpdate);
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+    }
+
+    private boolean isFilteredLogicalDeletedKey(ImmutableType type) {
+        LogicalDeletedInfo logicalDeletedInfo = type.getLogicalDeletedInfo();
+        return logicalDeletedInfo != null && logicalDeletedInfo.getType() == boolean.class;
     }
 
     private void validate(Shape shape, boolean insertOnly) {
@@ -1102,6 +1111,8 @@ class Operator {
 
         private final List<PropertyGetter> conflictGetters;
 
+        private final LogicalDeletedInfo conflictPredicate;
+
         private final List<PropertyGetter> updatedGetters;
 
         private final boolean updateIgnored;
@@ -1118,6 +1129,7 @@ class Operator {
                 SequenceIdGenerator sequenceIdGenerator,
                 List<PropertyGetter> insertedGetters,
                 List<PropertyGetter> conflictGetters,
+                LogicalDeletedInfo conflictPredicate,
                 List<PropertyGetter> updatedGetters,
                 boolean updateIgnored,
                 Predicate userOptimisticLockPredicate,
@@ -1142,6 +1154,7 @@ class Operator {
                     null;
             this.insertedGetters = insertedGetters;
             this.conflictGetters = conflictGetters;
+            this.conflictPredicate = conflictPredicate;
             this.updatedGetters = updatedGetters;
             this.updateIgnored = updateIgnored;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
@@ -1200,6 +1213,11 @@ class Operator {
                 return false;
             }
             return Classes.INT_TYPES.contains(generatedIdGetter.prop().getReturnClass());
+        }
+
+        @Override
+        public boolean hasConflictPredicate() {
+            return conflictPredicate != null;
         }
 
         @Override
@@ -1267,6 +1285,14 @@ class Operator {
         public Dialect.UpsertContext appendConflictColumns() {
             for (PropertyGetter getter : conflictGetters) {
                 builder.separator().sql(getter);
+            }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendConflictPredicate(String alias) {
+            if (conflictPredicate != null) {
+                builder.logicalDeleteConflictPredicate(conflictPredicate, alias);
             }
             return this;
         }
