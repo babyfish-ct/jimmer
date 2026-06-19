@@ -25,6 +25,7 @@ import org.babyfish.jimmer.sql.model.middle.CustomerProps;
 import org.babyfish.jimmer.sql.model.cycle.Person;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.Vendor;
+import org.babyfish.jimmer.sql.model.logic.C;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -901,6 +903,26 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("update issue1125_sys_perm set deleted_at = ? where ID = any(?)");
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testLogicalDeleteWithBinlogOnly() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(C.class, 1L),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update JIMMER_TEST_DB.C.TABLE_C set DELETED_TIME = ? where ID = ?");
+                        it.variables(variables -> {
+                            Assertions.assertEquals(2, variables.size());
+                            Assertions.assertInstanceOf(Timestamp.class, variables.get(0));
+                            Assertions.assertEquals(1L, variables.get(1));
+                        });
+                    });
+                    ctx.totalRowCount(1);
                 }
         );
     }

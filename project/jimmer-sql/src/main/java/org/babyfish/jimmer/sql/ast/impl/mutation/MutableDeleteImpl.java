@@ -241,7 +241,7 @@ public class MutableDeleteImpl
             LogicalDeletedValueGenerator<?> generator =
                     LogicalDeletedValueGenerators.of(logicalDeletedInfo, getSqlClient());
             assert generator != null;
-            MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), (TableProxy<?>) deleteQuery.getTable());
+            MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), table.getImmutableType());
             update.shareRootAliasWith(deleteQuery.getTableLikeImplementor());
             update.set(
                     (PropExpression<Object>)PropExpressionImpl.of(

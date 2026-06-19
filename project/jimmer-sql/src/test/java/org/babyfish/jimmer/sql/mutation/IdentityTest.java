@@ -1106,7 +1106,7 @@ public class IdentityTest extends AbstractMutationTest {
                                 "merge into ADMINISTRATOR tb_1_ " +
                                         "using(values(?, ?, ?, ?)) " +
                                         "tb_2_(NAME, CREATED_TIME, MODIFIED_TIME, DELETED) " +
-                                        "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED = tb_2_.DELETED::boolean " +
+                                        "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED = false " +
                                         "when not matched then " +
                                         "insert(NAME, CREATED_TIME, MODIFIED_TIME, DELETED) " +
                                         "values(tb_2_.NAME, tb_2_.CREATED_TIME, tb_2_.MODIFIED_TIME, tb_2_.DELETED)"

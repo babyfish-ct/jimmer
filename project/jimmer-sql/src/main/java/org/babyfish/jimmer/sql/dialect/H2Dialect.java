@@ -138,8 +138,13 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpsertWithConflictPredicateSupported() {
+        return true;
+    }
+
+    @Override
     public void upsert(UpsertContext ctx) {
-        if (!ctx.isUpdateIgnored() && ctx.isComplete()) {
+        if (!ctx.hasConflictPredicate() && !ctx.isUpdateIgnored() && ctx.isComplete()) {
             ctx.sql("merge into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
@@ -174,6 +179,9 @@ public class H2Dialect extends DefaultDialect {
         for (ValueGetter getter : ctx.getConflictGetters()) {
             ctx.separator().sql("tb_1_.").sql(getter).sql(" = ");
             appendConflictValueFromSource(ctx, getter);
+        }
+        if (ctx.hasConflictPredicate()) {
+            ctx.separator().appendConflictPredicate("tb_1_");
         }
         ctx.leave();
         if (!ctx.isUpdateIgnored() && (ctx.hasGeneratedId()) || ctx.hasUpdatedColumns()) {

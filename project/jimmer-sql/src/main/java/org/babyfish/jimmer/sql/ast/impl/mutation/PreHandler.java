@@ -379,6 +379,12 @@ abstract class AbstractPreHandler implements PreHandler {
                 if (!sqlClient.isUpsertWithUniqueConstraintSupported(ctx.path.getType())) {
                     return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
                 }
+                LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+                if (logicalDeletedInfo != null &&
+                        logicalDeletedInfo.getType() == boolean.class &&
+                        !sqlClient.getDialect().isUpsertWithConflictPredicateSupported()) {
+                    return QueryReason.LOGICAL_DELETED_CONFLICT_PREDICATE_UNSUPPORTED;
+                }
                 if (!constraint.isNullNotDistinct() ||
                         !sqlClient.getDialect().isUpsertWithNullableKeySupported()) {
                     for (Set<ImmutableProp> keyProps : keyMatcher.toMap().values()) {
