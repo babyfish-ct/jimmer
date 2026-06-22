@@ -465,7 +465,8 @@ public class MutableSubQueryImpl
         return ExistsPredicate.of(this, true);
     }
 
-    public void setParent(AbstractMutableStatementImpl parent) {
+    @Override
+    void bindParent(AbstractMutableStatementImpl parent) {
         if (this.parent == null) {
             this.parent = parent;
             ctx = parent.getContext();
@@ -482,7 +483,7 @@ public class MutableSubQueryImpl
 
     @Override
     public void resolveVirtualPredicate(AstContext ctx) {
-        setParent(ctx.getStatement());
+        bindParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
     }
 
@@ -490,4 +491,3 @@ public class MutableSubQueryImpl
         return filterOwner;
     }
 }
-

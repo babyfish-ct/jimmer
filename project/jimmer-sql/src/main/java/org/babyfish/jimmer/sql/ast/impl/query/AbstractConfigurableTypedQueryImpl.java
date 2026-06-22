@@ -65,6 +65,14 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+        bindParent(visitor);
+        acceptImpl(visitor);
+    }
+
+    protected void bindParent(AstVisitor visitor) {
+    }
+
+    protected final void acceptImpl(@NotNull AstVisitor visitor) {
         AstContext astContext = visitor.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {

@@ -166,7 +166,8 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
         return (MutableBaseQueryImpl)super.orderByIf(condition, orders);
     }
 
-    public void setParent(AbstractMutableStatementImpl parent) {
+    @Override
+    void bindParent(AbstractMutableStatementImpl parent) {
         if (this.parent == null) {
             this.parent = parent;
             ctx = parent.getContext();
@@ -185,7 +186,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     @Override
     public void resolveVirtualPredicate(AstContext ctx) {
-        setParent(ctx.getStatement());
+        bindParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
     }
 

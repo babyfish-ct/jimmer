@@ -193,10 +193,15 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        getMutableQuery().setParent(visitor.getAstContext().getStatement());
+        bindParent(visitor);
         if (visitor.visitSubQuery(this)) {
-            super.accept(visitor);
+            acceptImpl(visitor);
         }
+    }
+
+    @Override
+    protected void bindParent(AstVisitor visitor) {
+        getMutableQuery().bindParent(visitor.getAstContext().getStatement());
     }
 
     @Override

@@ -59,6 +59,9 @@ public abstract class AbstractMutableQueryImpl
         super(sqlClient, table);
     }
 
+    void bindParent(AbstractMutableStatementImpl parent) {
+    }
+
     @Override
     public AbstractMutableQueryImpl where(Predicate... predicates) {
         return (AbstractMutableQueryImpl) super.where(predicates);

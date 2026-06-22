@@ -158,9 +158,8 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     }
 
     @Override
-    public void accept(@NotNull AstVisitor visitor) {
-        getMutableQuery().setParent(visitor.getAstContext().getStatement());
-        super.accept(visitor);
+    protected void bindParent(AstVisitor visitor) {
+        getMutableQuery().bindParent(visitor.getAstContext().getStatement());
     }
 
     @Override
