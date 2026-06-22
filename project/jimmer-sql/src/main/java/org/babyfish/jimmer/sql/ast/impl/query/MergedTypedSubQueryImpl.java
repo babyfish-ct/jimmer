@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
@@ -13,7 +15,7 @@ import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.List;
 
-public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements TypedSubQuery<R>, TypedQueryImplementor  {
+public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements TypedSubQuery<R>, TypedQueryImplementor {
 
     private final JSqlClientImplementor sqlClient;
 
@@ -41,12 +43,12 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
     @SafeVarargs
     public static <R> TypedSubQuery<R> of(
             String operator,
-            TypedSubQuery<R> ... queries
+            TypedSubQuery<R>... queries
     ) {
         if (queries.length == 0) {
             throw new IllegalArgumentException("No queries are specified");
         }
-        JSqlClientImplementor sqlClient = ((TypedQueryImplementor)queries[0]).getSqlClient();
+        JSqlClientImplementor sqlClient = ((TypedQueryImplementor) queries[0]).getSqlClient();
         return of(sqlClient, operator, queries);
     }
 
@@ -63,7 +65,7 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
             case 1:
                 return queries[0];
             default:
-                Class<?> type = ((ExpressionImplementor<?>)queries[0]).getType();
+                Class<?> type = ((ExpressionImplementor<?>) queries[0]).getType();
                 if (type == String.class) {
                     return (TypedSubQuery<R>) new Str(
                             sqlClient,
@@ -117,15 +119,20 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
-        boolean addOperator = false;
-        for (TypedQueryImplementor query : queries) {
-            if (addOperator) {
-                builder.space('?').sql(operator).space('?');
-            } else {
-                addOperator = true;
+        builder.enter('?' + operator + '?');
+        for (int i = 0; i < queries.length; i++) {
+            TypedQueryImplementor query = queries[i];
+            builder.separator();
+            boolean wrap = query.requiresSubQueryInMergedOperand(builder);
+            if (wrap) {
+                builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             }
             query.renderTo(builder);
+            if (wrap) {
+                builder.leave();
+            }
         }
+        builder.leave();
         builder.leave();
     }
 
@@ -150,7 +157,7 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
     @SuppressWarnings("unchecked")
     @Override
     public Class<R> getType() {
-        return ((ExpressionImplementor<R>)queries[0]).getType();
+        return ((ExpressionImplementor<R>) queries[0]).getType();
     }
 
     @Override

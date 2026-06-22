@@ -4,9 +4,9 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.query.TypedQueryImplementor
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 @Suppress("UNCHECKED_CAST")
 internal abstract class KMergedSubQueryImpl<R>(
@@ -22,15 +22,47 @@ internal abstract class KMergedSubQueryImpl<R>(
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
-        left.renderTo(builder)
-        builder.space('?').sql(operator).space('?')
-        right.renderTo(builder)
+        builder.enter("?$operator?")
+        renderOperand(left, builder)
+        renderOperand(right, builder)
         builder.leave()
+        builder.leave()
+    }
+
+    private fun renderOperand(operand: Ast, builder: AbstractSqlBuilder<*>) {
+        builder.separator()
+        when (operand) {
+            is KConfigurableSubQueryImpl<*> ->
+                renderTypedOperand(operand.javaSubQuery as TypedQueryImplementor, builder)
+
+            is KMergedSubQueryImpl<*> ->
+                operand.renderTo(builder)
+
+            is TypedQueryImplementor ->
+                renderTypedOperand(operand, builder)
+
+            else -> {
+                builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
+                operand.renderTo(builder)
+                builder.leave()
+            }
+        }
+    }
+
+    private fun renderTypedOperand(operand: TypedQueryImplementor, builder: AbstractSqlBuilder<*>) {
+        val wrap = operand.requiresSubQueryInMergedOperand(builder)
+        if (wrap) {
+            builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
+        }
+        operand.renderTo(builder)
+        if (wrap) {
+            builder.leave()
+        }
     }
 
     override fun hasVirtualPredicate(): Boolean =
         left.hasVirtualPredicate() ||
-            right.hasVirtualPredicate()
+                right.hasVirtualPredicate()
 
     override fun resolveVirtualPredicate(ctx: AstContext): Ast {
         left = ctx.resolveVirtualPredicate(left)
@@ -38,7 +70,7 @@ internal abstract class KMergedSubQueryImpl<R>(
         return this
     }
 
-    class NonNull<R: Any>(
+    class NonNull<R : Any>(
         operator: String,
         left: KTypedSubQuery.NonNull<R>,
         right: KTypedSubQuery<R>
@@ -77,11 +109,11 @@ internal abstract class KMergedSubQueryImpl<R>(
             NonNull("intersect", this, other)
     }
 
-    class Nullable<R: Any>(
+    class Nullable<R : Any>(
         operator: String,
         left: KTypedSubQuery<R>,
         right: KTypedSubQuery<R>
-    ): KMergedSubQueryImpl<R>(operator, left as Ast, right as Ast), KTypedSubQuery.Nullable<R> {
+    ) : KMergedSubQueryImpl<R>(operator, left as Ast, right as Ast), KTypedSubQuery.Nullable<R> {
 
         override fun union(other: KTypedSubQuery<R>): KTypedSubQuery.Nullable<R> =
             Nullable("union", this, other)

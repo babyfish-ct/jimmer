@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
-import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
@@ -105,8 +104,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         if (tableLikeImplementor instanceof BaseTableImplementor) {
             visitor.visitTableReference(realBaseTable, null, false);
             TypedBaseQueryImplementor<?> query = ((BaseTableImplementor) tableLikeImplementor).getQuery();
-            MergedBaseQueryImpl<?> mergedBy = query.getMergedBy();
-            (mergedBy != null ? mergedBy : query).accept(visitor);
+            query.acceptBaseTableReference(visitor);
         } else {
             tableLikeImplementor.accept(visitor);
         }
@@ -268,12 +266,27 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private List<CteTableDeclaration> getCteTableDeclarations(QueryRenderContext renderContext) {
-        if (this instanceof TypedBaseQuery<?>) {
+        if (!rendersCteDeclarations()) {
             return Collections.emptyList();
         }
         return renderContext != null ?
                 renderContext.getAnalysis().getCteTableDeclarations(getMutableQuery()) :
                 Collections.emptyList();
+    }
+
+    protected boolean rendersCteDeclarations() {
+        return true;
+    }
+
+    @Override
+    public boolean requiresSubQueryInMergedOperand(AbstractSqlBuilder<?> builder) {
+        TypedQueryData data = getData();
+        if (data.limit != Integer.MAX_VALUE || data.offset != 0) {
+            return true;
+        }
+        return !data.withoutSortingAndPaging &&
+                !builder.assertSimple().getAstContext().isQueryWithoutSortingAndPaging() &&
+                !getMutableQuery().getOrders().isEmpty();
     }
 
     private void renderWithoutPagingImpl(
@@ -366,7 +379,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         );
         builder.enter(SqlBuilder.ScopeType.SELECT);
         if (data.selections.get(0) instanceof FetcherSelection<?>) {
-            for (Field field : ((FetcherSelection<?>)data.selections.get(0)).getFetcher().getFieldMap().values()) {
+            for (Field field : ((FetcherSelection<?>) data.selections.get(0)).getFetcher().getFieldMap().values()) {
                 writer.prop(field.getProp(), OffsetOptimizationWriter.ALIAS, false);
             }
         } else {
@@ -453,7 +466,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         public void prop(ImmutableProp prop, String alias, boolean multiColumnsAsTuple) {
             SqlTemplate template = prop.getSqlTemplate();
             if (template instanceof FormulaTemplate) {
-                builder.separator().sql(((FormulaTemplate)template).toSql(alias));
+                builder.separator().sql(((FormulaTemplate) template).toSql(alias));
                 return;
             }
             Storage storage = prop.getStorage(strategy);

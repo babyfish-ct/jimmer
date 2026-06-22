@@ -162,33 +162,14 @@ final class CteTableDependencyAnalyzer {
         }
 
         private void collectCteDependencies(TypedBaseQueryImplementor<?> query, AstContext astContext) {
-            if (query instanceof ConfigurableBaseQueryImpl<?>) {
-                collectCteDependencies((ConfigurableBaseQueryImpl<?>) query, astContext);
-                return;
-            }
             List<ConfigurableBaseQueryImpl<?>> queries = new ArrayList<>();
-            query.collectConfigurableQueries(queries);
+            query.collectCteDependencyQueries(queries);
             for (ConfigurableBaseQueryImpl<?> configurableQuery : queries) {
                 collectCteDependencies(configurableQuery, astContext);
             }
         }
 
         private void collectCteDependencies(ConfigurableBaseQueryImpl<?> query, AstContext parentAstContext) {
-            collectCteDependencies(query, parentAstContext, true);
-        }
-
-        private void collectCteDependencies(
-                ConfigurableBaseQueryImpl<?> query,
-                AstContext parentAstContext,
-                boolean expandMergedBy
-        ) {
-            MergedBaseQueryImpl<?> mergedBy = query.getMergedBy();
-            if (expandMergedBy && mergedBy != null) {
-                for (ConfigurableBaseQueryImpl<?> itemQuery : mergedBy.getExpandedQueries()) {
-                    collectCteDependencies(itemQuery, parentAstContext, false);
-                }
-                return;
-            }
             AstContext astContext = new AstContext(
                     parentAstContext.getSqlClient(),
                     QueryRenderMode.WITHOUT_NESTED_BASE_TABLE_SORTING_AND_PAGING
