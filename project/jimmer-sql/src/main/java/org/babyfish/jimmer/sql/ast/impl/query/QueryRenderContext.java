@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,9 +18,12 @@ public final class QueryRenderContext {
 
     private final QueryAnalysis analysis;
 
+    private final BaseQueryReadSupport baseQueryReadSupport;
+
     public QueryRenderContext(AstContext astContext, QueryAnalysis analysis) {
         this.astContext = astContext;
         this.analysis = analysis;
+        this.baseQueryReadSupport = new BaseQueryReadSupport(this);
     }
 
     public AstContext getAstContext() {
@@ -28,6 +32,10 @@ public final class QueryRenderContext {
 
     public QueryAnalysis getAnalysis() {
         return analysis;
+    }
+
+    public BaseQueryReadSupport getBaseQueryReadSupport() {
+        return baseQueryReadSupport;
     }
 
     public TableAliasScope getTableAliasScope() {

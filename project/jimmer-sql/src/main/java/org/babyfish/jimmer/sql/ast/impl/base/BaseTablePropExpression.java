@@ -2,25 +2,24 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
-import java.util.Objects;
 
 class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
 
@@ -112,19 +111,19 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
         ctx.pushStatement(baseTableOwner.getBaseTable().getQuery().getMutableQuery());
         try {
-            BaseQueryExportSelection exportSelection = Objects.requireNonNull(
-                    renderContext.getBaseQueryExportSelection(baseTableOwner),
-                    "No base-query export selection is available for " + baseTableOwner
-            );
             RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(renderContext);
-            if (exportSelection.isRootTable(realTable)) {
-                renderExportedProp(builder, exportSelection, realTable, ignoreBrackets);
+            BaseQueryReadSupport readSupport = renderContext.getBaseQueryReadSupport();
+            BaseQueryRead read = readSupport.propExpression(
+                    baseTableOwner,
+                    raw,
+                    realTable,
+                    builder.sqlClient().getMetadataStrategy()
+            );
+            if (read != null) {
+                renderExportedRead(builder, read, ignoreBrackets);
                 return;
             }
-            if (baseTableOwner.equals(BaseTableOwner.of(raw.getTable())) && exportSelection.isTableBacked()) {
-                renderExportedProp(builder, exportSelection, exportSelection.getRootRealTable(), ignoreBrackets);
-                return;
-            }
+            readSupport.requireSelection(baseTableOwner);
         } finally {
             ctx.popStatement();
         }
@@ -135,61 +134,31 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
         }
     }
 
-    private void renderExportedProp(
-            AbstractSqlBuilder<?> builder,
-            BaseQueryExportSelection exportSelection,
-            RealTable realTable,
-            boolean ignoreBrackets
-    ) {
-        SqlTemplate template = raw.getProp().getSqlTemplate();
-        if (template instanceof FormulaTemplate) {
-            renderExportedColumn(builder, exportSelection, exportSelection.formulaIndex(realTable, (FormulaTemplate) template));
-            return;
-        }
-        if (!raw.getProp().isColumnDefinition()) {
-            builder
-                    .sql(exportSelection.getAlias(builder.assertSimple()))
-                    .sql(".c")
-                    .sql(Integer.toString(exportSelection.expressionIndex()));
-            return;
-        }
-        ColumnDefinition definition = raw.getProp().getStorage(
-                builder.sqlClient().getMetadataStrategy()
-        );
-        if (!ignoreBrackets && definition.size() > 1) {
+    private void renderExportedRead(AbstractSqlBuilder<?> builder, BaseQueryRead read, boolean ignoreBrackets) {
+        if (!ignoreBrackets && read.size() > 1) {
             builder.enter(SqlBuilder.ScopeType.TUPLE);
-            renderExportedColumns(builder, exportSelection, realTable, definition);
+            renderExportedColumns(builder, read);
             builder.leave();
         } else {
-            renderExportedColumns(builder, exportSelection, realTable, definition);
+            renderExportedColumns(builder, read);
         }
     }
 
-    private void renderExportedColumns(
-            AbstractSqlBuilder<?> builder,
-            BaseQueryExportSelection exportSelection,
-            RealTable realTable,
-            ColumnDefinition definition
-    ) {
-        int size = definition.size();
+    private void renderExportedColumns(AbstractSqlBuilder<?> builder, BaseQueryRead read) {
+        int size = read.size();
         for (int i = 0; i < size; i++) {
             if (i != 0) {
                 builder.sql(", ");
             }
-            renderExportedColumn(
-                    builder,
-                    exportSelection,
-                    exportSelection.columnIndex(realTable, definition.name(i), false)
-            );
+            renderExportedColumn(builder, read, i);
         }
     }
 
-    private void renderExportedColumn(
-            AbstractSqlBuilder<?> builder,
-            BaseQueryExportSelection exportSelection,
-            int index
-    ) {
-        builder.sql(exportSelection.getAlias(builder.assertSimple())).sql(".c").sql(Integer.toString(index));
+    private void renderExportedColumn(AbstractSqlBuilder<?> builder, BaseQueryRead read, int index) {
+        builder
+                .sql(builder.assertSimple().alias(read.getRealBaseTable()))
+                .sql(".c")
+                .sql(Integer.toString(read.index(index)));
     }
 
     @Override
@@ -228,8 +197,8 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
     }
 
     static class Dt<T extends Date & Comparable<Date>>
-        extends Cmp<T>
-        implements PropExpression.Dt<T> {
+            extends Cmp<T>
+            implements PropExpression.Dt<T> {
 
         Dt(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
             super(raw, baseTableOwner);
@@ -237,8 +206,8 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
     }
 
     static class Tp<T extends Temporal & Comparable<?>>
-        extends Cmp<T>
-        implements PropExpression.Tp<T> {
+            extends Cmp<T>
+            implements PropExpression.Tp<T> {
 
         Tp(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
             super(raw, baseTableOwner);

@@ -30,6 +30,10 @@ public class BaseQueryExportSelection {
         return builder.alias(export.getRealBaseTable());
     }
 
+    RealTable getRealBaseTable() {
+        return export.getRealBaseTable();
+    }
+
     public boolean isTableBacked() {
         return rootRealTable != null;
     }

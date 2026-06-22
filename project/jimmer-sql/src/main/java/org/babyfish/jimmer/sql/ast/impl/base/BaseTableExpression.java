@@ -50,14 +50,14 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
         ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
         try {
             QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
-            BaseQueryExportSelection exportSelection = Objects.requireNonNull(
-                    renderContext.getBaseQueryExportSelection(baseTableOwner),
+            BaseQueryRead read = Objects.requireNonNull(
+                    renderContext.getBaseQueryReadSupport().expression(baseTableOwner),
                     "No base-query export selection is available for " + baseTableOwner
             );
             builder
-                    .sql(exportSelection.getAlias(builder.assertSimple()))
+                    .sql(builder.assertSimple().alias(read.getRealBaseTable()))
                     .sql(".c")
-                    .sql(Integer.toString(exportSelection.expressionIndex()));
+                    .sql(Integer.toString(read.index(0)));
         } finally {
             ctx.popStatement();
         }

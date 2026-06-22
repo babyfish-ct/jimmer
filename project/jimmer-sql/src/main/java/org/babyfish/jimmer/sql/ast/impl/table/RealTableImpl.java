@@ -11,7 +11,8 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryRead;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
@@ -627,25 +628,25 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 break;
         }
         if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
-            BaseQueryExportSelection exportSelection = null;
+            BaseQueryReadSupport readSupport = null;
+            BaseTableOwner baseTableOwner = null;
             QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
             if (owner instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
-                BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
+                baseTableOwner = tableImplementor.getBaseTableOwner();
                 if (baseTableOwner != null && queryRenderContext != null) {
-                    exportSelection = queryRenderContext.getBaseQueryExportSelection(baseTableOwner);
+                    readSupport = queryRenderContext.getBaseQueryReadSupport();
                 }
             }
             int size = previousDefinition.size();
             builder.enter(SqlBuilder.ScopeType.AND);
             for (int i = 0; i < size; i++) {
                 builder.separator();
-                if (exportSelection != null) {
-                    int index = exportSelection.columnIndex(previousTable, previousDefinition.name(i), false);
-                    builder
-                            .sql(exportSelection.getAlias(builder))
-                            .sql(".c")
-                            .sql(Integer.toString(index));
+                BaseQueryRead read = readSupport != null ?
+                        readSupport.column(baseTableOwner, previousTable, previousDefinition.name(i), false) :
+                        null;
+                if (read != null) {
+                    renderBaseQueryRead(builder, read, 0);
                 } else {
                     builder
                             .sql(previousAlias)
@@ -694,23 +695,22 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
-        BaseQueryExportSelection exportSelection =
-                queryRenderContext != null ?
-                        queryRenderContext.getBaseQueryExportSelection(owner.getBaseTableOwner()) :
+        BaseTableOwner baseTableOwner = owner.getBaseTableOwner();
+        BaseQueryReadSupport readSupport =
+                queryRenderContext != null &&
+                        queryRenderContext.getBaseQueryReadSupport().canReadSelection(
+                                baseTableOwner,
+                                this,
+                                prop,
+                                owner.joinProp,
+                                rawId,
+                                idViewAllowed,
+                                builder.sqlClient()
+                        ) ?
+                        queryRenderContext.getBaseQueryReadSupport() :
                         null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        if (exportSelection != null &&
-                !exportSelection.isRootTable(this) &&
-                !(prop.isId() &&
-                        joinProp != null &&
-                        !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                        (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient())) &&
-                        !owner.isInverse &&
-                        parent != null &&
-                        exportSelection.containsTable(parent))) {
-            exportSelection = null;
-        }
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
                 (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
             MiddleTable middleTable;
@@ -772,7 +772,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                             true,
                             withPrefix,
                             asBlock,
-                            exportSelection
+                            readSupport,
+                            baseTableOwner
                     );
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
@@ -784,7 +785,15 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         }
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
-                        renderColumn(builder, (RealTableImpl) parent, parentColumnName, true, withPrefix, exportSelection);
+                        renderColumn(
+                                builder,
+                                (RealTableImpl) parent,
+                                parentColumnName,
+                                true,
+                                withPrefix,
+                                readSupport,
+                                baseTableOwner
+                        );
                         if (asBlock != null) {
                             builder.sql(" ").sql(asBlock.apply(i));
                         }
@@ -810,7 +819,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     false,
                     withPrefix,
                     asBlock,
-                    exportSelection
+                    readSupport,
+                    baseTableOwner
             );
         }
     }
@@ -820,9 +830,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             AbstractSqlBuilder<?> builder,
             String columnName,
             boolean foreignKeyInBaseQuery,
-            BaseQueryExportSelection exportSelection
+            BaseQueryReadSupport readSupport,
+            BaseTableOwner baseTableOwner
     ) {
-        renderColumn(builder, this, columnName, foreignKeyInBaseQuery, true, exportSelection);
+        renderColumn(builder, this, columnName, foreignKeyInBaseQuery, true, readSupport, baseTableOwner);
     }
 
     @Override
@@ -830,9 +841,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             AbstractSqlBuilder<?> builder,
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
-            BaseQueryExportSelection exportSelection
+            BaseQueryReadSupport readSupport,
+            BaseTableOwner baseTableOwner
     ) {
-        renderDefinition(builder, this, definition, foreignKeyInBaseQuery, true, null, exportSelection);
+        renderDefinition(builder, this, definition, foreignKeyInBaseQuery, true, null, readSupport, baseTableOwner);
     }
 
     private void renderDefinition(
@@ -842,14 +854,23 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             boolean foreignKeyInBaseQuery,
             boolean withPrefix,
             Function<Integer, String> asBlock,
-            BaseQueryExportSelection exportSelection
+            BaseQueryReadSupport readSupport,
+            BaseTableOwner baseTableOwner
     ) {
         int size = definition.size();
         for (int i = 0; i < size; i++) {
             if (i != 0) {
                 builder.sql(", ");
             }
-            renderColumn(builder, table, definition.name(i), foreignKeyInBaseQuery, withPrefix, exportSelection);
+            renderColumn(
+                    builder,
+                    table,
+                    definition.name(i),
+                    foreignKeyInBaseQuery,
+                    withPrefix,
+                    readSupport,
+                    baseTableOwner
+            );
             if (asBlock != null) {
                 builder.sql(" ").sql(asBlock.apply(i));
             }
@@ -862,7 +883,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             String columnName,
             boolean foreignKeyInBaseQuery,
             boolean withPrefix,
-            BaseQueryExportSelection exportSelection
+            BaseQueryReadSupport readSupport,
+            BaseTableOwner baseTableOwner
     ) {
         ColumnMapping mapping = mappedIdParentColumn(builder, table, columnName);
         if (mapping != null) {
@@ -872,22 +894,29 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     mapping.columnName,
                     foreignKeyInBaseQuery,
                     withPrefix,
-                    exportSelection
+                    readSupport,
+                    baseTableOwner
             );
             return;
         }
-        if (withPrefix && exportSelection != null) {
-            int index = exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery);
-            builder
-                    .sql(exportSelection.getAlias(builder.assertSimple()))
-                    .sql(".c")
-                    .sql(Integer.toString(index));
+        BaseQueryRead read = withPrefix && readSupport != null ?
+                readSupport.column(baseTableOwner, table, columnName, foreignKeyInBaseQuery) :
+                null;
+        if (read != null) {
+            renderBaseQueryRead(builder, read, 0);
         } else {
             if (withPrefix) {
                 builder.sql(builder.assertSimple().alias(table)).sql(".");
             }
             builder.sql(columnName);
         }
+    }
+
+    private void renderBaseQueryRead(AbstractSqlBuilder<?> builder, BaseQueryRead read, int index) {
+        builder
+                .sql(builder.assertSimple().alias(read.getRealBaseTable()))
+                .sql(".c")
+                .sql(Integer.toString(read.index(index)));
     }
 
     @Nullable

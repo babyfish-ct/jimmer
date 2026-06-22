@@ -6,13 +6,13 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryRead;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -121,7 +121,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(query);
             if (mergedBy != null) {
                 for (TypedBaseQueryImplementor<?> q : mergedBy.getExpandedQueries()) {
-                    visitor.getAstContext().pushStatement(((ConfigurableBaseQueryImpl<?>)q).getMutableQuery());
+                    visitor.getAstContext().pushStatement(((ConfigurableBaseQueryImpl<?>) q).getMutableQuery());
                     accept((Table<?>) mergedBy.getSelections().get(index), visitor);
                     visitor.getAstContext().popStatement();
                 }
@@ -191,10 +191,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     return;
                 }
                 ImmutableProp prop = field.getProp();
-                BaseQueryExportSelection exportSelection =
+                BaseQueryReadSupport readSupport =
                         depth == 0 ?
-                                builder.getQueryRenderContext().getBaseQueryExportSelection(table.getBaseTableOwner()) :
+                                builder.getQueryRenderContext().getBaseQueryReadSupport() :
                                 null;
+                BaseTableOwner baseTableOwner = readSupport != null ? table.getBaseTableOwner() : null;
                 if (embeddedPropExpression != null) {
                     String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
                     renderEmbedded(
@@ -204,23 +205,33 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                     ((PropExpressionImplementor<?>) embeddedPropExpression).getProp().getStorage(strategy),
                             field.getChildFetcher(),
                             path != null ? path + '.' + field.getProp().getName() : field.getProp().getName(),
-                            exportSelection,
+                            readSupport,
+                            baseTableOwner,
                             builder
                     );
                 } else {
                     Storage storage = prop.getStorage(strategy);
                     SqlTemplate template = prop.getSqlTemplate();
                     if (storage instanceof EmbeddedColumns) {
-                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", exportSelection, builder);
+                        renderEmbedded(
+                                null,
+                                (EmbeddedColumns) storage,
+                                field.getChildFetcher(),
+                                "",
+                                readSupport,
+                                baseTableOwner,
+                                builder
+                        );
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator();
-                        table.renderDefinition(builder, (ColumnDefinition) storage, false, exportSelection);
+                        table.renderDefinition(builder, (ColumnDefinition) storage, false, readSupport, baseTableOwner);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
-                        if (exportSelection != null) {
-                            builder.sql(exportSelection.getAlias(builder))
-                                    .sql(".c")
-                                    .sql(Integer.toString(exportSelection.formulaIndex(table, (FormulaTemplate) template)));
+                        BaseQueryRead read = readSupport != null ?
+                                readSupport.formula(baseTableOwner, table, (FormulaTemplate) template) :
+                                null;
+                        if (read != null) {
+                            renderBaseQueryRead(builder, read, 0);
                         } else {
                             builder.sql(((FormulaTemplate) template).toSql(builder.alias(table)));
                         }
@@ -233,7 +244,8 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     EmbeddedColumns columns,
                     Fetcher<?> childFetcher,
                     String path,
-                    BaseQueryExportSelection exportSelection,
+                    BaseQueryReadSupport readSupport,
+                    BaseTableOwner baseTableOwner,
                     SqlBuilder builder
             ) {
                 RealTable realTable;
@@ -252,13 +264,13 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                             columnName = joinColumns.name(joinColumns.referencedIndex(columnName));
                         }
                         builder.separator();
-                        if (exportSelection != null) {
-                            builder
-                                    .sql(exportSelection.getAlias(builder))
-                                    .sql(".c")
-                                    .sql(Integer.toString(exportSelection.columnIndex(realTable, columnName, false)));
+                        BaseQueryRead read = readSupport != null ?
+                                readSupport.column(baseTableOwner, realTable, columnName, false) :
+                                null;
+                        if (read != null) {
+                            renderBaseQueryRead(builder, read, 0);
                         } else {
-                            realTable.renderColumn(builder, columnName, false, null);
+                            realTable.renderColumn(builder, columnName, false, null, null);
                         }
                     }
                 } else {
@@ -273,11 +285,19 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                                 columns,
                                 field.getChildFetcher(),
                                 path.isEmpty() ? propName : path + '.' + propName,
-                                exportSelection,
+                                readSupport,
+                                baseTableOwner,
                                 builder
                         );
                     }
                 }
+            }
+
+            private void renderBaseQueryRead(SqlBuilder builder, BaseQueryRead read, int index) {
+                builder
+                        .sql(builder.alias(read.getRealBaseTable()))
+                        .sql(".c")
+                        .sql(Integer.toString(read.index(index)));
             }
         }.visit(fetcher);
     }
@@ -299,7 +319,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
         } else {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
-            joinProp= tableImplementor.getJoinProp();
+            joinProp = tableImplementor.getJoinProp();
             if (tableImplementor.isInverse()) {
                 joinProp = joinProp.getMappedBy();
             }
