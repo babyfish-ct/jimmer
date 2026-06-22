@@ -1160,6 +1160,44 @@ class CteBaseQueryTest : AbstractQueryTest() {
         }
     }
 
+    @Test
+    fun testNestedCteBaseQuery() {
+        val inner = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                where(table.name like "M%")
+                selections.add(table.name)
+            }
+        }
+        val outer = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(inner) {
+                where(table._1 like "%N%")
+                selections.add(table._1)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(outer) {
+                where(table._1 like "%ING")
+                select(table._1)
+            }
+        ) {
+            sql(
+                """with tb_1_(c1) as (
+                    |--->select tb_3_.NAME 
+                    |--->from BOOK_STORE tb_3_ 
+                    |--->where tb_3_.NAME like ?
+                    |), tb_2_(c1) as (
+                    |--->select tb_1_.c1 
+                    |--->from tb_1_ 
+                    |--->where tb_1_.c1 like ?
+                    |) 
+                    |select tb_2_.c1 
+                    |from tb_2_ 
+                    |where tb_2_.c1 like ?""".trimMargin()
+            )
+            rows("""["MANNING"]""")
+        }
+    }
+
     private class BaseBookAuthorJoin : KPropsWeakJoin<
         KNonNullBaseTable1<KNonNullTable<Book>, KNullableTable<Book>>,
         KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>

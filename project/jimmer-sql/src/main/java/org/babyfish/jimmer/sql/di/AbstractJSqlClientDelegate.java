@@ -85,6 +85,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public MutableBaseQuery createBaseQuery(BaseTable table) {
+        return sqlClient().createBaseQuery(table);
+    }
+
+    @Override
     public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,

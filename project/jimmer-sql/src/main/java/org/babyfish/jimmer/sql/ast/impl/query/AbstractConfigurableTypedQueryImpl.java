@@ -5,7 +5,8 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.base.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -21,7 +22,6 @@ import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +101,15 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private void visitBaseTableImpl(RealTable realBaseTable, AstVisitor visitor) {
-        realBaseTable.getTableLikeImplementor().accept(visitor);
+        TableLikeImplementor<?> tableLikeImplementor = realBaseTable.getTableLikeImplementor();
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            visitor.visitTableReference(realBaseTable, null, false);
+            TypedBaseQueryImplementor<?> query = ((BaseTableImplementor) tableLikeImplementor).getQuery();
+            MergedBaseQueryImpl<?> mergedBy = query.getMergedBy();
+            (mergedBy != null ? mergedBy : query).accept(visitor);
+        } else {
+            tableLikeImplementor.accept(visitor);
+        }
         for (RealTable childBaseTable : realBaseTable) {
             visitBaseTableImpl(childBaseTable, visitor);
         }
@@ -256,28 +264,11 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private List<RealTable> getCteTables(AstContext ctx) {
-        TableLikeImplementor<?> tableLikeImplementor = getMutableQuery().getTableLikeImplementor();
-        if (!tableLikeImplementor.hasBaseTable()) {
+        if (this instanceof TypedBaseQuery<?>) {
             return Collections.emptyList();
         }
-        RealTable realTable = tableLikeImplementor.realTable(ctx);
-        List<RealTable> cteTables = new ArrayList<>();
-        collectCteTables(realTable, cteTables);
-        return cteTables;
-    }
-
-    private void collectCteTables(RealTable realTable, List<RealTable> cteTables) {
-        if (realTable.getTableLikeImplementor() instanceof BaseTableImplementor &&
-                !(this instanceof TypedBaseQuery<?>)) {
-            BaseTableImplementor baseTableImplementor =
-                    (BaseTableImplementor) realTable.getTableLikeImplementor();
-            if (baseTableImplementor.isCte()) {
-                cteTables.add(realTable);
-            }
-        }
-        for (RealTable child : realTable) {
-            collectCteTables(child, cteTables);
-        }
+        TableLikeImplementor<?> tableLikeImplementor = getMutableQuery().getTableLikeImplementor();
+        return CteTableCollector.collectRenderTables(tableLikeImplementor, ctx);
     }
 
     private void renderWithoutPagingImpl(

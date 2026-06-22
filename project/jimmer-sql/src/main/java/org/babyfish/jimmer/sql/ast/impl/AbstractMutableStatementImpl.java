@@ -9,20 +9,28 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.table.*;
-import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
-import org.babyfish.jimmer.sql.ast.impl.util.*;
-import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.*;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
+import org.babyfish.jimmer.sql.ast.impl.util.FlaternIterator;
+import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
+import org.babyfish.jimmer.sql.ast.impl.util.IdentityPairSet;
+import org.babyfish.jimmer.sql.ast.query.Filterable;
+import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
-import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -73,47 +81,45 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         this.type = type;
     }
 
-    public AbstractMutableStatementImpl(
+    protected AbstractMutableStatementImpl(
             JSqlClientImplementor sqlClient,
-            TableProxy<?> table
+            TableLike<?> table
     ) {
-        if (table.__unwrap() != null) {
-            throw new IllegalArgumentException("table proxy cannot be wrapper");
-        }
-        if (table.__prop() != null) {
-            throw new IllegalArgumentException("table proxy must be root table");
-        }
         this.sqlClient = Objects.requireNonNull(
                 sqlClient,
                 "sqlClient cannot be null"
         );
-        if (!sqlClient.getMicroServiceName().equals(table.getImmutableType().getMicroServiceName())) {
+        if (table instanceof TableProxy<?>) {
+            TableProxy<?> tableProxy = (TableProxy<?>) table;
+            if (tableProxy.__unwrap() != null) {
+                throw new IllegalArgumentException("table proxy cannot be wrapper");
+            }
+            if (tableProxy.__prop() != null) {
+                throw new IllegalArgumentException("table proxy must be root table");
+            }
+            if (!sqlClient.getMicroServiceName().equals(tableProxy.getImmutableType().getMicroServiceName())) {
+                throw new IllegalArgumentException(
+                        "The sql client and entity type \"" +
+                                tableProxy.getImmutableType() +
+                                "\" do not belong to the same micro service: " +
+                                "{sqlClient: \"" +
+                                sqlClient.getMicroServiceName() +
+                                "\", entity: \"" +
+                                tableProxy.getImmutableType().getMicroServiceName() +
+                                "\"}"
+                );
+            }
+            this.table = tableProxy;
+            this.type = tableProxy.getImmutableType();
+        } else if (table instanceof BaseTable) {
+            this.table = table;
+            this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null, null);
+            this.type = null;
+        } else {
             throw new IllegalArgumentException(
-                    "The sql client and entity type \"" +
-                            table.getImmutableType() +
-                            "\" do not belong to the same micro service: " +
-                            "{sqlClient: \"" +
-                            sqlClient.getMicroServiceName() +
-                            "\", entity: \"" +
-                            table.getImmutableType().getMicroServiceName() +
-                            "\"}"
+                    "table must be root table proxy or base table"
             );
         }
-        this.table = table;
-        this.type = table.getImmutableType();
-    }
-
-    public AbstractMutableStatementImpl(
-            JSqlClientImplementor sqlClient,
-            BaseTable table
-    ) {
-        this.sqlClient = Objects.requireNonNull(
-                sqlClient,
-                "sqlClient cannot be null"
-        );
-        this.table = table;
-        this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null, null);
-        this.type = null;
     }
 
     @SuppressWarnings("unchecked")

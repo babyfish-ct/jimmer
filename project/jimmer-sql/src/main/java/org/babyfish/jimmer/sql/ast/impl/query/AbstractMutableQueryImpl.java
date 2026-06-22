@@ -7,11 +7,16 @@ import org.babyfish.jimmer.meta.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
-import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.query.MutableQuery;
+import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -49,14 +54,7 @@ public abstract class AbstractMutableQueryImpl
 
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
-            TableProxy<?> table
-    ) {
-        super(sqlClient, table);
-    }
-
-    protected AbstractMutableQueryImpl(
-            JSqlClientImplementor sqlClient,
-            BaseTable table
+            TableLike<?> table
     ) {
         super(sqlClient, table);
     }

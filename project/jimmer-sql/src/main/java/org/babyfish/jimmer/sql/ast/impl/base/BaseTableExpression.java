@@ -41,12 +41,7 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     public void accept(@NotNull AstVisitor visitor) {
         AstContext ctx = visitor.getAstContext();
         visitor.visitBaseTableExpression(baseTableOwner);
-        ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
-        try {
-            ((Ast) this.raw).accept(visitor);
-        } finally {
-            ctx.popStatement();
-        }
+        baseTableOwner.visitOwnerStatementChain(ctx, () -> ((Ast) this.raw).accept(visitor));
     }
 
     @Override

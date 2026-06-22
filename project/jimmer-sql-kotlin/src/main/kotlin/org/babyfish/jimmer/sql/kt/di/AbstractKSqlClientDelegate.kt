@@ -39,6 +39,12 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQuery(entityType, block)
 
+    override fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
+    ): KConfigurableBaseQuery<R> =
+        sqlClient().createBaseQuery(symbol, block)
+
     override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,

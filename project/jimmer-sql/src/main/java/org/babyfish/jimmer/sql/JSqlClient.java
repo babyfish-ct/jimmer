@@ -61,6 +61,8 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     MutableBaseQuery createBaseQuery(TableProxy<?> table);
 
+    MutableBaseQuery createBaseQuery(BaseTable table);
+
     <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,

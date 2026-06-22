@@ -10,17 +10,16 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRecursiveBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.ast.table.WeakJoin
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
-import org.babyfish.jimmer.sql.kt.ast.mutation.*
+import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
+import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
 import org.babyfish.jimmer.sql.kt.ast.query.*
@@ -91,6 +90,17 @@ internal class KSqlClientImpl(
             ImmutableType.get(entityType.java)
         )
         return KMutableBaseQueryImpl<E>(query).block()
+    }
+
+    override fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
+    ): KConfigurableBaseQuery<R> {
+        val query = MutableBaseQueryImpl(
+            javaClient,
+            (symbol.baseTable as AbstractKBaseTableImpl).javaTable as TableLike<*>
+        )
+        return KMutableBaseQueryImpl.ForBaseTableImpl<B>(query, symbol.baseTable).block()
     }
 
     @Suppress("UNCHECKED_CAST")

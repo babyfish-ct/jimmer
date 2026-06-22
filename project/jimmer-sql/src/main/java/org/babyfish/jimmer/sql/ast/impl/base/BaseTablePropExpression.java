@@ -99,12 +99,7 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
     public void accept(@NotNull AstVisitor visitor) {
         AstContext ctx = visitor.getAstContext();
         visitor.visitBaseTableExpression(baseTableOwner);
-        ctx.pushStatement(baseTableOwner.getBaseTable().getQuery().getMutableQuery());
-        try {
-            ((Ast) raw.unwrap()).accept(visitor);
-        } finally {
-            ctx.popStatement();
-        }
+        baseTableOwner.visitOwnerStatementChain(ctx, () -> ((Ast) raw.unwrap()).accept(visitor));
     }
 
     @Override

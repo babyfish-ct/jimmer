@@ -3,15 +3,19 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Objects;
+import java.util.Set;
 
 public final class BaseTableOwner {
 
@@ -35,6 +39,56 @@ public final class BaseTableOwner {
 
     public int getIndex() {
         return index;
+    }
+
+    void visitOwnerStatementChain(AstContext ctx, Runnable block) {
+        visitStatementChain(
+                ctx,
+                baseTable.getQuery().getMutableQuery(),
+                Collections.newSetFromMap(new IdentityHashMap<>()),
+                block
+        );
+    }
+
+    private static void visitStatementChain(
+            AstContext ctx,
+            AbstractMutableStatementImpl statement,
+            Set<AbstractMutableStatementImpl> visiting,
+            Runnable block
+    ) {
+        if (!visiting.add(statement)) {
+            ctx.pushStatement(statement);
+            try {
+                block.run();
+            } finally {
+                ctx.popStatement();
+            }
+            return;
+        }
+        TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
+            visitStatementChain(
+                    ctx,
+                    ((BaseTableImplementor) tableLikeImplementor).getQuery().firstConfigurableQuery().getMutableQuery(),
+                    visiting,
+                    () -> {
+                        ctx.pushStatement(statement);
+                        try {
+                            block.run();
+                        } finally {
+                            ctx.popStatement();
+                        }
+                    }
+            );
+        } else {
+            ctx.pushStatement(statement);
+            try {
+                block.run();
+            } finally {
+                ctx.popStatement();
+            }
+        }
+        visiting.remove(statement);
     }
 
     @Override

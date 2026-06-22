@@ -1175,6 +1175,153 @@ public class BaseQueryTest extends AbstractQueryTest {
         );
     }
 
+    @Test
+    public void testNestedBaseQuery() {
+        BookStoreTable store = BookStoreTable.$;
+        BaseTable1<StringExpression> inner = getSqlClient()
+                .createBaseQuery(store)
+                .where(store.name().like("M%"))
+                .addSelect(store.name())
+                .asBaseTable();
+        BaseTable1<StringExpression> outer = getSqlClient()
+                .createBaseQuery(inner)
+                .where(inner.get_1().like("%N%"))
+                .addSelect(inner.get_1())
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(outer)
+                        .where(outer.get_1().like("%ING"))
+                        .select(outer.get_1()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1 " +
+                                    "from (" +
+                                    "--->select tb_2_.c1 c1 " +
+                                    "--->from (" +
+                                    "--->--->select tb_3_.NAME c1 " +
+                                    "--->--->from BOOK_STORE tb_3_ " +
+                                    "--->--->where tb_3_.NAME like ?" +
+                                    "--->) tb_2_ " +
+                                    "--->where tb_2_.c1 like ?" +
+                                    ") tb_1_ " +
+                                    "where tb_1_.c1 like ?"
+                    );
+                    ctx.rows("[\"MANNING\"]");
+                }
+        );
+    }
+
+    @Test
+    public void testCteChainBeforeNestedBaseQueries() {
+        BookStoreTable store = BookStoreTable.$;
+        BaseTable1<StringExpression> cte1 = getSqlClient()
+                .createBaseQuery(store)
+                .where(store.name().like("M%"))
+                .addSelect(store.name())
+                .asCteBaseTable();
+        BaseTable1<StringExpression> cte2 = getSqlClient()
+                .createBaseQuery(cte1)
+                .where(cte1.get_1().like("%N%"))
+                .addSelect(cte1.get_1())
+                .asCteBaseTable();
+        BaseTable1<StringExpression> query1 = getSqlClient()
+                .createBaseQuery(cte2)
+                .where(cte2.get_1().like("%I%"))
+                .addSelect(cte2.get_1())
+                .asBaseTable();
+        BaseTable1<StringExpression> query2 = getSqlClient()
+                .createBaseQuery(query1)
+                .where(query1.get_1().like("%G"))
+                .addSelect(query1.get_1())
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(query2)
+                        .where(query2.get_1().like("%ING"))
+                        .select(query2.get_1()),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1) as (" +
+                                    "--->select tb_5_.NAME " +
+                                    "--->from BOOK_STORE tb_5_ " +
+                                    "--->where tb_5_.NAME like ?" +
+                                    "), " +
+                                    "tb_2_(c1) as (" +
+                                    "--->select tb_1_.c1 " +
+                                    "--->from tb_1_ " +
+                                    "--->where tb_1_.c1 like ?" +
+                                    ") " +
+                                    "select tb_3_.c1 " +
+                                    "from (" +
+                                    "--->select tb_4_.c1 c1 " +
+                                    "--->from (" +
+                                    "--->--->select tb_2_.c1 c1 " +
+                                    "--->--->from tb_2_ " +
+                                    "--->--->where tb_2_.c1 like ?" +
+                                    "--->) tb_4_ " +
+                                    "--->where tb_4_.c1 like ?" +
+                                    ") tb_3_ " +
+                                    "where tb_3_.c1 like ?"
+                    );
+                    ctx.rows("[\"MANNING\"]");
+                }
+        );
+    }
+
+    @Test
+    public void testUnionAllOfQueriesBasedOnMultipleCtes() {
+        BookStoreTable store = BookStoreTable.$;
+        BaseTable1<StringExpression> cte1 = getSqlClient()
+                .createBaseQuery(store)
+                .where(store.name().eq("O'REILLY"))
+                .addSelect(store.name())
+                .asCteBaseTable();
+        BaseTable1<StringExpression> cte2 = getSqlClient()
+                .createBaseQuery(store)
+                .where(store.name().eq("MANNING"))
+                .addSelect(store.name())
+                .asCteBaseTable();
+        BaseTable1<StringExpression> union = TypedBaseQuery.unionAll(
+                getSqlClient()
+                        .createBaseQuery(cte1)
+                        .addSelect(cte1.get_1()),
+                getSqlClient()
+                        .createBaseQuery(cte2)
+                        .addSelect(cte2.get_1())
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(union)
+                        .where(union.get_1().like("%I%"))
+                        .select(union.get_1()),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1) as (" +
+                                    "--->select tb_4_.NAME " +
+                                    "--->from BOOK_STORE tb_4_ " +
+                                    "--->where tb_4_.NAME = ?" +
+                                    "), " +
+                                    "tb_2_(c1) as (" +
+                                    "--->select tb_5_.NAME " +
+                                    "--->from BOOK_STORE tb_5_ " +
+                                    "--->where tb_5_.NAME = ?" +
+                                    ") " +
+                                    "select tb_3_.c1 " +
+                                    "from (" +
+                                    "--->select tb_1_.c1 c1 " +
+                                    "--->from tb_1_ " +
+                                    "--->union all " +
+                                    "--->select tb_2_.c1 c1 " +
+                                    "--->from tb_2_" +
+                                    ") tb_3_ " +
+                                    "where tb_3_.c1 like ?"
+                    );
+                    ctx.rows("[\"O'REILLY\",\"MANNING\"]");
+                }
+        );
+    }
+
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 
         @Override

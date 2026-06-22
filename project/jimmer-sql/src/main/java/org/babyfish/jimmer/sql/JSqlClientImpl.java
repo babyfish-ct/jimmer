@@ -480,10 +480,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @Override
     public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
-        return new MutableBaseQueryImpl(
-                this,
-                table
-        );
+        return new MutableBaseQueryImpl(this, table);
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(BaseTable table) {
+        return new MutableBaseQueryImpl(this, table);
     }
 
     @SuppressWarnings("unchecked")
