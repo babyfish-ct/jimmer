@@ -21,7 +21,7 @@ final class CteTableDependencyAnalyzer {
         if (statements.isEmpty()) {
             return CteTableDependencies.EMPTY;
         }
-        Map<AbstractMutableStatementImpl, List<RealTable>> renderTableMap = new IdentityHashMap<>();
+        Map<AbstractMutableStatementImpl, List<CteTableDeclaration>> declarationMap = new IdentityHashMap<>();
         for (AbstractMutableStatementImpl statement : statements) {
             TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
             if (!tableLikeImplementor.hasBaseTable()) {
@@ -29,12 +29,12 @@ final class CteTableDependencyAnalyzer {
             }
             List<RealTable> tables = collectRenderTables(tableLikeImplementor.realTable(astContext));
             if (!tables.isEmpty()) {
-                renderTableMap.put(statement, tables);
+                declarationMap.put(statement, toDeclarations(tables));
             }
         }
         List<RealTable> aliasRootTables = collectAliasRootTables(tableUsages.getRootTables(), astContext);
         return new CteTableDependencies(
-                Collections.unmodifiableMap(renderTableMap),
+                Collections.unmodifiableMap(declarationMap),
                 Collections.unmodifiableList(aliasRootTables)
         );
     }
@@ -57,6 +57,15 @@ final class CteTableDependencyAnalyzer {
             }
         }
         return orderedRootTables;
+    }
+
+    private static List<CteTableDeclaration> toDeclarations(List<RealTable> tables) {
+        List<CteTableDeclaration> declarations = new ArrayList<>(tables.size());
+        for (RealTable table : tables) {
+            BaseTableImplementor baseTable = (BaseTableImplementor) table.getTableLikeImplementor();
+            declarations.add(new CteTableDeclaration(table, baseTable.toSymbol(), baseTable.isRecursiveCte()));
+        }
+        return Collections.unmodifiableList(declarations);
     }
 
     private static class State {

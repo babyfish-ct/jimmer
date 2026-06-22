@@ -158,11 +158,11 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {
-            List<RealTable> cteTables = getCteTables(builder.getQueryRenderContext());
-            if (cteTables.isEmpty()) {
+            List<CteTableDeclaration> cteDeclarations = getCteTableDeclarations(builder.getQueryRenderContext());
+            if (cteDeclarations.isEmpty()) {
                 return false;
             }
-            renderCte(builder, cteTables);
+            renderCte(builder, cteDeclarations);
             return true;
         } finally {
             astContext.popStatement();
@@ -228,33 +228,37 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             BaseSelectionAliasRender render,
             boolean renderCte
     ) {
-        List<RealTable> cteTables = getCteTables(builder.getQueryRenderContext());
-        if (!renderCte || cteTables.isEmpty()) {
+        List<CteTableDeclaration> cteDeclarations = getCteTableDeclarations(builder.getQueryRenderContext());
+        if (!renderCte || cteDeclarations.isEmpty()) {
             renderWithoutPagingImpl(builder, idPropExpr, render);
         } else {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderWithoutPagingImpl(tmpBuilder, idPropExpr, render);
-            renderCte(builder, cteTables);
+            renderCte(builder, cteDeclarations);
             builder.appendTempBuilder(tmpBuilder);
         }
     }
 
-    private void renderCte(SqlBuilder builder, List<RealTable> cteTables) {
+    private void renderCte(SqlBuilder builder, List<CteTableDeclaration> cteDeclarations) {
         builder.sql("with ");
-        for (RealTable cteTable : cteTables) {
-            if (((BaseTableImplementor)cteTable.getTableLikeImplementor()).isRecursiveCte()) {
+        for (CteTableDeclaration declaration : cteDeclarations) {
+            if (declaration.isRecursive()) {
                 builder.sql("recursive ");
                 break;
             }
         }
         builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
-        for (RealTable cteTable : cteTables) {
+        QueryRenderContext renderContext = Objects.requireNonNull(
+                builder.getQueryRenderContext(),
+                "Query render context is required to render CTE declarations"
+        );
+        for (CteTableDeclaration declaration : cteDeclarations) {
             builder.separator();
-            BaseTableImplementor baseTableImplementor = (BaseTableImplementor) cteTable.getTableLikeImplementor();
             BaseSelectionAliasRender cteRender = Objects.requireNonNull(
-                    builder.getQueryRenderContext().getBaseSelectionRender(baseTableImplementor.toSymbol().getQuery()),
-                    "No base-selection render is available for CTE " + baseTableImplementor.toSymbol()
+                    renderContext.getBaseSelectionRender(declaration.getSymbol().getQuery()),
+                    "No base-selection render is available for CTE " + declaration.getSymbol()
             );
+            RealTable cteTable = declaration.getTable();
             builder.sql(builder.alias(cteTable));
             cteRender.renderCteColumns(cteTable, builder);
             builder.sql(" as ");
@@ -263,12 +267,12 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         builder.leave().sql(" ");
     }
 
-    private List<RealTable> getCteTables(QueryRenderContext renderContext) {
+    private List<CteTableDeclaration> getCteTableDeclarations(QueryRenderContext renderContext) {
         if (this instanceof TypedBaseQuery<?>) {
             return Collections.emptyList();
         }
         return renderContext != null ?
-                renderContext.getAnalysis().getCteTables(getMutableQuery()) :
+                renderContext.getAnalysis().getCteTableDeclarations(getMutableQuery()) :
                 Collections.emptyList();
     }
 

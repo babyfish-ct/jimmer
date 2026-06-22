@@ -54,7 +54,7 @@ public final class QueryAnalysis {
         }
     }
 
-    public List<RealTable> getCteTables(AbstractMutableStatementImpl statement) {
-        return model.getCteTableDependencies().renderTables(statement);
+    List<CteTableDeclaration> getCteTableDeclarations(AbstractMutableStatementImpl statement) {
+        return model.getCteTableDependencies().declarations(statement);
     }
 }

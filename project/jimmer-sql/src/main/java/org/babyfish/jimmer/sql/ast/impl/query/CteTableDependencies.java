@@ -14,21 +14,21 @@ final class CteTableDependencies {
             Collections.emptyList()
     );
 
-    private final Map<AbstractMutableStatementImpl, List<RealTable>> renderTableMap;
+    private final Map<AbstractMutableStatementImpl, List<CteTableDeclaration>> declarationMap;
 
     private final List<RealTable> aliasRootTables;
 
     CteTableDependencies(
-            Map<AbstractMutableStatementImpl, List<RealTable>> renderTableMap,
+            Map<AbstractMutableStatementImpl, List<CteTableDeclaration>> declarationMap,
             List<RealTable> aliasRootTables
     ) {
-        this.renderTableMap = renderTableMap;
+        this.declarationMap = declarationMap;
         this.aliasRootTables = aliasRootTables;
     }
 
-    List<RealTable> renderTables(AbstractMutableStatementImpl statement) {
-        List<RealTable> tables = renderTableMap.get(statement);
-        return tables != null ? tables : Collections.emptyList();
+    List<CteTableDeclaration> declarations(AbstractMutableStatementImpl statement) {
+        List<CteTableDeclaration> declarations = declarationMap.get(statement);
+        return declarations != null ? declarations : Collections.emptyList();
     }
 
     List<RealTable> aliasRootTables() {
