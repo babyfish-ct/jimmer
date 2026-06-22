@@ -22,14 +22,14 @@ public final class BaseQueryReadSupport {
 
     public void requireSelection(BaseTableOwner owner) {
         Objects.requireNonNull(
-                renderContext.getBaseQueryExportSelection(owner),
+                selection(owner),
                 "No base-query export selection is available for " + owner
         );
     }
 
     @Nullable
     public BaseQueryRead expression(BaseTableOwner owner) {
-        BaseQueryExportSelection selection = renderContext.getBaseQueryExportSelection(owner);
+        BaseQueryExportSelection selection = selection(owner);
         return selection != null ? read(selection, selection.expressionIndex()) : null;
     }
 
@@ -40,7 +40,7 @@ public final class BaseQueryReadSupport {
             RealTable realTable,
             MetadataStrategy strategy
     ) {
-        BaseQueryExportSelection selection = renderContext.getBaseQueryExportSelection(owner);
+        BaseQueryExportSelection selection = selection(owner);
         if (selection == null) {
             return null;
         }
@@ -73,7 +73,7 @@ public final class BaseQueryReadSupport {
             boolean foreignKey,
             JSqlClientImplementor sqlClient
     ) {
-        BaseQueryExportSelection selection = renderContext.getBaseQueryExportSelection(owner);
+        BaseQueryExportSelection selection = selection(owner);
         if (selection == null || columnName == null) {
             return null;
         }
@@ -98,7 +98,7 @@ public final class BaseQueryReadSupport {
             String columnName,
             boolean foreignKeyInBaseQuery
     ) {
-        BaseQueryExportSelection selection = renderContext.getBaseQueryExportSelection(owner);
+        BaseQueryExportSelection selection = selection(owner);
         return selection != null ?
                 read(selection, selection.columnIndex(table, columnName, foreignKeyInBaseQuery)) :
                 null;
@@ -106,7 +106,7 @@ public final class BaseQueryReadSupport {
 
     @Nullable
     public BaseQueryRead formula(BaseTableOwner owner, RealTable table, FormulaTemplate formula) {
-        BaseQueryExportSelection selection = renderContext.getBaseQueryExportSelection(owner);
+        BaseQueryExportSelection selection = selection(owner);
         return selection != null ? read(selection, selection.formulaIndex(table, formula)) : null;
     }
 
@@ -119,7 +119,7 @@ public final class BaseQueryReadSupport {
             boolean idViewAllowed,
             JSqlClientImplementor sqlClient
     ) {
-        BaseQueryExportSelection selection = renderContext.getBaseQueryExportSelection(owner);
+        BaseQueryExportSelection selection = selection(owner);
         return selection != null &&
                 (selection.isRootTable(table) ||
                         canReadSelectedIdView(selection, table, prop, joinProp, rawId, idViewAllowed, sqlClient));
@@ -141,6 +141,11 @@ public final class BaseQueryReadSupport {
 
     private BaseQueryRead read(BaseQueryExportSelection selection, int index) {
         return new BaseQueryRead(selection.getRealBaseTable(), index);
+    }
+
+    @Nullable
+    private BaseQueryExportSelection selection(BaseTableOwner owner) {
+        return renderContext.getAnalysis().getBaseQueryExportSelection(owner);
     }
 
     private boolean canReadExportColumn(

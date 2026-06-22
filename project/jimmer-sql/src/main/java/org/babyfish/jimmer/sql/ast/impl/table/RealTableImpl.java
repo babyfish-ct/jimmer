@@ -209,7 +209,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     private static boolean lessThan(RealTable a, RealTable b) {
-        return ((RealTableImpl)a).owner.getOrder() < ((RealTableImpl)b).owner.getOrder();
+        return ((RealTableImpl) a).owner.getOrder() < ((RealTableImpl) b).owner.getOrder();
     }
 
     @Override
@@ -225,7 +225,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     @Override
     public void use(TableUsageVisitor visitor) {
         if (joinPredicate != null) {
-            ((Ast)joinPredicate).accept(visitor);
+            ((Ast) joinPredicate).accept(visitor);
         }
         for (RealTable childTable : this) {
             childTable.use(visitor);
@@ -318,7 +318,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         boolean aliasOnly = !cte && ((BaseTableImplementor) owner).isCte();
         boolean withScope = !cte && parent != null &&
                 parent.owner instanceof TableImplementor<?> &&
-                ((BaseTableImplementor)owner).getRecursive() == null;
+                ((BaseTableImplementor) owner).getRecursive() == null;
         if (withScope) {
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         }
@@ -361,7 +361,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         if (joinPredicate == null) {
             builder.sql("1 = 1");
         } else {
-            ((Ast)joinPredicate).renderTo(builder);
+            ((Ast) joinPredicate).renderTo(builder);
         }
         ctx.popRenderedBaseTable();
     }
@@ -385,7 +385,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 if (joinPredicate == null) {
                     builder.sql("1 = 1");
                 } else {
-                    ((Ast)joinPredicate).renderTo(builder);
+                    ((Ast) joinPredicate).renderTo(builder);
                 }
             }
             return;
@@ -412,7 +412,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         mode
                 );
                 renderMiddleTableFilters(
-                        ((AssociationProp)joinProp).getDeclaringType().getMiddleTable(strategy),
+                        ((AssociationProp) joinProp).getDeclaringType().getMiddleTable(strategy),
                         builder.alias(parent),
                         builder
                 );
@@ -426,7 +426,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
 
         if (middleTable != null) {
-                renderJoinImpl(
+            renderJoinImpl(
                     builder,
                     joinType,
                     builder.alias(parent),
@@ -475,7 +475,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private void renderInverseJoin(SqlBuilder builder, TableImplementor.RenderMode mode) {
 
-        TableImpl<?> owner = (TableImpl<?>)this.owner;
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         ImmutableType immutableType = owner.immutableType;
         ImmutableProp joinProp = owner.joinProp;
@@ -727,17 +727,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         builder.definition(
                                 middleAlias,
                                 middleTable.getColumnDefinition(),
-                                false,
-                                asBlock,
-                                null
+                                asBlock
                         );
                     } else {
                         builder.definition(
                                 middleAlias,
                                 middleTable.getTargetColumnDefinition(),
-                                false,
-                                asBlock,
-                                null
+                                asBlock
                         );
                     }
                 } else {
@@ -804,7 +800,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            builder.sql(((FormulaTemplate)template).toSql(builder.assertSimple().alias(this)));
+            builder.sql(((FormulaTemplate) template).toSql(builder.assertSimple().alias(this)));
             if (asBlock != null) {
                 builder.sql(" ").sql(asBlock.apply(0));
             }
