@@ -15,18 +15,22 @@ final class QueryAnalysisModel {
 
     private final BaseQueryExports baseQueryExports;
 
+    private final CteTableDependencies cteTableDependencies;
+
     QueryAnalysisModel(
             JoinRequirements joinRequirements,
             BaseQueryExportUsages baseQueryExportUsages,
             TableUsages tableUsages,
             TableAliases tableAliases,
-            BaseQueryExports baseQueryExports
+            BaseQueryExports baseQueryExports,
+            CteTableDependencies cteTableDependencies
     ) {
         this.joinRequirements = joinRequirements;
         this.baseQueryExportUsages = baseQueryExportUsages;
         this.tableUsages = tableUsages;
         this.tableAliases = tableAliases;
         this.baseQueryExports = baseQueryExports;
+        this.cteTableDependencies = cteTableDependencies;
     }
 
     JoinRequirements getJoinRequirements() {
@@ -47,5 +51,9 @@ final class QueryAnalysisModel {
 
     BaseQueryExports getBaseQueryExports() {
         return baseQueryExports;
+    }
+
+    CteTableDependencies getCteTableDependencies() {
+        return cteTableDependencies;
     }
 }

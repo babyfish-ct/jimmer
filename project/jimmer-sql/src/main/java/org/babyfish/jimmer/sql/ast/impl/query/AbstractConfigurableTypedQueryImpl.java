@@ -158,7 +158,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {
-            List<RealTable> cteTables = getCteTables(astContext);
+            List<RealTable> cteTables = getCteTables(builder.getQueryRenderContext());
             if (cteTables.isEmpty()) {
                 return false;
             }
@@ -228,7 +228,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             BaseSelectionAliasRender render,
             boolean renderCte
     ) {
-        List<RealTable> cteTables = getCteTables(builder.getAstContext());
+        List<RealTable> cteTables = getCteTables(builder.getQueryRenderContext());
         if (!renderCte || cteTables.isEmpty()) {
             renderWithoutPagingImpl(builder, idPropExpr, render);
         } else {
@@ -263,12 +263,13 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         builder.leave().sql(" ");
     }
 
-    private List<RealTable> getCteTables(AstContext ctx) {
+    private List<RealTable> getCteTables(QueryRenderContext renderContext) {
         if (this instanceof TypedBaseQuery<?>) {
             return Collections.emptyList();
         }
-        TableLikeImplementor<?> tableLikeImplementor = getMutableQuery().getTableLikeImplementor();
-        return CteTableCollector.collectRenderTables(tableLikeImplementor, ctx);
+        return renderContext != null ?
+                renderContext.getAnalysis().getCteTables(getMutableQuery()) :
+                Collections.emptyList();
     }
 
     private void renderWithoutPagingImpl(

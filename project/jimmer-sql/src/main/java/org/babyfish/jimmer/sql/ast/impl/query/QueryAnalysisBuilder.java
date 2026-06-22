@@ -12,11 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinRequirementCollector {
 
@@ -62,39 +58,37 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
 
     private QueryAnalysis analyze(TypedQueryImplementor ast) {
         collectJoinRequirements(ast);
-        QueryAnalysis joinAwareAnalysis = analysisFor(
-                joinRequirements,
-                BaseQueryExportUsages.EMPTY,
-                TableUsages.EMPTY,
-                BaseQueryExports.EMPTY
-        );
-        TableUsages tableUsages = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
+        QueryAnalysis joinAwareAnalysis = analysisFor(joinRequirements);
+        TableUsageAnalysis tableUsageAnalysis = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
+        TableUsages tableUsages = tableUsageAnalysis.tableUsages;
         BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
-        TableAliases tableAliases = materializeAliases ? materialize(tableUsages) : TableAliases.EMPTY;
+        CteTableDependencies cteTableDependencies = CteTableDependencyAnalyzer.analyze(
+                tableUsageAnalysis.statements,
+                tableUsages,
+                astContext
+        );
+        TableAliases tableAliases = materializeAliases ? materialize(tableUsages, cteTableDependencies) : TableAliases.EMPTY;
         QueryAnalysisModel model = new QueryAnalysisModel(
                 joinRequirements,
                 baseQueryExportUsages,
                 tableUsages,
                 tableAliases,
-                baseQueryExports
+                baseQueryExports,
+                cteTableDependencies
         );
         return new QueryAnalysis(astContext, model);
     }
 
-    private QueryAnalysis analysisFor(
-            JoinRequirements joinRequirements,
-            BaseQueryExportUsages baseQueryExportUsages,
-            TableUsages tableUsages,
-            BaseQueryExports baseQueryExports
-    ) {
+    private QueryAnalysis analysisFor(JoinRequirements joinRequirements) {
         return new QueryAnalysis(
                 astContext,
                 new QueryAnalysisModel(
                         joinRequirements,
-                        baseQueryExportUsages,
-                        tableUsages,
+                        BaseQueryExportUsages.EMPTY,
+                        TableUsages.EMPTY,
                         TableAliases.EMPTY,
-                        baseQueryExports
+                        BaseQueryExports.EMPTY,
+                        CteTableDependencies.EMPTY
                 )
         );
     }
@@ -103,7 +97,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
         ast.collectSelectionJoinRequirements(this);
     }
 
-    private TableUsages collectTableUsagesAndBaseExports(TypedQueryImplementor ast, QueryAnalysis joinAwareAnalysis) {
+    private TableUsageAnalysis collectTableUsagesAndBaseExports(TypedQueryImplementor ast, QueryAnalysis joinAwareAnalysis) {
         List<AbstractMutableStatementImpl> statements = new ArrayList<>();
         Set<AbstractMutableStatementImpl> statementSet = Collections.newSetFromMap(new IdentityHashMap<>());
         TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
@@ -127,12 +121,12 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                 analysisContext.popStatement();
             }
         }
-        return visitor.toTableUsages();
+        return new TableUsageAnalysis(visitor.toTableUsages(), statements);
     }
 
-    private TableAliases materialize(TableUsages tableUsages) {
+    private TableAliases materialize(TableUsages tableUsages, CteTableDependencies cteTableDependencies) {
         tableUsages.applyTo(astContext);
-        return tableUsages.allocateAliases(astContext);
+        return tableUsages.allocateAliases(astContext, cteTableDependencies);
     }
 
     @Override
@@ -161,5 +155,17 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
 
     Set<BaseTableOwner> baseQueryExportOwners() {
         return baseQueryExportUsages.owners();
+    }
+
+    private static class TableUsageAnalysis {
+
+        final TableUsages tableUsages;
+
+        final List<AbstractMutableStatementImpl> statements;
+
+        TableUsageAnalysis(TableUsages tableUsages, List<AbstractMutableStatementImpl> statements) {
+            this.tableUsages = tableUsages;
+            this.statements = statements;
+        }
     }
 }

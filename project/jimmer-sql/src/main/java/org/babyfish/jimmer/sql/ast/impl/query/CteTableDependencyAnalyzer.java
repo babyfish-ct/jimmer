@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
@@ -7,35 +8,58 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 
 import java.util.*;
 
-final class CteTableCollector {
+final class CteTableDependencyAnalyzer {
 
-    private CteTableCollector() {
+    private CteTableDependencyAnalyzer() {
     }
 
-    static List<RealTable> collectRenderTables(TableLikeImplementor<?> tableLikeImplementor, AstContext astContext) {
-        if (!tableLikeImplementor.hasBaseTable()) {
-            return Collections.emptyList();
+    static CteTableDependencies analyze(
+            List<AbstractMutableStatementImpl> statements,
+            TableUsages tableUsages,
+            AstContext astContext
+    ) {
+        if (statements.isEmpty()) {
+            return CteTableDependencies.EMPTY;
         }
-        Collector collector = new Collector();
-        collector.collectCteTables(tableLikeImplementor.realTable(astContext));
-        return collector.result();
+        Map<AbstractMutableStatementImpl, List<RealTable>> renderTableMap = new IdentityHashMap<>();
+        for (AbstractMutableStatementImpl statement : statements) {
+            TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
+            if (!tableLikeImplementor.hasBaseTable()) {
+                continue;
+            }
+            List<RealTable> tables = collectRenderTables(tableLikeImplementor.realTable(astContext));
+            if (!tables.isEmpty()) {
+                renderTableMap.put(statement, tables);
+            }
+        }
+        List<RealTable> aliasRootTables = collectAliasRootTables(tableUsages.getRootTables(), astContext);
+        return new CteTableDependencies(
+                Collections.unmodifiableMap(renderTableMap),
+                Collections.unmodifiableList(aliasRootTables)
+        );
     }
 
-    static List<RealTable> collectAliasRootTables(List<RealTable> rootTables, AstContext astContext) {
-        Collector collector = new Collector();
+    private static List<RealTable> collectRenderTables(RealTable table) {
+        State state = new State();
+        state.collectCteTables(table);
+        return state.result();
+    }
+
+    private static List<RealTable> collectAliasRootTables(List<RealTable> rootTables, AstContext astContext) {
+        State state = new State();
         List<RealTable> orderedRootTables = new ArrayList<>(rootTables.size());
         for (RealTable rootTable : rootTables) {
-            collector.collectCteDependencies(rootTable, astContext);
-            orderedRootTables.addAll(collector.drain());
-            if (!collector.isVisited(rootTable)) {
+            state.collectCteDependencies(rootTable, astContext);
+            orderedRootTables.addAll(state.drain());
+            if (!state.isVisited(rootTable)) {
                 orderedRootTables.add(rootTable);
-                collector.markVisited(rootTable);
+                state.markVisited(rootTable);
             }
         }
         return orderedRootTables;
     }
 
-    private static class Collector {
+    private static class State {
 
         private final List<RealTable> cteTables = new ArrayList<>();
 
@@ -44,7 +68,7 @@ final class CteTableCollector {
         private final Set<RealTable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
 
         List<RealTable> result() {
-            return cteTables;
+            return Collections.unmodifiableList(new ArrayList<>(cteTables));
         }
 
         List<RealTable> drain() {

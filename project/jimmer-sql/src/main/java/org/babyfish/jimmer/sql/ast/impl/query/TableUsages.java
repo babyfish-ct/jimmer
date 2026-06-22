@@ -6,11 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class TableUsages {
 
@@ -36,9 +32,13 @@ public final class TableUsages {
     }
 
     public TableAliases allocateAliases(AstContext astContext) {
+        return allocateAliases(astContext, null);
+    }
+
+    TableAliases allocateAliases(AstContext astContext, CteTableDependencies cteTableDependencies) {
         TableAliasScope aliasScope = astContext.beginTableAliasScope();
         TableAliases aliases = TableAliases.allocate(
-                CteTableCollector.collectAliasRootTables(rootTables, astContext),
+                cteTableDependencies != null ? cteTableDependencies.aliasRootTables() : rootTables,
                 tableStateMap,
                 aliasScope
         );
@@ -46,5 +46,9 @@ public final class TableUsages {
             aliasScope.applyAliases(rootTable, aliases);
         }
         return aliases;
+    }
+
+    List<RealTable> getRootTables() {
+        return rootTables;
     }
 }
