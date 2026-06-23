@@ -295,7 +295,7 @@ public class MutableUpdateImpl
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
             this.accept(visitor);
             TableUsages tableUsages = visitor.toTableUsages();
-            tableUsages.applyTo(astContext);
+            tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
             if (aliasSource != null) {
                 astContext.getTableAliasScope().bindAlias(
@@ -336,7 +336,7 @@ public class MutableUpdateImpl
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
             TableUsages tableUsages = visitor.toTableUsages();
-            tableUsages.applyTo(astContext);
+            tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
             TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();

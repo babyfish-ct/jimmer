@@ -21,7 +21,7 @@ public final class TableUsages {
         this.tableStateMap = new IdentityHashMap<>(tableStateMap);
     }
 
-    public void applyTo(AstContext astContext) {
+    public void applyUsedStatesTo(AstContext astContext) {
         for (Map.Entry<RealTable, TableUsedState> e : tableStateMap.entrySet()) {
             if (e.getValue() == TableUsedState.USED) {
                 astContext.useTable(e.getKey());

@@ -135,7 +135,7 @@ public class MutableDeleteImpl
                 ((Ast) predicate).accept(visitor);
             }
             TableUsages tableUsages = visitor.toTableUsages();
-            tableUsages.applyTo(astContext);
+            tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
         } finally {
             astContext.popStatement();
