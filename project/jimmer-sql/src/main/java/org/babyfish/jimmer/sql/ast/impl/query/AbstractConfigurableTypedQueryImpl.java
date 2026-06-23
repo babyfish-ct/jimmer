@@ -278,7 +278,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             return Collections.emptyList();
         }
         return renderContext != null ?
-                renderContext.getAnalysis().getCteTableDeclarations(getMutableQuery()) :
+                renderContext.getCteTableDeclarations(getMutableQuery()) :
                 Collections.emptyList();
     }
 

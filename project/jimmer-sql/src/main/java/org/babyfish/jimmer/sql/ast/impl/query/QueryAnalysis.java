@@ -24,12 +24,8 @@ public final class QueryAnalysis {
         this.model = model;
     }
 
-    public AstContext getAstContext() {
-        return astContext;
-    }
-
     @Nullable
-    public BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
+    BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
         BaseQueryExportSelection selection = model.getBaseQueryExports().exportSelection(baseTableOwner);
         if (selection != null) {
             return selection;
@@ -38,12 +34,12 @@ public final class QueryAnalysis {
     }
 
     @Nullable
-    public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
+    BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
         return model.getBaseQueryExports().baseSelectionRender(query);
     }
 
     @Nullable
-    public JoinType getRequiredJoinType(TableImplementor<?> table) {
+    JoinType getRequiredJoinType(TableImplementor<?> table) {
         return model.getJoinRequirements().get(table);
     }
 

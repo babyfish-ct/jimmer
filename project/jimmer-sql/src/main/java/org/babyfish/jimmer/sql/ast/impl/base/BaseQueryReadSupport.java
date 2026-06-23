@@ -145,7 +145,7 @@ public final class BaseQueryReadSupport {
 
     @Nullable
     private BaseQueryExportSelection selection(BaseTableOwner owner) {
-        return renderContext.getAnalysis().getBaseQueryExportSelection(owner);
+        return renderContext.getBaseQueryExportSelection(owner);
     }
 
     private boolean canReadExportColumn(
