@@ -20,12 +20,17 @@ public interface TypedQueryImplementor extends Ast {
 
     JSqlClientImplementor getSqlClient();
 
-    default void collectSelectionJoinRequirements(SelectionJoinRequirementCollector collector) {}
+    default void collectSelectionJoinRequirements(SelectionJoinRequirementCollector collector) {
+    }
 
     default void renderAsMergedOperand(@NotNull AbstractSqlBuilder<?> builder, boolean leading) {
         builder.sql("(");
         renderTo(builder);
         builder.sql(")");
+    }
+
+    default boolean requiresSubQueryInMergedOperand(AbstractSqlBuilder<?> builder) {
+        return false;
     }
 
     interface SelectionJoinRequirementCollector {

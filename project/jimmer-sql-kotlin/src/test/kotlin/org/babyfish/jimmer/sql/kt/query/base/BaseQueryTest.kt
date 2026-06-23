@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.query.base
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.query.baseTableSymbol
+import org.babyfish.jimmer.sql.kt.ast.query.cteBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.*
@@ -1150,6 +1151,152 @@ class BaseQueryTest : AbstractQueryTest() {
             rows(
                 """[{"id":1,"name":"O'REILLY","version":0,"website":null}]"""
             )
+        }
+    }
+
+    @Test
+    fun testNestedBaseQuery() {
+        val inner = baseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                where(table.name like "M%")
+                selections.add(table.name)
+            }
+        }
+        val outer = baseTableSymbol {
+            sqlClient.createBaseQuery(inner) {
+                where(table._1 like "%N%")
+                selections.add(table._1)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(outer) {
+                where(table._1 like "%ING")
+                select(table._1)
+            }
+        ) {
+            sql(
+                """select tb_1_.c1 
+                    |from (
+                    |--->select tb_2_.c1 c1 
+                    |--->from (
+                    |--->--->select tb_3_.NAME c1 
+                    |--->--->from BOOK_STORE tb_3_ 
+                    |--->--->where tb_3_.NAME like ?
+                    |--->) tb_2_ 
+                    |--->where tb_2_.c1 like ?
+                    |) tb_1_ 
+                    |where tb_1_.c1 like ?""".trimMargin()
+            )
+            rows("""["MANNING"]""")
+        }
+    }
+
+    @Test
+    fun testCteChainBeforeNestedBaseQueries() {
+        val cte1 = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                where(table.name like "M%")
+                selections.add(table.name)
+            }
+        }
+        val cte2 = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(cte1) {
+                where(table._1 like "%N%")
+                selections.add(table._1)
+            }
+        }
+        val query1 = baseTableSymbol {
+            sqlClient.createBaseQuery(cte2) {
+                where(table._1 like "%I%")
+                selections.add(table._1)
+            }
+        }
+        val query2 = baseTableSymbol {
+            sqlClient.createBaseQuery(query1) {
+                where(table._1 like "%G")
+                selections.add(table._1)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(query2) {
+                where(table._1 like "%ING")
+                select(table._1)
+            }
+        ) {
+            sql(
+                """with tb_1_(c1) as (
+                    |--->select tb_5_.NAME 
+                    |--->from BOOK_STORE tb_5_ 
+                    |--->where tb_5_.NAME like ?
+                    |), tb_2_(c1) as (
+                    |--->select tb_1_.c1 
+                    |--->from tb_1_ 
+                    |--->where tb_1_.c1 like ?
+                    |) 
+                    |select tb_3_.c1 
+                    |from (
+                    |--->select tb_4_.c1 c1 
+                    |--->from (
+                    |--->--->select tb_2_.c1 c1 
+                    |--->--->from tb_2_ 
+                    |--->--->where tb_2_.c1 like ?
+                    |--->) tb_4_ 
+                    |--->where tb_4_.c1 like ?
+                    |) tb_3_ 
+                    |where tb_3_.c1 like ?""".trimMargin()
+            )
+            rows("""["MANNING"]""")
+        }
+    }
+
+    @Test
+    fun testUnionAllOfQueriesBasedOnMultipleCtes() {
+        val cte1 = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                where(table.name eq "O'REILLY")
+                selections.add(table.name)
+            }
+        }
+        val cte2 = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                where(table.name eq "MANNING")
+                selections.add(table.name)
+            }
+        }
+        val union = baseTableSymbol {
+            sqlClient.createBaseQuery(cte1) {
+                selections.add(table._1)
+            } unionAll sqlClient.createBaseQuery(cte2) {
+                selections.add(table._1)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(union) {
+                where(table._1 like "%I%")
+                select(table._1)
+            }
+        ) {
+            sql(
+                """with tb_1_(c1) as (
+                    |--->select tb_4_.NAME 
+                    |--->from BOOK_STORE tb_4_ 
+                    |--->where tb_4_.NAME = ?
+                    |), tb_2_(c1) as (
+                    |--->select tb_5_.NAME 
+                    |--->from BOOK_STORE tb_5_ 
+                    |--->where tb_5_.NAME = ?
+                    |) 
+                    |select tb_3_.c1 
+                    |from (
+                    |--->select tb_1_.c1 c1 
+                    |--->from tb_1_ 
+                    |--->union all 
+                    |--->select tb_2_.c1 c1 
+                    |--->from tb_2_
+                    |) tb_3_ 
+                    |where tb_3_.c1 like ?""".trimMargin()
+            )
+            rows("""["O'REILLY","MANNING"]""")
         }
     }
 

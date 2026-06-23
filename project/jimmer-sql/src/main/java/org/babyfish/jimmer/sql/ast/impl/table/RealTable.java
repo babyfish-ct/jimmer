@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -40,14 +40,16 @@ public interface RealTable extends Iterable<RealTable> {
             AbstractSqlBuilder<?> builder,
             String columnName,
             boolean foreignKeyInBaseQuery,
-            BaseQueryExportSelection exportSelection
+            BaseQueryReadSupport readSupport,
+            BaseTableOwner baseTableOwner
     );
 
     void renderDefinition(
             AbstractSqlBuilder<?> builder,
             ColumnDefinition definition,
             boolean foreignKeyInBaseQuery,
-            BaseQueryExportSelection exportSelection
+            BaseQueryReadSupport readSupport,
+            BaseTableOwner baseTableOwner
     );
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);

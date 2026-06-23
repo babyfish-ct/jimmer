@@ -1297,6 +1297,45 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testNestedCteBaseQuery() {
+        BookStoreTable store = BookStoreTable.$;
+        BaseTable1<StringExpression> inner = getSqlClient()
+                .createBaseQuery(store)
+                .where(store.name().like("M%"))
+                .addSelect(store.name())
+                .asCteBaseTable();
+        BaseTable1<StringExpression> outer = getSqlClient()
+                .createBaseQuery(inner)
+                .where(inner.get_1().like("%N%"))
+                .addSelect(inner.get_1())
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(outer)
+                        .where(outer.get_1().like("%ING"))
+                        .select(outer.get_1()),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1) as (" +
+                                    "--->select tb_3_.NAME " +
+                                    "--->from BOOK_STORE tb_3_ " +
+                                    "--->where tb_3_.NAME like ?" +
+                                    "), " +
+                                    "tb_2_(c1) as (" +
+                                    "--->select tb_1_.c1 " +
+                                    "--->from tb_1_ " +
+                                    "--->where tb_1_.c1 like ?" +
+                                    ") " +
+                                    "select tb_2_.c1 " +
+                                    "from tb_2_ " +
+                                    "where tb_2_.c1 like ?"
+                    );
+                    ctx.rows("[\"MANNING\"]");
+                }
+        );
+    }
     
     private static class BaseBookAuthorJoin implements WeakJoin<BaseTable1<BookTable>, BaseTable1<AuthorTable>> {
 

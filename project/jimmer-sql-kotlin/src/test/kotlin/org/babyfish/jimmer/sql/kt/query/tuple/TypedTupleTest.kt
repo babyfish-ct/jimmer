@@ -133,6 +133,7 @@ class TypedTupleTest : AbstractQueryTest() {
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
                 where(table.edition eq 3)
+                orderBy(table.id)
                 select(
                     EntityTupleMapper
                         .book(
@@ -163,38 +164,39 @@ class TypedTupleTest : AbstractQueryTest() {
                     |--->) 
                     |--->from BOOK tb_1_ 
                     |--->left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
-                    |--->where tb_1_.EDITION = ?""".trimMargin()
+                    |--->where tb_1_.EDITION = ? 
+                    |--->order by tb_1_.ID asc""".trimMargin()
             )
             rows(
                 """[{
-                    |--->"book":{
-                    |--->--->"id":6,
-                    |--->--->"name":"Effective TypeScript",
-                    |--->--->"store":{"id":1,"name":"O'REILLY"}
-                    |--->},
-                    |--->"authorCount":1
-                    |},{
-                    |--->"book":{
-                    |--->--->"id":12,
-                    |--->--->"name":"GraphQL in Action",
-                    |--->--->"store":{"id":2,"name":"MANNING"}
-                    |--->},
-                    |--->"authorCount":1
-                    |},{
                     |--->"book":{
                     |--->--->"id":3,
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"store":{"id":1,"name":"O'REILLY"}
                     |--->},
                     |--->"authorCount":2
-                    |},{
+                |},{
+                    |--->"book":{
+                    |--->--->"id":6,
+                    |--->--->"name":"Effective TypeScript",
+                    |--->--->"store":{"id":1,"name":"O'REILLY"}
+                    |--->},
+                    |--->"authorCount":1
+                |},{
                     |--->"book":{
                     |--->--->"id":9,
                     |--->--->"name":"Programming TypeScript",
                     |--->--->"store":{"id":1,"name":"O'REILLY"}
                     |--->},
                     |--->"authorCount":1
-                    |}]""".trimMargin()
+                |},{
+                    |--->"book":{
+                    |--->--->"id":12,
+                    |--->--->"name":"GraphQL in Action",
+                    |--->--->"store":{"id":2,"name":"MANNING"}
+                    |--->},
+                    |--->"authorCount":1
+                |}]""".trimMargin()
             )
         }
     }

@@ -28,7 +28,8 @@ public abstract class AbstractExecutorProxy implements Executor {
             @NotNull String sql,
             @Nullable ImmutableProp generatedIdProp,
             @NotNull ExecutionPurpose purpose,
-            @NotNull JSqlClientImplementor sqlClient
+            @NotNull JSqlClientImplementor sqlClient,
+            boolean constraintViolationTranslatable
     ) {
         return createBatch(
                 raw.executeBatch(
@@ -36,7 +37,8 @@ public abstract class AbstractExecutorProxy implements Executor {
                         sql,
                         generatedIdProp,
                         purpose,
-                        sqlClient
+                        sqlClient,
+                        constraintViolationTranslatable
                 )
         );
     }

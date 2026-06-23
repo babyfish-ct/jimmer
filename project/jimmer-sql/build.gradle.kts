@@ -40,6 +40,7 @@ dependencies {
     testImplementation(libs.javax.validation.api)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.antlr)
+    testImplementation(libs.mockito.core)
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 

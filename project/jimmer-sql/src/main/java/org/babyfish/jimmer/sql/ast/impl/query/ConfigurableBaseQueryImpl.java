@@ -2,14 +2,16 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
-import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -19,11 +21,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.temporal.Temporal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 public class ConfigurableBaseQueryImpl<T extends BaseTable>
-extends AbstractConfigurableTypedQueryImpl
-implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
+        extends AbstractConfigurableTypedQueryImpl
+        implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     private T baseTable;
 
@@ -146,16 +151,15 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         this.baseTable = baseTable =
-            mergedBy != null ?
-                    mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
-                    (T) BaseTableSymbols.of(this, getData().selections, kotlinSelectionTypes, cte ? BaseTableKind.CTE : BaseTableKind.DERIVED);
+                mergedBy != null ?
+                        mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
+                        (T) BaseTableSymbols.of(this, getData().selections, kotlinSelectionTypes, cte ? BaseTableKind.CTE : BaseTableKind.DERIVED);
         return baseTable;
     }
 
     @Override
-    public void accept(@NotNull AstVisitor visitor) {
-        getMutableQuery().setParent(visitor.getAstContext().getStatement());
-        super.accept(visitor);
+    protected void bindParent(AstVisitor visitor) {
+        getMutableQuery().bindParent(visitor.getAstContext().getStatement());
     }
 
     @Override
@@ -180,6 +184,20 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     @Override
     public void collectConfigurableQueries(List<ConfigurableBaseQueryImpl<?>> queries) {
         queries.add(this);
+    }
+
+    @Override
+    public void collectCteDependencyQueries(List<ConfigurableBaseQueryImpl<?>> queries) {
+        if (mergedBy != null) {
+            mergedBy.collectCteDependencyQueries(queries);
+        } else {
+            queries.add(this);
+        }
+    }
+
+    @Override
+    protected boolean rendersCteDeclarations() {
+        return false;
     }
 
     @Override
@@ -211,8 +229,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     }
 
     static class Query1Impl<S1 extends Selection<?>>
-    extends ConfigurableBaseQueryImpl<BaseTable1<S1>>
-    implements Query1<S1> {
+            extends ConfigurableBaseQueryImpl<BaseTable1<S1>>
+            implements Query1<S1> {
 
         Query1Impl(Selection<?> selection, MutableBaseQueryImpl mutableQuery) {
             super(Collections.singletonList(selection), null, mutableQuery);
@@ -260,8 +278,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     }
 
     private static class Query2Impl<S1 extends Selection<?>, S2 extends Selection<?>>
-    extends ConfigurableBaseQueryImpl<BaseTable2<S1, S2>>
-    implements Query2<S1, S2> {
+            extends ConfigurableBaseQueryImpl<BaseTable2<S1, S2>>
+            implements Query2<S1, S2> {
 
         Query2Impl(Query1Impl<S1> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());
@@ -309,8 +327,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     }
 
     private static class Query3Impl<S1 extends Selection<?>, S2 extends Selection<?>, S3 extends Selection<?>>
-    extends ConfigurableBaseQueryImpl<BaseTable3<S1, S2, S3>>
-    implements Query3<S1, S2, S3> {
+            extends ConfigurableBaseQueryImpl<BaseTable3<S1, S2, S3>>
+            implements Query3<S1, S2, S3> {
 
         Query3Impl(Query2Impl<S1, S2> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());
@@ -362,7 +380,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             S2 extends Selection<?>,
             S3 extends Selection<?>,
             S4 extends Selection<?>
-    > extends ConfigurableBaseQueryImpl<BaseTable4<S1, S2, S3, S4>> implements Query4<S1, S2, S3, S4> {
+            > extends ConfigurableBaseQueryImpl<BaseTable4<S1, S2, S3, S4>> implements Query4<S1, S2, S3, S4> {
 
         Query4Impl(Query3Impl<S1, S2, S3> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());
@@ -415,8 +433,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             S3 extends Selection<?>,
             S4 extends Selection<?>,
             S5 extends Selection<?>
-    > extends ConfigurableBaseQueryImpl<BaseTable5<S1, S2, S3, S4, S5>>
-    implements Query5<S1, S2, S3, S4, S5> {
+            > extends ConfigurableBaseQueryImpl<BaseTable5<S1, S2, S3, S4, S5>>
+            implements Query5<S1, S2, S3, S4, S5> {
 
         Query5Impl(Query4Impl<S1, S2, S3, S4> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());
@@ -470,8 +488,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             S4 extends Selection<?>,
             S5 extends Selection<?>,
             S6 extends Selection<?>
-    > extends ConfigurableBaseQueryImpl<BaseTable6<S1, S2, S3, S4, S5, S6>>
-    implements Query6<S1, S2, S3, S4, S5, S6> {
+            > extends ConfigurableBaseQueryImpl<BaseTable6<S1, S2, S3, S4, S5, S6>>
+            implements Query6<S1, S2, S3, S4, S5, S6> {
 
         Query6Impl(Query5Impl<S1, S2, S3, S4, S5> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());
@@ -526,8 +544,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             S5 extends Selection<?>,
             S6 extends Selection<?>,
             S7 extends Selection<?>
-    > extends ConfigurableBaseQueryImpl<BaseTable7<S1, S2, S3, S4, S5, S6, S7>>
-    implements Query7<S1, S2, S3, S4, S5, S6, S7> {
+            > extends ConfigurableBaseQueryImpl<BaseTable7<S1, S2, S3, S4, S5, S6, S7>>
+            implements Query7<S1, S2, S3, S4, S5, S6, S7> {
 
         Query7Impl(Query6Impl<S1, S2, S3, S4, S5, S6> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());
@@ -583,7 +601,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             S6 extends Selection<?>,
             S7 extends Selection<?>,
             S8 extends Selection<?>
-    > extends ConfigurableBaseQueryImpl<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>>
+            > extends ConfigurableBaseQueryImpl<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>>
             implements Query8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
         Query8Impl(Query7Impl<S1, S2, S3, S4, S5, S6, S7> prev, Selection<?> selection) {
@@ -641,8 +659,8 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
             S7 extends Selection<?>,
             S8 extends Selection<?>,
             S9 extends Selection<?>
-    > extends ConfigurableBaseQueryImpl<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>>
-    implements Query9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
+            > extends ConfigurableBaseQueryImpl<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>>
+            implements Query9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
         Query9Impl(Query8Impl<S1, S2, S3, S4, S5, S6, S7, S8> prev, Selection<?> selection) {
             super(selections(prev, selection), null, prev.getMutableQuery());

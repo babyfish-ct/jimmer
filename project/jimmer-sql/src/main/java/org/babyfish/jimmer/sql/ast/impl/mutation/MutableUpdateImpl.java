@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
-import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -296,8 +295,8 @@ public class MutableUpdateImpl
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
             this.accept(visitor);
             TableUsages tableUsages = visitor.toTableUsages();
-            tableUsages.applyTo(astContext);
-            tableUsages.allocateAliases(astContext);
+            tableUsages.applyUsedStatesTo(astContext);
+            tableUsages.allocateAndBindAliases(astContext);
             if (aliasSource != null) {
                 astContext.getTableAliasScope().bindAlias(
                         aliasSource.realTable(astContext),
@@ -337,8 +336,8 @@ public class MutableUpdateImpl
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
             TableUsages tableUsages = visitor.toTableUsages();
-            tableUsages.applyTo(astContext);
-            tableUsages.allocateAliases(astContext);
+            tableUsages.applyUsedStatesTo(astContext);
+            tableUsages.allocateAndBindAliases(astContext);
             TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.enter(SqlBuilder.ScopeType.SELECT);

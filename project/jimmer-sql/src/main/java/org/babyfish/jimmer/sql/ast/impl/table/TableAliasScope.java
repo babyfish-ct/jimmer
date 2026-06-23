@@ -62,15 +62,14 @@ public final class TableAliasScope implements TableAliasAllocator {
         }
     }
 
-    private AliasBinding bind(RealTable table, String value, String middleValue) {
+    private void bind(RealTable table, String value, String middleValue) {
         reserveTableAlias(value);
         reserveTableAlias(middleValue);
         AliasBinding binding = new AliasBinding(value, middleValue, null, middleValue != null);
         bind(table, binding);
-        return binding;
     }
 
-    private AliasBinding bindLazy(
+    private void bindLazy(
             RealTable table,
             TableLikeImplementor<?> owner,
             boolean middleTableDefinition,
@@ -86,7 +85,6 @@ public final class TableAliasScope implements TableAliasAllocator {
         }
         AliasBinding binding = new AliasBinding(value, middleValue, owner, middleTableDefinition);
         bind(table, binding);
-        return binding;
     }
 
     boolean isIdentityBound(RealTable table) {

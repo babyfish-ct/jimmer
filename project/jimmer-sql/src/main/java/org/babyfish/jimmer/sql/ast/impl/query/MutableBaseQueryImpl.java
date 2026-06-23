@@ -11,11 +11,8 @@ import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
-import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterManager;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.time.temporal.Temporal;
@@ -31,7 +28,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     public MutableBaseQueryImpl(
             JSqlClientImplementor sqlClient,
-            TableProxy<?> table
+            TableLike<?> table
     ) {
         super(sqlClient, table);
     }
@@ -169,7 +166,8 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
         return (MutableBaseQueryImpl)super.orderByIf(condition, orders);
     }
 
-    public void setParent(AbstractMutableStatementImpl parent) {
+    @Override
+    void bindParent(AbstractMutableStatementImpl parent) {
         if (this.parent == null) {
             this.parent = parent;
             ctx = parent.getContext();
@@ -188,7 +186,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     @Override
     public void resolveVirtualPredicate(AstContext ctx) {
-        setParent(ctx.getStatement());
+        bindParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
     }
 

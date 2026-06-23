@@ -47,6 +47,11 @@ interface KSqlClient : KSaveOperations {
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
+    fun <B: KNonNullBaseTable<*>, R: KNonNullBaseTable<*>> createBaseQuery(
+        symbol: KBaseTableSymbol<B>,
+        block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
+    ): KConfigurableBaseQuery<R>
+
     fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,

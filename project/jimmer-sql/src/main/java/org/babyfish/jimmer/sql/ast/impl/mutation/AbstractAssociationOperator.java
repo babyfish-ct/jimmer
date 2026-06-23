@@ -111,7 +111,9 @@ abstract class AbstractAssociationOperator {
                                 },
                                 Connection::prepareStatement,
                                 (stmt, args) -> {
-                                    Savepoint savepoint = SavepointManager.setIfNeeded(args.con, sqlClient);
+                                    Savepoint savepoint = sqlClient.isConstraintViolationTranslatable() ?
+                                            SavepointManager.setIfNeeded(args.con, sqlClient) :
+                                            null;
                                     try {
                                         return stmt.executeUpdate();
                                     } catch (SQLException ex) {
@@ -132,7 +134,8 @@ abstract class AbstractAssociationOperator {
                         sqlTuple.get_1(),
                         null,
                         ExecutionPurpose.command(QueryReason.NONE),
-                        sqlClient
+                        sqlClient,
+                        sqlClient.isConstraintViolationTranslatable()
                 )
         ) {
             BatchSqlBuilder.VariableMapper mapper = sqlTuple.get_2();

@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
@@ -126,8 +127,17 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         this.queryRenderContext = new QueryRenderContext(ctx, queryAnalysis);
     }
 
-    public void restoreQueryRenderContext(@Nullable QueryRenderContext queryRenderContext) {
-        this.queryRenderContext = queryRenderContext;
+    public void usingQueryAnalysisIfAbsent(Supplier<QueryAnalysis> queryAnalysisSupplier, Runnable block) {
+        if (queryRenderContext != null) {
+            block.run();
+            return;
+        }
+        queryRenderContext = new QueryRenderContext(ctx, queryAnalysisSupplier.get());
+        try {
+            block.run();
+        } finally {
+            queryRenderContext = null;
+        }
     }
 
     public String alias(RealTable table) {
