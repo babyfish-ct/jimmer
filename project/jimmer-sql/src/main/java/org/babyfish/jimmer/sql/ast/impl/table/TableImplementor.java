@@ -2,7 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.DiscriminatorColumn;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -80,6 +83,40 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     TableImplementor<E> baseTableOwner(
             @Nullable BaseTableOwner baseTableOwner
     );
+
+    @Nullable
+    default org.babyfish.jimmer.sql.ast.Predicate getDiscriminatorPredicate() {
+        if (getParent() != null) {
+            return null;
+        }
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getRootType() == type) {
+            return null;
+        }
+        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
+        String value = type.getDiscriminatorValue();
+        if (discriminatorColumn == null || value == null) {
+            return null;
+        }
+        return new DiscriminatorPredicate(this, discriminatorColumn.name(), value);
+    }
+
+    default boolean isJoinedSubtypeRoot() {
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type;
+    }
+
+    default boolean isJoinedSubtypeTableRequiredBy(@Nullable ImmutableProp prop) {
+        if (!isJoinedSubtypeRoot()) {
+            return false;
+        }
+        return prop != null &&
+                prop.toOriginal().getDeclaringType() != getImmutableType().getInheritanceInfo().getRootType();
+    }
 
     void setHasBaseTable();
 

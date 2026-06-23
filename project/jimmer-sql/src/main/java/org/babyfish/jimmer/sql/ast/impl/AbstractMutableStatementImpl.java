@@ -258,6 +258,14 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     }
 
     protected void onFrozen(AstContext ctx) {
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        if (tableLikeImplementor instanceof TableImplementor<?>) {
+            Predicate discriminatorPredicate =
+                    ((TableImplementor<?>) tableLikeImplementor).getDiscriminatorPredicate();
+            if (discriminatorPredicate != null) {
+                predicates.add(discriminatorPredicate);
+            }
+        }
         filterPredicates.removeAll((t, ps) -> {
             if (ps.isEmpty()) {
                 return true;

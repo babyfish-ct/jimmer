@@ -297,6 +297,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             } else if (tableImplementor.getJoinProp() != null || tableImplementor.getWeakJoinHandle() != null) {
                 renderJoin(builder, mode);
                 filterPredicate = statement.getFilterPredicate(tableImplementor, builder.getAstContext());
+            } else if (tableImplementor.isJoinedSubtypeRoot()) {
+                renderJoinedSubtypeRoot(builder, tableImplementor, mode);
+                filterPredicate = null;
             } else {
                 builder
                         .from()
@@ -310,6 +313,51 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 ((Ast) filterPredicate).renderTo(builder);
             }
         }
+    }
+
+    private void renderJoinedSubtypeRoot(
+            SqlBuilder builder,
+            TableImplementor<?> tableImplementor,
+            TableImplementor.RenderMode mode
+    ) {
+        if (mode != TableImplementor.RenderMode.NORMAL && mode != TableImplementor.RenderMode.FROM_ONLY) {
+            throw new AssertionError("Internal bug: Illegal render mode for joined subtype root table");
+        }
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
+        ImmutableType type = tableImplementor.getImmutableType();
+        ImmutableType rootType = type.getInheritanceInfo().getRootType();
+        String rootAlias = builder.alias(this);
+        if (mode == TableImplementor.RenderMode.NORMAL) {
+            builder
+                    .from()
+                    .sql(rootType.getTableName(strategy))
+                    .sql(" ")
+                    .sql(rootAlias);
+        } else {
+            builder
+                    .sql(rootType.getTableName(strategy))
+                    .sql(" ")
+                    .sql(rootAlias);
+        }
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (queryRenderContext != null && !queryRenderContext.isJoinedSubtypeTableRequired(tableImplementor)) {
+            return;
+        }
+        renderJoinImpl(
+                builder,
+                JoinType.INNER,
+                rootAlias,
+                this,
+                rootType.getIdProp().getStorage(strategy),
+                type.getTableName(strategy),
+                joinedSubtypeAlias(builder),
+                type.getIdProp().getStorage(strategy),
+                TableImplementor.RenderMode.NORMAL
+        );
+    }
+
+    private String joinedSubtypeAlias(SqlBuilder builder) {
+        return builder.alias(this) + "_sub";
     }
 
     private void renderBaseTableCore(SqlBuilder builder, boolean cte) {
@@ -711,6 +759,17 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
+        if (joinProp == null && owner.isJoinedSubtypeRoot()) {
+            renderJoinedSubtypeSelection(
+                    prop,
+                    builder,
+                    optionalDefinition,
+                    withPrefix,
+                    asBlock,
+                    strategy
+            );
+            return;
+        }
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
                 (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
             MiddleTable middleTable;
@@ -818,6 +877,61 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     readSupport,
                     baseTableOwner
             );
+        }
+    }
+
+    private void renderJoinedSubtypeSelection(
+            ImmutableProp prop,
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition optionalDefinition,
+            boolean withPrefix,
+            Function<Integer, String> asBlock,
+            MetadataStrategy strategy
+    ) {
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
+        ImmutableType rootType = owner.immutableType.getInheritanceInfo().getRootType();
+        ColumnDefinition definition = optionalDefinition != null ?
+                optionalDefinition :
+                prop.getStorage(strategy);
+        if (prop.toOriginal().getDeclaringType() == rootType) {
+            renderDefinition(
+                    builder,
+                    this,
+                    definition,
+                    false,
+                    withPrefix,
+                    asBlock,
+                    null,
+                    null
+            );
+        } else {
+            renderJoinedSubtypeDefinition(
+                    builder,
+                    definition,
+                    withPrefix,
+                    asBlock
+            );
+        }
+    }
+
+    private void renderJoinedSubtypeDefinition(
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition definition,
+            boolean withPrefix,
+            Function<Integer, String> asBlock
+    ) {
+        int size = definition.size();
+        for (int i = 0; i < size; i++) {
+            if (i != 0) {
+                builder.sql(", ");
+            }
+            if (withPrefix) {
+                builder.sql(joinedSubtypeAlias(builder.assertSimple())).sql(".");
+            }
+            builder.sql(definition.name(i));
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(i));
+            }
         }
     }
 

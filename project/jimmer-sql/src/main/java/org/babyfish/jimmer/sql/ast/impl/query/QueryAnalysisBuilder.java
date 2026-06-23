@@ -61,6 +61,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
         QueryAnalysis joinAwareAnalysis = analysisFor(joinRequirements);
         TableUsageAnalysis tableUsageAnalysis = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
         TableUsages tableUsages = tableUsageAnalysis.tableUsages;
+        JoinedSubtypeTableUsages joinedSubtypeTableUsages = tableUsageAnalysis.joinedSubtypeTableUsages;
         BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
         CteTableDependencies cteTableDependencies = CteTableDependencyAnalyzer.analyze(
                 tableUsageAnalysis.statements,
@@ -74,6 +75,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                 joinRequirements,
                 baseQueryExportUsages,
                 tableUsages,
+                joinedSubtypeTableUsages,
                 tableAliases,
                 baseQueryExports,
                 cteTableDependencies
@@ -88,6 +90,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                         joinRequirements,
                         BaseQueryExportUsages.EMPTY,
                         TableUsages.EMPTY,
+                        JoinedSubtypeTableUsages.EMPTY,
                         TableAliases.EMPTY,
                         BaseQueryExports.EMPTY,
                         CteTableDependencies.EMPTY
@@ -123,7 +126,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                 analysisContext.popStatement();
             }
         }
-        return new TableUsageAnalysis(visitor.toTableUsages(), statements);
+        return new TableUsageAnalysis(visitor.toTableUsages(), visitor.toJoinedSubtypeTableUsages(), statements);
     }
 
     private TableAliases prepareTableUsageAndAliasBindings(TableUsages tableUsages, CteTableDependencies cteTableDependencies) {
@@ -163,10 +166,17 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
 
         final TableUsages tableUsages;
 
+        final JoinedSubtypeTableUsages joinedSubtypeTableUsages;
+
         final List<AbstractMutableStatementImpl> statements;
 
-        TableUsageAnalysis(TableUsages tableUsages, List<AbstractMutableStatementImpl> statements) {
+        TableUsageAnalysis(
+                TableUsages tableUsages,
+                JoinedSubtypeTableUsages joinedSubtypeTableUsages,
+                List<AbstractMutableStatementImpl> statements
+        ) {
             this.tableUsages = tableUsages;
+            this.joinedSubtypeTableUsages = joinedSubtypeTableUsages;
             this.statements = statements;
         }
     }

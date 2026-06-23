@@ -138,6 +138,20 @@ create table joined_person(
             references joined_client(id)
 );
 
+insert into client(id, client_type, name, tax_code)
+    values(100, 'ORG', 'Acme', 'ACME-001');
+insert into client(id, client_type, name, first_name, last_name)
+    values(101, 'Person', 'Bob', 'Bob', 'Brown');
+
+insert into joined_client(id, client_type, name)
+    values(200, 'ORG', 'Globex');
+insert into joined_organization(id, tax_code)
+    values(200, 'GLOBEX-001');
+insert into joined_client(id, client_type, name)
+    values(201, 'Person', 'Alice');
+insert into joined_person(id, first_name, last_name)
+    values(201, 'Alice', 'Green');
+
 create table B.TABLE_B(
     id bigint not null primary key,
     status varchar(7) not null,

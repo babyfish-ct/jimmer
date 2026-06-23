@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
@@ -12,17 +14,16 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TableUsageCollector extends TableUsageVisitor {
 
     private final List<RealTable> rootTables = new ArrayList<>();
 
     private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>();
+
+    private final Set<TableImplementor<?>> joinedSubtypeTableRequirements =
+            Collections.newSetFromMap(new IdentityHashMap<>());
 
     private final BaseQueryExportUsages.Builder baseQueryExportUsagesBuilder =
             new BaseQueryExportUsages.Builder();
@@ -43,6 +44,16 @@ public class TableUsageCollector extends TableUsageVisitor {
         return baseQueryExportUsagesBuilder.build();
     }
 
+    public JoinedSubtypeTableUsages toJoinedSubtypeTableUsages() {
+        return new JoinedSubtypeTableUsages(joinedSubtypeTableRequirements);
+    }
+
+    @Override
+    public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
+        collectJoinedSubtypeTableRequirement(table, prop);
+        super.visitTableReference(table, prop, rawId);
+    }
+
     @Override
     protected void addRootTable(RealTable table) {
         rootTables.add(table);
@@ -60,6 +71,7 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     @Override
     public void visitTableFetcherField(RealTable table, Field field) {
+        collectJoinedSubtypeTableRequirement(table, field.getProp());
         BaseTableOwner baseTableOwner = table.getBaseTableOwner();
         if (baseTableOwner == null) {
             super.visitTableFetcherField(table, field);
@@ -104,6 +116,16 @@ public class TableUsageCollector extends TableUsageVisitor {
     protected final TableUsedState getTableUsedState(RealTable table) {
         TableUsedState state = tableStateMap.get(table);
         return state != null ? state : TableUsedState.NONE;
+    }
+
+    private void collectJoinedSubtypeTableRequirement(RealTable table, @Nullable ImmutableProp prop) {
+        TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+        if (implementor instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+            if (tableImplementor.isJoinedSubtypeTableRequiredBy(prop)) {
+                joinedSubtypeTableRequirements.add(tableImplementor);
+            }
+        }
     }
 
     private BaseTableOwner canonicalTableOwner(BaseTableOwner baseTableOwner) {
