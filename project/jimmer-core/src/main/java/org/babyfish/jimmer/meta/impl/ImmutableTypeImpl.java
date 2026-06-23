@@ -755,6 +755,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     }
 
     private String getTableName0(MetadataStrategy strategy) {
+        InheritanceInfo inheritanceInfo = getInheritanceInfo();
+        if (inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.SINGLE_TABLE &&
+                inheritanceRoot != this) {
+            return inheritanceRoot.getTableName(strategy);
+        }
         Table table = javaClass.getAnnotation(Table.class);
 
         String schema = table != null ? table.schema() : "";

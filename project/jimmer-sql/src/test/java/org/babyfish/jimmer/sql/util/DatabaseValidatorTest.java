@@ -3,11 +3,11 @@ package org.babyfish.jimmer.sql.util;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
-import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.model.issue918.Issue918Model;
 import org.babyfish.jimmer.sql.runtime.DatabaseValidators;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
@@ -87,22 +87,71 @@ public class DatabaseValidatorTest extends AbstractTest {
         });
     }
 
+    @Test
+    public void testSingleTableInheritanceInH2() {
+        jdbc(con -> {
+            DatabaseValidationException ex = DatabaseValidators.validate(
+                    new EntityManager(
+                            org.babyfish.jimmer.sql.model.inheritance3.Client.class,
+                            org.babyfish.jimmer.sql.model.inheritance3.Organization.class,
+                            org.babyfish.jimmer.sql.model.inheritance3.Person.class
+                    ),
+                    "",
+                    true,
+                    defaultH2Strategy(),
+                    it -> true,
+                    con
+            );
+            Assertions.assertNull(ex);
+        });
+    }
+
+    @Test
+    public void testJoinedInheritanceInH2() {
+        jdbc(con -> {
+            DatabaseValidationException ex = DatabaseValidators.validate(
+                    new EntityManager(
+                            org.babyfish.jimmer.sql.model.inheritance4.Client.class,
+                            org.babyfish.jimmer.sql.model.inheritance4.Organization.class,
+                            org.babyfish.jimmer.sql.model.inheritance4.Person.class
+                    ),
+                    "",
+                    true,
+                    defaultH2Strategy(),
+                    it -> true,
+                    con
+            );
+            Assertions.assertNull(ex);
+        });
+    }
+
     private static Connection issue918InitH2(Connection con) throws SQLException {
         String DDL = "create table ${schema}.issue918_model(\n" +
-                     "    id bigint auto_increment not null,\n" +
-                     "    name varchar(50) not null\n" +
-                     ");\n" +
-                     "alter table ${schema}.issue918_model\n" +
-                     "    add constraint pk_issue918_model\n" +
-                     "        primary key(id);\n";
+                "    id bigint auto_increment not null,\n" +
+                "    name varchar(50) not null\n" +
+                ");\n" +
+                "alter table ${schema}.issue918_model\n" +
+                "    add constraint pk_issue918_model\n" +
+                "        primary key(id);\n";
         DDL = "create schema A;\n" +
-              "create schema B;\n" +
-              DDL.replace("${schema}", "A") +
-              DDL.replace("${schema}", "B");
+                "create schema B;\n" +
+                DDL.replace("${schema}", "A") +
+                DDL.replace("${schema}", "B");
         try (Statement stmt = con.createStatement()) {
             stmt.executeUpdate(DDL);
         }
         con.setSchema("A");
         return con;
+    }
+
+    private static MetadataStrategy defaultH2Strategy() {
+        return new MetadataStrategy(
+                DatabaseSchemaStrategy.IMPLICIT,
+                DefaultDatabaseNamingStrategy.UPPER_CASE,
+                ForeignKeyStrategy.REAL,
+                new H2Dialect(),
+                prop -> null,
+                str -> str
+        );
     }
 }

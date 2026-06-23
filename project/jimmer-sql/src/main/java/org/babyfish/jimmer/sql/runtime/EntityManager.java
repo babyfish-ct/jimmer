@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.lang.Lazy;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -37,7 +34,7 @@ public class EntityManager {
 
     private volatile Data data;
 
-    public EntityManager(Class<?> ... classes) {
+    public EntityManager(Class<?>... classes) {
         this(Arrays.asList(classes));
     }
 
@@ -167,7 +164,7 @@ public class EntityManager {
         this.data = new Data(map, springDevToolMap);
     }
 
-    public static EntityManager combine(EntityManager ... entityManagers) {
+    public static EntityManager combine(EntityManager... entityManagers) {
         if (entityManagers.length == 0) {
             throw new IllegalArgumentException("No entity managers");
         }
@@ -443,6 +440,20 @@ public class EntityManager {
         );
     }
 
+    @Nullable
+    private static ImmutableType sharedSingleTableRoot(ImmutableType type1, ImmutableType type2) {
+        InheritanceInfo info1 = type1.getInheritanceInfo();
+        InheritanceInfo info2 = type2.getInheritanceInfo();
+        if (info1 != null &&
+                info2 != null &&
+                info1.getStrategy() == InheritanceType.SINGLE_TABLE &&
+                info2.getStrategy() == InheritanceType.SINGLE_TABLE &&
+                info1.getRootType() == info2.getRootType()) {
+            return info1.getRootType();
+        }
+        return null;
+    }
+
     private static boolean validateMiddleTableCompatibility(
             AssociationType type1,
             AssociationType type2,
@@ -689,7 +700,12 @@ public class EntityManager {
                 Map<List<Object>, ImmutableType> subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
                 ImmutableType conflictType = subTypeMap.put(null, type);
                 if (conflictType != null) {
-                    tableSharedBy(key, conflictType, type, null);
+                    ImmutableType rootType = sharedSingleTableRoot(conflictType, type);
+                    if (rootType == null) {
+                        tableSharedBy(key, conflictType, type, null);
+                    } else {
+                        subTypeMap.put(null, rootType);
+                    }
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isMiddleTableDefinition()) {
@@ -727,7 +743,7 @@ public class EntityManager {
                 if (!type.isEntity()) {
                     continue;
                 }
-                ((AbstractImmutableTypeImpl)type).validateColumnUniqueness(strategy);
+                ((AbstractImmutableTypeImpl) type).validateColumnUniqueness(strategy);
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
                         Storage storage = prop.getStorage(strategy);
