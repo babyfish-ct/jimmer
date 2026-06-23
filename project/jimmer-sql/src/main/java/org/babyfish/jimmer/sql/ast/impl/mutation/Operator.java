@@ -702,7 +702,9 @@ class Operator {
                             (stmt, args) -> {
                                 int rowCount;
                                 try {
-                                    Savepoint savepoint = SavepointManager.setIfNeeded(ctx.con, sqlClient);
+                                    Savepoint savepoint = ctx.options.isConstraintViolationTranslatable() ?
+                                            SavepointManager.setIfNeeded(ctx.con, sqlClient) :
+                                            null;
                                     try {
                                         rowCount = stmt.executeUpdate();
                                     } catch (SQLException ex) {
@@ -758,7 +760,8 @@ class Operator {
                         tuple.get_1(),
                         shape.getIdGetters().isEmpty() ? ctx.path.getType().getIdProp() : null,
                         ExecutionPurpose.command(QueryReason.NONE),
-                        sqlClient
+                        sqlClient,
+                        ctx.options.isConstraintViolationTranslatable()
                 )
         ) {
             BatchSqlBuilder.VariableMapper mapper = tuple.get_2();

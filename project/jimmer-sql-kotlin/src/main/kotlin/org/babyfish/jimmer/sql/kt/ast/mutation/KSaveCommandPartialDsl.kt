@@ -179,6 +179,8 @@ interface KSaveCommandPartialDsl {
 
     fun setDumbBatchAcceptable(acceptable: Boolean = true)
 
+    fun setConstraintViolationTranslatable(translatable: Boolean = true)
+
     fun addExceptionTranslator(translator: ExceptionTranslator<*>?)
 
     fun setDeleteMode(mode: DeleteMode)

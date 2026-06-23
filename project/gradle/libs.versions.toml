@@ -20,6 +20,7 @@ ksp = "2.1.20-2.0.0"
 lombok = "1.18.38"
 mapstruct = "1.5.3.Final"
 mysql = "8.0.29"
+mockito = "5.18.0"
 postgresql = "42.3.6"
 sqlite = "3.47.0.0"
 slf4j = "1.7.36"
@@ -80,6 +81,8 @@ mapstruct = { group = "org.mapstruct", name = "mapstruct", version.ref = "mapstr
 mapstruct-processor = { group = "org.mapstruct", name = "mapstruct-processor", version.ref = "mapstruct" }
 
 mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version.ref = "mysql" }
+
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 

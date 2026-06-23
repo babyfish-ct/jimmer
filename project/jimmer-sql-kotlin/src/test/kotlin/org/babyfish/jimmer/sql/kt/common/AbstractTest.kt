@@ -48,14 +48,16 @@ abstract class AbstractTest {
                     sql: String,
                     generatedIdProp: ImmutableProp?,
                     purpose: ExecutionPurpose,
-                    sqlClient: JSqlClientImplementor
+                    sqlClient: JSqlClientImplementor,
+                    constraintViolationTranslatable: Boolean
                 ): BatchContext {
                     val ctx = DefaultExecutor.INSTANCE.executeBatch(
                         con,
                         sql,
                         generatedIdProp,
                         purpose,
-                        sqlClient
+                        sqlClient,
+                        constraintViolationTranslatable
                     )
                     val execution = Execution(
                         sql,

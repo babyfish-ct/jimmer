@@ -151,14 +151,16 @@ public class SpringJavaTest extends AbstractTest {
                         @NotNull String sql,
                         @Nullable ImmutableProp generatedIdProp,
                         @NotNull ExecutionPurpose purpose,
-                        @NotNull JSqlClientImplementor sqlClient
+                        @NotNull JSqlClientImplementor sqlClient,
+                        boolean constraintViolationTranslatable
                 ) {
                     return DefaultExecutor.INSTANCE.executeBatch(
                             con,
                             sql,
                             generatedIdProp,
                             purpose,
-                            sqlClient
+                            sqlClient,
+                            constraintViolationTranslatable
                     );
                 }
             };

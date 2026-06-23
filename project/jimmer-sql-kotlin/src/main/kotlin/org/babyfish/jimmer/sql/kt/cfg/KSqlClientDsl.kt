@@ -80,6 +80,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setTargetTransferable(transferable)
     }
 
+    fun setConstraintViolationTranslatable(translatable: Boolean = true) {
+        javaBuilder.setConstraintViolationTranslatable(translatable)
+    }
+
     fun addExceptionTranslator(translator: ExceptionTranslator<*>) {
         javaBuilder.addExceptionTranslator(translator)
     }

@@ -17,12 +17,30 @@ public interface Executor {
 
     <R> R execute(@NotNull Args<R> args);
 
-    BatchContext executeBatch(
+    default BatchContext executeBatch(
             @NotNull Connection con,
             @NotNull String sql,
             @Nullable ImmutableProp generatedIdProp,
             @NotNull ExecutionPurpose purpose,
             @NotNull JSqlClientImplementor sqlClient
+    ) {
+        return executeBatch(
+                con,
+                sql,
+                generatedIdProp,
+                purpose,
+                sqlClient,
+                sqlClient.isConstraintViolationTranslatable()
+        );
+    }
+
+    BatchContext executeBatch(
+            @NotNull Connection con,
+            @NotNull String sql,
+            @Nullable ImmutableProp generatedIdProp,
+            @NotNull ExecutionPurpose purpose,
+            @NotNull JSqlClientImplementor sqlClient,
+            boolean constraintViolationTranslatable
     );
 
     /**
