@@ -111,7 +111,14 @@ public class ReaderManager {
                 }
             }
         }
-        return new ObjectReader(immutableType, idReader, nonIdReaderMap, null, null);
+        return new ObjectReader(
+                immutableType,
+                idReader,
+                nonIdReaderMap,
+                ObjectReader.discriminatorReader(sqlClient, immutableType),
+                null,
+                null
+        );
     }
 
     private Reader<?> scalarReader(ImmutableProp prop) {

@@ -102,6 +102,22 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         return new DiscriminatorPredicate(this, discriminatorColumn.name(), value);
     }
 
+    @Nullable
+    default String getPolymorphicDiscriminatorColumnName() {
+        if (getParent() != null) {
+            return null;
+        }
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null ||
+                inheritanceInfo.getRootType() != type ||
+                inheritanceInfo.getStrategy() == InheritanceType.TABLE_PER_CLASS) {
+            return null;
+        }
+        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
+        return discriminatorColumn != null ? discriminatorColumn.name() : null;
+    }
+
     default boolean isJoinedSubtypeRoot() {
         ImmutableType type = getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();

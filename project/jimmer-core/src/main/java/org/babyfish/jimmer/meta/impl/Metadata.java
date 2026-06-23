@@ -5,7 +5,6 @@ import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.meta.spi.TableDelegate;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.Embeddable;
@@ -16,16 +15,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.BiFunction;
 
 public class Metadata {
 
     private static final ClassCache<ImmutableTypeImpl> CACHE =
             new ClassCache<>(Metadata::create);
-
-    private static final java.util.Map<ImmutableTypeImpl, Set<ImmutableTypeImpl>> DIRECT_DERIVED_TYPE_MAP =
-            new WeakHashMap<>();
 
     private Metadata() {
     }
@@ -149,53 +146,14 @@ public class Metadata {
         return new ImmutableTypeImpl.BuilderImpl(kotlinClass, superTypes, draftFactory);
     }
 
-    static synchronized void register(ImmutableTypeImpl type) {
+    static void register(ImmutableTypeImpl type) {
         ImmutableTypeImpl superType = (ImmutableTypeImpl) type.getPrimarySuperType();
         if (superType != null && superType.isEntity()) {
-            String value = type.getDiscriminatorValue();
-            if (value != null) {
-                ImmutableType rootType = type.getInheritanceRoot();
-                if (rootType != null) {
-                    if (value.equals(rootType.getDiscriminatorValue())) {
-                        throw new ModelException(
-                                "Illegal type \"" +
-                                        type +
-                                        "\", its discriminator value \"" +
-                                        value +
-                                        "\" is already used by \"" +
-                                        rootType +
-                                        "\""
-                        );
-                    }
-                    for (ImmutableType derivedType : rootType.getAllDerivedTypes()) {
-                        if (derivedType != type && value.equals(derivedType.getDiscriminatorValue())) {
-                            throw new ModelException(
-                                    "Illegal type \"" +
-                                            type +
-                                            "\", its discriminator value \"" +
-                                            value +
-                                            "\" is already used by \"" +
-                                            derivedType +
-                                            "\""
-                            );
-                        }
-                    }
-                }
+            ImmutableType rootType = type.getInheritanceRoot();
+            if (rootType != null) {
+                ((ImmutableTypeImpl) rootType).registerDerivedType(superType, type);
             }
-            Set<ImmutableTypeImpl> derivedTypes = DIRECT_DERIVED_TYPE_MAP.computeIfAbsent(
-                    superType,
-                    it -> new LinkedHashSet<>()
-            );
-            derivedTypes.add(type);
         }
-    }
-
-    static synchronized Set<ImmutableType> directDerivedTypes(ImmutableTypeImpl type) {
-        Set<ImmutableTypeImpl> derivedTypes = DIRECT_DERIVED_TYPE_MAP.get(type);
-        if (derivedTypes == null || derivedTypes.isEmpty()) {
-            return Collections.emptySet();
-        }
-        return Collections.unmodifiableSet(new LinkedHashSet<>(derivedTypes));
     }
 
     private static Class<?> getImmutableJavaClass(Class<?> javaClass) {

@@ -3,8 +3,11 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
@@ -32,6 +35,12 @@ class ObjectReader implements Reader<Object> {
     private final PropId[] idViewBasePropIds;
 
     @Nullable
+    private final Reader<?> discriminatorReader;
+
+    @Nullable
+    private final Map<String, ImmutableType> discriminatorTypeMap;
+
+    @Nullable
     private final List<PropId> shownPropIds;
 
     @Nullable
@@ -41,6 +50,7 @@ class ObjectReader implements Reader<Object> {
             ImmutableType type,
             Reader<?> idReader,
             Map<ImmutableProp, Reader<?>> nonIdReaders,
+            @Nullable Reader<?> discriminatorReader,
             @Nullable List<PropId> shownPropIds,
             @Nullable List<PropId> hiddenPropsIds
     ) {
@@ -60,8 +70,24 @@ class ObjectReader implements Reader<Object> {
         this.nonIdReaders = nonIdReaders.values().toArray(EMPTY_READERS);
         this.idViewPropIds = idViewPropIds.toArray(EMPTY_PROP_IDS);
         this.idViewBasePropIds = idViewBasePropIds.toArray(EMPTY_PROP_IDS);
+        this.discriminatorReader = discriminatorReader;
+        this.discriminatorTypeMap = discriminatorReader != null ?
+                type.getInheritanceInfo().getDiscriminatorTypeMap() :
+                null;
         this.shownPropIds = shownPropIds;
         this.hiddenPropsIds = hiddenPropsIds;
+    }
+
+    @Nullable
+    static Reader<?> discriminatorReader(JSqlClientImplementor sqlClient, ImmutableType type) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null ||
+                inheritanceInfo.getRootType() != type ||
+                inheritanceInfo.getDiscriminatorColumn() == null ||
+                inheritanceInfo.getStrategy() == InheritanceType.TABLE_PER_CLASS) {
+            return null;
+        }
+        return sqlClient.getReader(String.class);
     }
 
     @Override
@@ -69,6 +95,9 @@ class ObjectReader implements Reader<Object> {
         idReader.skip(ctx);
         for (Reader<?> reader : nonIdReaders) {
             reader.skip(ctx);
+        }
+        if (discriminatorReader != null) {
+            discriminatorReader.skip(ctx);
         }
     }
 
@@ -79,15 +108,22 @@ class ObjectReader implements Reader<Object> {
             for (Reader<?> reader : nonIdReaders) {
                 reader.skip(ctx);
             }
+            if (discriminatorReader != null) {
+                discriminatorReader.skip(ctx);
+            }
             return null;
         }
-        DraftSpi spi = (DraftSpi) type.getDraftFactory().apply(ctx.draftContext(), null);
+        Object[] values = new Object[nonIdReaders.length];
+        int size = nonIdReaders.length;
+        for (int i = 0; i < size; i++) {
+            values[i] = nonIdReaders[i].read(rs, ctx);
+        }
+        ImmutableType actualType = readActualType(rs, ctx);
+        DraftSpi spi = (DraftSpi) actualType.getDraftFactory().apply(ctx.draftContext(), null);
         spi.__set(type.getIdProp().getId(), id);
         try {
-            int size = nonIdReaders.length;
             for (int i = 0; i < size; i++) {
-                Object value = nonIdReaders[i].read(rs, ctx);
-                spi.__set(nonIdPropIds[i], value);
+                spi.__set(nonIdPropIds[i], values[i]);
             }
             for (int i = idViewBasePropIds.length - 1; i >= 0; i--) {
                 spi.__show(idViewPropIds[i], true);
@@ -107,5 +143,32 @@ class ObjectReader implements Reader<Object> {
             throw DraftConsumerUncheckedException.rethrow(ex);
         }
         return ctx.resolve(spi);
+    }
+
+    private ImmutableType readActualType(ResultSet rs, Context ctx) throws SQLException {
+        Reader<?> reader = discriminatorReader;
+        if (reader == null) {
+            return type;
+        }
+        Object value = reader.read(rs, ctx);
+        if (!(value instanceof String)) {
+            throw new ExecutionException(
+                    "Cannot resolve the concrete type of \"" +
+                            type +
+                            "\" because the discriminator value is " +
+                            (value != null ? "\"" + value + "\"" : "null")
+            );
+        }
+        ImmutableType actualType = discriminatorTypeMap.get(value);
+        if (actualType == null) {
+            throw new ExecutionException(
+                    "Cannot resolve the concrete type of \"" +
+                            type +
+                            "\" because there is no subtype mapped by discriminator value \"" +
+                            value +
+                            "\""
+            );
+        }
+        return actualType;
     }
 }

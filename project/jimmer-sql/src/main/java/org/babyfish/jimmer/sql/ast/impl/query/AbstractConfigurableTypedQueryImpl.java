@@ -375,6 +375,16 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             builder.separator();
             table.renderSelection(prop, !prop.isId(), builder, null, true, null, false);
         }
+        if (table instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
+            String discriminatorColumnName = tableImplementor.getPolymorphicDiscriminatorColumnName();
+            if (discriminatorColumnName != null) {
+                builder.separator();
+                tableImplementor
+                        .realTableForRender(builder)
+                        .renderColumn(builder, discriminatorColumnName, false, null, null);
+            }
+        }
     }
 
     private void renderIdOnlyQuery(PropExpressionImplementor<?> idPropExpr, SqlBuilder builder) {

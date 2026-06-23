@@ -142,6 +142,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         }
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
         RealTable realTable = visitor.realTableForAnalysis(tableImplementor);
+        if (tableImplementor.getPolymorphicDiscriminatorColumnName() != null) {
+            visitor.visitTableReference(realTable, null, false);
+        }
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() ||
@@ -163,7 +166,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         RealTable realTable = TableProxies
                 .resolve(table, builder.getAstContext())
                 .realTable(builder.getQueryRenderContext());
-        new JoinFetchFieldVisitor(builder.sqlClient()) {
+        JoinFetchFieldVisitor visitor = new JoinFetchFieldVisitor(builder.sqlClient()) {
 
             private RealTable table = realTable;
 
@@ -299,7 +302,15 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         .sql(".c")
                         .sql(Integer.toString(read.index(index)));
             }
-        }.visit(fetcher);
+        };
+        visitor.visit(fetcher);
+        String discriminatorColumnName = TableProxies
+                .resolve(table, builder.getAstContext())
+                .getPolymorphicDiscriminatorColumnName();
+        if (discriminatorColumnName != null) {
+            builder.separator();
+            realTable.renderColumn(builder, discriminatorColumnName, false, null, null);
+        }
     }
 
     private ImmutableProp getEmbeddedRawReferenceProp(JSqlClientImplementor sqlClient) {

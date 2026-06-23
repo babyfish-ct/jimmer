@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -92,6 +93,19 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private final ImmutableType inheritanceRoot;
 
     private final InheritanceInfo declaredInheritanceInfo;
+
+    /*
+     * TODO(inheritance): Replace this lazy runtime registry with a frozen
+     * metadata lifecycle. The long-term model should build the full model
+     * scope, resolve all derived-type graphs and discriminator maps once, and
+     * publish immutable snapshots instead of accepting late subtype
+     * registration.
+     */
+    private final ConcurrentHashMap<ImmutableTypeImpl, Set<ImmutableType>> directDerivedTypeMap =
+            new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<String, ImmutableType> discriminatorValueTypeMap =
+            new ConcurrentHashMap<>();
 
     private final BiFunction<DraftContext, Object, Draft> draftFactory;
 
@@ -366,7 +380,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @Override
     public Set<ImmutableType> getDirectDerivedTypes() {
-        return Metadata.directDerivedTypes(this);
+        ImmutableTypeImpl rootType = inheritanceRoot != null ? (ImmutableTypeImpl) inheritanceRoot : this;
+        Set<ImmutableType> directDerivedTypes = rootType.directDerivedTypeMap.get(this);
+        return directDerivedTypes != null ? directDerivedTypes : Collections.emptySet();
     }
 
     @Override
@@ -374,6 +390,46 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         Set<ImmutableType> all = new LinkedHashSet<>();
         collectAllDerivedTypes(all);
         return Collections.unmodifiableSet(all);
+    }
+
+    void registerDerivedType(ImmutableTypeImpl superType, ImmutableTypeImpl type) {
+        String value = type.getDiscriminatorValue();
+        if (value != null) {
+            if (value.equals(getDiscriminatorValue())) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                type +
+                                "\", its discriminator value \"" +
+                                value +
+                                "\" is already used by \"" +
+                                this +
+                                "\""
+                );
+            }
+            ImmutableType conflictType = discriminatorValueTypeMap.putIfAbsent(value, type);
+            if (conflictType != null && conflictType != type) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                type +
+                                "\", its discriminator value \"" +
+                                value +
+                                "\" is already used by \"" +
+                                conflictType +
+                                "\""
+                );
+            }
+        }
+        directDerivedTypeMap.compute(superType, (key, oldDirectDerivedTypes) -> {
+            if (oldDirectDerivedTypes != null && oldDirectDerivedTypes.contains(type)) {
+                return oldDirectDerivedTypes;
+            }
+            Set<ImmutableType> newDirectDerivedTypes = new LinkedHashSet<>();
+            if (oldDirectDerivedTypes != null) {
+                newDirectDerivedTypes.addAll(oldDirectDerivedTypes);
+            }
+            newDirectDerivedTypes.add(type);
+            return Collections.unmodifiableSet(newDirectDerivedTypes);
+        });
     }
 
     private void collectAllDerivedTypes(Set<ImmutableType> all) {

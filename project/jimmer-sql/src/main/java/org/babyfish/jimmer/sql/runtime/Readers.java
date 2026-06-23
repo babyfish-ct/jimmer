@@ -287,6 +287,7 @@ class Readers {
                         type,
                         sqlClient.getReader(type.getIdProp()),
                         nonIdReaderMap,
+                        ObjectReader.discriminatorReader(sqlClient, type),
                         shownPropIds,
                         hiddenPropIds
                 );
