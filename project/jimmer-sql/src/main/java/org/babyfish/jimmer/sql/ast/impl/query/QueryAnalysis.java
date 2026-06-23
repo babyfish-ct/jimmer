@@ -6,8 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
@@ -48,10 +47,8 @@ public final class QueryAnalysis {
         return model.getJoinRequirements().get(table);
     }
 
-    public void applyAliases(RealTable table, TableAliasScope aliasScope) {
-        if (aliasScope != null) {
-            aliasScope.applyAliases(table, model.getTableAliases());
-        }
+    TableAliases getTableAliases() {
+        return model.getTableAliases();
     }
 
     List<CteTableDeclaration> getCteTableDeclarations(AbstractMutableStatementImpl statement) {

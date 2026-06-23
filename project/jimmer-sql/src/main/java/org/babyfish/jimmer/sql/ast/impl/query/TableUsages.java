@@ -31,11 +31,11 @@ public final class TableUsages {
         }
     }
 
-    public TableAliases allocateAliases(AstContext astContext) {
-        return allocateAliases(astContext, null);
+    public void allocateAndBindAliases(AstContext astContext) {
+        allocateAndBindAliases(astContext, null);
     }
 
-    TableAliases allocateAliases(AstContext astContext, CteTableDependencies cteTableDependencies) {
+    TableAliases allocateAndBindAliases(AstContext astContext, CteTableDependencies cteTableDependencies) {
         TableAliasScope aliasScope = astContext.beginTableAliasScope();
         TableAliases aliases = TableAliases.allocate(
                 cteTableDependencies != null ? cteTableDependencies.aliasRootTables() : rootTables,

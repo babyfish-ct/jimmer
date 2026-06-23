@@ -51,6 +51,9 @@ public final class QueryRenderContext {
     }
 
     public void applyAliases(RealTable table) {
-        analysis.applyAliases(table, getTableAliasScope());
+        TableAliasScope aliasScope = getTableAliasScope();
+        if (aliasScope != null) {
+            aliasScope.applyAliases(table, analysis.getTableAliases());
+        }
     }
 }

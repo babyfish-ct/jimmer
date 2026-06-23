@@ -67,7 +67,9 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                 tableUsages,
                 astContext
         );
-        TableAliases tableAliases = materializeAliases ? materialize(tableUsages, cteTableDependencies) : TableAliases.EMPTY;
+        TableAliases tableAliases = materializeAliases ?
+                prepareAliasBindings(tableUsages, cteTableDependencies) :
+                TableAliases.EMPTY;
         QueryAnalysisModel model = new QueryAnalysisModel(
                 joinRequirements,
                 baseQueryExportUsages,
@@ -124,9 +126,9 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
         return new TableUsageAnalysis(visitor.toTableUsages(), statements);
     }
 
-    private TableAliases materialize(TableUsages tableUsages, CteTableDependencies cteTableDependencies) {
+    private TableAliases prepareAliasBindings(TableUsages tableUsages, CteTableDependencies cteTableDependencies) {
         tableUsages.applyTo(astContext);
-        return tableUsages.allocateAliases(astContext, cteTableDependencies);
+        return tableUsages.allocateAndBindAliases(astContext, cteTableDependencies);
     }
 
     @Override

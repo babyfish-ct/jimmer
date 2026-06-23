@@ -136,7 +136,7 @@ public class MutableDeleteImpl
             }
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyTo(astContext);
-            tableUsages.allocateAliases(astContext);
+            tableUsages.allocateAndBindAliases(astContext);
         } finally {
             astContext.popStatement();
         }
