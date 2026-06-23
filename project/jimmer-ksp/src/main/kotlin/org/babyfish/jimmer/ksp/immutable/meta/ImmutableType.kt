@@ -21,7 +21,7 @@ import kotlin.reflect.KClass
 class ImmutableType(
     ctx: Context,
     val classDeclaration: KSClassDeclaration
-): BaseType {
+) : BaseType {
     private val immutableAnnoTypeName: String =
         listOf(
             classDeclaration.annotation(Entity::class),
@@ -75,7 +75,7 @@ class ImmutableType(
                     throw MetaException(
                         classDeclaration,
                         "it cannot be decorated by both " +
-                            "@${annotationType!!.qualifiedName} and ${sqlAnnotationType.qualifiedName}"
+                                "@${annotationType!!.qualifiedName} and ${sqlAnnotationType.qualifiedName}"
                     )
                 }
                 annotationType = sqlAnnotationType
@@ -98,19 +98,19 @@ class ImmutableType(
 
     val microServiceName: String =
         (
-            classDeclaration.annotation(Entity::class)?.get(Entity::microServiceName)
-                ?: classDeclaration.annotation(MappedSuperclass::class)?.get(MappedSuperclass::microServiceName)
-                ?: ""
-        ).also {
-            if (it.isNotEmpty() && isAcrossMicroServices) {
-                throw MetaException(
-                    classDeclaration,
-                    "the `acrossMicroServices` of its annotation \"@" +
-                        MappedSuperclass::class.java.name +
-                        "\" is true so that `microServiceName` cannot be specified"
-                )
+                classDeclaration.annotation(Entity::class)?.get(Entity::microServiceName)
+                    ?: classDeclaration.annotation(MappedSuperclass::class)?.get(MappedSuperclass::microServiceName)
+                    ?: ""
+                ).also {
+                if (it.isNotEmpty() && isAcrossMicroServices) {
+                    throw MetaException(
+                        classDeclaration,
+                        "the `acrossMicroServices` of its annotation \"@" +
+                                MappedSuperclass::class.java.name +
+                                "\" is true so that `microServiceName` cannot be specified"
+                    )
+                }
             }
-        }
 
     val superTypes: List<ImmutableType> =
         classDeclaration
@@ -119,7 +119,7 @@ class ImmutableType(
             .filterIsInstance<KSClassDeclaration>()
             .filter {
                 it.classKind == ClassKind.INTERFACE &&
-                    ctx.typeAnnotationOf(it) !== null
+                        ctx.typeAnnotationOf(it) !== null
             }
             .toList()
             .map {
@@ -135,10 +135,12 @@ class ImmutableType(
                             "simple immutable type does not support multiple inheritance"
                         )
                     }
+
                     isEmbeddable -> throw MetaException(
                         classDeclaration,
                         "embeddable type does not support inheritance"
                     )
+
                     isEntity -> for (superType in it) {
                         if (!superType.isEntity && !superType.isMappedSuperclass) {
                             throw MetaException(
@@ -147,6 +149,7 @@ class ImmutableType(
                             )
                         }
                     }
+
                     isMappedSuperclass -> for (superType in it) {
                         if (!superType.isMappedSuperclass) {
                             throw MetaException(
@@ -161,12 +164,12 @@ class ImmutableType(
                         throw MetaException(
                             classDeclaration,
                             "its micro service name is \"" +
-                                microServiceName +
-                                "\" but the micro service name of its super type \"" +
-                                superType.qualifiedName +
-                                "\" is \"" +
-                                superType.microServiceName +
-                                "\""
+                                    microServiceName +
+                                    "\" but the micro service name of its super type \"" +
+                                    superType.qualifiedName +
+                                    "\" is \"" +
+                                    superType.microServiceName +
+                                    "\""
                         )
                     }
                 }
@@ -185,16 +188,103 @@ class ImmutableType(
             }
             .firstOrNull()
 
+    val inheritanceRoot: ImmutableType?
+
+    val inheritanceStrategy: InheritanceType?
+
+    val discriminatorColumnName: String?
+
+    val discriminatorValue: String?
+
     val declaredProperties: Map<String, ImmutableProp>
 
     val redefinedProps: Map<String, ImmutableProp>
 
     init {
+        val inheritance = classDeclaration.annotation(Inheritance::class)
+        val discriminatorColumn = classDeclaration.annotation(DiscriminatorColumn::class)
+        val discriminatorValue = classDeclaration.annotation(DiscriminatorValue::class)
+        if (!isEntity) {
+            if (inheritance !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${Inheritance::class.java.name} can only be declared by entity type"
+                )
+            }
+            if (discriminatorColumn !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${DiscriminatorColumn::class.java.name} can only be declared by entity type"
+                )
+            }
+            if (discriminatorValue !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${DiscriminatorValue::class.java.name} can only be declared by entity type"
+                )
+            }
+            inheritanceRoot = null
+            inheritanceStrategy = null
+            discriminatorColumnName = null
+            this.discriminatorValue = null
+        } else if (primarySuperType?.isEntity == true) {
+            if (inheritance !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${Inheritance::class.java.name} can only be declared by inheritance root type"
+                )
+            }
+            if (discriminatorColumn !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${DiscriminatorColumn::class.java.name} can only be declared by inheritance root type"
+                )
+            }
+            val root = primarySuperType.inheritanceRoot
+                ?: throw MetaException(
+                    classDeclaration,
+                    "it cannot inherit entity type \"$primarySuperType\" because the super type is not an inheritance root"
+                )
+            inheritanceRoot = root
+            inheritanceStrategy = null
+            discriminatorColumnName = null
+            this.discriminatorValue =
+                discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
+        } else if (inheritance !== null) {
+            inheritanceRoot = this
+            val strategy = when (val value: Any? = inheritance["strategy"]) {
+                null -> InheritanceType.SINGLE_TABLE
+                is InheritanceType -> value
+                is KSClassDeclaration -> InheritanceType.valueOf(value.simpleName.asString())
+                else -> throw MetaException(
+                    classDeclaration,
+                    "Illegal value of @${Inheritance::class.java.name}.strategy: $value"
+                )
+            }
+            inheritanceStrategy = strategy
+            discriminatorColumnName =
+                discriminatorColumn?.get(DiscriminatorColumn::name)
+                    ?: if (strategy != InheritanceType.TABLE_PER_CLASS) "DTYPE" else null
+            this.discriminatorValue =
+                discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
+        } else {
+            if (discriminatorColumn !== null || discriminatorValue !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "discriminator annotations can only be used by inheritance types"
+                )
+            }
+            inheritanceRoot = null
+            inheritanceStrategy = null
+            discriminatorColumnName = null
+            this.discriminatorValue = null
+        }
+
         val superPropMap = superTypes
             .flatMap { it.properties.values }
             .groupBy { it.name }
             .toList()
-            .associateBy({it.first}) {
+            .associateBy({ it.first }) {
                 if (it.second.size > 1) {
                     val prop1 = it.second[0]
                     val prop2 = it.second[1]
@@ -202,10 +292,10 @@ class ImmutableType(
                         throw MetaException(
                             classDeclaration,
                             "There are two super properties with the same name: \"" +
-                                prop1 +
-                                "\" and \"" +
-                                prop2 +
-                                "\", but their return type are different"
+                                    prop1 +
+                                    "\" and \"" +
+                                    prop2 +
+                                    "\", but their return type are different"
                         )
                     }
                 }
@@ -234,9 +324,9 @@ class ImmutableType(
                         throw MetaException(
                             propDeclaration,
                             "it is abstract and decorated by @" +
-                                Formula::class.java.name +
-                                ", abstract modifier means simple calculation property based on " +
-                                "SQL expression so that the `sql` of that annotation must be specified"
+                                    Formula::class.java.name +
+                                    ", abstract modifier means simple calculation property based on " +
+                                    "SQL expression so that the `sql` of that annotation must be specified"
                         )
                     }
                     val dependencies = formula.getListArgument(Formula::dependencies) ?: emptyList()
@@ -244,9 +334,9 @@ class ImmutableType(
                         throw MetaException(
                             propDeclaration,
                             "it is abstract and decorated by @" +
-                                Formula::class.java.name +
-                                ", abstract modifier means simple calculation property based on " +
-                                "SQL expression so that the `dependencies` of that annotation cannot be specified"
+                                    Formula::class.java.name +
+                                    ", abstract modifier means simple calculation property based on " +
+                                    "SQL expression so that the `dependencies` of that annotation cannot be specified"
                         )
                     }
                 }
@@ -256,19 +346,19 @@ class ImmutableType(
                         throw MetaException(
                             propDeclaration,
                             "it is not abstract so that " +
-                                "it cannot be decorated by " +
-                                "any jimmer annotations except @" +
-                                FORMULA_CLASS_NAME
+                                    "it cannot be decorated by " +
+                                    "any jimmer annotations except @" +
+                                    FORMULA_CLASS_NAME
                         )
                     }
                     if (formula !== null) {
-                        formula[Formula::sql]?.takeIf { it.isNotEmpty() } ?.let {
+                        formula[Formula::sql]?.takeIf { it.isNotEmpty() }?.let {
                             throw MetaException(
                                 propDeclaration,
                                 "it is non-abstract and decorated by @" +
-                                    Formula::class.java.name +
-                                    ", non-abstract modifier means simple calculation property based on " +
-                                    "kotlin expression so that the `sql` of that annotation cannot be specified"
+                                        Formula::class.java.name +
+                                        ", non-abstract modifier means simple calculation property based on " +
+                                        "kotlin expression so that the `sql` of that annotation cannot be specified"
                             )
                         }
                         val dependencies = formula.getListArgument(Formula::dependencies) ?: emptyList()
@@ -276,9 +366,9 @@ class ImmutableType(
                             throw MetaException(
                                 propDeclaration,
                                 "it is non-abstract and decorated by @" +
-                                    Formula::class.java.name +
-                                    ", non-abstract modifier means simple calculation property based on " +
-                                    "kotlin expression so that the `dependencies` of that annotation must be specified"
+                                        Formula::class.java.name +
+                                        ", non-abstract modifier means simple calculation property based on " +
+                                        "kotlin expression so that the `dependencies` of that annotation must be specified"
                             )
                         }
                     }
@@ -311,15 +401,15 @@ class ImmutableType(
             classDeclaration
                 .getDeclaredProperties()
                 .filter { it.annotation(Id::class) != null }
-                .associateBy({it.name}) {
+                .associateBy({ it.name }) {
                     ImmutableProp(ctx, this, propIdSequence++, it)
                 } +
-                classDeclaration
-                    .getDeclaredProperties()
-                    .filter { it.annotation(Id::class) == null }
-                    .associateBy({it.name}) {
-                        ImmutableProp(ctx, this, propIdSequence++, it)
-                    }
+                    classDeclaration
+                        .getDeclaredProperties()
+                        .filter { it.annotation(Id::class) == null }
+                        .associateBy({ it.name }) {
+                            ImmutableProp(ctx, this, propIdSequence++, it)
+                        }
     }
 
     val properties: Map<String, ImmutableProp> =
@@ -405,12 +495,12 @@ class ImmutableType(
         val mapsId = associationProp.annotation(MapsId::class)
         val ownerIdProp = idProp
         return mapsId != null &&
-            (mapsId[MapsId::value] ?: "").isEmpty() &&
-            !associationProp.isReverse &&
-            !associationProp.isTransient &&
-            ownerIdProp != null &&
-            expectedProp.isId &&
-            expectedProp.name == ownerIdProp.name
+                (mapsId[MapsId::value] ?: "").isEmpty() &&
+                !associationProp.isReverse &&
+                !associationProp.isTransient &&
+                ownerIdProp != null &&
+                expectedProp.isId &&
+                expectedProp.name == ownerIdProp.name
     }
 
     fun getIdPropName(prop: String): String? =
@@ -421,12 +511,12 @@ class ImmutableType(
     }
 
     val idProp: ImmutableProp? by lazy {
-        val idProps = declaredProperties.values.filter { it.isId }
+        val idProps = declaredProperties.values.filter { it.declaringType === this && it.isId }
         if (idProps.size > 1) {
             throw MetaException(
                 classDeclaration,
                 "two many properties are decorated by \"@${Id::class.qualifiedName}\": " +
-                    idProps
+                        idProps
             )
         }
         val superIdProp = superTypes.firstOrNull { it.idProp !== null }?.idProp
@@ -434,7 +524,7 @@ class ImmutableType(
             throw MetaException(
                 classDeclaration,
                 "it cannot declare id property " +
-                    "because id property has been declared by super type"
+                        "because id property has been declared by super type"
             )
         }
         val prop = idProps.firstOrNull() ?: superIdProp
@@ -442,7 +532,7 @@ class ImmutableType(
             throw MetaException(
                 classDeclaration,
                 "it is decorated by \"@${Entity::class.qualifiedName}\" " +
-                    "but there is no id property"
+                        "but there is no id property"
             )
         }
         prop

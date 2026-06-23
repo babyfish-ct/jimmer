@@ -2,14 +2,17 @@ package org.babyfish.jimmer.meta.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.babyfish.jimmer.sql.meta.impl.PropChains;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractImmutableTypeImpl implements ImmutableType {
 
@@ -34,5 +37,33 @@ public abstract class AbstractImmutableTypeImpl implements ImmutableType {
 
     public void validateColumnUniqueness(MetadataStrategy strategy) {
         chainMapCache.get(strategy);
+    }
+
+    @Nullable
+    @Override
+    public ImmutableType getInheritanceRoot() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public InheritanceInfo getInheritanceInfo() {
+        return null;
+    }
+
+    @Override
+    public Set<ImmutableType> getDirectDerivedTypes() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<ImmutableType> getAllDerivedTypes() {
+        return Collections.emptySet();
+    }
+
+    @Nullable
+    @Override
+    public String getDiscriminatorValue() {
+        return null;
     }
 }

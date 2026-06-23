@@ -12,7 +12,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 import static org.babyfish.jimmer.meta.GeneratorVersionChecker.checkGeneratorVersion;
@@ -69,6 +72,19 @@ public interface ImmutableType {
     Set<ImmutableType> getSuperTypes();
 
     Set<ImmutableType> getAllTypes();
+
+    @Nullable
+    ImmutableType getInheritanceRoot();
+
+    @Nullable
+    InheritanceInfo getInheritanceInfo();
+
+    Set<ImmutableType> getDirectDerivedTypes();
+
+    Set<ImmutableType> getAllDerivedTypes();
+
+    @Nullable
+    String getDiscriminatorValue();
 
     @NotNull
     BiFunction<DraftContext, Object, Draft> getDraftFactory();
