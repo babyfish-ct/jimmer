@@ -60,7 +60,7 @@ public final class BaseQueryReadSupport {
         if (!expression.getProp().isColumnDefinition()) {
             return read(selection, selection.expressionIndex());
         }
-        return columns(selection, table, expression.getProp().getStorage(strategy), false);
+        return columns(selection, table, expression.getProp().getStorage(strategy));
     }
 
     @Nullable
@@ -128,13 +128,12 @@ public final class BaseQueryReadSupport {
     private BaseQueryRead columns(
             BaseQueryExportSelection selection,
             RealTable table,
-            ColumnDefinition definition,
-            boolean foreignKeyInBaseQuery
+            ColumnDefinition definition
     ) {
         int size = definition.size();
         int[] indexes = new int[size];
         for (int i = 0; i < size; i++) {
-            indexes[i] = selection.columnIndex(table, definition.name(i), foreignKeyInBaseQuery);
+            indexes[i] = selection.columnIndex(table, definition.name(i), false);
         }
         return new BaseQueryRead(selection.getRealBaseTable(), indexes);
     }
