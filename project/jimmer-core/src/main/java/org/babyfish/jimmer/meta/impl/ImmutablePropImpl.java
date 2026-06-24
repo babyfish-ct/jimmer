@@ -243,13 +243,13 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         }
         Discriminator discriminator = getAnnotation(Discriminator.class);
         if (discriminator != null) {
-            if (category != ImmutablePropCategory.SCALAR || elementClass != String.class) {
+            if (category != ImmutablePropCategory.SCALAR || (elementClass != String.class && !elementClass.isEnum())) {
                 throw new ModelException(
                         "Illegal property \"" +
                                 this +
                                 "\", it is decorated by \"" +
                                 Discriminator.class.getName() +
-                                "\" so that it must be scalar string property"
+                                "\" so that it must be scalar string or enum property"
                 );
             }
         }
@@ -606,19 +606,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Nullable
     @Override
     public SqlTemplate getSqlTemplate() {
-        if (primaryAnnotationType == Discriminator.class) {
-            InheritanceInfo inheritanceInfo = declaringType.getInheritanceInfo();
-            if (inheritanceInfo == null || inheritanceInfo.getDiscriminatorColumn() == null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by \"" +
-                                Discriminator.class.getName() +
-                                "\" but the declaring type is not an inheritance type with discriminator column"
-                );
-            }
-            return FormulaTemplate.of("%alias." + inheritanceInfo.getDiscriminatorColumn().name());
-        }
         return sqlTemplate;
     }
 
@@ -1037,7 +1024,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 if (type == 0) {
                     int result;
                     if (isTransient() ||
-                            isDiscriminator() ||
                             isFormula() ||
                             !getDependencies().isEmpty() ||
                             getSqlTemplate() instanceof JoinTemplate ||

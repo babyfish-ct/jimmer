@@ -289,7 +289,9 @@ public class PropDescriptor {
                 Class<? extends Annotation> annotationType
         ) {
             return explicitType == Discriminator.class && annotationType == Key.class ||
-                    explicitType == Key.class && annotationType == Discriminator.class;
+                    explicitType == Key.class && annotationType == Discriminator.class ||
+                    explicitType == Discriminator.class && annotationType == Column.class ||
+                    explicitType == Column.class && annotationType == Discriminator.class;
         }
 
         public PropDescriptor build() {

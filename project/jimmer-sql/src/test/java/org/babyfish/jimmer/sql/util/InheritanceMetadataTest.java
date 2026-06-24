@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.util;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
+import org.babyfish.jimmer.sql.Column;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Client;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Organization;
@@ -28,7 +29,8 @@ public class InheritanceMetadataTest {
         assertSame(info, organizationType.getInheritanceInfo());
         assertSame(info, personType.getInheritanceInfo());
         assertEquals(InheritanceType.SINGLE_TABLE, info.getStrategy());
-        assertEquals("CLIENT_TYPE", info.getDiscriminatorColumn().name());
+        assertEquals("type", info.getDiscriminatorProp().getName());
+        assertEquals("CLIENT_TYPE", info.getDiscriminatorProp().getAnnotation(Column.class).name());
 
         assertEquals("Client", clientType.getDiscriminatorValue());
         assertEquals("ORG", organizationType.getDiscriminatorValue());
@@ -49,4 +51,5 @@ public class InheritanceMetadataTest {
                 info.getDiscriminatorTypeMap().toString()
         );
     }
+
 }

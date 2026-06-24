@@ -37,34 +37,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private static final IdGenerator NIL_ID_GENERATOR = new IdGenerator() {
     };
 
-    private static final DiscriminatorColumn DEFAULT_DISCRIMINATOR_COLUMN = new DiscriminatorColumn() {
-
-        @Override
-        public String name() {
-            return "DTYPE";
-        }
-
-        @Override
-        public String sqlType() {
-            return "varchar";
-        }
-
-        @Override
-        public int length() {
-            return 31;
-        }
-
-        @Override
-        public boolean nullable() {
-            return false;
-        }
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return DiscriminatorColumn.class;
-        }
-    };
-
     private static final LogicalDeletedValueGenerator<?> NIL_LOGICAL_DELETED_VALUE_GENERATOR = new LogicalDeletedValueGenerator<Object>() {
         @Override
         public Object generate() {
@@ -84,7 +56,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private final ImmutableType primarySuperType;
     private final Set<ImmutableType> superTypes;
     private final ImmutableType inheritanceRoot;
-    private final InheritanceInfo declaredInheritanceInfo;
+    private final Inheritance declaredInheritance;
+    private InheritanceInfo declaredInheritanceInfo;
     /*
      * TODO(inheritance): Replace this lazy runtime registry with a frozen
      * metadata lifecycle. The long-term model should build the full model
@@ -174,7 +147,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
         if (isEntity) {
             Inheritance inheritance = javaClass.getAnnotation(Inheritance.class);
-            DiscriminatorColumn discriminatorColumn = javaClass.getAnnotation(DiscriminatorColumn.class);
             DiscriminatorValue discriminatorValue = javaClass.getAnnotation(DiscriminatorValue.class);
             if (primarySuperType != null && primarySuperType.isEntity()) {
                 if (inheritance != null) {
@@ -183,15 +155,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                     javaClass.getName() +
                                     "\", @" +
                                     Inheritance.class.getName() +
-                                    " can only be declared by inheritance root type"
-                    );
-                }
-                if (discriminatorColumn != null) {
-                    throw new ModelException(
-                            "Illegal type \"" +
-                                    javaClass.getName() +
-                                    "\", @" +
-                                    DiscriminatorColumn.class.getName() +
                                     " can only be declared by inheritance root type"
                     );
                 }
@@ -205,6 +168,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                     "\" because the super type is not an inheritance root"
                     );
                 }
+                declaredInheritance = null;
                 declaredInheritanceInfo = null;
             } else if (inheritance != null) {
                 inheritanceRoot = this;
@@ -222,17 +186,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                     "\""
                     );
                 }
-                if (discriminatorColumn == null) {
-                    discriminatorColumn = DEFAULT_DISCRIMINATOR_COLUMN;
-                }
-                declaredInheritanceInfo = new InheritanceInfo(
-                        this,
-                        inheritance.strategy(),
-                        inheritance.joinedTableDeleteMode(),
-                        discriminatorColumn
-                );
+                declaredInheritance = inheritance;
+                declaredInheritanceInfo = null;
             } else {
-                if (discriminatorColumn != null || discriminatorValue != null) {
+                if (discriminatorValue != null) {
                     throw new ModelException(
                             "Illegal type \"" +
                                     javaClass.getName() +
@@ -240,6 +197,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                     );
                 }
                 inheritanceRoot = null;
+                declaredInheritance = null;
                 declaredInheritanceInfo = null;
             }
         } else {
@@ -252,8 +210,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 " can only be declared by entity type"
                 );
             }
-            if (javaClass.isAnnotationPresent(DiscriminatorColumn.class) ||
-                    javaClass.isAnnotationPresent(DiscriminatorValue.class)) {
+            if (javaClass.isAnnotationPresent(DiscriminatorValue.class)) {
                 throw new ModelException(
                         "Illegal type \"" +
                                 javaClass.getName() +
@@ -261,6 +218,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 );
             }
             inheritanceRoot = null;
+            declaredInheritance = null;
             declaredInheritanceInfo = null;
         }
 
@@ -775,6 +733,67 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     void setProps(Map<String, ImmutableProp> declaredPropMap, Map<String, PropId> redefinedMap) {
         this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
         this.props = Collections.unmodifiableMap(createPropMap(redefinedMap));
+    }
+
+    void resolveInheritanceInfo() {
+        if (inheritanceRoot == null) {
+            if (isMappedSupperClass) {
+                return;
+            }
+            if (props.values().stream().anyMatch(ImmutableProp::isDiscriminator)) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", property decorated by @" +
+                                Discriminator.class.getName() +
+                                " can only be used by inheritance root type or its subtypes"
+                );
+            }
+            return;
+        }
+        if (inheritanceRoot != this) {
+            if (declaredProps.values().stream().anyMatch(ImmutableProp::isDiscriminator)) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", @" +
+                                Discriminator.class.getName() +
+                                " cannot be declared by inheritance subtype"
+                );
+            }
+            return;
+        }
+        ImmutableProp discriminatorProp = null;
+        for (ImmutableProp prop : props.values()) {
+            if (prop.isDiscriminator()) {
+                if (discriminatorProp != null) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", multiple discriminator properties are declared: \"" +
+                                    discriminatorProp +
+                                    "\" and \"" +
+                                    prop +
+                                    "\""
+                    );
+                }
+                discriminatorProp = prop;
+            }
+        }
+        if (discriminatorProp == null) {
+            throw new ModelException(
+                    "Illegal type \"" +
+                            javaClass.getName() +
+                            "\", inheritance root type must declare or inherit a scalar property decorated by @" +
+                            Discriminator.class.getName()
+            );
+        }
+        declaredInheritanceInfo = new InheritanceInfo(
+                this,
+                declaredInheritance.strategy(),
+                declaredInheritance.joinedTableDeleteMode(),
+                discriminatorProp
+        );
     }
 
     void setKeyGroups(Map<String, Set<ImmutableProp>> keyGroups) {
@@ -1409,6 +1428,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 map.put(e.getKey(), e.getValue().build(type));
             }
             type.setProps(map, redefinedMap);
+            type.resolveInheritanceInfo();
 
             if (idPropName != null) {
                 type.setIdProp(type.declaredProps.get(idPropName));

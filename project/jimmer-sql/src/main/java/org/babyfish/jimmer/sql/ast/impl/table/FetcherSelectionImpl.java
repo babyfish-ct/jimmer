@@ -142,7 +142,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         }
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
         RealTable realTable = visitor.realTableForAnalysis(tableImplementor);
-        if (tableImplementor.getPolymorphicDiscriminatorColumnName() != null) {
+        if (tableImplementor.getPolymorphicDiscriminatorProp() != null) {
             visitor.visitTableReference(realTable, null, false);
         }
         for (Field field : fetcher.getFieldMap().values()) {
@@ -304,12 +304,20 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
         };
         visitor.visit(fetcher);
-        String discriminatorColumnName = TableProxies
+        ImmutableProp discriminatorProp = TableProxies
                 .resolve(table, builder.getAstContext())
-                .getPolymorphicDiscriminatorColumnName();
-        if (discriminatorColumnName != null && !hasDiscriminatorField(fetcher)) {
+                .getPolymorphicDiscriminatorProp();
+        if (discriminatorProp != null && !hasDiscriminatorField(fetcher)) {
             builder.separator();
-            realTable.renderColumn(builder, discriminatorColumnName, false, null, null);
+            realTable.renderColumn(
+                    builder,
+                    ((org.babyfish.jimmer.sql.meta.SingleColumn) discriminatorProp.getStorage(
+                            builder.getAstContext().getSqlClient().getMetadataStrategy()
+                    )).getName(),
+                    false,
+                    null,
+                    null
+            );
         }
     }
 

@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.Nullable;
@@ -21,9 +23,15 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
         ImmutableSpi spi = (ImmutableSpi) value;
         PropId propId = prop.getId();
         if (prop.isDiscriminator() && !spi.__isLoaded(propId)) {
-            String discriminatorValue = spi.__type().getDiscriminatorValue();
+            ImmutableType type = spi.__type();
+            String discriminatorValue = type.getDiscriminatorValue();
             if (discriminatorValue != null) {
-                return valueGetter.get(discriminatorValue);
+                InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+                return valueGetter.get(
+                        inheritanceInfo != null ?
+                                inheritanceInfo.discriminatorValue(discriminatorValue) :
+                                discriminatorValue
+                );
             }
         }
         if (spi.__isLoaded(propId) && !prop.isLogicalDeleted()) {

@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.key.NaturalOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.*;
 import org.junit.jupiter.api.Test;
@@ -41,6 +43,35 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
                         it.modified("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testInsertSubtypeWithEnumDiscriminator() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                EnumOrganizationDraft.$.produce(organization -> {
+                                    organization.setId(310L);
+                                    organization.setName("Enum Org");
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ENUM_CLIENT(ID, CLIENT_TYPE, NAME) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(310L, "ORG", "Enum Org");
+                    });
+                    ctx.rowCount(AffectedTable.of(EnumOrganization.class), 1);
+                    ctx.entity(it -> {
+                        it.original("{\"id\":310,\"name\":\"Enum Org\"}");
+                        it.modified("{\"id\":310,\"name\":\"Enum Org\"}");
                     });
                 }
         );
@@ -262,15 +293,31 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                 con -> {
                     getSqlClient()
                             .getEntities()
-                            .deleteCommand(Organization.class, 100L)
+                            .deleteCommand(Organization.class, 102L)
                             .setMode(DeleteMode.PHYSICAL)
                             .execute(con);
-                    return clientRow(con, 100L) + "; " + clientRow(con, 101L);
+                    return clientRow(con, 102L) + "; " + clientRow(con, 101L);
                 },
                 ctx -> {
                     ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                                        "where tb_1_.CLIENT_ID = ? limit ?"
+                        );
+                        it.variables(102L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from SINGLE_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                        );
+                        it.variables(102L, 1);
+                    });
+                    ctx.statement(it -> {
                         it.sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?");
-                        it.variables(100L, "ORG");
+                        it.variables(102L, "ORG");
                     });
                     ctx.value("null; [Person, Bob, null, Bob, Brown]");
                 }

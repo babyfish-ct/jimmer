@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -94,28 +93,29 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (inheritanceInfo == null || inheritanceInfo.getRootType() == type) {
             return null;
         }
-        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
         String value = type.getDiscriminatorValue();
-        if (discriminatorColumn == null || value == null) {
+        if (value == null) {
             return null;
         }
-        return new DiscriminatorPredicate(this, discriminatorColumn.name(), value);
+        return new DiscriminatorPredicate(
+                this,
+                inheritanceInfo.getDiscriminatorProp(),
+                inheritanceInfo.discriminatorValue(value)
+        );
     }
 
     @Nullable
-    default String getPolymorphicDiscriminatorColumnName() {
+    default ImmutableProp getPolymorphicDiscriminatorProp() {
         if (getParent() != null) {
             return null;
         }
         ImmutableType type = getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null ||
-                inheritanceInfo.getRootType() != type ||
-                inheritanceInfo.getDiscriminatorColumn() == null) {
+                inheritanceInfo.getRootType() != type) {
             return null;
         }
-        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
-        return discriminatorColumn.name();
+        return inheritanceInfo.getDiscriminatorProp();
     }
 
     default boolean isJoinedSubtypeRoot() {

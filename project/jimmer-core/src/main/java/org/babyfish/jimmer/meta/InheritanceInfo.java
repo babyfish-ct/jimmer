@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -15,19 +13,18 @@ public final class InheritanceInfo {
 
     private final JoinedTableDeleteMode joinedTableDeleteMode;
 
-    @Nullable
-    private final DiscriminatorColumn discriminatorColumn;
+    private final ImmutableProp discriminatorProp;
 
     public InheritanceInfo(
             ImmutableType rootType,
             InheritanceType strategy,
             JoinedTableDeleteMode joinedTableDeleteMode,
-            @Nullable DiscriminatorColumn discriminatorColumn
+            ImmutableProp discriminatorProp
     ) {
         this.rootType = rootType;
         this.strategy = strategy;
         this.joinedTableDeleteMode = joinedTableDeleteMode;
-        this.discriminatorColumn = discriminatorColumn;
+        this.discriminatorProp = discriminatorProp;
     }
 
     public ImmutableType getRootType() {
@@ -42,9 +39,8 @@ public final class InheritanceInfo {
         return joinedTableDeleteMode;
     }
 
-    @Nullable
-    public DiscriminatorColumn getDiscriminatorColumn() {
-        return discriminatorColumn;
+    public ImmutableProp getDiscriminatorProp() {
+        return discriminatorProp;
     }
 
     public Collection<ImmutableType> getConcreteTypes() {
@@ -54,15 +50,24 @@ public final class InheritanceInfo {
         return Collections.unmodifiableSet(types);
     }
 
-    public Map<String, ImmutableType> getDiscriminatorTypeMap() {
-        Map<String, ImmutableType> map = new LinkedHashMap<>();
+    public Map<Object, ImmutableType> getDiscriminatorTypeMap() {
+        Map<Object, ImmutableType> map = new LinkedHashMap<>();
         for (ImmutableType type : getConcreteTypes()) {
             String value = type.getDiscriminatorValue();
             if (value != null) {
-                map.put(value, type);
+                map.put(discriminatorValue(value), type);
             }
         }
         return Collections.unmodifiableMap(map);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Object discriminatorValue(String value) {
+        Class<?> propType = discriminatorProp.getReturnClass();
+        if (propType.isEnum()) {
+            return Enum.valueOf((Class<Enum>) propType, value);
+        }
+        return value;
     }
 
     @Override
@@ -71,7 +76,7 @@ public final class InheritanceInfo {
                 "rootType=" + rootType +
                 ", strategy=" + strategy +
                 ", joinedTableDeleteMode=" + joinedTableDeleteMode +
-                ", discriminatorColumn=" + (discriminatorColumn != null ? discriminatorColumn.name() : null) +
+                ", discriminatorProp=" + discriminatorProp +
                 '}';
     }
 }

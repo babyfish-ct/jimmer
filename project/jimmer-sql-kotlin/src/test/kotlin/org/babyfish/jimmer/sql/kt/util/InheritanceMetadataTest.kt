@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.util
 
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.Column
 import org.babyfish.jimmer.sql.InheritanceType
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization
@@ -24,7 +25,8 @@ class InheritanceMetadataTest {
         assertSame(info, organizationType.inheritanceInfo)
         assertSame(info, personType.inheritanceInfo)
         assertEquals(InheritanceType.JOINED, info.strategy)
-        assertEquals("CLIENT_TYPE", info.discriminatorColumn!!.name)
+        assertEquals("type", info.discriminatorProp.name)
+        assertEquals("CLIENT_TYPE", info.discriminatorProp.getAnnotation(Column::class.java).name)
 
         assertEquals("KClient", clientType.discriminatorValue)
         assertEquals("ORG", organizationType.discriminatorValue)

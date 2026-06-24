@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.*
 @Entity
 @Table(name = "JOINED_CLIENT")
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "CLIENT_TYPE")
 interface KClient : KClientBase {
 
     @Id

@@ -4,7 +4,6 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.*;
@@ -76,8 +75,7 @@ class Operator {
         insert(
                 batch,
                 ctx.path.getType(),
-                discriminatorColumnName(inheritanceInfo),
-                type.getDiscriminatorValue(),
+                discriminatorProp(inheritanceInfo),
                 false
         );
     }
@@ -95,8 +93,7 @@ class Operator {
         insert(
                 batchOf(batch, rootShape),
                 rootType,
-                discriminatorColumnName(inheritanceInfo),
-                batch.shape().getType().getDiscriminatorValue(),
+                discriminatorProp(inheritanceInfo),
                 true
         );
         ImmutableType previousTableType = rootType;
@@ -110,7 +107,7 @@ class Operator {
                             (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
-            insert(batchOf(batch, shape), tableType, null, null, true);
+            insert(batchOf(batch, shape), tableType, null, true);
             previousTableType = tableType;
         }
     }
@@ -118,8 +115,7 @@ class Operator {
     private void insert(
             Batch<DraftSpi> batch,
             ImmutableType tableType,
-            @Nullable String discriminatorColumnName,
-            @Nullable String discriminatorValue,
+            @Nullable ImmutableProp discriminatorProp,
             boolean allowIdOnly
     ) {
 
@@ -129,6 +125,9 @@ class Operator {
         validate(batch.shape(), true);
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        PropertyGetter discriminatorGetter = discriminatorProp != null ?
+                PropertyGetter.propertyGetters(sqlClient, discriminatorProp).get(0) :
+                null;
         List<PropertyGetter> defaultGetters = new ArrayList<>();
         for (PropertyGetter getter : Shape.fullOf(sqlClient, tableType.getJavaClass()).getGetters()) {
             if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
@@ -202,8 +201,8 @@ class Operator {
                 builder.separator().sql(getter);
             }
         }
-        if (discriminatorColumnName != null) {
-            builder.separator().sql(discriminatorColumnName);
+        if (discriminatorGetter != null) {
+            builder.separator().sql(discriminatorGetter);
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
             if (!getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
@@ -235,8 +234,8 @@ class Operator {
                 builder.separator().variable(getter);
             }
         }
-        if (discriminatorColumnName != null) {
-            builder.separator().rawVariable(discriminatorValue);
+        if (discriminatorGetter != null) {
+            builder.separator().variable(discriminatorGetter);
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
             if (!getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
@@ -269,12 +268,11 @@ class Operator {
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
     }
 
-    private static String discriminatorColumnName(@Nullable InheritanceInfo inheritanceInfo) {
+    private ImmutableProp discriminatorProp(@Nullable InheritanceInfo inheritanceInfo) {
         if (inheritanceInfo == null) {
             return null;
         }
-        DiscriminatorColumn column = inheritanceInfo.getDiscriminatorColumn();
-        return column != null ? column.name() : null;
+        return inheritanceInfo.getDiscriminatorProp();
     }
 
     private static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
@@ -354,8 +352,7 @@ class Operator {
                 originalKeyObjMap,
                 batch,
                 ctx.path.getType(),
-                discriminatorColumnName(inheritanceInfo),
-                type.getDiscriminatorValue(),
+                discriminatorProp(inheritanceInfo),
                 redundantSingleTableGetters(inheritanceInfo, type)
         );
     }
@@ -387,8 +384,7 @@ class Operator {
                 originalKeyObjMap,
                 rootBatch,
                 rootType,
-                discriminatorColumnName(inheritanceInfo),
-                batch.shape().getType().getDiscriminatorValue(),
+                discriminatorProp(inheritanceInfo),
                 Collections.emptyList()
         );
         deleteRedundantJoinedRows(batch, inheritanceInfo);
@@ -415,7 +411,7 @@ class Operator {
             ImmutableType tableType
     ) {
         if (ctx.options.getSqlClient().getDialect().isUpsertSupported()) {
-            upsert(batch, tableType, null, null, Collections.emptyList(), false);
+            upsert(batch, tableType, null, Collections.emptyList(), false);
             return;
         }
         Set<Object> existingIds = findExistingIds(tableType, batch);
@@ -436,12 +432,11 @@ class Operator {
                     batchOf(batch, batch.shape(), existingEntities),
                     tableType,
                     null,
-                    null,
                     Collections.emptyList()
             );
         }
         if (!missingEntities.isEmpty()) {
-            insert(batchOf(batch, batch.shape(), missingEntities), tableType, null, null, true);
+            insert(batchOf(batch, batch.shape(), missingEntities), tableType, null, true);
         }
     }
 
@@ -500,8 +495,7 @@ class Operator {
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch,
             ImmutableType tableType,
-            @Nullable String discriminatorColumnName,
-            @Nullable String discriminatorValue,
+            @Nullable ImmutableProp discriminatorProp,
             List<PropertyGetter> nullGetters
     ) {
         Shape shape = batch.shape();
@@ -583,7 +577,7 @@ class Operator {
             }
             updatedGetters.add(getter);
         }
-        if (updatedGetters.isEmpty() && discriminatorColumnName == null && nullGetters.isEmpty() && !hasOptimisticLock) {
+        if (updatedGetters.isEmpty() && discriminatorProp == null && nullGetters.isEmpty() && !hasOptimisticLock) {
             fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
             return;
         }
@@ -604,8 +598,7 @@ class Operator {
                 Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters().get(0),
                 keyProps,
                 updatedGetters,
-                discriminatorColumnName,
-                discriminatorValue,
+                discriminatorProp,
                 nullGetters,
                 userOptimisticLockPredicate,
                 versionGetter
@@ -727,8 +720,7 @@ class Operator {
         upsert(
                 batch,
                 ctx.path.getType(),
-                discriminatorColumnName(inheritanceInfo),
-                type.getDiscriminatorValue(),
+                discriminatorProp(inheritanceInfo),
                 redundantSingleTableGetters(inheritanceInfo, type),
                 ignoreUpdate
         );
@@ -747,8 +739,7 @@ class Operator {
         upsert(
                 batchOf(batch, rootShape),
                 rootType,
-                discriminatorColumnName(inheritanceInfo),
-                batch.shape().getType().getDiscriminatorValue(),
+                discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
                 ignoreUpdate
         );
@@ -764,7 +755,7 @@ class Operator {
                             (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
-            upsert(batchOf(batch, shape), tableType, null, null, Collections.emptyList(), ignoreUpdate);
+            upsert(batchOf(batch, shape), tableType, null, Collections.emptyList(), ignoreUpdate);
             previousTableType = tableType;
         }
     }
@@ -772,8 +763,7 @@ class Operator {
     private void upsert(
             Batch<DraftSpi> batch,
             ImmutableType tableType,
-            @Nullable String discriminatorColumnName,
-            @Nullable String discriminatorValue,
+            @Nullable ImmutableProp discriminatorProp,
             List<PropertyGetter> nullGetters,
             boolean ignoreUpdate
     ) {
@@ -876,8 +866,7 @@ class Operator {
                 batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
                 sequenceIdGenerator,
                 insertedGetters,
-                discriminatorColumnName,
-                discriminatorValue,
+                discriminatorProp,
                 nullGetters,
                 conflictGetters,
                 conflictPredicate,
@@ -1389,10 +1378,7 @@ class Operator {
         private final List<PropertyGetter> updatedGetters;
 
         @Nullable
-        private final String discriminatorColumnName;
-
-        @Nullable
-        private final String discriminatorValue;
+        private final PropertyGetter discriminatorGetter;
 
         private final List<PropertyGetter> nullGetters;
 
@@ -1407,8 +1393,7 @@ class Operator {
                 PropertyGetter idGetter,
                 Set<ImmutableProp> keyProps,
                 List<PropertyGetter> updatedGetters,
-                @Nullable String discriminatorColumnName,
-                @Nullable String discriminatorValue,
+                @Nullable ImmutableProp discriminatorProp,
                 List<PropertyGetter> nullGetters,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter
@@ -1419,8 +1404,9 @@ class Operator {
             this.idGetter = idGetter;
             this.keyProps = keyProps;
             this.updatedGetters = updatedGetters;
-            this.discriminatorColumnName = discriminatorColumnName;
-            this.discriminatorValue = discriminatorValue;
+            this.discriminatorGetter = discriminatorProp != null ?
+                    PropertyGetter.propertyGetters(ctx.options.getSqlClient(), discriminatorProp).get(0) :
+                    null;
             this.nullGetters = nullGetters;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
@@ -1477,11 +1463,11 @@ class Operator {
 
         @Override
         public Dialect.UpdateContext appendAssignments() {
-            if (discriminatorColumnName != null) {
+            if (discriminatorGetter != null) {
                 builder.separator()
-                        .sql(discriminatorColumnName)
+                        .sql(discriminatorGetter)
                         .sql(" = ")
-                        .rawVariable(discriminatorValue);
+                        .variable(discriminatorGetter);
             }
             for (PropertyGetter getter : nullGetters) {
                 builder.separator()
@@ -1526,14 +1512,7 @@ class Operator {
                     List<PropertyGetter> getters = getterMap.get(keyProp);
                     if (getters == null) {
                         if (keyProp.isDiscriminator()) {
-                            String columnName = discriminatorColumnName(tableType.getInheritanceInfo());
-                            if (columnName != null) {
-                                getters = PropertyGetter.discriminatorGetters(
-                                        ctx.options.getSqlClient(),
-                                        keyProp,
-                                        columnName
-                                );
-                            }
+                            getters = PropertyGetter.propertyGetters(ctx.options.getSqlClient(), keyProp);
                         }
                     }
                     if (getters == null) {
@@ -1595,10 +1574,7 @@ class Operator {
         private final List<PropertyGetter> insertedGetters;
 
         @Nullable
-        private final String discriminatorColumnName;
-
-        @Nullable
-        private final String discriminatorValue;
+        private final PropertyGetter discriminatorGetter;
 
         private final List<PropertyGetter> nullGetters;
 
@@ -1622,8 +1598,7 @@ class Operator {
                 ImmutableProp generatedIdProp,
                 SequenceIdGenerator sequenceIdGenerator,
                 List<PropertyGetter> insertedGetters,
-                @Nullable String discriminatorColumnName,
-                @Nullable String discriminatorValue,
+                @Nullable ImmutableProp discriminatorProp,
                 List<PropertyGetter> nullGetters,
                 List<PropertyGetter> conflictGetters,
                 LogicalDeletedInfo conflictPredicate,
@@ -1651,8 +1626,9 @@ class Operator {
                             .get(0) :
                     null;
             this.insertedGetters = insertedGetters;
-            this.discriminatorColumnName = discriminatorColumnName;
-            this.discriminatorValue = discriminatorValue;
+            this.discriminatorGetter = discriminatorProp != null ?
+                    PropertyGetter.propertyGetters(ctx.options.getSqlClient(), discriminatorProp).get(0) :
+                    null;
             this.nullGetters = nullGetters;
             this.conflictGetters = conflictGetters;
             this.conflictPredicate = conflictPredicate;
@@ -1665,7 +1641,7 @@ class Operator {
         @Override
         public boolean hasUpdatedColumns() {
             return !updateIgnored &&
-                    (!updatedGetters.isEmpty() || discriminatorColumnName != null || !nullGetters.isEmpty());
+                    (!updatedGetters.isEmpty() || discriminatorGetter != null || !nullGetters.isEmpty());
         }
 
         @Override
@@ -1780,8 +1756,8 @@ class Operator {
                     builder.separator().sql(prefix).sql(getter);
                 }
             }
-            if (discriminatorColumnName != null) {
-                builder.separator().sql(prefix).sql(discriminatorColumnName);
+            if (discriminatorGetter != null) {
+                builder.separator().sql(prefix).sql(discriminatorGetter);
             }
             for (PropertyGetter getter : insertedGetters) {
                 if (!getter.prop().isId()) {
@@ -1818,8 +1794,8 @@ class Operator {
                     builder.separator().variable(getter);
                 }
             }
-            if (discriminatorColumnName != null) {
-                builder.separator().rawVariable(discriminatorValue);
+            if (discriminatorGetter != null) {
+                builder.separator().variable(discriminatorGetter);
             }
             for (PropertyGetter getter : insertedGetters) {
                 if (!getter.prop().isId()) {
@@ -1835,11 +1811,11 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
-            if (discriminatorColumnName != null) {
+            if (discriminatorGetter != null) {
                 builder.separator()
-                        .sql(discriminatorColumnName)
+                        .sql(discriminatorGetter)
                         .sql(" = ")
-                        .rawVariable(discriminatorValue);
+                        .variable(discriminatorGetter);
             }
             for (PropertyGetter getter : nullGetters) {
                 builder.separator()

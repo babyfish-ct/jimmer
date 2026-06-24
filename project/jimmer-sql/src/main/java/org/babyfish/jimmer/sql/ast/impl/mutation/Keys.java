@@ -33,7 +33,7 @@ class Keys {
 
     static Object valueOf(ImmutableSpi spi, ImmutableProp prop) {
         if (prop.isDiscriminator() && !spi.__isLoaded(prop.getId())) {
-            String value = spi.__type().getDiscriminatorValue();
+            Object value = DiscriminatorValues.of(spi.__type());
             if (value != null) {
                 return value;
             }

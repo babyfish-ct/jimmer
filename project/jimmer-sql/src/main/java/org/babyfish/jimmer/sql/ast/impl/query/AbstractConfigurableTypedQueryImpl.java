@@ -377,12 +377,20 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         }
         if (table instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
-            String discriminatorColumnName = tableImplementor.getPolymorphicDiscriminatorColumnName();
-            if (discriminatorColumnName != null && selectableProps.values().stream().noneMatch(ImmutableProp::isDiscriminator)) {
+            ImmutableProp discriminatorProp = tableImplementor.getPolymorphicDiscriminatorProp();
+            if (discriminatorProp != null && selectableProps.values().stream().noneMatch(ImmutableProp::isDiscriminator)) {
                 builder.separator();
                 tableImplementor
                         .realTableForRender(builder)
-                        .renderColumn(builder, discriminatorColumnName, false, null, null);
+                        .renderColumn(
+                                builder,
+                                ((org.babyfish.jimmer.sql.meta.SingleColumn) discriminatorProp.getStorage(
+                                        builder.getAstContext().getSqlClient().getMetadataStrategy()
+                                )).getName(),
+                                false,
+                                null,
+                                null
+                        );
             }
         }
     }

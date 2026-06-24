@@ -8,12 +8,15 @@ import org.babyfish.jimmer.sql.*;
         strategy = InheritanceType.JOINED,
         joinedTableDeleteMode = JoinedTableDeleteMode.DB_CASCADE
 )
-@DiscriminatorColumn(name = "CLIENT_TYPE")
 public interface Client {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
+
+    @Discriminator
+    @Column(name = "CLIENT_TYPE")
+    String type();
 
     String name();
 }

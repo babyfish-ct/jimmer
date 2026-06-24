@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.*;
 @Entity
 @Table(name = "NATURAL_CLIENT")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "CLIENT_TYPE")
 public interface NaturalClient {
 
     @Id
@@ -14,6 +13,7 @@ public interface NaturalClient {
 
     @Key
     @Discriminator
+    @Column(name = "CLIENT_TYPE")
     String type();
 
     @Key

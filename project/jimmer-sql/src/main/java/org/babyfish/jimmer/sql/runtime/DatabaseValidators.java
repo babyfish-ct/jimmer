@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
-import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -123,7 +122,7 @@ public class DatabaseValidators {
                 );
             }
         }
-        validateDiscriminatorColumn(type, table);
+        validateDiscriminatorProp(type, table);
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.getAnnotation(DatabaseValidationIgnore.class) != null) {
                 continue;
@@ -180,43 +179,41 @@ public class DatabaseValidators {
         }
     }
 
-    private void validateDiscriminatorColumn(ImmutableType type, Table table) {
+    private void validateDiscriminatorProp(ImmutableType type, Table table) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null || inheritanceInfo.getRootType() != type) {
             return;
         }
-        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
-        if (discriminatorColumn == null) {
-            return;
-        }
+        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
+        SingleColumn discriminatorColumn = discriminatorProp.getStorage(strategy);
         Column column = table.columnMap.get(
-                DatabaseIdentifiers.comparableIdentifier(discriminatorColumn.name())
+                DatabaseIdentifiers.comparableIdentifier(discriminatorColumn.getName())
         );
         if (column == null) {
             items.add(
                     new DatabaseValidationException.Item(
                             type,
-                            null,
+                            discriminatorProp,
                             "There is no discriminator column \"" +
-                                    discriminatorColumn.name() +
+                                    discriminatorColumn.getName() +
                                     "\" in table \"" +
                                     table +
                                     "\""
                     )
             );
-        } else if (column.nullable != discriminatorColumn.nullable()) {
+        } else if (column.nullable != discriminatorProp.isNullable()) {
             items.add(
                     new DatabaseValidationException.Item(
                             type,
-                            null,
+                            discriminatorProp,
                             "The discriminator column \"" +
-                                    discriminatorColumn.name() +
+                                    discriminatorColumn.getName() +
                                     "\" in table \"" +
                                     table +
                                     "\" is " +
                                     (column.nullable ? "nullable" : "nonnull") +
                                     ", but the mapping declares it as " +
-                                    (discriminatorColumn.nullable() ? "nullable" : "nonnull")
+                                    (discriminatorProp.isNullable() ? "nullable" : "nonnull")
                     )
             );
         }

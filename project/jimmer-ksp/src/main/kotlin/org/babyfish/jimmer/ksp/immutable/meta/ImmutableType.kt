@@ -192,8 +192,6 @@ class ImmutableType(
 
     val inheritanceStrategy: InheritanceType?
 
-    val discriminatorColumnName: String?
-
     val discriminatorValue: String?
 
     val declaredProperties: Map<String, ImmutableProp>
@@ -202,19 +200,12 @@ class ImmutableType(
 
     init {
         val inheritance = classDeclaration.annotation(Inheritance::class)
-        val discriminatorColumn = classDeclaration.annotation(DiscriminatorColumn::class)
         val discriminatorValue = classDeclaration.annotation(DiscriminatorValue::class)
         if (!isEntity) {
             if (inheritance !== null) {
                 throw MetaException(
                     classDeclaration,
                     "@${Inheritance::class.java.name} can only be declared by entity type"
-                )
-            }
-            if (discriminatorColumn !== null) {
-                throw MetaException(
-                    classDeclaration,
-                    "@${DiscriminatorColumn::class.java.name} can only be declared by entity type"
                 )
             }
             if (discriminatorValue !== null) {
@@ -225,19 +216,12 @@ class ImmutableType(
             }
             inheritanceRoot = null
             inheritanceStrategy = null
-            discriminatorColumnName = null
             this.discriminatorValue = null
         } else if (primarySuperType?.isEntity == true) {
             if (inheritance !== null) {
                 throw MetaException(
                     classDeclaration,
                     "@${Inheritance::class.java.name} can only be declared by inheritance root type"
-                )
-            }
-            if (discriminatorColumn !== null) {
-                throw MetaException(
-                    classDeclaration,
-                    "@${DiscriminatorColumn::class.java.name} can only be declared by inheritance root type"
                 )
             }
             val root = primarySuperType.inheritanceRoot
@@ -247,7 +231,6 @@ class ImmutableType(
                 )
             inheritanceRoot = root
             inheritanceStrategy = null
-            discriminatorColumnName = null
             this.discriminatorValue =
                 discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
         } else if (inheritance !== null) {
@@ -279,13 +262,10 @@ class ImmutableType(
                 )
             }
             inheritanceStrategy = strategy
-            discriminatorColumnName =
-                discriminatorColumn?.get(DiscriminatorColumn::name)
-                    ?: "DTYPE"
             this.discriminatorValue =
                 discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
         } else {
-            if (discriminatorColumn !== null || discriminatorValue !== null) {
+            if (discriminatorValue !== null) {
                 throw MetaException(
                     classDeclaration,
                     "discriminator annotations can only be used by inheritance types"
@@ -293,7 +273,6 @@ class ImmutableType(
             }
             inheritanceRoot = null
             inheritanceStrategy = null
-            discriminatorColumnName = null
             this.discriminatorValue = null
         }
 
@@ -470,6 +449,41 @@ class ImmutableType(
             }
             map
         }
+
+    init {
+        if (inheritanceRoot == null && isEntity) {
+            properties.values.firstOrNull { it.isDiscriminator }?.let {
+                throw MetaException(
+                    it.propDeclaration,
+                    "property decorated by @${Discriminator::class.qualifiedName} " +
+                            "can only be used by inheritance root type or its subtypes"
+                )
+            }
+        } else if (inheritanceRoot !== this && isEntity) {
+            declaredProperties.values.firstOrNull { it.isDiscriminator }?.let {
+                throw MetaException(
+                    it.propDeclaration,
+                    "property decorated by @${Discriminator::class.qualifiedName} " +
+                            "cannot be declared by inheritance subtype"
+                )
+            }
+        } else if (inheritanceRoot === this) {
+            val discriminatorProps = properties.values.filter { it.isDiscriminator }
+            if (discriminatorProps.isEmpty()) {
+                throw MetaException(
+                    classDeclaration,
+                    "inheritance root type must declare or inherit a scalar property decorated by " +
+                            "@${Discriminator::class.qualifiedName}"
+                )
+            }
+            if (discriminatorProps.size > 1) {
+                throw MetaException(
+                    discriminatorProps[1].propDeclaration,
+                    "multiple discriminator properties are declared"
+                )
+            }
+        }
+    }
 
     private val idPropNameMap: Map<String, String> by lazy {
         mutableMapOf<String, String>().also { map ->

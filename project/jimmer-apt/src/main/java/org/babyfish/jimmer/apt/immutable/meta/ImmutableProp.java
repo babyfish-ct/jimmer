@@ -349,12 +349,12 @@ public class ImmutableProp implements BaseProp {
         } else {
             typeName = elementTypeName;
         }
-        if (isDiscriminator && !typeName.equals(Constants.STRING_CLASS_NAME)) {
+        if (isDiscriminator && !typeName.equals(Constants.STRING_CLASS_NAME) && !context.isEnum(elementType)) {
             throw new MetaException(
                     executableElement,
                     "the property decorated by @" +
                             Discriminator.class.getName() +
-                            " must return java.lang.String"
+                            " must return java.lang.String or enum"
             );
         }
 

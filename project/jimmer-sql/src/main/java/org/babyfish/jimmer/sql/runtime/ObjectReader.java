@@ -39,7 +39,7 @@ class ObjectReader implements Reader<Object> {
     private final Reader<?> discriminatorReader;
 
     @Nullable
-    private final Map<String, ImmutableType> discriminatorTypeMap;
+    private final Map<Object, ImmutableType> discriminatorTypeMap;
 
     @Nullable
     private final List<PropId> shownPropIds;
@@ -90,11 +90,10 @@ class ObjectReader implements Reader<Object> {
     static Reader<?> discriminatorReader(JSqlClientImplementor sqlClient, ImmutableType type) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null ||
-                inheritanceInfo.getRootType() != type ||
-                inheritanceInfo.getDiscriminatorColumn() == null) {
+                inheritanceInfo.getRootType() != type) {
             return null;
         }
-        return sqlClient.getReader(String.class);
+        return sqlClient.getReader(inheritanceInfo.getDiscriminatorProp());
     }
 
     @Override
@@ -163,17 +162,9 @@ class ObjectReader implements Reader<Object> {
             }
             value = reader.read(rs, ctx);
         }
-        Map<String, ImmutableType> map = discriminatorTypeMap;
+        Map<Object, ImmutableType> map = discriminatorTypeMap;
         if (map == null) {
             return type;
-        }
-        if (!(value instanceof String)) {
-            throw new ExecutionException(
-                    "Cannot resolve the concrete type of \"" +
-                            type +
-                            "\" because the discriminator value is " +
-                            (value != null ? "\"" + value + "\"" : "null")
-            );
         }
         ImmutableType actualType = map.get(value);
         if (actualType == null) {

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
+import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.key.KNaturalOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization
@@ -39,6 +40,33 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             entity {
                 original("""{"id":300,"name":"New Org","taxCode":"NEW-001"}""")
                 modified("""{"id":300,"name":"New Org","taxCode":"NEW-001"}""")
+            }
+        }
+    }
+
+    @Test
+    fun testInsertSubtypeWithEnumDiscriminator() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KEnumOrganization {
+                    id = 310L
+                    name = "Enum Org"
+                }
+            ) {
+                setMode(SaveMode.INSERT_ONLY)
+            }
+        }) {
+            statement {
+                sql(
+                    "insert into K_ENUM_CLIENT(ID, CLIENT_TYPE, NAME) " +
+                        "values(?, ?, ?)"
+                )
+                variables(310L, "ORG", "Enum Org")
+            }
+            rowCount(KEnumOrganization::class, 1)
+            entity {
+                original("""{"id":310,"name":"Enum Org"}""")
+                modified("""{"id":310,"name":"Enum Org"}""")
             }
         }
     }
@@ -242,14 +270,30 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     @Test
     fun testDeleteSubtype() {
         connectAndExpect({ con ->
-            sqlClient.entities.forConnection(con).delete(KOrganization::class, 100L) {
+            sqlClient.entities.forConnection(con).delete(KOrganization::class, 102L) {
                 setMode(DeleteMode.PHYSICAL)
             }
-            "${clientRow(con, 100L)}; ${clientRow(con, 101L)}"
+            "${clientRow(con, 102L)}; ${clientRow(con, 101L)}"
         }) {
             statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                        "where tb_1_.CLIENT_ID = ? limit ?"
+                )
+                variables(102L, 1)
+            }
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from SINGLE_ORG_PROJECT tb_1_ " +
+                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                )
+                variables(102L, 1)
+            }
+            statement {
                 sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?")
-                variables(100L, "ORG")
+                variables(102L, "ORG")
             }
             value("null; [KPerson, Bob, null, Bob, Brown]")
         }

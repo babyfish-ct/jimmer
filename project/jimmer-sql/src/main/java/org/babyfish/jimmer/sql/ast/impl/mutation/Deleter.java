@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
@@ -377,15 +376,9 @@ public class Deleter {
             ExceptionTranslator<?> exceptionTranslator
     ) {
         ImmutableType rootType = inheritanceInfo.getRootType();
-        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
-        if (discriminatorColumn == null) {
-            throw new ExecutionException(
-                    "Cannot physically delete joined inheritance rows explicitly because \"" +
-                            rootType +
-                            "\" does not have discriminator column metadata"
-            );
-        }
+        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        String discriminatorColumnName = discriminatorProp.<SingleColumn>getStorage(strategy).getName();
         ImmutableProp idProp = rootType.getIdProp();
         boolean readDiscriminator = deletedType == rootType || hasEntityDerivedTypes(deletedType);
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -393,7 +386,7 @@ public class Deleter {
                 .definition(idProp.getStorage(strategy));
         if (readDiscriminator) {
             builder.sql(", ")
-                    .sql(discriminatorColumn.name());
+                    .sql(discriminatorColumnName);
         }
         builder
                 .sql(" from ")
@@ -417,7 +410,8 @@ public class Deleter {
                 exceptionTranslator,
                 idProp,
                 readDiscriminator,
-                discriminatorColumn,
+                discriminatorProp,
+                discriminatorColumnName,
                 inheritanceInfo.getDiscriminatorTypeMap(),
                 rootType
         );
@@ -492,12 +486,14 @@ public class Deleter {
             ExceptionTranslator<?> exceptionTranslator,
             ImmutableProp idProp,
             boolean readDiscriminator,
-            DiscriminatorColumn discriminatorColumn,
-            Map<String, ImmutableType> discriminatorTypeMap,
+            ImmutableProp discriminatorProp,
+            String discriminatorColumnName,
+            Map<Object, ImmutableType> discriminatorTypeMap,
             ImmutableType rootType
     ) {
         Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
         Reader<?> idReader = sqlClient.getReader(idProp);
+        Reader<?> discriminatorReader = sqlClient.getReader(discriminatorProp);
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
@@ -520,7 +516,7 @@ public class Deleter {
                                     if (!readDiscriminator) {
                                         continue;
                                     }
-                                    String discriminator = rs.getString(readerContext.col());
+                                    Object discriminator = discriminatorReader.read(rs, readerContext);
                                     ImmutableType concreteType = discriminatorTypeMap.get(discriminator);
                                     if (concreteType == null) {
                                         throw new ExecutionException(
@@ -528,7 +524,7 @@ public class Deleter {
                                                         "the discriminator value \"" +
                                                         discriminator +
                                                         "\" of column \"" +
-                                                        discriminatorColumn.name() +
+                                                        discriminatorColumnName +
                                                         "\" is not mapped by \"" +
                                                         rootType +
                                                         "\""
@@ -569,30 +565,27 @@ public class Deleter {
         if (inheritanceInfo == null || inheritanceInfo.getRootType() != tableType) {
             return;
         }
-        DiscriminatorColumn column = inheritanceInfo.getDiscriminatorColumn();
-        if (column == null) {
-            return;
-        }
+        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
         List<Object> values = new ArrayList<>();
         for (ImmutableType type : deletedTypes(deletedType)) {
             String value = type.getDiscriminatorValue();
             if (value != null) {
-                values.add(value);
+                values.add(inheritanceInfo.discriminatorValue(value));
             }
         }
         if (values.isEmpty()) {
             return;
         }
         builder.sql(" and ")
-                .sql(column.name());
+                .sql(discriminatorProp.<SingleColumn>getStorage(builder.getAstContext().getSqlClient().getMetadataStrategy()).getName());
         if (values.size() == 1) {
             builder.sql(" = ")
-                    .variable(values.get(0));
+                    .variable(Variables.process(values.get(0), discriminatorProp, builder.getAstContext().getSqlClient()));
         } else {
             builder.sql(" in ");
             builder.enter(SqlBuilder.ScopeType.LIST);
             for (Object value : values) {
-                builder.separator().variable(value);
+                builder.separator().variable(Variables.process(value, discriminatorProp, builder.getAstContext().getSqlClient()));
             }
             builder.leave();
         }

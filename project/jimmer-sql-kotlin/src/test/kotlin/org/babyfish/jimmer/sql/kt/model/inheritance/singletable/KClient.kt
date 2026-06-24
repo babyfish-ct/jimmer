@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.model.inheritance.singletable
 
+import org.babyfish.jimmer.sql.Column
 import org.babyfish.jimmer.sql.Discriminator
-import org.babyfish.jimmer.sql.DiscriminatorColumn
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.GeneratedValue
 import org.babyfish.jimmer.sql.GenerationType
@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.Table
 @Entity
 @Table(name = "CLIENT")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "CLIENT_TYPE")
 interface KClient {
 
     @Id
@@ -21,6 +20,7 @@ interface KClient {
     val id: Long
 
     @Discriminator
+    @Column(name = "CLIENT_TYPE")
     val type: String
 
     val name: String

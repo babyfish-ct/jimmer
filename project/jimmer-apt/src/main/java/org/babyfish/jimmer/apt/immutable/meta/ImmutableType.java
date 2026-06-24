@@ -20,34 +20,6 @@ public class ImmutableType implements BaseType {
 
     private static final String FORMULA_CLASS_NAME = Formula.class.getName();
 
-    private static final DiscriminatorColumn DEFAULT_DISCRIMINATOR_COLUMN = new DiscriminatorColumn() {
-
-        @Override
-        public String name() {
-            return "DTYPE";
-        }
-
-        @Override
-        public String sqlType() {
-            return "varchar";
-        }
-
-        @Override
-        public int length() {
-            return 31;
-        }
-
-        @Override
-        public boolean nullable() {
-            return false;
-        }
-
-        @Override
-        public Class<? extends java.lang.annotation.Annotation> annotationType() {
-            return DiscriminatorColumn.class;
-        }
-    };
-
     private final TypeElement typeElement;
 
     private final boolean isEntity;
@@ -71,8 +43,6 @@ public class ImmutableType implements BaseType {
     private final ImmutableType inheritanceRoot;
 
     private final Inheritance inheritance;
-
-    private final DiscriminatorColumn discriminatorColumn;
 
     private final String discriminatorValue;
 
@@ -221,19 +191,12 @@ public class ImmutableType implements BaseType {
         }
 
         Inheritance inheritance = typeElement.getAnnotation(Inheritance.class);
-        DiscriminatorColumn discriminatorColumn = typeElement.getAnnotation(DiscriminatorColumn.class);
         DiscriminatorValue discriminatorValue = typeElement.getAnnotation(DiscriminatorValue.class);
         if (!isEntity) {
             if (inheritance != null) {
                 throw new MetaException(
                         typeElement,
                         "@" + Inheritance.class.getName() + " can only be declared by entity type"
-                );
-            }
-            if (discriminatorColumn != null) {
-                throw new MetaException(
-                        typeElement,
-                        "@" + DiscriminatorColumn.class.getName() + " can only be declared by entity type"
                 );
             }
             if (discriminatorValue != null) {
@@ -244,19 +207,12 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = null;
             this.inheritance = null;
-            this.discriminatorColumn = null;
             this.discriminatorValue = null;
         } else if (this.primarySuperType != null && this.primarySuperType.isEntity) {
             if (inheritance != null) {
                 throw new MetaException(
                         typeElement,
                         "@" + Inheritance.class.getName() + " can only be declared by inheritance root type"
-                );
-            }
-            if (discriminatorColumn != null) {
-                throw new MetaException(
-                        typeElement,
-                        "@" + DiscriminatorColumn.class.getName() + " can only be declared by inheritance root type"
                 );
             }
             ImmutableType root = this.primarySuperType.getInheritanceRoot();
@@ -270,7 +226,6 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = root;
             this.inheritance = null;
-            this.discriminatorColumn = null;
             this.discriminatorValue = discriminatorValue != null ?
                     discriminatorValue.value() :
                     typeElement.getSimpleName().toString();
@@ -290,14 +245,11 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = this;
             this.inheritance = inheritance;
-            this.discriminatorColumn = discriminatorColumn != null ?
-                    discriminatorColumn :
-                    DEFAULT_DISCRIMINATOR_COLUMN;
             this.discriminatorValue = discriminatorValue != null ?
                     discriminatorValue.value() :
                     typeElement.getSimpleName().toString();
         } else {
-            if (discriminatorColumn != null || discriminatorValue != null) {
+            if (discriminatorValue != null) {
                 throw new MetaException(
                         typeElement,
                         "discriminator annotations can only be used by inheritance types"
@@ -305,7 +257,6 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = null;
             this.inheritance = null;
-            this.discriminatorColumn = null;
             this.discriminatorValue = null;
         }
 
@@ -466,6 +417,48 @@ public class ImmutableType implements BaseType {
 
         this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
         this.redefinedProps = Collections.unmodifiableMap(redefinedPropMap);
+        if (inheritanceRoot == null && isEntity) {
+            for (ImmutableProp prop : this.declaredProps.values()) {
+                if (prop.isDiscriminator()) {
+                    throw new MetaException(
+                            prop.toElement(),
+                            "property decorated by @" +
+                                    Discriminator.class.getName() +
+                                    " can only be used by inheritance root type or its subtypes"
+                    );
+                }
+            }
+        } else if (inheritanceRoot != this && isEntity) {
+            for (ImmutableProp prop : this.declaredProps.values()) {
+                if (prop.isDiscriminator() && prop.getDeclaringType() == this) {
+                    throw new MetaException(
+                            prop.toElement(),
+                            "property decorated by @" +
+                                    Discriminator.class.getName() +
+                                    " cannot be declared by inheritance subtype"
+                    );
+                }
+            }
+        } else if (inheritanceRoot == this) {
+            List<ImmutableProp> discriminatorProps = allProps()
+                    .values()
+                    .stream()
+                    .filter(ImmutableProp::isDiscriminator)
+                    .collect(Collectors.toList());
+            if (discriminatorProps.isEmpty()) {
+                throw new MetaException(
+                        typeElement,
+                        "inheritance root type must declare or inherit a scalar property decorated by @" +
+                                Discriminator.class.getName()
+                );
+            }
+            if (discriminatorProps.size() > 1) {
+                throw new MetaException(
+                        discriminatorProps.get(1).toElement(),
+                        "multiple discriminator properties are declared"
+                );
+            }
+        }
 
         List<ImmutableProp> idProps = declaredProps
                 .values()
@@ -702,10 +695,6 @@ public class ImmutableType implements BaseType {
         return inheritance;
     }
 
-    public DiscriminatorColumn getDiscriminatorColumn() {
-        return discriminatorColumn;
-    }
-
     public String getDiscriminatorValue() {
         return discriminatorValue;
     }
@@ -718,48 +707,52 @@ public class ImmutableType implements BaseType {
         return redefinedProps;
     }
 
+    private Map<String, ImmutableProp> allProps() {
+        if (superTypes.isEmpty()) {
+            return declaredProps;
+        }
+        Map<String, ImmutableProp> props = new LinkedHashMap<>();
+        for (ImmutableType superType : superTypes) {
+            for (ImmutableProp prop : superType.getProps().values()) {
+                if (prop.getAnnotation(Id.class) != null) {
+                    props.put(prop.getName(), prop);
+                }
+            }
+        }
+        for (ImmutableProp prop : redefinedProps.values()) {
+            if (prop.getAnnotation(Id.class) != null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        for (ImmutableProp prop : declaredProps.values()) {
+            if (prop.getAnnotation(Id.class) != null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        for (ImmutableType superType : superTypes) {
+            for (ImmutableProp prop : superType.getProps().values()) {
+                if (prop.getAnnotation(Id.class) == null) {
+                    props.put(prop.getName(), prop);
+                }
+            }
+        }
+        for (ImmutableProp prop : redefinedProps.values()) {
+            if (prop.getAnnotation(Id.class) == null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        for (ImmutableProp prop : declaredProps.values()) {
+            if (prop.getAnnotation(Id.class) == null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        return props;
+    }
+
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
         if (props == null) {
-            if (superTypes.isEmpty()) {
-                props = declaredProps;
-            } else {
-                props = new LinkedHashMap<>();
-                for (ImmutableType superType : superTypes) {
-                    for (ImmutableProp prop : superType.getProps().values()) {
-                        if (prop.getAnnotation(Id.class) != null) {
-                            props.put(prop.getName(), prop);
-                        }
-                    }
-                }
-                for (ImmutableProp prop : redefinedProps.values()) {
-                    if (prop.getAnnotation(Id.class) != null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-                for (ImmutableProp prop : declaredProps.values()) {
-                    if (prop.getAnnotation(Id.class) != null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-                for (ImmutableType superType : superTypes) {
-                    for (ImmutableProp prop : superType.getProps().values()) {
-                        if (prop.getAnnotation(Id.class) == null) {
-                            props.put(prop.getName(), prop);
-                        }
-                    }
-                }
-                for (ImmutableProp prop : redefinedProps.values()) {
-                    if (prop.getAnnotation(Id.class) == null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-                for (ImmutableProp prop : declaredProps.values()) {
-                    if (prop.getAnnotation(Id.class) == null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-            }
+            props = allProps();
             this.props = Collections.unmodifiableMap(props);
         }
         return props;

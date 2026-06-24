@@ -261,10 +261,11 @@ class ImmutableProp(
             .build()
         primaryAnnotationType = descriptor.type.annotationType
         _isNullable = descriptor.isNullable
-        if (isDiscriminator && typeName(overrideNullable = false) != STRING) {
+        if (isDiscriminator && typeName(overrideNullable = false) != STRING &&
+            (realDeclaration as? KSClassDeclaration)?.classKind != ClassKind.ENUM_CLASS) {
             throw MetaException(
                 propDeclaration,
-                "the property decorated by @${Discriminator::class.qualifiedName} must return kotlin.String"
+                "the property decorated by @${Discriminator::class.qualifiedName} must return kotlin.String or enum"
             )
         }
     }

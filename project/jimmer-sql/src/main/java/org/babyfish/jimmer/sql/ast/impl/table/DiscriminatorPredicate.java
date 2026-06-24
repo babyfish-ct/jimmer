@@ -3,19 +3,23 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 class DiscriminatorPredicate extends AbstractPredicate {
 
     private final TableImplementor<?> table;
 
-    private final String columnName;
+    private final ImmutableProp prop;
 
-    private final String value;
+    private final Object value;
 
-    DiscriminatorPredicate(TableImplementor<?> table, String columnName, String value) {
+    DiscriminatorPredicate(TableImplementor<?> table, ImmutableProp prop, Object value) {
         this.table = table;
-        this.columnName = columnName;
+        this.prop = prop;
         this.value = value;
     }
 
@@ -31,14 +35,15 @@ class DiscriminatorPredicate extends AbstractPredicate {
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         SqlBuilder sqlBuilder = builder.assertSimple();
+        Storage storage = prop.getStorage(builder.getAstContext().getSqlClient().getMetadataStrategy());
         table.realTableForRender(builder).renderColumn(
                 builder,
-                columnName,
+                ((SingleColumn) storage).getName(),
                 false,
                 null,
                 null
         );
-        sqlBuilder.sql(" = ").variable(value);
+        sqlBuilder.sql(" = ").variable(Variables.process(value, prop, builder.getAstContext().getSqlClient()));
     }
 
     @Override

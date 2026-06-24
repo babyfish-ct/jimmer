@@ -220,7 +220,7 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
 
     private static Object valueOf(ImmutableSpi spi, PropId propId) {
         if (!spi.__isLoaded(propId)) {
-            String value = spi.__type().getDiscriminatorValue();
+            Object value = DiscriminatorValues.of(spi.__type());
             if (value != null) {
                 for (ImmutableProp prop : spi.__type().getProps().values()) {
                     if (prop.isDiscriminator() && prop.getId().equals(propId)) {
