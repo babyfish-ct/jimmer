@@ -188,6 +188,58 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testUpdateRootAssociationToSubtypeTarget() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClientProject {
+                    id = 1000L
+                    name = "Single root project+"
+                    clientId = 101L
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+        }) {
+            statement {
+                sql(
+                    "update SINGLE_CLIENT_PROJECT " +
+                        "set NAME = ?, CLIENT_ID = ? " +
+                        "where ID = ?"
+                )
+                variables("Single root project+", 101L, 1000L)
+            }
+            rowCount(KClientProject::class, 1)
+            entity {}
+        }
+    }
+
+    @Test
+    fun testUpdateSubtypeAssociationToSubtypeTarget() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KOrganizationProject {
+                    id = 1001L
+                    name = "Single organization project+"
+                    organizationId = 102L
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+        }) {
+            statement {
+                sql(
+                    "update SINGLE_ORG_PROJECT " +
+                        "set NAME = ?, ORGANIZATION_ID = ? " +
+                        "where ID = ?"
+                )
+                variables("Single organization project+", 102L, 1001L)
+            }
+            rowCount(KOrganizationProject::class, 1)
+            entity {}
+        }
+    }
+
+    @Test
     fun testDeleteSubtype() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 100L) {

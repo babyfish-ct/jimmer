@@ -201,6 +201,62 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateRootAssociationToSubtypeTarget() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                ClientProjectDraft.$.produce(project -> {
+                                    project.setId(1000L);
+                                    project.setName("Single root project+");
+                                    project.setClientId(101L);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update SINGLE_CLIENT_PROJECT " +
+                                        "set NAME = ?, CLIENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Single root project+", 101L, 1000L);
+                    });
+                    ctx.rowCount(AffectedTable.of(ClientProject.class), 1);
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateSubtypeAssociationToSubtypeTarget() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationProjectDraft.$.produce(project -> {
+                                    project.setId(1001L);
+                                    project.setName("Single organization project+");
+                                    project.setOrganizationId(102L);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update SINGLE_ORG_PROJECT " +
+                                        "set NAME = ?, ORGANIZATION_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Single organization project+", 102L, 1001L);
+                    });
+                    ctx.rowCount(AffectedTable.of(OrganizationProject.class), 1);
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
     public void testDeleteSubtype() {
         connectAndExpect(
                 con -> {

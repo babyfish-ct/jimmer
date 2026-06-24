@@ -209,6 +209,58 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testUpdateRootAssociationToSubtypeTarget() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClientProject {
+                    id = 2000L
+                    name = "Joined root project+"
+                    clientId = 201L
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+        }) {
+            statement {
+                sql(
+                    "update JOINED_CLIENT_PROJECT " +
+                        "set NAME = ?, CLIENT_ID = ? " +
+                        "where ID = ?"
+                )
+                variables("Joined root project+", 201L, 2000L)
+            }
+            rowCount(KClientProject::class, 1)
+            entity {}
+        }
+    }
+
+    @Test
+    fun testUpdateSubtypeAssociationToSubtypeTarget() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KOrganizationProject {
+                    id = 2001L
+                    name = "Joined organization project+"
+                    organizationId = 202L
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+        }) {
+            statement {
+                sql(
+                    "update JOINED_ORG_PROJECT " +
+                        "set NAME = ?, ORGANIZATION_ID = ? " +
+                        "where ID = ?"
+                )
+                variables("Joined organization project+", 202L, 2001L)
+            }
+            rowCount(KOrganizationProject::class, 1)
+            entity {}
+        }
+    }
+
+    @Test
     fun testDeleteSubtype() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 200L) {

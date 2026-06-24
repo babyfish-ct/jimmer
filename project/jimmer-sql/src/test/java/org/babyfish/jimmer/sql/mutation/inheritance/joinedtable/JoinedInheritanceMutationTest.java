@@ -285,6 +285,62 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateRootAssociationToSubtypeTarget() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                ClientProjectDraft.$.produce(project -> {
+                                    project.setId(2000L);
+                                    project.setName("Joined root project+");
+                                    project.setClientId(201L);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT_PROJECT " +
+                                        "set NAME = ?, CLIENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Joined root project+", 201L, 2000L);
+                    });
+                    ctx.rowCount(AffectedTable.of(ClientProject.class), 1);
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateSubtypeAssociationToSubtypeTarget() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationProjectDraft.$.produce(project -> {
+                                    project.setId(2001L);
+                                    project.setName("Joined organization project+");
+                                    project.setOrganizationId(202L);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORG_PROJECT " +
+                                        "set NAME = ?, ORGANIZATION_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Joined organization project+", 202L, 2001L);
+                    });
+                    ctx.rowCount(AffectedTable.of(OrganizationProject.class), 1);
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
     public void testDeleteSubtype() {
         connectAndExpect(
                 con -> {

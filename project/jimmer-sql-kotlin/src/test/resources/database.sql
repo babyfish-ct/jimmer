@@ -214,6 +214,8 @@ create table logical_joined_person(
 
 insert into client(id, client_type, name, tax_code)
     values(100, 'ORG', 'Acme', 'ACME-001');
+insert into client(id, client_type, name, tax_code)
+    values(102, 'ORG', 'Umbrella', 'UMB-001');
 insert into client(id, client_type, name, first_name, last_name)
     values(101, 'KPerson', 'Bob', 'Bob', 'Brown');
 insert into single_client_project(id, name, client_id)
@@ -230,6 +232,10 @@ insert into joined_client(id, client_type, name)
     values(200, 'ORG', 'Globex');
 insert into joined_organization(id, tax_code)
     values(200, 'GLOBEX-001');
+insert into joined_client(id, client_type, name)
+    values(202, 'ORG', 'Initech');
+insert into joined_organization(id, tax_code)
+    values(202, 'INI-001');
 insert into joined_client(id, client_type, name)
     values(201, 'KPerson', 'Alice');
 insert into joined_person(id, first_name, last_name)
