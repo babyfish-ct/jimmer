@@ -92,9 +92,9 @@ public class DatabaseValidatorTest extends AbstractTest {
         jdbc(con -> {
             DatabaseValidationException ex = DatabaseValidators.validate(
                     new EntityManager(
-                            org.babyfish.jimmer.sql.model.inheritance3.Client.class,
-                            org.babyfish.jimmer.sql.model.inheritance3.Organization.class,
-                            org.babyfish.jimmer.sql.model.inheritance3.Person.class
+                            org.babyfish.jimmer.sql.model.inheritance.singletable.Client.class,
+                            org.babyfish.jimmer.sql.model.inheritance.singletable.Organization.class,
+                            org.babyfish.jimmer.sql.model.inheritance.singletable.Person.class
                     ),
                     "",
                     true,
@@ -111,9 +111,9 @@ public class DatabaseValidatorTest extends AbstractTest {
         jdbc(con -> {
             DatabaseValidationException ex = DatabaseValidators.validate(
                     new EntityManager(
-                            org.babyfish.jimmer.sql.model.inheritance4.Client.class,
-                            org.babyfish.jimmer.sql.model.inheritance4.Organization.class,
-                            org.babyfish.jimmer.sql.model.inheritance4.Person.class
+                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client.class,
+                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization.class,
+                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.Person.class
                     ),
                     "",
                     true,

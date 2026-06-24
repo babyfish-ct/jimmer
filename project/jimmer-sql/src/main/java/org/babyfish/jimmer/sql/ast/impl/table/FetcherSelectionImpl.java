@@ -307,10 +307,20 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         String discriminatorColumnName = TableProxies
                 .resolve(table, builder.getAstContext())
                 .getPolymorphicDiscriminatorColumnName();
-        if (discriminatorColumnName != null) {
+        if (discriminatorColumnName != null && !hasDiscriminatorField(fetcher)) {
             builder.separator();
             realTable.renderColumn(builder, discriminatorColumnName, false, null, null);
         }
+    }
+
+    private static boolean hasDiscriminatorField(Fetcher<?> fetcher) {
+        for (Field field : fetcher.getFieldMap().values()) {
+            ImmutableProp prop = field.getProp();
+            if (prop != null && prop.isDiscriminator()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ImmutableProp getEmbeddedRawReferenceProp(JSqlClientImplementor sqlClient) {

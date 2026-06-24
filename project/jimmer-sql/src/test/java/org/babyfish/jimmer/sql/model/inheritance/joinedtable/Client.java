@@ -1,11 +1,12 @@
-package org.babyfish.jimmer.sql.model.inheritance3;
+package org.babyfish.jimmer.sql.model.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.*;
 
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@Table(name = "JOINED_CLIENT")
+@Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "CLIENT_TYPE")
-public interface Client {
+public interface Client extends ClientBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

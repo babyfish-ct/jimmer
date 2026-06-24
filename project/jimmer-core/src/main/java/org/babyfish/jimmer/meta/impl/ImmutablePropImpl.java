@@ -7,8 +7,8 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
@@ -241,6 +241,18 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                             "\" so that it cannot be association"
             );
         }
+        Discriminator discriminator = getAnnotation(Discriminator.class);
+        if (discriminator != null) {
+            if (category != ImmutablePropCategory.SCALAR || elementClass != String.class) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by \"" +
+                                Discriminator.class.getName() +
+                                "\" so that it must be scalar string property"
+                );
+            }
+        }
 
         JoinSql joinSql = getAnnotation(JoinSql.class);
         if (formula != null && !formula.sql().isEmpty()) {
@@ -303,6 +315,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 primaryAnnotationType = Version.class;
             } else if (isLogicalDeleted()) {
                 primaryAnnotationType = LogicalDeleted.class;
+            } else if (discriminator != null) {
+                primaryAnnotationType = Discriminator.class;
             } else if (isFormula) {
                 primaryAnnotationType = Formula.class;
             } else if (isTransient) {
@@ -460,6 +474,9 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     @Override
     public boolean isMutable() {
+        if (primaryAnnotationType == Discriminator.class) {
+            return false;
+        }
         return !isFormula || sqlTemplate instanceof FormulaTemplate;
     }
 
@@ -553,6 +570,11 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     }
 
     @Override
+    public boolean isDiscriminator() {
+        return primaryAnnotationType == Discriminator.class;
+    }
+
+    @Override
     public boolean isTargetForeignKeyReal(MetadataStrategy strategy) {
         return isTargetForeignKeyRealCache.get(strategy);
     }
@@ -584,6 +606,19 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Nullable
     @Override
     public SqlTemplate getSqlTemplate() {
+        if (primaryAnnotationType == Discriminator.class) {
+            InheritanceInfo inheritanceInfo = declaringType.getInheritanceInfo();
+            if (inheritanceInfo == null || inheritanceInfo.getDiscriminatorColumn() == null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by \"" +
+                                Discriminator.class.getName() +
+                                "\" but the declaring type is not an inheritance type with discriminator column"
+                );
+            }
+            return FormulaTemplate.of("%alias." + inheritanceInfo.getDiscriminatorColumn().name());
+        }
         return sqlTemplate;
     }
 
@@ -1002,6 +1037,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 if (type == 0) {
                     int result;
                     if (isTransient() ||
+                            isDiscriminator() ||
                             isFormula() ||
                             !getDependencies().isEmpty() ||
                             getSqlTemplate() instanceof JoinTemplate ||

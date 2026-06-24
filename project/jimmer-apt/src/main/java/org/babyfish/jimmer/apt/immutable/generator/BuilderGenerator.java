@@ -89,7 +89,7 @@ public class BuilderGenerator {
     }
 
     private void addSetter(ImmutableProp prop) {
-        if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
+        if (prop.isJavaFormula() || prop.isDiscriminator() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
         TypeName box = prop.getTypeName().box();

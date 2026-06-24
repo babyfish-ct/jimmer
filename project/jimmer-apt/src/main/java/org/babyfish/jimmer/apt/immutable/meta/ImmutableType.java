@@ -20,6 +20,34 @@ public class ImmutableType implements BaseType {
 
     private static final String FORMULA_CLASS_NAME = Formula.class.getName();
 
+    private static final DiscriminatorColumn DEFAULT_DISCRIMINATOR_COLUMN = new DiscriminatorColumn() {
+
+        @Override
+        public String name() {
+            return "DTYPE";
+        }
+
+        @Override
+        public String sqlType() {
+            return "varchar";
+        }
+
+        @Override
+        public int length() {
+            return 31;
+        }
+
+        @Override
+        public boolean nullable() {
+            return false;
+        }
+
+        @Override
+        public Class<? extends java.lang.annotation.Annotation> annotationType() {
+            return DiscriminatorColumn.class;
+        }
+    };
+
     private final TypeElement typeElement;
 
     private final boolean isEntity;
@@ -270,9 +298,19 @@ public class ImmutableType implements BaseType {
                     discriminatorValue.value() :
                     typeElement.getSimpleName().toString();
         } else if (inheritance != null) {
+            if (inheritance.strategy() == InheritanceType.TABLE_PER_CLASS) {
+                throw new MetaException(
+                        typeElement,
+                        "inheritance strategy \"" +
+                                InheritanceType.TABLE_PER_CLASS +
+                                "\" is not supported yet"
+                );
+            }
             this.inheritanceRoot = this;
             this.inheritance = inheritance;
-            this.discriminatorColumn = discriminatorColumn;
+            this.discriminatorColumn = discriminatorColumn != null ?
+                    discriminatorColumn :
+                    DEFAULT_DISCRIMINATOR_COLUMN;
             this.discriminatorValue = discriminatorValue != null ?
                     discriminatorValue.value() :
                     typeElement.getSimpleName().toString();

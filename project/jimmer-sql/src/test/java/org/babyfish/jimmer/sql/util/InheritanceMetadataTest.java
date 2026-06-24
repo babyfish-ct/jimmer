@@ -3,9 +3,9 @@ package org.babyfish.jimmer.sql.util;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.sql.InheritanceType;
-import org.babyfish.jimmer.sql.model.inheritance3.Client;
-import org.babyfish.jimmer.sql.model.inheritance3.Organization;
-import org.babyfish.jimmer.sql.model.inheritance3.Person;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.Client;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.Organization;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.Person;
 import org.junit.jupiter.api.Test;
 
 import java.util.stream.Collectors;
@@ -43,9 +43,9 @@ public class InheritanceMetadataTest {
                         .toString()
         );
         assertEquals(
-                "{Client=org.babyfish.jimmer.sql.model.inheritance3.Client, " +
-                        "ORG=org.babyfish.jimmer.sql.model.inheritance3.Organization, " +
-                        "Person=org.babyfish.jimmer.sql.model.inheritance3.Person}",
+                "{Client=org.babyfish.jimmer.sql.model.inheritance.singletable.Client, " +
+                        "ORG=org.babyfish.jimmer.sql.model.inheritance.singletable.Organization, " +
+                        "Person=org.babyfish.jimmer.sql.model.inheritance.singletable.Person}",
                 info.getDiscriminatorTypeMap().toString()
         );
     }

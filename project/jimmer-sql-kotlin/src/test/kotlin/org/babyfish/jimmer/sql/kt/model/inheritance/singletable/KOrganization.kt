@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt.model.inheritance3
+package org.babyfish.jimmer.sql.kt.model.inheritance.singletable
 
 import org.babyfish.jimmer.sql.DiscriminatorValue
 import org.babyfish.jimmer.sql.Entity

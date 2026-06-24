@@ -76,6 +76,7 @@ public class PropDescriptor {
         ID(Id.class, false),
         VERSION(Version.class, false),
         LOGICAL_DELETED(LogicalDeleted.class, false),
+        DISCRIMINATOR(Discriminator.class, false),
         FORMULA(Formula.class, false),
         BASIC(null, false),
         ONE_TO_ONE(OneToOne.class, true),
@@ -559,6 +560,7 @@ public class PropDescriptor {
             typeMap.put(Id.class, Type.ID);
             typeMap.put(Version.class, Type.VERSION);
             typeMap.put(LogicalDeleted.class, Type.LOGICAL_DELETED);
+            typeMap.put(Discriminator.class, Type.DISCRIMINATOR);
             typeMap.put(Formula.class, Type.FORMULA);
             typeMap.put(OneToOne.class, Type.ONE_TO_ONE);
             typeMap.put(ManyToOne.class, Type.MANY_TO_ONE);
@@ -571,6 +573,7 @@ public class PropDescriptor {
             families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.VERSION, setOf(Column.class, Default.class, ExcludeFromAllScalars.class));
             families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class, Default.class, ExcludeFromAllScalars.class));
+            families.put(Type.DISCRIMINATOR, setOf(Discriminator.class));
             families.put(Type.FORMULA, setOf(Formula.class));
             families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class, Scalar.class, Serialized.class, Default.class, ExcludeFromAllScalars.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class, MapsId.class));

@@ -130,8 +130,15 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (!isJoinedSubtypeRoot()) {
             return false;
         }
-        return prop != null &&
-                prop.toOriginal().getDeclaringType() != getImmutableType().getInheritanceInfo().getRootType();
+        return prop != null && !isRootTableProp(prop);
+    }
+
+    default boolean isRootTableProp(ImmutableProp prop) {
+        InheritanceInfo inheritanceInfo = getImmutableType().getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return true;
+        }
+        return prop.toOriginal().getDeclaringType().isAssignableFrom(inheritanceInfo.getRootType());
     }
 
     void setHasBaseTable();

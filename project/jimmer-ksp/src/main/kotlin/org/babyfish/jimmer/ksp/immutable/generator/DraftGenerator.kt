@@ -110,14 +110,14 @@ class DraftGenerator(
                 )
                 .addModifiers(KModifier.OVERRIDE)
                 .apply {
-                    mutable(!prop.isKotlinFormula && prop.manyToManyViewBaseProp === null)
+                    mutable(!prop.isKotlinFormula && !prop.isDiscriminator && prop.manyToManyViewBaseProp === null)
                 }
                 .build()
         )
     }
 
     private fun TypeSpec.Builder.addFun(prop: ImmutableProp) {
-        if ((prop.isAssociation(false) || prop.isList) && prop.manyToManyViewBaseProp == null && !prop.isFormula) {
+        if ((prop.isAssociation(false) || prop.isList) && prop.manyToManyViewBaseProp == null && !prop.isFormula && !prop.isDiscriminator) {
             addFunction(
                 FunSpec
                     .builder(prop.name)
@@ -129,7 +129,7 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addRefFun(prop: ImmutableProp) {
-        if (!prop.isAssociation(false) || prop.isList || prop.isFormula) {
+        if (!prop.isAssociation(false) || prop.isList || prop.isFormula || prop.isDiscriminator) {
             return
         }
         addFunction(

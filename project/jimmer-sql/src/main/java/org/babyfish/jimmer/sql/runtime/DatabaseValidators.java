@@ -229,7 +229,10 @@ public class DatabaseValidators {
                 inheritanceInfo.getRootType() == type) {
             return true;
         }
-        return prop == type.getIdProp() || prop.toOriginal().getDeclaringType() == type;
+        ImmutableType declaringType = prop.toOriginal().getDeclaringType();
+        return prop == type.getIdProp() ||
+                declaringType.isAssignableFrom(type) &&
+                        !declaringType.isAssignableFrom(inheritanceInfo.getRootType());
     }
 
     private boolean isNullableInDatabase(ImmutableType type, ImmutableProp prop) {

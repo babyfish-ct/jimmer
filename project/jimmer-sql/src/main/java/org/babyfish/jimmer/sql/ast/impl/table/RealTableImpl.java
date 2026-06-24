@@ -890,10 +890,22 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         ImmutableType rootType = owner.immutableType.getInheritanceInfo().getRootType();
+        boolean rootProp = prop.toOriginal().getDeclaringType().isAssignableFrom(rootType);
+        SqlTemplate template = prop.getSqlTemplate();
+        if (template instanceof FormulaTemplate) {
+            String alias = rootProp ?
+                    builder.assertSimple().alias(this) :
+                    joinedSubtypeAlias(builder.assertSimple());
+            builder.sql(((FormulaTemplate) template).toSql(alias));
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(0));
+            }
+            return;
+        }
         ColumnDefinition definition = optionalDefinition != null ?
                 optionalDefinition :
                 prop.getStorage(strategy);
-        if (prop.toOriginal().getDeclaringType() == rootType) {
+        if (rootProp) {
             renderDefinition(
                     builder,
                     this,

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.inheritance4.OrganizationTable;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationTable;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,18 +14,19 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .select(table.name(), table.taxCode()),
+                        .select(table.type(), table.name(), table.taxCode()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                            "select tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
                                     "from JOINED_CLIENT tb_1_ " +
                                     "inner join JOINED_ORGANIZATION tb_1__sub " +
                                     "on tb_1_.ID = tb_1__sub.ID " +
                                     "where tb_1_.CLIENT_TYPE = ?"
                     ).variables("ORG");
                     ctx.row(0, row -> {
-                        assertEquals("Globex", row.get_1());
-                        assertEquals("GLOBEX-001", row.get_2());
+                        assertEquals("ORG", row.get_1());
+                        assertEquals("Globex", row.get_2());
+                        assertEquals("GLOBEX-001", row.get_3());
                     });
                 }
         );
@@ -37,14 +38,17 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .select(table.name()),
+                        .select(table.type(), table.name()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.NAME " +
+                            "select tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from JOINED_CLIENT tb_1_ " +
                                     "where tb_1_.CLIENT_TYPE = ?"
                     ).variables("ORG");
-                    ctx.row(0, "\"Globex\"");
+                    ctx.row(0, row -> {
+                        assertEquals("ORG", row.get_1());
+                        assertEquals("Globex", row.get_2());
+                    });
                 }
         );
     }

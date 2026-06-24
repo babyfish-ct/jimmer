@@ -378,7 +378,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         if (table instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
             String discriminatorColumnName = tableImplementor.getPolymorphicDiscriminatorColumnName();
-            if (discriminatorColumnName != null) {
+            if (discriminatorColumnName != null && selectableProps.values().stream().noneMatch(ImmutableProp::isDiscriminator)) {
                 builder.separator();
                 tableImplementor
                         .realTableForRender(builder)

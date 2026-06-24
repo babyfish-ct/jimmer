@@ -2,9 +2,9 @@ package org.babyfish.jimmer.sql.kt.util
 
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.InheritanceType
-import org.babyfish.jimmer.sql.kt.model.inheritance3.KClient
-import org.babyfish.jimmer.sql.kt.model.inheritance3.KOrganization
-import org.babyfish.jimmer.sql.kt.model.inheritance3.KPerson
+import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient
+import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization
+import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KPerson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -34,9 +34,9 @@ class InheritanceMetadataTest {
             info.concreteTypes.map { it.javaClass.simpleName }.toString()
         )
         assertEquals(
-            "{KClient=org.babyfish.jimmer.sql.kt.model.inheritance3.KClient, " +
-                    "ORG=org.babyfish.jimmer.sql.kt.model.inheritance3.KOrganization, " +
-                    "KPerson=org.babyfish.jimmer.sql.kt.model.inheritance3.KPerson}",
+            "{KClient=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient, " +
+                    "ORG=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization, " +
+                    "KPerson=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KPerson}",
             info.discriminatorTypeMap.toString()
         )
     }

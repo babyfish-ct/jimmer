@@ -156,6 +156,9 @@ class ImmutableProp(
     val isKotlinFormula: Boolean =
         annotation(Formula::class) !== null && !propDeclaration.isAbstract()
 
+    val isDiscriminator: Boolean =
+        annotation(Discriminator::class) !== null
+
     override val isList: Boolean
         get() = if (isKotlinFormula || annotations { true }.any { isExplicitScalar(it, mutableSetOf()) }) {
             false
@@ -225,6 +228,9 @@ class ImmutableProp(
     override val isNullable: Boolean
         get() = _isNullable
 
+    val targetClassName: ClassName =
+        targetDeclaration.nestedClassName()
+
     init {
         val descriptor = PropDescriptor
             .newBuilder(
@@ -255,6 +261,12 @@ class ImmutableProp(
             .build()
         primaryAnnotationType = descriptor.type.annotationType
         _isNullable = descriptor.isNullable
+        if (isDiscriminator && typeName(overrideNullable = false) != STRING) {
+            throw MetaException(
+                propDeclaration,
+                "the property decorated by @${Discriminator::class.qualifiedName} must return kotlin.String"
+            )
+        }
     }
 
     private val isAssociation: Boolean =
@@ -281,9 +293,6 @@ class ImmutableProp(
 
     override fun isAssociation(entityLevel: Boolean): Boolean =
         isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
-
-    val targetClassName: ClassName =
-        targetDeclaration.nestedClassName()
 
     fun targetTypeName(
         draft: Boolean = false,

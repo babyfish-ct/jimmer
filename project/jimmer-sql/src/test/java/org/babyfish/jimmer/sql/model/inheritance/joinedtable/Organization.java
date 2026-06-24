@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.model.inheritance4;
+package org.babyfish.jimmer.sql.model.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.DiscriminatorValue;
 import org.babyfish.jimmer.sql.Entity;

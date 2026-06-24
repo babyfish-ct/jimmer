@@ -261,10 +261,16 @@ class ImmutableType(
                     "Illegal value of @${Inheritance::class.java.name}.strategy: $value"
                 )
             }
+            if (strategy == InheritanceType.TABLE_PER_CLASS) {
+                throw MetaException(
+                    classDeclaration,
+                    "inheritance strategy \"$strategy\" is not supported yet"
+                )
+            }
             inheritanceStrategy = strategy
             discriminatorColumnName =
                 discriminatorColumn?.get(DiscriminatorColumn::name)
-                    ?: if (strategy != InheritanceType.TABLE_PER_CLASS) "DTYPE" else null
+                    ?: "DTYPE"
             this.discriminatorValue =
                 discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
         } else {

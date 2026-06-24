@@ -34,6 +34,8 @@ class ObjectReader implements Reader<Object> {
 
     private final PropId[] idViewBasePropIds;
 
+    private final int discriminatorPropIndex;
+
     @Nullable
     private final Reader<?> discriminatorReader;
 
@@ -56,12 +58,18 @@ class ObjectReader implements Reader<Object> {
     ) {
         List<PropId> idViewPropIds = new ArrayList<>();
         List<PropId> idViewBasePropIds = new ArrayList<>();
+        int discriminatorPropIndex = -1;
+        int index = 0;
         for (ImmutableProp prop : nonIdReaders.keySet()) {
             ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
             if (idViewBaseProp != null) {
                 idViewPropIds.add(prop.getId());
                 idViewBasePropIds.add(idViewBaseProp.getId());
             }
+            if (prop.isDiscriminator()) {
+                discriminatorPropIndex = index;
+            }
+            index++;
         }
 
         this.type = type;
@@ -70,8 +78,9 @@ class ObjectReader implements Reader<Object> {
         this.nonIdReaders = nonIdReaders.values().toArray(EMPTY_READERS);
         this.idViewPropIds = idViewPropIds.toArray(EMPTY_PROP_IDS);
         this.idViewBasePropIds = idViewBasePropIds.toArray(EMPTY_PROP_IDS);
-        this.discriminatorReader = discriminatorReader;
-        this.discriminatorTypeMap = discriminatorReader != null ?
+        this.discriminatorPropIndex = discriminatorPropIndex;
+        this.discriminatorReader = discriminatorPropIndex == -1 ? discriminatorReader : null;
+        this.discriminatorTypeMap = discriminatorPropIndex != -1 || discriminatorReader != null ?
                 type.getInheritanceInfo().getDiscriminatorTypeMap() :
                 null;
         this.shownPropIds = shownPropIds;
@@ -118,7 +127,7 @@ class ObjectReader implements Reader<Object> {
         for (int i = 0; i < size; i++) {
             values[i] = nonIdReaders[i].read(rs, ctx);
         }
-        ImmutableType actualType = readActualType(rs, ctx);
+        ImmutableType actualType = readActualType(rs, ctx, values);
         DraftSpi spi = (DraftSpi) actualType.getDraftFactory().apply(ctx.draftContext(), null);
         spi.__set(type.getIdProp().getId(), id);
         try {
@@ -145,12 +154,21 @@ class ObjectReader implements Reader<Object> {
         return ctx.resolve(spi);
     }
 
-    private ImmutableType readActualType(ResultSet rs, Context ctx) throws SQLException {
-        Reader<?> reader = discriminatorReader;
-        if (reader == null) {
+    private ImmutableType readActualType(ResultSet rs, Context ctx, Object[] values) throws SQLException {
+        Object value;
+        if (discriminatorPropIndex != -1) {
+            value = values[discriminatorPropIndex];
+        } else {
+            Reader<?> reader = discriminatorReader;
+            if (reader == null) {
+                return type;
+            }
+            value = reader.read(rs, ctx);
+        }
+        Map<String, ImmutableType> map = discriminatorTypeMap;
+        if (map == null) {
             return type;
         }
-        Object value = reader.read(rs, ctx);
         if (!(value instanceof String)) {
             throw new ExecutionException(
                     "Cannot resolve the concrete type of \"" +
@@ -159,7 +177,7 @@ class ObjectReader implements Reader<Object> {
                             (value != null ? "\"" + value + "\"" : "null")
             );
         }
-        ImmutableType actualType = discriminatorTypeMap.get(value);
+        ImmutableType actualType = map.get(value);
         if (actualType == null) {
             throw new ExecutionException(
                     "Cannot resolve the concrete type of \"" +

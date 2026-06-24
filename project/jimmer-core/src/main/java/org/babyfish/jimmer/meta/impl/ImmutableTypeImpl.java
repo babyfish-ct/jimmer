@@ -46,7 +46,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
         @Override
         public String sqlType() {
-            return "";
+            return "varchar";
         }
 
         @Override
@@ -238,7 +238,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 declaredInheritanceInfo = null;
             } else if (inheritance != null) {
                 inheritanceRoot = this;
-                if (discriminatorColumn == null && inheritance.strategy() != InheritanceType.TABLE_PER_CLASS) {
+                if (inheritance.strategy() == InheritanceType.TABLE_PER_CLASS) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", inheritance strategy \"" +
+                                    InheritanceType.TABLE_PER_CLASS +
+                                    "\" is not supported yet"
+                    );
+                }
+                if (discriminatorColumn == null) {
                     discriminatorColumn = DEFAULT_DISCRIMINATOR_COLUMN;
                 }
                 declaredInheritanceInfo = new InheritanceInfo(
