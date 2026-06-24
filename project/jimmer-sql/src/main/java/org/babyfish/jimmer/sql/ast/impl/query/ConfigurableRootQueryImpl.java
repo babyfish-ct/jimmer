@@ -45,7 +45,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
 
     @Override
     public long fetchUnlimitedCount(final Connection con) {
-        if (getMutableQuery().getTable() instanceof BaseTable) {
+        if (getMutableQuery().getTable() instanceof BaseTable || getMutableQuery().isGroupByClauseUsed()) {
             return simpleCount(con);
         }
         return ConfigurableRootQuery.super.fetchUnlimitedCount(con);
@@ -352,7 +352,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
                 data.forUpdate != null
         );
