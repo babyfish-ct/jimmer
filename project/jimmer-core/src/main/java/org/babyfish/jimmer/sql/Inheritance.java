@@ -8,4 +8,6 @@ import java.lang.annotation.*;
 public @interface Inheritance {
 
     InheritanceType strategy() default InheritanceType.SINGLE_TABLE;
+
+    JoinedTableDeleteMode joinedTableDeleteMode() default JoinedTableDeleteMode.EXPLICIT;
 }

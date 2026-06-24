@@ -317,6 +317,22 @@ class Operator {
         };
     }
 
+    private static int compareJoinedCleanupTableTypes(
+            MetadataStrategy strategy,
+            ImmutableType a,
+            ImmutableType b
+    ) {
+        int cmp = Integer.compare(b.getAllTypes().size(), a.getAllTypes().size());
+        if (cmp != 0) {
+            return cmp;
+        }
+        cmp = a.getTableName(strategy).compareTo(b.getTableName(strategy));
+        if (cmp != 0) {
+            return cmp;
+        }
+        return a.getJavaClass().getName().compareTo(b.getJavaClass().getName());
+    }
+
     public void update(
             Map<Object, ImmutableSpi> originalIdObjMap,
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
@@ -913,7 +929,9 @@ class Operator {
         Set<ImmutableType> retainedTypes = new HashSet<>(joinedTableTypes(rootType, targetType));
         PropId idPropId = rootType.getIdProp().getId();
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-        for (ImmutableType concreteType : inheritanceInfo.getConcreteTypes()) {
+        List<ImmutableType> tableTypes = new ArrayList<>(inheritanceInfo.getConcreteTypes());
+        tableTypes.sort((a, b) -> compareJoinedCleanupTableTypes(strategy, a, b));
+        for (ImmutableType concreteType : tableTypes) {
             if (concreteType == rootType || !concreteType.isEntity() || retainedTypes.contains(concreteType)) {
                 continue;
             }

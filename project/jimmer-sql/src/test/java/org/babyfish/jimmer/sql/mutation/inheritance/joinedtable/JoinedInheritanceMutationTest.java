@@ -17,6 +17,36 @@ import java.sql.SQLException;
 
 public class JoinedInheritanceMutationTest extends AbstractMutationTest {
 
+    private static String joinedClientRow(Connection con, long id) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "select c.CLIENT_TYPE, c.NAME, o.TAX_CODE, p.FIRST_NAME, p.LAST_NAME " +
+                        "from JOINED_CLIENT c " +
+                        "left join JOINED_ORGANIZATION o on c.ID = o.ID " +
+                        "left join JOINED_PERSON p on c.ID = p.ID " +
+                        "where c.ID = ?"
+        )) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return "[" +
+                        rs.getString(1) +
+                        ", " +
+                        rs.getString(2) +
+                        ", " +
+                        rs.getString(3) +
+                        ", " +
+                        rs.getString(4) +
+                        ", " +
+                        rs.getString(5) +
+                        "]";
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     @Test
     public void testInsertSubtype() {
         executeAndExpectResult(
@@ -235,6 +265,10 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
+                        it.sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update");
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
                         it.variables(200L);
                     });
@@ -243,6 +277,28 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(200L, "ORG");
                     });
                     ctx.value("null; [Person, Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteSubtypeWithMismatchedDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    int affectedRowCount = getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Organization.class, 201L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    return affectedRowCount + "; " + joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update");
+                        it.variables(201L, "ORG");
+                    });
+                    ctx.value("0; [Person, Alice, null, Alice, Smith]");
                 }
         );
     }
@@ -260,11 +316,11 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
                         it.variables(200L);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from JOINED_PERSON where ID = ?");
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
                         it.variables(200L);
                     });
                     ctx.statement(it -> {
@@ -274,35 +330,5 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.value("null; [Person, Alice, null, Alice, Smith]");
                 }
         );
-    }
-
-    private static String joinedClientRow(Connection con, long id) {
-        try (PreparedStatement stmt = con.prepareStatement(
-                "select c.CLIENT_TYPE, c.NAME, o.TAX_CODE, p.FIRST_NAME, p.LAST_NAME " +
-                        "from JOINED_CLIENT c " +
-                        "left join JOINED_ORGANIZATION o on c.ID = o.ID " +
-                        "left join JOINED_PERSON p on c.ID = p.ID " +
-                        "where c.ID = ?"
-        )) {
-            stmt.setLong(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                return "[" +
-                        rs.getString(1) +
-                        ", " +
-                        rs.getString(2) +
-                        ", " +
-                        rs.getString(3) +
-                        ", " +
-                        rs.getString(4) +
-                        ", " +
-                        rs.getString(5) +
-                        "]";
-            }
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
     }
 }

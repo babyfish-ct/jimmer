@@ -28,14 +28,14 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "insert into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                        "values(?, ?, ?)"
+                            "values(?, ?, ?)"
                 )
                 variables(300L, "ORG", "New Org")
             }
             statement {
                 sql(
                     "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                        "values(?, ?)"
+                            "values(?, ?)"
                 )
                 variables(300L, "NEW-001")
             }
@@ -64,7 +64,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                        "key(ID) values(?, ?, ?)"
+                            "key(ID) values(?, ?, ?)"
                 )
                 variables(300L, "ORG", "New Org")
             }
@@ -75,7 +75,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                        "key(ID) values(?, ?)"
+                            "key(ID) values(?, ?)"
                 )
                 variables(300L, "NEW-001")
             }
@@ -106,7 +106,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                        "key(ID) values(?, ?, ?)"
+                            "key(ID) values(?, ?, ?)"
                 )
                 variables(200L, "KPerson", "Globex Person")
             }
@@ -117,7 +117,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
-                        "key(ID) values(?, ?, ?)"
+                            "key(ID) values(?, ?, ?)"
                 )
                 variables(200L, "Gary", "Stone")
             }
@@ -143,8 +143,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                        "set CLIENT_TYPE = ?, NAME = ? " +
-                        "where ID = ?"
+                            "set CLIENT_TYPE = ?, NAME = ? " +
+                            "where ID = ?"
                 )
                 variables("KPerson", "Globex Person", 200L)
             }
@@ -159,7 +159,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "insert into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
-                        "values(?, ?, ?)"
+                            "values(?, ?, ?)"
                 )
                 variables(200L, "Gary", "Stone")
             }
@@ -184,8 +184,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                        "set CLIENT_TYPE = ?, NAME = ? " +
-                        "where ID = ?"
+                            "set CLIENT_TYPE = ?, NAME = ? " +
+                            "where ID = ?"
                 )
                 variables("ORG", "Globex+", 200L)
             }
@@ -200,8 +200,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_ORGANIZATION " +
-                        "set TAX_CODE = ? " +
-                        "where ID = ?"
+                            "set TAX_CODE = ? " +
+                            "where ID = ?"
                 )
                 variables("GLOBEX-002", 200L)
             }
@@ -218,6 +218,10 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "${joinedClientRow(con, 200L)}; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
+                sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update")
+                variables(200L, "ORG")
+            }
+            statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
                 variables(200L)
             }
@@ -230,6 +234,22 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testDeleteSubtypeWithMismatchedDiscriminator() {
+        connectAndExpect({ con ->
+            val affectedRowCount = sqlClient.entities.forConnection(con).delete(KOrganization::class, 201L) {
+                setMode(DeleteMode.PHYSICAL)
+            }.totalAffectedRowCount
+            "$affectedRowCount; ${joinedClientRow(con, 201L)}"
+        }) {
+            statement {
+                sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update")
+                variables(201L, "ORG")
+            }
+            value("0; [KPerson, Alice, null, Alice, Smith]")
+        }
+    }
+
+    @Test
     fun testDeleteRoot() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
@@ -238,11 +258,11 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "${joinedClientRow(con, 200L)}; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
-                sql("delete from JOINED_ORGANIZATION where ID = ?")
+                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update")
                 variables(200L)
             }
             statement {
-                sql("delete from JOINED_PERSON where ID = ?")
+                sql("delete from JOINED_ORGANIZATION where ID = ?")
                 variables(200L)
             }
             statement {
@@ -256,10 +276,10 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     private fun joinedClientRow(con: Connection, id: Long): String? =
         con.prepareStatement(
             "select c.CLIENT_TYPE, c.NAME, o.TAX_CODE, p.FIRST_NAME, p.LAST_NAME " +
-                "from JOINED_CLIENT c " +
-                "left join JOINED_ORGANIZATION o on c.ID = o.ID " +
-                "left join JOINED_PERSON p on c.ID = p.ID " +
-                "where c.ID = ?"
+                    "from JOINED_CLIENT c " +
+                    "left join JOINED_ORGANIZATION o on c.ID = o.ID " +
+                    "left join JOINED_PERSON p on c.ID = p.ID " +
+                    "where c.ID = ?"
         ).use { stmt ->
             stmt.setLong(1, id)
             stmt.executeQuery().use { rs ->
@@ -267,7 +287,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                     null
                 } else {
                     "[${rs.getString(1)}, ${rs.getString(2)}, ${rs.getString(3)}, " +
-                        "${rs.getString(4)}, ${rs.getString(5)}]"
+                            "${rs.getString(4)}, ${rs.getString(5)}]"
                 }
             }
         }

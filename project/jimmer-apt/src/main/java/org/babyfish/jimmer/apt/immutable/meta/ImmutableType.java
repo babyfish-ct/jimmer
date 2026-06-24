@@ -79,52 +79,29 @@ public class ImmutableType implements BaseType {
     private final Map<String, ImmutableProp> declaredProps;
 
     private final Map<String, ImmutableProp> redefinedProps;
-
-    private Map<String, ImmutableProp> props;
-
-    private Map<String, String> idPropNameMap;
-
-    private List<ImmutableProp> propsOrderById;
-
-    private ImmutableProp idProp;
-
-    private ImmutableProp versionProp;
-
-    private ImmutableProp logicalDeletedProp;
-
     private final ClassName className;
-
     private final ClassName draftClassName;
-
     private final ClassName producerClassName;
-
     private final ClassName implementorClassName;
-
     private final ClassName implClassName;
-
     private final ClassName draftImplClassName;
-
     private final ClassName builderClassName;
-
     private final ClassName tableClassName;
-
     private final ClassName tableExClassName;
-
     private final ClassName remoteTableClassName;
-
     private final ClassName fetcherClassName;
-
     private final ClassName propsClassName;
-
     private final ClassName propExpressionClassName;
-
     private final ClassName dynamicClassName;
-
     private final Map<ClassName, String> validationMessageMap;
-
     private final boolean acrossMicroServices;
-
     private final String microServiceName;
+    private Map<String, ImmutableProp> props;
+    private Map<String, String> idPropNameMap;
+    private List<ImmutableProp> propsOrderById;
+    private ImmutableProp idProp;
+    private ImmutableProp versionProp;
+    private ImmutableProp logicalDeletedProp;
 
     public ImmutableType(
             Context context,
@@ -304,6 +281,19 @@ public class ImmutableType implements BaseType {
                         "inheritance strategy \"" +
                                 InheritanceType.TABLE_PER_CLASS +
                                 "\" is not supported yet"
+                );
+            }
+            if (inheritance.strategy() != InheritanceType.JOINED &&
+                    inheritance.joinedTableDeleteMode() != JoinedTableDeleteMode.EXPLICIT) {
+                throw new MetaException(
+                        typeElement,
+                        "the `joinedTableDeleteMode` of @" +
+                                Inheritance.class.getName() +
+                                " can only be \"" +
+                                JoinedTableDeleteMode.DB_CASCADE +
+                                "\" when the inheritance strategy is \"" +
+                                InheritanceType.JOINED +
+                                "\""
                 );
             }
             this.inheritanceRoot = this;

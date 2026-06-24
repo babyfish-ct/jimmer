@@ -267,6 +267,23 @@ class ImmutableType(
                     "inheritance strategy \"$strategy\" is not supported yet"
                 )
             }
+            val joinedTableDeleteMode = when (val value: Any? = inheritance["joinedTableDeleteMode"]) {
+                null -> JoinedTableDeleteMode.EXPLICIT
+                is JoinedTableDeleteMode -> value
+                is KSClassDeclaration -> JoinedTableDeleteMode.valueOf(value.simpleName.asString())
+                else -> throw MetaException(
+                    classDeclaration,
+                    "Illegal value of @${Inheritance::class.java.name}.joinedTableDeleteMode: $value"
+                )
+            }
+            if (strategy != InheritanceType.JOINED && joinedTableDeleteMode != JoinedTableDeleteMode.EXPLICIT) {
+                throw MetaException(
+                    classDeclaration,
+                    "the `joinedTableDeleteMode` of @${Inheritance::class.java.name} " +
+                            "can only be \"${JoinedTableDeleteMode.DB_CASCADE}\" when the inheritance strategy is " +
+                            "\"${InheritanceType.JOINED}\""
+                )
+            }
             inheritanceStrategy = strategy
             discriminatorColumnName =
                 discriminatorColumn?.get(DiscriminatorColumn::name)

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -12,16 +13,20 @@ public final class InheritanceInfo {
 
     private final InheritanceType strategy;
 
+    private final JoinedTableDeleteMode joinedTableDeleteMode;
+
     @Nullable
     private final DiscriminatorColumn discriminatorColumn;
 
     public InheritanceInfo(
             ImmutableType rootType,
             InheritanceType strategy,
+            JoinedTableDeleteMode joinedTableDeleteMode,
             @Nullable DiscriminatorColumn discriminatorColumn
     ) {
         this.rootType = rootType;
         this.strategy = strategy;
+        this.joinedTableDeleteMode = joinedTableDeleteMode;
         this.discriminatorColumn = discriminatorColumn;
     }
 
@@ -31,6 +36,10 @@ public final class InheritanceInfo {
 
     public InheritanceType getStrategy() {
         return strategy;
+    }
+
+    public JoinedTableDeleteMode getJoinedTableDeleteMode() {
+        return joinedTableDeleteMode;
     }
 
     @Nullable
@@ -61,6 +70,7 @@ public final class InheritanceInfo {
         return "InheritanceInfo{" +
                 "rootType=" + rootType +
                 ", strategy=" + strategy +
+                ", joinedTableDeleteMode=" + joinedTableDeleteMode +
                 ", discriminatorColumn=" + (discriminatorColumn != null ? discriminatorColumn.name() : null) +
                 '}';
     }

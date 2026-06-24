@@ -5,26 +5,33 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DiscriminatorColumn;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.query.LockMode;
+import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.*;
 
 public class Deleter {
@@ -280,8 +287,26 @@ public class Deleter {
                         exceptionTranslator
                 );
             }
-            if (inheritanceInfo.getStrategy() == InheritanceType.JOINED) {
-                deleteJoinedSubtypeTables(sqlClient, con, rootType, type, ids, exceptionTranslator);
+            if (inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                    inheritanceInfo.getJoinedTableDeleteMode() != JoinedTableDeleteMode.DB_CASCADE) {
+                LockedJoinedRows lockedRows = lockJoinedRows(
+                        sqlClient,
+                        con,
+                        inheritanceInfo,
+                        type,
+                        ids,
+                        exceptionTranslator
+                );
+                if (lockedRows.ids.isEmpty()) {
+                    return 0;
+                }
+                deleteJoinedSubtypeTables(
+                        sqlClient,
+                        con,
+                        lockedRows.tableIdMap,
+                        exceptionTranslator
+                );
+                ids = lockedRows.ids;
             }
             return deleteFromSingleTable(
                     sqlClient,
@@ -343,22 +368,93 @@ public class Deleter {
         return execute(sqlClient, con, builder, exceptionTranslator);
     }
 
-    private static void deleteJoinedSubtypeTables(
+    private static LockedJoinedRows lockJoinedRows(
             JSqlClientImplementor sqlClient,
             Connection con,
-            ImmutableType rootType,
+            InheritanceInfo inheritanceInfo,
             ImmutableType deletedType,
             Collection<Object> ids,
             ExceptionTranslator<?> exceptionTranslator
     ) {
-        List<ImmutableType> tableTypes = new ArrayList<>();
-        for (ImmutableType derivedType : deletedTypes(deletedType)) {
-            if (derivedType != rootType) {
-                tableTypes.add(derivedType);
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
+        if (discriminatorColumn == null) {
+            throw new ExecutionException(
+                    "Cannot physically delete joined inheritance rows explicitly because \"" +
+                            rootType +
+                            "\" does not have discriminator column metadata"
+            );
+        }
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        ImmutableProp idProp = rootType.getIdProp();
+        boolean readDiscriminator = deletedType == rootType || hasEntityDerivedTypes(deletedType);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.sql("select ")
+                .definition(idProp.getStorage(strategy));
+        if (readDiscriminator) {
+            builder.sql(", ")
+                    .sql(discriminatorColumn.name());
+        }
+        builder
+                .sql(" from ")
+                .sql(rootType.getTableName(strategy))
+                .sql(" where ");
+        ComparisonPredicates.renderIn(
+                false,
+                ValueGetter.valueGetters(sqlClient, idProp),
+                ids,
+                builder
+        );
+        renderDiscriminatorPredicate(builder, rootType, deletedType);
+        builder.sql(" order by ")
+                .definition(idProp.getStorage(strategy));
+        sqlClient.getDialect().renderForUpdate(builder, new ForUpdate(LockMode.UPDATE, LockWait.DEFAULT));
+
+        LockedJoinedRows lockedRows = executeJoinedLockQuery(
+                sqlClient,
+                con,
+                builder,
+                exceptionTranslator,
+                idProp,
+                readDiscriminator,
+                discriminatorColumn,
+                inheritanceInfo.getDiscriminatorTypeMap(),
+                rootType
+        );
+        if (!readDiscriminator && !lockedRows.ids.isEmpty()) {
+            for (ImmutableType tableType : joinedTableTypes(rootType, deletedType)) {
+                lockedRows.tableIdMap.put(tableType, lockedRows.ids);
             }
         }
-        tableTypes.sort((a, b) -> b.getAllTypes().size() - a.getAllTypes().size());
+        if (lockedRows.tableIdMap.isEmpty()) {
+            return lockedRows;
+        }
+        Map<ImmutableType, Set<Object>> orderedTableIdMap = new LinkedHashMap<>();
+        List<ImmutableType> tableTypes = new ArrayList<>(lockedRows.tableIdMap.keySet());
+        tableTypes.sort((a, b) -> compareJoinedCleanupTableTypes(strategy, a, b));
         for (ImmutableType tableType : tableTypes) {
+            orderedTableIdMap.put(tableType, lockedRows.tableIdMap.get(tableType));
+        }
+        return new LockedJoinedRows(lockedRows.ids, orderedTableIdMap);
+    }
+
+    private static boolean hasEntityDerivedTypes(ImmutableType type) {
+        for (ImmutableType derivedType : type.getAllDerivedTypes()) {
+            if (derivedType.isEntity()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void deleteJoinedSubtypeTables(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            Map<ImmutableType, Set<Object>> tableIdMap,
+            ExceptionTranslator<?> exceptionTranslator
+    ) {
+        for (Map.Entry<ImmutableType, Set<Object>> e : tableIdMap.entrySet()) {
+            ImmutableType tableType = e.getKey();
             SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
             builder.sql("delete from ")
                     .sql(tableType.getTableName(sqlClient.getMetadataStrategy()))
@@ -366,11 +462,99 @@ public class Deleter {
             ComparisonPredicates.renderIn(
                     false,
                     ValueGetter.valueGetters(sqlClient, tableType.getIdProp()),
-                    ids,
+                    e.getValue(),
                     builder
             );
             execute(sqlClient, con, builder, exceptionTranslator);
         }
+    }
+
+    private static int compareJoinedCleanupTableTypes(
+            MetadataStrategy strategy,
+            ImmutableType a,
+            ImmutableType b
+    ) {
+        int cmp = Integer.compare(b.getAllTypes().size(), a.getAllTypes().size());
+        if (cmp != 0) {
+            return cmp;
+        }
+        cmp = a.getTableName(strategy).compareTo(b.getTableName(strategy));
+        if (cmp != 0) {
+            return cmp;
+        }
+        return a.getJavaClass().getName().compareTo(b.getJavaClass().getName());
+    }
+
+    private static LockedJoinedRows executeJoinedLockQuery(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            SqlBuilder builder,
+            ExceptionTranslator<?> exceptionTranslator,
+            ImmutableProp idProp,
+            boolean readDiscriminator,
+            DiscriminatorColumn discriminatorColumn,
+            Map<String, ImmutableType> discriminatorTypeMap,
+            ImmutableType rootType
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
+        Reader<?> idReader = sqlClient.getReader(idProp);
+        return sqlClient.getExecutor().execute(
+                new Executor.Args<>(
+                        sqlClient,
+                        con,
+                        tuple.get_1(),
+                        tuple.get_2(),
+                        tuple.get_3(),
+                        ExecutionPurpose.command(QueryReason.LOCK_ID_FOR_JOINED_INHERITANCE_DELETE),
+                        exceptionTranslator,
+                        null,
+                        (stmt, args) -> {
+                            Set<Object> lockedIds = new LinkedHashSet<>();
+                            Map<ImmutableType, Set<Object>> tableIdMap = new LinkedHashMap<>();
+                            Reader.Context readerContext = new Reader.Context(null, sqlClient);
+                            try (ResultSet rs = stmt.executeQuery()) {
+                                while (rs.next()) {
+                                    readerContext.resetCol();
+                                    Object id = idReader.read(rs, readerContext);
+                                    lockedIds.add(id);
+                                    if (!readDiscriminator) {
+                                        continue;
+                                    }
+                                    String discriminator = rs.getString(readerContext.col());
+                                    ImmutableType concreteType = discriminatorTypeMap.get(discriminator);
+                                    if (concreteType == null) {
+                                        throw new ExecutionException(
+                                                "Cannot physically delete joined inheritance rows explicitly, " +
+                                                        "the discriminator value \"" +
+                                                        discriminator +
+                                                        "\" of column \"" +
+                                                        discriminatorColumn.name() +
+                                                        "\" is not mapped by \"" +
+                                                        rootType +
+                                                        "\""
+                                        );
+                                    }
+                                    for (ImmutableType tableType : joinedTableTypes(rootType, concreteType)) {
+                                        tableIdMap
+                                                .computeIfAbsent(tableType, it -> new LinkedHashSet<>())
+                                                .add(id);
+                                    }
+                                }
+                            }
+                            return new LockedJoinedRows(lockedIds, tableIdMap);
+                        }
+                )
+        );
+    }
+
+    private static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
+        List<ImmutableType> tableTypes = new ArrayList<>();
+        for (ImmutableType t = type; t != rootType; t = t.getPrimarySuperType()) {
+            if (t.isEntity()) {
+                tableTypes.add(t);
+            }
+        }
+        return tableTypes;
     }
 
     private static void renderDiscriminatorPredicate(
@@ -450,7 +634,7 @@ public class Deleter {
     ) {
         if (prop != null) {
             ImmutableSpi newRow = (ImmutableSpi) Internal.produce(row.__type(), row, draft -> {
-                ((DraftSpi)draft).__set(prop.getId(), value);
+                ((DraftSpi) draft).__set(prop.getId(), value);
             });
             trigger.modifyEntityTable(row, newRow);
         } else {
@@ -572,5 +756,17 @@ public class Deleter {
                 return false;
             }
         };
+    }
+
+    private static class LockedJoinedRows {
+
+        final Set<Object> ids;
+
+        final Map<ImmutableType, Set<Object>> tableIdMap;
+
+        LockedJoinedRows(Set<Object> ids, Map<ImmutableType, Set<Object>> tableIdMap) {
+            this.ids = ids;
+            this.tableIdMap = tableIdMap;
+        }
     }
 }

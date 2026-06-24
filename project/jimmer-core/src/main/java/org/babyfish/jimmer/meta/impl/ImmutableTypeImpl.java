@@ -81,19 +81,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private final boolean isEmbeddable;
 
     private final Annotation immutableAnnotation;
-
-    private KClass<?> kotlinClass;
-
     private final ImmutableType primarySuperType;
-
     private final Set<ImmutableType> superTypes;
-
-    private Set<ImmutableType> allTypes;
-
     private final ImmutableType inheritanceRoot;
-
     private final InheritanceInfo declaredInheritanceInfo;
-
     /*
      * TODO(inheritance): Replace this lazy runtime registry with a frozen
      * metadata lifecycle. The long-term model should build the full model
@@ -103,59 +94,38 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
      */
     private final ConcurrentHashMap<ImmutableTypeImpl, Set<ImmutableType>> directDerivedTypeMap =
             new ConcurrentHashMap<>();
-
     private final ConcurrentHashMap<String, ImmutableType> discriminatorValueTypeMap =
             new ConcurrentHashMap<>();
-
     private final BiFunction<DraftContext, Object, Draft> draftFactory;
-
-    private Map<String, ImmutableProp> declaredProps;
-
-    private Map<String, ImmutableProp> props;
-
-    private ImmutableProp[] propArr;
-
-    private Map<String, List<ImmutableProp>> embeddedPaths;
-
-    private Map<String, ImmutableProp> entityProps;
-
-    private Map<String, ImmutableProp> selectableProps;
-
-    private Map<String, ImmutableProp> selectableScalarProps;
-
-    private Map<String, ImmutableProp> selectableReferenceProps;
-
-    private Map<String, ImmutableProp> objectCacheProps;
-
-    private Map<String, ImmutableProp> referenceProps;
-
-    private ImmutableProp idProp;
-
-    private ImmutableProp versionProp;
-
-    private LogicalDeletedInfo declaredLogicalDeletedInfo;
-
-    private LogicalDeletedInfo logicalDeletedInfo;
-
-    private KeyMatcher keyMatcher = KeyMatcher.EMPTY;
-
-    private List<MappedId> mappedIds;
-
-    private Set<ImmutableProp> mappedIdProps;
-
     private final String microServiceName;
-
     private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
-
     private final SqlContextCache<IdGenerator> idGeneratorCache = new SqlContextCache<>(it -> {
         IdGenerator g = IdGenerators.of(this, it);
         return g != null ? g : NIL_ID_GENERATOR;
     });
-
+    private KClass<?> kotlinClass;
+    private Set<ImmutableType> allTypes;
+    private Map<String, ImmutableProp> declaredProps;
+    private Map<String, ImmutableProp> props;
+    private ImmutableProp[] propArr;
+    private Map<String, List<ImmutableProp>> embeddedPaths;
+    private Map<String, ImmutableProp> entityProps;
+    private Map<String, ImmutableProp> selectableProps;
+    private Map<String, ImmutableProp> selectableScalarProps;
+    private Map<String, ImmutableProp> selectableReferenceProps;
+    private Map<String, ImmutableProp> objectCacheProps;
+    private Map<String, ImmutableProp> referenceProps;
+    private ImmutableProp idProp;
+    private ImmutableProp versionProp;
+    private LogicalDeletedInfo declaredLogicalDeletedInfo;
+    private LogicalDeletedInfo logicalDeletedInfo;
     private final SqlContextCache<LogicalDeletedValueGenerator<?>> logicalDeletedValueGeneratorCache = new SqlContextCache<>(it -> {
         LogicalDeletedValueGenerator<?> g = LogicalDeletedValueGenerators.of(getLogicalDeletedInfo(), it);
         return g != null ? g : NIL_LOGICAL_DELETED_VALUE_GENERATOR;
     });
+    private KeyMatcher keyMatcher = KeyMatcher.EMPTY;
+    private List<MappedId> mappedIds;
+    private Set<ImmutableProp> mappedIdProps;
 
     ImmutableTypeImpl(
             Class<?> javaClass,
@@ -247,12 +217,27 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                     "\" is not supported yet"
                     );
                 }
+                if (inheritance.strategy() != InheritanceType.JOINED &&
+                        inheritance.joinedTableDeleteMode() != JoinedTableDeleteMode.EXPLICIT) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", the `joinedTableDeleteMode` of @" +
+                                    Inheritance.class.getName() +
+                                    " can only be \"" +
+                                    JoinedTableDeleteMode.DB_CASCADE +
+                                    "\" when the inheritance strategy is \"" +
+                                    InheritanceType.JOINED +
+                                    "\""
+                    );
+                }
                 if (discriminatorColumn == null) {
                     discriminatorColumn = DEFAULT_DISCRIMINATOR_COLUMN;
                 }
                 declaredInheritanceInfo = new InheritanceInfo(
                         this,
                         inheritance.strategy(),
+                        inheritance.joinedTableDeleteMode(),
                         discriminatorColumn
                 );
             } else {
@@ -483,16 +468,58 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         return idProp;
     }
 
+    void setIdProp(ImmutableProp idProp) {
+        if (idProp.getDeclaringType() != this) {
+            idProp = getProp(idProp.getName());
+        }
+        if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
+            validateEmbeddedIdType(idProp.getTargetType(), null);
+        }
+        this.idProp = idProp;
+    }
+
     @Nullable
     @Override
     public ImmutableProp getVersionProp() {
         return versionProp;
     }
 
+    void setVersionProp(ImmutableProp versionProp) {
+        if (versionProp != null && versionProp.getDeclaringType() != this) {
+            versionProp = getProp(versionProp.getName());
+        }
+        this.versionProp = versionProp;
+    }
+
     @Nullable
     @Override
     public LogicalDeletedInfo getDeclaredLogicalDeletedInfo() {
         return declaredLogicalDeletedInfo;
+    }
+
+    void setDeclaredLogicalDeletedInfo(LogicalDeletedInfo declaredLogicalDeletedInfo) {
+        LogicalDeletedInfo superInfo = null;
+        for (ImmutableType superType : superTypes) {
+            superInfo = superType.getLogicalDeletedInfo();
+            if (superInfo != null) {
+                break;
+            }
+        }
+        if (superInfo != null && declaredLogicalDeletedInfo != null) {
+            throw new AssertionError(
+                    "Internal bug, @LogicalDeleted field is configured in both \"" +
+                            this +
+                            "\" and its super type"
+            );
+        }
+        this.declaredLogicalDeletedInfo = declaredLogicalDeletedInfo;
+        if (superInfo != null) {
+            logicalDeletedInfo = superInfo.to(
+                    getProp(superInfo.getProp().getName())
+            );
+        } else {
+            logicalDeletedInfo = declaredLogicalDeletedInfo;
+        }
     }
 
     @Nullable
@@ -759,48 +786,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         this.props = Collections.unmodifiableMap(createPropMap(redefinedMap));
     }
 
-    void setIdProp(ImmutableProp idProp) {
-        if (idProp.getDeclaringType() != this) {
-            idProp = getProp(idProp.getName());
-        }
-        if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
-            validateEmbeddedIdType(idProp.getTargetType(), null);
-        }
-        this.idProp = idProp;
-    }
-
-    void setVersionProp(ImmutableProp versionProp) {
-        if (versionProp != null && versionProp.getDeclaringType() != this) {
-            versionProp = getProp(versionProp.getName());
-        }
-        this.versionProp = versionProp;
-    }
-
-    void setDeclaredLogicalDeletedInfo(LogicalDeletedInfo declaredLogicalDeletedInfo) {
-        LogicalDeletedInfo superInfo = null;
-        for (ImmutableType superType : superTypes) {
-            superInfo = superType.getLogicalDeletedInfo();
-            if (superInfo != null) {
-                break;
-            }
-        }
-        if (superInfo != null && declaredLogicalDeletedInfo != null) {
-            throw new AssertionError(
-                    "Internal bug, @LogicalDeleted field is configured in both \"" +
-                            this +
-                            "\" and its super type"
-            );
-        }
-        this.declaredLogicalDeletedInfo = declaredLogicalDeletedInfo;
-        if (superInfo != null) {
-            logicalDeletedInfo = superInfo.to(
-                    getProp(superInfo.getProp().getName())
-            );
-        } else {
-            logicalDeletedInfo = declaredLogicalDeletedInfo;
-        }
-    }
-
     void setKeyGroups(Map<String, Set<ImmutableProp>> keyGroups) {
         if (keyGroups.isEmpty()) {
             this.keyMatcher = KeyMatcher.EMPTY;
@@ -895,20 +880,13 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         private final Set<ImmutableType> superTypes;
 
         private final BiFunction<DraftContext, Object, Draft> draftFactory;
-
-        private String idPropName;
-
-        private String versionPropName;
-
-        private String logicalDeletedPropName;
-
         private final List<String> keyPropNames = new ArrayList<>();
-
         private final Map<String, PropBuilder> propBuilderMap = new LinkedHashMap<>();
-
         private final Set<PropId> propIds = new LinkedHashSet<>();
-
         private final Map<String, PropId> redefinedMap = new HashMap<>();
+        private String idPropName;
+        private String versionPropName;
+        private String logicalDeletedPropName;
 
         BuilderImpl(
                 Class<?> javaClass,
@@ -965,6 +943,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                     }
                 }
             }
+        }
+
+        private static ImmutablePropCategory category(Class<?> elementType) {
+            return elementType.isAnnotationPresent(Embeddable.class) ?
+                    ImmutablePropCategory.REFERENCE :
+                    ImmutablePropCategory.SCALAR;
         }
 
         private Set<ImmutableType> standardSuperTypes(Collection<ImmutableType> superTypes) {
@@ -1420,12 +1404,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                     )
             );
             return this;
-        }
-
-        private static ImmutablePropCategory category(Class<?> elementType) {
-            return elementType.isAnnotationPresent(Embeddable.class) ?
-                    ImmutablePropCategory.REFERENCE :
-                    ImmutablePropCategory.SCALAR;
         }
 
         @Override
