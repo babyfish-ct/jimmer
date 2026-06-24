@@ -48,8 +48,14 @@ fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
     return immutableType.getProp(name)
 }
 
-inline fun <reified I : Any> fromString(json: String, jsonCodec: JsonCodec<*>?): I =
+inline fun <reified I : Any> fromString(json: String): I =
+    ImmutableObjects.fromString(I::class.java, json)
+
+inline fun <reified I : Any> fromString(json: String, jsonCodec: JsonCodec<*>): I =
     ImmutableObjects.fromString(I::class.java, json, jsonCodec)
 
-fun <I : Any> fromString(type: KClass<I>, json: String, jsonCodec: JsonCodec<*>? = null): I =
+fun <I : Any> fromString(type: KClass<I>, json: String): I =
+    ImmutableObjects.fromString(type.java, json)
+
+fun <I : Any> fromString(type: KClass<I>, json: String, jsonCodec: JsonCodec<*>): I =
     ImmutableObjects.fromString(type.java, json, jsonCodec)

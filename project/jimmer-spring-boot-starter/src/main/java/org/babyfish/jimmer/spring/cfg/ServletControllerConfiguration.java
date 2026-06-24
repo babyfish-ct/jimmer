@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.cfg;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.OpenApiController;
 import org.babyfish.jimmer.spring.client.OpenApiUiController;
@@ -8,7 +7,6 @@ import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.cloud.MicroServiceExporterController;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -70,12 +68,9 @@ public class ServletControllerConfiguration {
     @Bean
     public MicroServiceExporterController microServiceExporterController(
             @Autowired(required = false) JSqlClient jSqlClient,
-            @Autowired(required = false) KSqlClient kSqlClient,
-            ObjectProvider<JsonCodec<?>> jsonCodecProvider
+            @Autowired(required = false) KSqlClient kSqlClient
     ) {
-        return new MicroServiceExporterController(
-                jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient(),
-                jsonCodecProvider.getIfAvailable(JsonCodec::jsonCodec)
-        );
+        JSqlClient sqlClient = jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient();
+        return new MicroServiceExporterController(sqlClient);
     }
 }

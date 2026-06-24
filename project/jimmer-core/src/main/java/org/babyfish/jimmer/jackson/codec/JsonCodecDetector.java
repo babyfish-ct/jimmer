@@ -10,15 +10,13 @@ import static org.babyfish.jimmer.jackson.ClassUtils.classExists;
 
 class JsonCodecDetector {
     static final JsonCodec<?> JSON_CODEC;
-    static final JsonCodec<?> JSON_CODEC_WITHOUT_IMMUTABLE_MODULE;
 
     static {
         JsonCodecProvider provider = loadJsonCodecProvider();
-        JSON_CODEC_WITHOUT_IMMUTABLE_MODULE = provider.create();
-        JSON_CODEC = JSON_CODEC_WITHOUT_IMMUTABLE_MODULE.withCustomizations(new ImmutableModuleCustomization());
+        JSON_CODEC = provider.create().withCustomizations(new ImmutableModuleCustomization());
     }
 
-    private static JsonCodecProvider loadJsonCodecProvider() {
+    static JsonCodecProvider loadJsonCodecProvider() {
         ServiceLoader<JsonCodecProvider> serviceLoader = ServiceLoader.load(JsonCodecProvider.class);
         Iterator<JsonCodecProvider> providerIterator = serviceLoader.iterator();
         if (providerIterator.hasNext()) {

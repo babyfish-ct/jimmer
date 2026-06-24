@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
+import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.jackson.codec.Node;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -15,7 +16,6 @@ import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.List;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 
 class ValueParser {
@@ -113,7 +113,7 @@ class ValueParser {
         if (Date.class.isAssignableFrom(sqlType) || Temporal.class.isAssignableFrom(sqlType)) {
             return ILLEGAL_VALUE;
         }
-        Object value = valueOf(node, sqlType);
+        Object value = valueOf(parser.codec(), node, sqlType);
         if (provider != null && value != null) {
             try {
                 return provider.toScalar(value);
@@ -131,7 +131,7 @@ class ValueParser {
         return value;
     }
 
-    static Object valueOrError(Node node, Class<?> type) {
+    static Object valueOrError(JsonCodec<?> codec, Node node, Class<?> type) {
         if (node.isNull()) {
             return null;
         }
@@ -139,7 +139,7 @@ class ValueParser {
             return node.castTo(type);
         }
         try {
-            return node.convertTo(type, jsonCodec().converter());
+            return node.convertTo(type, codec.converter());
         } catch (Exception ex) {
             throw new IllegalArgumentException("Cannot convert  \"" +
                     node +
@@ -150,7 +150,7 @@ class ValueParser {
         }
     }
 
-    private static Object valueOf(Node node, Class<?> type) {
+    private static Object valueOf(JsonCodec<?> codec, Node node, Class<?> type) {
         if (node.isNull()) {
             return null;
         }
@@ -158,7 +158,7 @@ class ValueParser {
             return node.castTo(type);
         }
         try {
-            return node.convertTo(type, jsonCodec().converter());
+            return node.convertTo(type, codec.converter());
         } catch (Exception ex) {
             return ILLEGAL_VALUE;
         }

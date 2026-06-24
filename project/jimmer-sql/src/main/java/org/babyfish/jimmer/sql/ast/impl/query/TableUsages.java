@@ -6,11 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class TableUsages {
 
@@ -25,7 +21,7 @@ public final class TableUsages {
         this.tableStateMap = new IdentityHashMap<>(tableStateMap);
     }
 
-    public void applyTo(AstContext astContext) {
+    public void applyUsedStatesTo(AstContext astContext) {
         for (Map.Entry<RealTable, TableUsedState> e : tableStateMap.entrySet()) {
             if (e.getValue() == TableUsedState.USED) {
                 astContext.useTable(e.getKey());
@@ -35,12 +31,24 @@ public final class TableUsages {
         }
     }
 
-    public TableAliases allocateAliases(AstContext astContext) {
+    public void allocateAndBindAliases(AstContext astContext) {
+        allocateAndBindAliases(astContext, null);
+    }
+
+    TableAliases allocateAndBindAliases(AstContext astContext, CteTableDependencies cteTableDependencies) {
         TableAliasScope aliasScope = astContext.beginTableAliasScope();
-        TableAliases aliases = TableAliases.allocate(rootTables, tableStateMap, aliasScope);
+        TableAliases aliases = TableAliases.allocate(
+                cteTableDependencies != null ? cteTableDependencies.aliasRootTables() : rootTables,
+                tableStateMap,
+                aliasScope
+        );
         for (RealTable rootTable : rootTables) {
             aliasScope.applyAliases(rootTable, aliases);
         }
         return aliases;
+    }
+
+    List<RealTable> getRootTables() {
+        return rootTables;
     }
 }

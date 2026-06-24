@@ -61,19 +61,11 @@ class InputBuilderGenerator(
     }
 
     private fun TypeSpec.Builder.addMembers() {
-        parentGenerator
-        for (prop in dtoType.dtoProps) {
+        for (prop in dtoType.props) {
             addField(prop)
             addStateField(prop)
         }
-        for (prop in dtoType.userProps) {
-            addField(prop)
-            addStateField(prop)
-        }
-        for (prop in dtoType.dtoProps) {
-            addSetter(prop)
-        }
-        for (prop in dtoType.userProps) {
+        for (prop in dtoType.props) {
             addSetter(prop)
         }
         addBuild()
@@ -142,15 +134,16 @@ class InputBuilderGenerator(
                         .add("return %T(\n", parentGenerator.getDtoClassName())
                         .indent()
                         .apply {
-                            for (prop in dtoType.dtoProps) {
+                            for (prop in dtoType.props) {
                                 val builderStatePropName = parentGenerator.statePropName(prop, true)
                                 val dtoStatePropName = parentGenerator.statePropName(prop, false)
                                 if (builderStatePropName === null) {
                                     addArg(prop)
                                     add(",\n")
                                 } else {
-                                    add("// %L\n", prop.inputModifier)
-                                    if (prop.inputModifier == DtoModifier.FIXED) {
+                                    val inputModifier = prop.inputModifier
+                                    add("// %L\n", inputModifier)
+                                    if (inputModifier == DtoModifier.FIXED) {
                                         beginControlFlow("if (!%L)", builderStatePropName)
                                         add(
                                             "throw %T.unknownNullableProperty(%T::class.java, %S)",
@@ -170,10 +163,6 @@ class InputBuilderGenerator(
                                         add("%L,\n", builderStatePropName)
                                     }
                                 }
-                            }
-                            for (prop in dtoType.userProps) {
-                                addArg(prop)
-                                add(",\n")
                             }
                         }
                         .unindent()
@@ -205,7 +194,7 @@ class InputBuilderGenerator(
         )
 
         private fun isFieldNullable(prop: AbstractProp): Boolean =
-            prop !is DtoProp<*, *> || (prop.funcName != "null" && prop.funcName != "notNull")
+            prop.funcName != "null" && prop.funcName != "notNull"
 
         @Suppress("UNCHECKED_CAST")
         private fun FunSpec.Builder.addJacksonAnnotations(prop: AbstractProp, resolver: Resolver) {
@@ -216,9 +205,9 @@ class InputBuilderGenerator(
                     addAnnotation(DtoGenerator.annotationOf(anno, resolver))
                 }
             }
-            if (prop is DtoProp<*, *>) {
-                val dtoProp = prop as DtoProp<*, ImmutableProp>
-                for (anno in dtoProp.toTailProp().baseProp.annotations { an ->
+            val baseProp = prop.basePropOrNull as ImmutableProp?
+            if (baseProp !== null) {
+                for (anno in baseProp.annotations { an ->
                     JACKSON_ANNO_PREFIXIES.any { an.fullName.startsWith(it) }
                 }) {
                     if (typeNames.add(anno.fullName)) {

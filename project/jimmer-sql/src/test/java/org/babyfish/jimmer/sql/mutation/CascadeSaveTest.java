@@ -1570,9 +1570,17 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into ADMINISTRATOR_METADATA(" +
-                                "--->NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED" +
-                                ") key(NAME, DELETED) values(?, ?, ?, ?, ?, ?, ?)"
+                                "merge into ADMINISTRATOR_METADATA tb_1_ " +
+                                "using(values(?, ?, ?, ?, ?, ?, ?)) " +
+                                "tb_2_(NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED) " +
+                                "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED = false " +
+                                "when matched then " +
+                                "--->update set CREATED_TIME = tb_2_.CREATED_TIME, MODIFIED_TIME = tb_2_.MODIFIED_TIME, " +
+                                "EMAIL = tb_2_.EMAIL, WEBSITE = tb_2_.WEBSITE, ADMINISTRATOR_ID = tb_2_.ADMINISTRATOR_ID " +
+                                "when not matched then " +
+                                "--->insert(NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED) " +
+                                "--->values(tb_2_.NAME, tb_2_.CREATED_TIME, tb_2_.MODIFIED_TIME, tb_2_.EMAIL, " +
+                                "tb_2_.WEBSITE, tb_2_.ADMINISTRATOR_ID, tb_2_.DELETED)"
                         );
                         it.variables(
                                 "Daisy-Metadata",

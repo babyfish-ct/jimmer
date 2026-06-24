@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
@@ -15,6 +14,7 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
@@ -52,19 +52,19 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     public T sql(String sql) {
         preAppend();
         builder.append(sql);
-        return (T)this;
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")
     public T sql(ValueGetter getter) {
         getter.metadata().renderTo(this);
-        return (T)this;
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")
     public final T ast(Ast ast, int currentPrecedence) {
         if (ast instanceof ExpressionImplementor<?> &&
-                ((ExpressionImplementor<?>)ast).precedence() <= currentPrecedence) {
+                ((ExpressionImplementor<?>) ast).precedence() <= currentPrecedence) {
             ast.renderTo(this);
         } else {
             sql("(").space('\n');
@@ -105,7 +105,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             generatedValue = Variables.process(generatedValue, logicalDeletedInfo.getType(), sqlClient());
             rawVariable(generatedValue);
         }
-        return (T)this;
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")
@@ -135,11 +135,56 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
             sql(assignedName).sql(" is null");
-        }
-        else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
             sql(assignedName).sql(" is not null");
         }
-        return (T)this;
+        return (T) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T logicalDeleteConflictPredicate(LogicalDeletedInfo logicalDeletedInfo, String alias) {
+        String assignedName = logicalDeletedInfo.getColumnName();
+        if (assignedName == null) {
+            assignedName = logicalDeletedInfo
+                    .getProp()
+                    .<SingleColumn>getStorage(sqlClient().getMetadataStrategy())
+                    .getName();
+        }
+        if (alias != null) {
+            assignedName = alias + '.' + assignedName;
+        }
+        LogicalDeletedInfo.Action action = logicalDeletedInfo.getAction();
+        if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+            sql(assignedName).sql(" is null");
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+            sql(assignedName).sql(" is not null");
+        } else {
+            Object value = logicalDeletedInfo.allocateInitializedValue();
+            if (value == null) {
+                sql(assignedName).sql(" is null");
+            } else {
+                value = Variables.process(value, logicalDeletedInfo.getProp(), sqlClient());
+                sql(assignedName).sql(" = ");
+                renderLiteral(value);
+            }
+        }
+        return (T) this;
+    }
+
+    private void renderLiteral(Object value) {
+        if (value instanceof DbLiteral.DbNull) {
+            sql("null");
+        } else if (value instanceof DbLiteral) {
+            StringBuilder builder = new StringBuilder();
+            ((DbLiteral) value).renderValue(builder);
+            sql(builder.toString());
+        } else if (value instanceof Number) {
+            sql(value.toString());
+        } else if (value instanceof Boolean) {
+            sql((Boolean) value ? "true" : "false");
+        } else {
+            sql("'").sql(value.toString().replace("'", "''")).sql("'");
+        }
     }
 
     public abstract T rawVariable(Object value);
@@ -147,13 +192,13 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     @SuppressWarnings("unchecked")
     public T enter(String separator) {
         enterImpl(ScopeType.BLANK, separator);
-        return (T)this;
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")
     public T enter(ScopeType type) {
         enterImpl(type, null);
-        return (T)this;
+        return (T) this;
     }
 
     private void enterImpl(ScopeType type, String separator) {
@@ -198,7 +243,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             }
             scope.dirty = false;
         }
-        return (T)this;
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")
@@ -218,7 +263,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 part(scope.type.suffix);
             }
         }
-        return (T)this;
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")
@@ -228,7 +273,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (scope != null) {
             scope.dirty = false;
         }
-        return (T)this;
+        return (T) this;
     }
 
     private void part(ScopeType.Part part) {
@@ -270,7 +315,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 }
                 break;
         }
-        return (T)this;
+        return (T) this;
     }
 
     protected final void preAppend() {
@@ -309,86 +354,32 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
     public T definition(
             String tableAlias,
-            ColumnDefinition definition,
-            BaseQueryExportSelection exportSelection
+            ColumnDefinition definition
     ) {
-        return definition(tableAlias, null, definition, false, null, exportSelection);
+        return definition(tableAlias, definition, null);
     }
 
     public T definition(
             RealTable table,
-            ColumnDefinition definition,
-            BaseQueryExportSelection exportSelection
+            ColumnDefinition definition
     ) {
-        return definition(alias(table), table, definition, false, null, exportSelection);
+        return definition(alias(table), definition, null);
     }
 
     @SuppressWarnings("unchecked")
     public T definition(
             String tableAlias,
             ColumnDefinition definition,
-            boolean foreignKeyInBaseQuery,
-            Function<Integer, String> asBlock,
-            BaseQueryExportSelection exportSelection
-    ) {
-        return definition(tableAlias, null, definition, foreignKeyInBaseQuery, asBlock, exportSelection);
-    }
-
-    @SuppressWarnings("unchecked")
-    public T definition(
-            RealTable table,
-            ColumnDefinition definition,
-            boolean foreignKeyInBaseQuery,
-            Function<Integer, String> asBlock,
-            BaseQueryExportSelection exportSelection
-    ) {
-        return definition(
-                table != null ? alias(table) : null,
-                table,
-                definition,
-                foreignKeyInBaseQuery,
-                asBlock,
-                exportSelection
-        );
-    }
-
-    private String alias(RealTable table) {
-        return assertSimple().alias(table);
-    }
-
-    private String exportAlias(BaseQueryExportSelection exportSelection) {
-        if (this instanceof SqlBuilder) {
-            return exportSelection.getAlias((SqlBuilder) this);
-        }
-        throw new IllegalStateException(
-                "Base-query export alias rendering requires " + SqlBuilder.class.getName()
-        );
-    }
-
-    @SuppressWarnings("unchecked")
-    private T definition(
-            String tableAlias,
-            RealTable table,
-            ColumnDefinition definition,
-            boolean foreignKeyInBaseQuery,
-            Function<Integer, String> asBlock,
-            BaseQueryExportSelection exportSelection
+            Function<Integer, String> asBlock
     ) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return definition(definition);
         }
         preAppend();
         if (definition instanceof SingleColumn) {
-            String columnName = ((SingleColumn)definition).getName();
-            if (exportSelection != null) {
-                builder.append(exportAlias(exportSelection))
-                        .append(".c")
-                        .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
-            } else {
-                builder.append(tableAlias).append('.').append(columnName);
-                if (asBlock != null) {
-                    builder.append(" ").append(asBlock.apply(0));
-                }
+            builder.append(tableAlias).append('.').append(((SingleColumn) definition).getName());
+            if (asBlock != null) {
+                builder.append(" ").append(asBlock.apply(0));
             }
         } else {
             int size = definition.size();
@@ -396,27 +387,33 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 if (i != 0) {
                     builder.append(", ");
                 }
-                String columnName = definition.name(i);
-                if (exportSelection != null) {
-                    builder.append(exportAlias(exportSelection))
-                            .append(".c")
-                            .append(exportSelection.columnIndex(table, columnName, foreignKeyInBaseQuery));
-                } else {
-                    builder.append(tableAlias).append('.').append(columnName);
-                    if (asBlock != null) {
-                        builder.append(" ").append(asBlock.apply(i));
-                    }
+                builder.append(tableAlias).append('.').append(definition.name(i));
+                if (asBlock != null) {
+                    builder.append(" ").append(asBlock.apply(i));
                 }
             }
         }
-        return (T)this;
+        return (T) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T definition(
+            RealTable table,
+            ColumnDefinition definition,
+            Function<Integer, String> asBlock
+    ) {
+        return definition(table != null ? alias(table) : null, definition, asBlock);
+    }
+
+    private String alias(RealTable table) {
+        return assertSimple().alias(table);
     }
 
     @SuppressWarnings("unchecked")
     public T definition(ColumnDefinition definition) {
         preAppend();
         if (definition instanceof SingleColumn) {
-            builder.append(((SingleColumn)definition).getName());
+            builder.append(((SingleColumn) definition).getName());
         } else {
             boolean addComma = false;
             for (String columnName : definition) {
@@ -428,7 +425,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 builder.append(columnName);
             }
         }
-        return (T)this;
+        return (T) this;
     }
 
     protected BatchSqlBuilder assertBatch(AbstractSqlBuilder<?> builder) {
@@ -520,8 +517,11 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     }
 
     protected static class ScopeManager {
-        public ScopeManager() {}
+        public ScopeManager() {
+        }
+
         public Scope current;
+
         public Scope cloneScope() {
             if (current == null) {
                 return null;
@@ -555,7 +555,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             this.parent = parent;
             this.type = type;
             this.ignored = ignored;
-            this.depth = ignored ? (parent != null ? parent.depth: 0) : (parent != null ? parent.depth + 1: 1);
+            this.depth = ignored ? (parent != null ? parent.depth : 0) : (parent != null ? parent.depth + 1 : 1);
             this.separator = separator != null ? ScopeType.partOf(separator) : type.separator;
         }
 

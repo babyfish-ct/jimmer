@@ -169,6 +169,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
     }
 
+    override fun setConstraintViolationTranslatable(translatable: Boolean) {
+        javaCommand = javaCommand.setConstraintViolationTranslatable(translatable)
+    }
+
     override fun addExceptionTranslator(translator: ExceptionTranslator<*>?) {
         javaCommand = javaCommand.addExceptionTranslator(translator)
     }
@@ -189,4 +193,3 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setDissociationLogicalDeleteEnabled(enabled)
     }
 }
-

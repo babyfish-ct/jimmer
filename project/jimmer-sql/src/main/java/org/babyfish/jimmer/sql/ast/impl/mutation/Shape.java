@@ -34,13 +34,16 @@ class Shape {
     public static Shape of(JSqlClientImplementor sqlClient, ImmutableSpi spi, Predicate<ImmutableProp> propFilter) {
         return new Shape(
                 spi.__type(), 
-                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, propFilter)
+                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, withoutMappedIdProps(spi.__type(), propFilter))
         );
     }
 
     public static Shape fullOf(JSqlClientImplementor sqlClient, Class<?> type) {
         ImmutableType immutableType = ImmutableType.get(type);
-        return new Shape(immutableType, PropertyGetter.entityGetters(sqlClient, immutableType, null, null));
+        return new Shape(
+                immutableType,
+                PropertyGetter.entityGetters(sqlClient, immutableType, null, withoutMappedIdProps(immutableType, null))
+        );
     }
 
     @NotNull
@@ -190,5 +193,23 @@ class Shape {
         }
         builder.append(']');
         return builder.toString();
+    }
+
+    private static Predicate<ImmutableProp> withoutMappedIdProps(
+            ImmutableType type,
+            Predicate<ImmutableProp> propFilter
+    ) {
+        List<MappedId> mappedIds = type.getMappedIds();
+        if (mappedIds.isEmpty()) {
+            return propFilter;
+        }
+        Set<ImmutableProp> mappedIdProps = new HashSet<>(mappedIds.size());
+        for (MappedId mappedId : mappedIds) {
+            mappedIdProps.add(mappedId.getProp());
+        }
+        if (propFilter == null) {
+            return prop -> !mappedIdProps.contains(prop);
+        }
+        return prop -> !mappedIdProps.contains(prop) && propFilter.test(prop);
     }
 }

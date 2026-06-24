@@ -193,6 +193,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpsertWithConflictPredicateSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isTransactionAbortedByError() {
         return true;
     }
@@ -236,6 +241,9 @@ public class PostgresDialect extends DefaultDialect {
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendConflictColumns()
                 .leave();
+        if (ctx.hasConflictPredicate()) {
+            ctx.sql(" where ").appendConflictPredicate(null);
+        }
         if (ctx.isUpdateIgnored()) {
             ctx.sql(" do nothing");
             if (ctx.hasGeneratedId()) {

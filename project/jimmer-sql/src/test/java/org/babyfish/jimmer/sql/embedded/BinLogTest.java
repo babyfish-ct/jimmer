@@ -10,15 +10,18 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+
 public class BinLogTest {
 
     private final BinLogParser parser = 
-            new BinLogParser()
+            new BinLogParser(
+                    jsonCodec(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap()
+            )
                     .initialize(
-                            (JSqlClientImplementor) JSqlClient.newBuilder().build(),
-                            null,
-                            Collections.emptyMap(),
-                            Collections.emptyMap()
+                            (JSqlClientImplementor) JSqlClient.newBuilder().build()
                     );
     
     @Test

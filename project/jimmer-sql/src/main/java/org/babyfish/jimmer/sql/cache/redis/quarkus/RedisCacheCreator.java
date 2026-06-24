@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheCreator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -26,10 +27,10 @@ import java.util.Objects;
 public class RedisCacheCreator extends AbstractCacheCreator {
 
     public RedisCacheCreator(RedisDataSource redisDataSource) {
-        this(redisDataSource, null);
+        this(redisDataSource, JsonCodec.jsonCodec());
     }
 
-    public RedisCacheCreator(RedisDataSource redisDataSource, JsonCodec<?> jsonCodec) {
+    public RedisCacheCreator(RedisDataSource redisDataSource, @NotNull JsonCodec<?> jsonCodec) {
         super(new Root(redisDataSource, jsonCodec));
     }
 
@@ -111,9 +112,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
     private <K, V> SimpleBinder<K, V> redisValueBinder(ImmutableType type) {
         Args args = args();
         return RedisValueBinder
-                .<K, V>forObject(type)
+                .<K, V>forObject(type, args.jsonCodec)
                 .publish(args.tracker)
-                .jsonCodec(args.jsonCodec)
                 .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
@@ -125,9 +125,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
     private <K, V> SimpleBinder<K, V> redisValueBinder(ImmutableProp prop) {
         Args args = args();
         return RedisValueBinder
-                .<K, V>forProp(prop)
+                .<K, V>forProp(prop, args.jsonCodec)
                 .publish(args.tracker)
-                .jsonCodec(args.jsonCodec)
                 .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.duration)
                 .randomPercent(args.randomDurationPercent)
@@ -139,9 +138,8 @@ public class RedisCacheCreator extends AbstractCacheCreator {
     private <K, V> SimpleBinder.Parameterized<K, V> redisHashBinder(ImmutableProp prop) {
         Args args = args();
         return RedisHashBinder
-                .<K, V>forProp(prop)
+                .<K, V>forProp(prop, args.jsonCodec)
                 .publish(args.tracker)
-                .jsonCodec(args.jsonCodec)
                 .keyPrefixProvider(args.keyPrefixProvider)
                 .duration(args.multiVewDuration)
                 .randomPercent(args.randomDurationPercent)
@@ -156,7 +154,7 @@ public class RedisCacheCreator extends AbstractCacheCreator {
 
         final JsonCodec<?> jsonCodec;
 
-        private Root(RedisDataSource redisDataSource, JsonCodec<?> jsonCodec) {
+        private Root(RedisDataSource redisDataSource, @NotNull JsonCodec<?> jsonCodec) {
             super(null);
             this.redisDataSource = Objects.requireNonNull(redisDataSource, "redisDataSource cannot be null");
             this.jsonCodec = jsonCodec;

@@ -55,6 +55,9 @@ public enum SaveErrorCode {
 
     INCOMPLETE_PROPERTY,
 
+    @ErrorField(name = "prop", type = String.class)
+    INCONSISTENT_MAPPED_ID,
+
     @ErrorField(name = "props", type = String.class, list = true)
     @ErrorField(name = "values", type = Object.class, list = true)
     NOT_UNIQUE,

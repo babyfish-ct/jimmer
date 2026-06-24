@@ -7,6 +7,16 @@ create schema if not exists D;
 drop table issue1125_mp_role_perm if exists;
 drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
+drop table dual_parent_child if exists;
+drop table tenant_document_detail if exists;
+drop table mapped_tenant_document if exists;
+drop table tenant_document if exists;
+drop table long_maps_id_profile if exists;
+drop table tenant if exists;
+drop table maps_id_message_delivery if exists;
+drop table maps_id_message if exists;
+drop table maps_id_profile if exists;
+drop table maps_id_principal if exists;
 drop table time_row if exists;
 drop table issue888_item if exists;
 drop table issue888_structure if exists;
@@ -14,6 +24,7 @@ drop table post_2_category_2_mapping if exists;
 drop table post2_item if exists;
 drop table post_2 if exists;
 drop table category_2 if exists;
+drop table bool_key_file if exists;
 drop table sys_user if exists;
 drop table players if exists;
 drop table teams if exists;
@@ -102,6 +113,8 @@ create table D.TABLE_D(
     id bigint not null primary key,
     created_time datetime
 );
+
+insert into C.TABLE_C(id, deleted_time) values(1, null);
 
 create table book_store(
     id uuid not null,
@@ -1419,6 +1432,16 @@ alter table category_2
     add constraint uq_category
         unique(name);
 
+create table bool_key_file(
+    id bigint auto_increment(100) not null,
+    path varchar(50) not null,
+    name varchar(50) not null,
+    deleted boolean not null
+);
+alter table bool_key_file
+    add constraint pk_bool_key_file
+        primary key(id);
+
 create table post_2_category_2_mapping(
     post_id bigint not null,
     category_id bigint not null,
@@ -1441,6 +1464,10 @@ insert into category_2(id, name, deleted_millis) values
     (3, 'category-3', 0),
     (4, 'category-4', 0),
     (5, 'category-5', 0);
+
+insert into bool_key_file(id, path, name, deleted) values
+    (1, '/active', 'old-active', false),
+    (2, '/deleted', 'old-deleted', true);
 
 insert into post_2_category_2_mapping(post_id, category_id, deleted_uuid) values
     (1, 2, x'00000000000000000000000000000000'), (1, 3, x'00000000000000000000000000000000'),
@@ -1567,4 +1594,98 @@ create table issue1125_sys_role (
   id bigint generated always as identity(start with 1 increment by 1) not null,
   deleted_at timestamp(0),
   constraint sys_role_pkey primary key (id)
+);
+
+create table maps_id_principal(
+    a bigint not null,
+    b bigint not null,
+    name varchar(50) not null,
+    constraint pk_maps_id_principal primary key(a, b)
+);
+
+create table maps_id_profile(
+    a bigint not null,
+    b bigint not null,
+    nickname varchar(50) not null,
+    constraint pk_maps_id_profile primary key(a, b),
+    constraint fk_maps_id_profile__principal
+        foreign key(a, b)
+            references maps_id_principal(a, b)
+);
+
+create table tenant(
+    id bigint not null,
+    name varchar(50) not null,
+    constraint pk_tenant primary key(id)
+);
+
+create table long_maps_id_profile(
+    id bigint not null,
+    nickname varchar(50) not null,
+    constraint pk_long_maps_id_profile primary key(id),
+    constraint fk_long_maps_id_profile__tenant
+        foreign key(id)
+            references tenant(id)
+);
+
+create table maps_id_message(
+    id bigint not null,
+    text varchar(50) not null,
+    constraint pk_maps_id_message primary key(id)
+);
+
+create table maps_id_message_delivery(
+    message_id bigint not null,
+    status varchar(50) not null,
+    constraint pk_maps_id_message_delivery primary key(message_id),
+    constraint fk_maps_id_message_delivery__message
+        foreign key(message_id)
+            references maps_id_message(id)
+);
+
+insert into maps_id_message(id, text) values(100, 'Hello');
+insert into maps_id_message_delivery(message_id, status) values(100, 'SENT');
+
+create table tenant_document(
+    tenant_id bigint not null,
+    document_id bigint not null,
+    name varchar(50) not null,
+    constraint pk_tenant_document primary key(tenant_id, document_id),
+    constraint fk_tenant_document__tenant
+        foreign key(tenant_id)
+            references tenant(id)
+);
+
+create table mapped_tenant_document(
+    tenant_id bigint not null,
+    document_id bigint not null,
+    name varchar(50) not null,
+    constraint pk_mapped_tenant_document primary key(tenant_id, document_id),
+    constraint fk_mapped_tenant_document__tenant
+        foreign key(tenant_id)
+            references tenant(id)
+);
+
+create table tenant_document_detail(
+    tenant_id bigint not null,
+    document_id bigint not null,
+    description varchar(50) not null,
+    constraint pk_tenant_document_detail primary key(tenant_id, document_id),
+    constraint fk_tenant_document_detail__document
+        foreign key(tenant_id, document_id)
+            references tenant_document(tenant_id, document_id)
+);
+
+create table dual_parent_child(
+    left_id bigint not null,
+    right_id bigint not null,
+    local_id bigint not null,
+    name varchar(50) not null,
+    constraint pk_dual_parent_child primary key(left_id, right_id, local_id),
+    constraint fk_dual_parent_child__left
+        foreign key(left_id)
+            references tenant(id),
+    constraint fk_dual_parent_child__right
+        foreign key(right_id)
+            references tenant(id)
 );

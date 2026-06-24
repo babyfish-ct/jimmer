@@ -17,12 +17,15 @@ import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -972,7 +975,7 @@ public class IdentityTest extends AbstractMutationTest {
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.entity(it -> it.modified("{\"id\":\"1\",\"name\":\"Market\"}"));
-                    ctx.entity(it -> it.modified("{\"id\":\"101\",\"name\":\"Sales\"}"));
+                    ctx.entity(it -> it.modified("{\"id\":\"100\",\"name\":\"Sales\"}"));
                 }
         );
     }
@@ -1077,6 +1080,49 @@ public class IdentityTest extends AbstractMutationTest {
                     });
                     ctx.entity(it -> it.modified("{\"id\":\"1\",\"name\":\"Market\"}"));
                     ctx.entity(it -> it.modified("{\"id\":\"101\",\"name\":\"Sales\"}"));
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentWithBooleanLogicalDeletedByH2() {
+
+        resetIdentity(null);
+
+        LocalDateTime time = LocalDateTime.of(2024, 6, 6, 22, 13);
+        Administrator administrator = AdministratorDraft.$.produce(draft -> {
+            draft.setName("a_5");
+            draft.setCreatedTime(time);
+            draft.setModifiedTime(time);
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveCommand(administrator)
+                        .setMode(SaveMode.INSERT_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into ADMINISTRATOR tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) " +
+                                        "tb_2_(NAME, CREATED_TIME, MODIFIED_TIME, DELETED) " +
+                                        "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED = false " +
+                                        "when not matched then " +
+                                        "insert(NAME, CREATED_TIME, MODIFIED_TIME, DELETED) " +
+                                        "values(tb_2_.NAME, tb_2_.CREATED_TIME, tb_2_.MODIFIED_TIME, tb_2_.DELETED)"
+                        );
+                        it.variables("a_5", Timestamp.valueOf(time), Timestamp.valueOf(time), false);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"name\":\"a_5\"," +
+                                        "--->\"createdTime\":\"2024-06-06 22:13:00\"," +
+                                        "--->\"modifiedTime\":\"2024-06-06 22:13:00\"," +
+                                        "--->\"id\":100" +
+                                        "}"
+                        );
+                    });
                 }
         );
     }

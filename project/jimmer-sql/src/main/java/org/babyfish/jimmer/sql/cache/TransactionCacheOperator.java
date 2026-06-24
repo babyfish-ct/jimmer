@@ -15,8 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.*;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
-
 public class TransactionCacheOperator extends AbstractCacheOperator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionCacheOperator.class);
@@ -35,7 +33,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
 
     private Sql sql;
 
-    private final JsonCodec<?> jsonCodec;
+    private JsonCodec<?> jsonCodec;
 
     private final int batchSize;
 
@@ -55,12 +53,15 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         if (batchSize < 1) {
             throw new IllegalArgumentException("`batchSize` cannot be less than 1");
         }
-        this.jsonCodec = jsonCodec != null ? jsonCodec : jsonCodec();
+        this.jsonCodec = jsonCodec;
         this.batchSize = batchSize;
     }
 
     @Override
     protected void onInitialize(JSqlClientImplementor sqlClient) {
+        if (jsonCodec == null) {
+            jsonCodec = sqlClient.getJsonCodec();
+        }
         String schema = sqlClient.getMetadataStrategy().getSchemaStrategy().systemTableSchema();
         String qualifiedTableName = schema == null || schema.isEmpty()
                 ? TABLE_NAME

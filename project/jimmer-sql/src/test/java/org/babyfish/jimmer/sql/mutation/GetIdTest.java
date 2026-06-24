@@ -145,11 +145,11 @@ public class GetIdTest extends AbstractMutationTest {
                         .setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update EMPLOYEE set DEPARTMENT_ID = ? where NAME = ?");
-                        it.batchVariables(0, 1L, "Jacob");
-                        it.batchVariables(1, 1L, "Jessica");
-                        it.batchVariables(2, 1L, "Raines");
-                        it.batchVariables(3, 1L, "Sam");
+                        it.sql("update EMPLOYEE set DEPARTMENT_ID = ? where NAME = ? and DELETED_MILLIS = ?");
+                        it.batchVariables(0, 1L, "Jacob", 0L);
+                        it.batchVariables(1, 1L, "Jessica", 0L);
+                        it.batchVariables(2, 1L, "Raines", 0L);
+                        it.batchVariables(3, 1L, "Sam", 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -169,6 +169,64 @@ public class GetIdTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.modified(
                                 "{\"id\":\"1\",\"name\":\"Sam\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateByKeyDoesNotAffectLogicalDeletedRowsFromH2() {
+        jdbc(con -> {
+            try (Statement stmt = con.createStatement()) {
+                stmt.executeUpdate("delete from employee");
+                stmt.executeUpdate("delete from department");
+                stmt.executeUpdate("insert into department(id, name) values(1, 'Market')");
+                stmt.executeUpdate(
+                        "insert into employee(id, name, gender, department_id, deleted_millis) " +
+                                "values(1, 'Sam', 'M', 1, 0)"
+                );
+                stmt.executeUpdate(
+                        "insert into employee(id, name, gender, department_id, deleted_millis) " +
+                                "values(2, 'Jessica', 'F', 1, 0)"
+                );
+                stmt.executeUpdate(
+                        "insert into employee(id, name, gender, department_id, deleted_millis) " +
+                                "values(3, 'Sam', 'M', 1, 9)"
+                );
+            }
+        });
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new H2Dialect()));
+        Employee employee1 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Sam");
+            draft.setGender(Gender.FEMALE);
+        });
+        Employee employee2 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Jessica");
+            draft.setGender(Gender.MALE);
+        });
+        executeAndExpectResult(
+                sqlClient
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(employee1, employee2)
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update EMPLOYEE set GENDER = ? where NAME = ? and DELETED_MILLIS = ?");
+                        it.batchVariables(0, "F", "Sam", 0L);
+                        it.batchVariables(1, "M", "Jessica", 0L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"id\":\"1\",\"name\":\"Sam\",\"gender\":\"FEMALE\"}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"id\":\"2\",\"name\":\"Jessica\",\"gender\":\"MALE\"}"
                         );
                     });
                 }
@@ -787,9 +845,9 @@ public class GetIdTest extends AbstractMutationTest {
                         it.queryReason(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE);
                     });
                     ctx.statement(it -> {
-                        it.sql("update EMPLOYEE set DEPARTMENT_ID = ? where NAME = ?");
-                        it.batchVariables(0, 1L, "Jessica");
-                        it.batchVariables(1, 1L, "Sam");
+                        it.sql("update EMPLOYEE set DEPARTMENT_ID = ? where NAME = ? and DELETED_MILLIS = ?");
+                        it.batchVariables(0, 1L, "Jessica", 0L);
+                        it.batchVariables(1, 1L, "Sam", 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(

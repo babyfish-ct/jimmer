@@ -92,13 +92,15 @@ open class SpringKotlinTest : AbstractTest() {
                     generatedIdProp: ImmutableProp?,
                     purpose: ExecutionPurpose,
                     sqlClient: JSqlClientImplementor,
+                    constraintViolationTranslatable: Boolean
                 ): Executor.BatchContext {
                     return DefaultExecutor.INSTANCE.executeBatch(
                         con,
                         sql,
                         generatedIdProp,
                         purpose,
-                        sqlClient
+                        sqlClient,
+                        constraintViolationTranslatable
                     )
                 }
             }

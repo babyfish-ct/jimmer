@@ -58,7 +58,8 @@ public abstract class AbstractJsonTest {
                                     @NotNull String sql,
                                     @Nullable ImmutableProp generatedIdProp,
                                     @NotNull ExecutionPurpose purpose,
-                                    @NotNull JSqlClientImplementor sqlClient
+                                    @NotNull JSqlClientImplementor sqlClient,
+                                    boolean constraintViolationTranslatable
                             ) {
                                 SQLRecord sqlRecord = new SQLRecord(sql);
                                 records.add(sqlRecord);
@@ -67,7 +68,8 @@ public abstract class AbstractJsonTest {
                                         sql,
                                         generatedIdProp,
                                         purpose,
-                                        sqlClient
+                                        sqlClient,
+                                        constraintViolationTranslatable
                                 );
                                 return new BatchContext() {
 

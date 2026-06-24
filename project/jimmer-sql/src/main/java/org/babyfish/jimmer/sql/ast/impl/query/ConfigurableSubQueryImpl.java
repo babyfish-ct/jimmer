@@ -193,30 +193,32 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        getMutableQuery().setParent(visitor.getAstContext().getStatement());
+        bindParent(visitor);
         if (visitor.visitSubQuery(this)) {
-            super.accept(visitor);
+            acceptImpl(visitor);
         }
+    }
+
+    @Override
+    protected void bindParent(AstVisitor visitor) {
+        getMutableQuery().bindParent(visitor.getAstContext().getStatement());
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         SqlBuilder sqlBuilder = builder.assertSimple();
-        QueryRenderContext oldRenderContext = sqlBuilder.getQueryRenderContext();
-        if (oldRenderContext == null) {
-            sqlBuilder.setQueryAnalysis(QueryAnalysisBuilder.analyze(sqlBuilder.getAstContext(), this, false));
-        }
+        sqlBuilder.usingQueryAnalysisIfAbsent(
+                () -> QueryAnalysisBuilder.analyze(sqlBuilder.getAstContext(), this, false),
+                () -> renderWithCurrentQueryAnalysis(builder)
+        );
+    }
+
+    private void renderWithCurrentQueryAnalysis(AbstractSqlBuilder<?> builder) {
         builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
         try {
             super.renderTo(builder);
         } finally {
-            try {
-                builder.leave();
-            } finally {
-                if (oldRenderContext == null) {
-                    sqlBuilder.restoreQueryRenderContext(null);
-                }
-            }
+            builder.leave();
         }
     }
 

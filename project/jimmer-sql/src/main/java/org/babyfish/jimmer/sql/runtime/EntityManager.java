@@ -622,7 +622,6 @@ public class EntityManager {
             return typeMapCache.get(strategy);
         }
 
-        @SuppressWarnings("unchecked")
         private Map<Key, Map<List<Object>, ImmutableType>> createTypeMap(MetadataStrategy strategy) {
             Map<Key, Map<List<Object>, ImmutableType>> typeMap = createRawTypeMap(strategy);
             for (Map.Entry<Key, Map<List<Object>, ImmutableType>> e : typeMap.entrySet()) {
@@ -674,21 +673,7 @@ public class EntityManager {
                 }
             }
 
-            for (ImmutableType type : map.keySet()) {
-                if (!type.isEntity()) {
-                    continue;
-                }
-                String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
-                extendRawTypeMap(type.getMicroServiceName(), tableName, typeMap);
-                for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.isMiddleTableDefinition()) {
-                        String middleTableName = DatabaseIdentifiers.comparableIdentifier(
-                                prop.<MiddleTable>getStorage(strategy).getTableName()
-                        );
-                        extendRawTypeMap(type.getMicroServiceName(), middleTableName, typeMap);
-                    }
-                }
-            }
+            typeMap.putAll(createAliasTypeMap(typeMap));
             return typeMap;
         }
 
@@ -699,10 +684,6 @@ public class EntityManager {
                     continue;
                 }
                 String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
-                int lastDotIndex = tableName.lastIndexOf('.');
-                if (lastDotIndex != -1) {
-                    tableName = tableName.substring(lastDotIndex + 1);
-                }
                 String microServiceName = type.getMicroServiceName();
                 Key key = new Key(microServiceName, tableName);
                 Map<List<Object>, ImmutableType> subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
@@ -718,10 +699,6 @@ public class EntityManager {
                                 middleTable.getFilterInfo().getValues() :
                                 null;
                         String middleTableName = DatabaseIdentifiers.comparableIdentifier(middleTable.getTableName());
-                        lastDotIndex = middleTableName.lastIndexOf('.');
-                        if (lastDotIndex != -1) {
-                            middleTableName = middleTableName.substring(lastDotIndex + 1);
-                        }
                         key = new Key(microServiceName, middleTableName);
                         subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
                         if (filteredValues != null) {
@@ -848,24 +825,45 @@ public class EntityManager {
         }
     }
 
-    private static void extendRawTypeMap(String microServiceName, String tableName, Map<Key, Map<List<Object>, ImmutableType>> map) {
-        int lastDotIndex = tableName.lastIndexOf('.');
-        if (lastDotIndex == -1) {
-            return;
+    private static Map<Key, Map<List<Object>, ImmutableType>> createAliasTypeMap(
+            Map<Key, Map<List<Object>, ImmutableType>> rawTypeMap
+    ) {
+        Map<Key, Map<List<Object>, ImmutableType>> aliasTypeMap = new LinkedHashMap<>();
+        Set<Key> ambiguousAliasKeys = new HashSet<>();
+        for (Map.Entry<Key, Map<List<Object>, ImmutableType>> e : rawTypeMap.entrySet()) {
+            addAliasTypeMap(e.getKey(), e.getValue(), rawTypeMap, aliasTypeMap, ambiguousAliasKeys);
         }
-        Map<List<Object>, ImmutableType> subMap = map.get(
-                new Key(
-                        microServiceName,
-                        tableName.substring(lastDotIndex + 1)
-                )
-        );
-        if (subMap == null) {
-            return;
-        }
+        return aliasTypeMap;
+    }
+
+    private static void addAliasTypeMap(
+            Key rawKey,
+            Map<List<Object>, ImmutableType> subMap,
+            Map<Key, Map<List<Object>, ImmutableType>> rawTypeMap,
+            Map<Key, Map<List<Object>, ImmutableType>> aliasTypeMap,
+            Set<Key> ambiguousAliasKeys
+    ) {
+        String tableName = rawKey.tableName;
         int index;
         while ((index = tableName.indexOf('.')) != -1) {
-            map.put(new Key(microServiceName, tableName), subMap);
             tableName = tableName.substring(index + 1);
+            Key aliasKey = new Key(rawKey.microServiceName, tableName);
+            if (ambiguousAliasKeys.contains(aliasKey)) {
+                continue;
+            }
+            Map<List<Object>, ImmutableType> conflictMap = rawTypeMap.get(aliasKey);
+            if (conflictMap != null && conflictMap != subMap) {
+                tableSharedBy(aliasKey, firstType(conflictMap), firstType(subMap), null);
+            }
+            conflictMap = aliasTypeMap.putIfAbsent(aliasKey, subMap);
+            if (conflictMap != null && conflictMap != subMap) {
+                aliasTypeMap.remove(aliasKey);
+                ambiguousAliasKeys.add(aliasKey);
+            }
         }
+    }
+
+    private static ImmutableType firstType(Map<List<Object>, ImmutableType> subMap) {
+        return subMap.values().iterator().next();
     }
 }

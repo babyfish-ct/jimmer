@@ -105,6 +105,11 @@ public class ApiErrorsTest {
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'INCONSISTENT_MAPPED_ID', \n" +
+                        "        saveErrorCode: SaveErrorCode, \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'NOT_UNIQUE', \n" +
                         "        saveErrorCode: SaveErrorCode, \n" +
                         "        exportedPath: ExportedSavePath\n" +
@@ -194,6 +199,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'INCONSISTENT_MAPPED_ID', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NOT_UNIQUE', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -275,6 +284,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'INCONSISTENT_MAPPED_ID', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NOT_UNIQUE', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -353,6 +366,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'INCOMPLETE_PROPERTY', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'INCONSISTENT_MAPPED_ID', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +

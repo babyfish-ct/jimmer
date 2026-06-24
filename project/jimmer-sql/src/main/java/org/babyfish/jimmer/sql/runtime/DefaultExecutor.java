@@ -86,7 +86,8 @@ public class DefaultExecutor implements Executor {
             @NotNull String sql,
             @Nullable ImmutableProp generatedIdProp,
             @NotNull ExecutionPurpose purpose,
-            @NotNull JSqlClientImplementor sqlClient
+            @NotNull JSqlClientImplementor sqlClient,
+            boolean constraintViolationTranslatable
     ) {
         return new BatchContextImpl(
                 con,
@@ -94,7 +95,8 @@ public class DefaultExecutor implements Executor {
                 generatedIdProp,
                 purpose,
                 ExecutorContext.create(sqlClient),
-                sqlClient
+                sqlClient,
+                constraintViolationTranslatable
         );
     }
 
@@ -127,9 +129,10 @@ public class DefaultExecutor implements Executor {
                 @Nullable ImmutableProp generatedIdProp,
                 ExecutionPurpose purpose,
                 ExecutorContext executorContext,
-                JSqlClientImplementor sqlClient
+                JSqlClientImplementor sqlClient,
+                boolean constraintViolationTranslatable
         ) {
-            savepoint = SavepointManager.setIfNeeded(con, sqlClient);
+            savepoint = constraintViolationTranslatable ? SavepointManager.setIfNeeded(con, sqlClient) : null;
             PreparedStatement statement;
             try {
                 if (generatedIdProp != null) {
@@ -239,6 +242,11 @@ public class DefaultExecutor implements Executor {
             Reader<?> idReader = sqlClient.getReader(generatedIdProp);
             try (ResultSet rs = statement.getGeneratedKeys()) {
                 while (rs.next()) {
+                    if (index == batchCount) {
+                        throw new ExecutionException(
+                                "Too many generated ids for batch SQL statement: " + sql
+                        );
+                    }
                     Object id = idReader.read(rs, new Reader.Context(null, sqlClient));
                     ids[index++] = id;
                 }

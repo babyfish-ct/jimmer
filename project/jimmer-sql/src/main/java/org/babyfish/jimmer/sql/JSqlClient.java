@@ -61,6 +61,8 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     MutableBaseQuery createBaseQuery(TableProxy<?> table);
 
+    MutableBaseQuery createBaseQuery(BaseTable table);
+
     <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
@@ -126,6 +128,8 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
     Associations getAssociations(AssociationType associationType);
 
     Caches getCaches();
+
+    JsonCodec<?> getJsonCodec();
 
     Filters getFilters();
 
@@ -370,6 +374,9 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
         @OldChain
         Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
+
+        @OldChain
+        Builder setJsonCodec(JsonCodec<?> jsonCodec);
 
         @OldChain
         Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec);

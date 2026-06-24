@@ -3,7 +3,7 @@ antlr = "4.13.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
 redisson = "3.32.0"
-h2 = "2.1.212"
+h2 = "2.3.232"
 intellijAnnotations = "12.0"
 jackson2 = "2.15.2"
 jackson3 = "3.0.3"
@@ -20,6 +20,7 @@ ksp = "2.1.20-2.0.0"
 lombok = "1.18.38"
 mapstruct = "1.5.3.Final"
 mysql = "8.0.29"
+mockito = "5.18.0"
 postgresql = "42.3.6"
 sqlite = "3.47.0.0"
 sqlserver = "12.4.2.jre11"
@@ -82,6 +83,8 @@ mapstruct = { group = "org.mapstruct", name = "mapstruct", version.ref = "mapstr
 mapstruct-processor = { group = "org.mapstruct", name = "mapstruct-processor", version.ref = "mapstruct" }
 
 mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version.ref = "mysql" }
+
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 

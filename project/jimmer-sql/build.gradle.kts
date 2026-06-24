@@ -41,6 +41,7 @@ dependencies {
     testImplementation(libs.javax.validation.api)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.antlr)
+    testImplementation(libs.mockito.core)
     testImplementation(libs.ojdbc8)
 }
 

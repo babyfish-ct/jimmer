@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.model.pg
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
@@ -18,9 +19,9 @@ class TagsProvider : ScalarProvider<List<String>, String> {
 
     companion object {
         @JvmStatic
-        private val READER = jsonCodecWithoutImmutableModule().readerForListOf(String::class.java)
+        private val READER = jsonCodec().readerForListOf(String::class.java)
 
         @JvmStatic
-        private val WRITER = jsonCodecWithoutImmutableModule().writer()
+        private val WRITER = jsonCodec().writer()
     }
 }

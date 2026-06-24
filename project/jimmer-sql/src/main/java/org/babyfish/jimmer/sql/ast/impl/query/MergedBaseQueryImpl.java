@@ -1,11 +1,15 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.ast.*;
-import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
@@ -43,7 +47,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     private RecursiveBaseQueryCreator<T>[] recursiveBaseQueryCreators;
 
     @SafeVarargs
-    public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T> ... queries) {
+    public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T>... queries) {
         switch (queries.length) {
             case 0:
                 throw new IllegalArgumentException("No queries are specified");
@@ -51,7 +55,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                 return queries[0];
             default:
                 return new MergedBaseQueryImpl<>(
-                        ((TypedBaseQueryImplementor<?>)queries[0]).getSqlClient(),
+                        ((TypedBaseQueryImplementor<?>) queries[0]).getSqlClient(),
                         operator,
                         queries,
                         null
@@ -63,7 +67,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     @SafeVarargs
     public static <T extends BaseTable> TypedBaseQuery<T> of(
             TypedBaseQuery<T> query,
-            RecursiveBaseQueryCreator<T> ... recursiveBaseQueryCreators
+            RecursiveBaseQueryCreator<T>... recursiveBaseQueryCreators
     ) {
         if (recursiveBaseQueryCreators.length == 0) {
             return query;
@@ -71,7 +75,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         return new MergedBaseQueryImpl<>(
                 ((TypedBaseQueryImplementor<?>) query).getSqlClient(),
                 "union all",
-                (TypedBaseQuery<T>[]) new TypedBaseQuery<?>[] {query},
+                (TypedBaseQuery<T>[]) new TypedBaseQuery<?>[]{query},
                 recursiveBaseQueryCreators
         );
     }
@@ -84,7 +88,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             RecursiveBaseQueryCreator<T>[] recursiveBaseQueryCreators
     ) {
         for (TypedBaseQuery<?> query : queries) {
-            ((TypedBaseQueryImplementor<T>)query).setMergedBy(this);
+            ((TypedBaseQueryImplementor<T>) query).setMergedBy(this);
         }
 
         this.sqlClient = sqlClient;
@@ -196,7 +200,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         builder.enter('?' + operator + '?');
         for (TypedQueryImplementor query : getQueries()) {
             builder.separator();
-            boolean wrap = requiresSubQuery(query, builder);
+            boolean wrap = query.requiresSubQueryInMergedOperand(builder);
             if (wrap) {
                 builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             }
@@ -208,26 +212,14 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         builder.leave();
     }
 
-    private static boolean requiresSubQuery(TypedQueryImplementor query, AbstractSqlBuilder<?> builder) {
-        if (query instanceof MergedBaseQueryImpl<?>) {
-            for (TypedQueryImplementor childQuery : ((MergedBaseQueryImpl<?>) query).getQueries()) {
-                if (requiresSubQuery(childQuery, builder)) {
-                    return true;
-                }
+    @Override
+    public boolean requiresSubQueryInMergedOperand(AbstractSqlBuilder<?> builder) {
+        for (TypedQueryImplementor query : getQueries()) {
+            if (query.requiresSubQueryInMergedOperand(builder)) {
+                return true;
             }
-            return false;
         }
-        if (!(query instanceof AbstractConfigurableTypedQueryImpl)) {
-            return false;
-        }
-        AbstractConfigurableTypedQueryImpl configurableQuery = (AbstractConfigurableTypedQueryImpl) query;
-        TypedQueryData data = configurableQuery.getData();
-        if (data.limit != Integer.MAX_VALUE || data.offset != 0) {
-            return true;
-        }
-        return !data.withoutSortingAndPaging &&
-                !builder.assertSimple().getAstContext().isQueryWithoutSortingAndPaging() &&
-                !configurableQuery.getMutableQuery().getOrders().isEmpty();
+        return false;
     }
 
     @Override
@@ -284,6 +276,12 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         for (TypedBaseQueryImplementor<T> query : this.queries) {
             query.collectConfigurableQueries(queries);
         }
+    }
+
+    @Override
+    public void collectCteDependencyQueries(List<ConfigurableBaseQueryImpl<?>> queries) {
+        upgrade();
+        Collections.addAll(queries, expandedQueries);
     }
 
     public BaseTableSymbol itemBaseTable(ConfigurableBaseQueryImpl<?> itemQuery, boolean cte) {
@@ -373,7 +371,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                                 kotlinSelectionTypes,
                                 recursive ?
                                         BaseTableKind.RECURSIVE_CTE :
-                                                cte ? BaseTableKind.CTE :
+                                        cte ? BaseTableKind.CTE :
                                                 BaseTableKind.DERIVED
                         );
         return baseTable;

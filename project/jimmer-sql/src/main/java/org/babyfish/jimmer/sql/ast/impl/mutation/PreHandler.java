@@ -283,7 +283,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     }
                 }
             }
-            if (ctx.backReferenceFrozen) {
+            if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
                 fetcherImplementor = fetcherImplementor.add(ctx.backReferenceProp.getName(), IdOnlyFetchType.RAW);
             }
             this.originalFetcher = oldFetcher = fetcherImplementor;
@@ -295,7 +295,7 @@ abstract class AbstractPreHandler implements PreHandler {
         if (ctx.trigger != null) {
             return QueryReason.TRIGGER;
         }
-        if (ctx.backReferenceFrozen) {
+        if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
             return QueryReason.TARGET_NOT_TRANSFERABLE;
         }
         if (interceptor != null) {
@@ -378,6 +378,12 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
                 if (!sqlClient.isUpsertWithUniqueConstraintSupported(ctx.path.getType())) {
                     return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
+                }
+                LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+                if (logicalDeletedInfo != null &&
+                        logicalDeletedInfo.getType() == boolean.class &&
+                        !sqlClient.getDialect().isUpsertWithConflictPredicateSupported()) {
+                    return QueryReason.LOGICAL_DELETED_CONFLICT_PREDICATE_UNSUPPORTED;
                 }
                 if (!constraint.isNullNotDistinct() ||
                         !sqlClient.getDialect().isUpsertWithNullableKeySupported()) {
@@ -1059,4 +1065,3 @@ class NonIdempotentUpsertHandler extends UpsertPreHandler {
         return true;
     }
 }
-

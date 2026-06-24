@@ -79,6 +79,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final SqlFormatter sqlFormatter;
 
+    private final JsonCodec<?> jsonCodec;
+
     private final ReferenceFetchType defaultReferenceFetchType;
 
     private final int maxJoinFetchDepth;
@@ -164,6 +166,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Executor executor,
             List<String> executorContextPrefixes,
             SqlFormatter sqlFormatter,
+            JsonCodec<?> jsonCodec,
             ReferenceFetchType defaultReferenceFetchType,
             int maxJoinFetchDepth,
             ZoneId zoneId,
@@ -216,6 +219,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         Collections.unmodifiableList(executorContextPrefixes) :
                         null;
         this.sqlFormatter = sqlFormatter;
+        this.jsonCodec = jsonCodec;
         this.defaultReferenceFetchType = defaultReferenceFetchType;
         this.maxJoinFetchDepth = maxJoinFetchDepth;
         this.zoneId = zoneId != null ? zoneId : ZoneId.systemDefault();
@@ -295,6 +299,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public SqlFormatter getSqlFormatter() {
         return sqlFormatter;
+    }
+
+    @Override
+    public JsonCodec<?> getJsonCodec() {
+        return jsonCodec;
     }
 
     @SuppressWarnings("unchecked")
@@ -471,10 +480,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @Override
     public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
-        return new MutableBaseQueryImpl(
-                this,
-                table
-        );
+        return new MutableBaseQueryImpl(this, table);
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(BaseTable table) {
+        return new MutableBaseQueryImpl(this, table);
     }
 
     @SuppressWarnings("unchecked")
@@ -685,6 +696,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -741,6 +753,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -792,6 +805,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -846,6 +860,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                jsonCodec,
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
@@ -1018,6 +1033,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
         private PropScalarProviderFactory propScalarProviderFactory;
+
+        private JsonCodec<?> jsonCodec;
+
+        private JsonCodec<?> serializedJsonCodec;
 
         private final Map<Class<?>, JsonCodec<?>> serializedTypeJsonCodecMap = new HashMap<>();
 
@@ -1379,16 +1398,26 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setJsonCodec(JsonCodec<?> jsonCodec) {
+            this.jsonCodec = jsonCodec;
+            return this;
+        }
+
+        @Override
         public Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec) {
-            return setSerializedTypeJsonCodec(Object.class, jsonCodec);
+            this.serializedJsonCodec = jsonCodec;
+            return this;
         }
 
         @Override
         public Builder setSerializedTypeJsonCodec(Class<?> type, JsonCodec<?> jsonCodec) {
+            if (type == null || type == Object.class) {
+                return setDefaultSerializedTypeJsonCodec(jsonCodec);
+            }
             if (jsonCodec != null) {
-                serializedTypeJsonCodecMap.put(type != null ? type : Object.class, jsonCodec);
+                serializedTypeJsonCodecMap.put(type, jsonCodec);
             } else {
-                serializedTypeJsonCodecMap.remove(type != null ? type : Object.class);
+                serializedTypeJsonCodecMap.remove(type);
             }
             return this;
         }
@@ -1850,10 +1879,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
             } else {
                 foreignKeyStrategy = ForeignKeyStrategy.FAKE;
             }
+            JsonCodec<?> resolvedApplicationJsonCodec =
+                    jsonCodec != null ? jsonCodec : JsonCodec.jsonCodec();
+            JsonCodec<?> resolvedSerializedJsonCodec =
+                    serializedJsonCodec != null ? serializedJsonCodec : resolvedApplicationJsonCodec;
+            JsonCodec<?> resolvedBinLogJsonCodec =
+                    binLogJsonCodec != null ? binLogJsonCodec : resolvedApplicationJsonCodec;
             ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
                     typeScalarProviderMap,
                     propScalarProviderMap,
                     propScalarProviderFactory,
+                    resolvedSerializedJsonCodec,
                     serializedTypeJsonCodecMap,
                     serializedPropJsonCodecMap,
                     defaultJsonProviderCreator,
@@ -1883,7 +1919,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     triggers,
                     filterManager
             );
-            BinLogParser binLogParser = new BinLogParser();
+            BinLogParser binLogParser = new BinLogParser(
+                    resolvedBinLogJsonCodec,
+                    binLogPropReaderMap,
+                    typeBinLogPropReaderMap
+            );
             BinLog binLog = new BinLogImpl(
                     entityManager(),
                     microServiceName,
@@ -1905,6 +1945,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     executor,
                     executorContextPrefixes,
                     sqlFormatter,
+                    resolvedApplicationJsonCodec,
                     defaultReferenceFetchType,
                     maxJoinFetchDepth,
                     zoneId,
@@ -1944,7 +1985,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             );
             CachesImpl.initialize(caches, sqlClient);
             filterManager.initialize(sqlClient);
-            binLogParser.initialize(sqlClient, binLogJsonCodec, binLogPropReaderMap, typeBinLogPropReaderMap);
+            binLogParser.initialize(sqlClient);
             transientResolverManager.initialize(sqlClient);
             triggers.initialize(sqlClient);
             if (transactionTriggers != null && transactionTriggers != triggers) {

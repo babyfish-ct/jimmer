@@ -5,7 +5,6 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
-import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -90,7 +89,7 @@ public class ImmutableType implements BaseType {
     private final boolean acrossMicroServices;
 
     private final String microServiceName;
-    
+
     public ImmutableType(
             Context context,
             TypeElement typeElement
@@ -672,6 +671,9 @@ public class ImmutableType implements BaseType {
                 String expectedPropName = prop.getName() + "Id";
                 ImmutableProp expectedProp = getProps().get(expectedPropName);
                 if (expectedProp != null) {
+                    if (isExplicitMappedIdNameConflictAllowed(prop, expectedProp)) {
+                        continue;
+                    }
                     throw new MetaException(
                             expectedProp.toElement(),
                             "It looks like @IdView of association \"" +
@@ -684,6 +686,18 @@ public class ImmutableType implements BaseType {
             this.idPropNameMap = map;
         }
         return map;
+    }
+
+    private boolean isExplicitMappedIdNameConflictAllowed(ImmutableProp associationProp,
+                                                          ImmutableProp expectedProp) {
+        MapsId mapsId = associationProp.getAnnotation(MapsId.class);
+        return mapsId != null &&
+                mapsId.value().isEmpty() &&
+                !associationProp.isReverse() &&
+                !associationProp.isTransient() &&
+                idProp != null &&
+                expectedProp.isId() &&
+                expectedProp.getName().equals(idProp.getName());
     }
 
     public List<ImmutableProp> getPropsOrderById() {

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodecWithoutImmutableModule
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -13,7 +13,7 @@ class EmbeddedMutationTest : AbstractMutationTest() {
 
     @Test
     fun testIssue527() {
-        val reader = jsonCodecWithoutImmutableModule()
+        val reader = jsonCodec()
             .readerFor(DynamicRectInput::class.java)
 
         val sourceJson = "{" +

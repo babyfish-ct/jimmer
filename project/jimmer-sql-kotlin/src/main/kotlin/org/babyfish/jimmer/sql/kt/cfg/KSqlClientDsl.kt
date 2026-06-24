@@ -80,6 +80,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setTargetTransferable(transferable)
     }
 
+    fun setConstraintViolationTranslatable(translatable: Boolean = true) {
+        javaBuilder.setConstraintViolationTranslatable(translatable)
+    }
+
     fun addExceptionTranslator(translator: ExceptionTranslator<*>) {
         javaBuilder.addExceptionTranslator(translator)
     }
@@ -184,6 +188,10 @@ class KSqlClientDsl constructor(
 
     fun addPropScalarProviderFactory(factory: PropScalarProviderFactory) {
         javaBuilder.addPropScalarProviderFactory(factory)
+    }
+
+    fun setJsonCodec(jsonCodec: JsonCodec<*>) {
+        javaBuilder.setJsonCodec(jsonCodec)
     }
 
     fun setDefaultSerializedTypeJsonCodec(jsonCodec: JsonCodec<*>) {

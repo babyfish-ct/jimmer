@@ -135,8 +135,8 @@ public class MutableDeleteImpl
                 ((Ast) predicate).accept(visitor);
             }
             TableUsages tableUsages = visitor.toTableUsages();
-            tableUsages.applyTo(astContext);
-            tableUsages.allocateAliases(astContext);
+            tableUsages.applyUsedStatesTo(astContext);
+            tableUsages.allocateAndBindAliases(astContext);
         } finally {
             astContext.popStatement();
         }
@@ -241,7 +241,7 @@ public class MutableDeleteImpl
             LogicalDeletedValueGenerator<?> generator =
                     LogicalDeletedValueGenerators.of(logicalDeletedInfo, getSqlClient());
             assert generator != null;
-            MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), (TableProxy<?>) deleteQuery.getTable());
+            MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), table.getImmutableType());
             update.shareRootAliasWith(deleteQuery.getTableLikeImplementor());
             update.set(
                     (PropExpression<Object>)PropExpressionImpl.of(

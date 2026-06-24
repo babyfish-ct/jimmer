@@ -38,6 +38,7 @@ import java.util.*;
                 SaveException.UnstructuredAssociation.class,
                 SaveException.TargetIsNotTransferable.class,
                 SaveException.IncompleteProperty.class,
+                SaveException.InconsistentMappedId.class,
                 SaveException.NotUnique.class,
                 SaveException.IllegalTargetId.class,
                 SaveException.UnloadedFrozenBackReference.class
@@ -404,6 +405,33 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.INCOMPLETE_PROPERTY;
+        }
+    }
+
+    @ClientException(code = "INCONSISTENT_MAPPED_ID")
+    public static class InconsistentMappedId extends SaveException {
+
+        private final ImmutableProp prop;
+
+        public InconsistentMappedId(@NotNull MutationPath path, String message, ImmutableProp prop) {
+            super(path, message);
+            this.prop = prop;
+        }
+
+        public InconsistentMappedId(@NotNull ExportedSavePath path, String message, ImmutableProp prop) {
+            super(path, message);
+            this.prop = prop;
+        }
+
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.INCONSISTENT_MAPPED_ID;
+        }
+
+        @ApiIgnore
+        @NotNull
+        public ImmutableProp getProp() {
+            return prop;
         }
     }
 

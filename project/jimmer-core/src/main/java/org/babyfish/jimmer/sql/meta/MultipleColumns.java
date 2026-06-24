@@ -11,6 +11,8 @@ public abstract class MultipleColumns implements ColumnDefinition {
 
     protected final boolean embedded;
 
+    private final Map<String, Integer> comparableNameIndexMap;
+
     public MultipleColumns(String[] arr, boolean embedded) {
         if (arr.length > 1 && !embedded) {
             throw new IllegalArgumentException(
@@ -20,6 +22,11 @@ public abstract class MultipleColumns implements ColumnDefinition {
         }
         this.arr = arr;
         this.embedded = embedded;
+        Map<String, Integer> map = new HashMap<>();
+        for (int i = 0; i < arr.length; i++) {
+            map.put(DatabaseIdentifiers.comparableIdentifier(arr[i]), i);
+        }
+        this.comparableNameIndexMap = Collections.unmodifiableMap(map);
     }
 
     @Override
@@ -46,6 +53,12 @@ public abstract class MultipleColumns implements ColumnDefinition {
             }
         }
         return -1;
+    }
+
+    @Override
+    public int indexByComparableIdentifier(String identifier) {
+        Integer index = comparableNameIndexMap.get(DatabaseIdentifiers.comparableIdentifier(identifier));
+        return index != null ? index : -1;
     }
 
     @Override

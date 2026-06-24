@@ -79,6 +79,16 @@ public class PropertyNamingStrategyTest {
     }
 
     @Test
+    public void testExplicitCodecForImmutableObjectsToString() {
+        JsonCodec<?> codec = jsonCodec()
+                .withCustomizations(new PropertyNamingCustomization(PropertyNaming.SNAKE_CASE));
+        Assertions.assertEquals(
+                "{\"parent_id\":1,\"child_ids\":[2,3]}",
+                ImmutableObjects.toString(INPUT, codec)
+        );
+    }
+
+    @Test
     public void testKebabCase() throws Exception {
         JsonCodec<?> codec = jsonCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.KEBAB_CASE));

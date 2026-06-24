@@ -30,7 +30,7 @@ class NativePredicates {
         String match = negative ? " <> " : " = ";
         boolean oneValue = values.size() == 1;
         if (definition.size() == 1) {
-            builder.definition(alias, definition, null);
+            builder.definition(alias, definition);
             if (values.size() == 1) {
                 builder.sql(match).variable(CollectionUtils.first(values));
             } else {
@@ -44,7 +44,7 @@ class NativePredicates {
         } else if (builder.getAstContext().getSqlClient().getDialect().isTupleSupported()) {
             builder
                     .enter(SqlBuilder.ScopeType.TUPLE)
-                    .definition(alias, definition, null)
+                    .definition(alias, definition)
                     .leave();
             if (oneValue) {
                 Object value = CollectionUtils.first(values);

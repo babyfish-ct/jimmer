@@ -35,7 +35,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
-            @Nullable JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec<?> jsonCodec,
             @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
@@ -91,21 +91,21 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
     }
 
     @NotNull
-    public static <K, V> Builder<K, V> forObject(ImmutableType type) {
-        return new Builder<>(type, null);
+    public static <K, V> Builder<K, V> forObject(ImmutableType type, @NotNull JsonCodec<?> jsonCodec) {
+        return new Builder<>(type, null, jsonCodec);
     }
 
     @NotNull
-    public static <K, V> Builder<K, V> forProp(ImmutableProp prop) {
-        return new Builder<>(null, prop);
+    public static <K, V> Builder<K, V> forProp(ImmutableProp prop, @NotNull JsonCodec<?> jsonCodec) {
+        return new Builder<>(null, prop, jsonCodec);
     }
 
     public static class Builder<K, V> extends AbstractBuilder<K, V, Builder<K, V>> {
 
         private RedisOperations<String, byte[]> operations;
 
-        protected Builder(ImmutableType type, ImmutableProp prop) {
-            super(type, prop);
+        protected Builder(ImmutableType type, ImmutableProp prop, JsonCodec<?> jsonCodec) {
+            super(type, prop, jsonCodec);
         }
 
         public Builder<K, V> redis(RedisOperations<String, byte[]> operations) {

@@ -19,7 +19,7 @@ class SimpleValueGetter extends AbstractValueGetter {
     private final Table<?> table;
 
     private final boolean rawId;
-    
+
     private final String columnName;
 
     private final boolean foreignKey;
@@ -96,15 +96,15 @@ class SimpleValueGetter extends AbstractValueGetter {
                 RealTable realTable = tableImplementor.realTableForRender(builder);
                 String middleTableAlias = sqlBuilder.middleTableAlias(realTable);
                 if (middleTableAlias != null) {
-                    builder.sql(middleTableAlias);
+                    builder.sql(middleTableAlias).sql(".").sql(columnName);
                 } else {
                     TableImplementor<?> parent = tableImplementor.getParent();
-                    sqlBuilder.sqlAlias(parent.realTableForRender(builder));
+                    parent.realTableForRender(builder).renderColumn(builder, columnName, true, null, null);
                 }
             } else {
-                sqlBuilder.sqlAlias(tableImplementor.realTableForRender(builder));
+                tableImplementor.realTableForRender(builder).renderColumn(builder, columnName, false, null, null);
             }
-            builder.sql(".");
+            return;
         }
         builder.sql(columnName);
     }

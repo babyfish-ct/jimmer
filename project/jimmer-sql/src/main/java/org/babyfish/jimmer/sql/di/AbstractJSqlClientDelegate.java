@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.di;
 
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -84,6 +85,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public MutableBaseQuery createBaseQuery(BaseTable table) {
+        return sqlClient().createBaseQuery(table);
+    }
+
+    @Override
     public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
@@ -145,6 +151,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public Caches getCaches() {
         return sqlClient().getCaches();
+    }
+
+    @Override
+    public JsonCodec<?> getJsonCodec() {
+        return sqlClient().getJsonCodec();
     }
 
     @Override
