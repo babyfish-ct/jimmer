@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable
 
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -205,6 +206,50 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 variables("GLOBEX-002", 200L)
             }
             value("[ORG, Globex+, GLOBEX-002, null, null]")
+        }
+    }
+
+    @Test
+    fun testDeleteSubtype() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).delete(KOrganization::class, 200L) {
+                setMode(DeleteMode.PHYSICAL)
+            }
+            "${joinedClientRow(con, 200L)}; ${joinedClientRow(con, 201L)}"
+        }) {
+            statement {
+                sql("delete from JOINED_ORGANIZATION where ID = ?")
+                variables(200L)
+            }
+            statement {
+                sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?")
+                variables(200L, "ORG")
+            }
+            value("null; [KPerson, Alice, null, Alice, Smith]")
+        }
+    }
+
+    @Test
+    fun testDeleteRoot() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
+                setMode(DeleteMode.PHYSICAL)
+            }
+            "${joinedClientRow(con, 200L)}; ${joinedClientRow(con, 201L)}"
+        }) {
+            statement {
+                sql("delete from JOINED_ORGANIZATION where ID = ?")
+                variables(200L)
+            }
+            statement {
+                sql("delete from JOINED_PERSON where ID = ?")
+                variables(200L)
+            }
+            statement {
+                sql("delete from JOINED_CLIENT where ID = ?")
+                variables(200L)
+            }
+            value("null; [KPerson, Alice, null, Alice, Smith]")
         }
     }
 

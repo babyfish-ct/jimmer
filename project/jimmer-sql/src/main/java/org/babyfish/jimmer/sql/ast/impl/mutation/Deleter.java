@@ -6,6 +6,8 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.DiscriminatorColumn;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -263,10 +265,61 @@ public class Deleter {
             Object generatedDeletedValue,
             ExceptionTranslator<?> exceptionTranslator
     ) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null) {
+            ImmutableType rootType = inheritanceInfo.getRootType();
+            if (info != null) {
+                return deleteFromSingleTable(
+                        sqlClient,
+                        con,
+                        rootType,
+                        type,
+                        ids,
+                        info,
+                        generatedDeletedValue,
+                        exceptionTranslator
+                );
+            }
+            if (inheritanceInfo.getStrategy() == InheritanceType.JOINED) {
+                deleteJoinedSubtypeTables(sqlClient, con, rootType, type, ids, exceptionTranslator);
+            }
+            return deleteFromSingleTable(
+                    sqlClient,
+                    con,
+                    rootType,
+                    type,
+                    ids,
+                    null,
+                    null,
+                    exceptionTranslator
+            );
+        }
+        return deleteFromSingleTable(
+                sqlClient,
+                con,
+                type,
+                type,
+                ids,
+                info,
+                generatedDeletedValue,
+                exceptionTranslator
+        );
+    }
+
+    private static int deleteFromSingleTable(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType tableType,
+            ImmutableType deletedType,
+            Collection<Object> ids,
+            LogicalDeletedInfo info,
+            Object generatedDeletedValue,
+            ExceptionTranslator<?> exceptionTranslator
+    ) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         if (info != null) {
             builder.sql("update ")
-                    .sql(type.getTableName(sqlClient.getMetadataStrategy()))
+                    .sql(tableType.getTableName(sqlClient.getMetadataStrategy()))
                     .sql(" set ")
                     .sql(info.getProp().<SingleColumn>getStorage(sqlClient.getMetadataStrategy()).getName())
                     .sql(" = ");
@@ -277,15 +330,103 @@ public class Deleter {
             }
         } else {
             builder.sql("delete from ")
-                    .sql(type.getTableName(sqlClient.getMetadataStrategy()));
+                    .sql(tableType.getTableName(sqlClient.getMetadataStrategy()));
         }
         builder.sql(" where ");
         ComparisonPredicates.renderIn(
                 false,
-                ValueGetter.valueGetters(sqlClient, type.getIdProp()),
+                ValueGetter.valueGetters(sqlClient, tableType.getIdProp()),
                 ids,
                 builder
         );
+        renderDiscriminatorPredicate(builder, tableType, deletedType);
+        return execute(sqlClient, con, builder, exceptionTranslator);
+    }
+
+    private static void deleteJoinedSubtypeTables(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType rootType,
+            ImmutableType deletedType,
+            Collection<Object> ids,
+            ExceptionTranslator<?> exceptionTranslator
+    ) {
+        List<ImmutableType> tableTypes = new ArrayList<>();
+        for (ImmutableType derivedType : deletedTypes(deletedType)) {
+            if (derivedType != rootType) {
+                tableTypes.add(derivedType);
+            }
+        }
+        tableTypes.sort((a, b) -> b.getAllTypes().size() - a.getAllTypes().size());
+        for (ImmutableType tableType : tableTypes) {
+            SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+            builder.sql("delete from ")
+                    .sql(tableType.getTableName(sqlClient.getMetadataStrategy()))
+                    .sql(" where ");
+            ComparisonPredicates.renderIn(
+                    false,
+                    ValueGetter.valueGetters(sqlClient, tableType.getIdProp()),
+                    ids,
+                    builder
+            );
+            execute(sqlClient, con, builder, exceptionTranslator);
+        }
+    }
+
+    private static void renderDiscriminatorPredicate(
+            SqlBuilder builder,
+            ImmutableType tableType,
+            ImmutableType deletedType
+    ) {
+        if (deletedType == tableType) {
+            return;
+        }
+        InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getRootType() != tableType) {
+            return;
+        }
+        DiscriminatorColumn column = inheritanceInfo.getDiscriminatorColumn();
+        if (column == null) {
+            return;
+        }
+        List<Object> values = new ArrayList<>();
+        for (ImmutableType type : deletedTypes(deletedType)) {
+            String value = type.getDiscriminatorValue();
+            if (value != null) {
+                values.add(value);
+            }
+        }
+        if (values.isEmpty()) {
+            return;
+        }
+        builder.sql(" and ")
+                .sql(column.name());
+        if (values.size() == 1) {
+            builder.sql(" = ")
+                    .variable(values.get(0));
+        } else {
+            builder.sql(" in ");
+            builder.enter(SqlBuilder.ScopeType.LIST);
+            for (Object value : values) {
+                builder.separator().variable(value);
+            }
+            builder.leave();
+        }
+    }
+
+    private static Collection<ImmutableType> deletedTypes(ImmutableType type) {
+        Set<ImmutableType> types = new LinkedHashSet<>();
+        types.add(type);
+        types.addAll(type.getAllDerivedTypes());
+        return types;
+    }
+
+    private static int execute(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            SqlBuilder builder,
+            ExceptionTranslator<?> exceptionTranslator
+    ) {
         Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
         Executor.Args<Integer> args = new Executor.Args<>(
                 sqlClient,

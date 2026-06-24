@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client;
@@ -217,6 +218,60 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(200L, "GLOBEX-002");
                     });
                     ctx.value("[ORG, Globex+, GLOBEX-002, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteSubtype() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Organization.class, 200L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) + "; " + joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.value("null; [Person, Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteRoot() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Client.class, 200L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) + "; " + joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_PERSON where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_CLIENT where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.value("null; [Person, Alice, null, Alice, Smith]");
                 }
         );
     }

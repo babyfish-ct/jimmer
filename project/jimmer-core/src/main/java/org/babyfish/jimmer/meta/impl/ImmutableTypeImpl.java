@@ -1223,6 +1223,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
+            validateNotInheritanceSubtype("@Version");
             for (ImmutableType superType : superTypes) {
                 if (superType.getVersionProp() != null) {
                     throw new IllegalStateException(
@@ -1264,6 +1265,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
+            validateNotInheritanceSubtype("@LogicalDeleted");
             for (ImmutableType superType : superTypes) {
                 if (superType.getLogicalDeletedInfo() != null) {
                     throw new IllegalStateException(
@@ -1288,6 +1290,23 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             }
             logicalDeletedPropName = name;
             return add(id, name, ImmutablePropCategory.SCALAR, elementType, nullable);
+        }
+
+        private void validateNotInheritanceSubtype(String annotation) {
+            if (!javaClass.isAnnotationPresent(Entity.class)) {
+                return;
+            }
+            for (ImmutableType superType : superTypes) {
+                if (superType.isEntity() && superType.getInheritanceRoot() != null) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", " +
+                                    annotation +
+                                    " can only be declared by inheritance root type or mapped super class"
+                    );
+                }
+            }
         }
 
         @Override

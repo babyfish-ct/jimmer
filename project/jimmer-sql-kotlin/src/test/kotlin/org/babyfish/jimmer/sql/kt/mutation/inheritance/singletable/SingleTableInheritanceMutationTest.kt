@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.singletable
 
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -180,6 +181,22 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 "[300, ORG, same-code, Acme Natural+, ACME-N-002, null, null]; " +
                     "[301, KNaturalPerson, same-code, Bob Natural, null, Bob, Brown]"
             )
+        }
+    }
+
+    @Test
+    fun testDeleteSubtype() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).delete(KOrganization::class, 100L) {
+                setMode(DeleteMode.PHYSICAL)
+            }
+            "${clientRow(con, 100L)}; ${clientRow(con, 101L)}"
+        }) {
+            statement {
+                sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?")
+                variables(100L, "ORG")
+            }
+            value("null; [KPerson, Bob, null, Bob, Brown]")
         }
     }
 

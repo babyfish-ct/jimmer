@@ -36,6 +36,10 @@ drop table primitive if exists;
 drop table personal if exists;
 drop table monster if exists;
 drop table work_user if exists;
+drop table logical_joined_person if exists;
+drop table logical_joined_organization if exists;
+drop table logical_joined_client if exists;
+drop table logical_client if exists;
 drop table joined_person if exists;
 drop table joined_organization if exists;
 drop table joined_client if exists;
@@ -95,6 +99,44 @@ create table joined_person(
             references joined_client(id)
 );
 
+create table logical_client(
+    id bigint not null,
+    client_type varchar(31) not null,
+    name varchar(50) not null,
+    tax_code varchar(50),
+    first_name varchar(50),
+    last_name varchar(50),
+    deleted boolean not null,
+    constraint pk_logical_client primary key(id)
+);
+
+create table logical_joined_client(
+    id bigint not null,
+    client_type varchar(31) not null,
+    name varchar(50) not null,
+    deleted boolean not null,
+    constraint pk_logical_joined_client primary key(id)
+);
+
+create table logical_joined_organization(
+    id bigint not null,
+    tax_code varchar(50) not null,
+    constraint pk_logical_joined_organization primary key(id),
+    constraint fk_logical_joined_organization__client
+        foreign key(id)
+            references logical_joined_client(id)
+);
+
+create table logical_joined_person(
+    id bigint not null,
+    first_name varchar(50) not null,
+    last_name varchar(50) not null,
+    constraint pk_logical_joined_person primary key(id),
+    constraint fk_logical_joined_person__client
+        foreign key(id)
+            references logical_joined_client(id)
+);
+
 insert into client(id, client_type, name, tax_code)
     values(100, 'ORG', 'Acme', 'ACME-001');
 insert into client(id, client_type, name, first_name, last_name)
@@ -112,7 +154,21 @@ insert into joined_organization(id, tax_code)
 insert into joined_client(id, client_type, name)
     values(201, 'KPerson', 'Alice');
 insert into joined_person(id, first_name, last_name)
-    values(201, 'Alice', 'Green');
+    values(201, 'Alice', 'Smith');
+
+insert into logical_client(id, client_type, name, tax_code, deleted)
+    values(400, 'ORG', 'Logical Acme', 'L-ACME-001', false);
+insert into logical_client(id, client_type, name, first_name, last_name, deleted)
+    values(401, 'KPerson', 'Logical Bob', 'Bob', 'Brown', false);
+
+insert into logical_joined_client(id, client_type, name, deleted)
+    values(500, 'ORG', 'Logical Globex', false);
+insert into logical_joined_organization(id, tax_code)
+    values(500, 'L-GLOBEX-001');
+insert into logical_joined_client(id, client_type, name, deleted)
+    values(501, 'KPerson', 'Logical Alice', false);
+insert into logical_joined_person(id, first_name, last_name)
+    values(501, 'Alice', 'Smith');
 
 create table book_store(
     id bigint not null,

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.inheritance.key.NaturalOrganizationDraft;
@@ -196,6 +197,27 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.value("[300, ORG, same-code, Acme Natural+, ACME-N-002, null, null]; " +
                             "[301, NaturalPerson, same-code, Bob Natural, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteSubtype() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Organization.class, 100L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .execute(con);
+                    return clientRow(con, 100L) + "; " + clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?");
+                        it.variables(100L, "ORG");
+                    });
+                    ctx.value("null; [Person, Bob, null, Bob, Brown]");
                 }
         );
     }
