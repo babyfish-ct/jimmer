@@ -4,6 +4,8 @@ import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheOperator;
+import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.dialect.PaginationContext;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -63,7 +65,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         String qualifiedTableName = schema == null || schema.isEmpty()
                 ? TABLE_NAME
                 : schema + "." + TABLE_NAME;
-        sql = new Sql(qualifiedTableName);
+        sql = new Sql(qualifiedTableName, sqlClient.getDialect());
 
         ConnectionManager connectionManager = sqlClient.getConnectionManager();
         if (connectionManager == null) {
@@ -187,7 +189,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
     }
 
     private List<Long> selectOperationIds(Connection con) {
-        String sql = sql().selectIdPrefix + batchSize;
+        String sql = sql().getSelectIdSql(batchSize);
         List<Long> ids = new ArrayList<>();
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
             try (ResultSet rs = stmt.executeQuery()) {
@@ -307,13 +309,16 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
 
         final String insert;
 
-        final String selectIdPrefix;
+        final String selectIdBase;
 
         final String selectPrefix;
 
         final String deletePrefix;
 
-        Sql(String qualifiedTableName) {
+        final Dialect dialect;
+
+        Sql(String qualifiedTableName, Dialect dialect) {
+            this.dialect = dialect;
             insert = "insert into " +
                     qualifiedTableName + "(" +
                     IMMUTABLE_TYPE +
@@ -325,13 +330,12 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
                     REASON +
                     ") values(?, ?, ?, ?)";
 
-            selectIdPrefix = "select " +
+            selectIdBase = "select " +
                     ID +
                     " from " +
                     qualifiedTableName +
                     " order by " +
-                    ID +
-                    " limit ";
+                    ID;
 
             selectPrefix = "select " +
                     ID +
@@ -354,6 +358,76 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
                     " where " +
                     ID +
                     " in";
+        }
+
+        String getSelectIdSql(int limit) {
+            StringBuilder builder = new StringBuilder();
+            SimplePaginationContext ctx = new SimplePaginationContext(builder, selectIdBase, limit, 0);
+            dialect.paginate(ctx);
+            return builder.toString();
+        }
+    }
+
+    private static class SimplePaginationContext implements PaginationContext {
+
+        private final StringBuilder builder;
+        private final String baseSql;
+        private final int limit;
+        private final long offset;
+        private boolean isOrigin = true;
+
+        SimplePaginationContext(StringBuilder builder, String baseSql, int limit, long offset) {
+            this.builder = builder;
+            this.baseSql = baseSql;
+            this.limit = limit;
+            this.offset = offset;
+        }
+
+        @Override
+        public int getLimit() {
+            return limit;
+        }
+
+        @Override
+        public long getOffset() {
+            return offset;
+        }
+
+        @Override
+        public boolean isIdOnly() {
+            return true;
+        }
+
+        @Override
+        public PaginationContext origin() {
+            if (isOrigin) {
+                builder.append(baseSql);
+            }
+            return this;
+        }
+
+        @Override
+        public PaginationContext space() {
+            builder.append(' ');
+            return this;
+        }
+
+        @Override
+        public PaginationContext newLine() {
+            builder.append('\n');
+            return this;
+        }
+
+        @Override
+        public PaginationContext sql(String sql) {
+            builder.append(sql);
+            return this;
+        }
+
+        @Override
+        public PaginationContext variable(Object value) {
+            builder.append(value);
+            return this;
         }
     }
 
