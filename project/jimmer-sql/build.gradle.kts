@@ -36,11 +36,12 @@ dependencies {
     testImplementation(libs.mysql.connector.java)
     testImplementation(libs.postgresql)
     testImplementation(libs.sqlite)
+    testImplementation(libs.sqlserver)
     testImplementation(libs.kafka.connect.api)
     testImplementation(libs.javax.validation.api)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.antlr)
-    // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
+    testImplementation(libs.ojdbc8)
 }
 
 configurations.api {

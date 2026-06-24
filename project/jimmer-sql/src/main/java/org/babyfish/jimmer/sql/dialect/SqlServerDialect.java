@@ -25,6 +25,11 @@ public class SqlServerDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateAliasRequired() {
+        return true;
+    }
+
+    @Override
     public String sqlType(Class<?> elementType) {
         if (elementType == String.class) {
             return "varchar";

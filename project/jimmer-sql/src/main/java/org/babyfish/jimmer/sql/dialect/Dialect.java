@@ -55,6 +55,19 @@ public interface Dialect extends SqlTypeStrategy {
 
     default boolean isUpdateNeedsAsKeyword() { return false; }
 
+    /**
+     * Whether UPDATE statement requires alias before table name.
+     * <p>
+     * For SQL Server, this returns {@code true} to generate:
+     * {@code update alias SET ... FROM table alias WHERE ...}
+     * <p>
+     * For other databases, this returns {@code false} (default) to generate:
+     * {@code update table [as] alias SET ...}
+     *
+     * @return whether update alias is required before table name
+     */
+    default boolean isUpdateAliasRequired() { return false; }
+
     @Nullable
     default String getOffsetOptimizationNumField() {
         return null;
