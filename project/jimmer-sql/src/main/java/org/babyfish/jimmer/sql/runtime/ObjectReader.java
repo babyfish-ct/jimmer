@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.jetbrains.annotations.Nullable;
 
@@ -92,8 +91,7 @@ class ObjectReader implements Reader<Object> {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null ||
                 inheritanceInfo.getRootType() != type ||
-                inheritanceInfo.getDiscriminatorColumn() == null ||
-                inheritanceInfo.getStrategy() == InheritanceType.TABLE_PER_CLASS) {
+                inheritanceInfo.getDiscriminatorColumn() == null) {
             return null;
         }
         return sqlClient.getReader(String.class);

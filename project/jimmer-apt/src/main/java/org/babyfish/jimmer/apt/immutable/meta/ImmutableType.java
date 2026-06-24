@@ -275,14 +275,6 @@ public class ImmutableType implements BaseType {
                     discriminatorValue.value() :
                     typeElement.getSimpleName().toString();
         } else if (inheritance != null) {
-            if (inheritance.strategy() == InheritanceType.TABLE_PER_CLASS) {
-                throw new MetaException(
-                        typeElement,
-                        "inheritance strategy \"" +
-                                InheritanceType.TABLE_PER_CLASS +
-                                "\" is not supported yet"
-                );
-            }
             if (inheritance.strategy() != InheritanceType.JOINED &&
                     inheritance.joinedTableDeleteMode() != JoinedTableDeleteMode.EXPLICIT) {
                 throw new MetaException(

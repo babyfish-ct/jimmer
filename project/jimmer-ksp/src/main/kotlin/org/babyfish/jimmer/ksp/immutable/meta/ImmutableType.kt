@@ -261,12 +261,6 @@ class ImmutableType(
                     "Illegal value of @${Inheritance::class.java.name}.strategy: $value"
                 )
             }
-            if (strategy == InheritanceType.TABLE_PER_CLASS) {
-                throw MetaException(
-                    classDeclaration,
-                    "inheritance strategy \"$strategy\" is not supported yet"
-                )
-            }
             val joinedTableDeleteMode = when (val value: Any? = inheritance["joinedTableDeleteMode"]) {
                 null -> JoinedTableDeleteMode.EXPLICIT
                 is JoinedTableDeleteMode -> value

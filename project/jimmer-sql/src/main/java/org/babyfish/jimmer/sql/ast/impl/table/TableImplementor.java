@@ -111,11 +111,11 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null ||
                 inheritanceInfo.getRootType() != type ||
-                inheritanceInfo.getStrategy() == InheritanceType.TABLE_PER_CLASS) {
+                inheritanceInfo.getDiscriminatorColumn() == null) {
             return null;
         }
         DiscriminatorColumn discriminatorColumn = inheritanceInfo.getDiscriminatorColumn();
-        return discriminatorColumn != null ? discriminatorColumn.name() : null;
+        return discriminatorColumn.name();
     }
 
     default boolean isJoinedSubtypeRoot() {
