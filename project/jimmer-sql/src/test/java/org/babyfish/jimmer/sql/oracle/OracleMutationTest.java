@@ -73,7 +73,7 @@ public class OracleMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
                         );
                     });
                     ctx.statement(it -> {
@@ -81,20 +81,7 @@ public class OracleMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "select ?, ? from dual " +
-                                        "union all " +
-                                        "select ?, ? from dual"
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)"
                         );
                     });
                     ctx.entity(it -> {

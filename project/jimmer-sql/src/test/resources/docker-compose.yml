@@ -25,8 +25,40 @@ services:
       POSTGRES_PASSWORD: 123456
     volumes:
       - ./database-postgres.sql:/docker-entrypoint-initdb.d/database-postgres.sql
-      - db-jimmer-test-postgres:/var/lib/postgresql/data
+      - db-jimmer-test-postgres:/var/lib/postgresql
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: jimmer-test-sqlserver
+    restart: always
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Jimmer@123456"
+      MSSQL_COLLATION: "Chinese_PRC_CI_AS"
+    volumes:
+      - ./database-sqlserver.sql:/init/database-sqlserver.sql
+      - ./init-sqlserver.sh:/init/init-sqlserver.sh
+      - db-jimmer-test-sqlserver:/var/opt/mssql
+    entrypoint: ["/bin/bash", "/init/init-sqlserver.sh"]
+
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: jimmer-test-oracle
+    restart: always
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: "123456"
+      ORACLE_CHARACTERSET: "AL32UTF8"
+    volumes:
+      - ./database-oracle.sql:/init/database-oracle.sql
+      - ./init-oracle.sh:/docker-entrypoint-initdb.d/init-oracle.sh
+      - db-jimmer-test-oracle:/opt/oracle/oradata
 
 volumes:
   db-jimmer-test-mysql:
   db-jimmer-test-postgres:
+  db-jimmer-test-sqlserver:
+  db-jimmer-test-oracle:

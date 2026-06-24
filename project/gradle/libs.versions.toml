@@ -23,6 +23,8 @@ mysql = "8.0.29"
 mockito = "5.18.0"
 postgresql = "42.3.6"
 sqlite = "3.47.0.0"
+sqlserver = "12.4.2.jre11"
+oracle = "21.9.0.0"
 slf4j = "1.7.36"
 spring = "5.3.20"
 springBoot = "2.7.0"
@@ -87,6 +89,10 @@ mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mo
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 
 sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqlite" }
+
+sqlserver = { group = "com.microsoft.sqlserver", name = "mssql-jdbc", version.ref = "sqlserver" }
+
+ojdbc8 = { group = "com.oracle.database.jdbc", name = "ojdbc8", version.ref = "oracle" }
 
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 
