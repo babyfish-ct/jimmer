@@ -4,6 +4,8 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.DiscriminatorColumn;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -62,15 +64,75 @@ class Operator {
     }
 
     public void insert(Batch<DraftSpi> batch) {
+        if (batch.entities().isEmpty()) {
+            return;
+        }
+        ImmutableType type = batch.shape().getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type) {
+            insertJoined(batch, inheritanceInfo);
+            return;
+        }
+        insert(
+                batch,
+                ctx.path.getType(),
+                discriminatorColumnName(inheritanceInfo),
+                type.getDiscriminatorValue(),
+                false
+        );
+    }
 
-        if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
+    private void insertJoined(Batch<DraftSpi> batch, InheritanceInfo inheritanceInfo) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        DraftSpi sample = batch.entities().iterator().next();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        Shape rootShape = Shape.of(
+                sqlClient,
+                rootType,
+                sample,
+                prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
+        );
+        insert(
+                batchOf(batch, rootShape),
+                rootType,
+                discriminatorColumnName(inheritanceInfo),
+                batch.shape().getType().getDiscriminatorValue(),
+                true
+        );
+        ImmutableType previousTableType = rootType;
+        for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
+            ImmutableType parentTableType = previousTableType;
+            Shape shape = Shape.of(
+                    sqlClient,
+                    tableType,
+                    sample,
+                    prop -> prop.isId() ||
+                            (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
+                                    !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
+            );
+            insert(batchOf(batch, shape), tableType, null, null, true);
+            previousTableType = tableType;
+        }
+    }
+
+    private void insert(
+            Batch<DraftSpi> batch,
+            ImmutableType tableType,
+            @Nullable String discriminatorColumnName,
+            @Nullable String discriminatorValue,
+            boolean allowIdOnly
+    ) {
+
+        if (batch.entities().isEmpty() || (!allowIdOnly && batch.shape().isIdOnly())) {
             return;
         }
         validate(batch.shape(), true);
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         List<PropertyGetter> defaultGetters = new ArrayList<>();
-        for (PropertyGetter getter : Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getGetters()) {
+        for (PropertyGetter getter : Shape.fullOf(sqlClient, tableType.getJavaClass()).getGetters()) {
             if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
                 defaultGetters.add(getter);
             }
@@ -79,7 +141,7 @@ class Operator {
         SequenceIdGenerator sequenceIdGenerator = null;
         UserIdGenerator<?> userIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
-            IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
+            IdGenerator idGenerator = sqlClient.getIdGenerator(tableType.getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (idGenerator instanceof UserIdGenerator<?>) {
@@ -94,38 +156,26 @@ class Operator {
         }
 
         if (userIdGenerator != null) {
-            Class<?> javaType = ctx.path.getType().getJavaClass();
-            PropId idPropId = ctx.path.getType().getIdProp().getId();
+            Class<?> javaType = tableType.getJavaClass();
+            PropId idPropId = tableType.getIdProp().getId();
             for (DraftSpi draft : batch.entities()) {
                 Object id = userIdGenerator.generate(javaType);
-                if (id == null || id.getClass() != ctx.path.getType().getIdProp().getReturnClass()) {
+                if (id == null || id.getClass() != tableType.getIdProp().getReturnClass()) {
                     ctx.throwIllegalGeneratedId(id);
                 }
                 draft.__set(idPropId, id);
             }
         }
 
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        BatchSqlBuilder builder = new BatchSqlBuilder(
-                sqlClient,
-                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
-        );
-        builder.sql("insert into ")
-                .sql(ctx.path.getType().getTableName(strategy))
-                .enter(BatchSqlBuilder.ScopeType.TUPLE);
-        if (sequenceIdGenerator != null) {
-            builder.separator().sql(ctx.path.getType().getIdProp().<SingleColumn>getStorage(strategy).getName());
-        }
-
         UpsertMask<?> upsertMask;
         List<ImmutableProp> conflictProps;
         if (batch.originalMode() == SaveMode.UPSERT) {
-            upsertMask = ctx.options.getUpsertMask(ctx.path.getType());
+            upsertMask = ctx.options.getUpsertMask(tableType);
             if (!batch.shape().getIdGetters().isEmpty()) {
                 conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
             } else {
                 Set<ImmutableProp> keyProps = batch.shape().keyProps(
-                        ctx.options.getKeyMatcher(ctx.path.getType())
+                        ctx.options.getKeyMatcher(tableType)
                 );
                 conflictProps = new ArrayList<>(keyProps);
                 LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
@@ -137,8 +187,28 @@ class Operator {
             upsertMask = null;
             conflictProps = Collections.emptyList();
         }
+
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        BatchSqlBuilder builder = new BatchSqlBuilder(
+                sqlClient,
+                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+        );
+        builder.sql("insert into ")
+                .sql(tableType.getTableName(strategy))
+                .enter(BatchSqlBuilder.ScopeType.TUPLE);
+        if (sequenceIdGenerator != null) {
+            builder.separator().sql(tableType.getIdProp().<SingleColumn>getStorage(strategy).getName());
+        }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (getter.isInsertable(conflictProps, upsertMask)) {
+            if (getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
+                builder.separator().sql(getter);
+            }
+        }
+        if (discriminatorColumnName != null) {
+            builder.separator().sql(discriminatorColumnName);
+        }
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            if (!getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
                 builder.separator().sql(getter);
             }
         }
@@ -156,14 +226,22 @@ class Operator {
                     )
                     .sql(")");
         } else if (userIdGenerator != null) {
-            Shape fullShape = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass());
+            Shape fullShape = Shape.fullOf(sqlClient, tableType.getJavaClass());
             builder.separator();
             for (PropertyGetter getter : fullShape.getIdGetters()) {
                 builder.separator().sql(getter);
             }
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (getter.isInsertable(conflictProps, upsertMask)) {
+            if (getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
+                builder.separator().variable(getter);
+            }
+        }
+        if (discriminatorColumnName != null) {
+            builder.separator().rawVariable(discriminatorValue);
+        }
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            if (!getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
                 builder.separator().variable(getter);
             }
         }
@@ -177,7 +255,7 @@ class Operator {
             sqlClient.getDialect().isInsertedIdReturningRequired()) {
             builder.sql(" returning ")
                     .sql(
-                            batch.shape().getType().getIdProp()
+                            tableType.getIdProp()
                                     .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
                                     .getName()
                     );
@@ -190,7 +268,51 @@ class Operator {
             }
         }
         int rowCount = execute(builder, batch, false, false);
-        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+        AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
+    }
+
+    private static String discriminatorColumnName(@Nullable InheritanceInfo inheritanceInfo) {
+        if (inheritanceInfo == null) {
+            return null;
+        }
+        DiscriminatorColumn column = inheritanceInfo.getDiscriminatorColumn();
+        return column != null ? column.name() : null;
+    }
+
+    private static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
+        List<ImmutableType> tableTypes = new ArrayList<>();
+        for (ImmutableType t = type; t != rootType; t = t.getPrimarySuperType()) {
+            if (t.isEntity()) {
+                tableTypes.add(t);
+            }
+        }
+        Collections.reverse(tableTypes);
+        return tableTypes;
+    }
+
+    private static Batch<DraftSpi> batchOf(Batch<DraftSpi> base, Shape shape) {
+        return new Batch<DraftSpi>() {
+
+            @Override
+            public Shape shape() {
+                return shape;
+            }
+
+            @Override
+            public EntityCollection<DraftSpi> entities() {
+                return base.entities();
+            }
+
+            @Override
+            public SaveMode mode() {
+                return base.mode();
+            }
+
+            @Override
+            public SaveMode originalMode() {
+                return base.originalMode();
+            }
+        };
     }
 
     public void update(
@@ -403,6 +525,66 @@ class Operator {
     }
 
     public void upsert(Batch<DraftSpi> batch, boolean ignoreUpdate) {
+        if (batch.entities().isEmpty()) {
+            return;
+        }
+        ImmutableType type = batch.shape().getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type) {
+            upsertJoined(batch, inheritanceInfo, ignoreUpdate);
+            return;
+        }
+        upsert(
+                batch,
+                ctx.path.getType(),
+                discriminatorColumnName(inheritanceInfo),
+                type.getDiscriminatorValue(),
+                ignoreUpdate
+        );
+    }
+
+    private void upsertJoined(Batch<DraftSpi> batch, InheritanceInfo inheritanceInfo, boolean ignoreUpdate) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        DraftSpi sample = batch.entities().iterator().next();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        Shape rootShape = Shape.of(
+                sqlClient,
+                rootType,
+                sample,
+                prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
+        );
+        upsert(
+                batchOf(batch, rootShape),
+                rootType,
+                discriminatorColumnName(inheritanceInfo),
+                batch.shape().getType().getDiscriminatorValue(),
+                ignoreUpdate
+        );
+        ImmutableType previousTableType = rootType;
+        for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
+            ImmutableType parentTableType = previousTableType;
+            Shape shape = Shape.of(
+                    sqlClient,
+                    tableType,
+                    sample,
+                    prop -> prop.isId() ||
+                            (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
+                                    !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
+            );
+            upsert(batchOf(batch, shape), tableType, null, null, ignoreUpdate);
+            previousTableType = tableType;
+        }
+    }
+
+    private void upsert(
+            Batch<DraftSpi> batch,
+            ImmutableType tableType,
+            @Nullable String discriminatorColumnName,
+            @Nullable String discriminatorValue,
+            boolean ignoreUpdate
+    ) {
 
         validate(batch.shape(), false);
         if (batch.entities().isEmpty()) {
@@ -420,7 +602,7 @@ class Operator {
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        Shape fullShape = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass());
+        Shape fullShape = Shape.fullOf(sqlClient, tableType.getJavaClass());
         List<PropertyGetter> defaultGetters = new ArrayList<>();
         for (PropertyGetter getter : fullShape.getColumnDefinitionGetters()) {
             if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
@@ -429,7 +611,7 @@ class Operator {
         }
         SequenceIdGenerator sequenceIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
-            IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
+            IdGenerator idGenerator = sqlClient.getIdGenerator(tableType.getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
@@ -449,7 +631,7 @@ class Operator {
             conflictPredicate = null;
         } else {
             Set<ImmutableProp> keyProps = batch.shape().keyProps(
-                    ctx.options.getKeyMatcher(ctx.path.getType())
+                    ctx.options.getKeyMatcher(tableType)
             );
             conflictProps = new ArrayList<>(keyProps);
             LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
@@ -467,7 +649,7 @@ class Operator {
             }
             conflictPredicate = filteredLogicalDeletedKey ? logicalDeletedInfo : null;
         }
-        UpsertMask<?> upsertMask = ctx.options.getUpsertMask(batch.shape().getType());
+        UpsertMask<?> upsertMask = ctx.options.getUpsertMask(tableType);
         List<PropertyGetter> insertedGetters = new ArrayList<>();
         for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
             if (getter.isInsertable(conflictProps, upsertMask)) {
@@ -498,9 +680,12 @@ class Operator {
         );
         UpsertContextImpl upsertContext = new UpsertContextImpl(
                 builder,
+                tableType,
                 batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
                 sequenceIdGenerator,
                 insertedGetters,
+                discriminatorColumnName,
+                discriminatorValue,
                 conflictGetters,
                 conflictPredicate,
                 updatedGetters,
@@ -510,7 +695,7 @@ class Operator {
         );
         sqlClient.getDialect().upsert(upsertContext);
         int rowCount = execute(builder, batch, true, ignoreUpdate);
-        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+        AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
     }
 
     private boolean isFilteredLogicalDeletedKey(ImmutableType type) {
@@ -1106,11 +1291,19 @@ class Operator {
 
         private final BatchSqlBuilder builder;
 
+        private final ImmutableType tableType;
+
         private final SequenceIdGenerator sequenceIdGenerator;
 
         private final PropertyGetter generatedIdGetter;
 
         private final List<PropertyGetter> insertedGetters;
+
+        @Nullable
+        private final String discriminatorColumnName;
+
+        @Nullable
+        private final String discriminatorValue;
 
         private final List<PropertyGetter> conflictGetters;
 
@@ -1128,9 +1321,12 @@ class Operator {
 
         UpsertContextImpl(
                 BatchSqlBuilder builder,
+                ImmutableType tableType,
                 ImmutableProp generatedIdProp,
                 SequenceIdGenerator sequenceIdGenerator,
                 List<PropertyGetter> insertedGetters,
+                @Nullable String discriminatorColumnName,
+                @Nullable String discriminatorValue,
                 List<PropertyGetter> conflictGetters,
                 LogicalDeletedInfo conflictPredicate,
                 List<PropertyGetter> updatedGetters,
@@ -1149,13 +1345,16 @@ class Operator {
                 );
             }
             this.builder = builder;
+            this.tableType = tableType;
             this.sequenceIdGenerator = sequenceIdGenerator;
             this.generatedIdGetter = generatedIdProp != null ?
-                    Shape.fullOf(builder.sqlClient(), generatedIdProp.getDeclaringType().getJavaClass())
+                    Shape.fullOf(builder.sqlClient(), tableType.getJavaClass())
                             .getIdGetters()
                             .get(0) :
                     null;
             this.insertedGetters = insertedGetters;
+            this.discriminatorColumnName = discriminatorColumnName;
+            this.discriminatorValue = discriminatorValue;
             this.conflictGetters = conflictGetters;
             this.conflictPredicate = conflictPredicate;
             this.updatedGetters = updatedGetters;
@@ -1260,7 +1459,7 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendTableName() {
-            builder.sql(ctx.path.getType().getTableName(ctx.options.getSqlClient().getMetadataStrategy()));
+            builder.sql(tableType.getTableName(ctx.options.getSqlClient().getMetadataStrategy()));
             return this;
         }
 
@@ -1277,7 +1476,15 @@ class Operator {
                         .sql(")");
             }
             for (PropertyGetter getter : insertedGetters) {
-                if (!getter.prop().isId() || sequenceIdGenerator == null) {
+                if (getter.prop().isId() && sequenceIdGenerator == null) {
+                    builder.separator().sql(prefix).sql(getter);
+                }
+            }
+            if (discriminatorColumnName != null) {
+                builder.separator().sql(prefix).sql(discriminatorColumnName);
+            }
+            for (PropertyGetter getter : insertedGetters) {
+                if (!getter.prop().isId()) {
                     builder.separator().sql(prefix).sql(getter);
                 }
             }
@@ -1304,7 +1511,17 @@ class Operator {
         public Dialect.UpsertContext appendInsertingValues() {
             builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : insertedGetters) {
-                builder.separator().variable(getter);
+                if (getter.prop().isId()) {
+                    builder.separator().variable(getter);
+                }
+            }
+            if (discriminatorColumnName != null) {
+                builder.separator().rawVariable(discriminatorValue);
+            }
+            for (PropertyGetter getter : insertedGetters) {
+                if (!getter.prop().isId()) {
+                    builder.separator().variable(getter);
+                }
             }
             builder.leave();
             return this;
