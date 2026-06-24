@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
@@ -200,7 +201,7 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
     private int h(ImmutableSpi spi) {
         int hash = 1;
         for (int i = propIds.length - 1; i >= 0; --i) {
-            Object v = spi.__get(propIds[i]);
+            Object v = valueOf(spi, propIds[i]);
             hash = hash * 31 + (v != null ? v.hashCode() : 0);
         }
         return hash;
@@ -208,13 +209,27 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
 
     private boolean eq(ImmutableSpi a, ImmutableSpi b) {
         for (int i = propIds.length - 1; i >= 0; --i) {
-            Object v1 = a.__get(propIds[i]);
-            Object v2 = b.__get(propIds[i]);
+            Object v1 = valueOf(a, propIds[i]);
+            Object v2 = valueOf(b, propIds[i]);
             if (!Objects.equals(v1, v2)) {
                 return false;
             }
         }
         return true;
+    }
+
+    private static Object valueOf(ImmutableSpi spi, PropId propId) {
+        if (!spi.__isLoaded(propId)) {
+            String value = spi.__type().getDiscriminatorValue();
+            if (value != null) {
+                for (ImmutableProp prop : spi.__type().getProps().values()) {
+                    if (prop.isDiscriminator() && prop.getId().equals(propId)) {
+                        return value;
+                    }
+                }
+            }
+        }
+        return spi.__get(propId);
     }
 
     private static abstract class AbstractItr<E> {

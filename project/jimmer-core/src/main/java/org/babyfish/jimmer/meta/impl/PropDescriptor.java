@@ -224,9 +224,15 @@ public class PropDescriptor {
                     Type type = TYPE_MAP.get(annotationType);
                     if (FAMILY_MAP.containsKey(type)) {
                         if (explicitType != null) {
-                            conflict(explicitType, annotationType);
+                            if (!isCompatibleAdditionalAnnotation(explicitType, annotationType)) {
+                                conflict(explicitType, annotationType);
+                            }
+                            if (annotationType == Discriminator.class) {
+                                explicitType = Discriminator.class;
+                            }
+                        } else {
+                            explicitType = annotationType;
                         }
-                        explicitType = annotationType;
                     } else if (explicitType == null) {
                         Set<Type> set = INVERSE_MAP.get(annotationType);
                         if (set == null) {
@@ -276,6 +282,14 @@ public class PropDescriptor {
         public Builder hasMappedBy() {
             hasMappedBy = true;
             return this;
+        }
+
+        private boolean isCompatibleAdditionalAnnotation(
+                Class<? extends Annotation> explicitType,
+                Class<? extends Annotation> annotationType
+        ) {
+            return explicitType == Discriminator.class && annotationType == Key.class ||
+                    explicitType == Key.class && annotationType == Discriminator.class;
         }
 
         public PropDescriptor build() {
@@ -349,7 +363,8 @@ public class PropDescriptor {
             Set<Class<? extends Annotation>> expectedAnnotationTypes = FAMILY_MAP.get(type);
             for (Class<? extends Annotation> annotationType : annotationTypes) {
                 if (annotationType != type.getAnnotationType() &&
-                !expectedAnnotationTypes.contains(annotationType)) {
+                !expectedAnnotationTypes.contains(annotationType) &&
+                !isCompatibleAdditionalAnnotation(type.getAnnotationType(), annotationType)) {
                     throw exceptionCreator.apply(
                             "the "+
                                     type +

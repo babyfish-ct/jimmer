@@ -4,11 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.event.*;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -152,7 +149,7 @@ public class TriggersImpl implements Triggers {
             throw new IllegalArgumentException("newRow must be immutable");
         }
         EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow, con, reason);
-        List<EntityListener<ImmutableSpi>> listeners = entityListeners(event.getImmutableType());
+        List<EntityListener<ImmutableSpi>> listeners = entityListeners(event.getAffectedTypes());
         Throwable throwable = null;
         if (!listeners.isEmpty()) {
             for (EntityListener<ImmutableSpi> listener : listeners) {
@@ -326,11 +323,19 @@ public class TriggersImpl implements Triggers {
     }
 
     private List<EntityListener<ImmutableSpi>> entityListeners(ImmutableType type) {
+        return entityListeners(Collections.singleton(type));
+    }
+
+    private List<EntityListener<ImmutableSpi>> entityListeners(Collection<ImmutableType> types) {
         List<EntityListener<ImmutableSpi>> listeners = new ArrayList<>(globalEntityListeners);
         Map<ImmutableType, CopyOnWriteArrayList<EntityListener<ImmutableSpi>>> map =
                 entityTableListenerMultiMap;
-        for (ImmutableType t : type.getAllTypes()) {
-            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(t);
+        Set<ImmutableType> allTypes = new LinkedHashSet<>();
+        for (ImmutableType type : types) {
+            allTypes.addAll(type.getAllTypes());
+        }
+        for (ImmutableType type : allTypes) {
+            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(type);
             if (list != null) {
                 listeners.addAll(list);
             }
@@ -356,9 +361,12 @@ public class TriggersImpl implements Triggers {
     }
 
     private Throwable fireAssociationEventByEntityEvent(EntityEvent<?> event, Throwable throwable) {
-        ImmutableType type = event.getImmutableType();
         if (!event.isEvict()) {
-            for (ImmutableProp prop : type.getProps().values()) {
+            Set<ImmutableProp> props = new LinkedHashSet<>();
+            for (ImmutableType affectedType : event.getAffectedTypes()) {
+                props.addAll(affectedType.getProps().values());
+            }
+            for (ImmutableProp prop : props) {
                 if (prop.isColumnDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
                     ChangedRef<Object> changedRef = event.getChangedRef(prop);
                     if (changedRef != null) {

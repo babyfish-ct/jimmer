@@ -149,7 +149,7 @@ class Rows {
                 List<String> spiMissingProps = new ArrayList<>();
 
                 for (ImmutableProp keyProp : keyProps) {
-                    if (!spi.__isLoaded(keyProp.getId())) {
+                    if (!isLoaded(spi, keyProp)) {
                         unloaded = true;
                         if (!keyProp.isNullable()) {
                             //  Add missing non-null key prop name
@@ -221,6 +221,11 @@ class Rows {
             resultMap.put(group, list);
         }
         return resultMap;
+    }
+
+    private static boolean isLoaded(ImmutableSpi spi, ImmutableProp prop) {
+        return spi.__isLoaded(prop.getId()) ||
+                prop.isDiscriminator() && spi.__type().getDiscriminatorValue() != null;
     }
 
     @SuppressWarnings("unchecked")

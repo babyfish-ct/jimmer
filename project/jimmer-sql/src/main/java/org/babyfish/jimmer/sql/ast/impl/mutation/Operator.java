@@ -7,14 +7,12 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DiscriminatorColumn;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.AbstractExpression;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
-import org.babyfish.jimmer.sql.ast.impl.OptimisticLockValueFactoryFactories;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
@@ -291,6 +289,10 @@ class Operator {
     }
 
     private static Batch<DraftSpi> batchOf(Batch<DraftSpi> base, Shape shape) {
+        return batchOf(base, shape, base.entities());
+    }
+
+    private static Batch<DraftSpi> batchOf(Batch<DraftSpi> base, Shape shape, EntityCollection<DraftSpi> entities) {
         return new Batch<DraftSpi>() {
 
             @Override
@@ -300,7 +302,7 @@ class Operator {
 
             @Override
             public EntityCollection<DraftSpi> entities() {
-                return base.entities();
+                return entities;
             }
 
             @Override
@@ -319,6 +321,172 @@ class Operator {
             Map<Object, ImmutableSpi> originalIdObjMap,
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch
+    ) {
+        if (batch.entities().isEmpty()) {
+            return;
+        }
+        ImmutableType type = batch.shape().getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type) {
+            updateJoined(originalIdObjMap, originalKeyObjMap, batch, inheritanceInfo);
+            return;
+        }
+        update(
+                originalIdObjMap,
+                originalKeyObjMap,
+                batch,
+                ctx.path.getType(),
+                discriminatorColumnName(inheritanceInfo),
+                type.getDiscriminatorValue(),
+                redundantSingleTableGetters(inheritanceInfo, type)
+        );
+    }
+
+    private void updateJoined(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch,
+            InheritanceInfo inheritanceInfo
+    ) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        DraftSpi sample = batch.entities().iterator().next();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        Shape rootShape = Shape.of(
+                sqlClient,
+                rootType,
+                sample,
+                prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
+        );
+        Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
+        if (rootShape.getIdGetters().isEmpty()) {
+            fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, rootBatch);
+            if (rootBatch.entities().isEmpty()) {
+                return;
+            }
+        }
+        update(
+                originalIdObjMap,
+                originalKeyObjMap,
+                rootBatch,
+                rootType,
+                discriminatorColumnName(inheritanceInfo),
+                batch.shape().getType().getDiscriminatorValue(),
+                Collections.emptyList()
+        );
+        deleteRedundantJoinedRows(batch, inheritanceInfo);
+        ImmutableType previousTableType = rootType;
+        for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
+            ImmutableType parentTableType = previousTableType;
+            Shape shape = Shape.of(
+                    sqlClient,
+                    tableType,
+                    sample,
+                    prop -> prop.isId() ||
+                            (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
+                                    !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
+            );
+            saveJoinedTableForUpdate(originalIdObjMap, originalKeyObjMap, batchOf(batch, shape), tableType);
+            previousTableType = tableType;
+        }
+    }
+
+    private void saveJoinedTableForUpdate(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch,
+            ImmutableType tableType
+    ) {
+        if (ctx.options.getSqlClient().getDialect().isUpsertSupported()) {
+            upsert(batch, tableType, null, null, Collections.emptyList(), false);
+            return;
+        }
+        Set<Object> existingIds = findExistingIds(tableType, batch);
+        EntityList<DraftSpi> existingEntities = new EntityList<>();
+        EntityList<DraftSpi> missingEntities = new EntityList<>();
+        PropId idPropId = tableType.getIdProp().getId();
+        for (DraftSpi draft : batch.entities()) {
+            if (existingIds.contains(draft.__get(idPropId))) {
+                existingEntities.add(draft);
+            } else {
+                missingEntities.add(draft);
+            }
+        }
+        if (!existingEntities.isEmpty()) {
+            update(
+                    originalIdObjMap,
+                    originalKeyObjMap,
+                    batchOf(batch, batch.shape(), existingEntities),
+                    tableType,
+                    null,
+                    null,
+                    Collections.emptyList()
+            );
+        }
+        if (!missingEntities.isEmpty()) {
+            insert(batchOf(batch, batch.shape(), missingEntities), tableType, null, null, true);
+        }
+    }
+
+    private Set<Object> findExistingIds(ImmutableType tableType, Batch<DraftSpi> batch) {
+        Set<Object> ids = new LinkedHashSet<>((batch.entities().size() * 4 + 2) / 3);
+        PropId idPropId = tableType.getIdProp().getId();
+        for (DraftSpi draft : batch.entities()) {
+            ids.add(draft.__get(idPropId));
+        }
+        if (ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder
+                .sql("select ")
+                .definition(tableType.getIdProp().getStorage(sqlClient.getMetadataStrategy()))
+                .sql(" from ")
+                .sql(tableType.getTableName(sqlClient.getMetadataStrategy()))
+                .sql(" where ");
+        ComparisonPredicates.renderIn(
+                false,
+                ValueGetter.valueGetters(sqlClient, tableType.getIdProp()),
+                ids,
+                builder
+        );
+        Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
+        Reader<?> reader = sqlClient.getReader(tableType.getIdProp());
+        return sqlClient.getExecutor().execute(
+                new Executor.Args<>(
+                        sqlClient,
+                        ctx.con,
+                        tuple.get_1(),
+                        tuple.get_2(),
+                        tuple.get_3(),
+                        ExecutionPurpose.command(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE),
+                        ctx.options.getExceptionTranslator(),
+                        null,
+                        (stmt, args) -> {
+                            Set<Object> existingIds = new LinkedHashSet<>();
+                            Reader.Context readerContext = new Reader.Context(null, sqlClient);
+                            try (ResultSet rs = stmt.executeQuery()) {
+                                while (rs.next()) {
+                                    readerContext.resetCol();
+                                    existingIds.add(reader.read(rs, readerContext));
+                                }
+                            }
+                            return existingIds;
+                        }
+                )
+        );
+    }
+
+    private void update(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch,
+            ImmutableType tableType,
+            @Nullable String discriminatorColumnName,
+            @Nullable String discriminatorValue,
+            List<PropertyGetter> nullGetters
     ) {
         Shape shape = batch.shape();
         validate(shape, false);
@@ -399,7 +567,7 @@ class Operator {
             }
             updatedGetters.add(getter);
         }
-        if (updatedGetters.isEmpty() && !hasOptimisticLock) {
+        if (updatedGetters.isEmpty() && discriminatorColumnName == null && nullGetters.isEmpty() && !hasOptimisticLock) {
             fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
             return;
         }
@@ -415,10 +583,14 @@ class Operator {
         );
         Dialect.UpdateContext updateContext = new UpdateContextImpl(
                 builder,
+                tableType,
                 shape,
                 Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters().get(0),
                 keyProps,
                 updatedGetters,
+                discriminatorColumnName,
+                discriminatorValue,
+                nullGetters,
                 userOptimisticLockPredicate,
                 versionGetter
         );
@@ -479,7 +651,7 @@ class Operator {
                 }
             }
         }
-        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount(rowCounts));
+        AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
     }
 
     @SuppressWarnings("unchecked")
@@ -541,6 +713,7 @@ class Operator {
                 ctx.path.getType(),
                 discriminatorColumnName(inheritanceInfo),
                 type.getDiscriminatorValue(),
+                redundantSingleTableGetters(inheritanceInfo, type),
                 ignoreUpdate
         );
     }
@@ -560,8 +733,10 @@ class Operator {
                 rootType,
                 discriminatorColumnName(inheritanceInfo),
                 batch.shape().getType().getDiscriminatorValue(),
+                Collections.emptyList(),
                 ignoreUpdate
         );
+        deleteRedundantJoinedRows(batch, inheritanceInfo);
         ImmutableType previousTableType = rootType;
         for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
             ImmutableType parentTableType = previousTableType;
@@ -573,7 +748,7 @@ class Operator {
                             (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
-            upsert(batchOf(batch, shape), tableType, null, null, ignoreUpdate);
+            upsert(batchOf(batch, shape), tableType, null, null, Collections.emptyList(), ignoreUpdate);
             previousTableType = tableType;
         }
     }
@@ -583,6 +758,7 @@ class Operator {
             ImmutableType tableType,
             @Nullable String discriminatorColumnName,
             @Nullable String discriminatorValue,
+            List<PropertyGetter> nullGetters,
             boolean ignoreUpdate
     ) {
 
@@ -686,6 +862,7 @@ class Operator {
                 insertedGetters,
                 discriminatorColumnName,
                 discriminatorValue,
+                nullGetters,
                 conflictGetters,
                 conflictPredicate,
                 updatedGetters,
@@ -696,6 +873,62 @@ class Operator {
         sqlClient.getDialect().upsert(upsertContext);
         int rowCount = execute(builder, batch, true, ignoreUpdate);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
+    }
+
+    private List<PropertyGetter> redundantSingleTableGetters(
+            @Nullable InheritanceInfo inheritanceInfo,
+            ImmutableType targetType
+    ) {
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.SINGLE_TABLE) {
+            return Collections.emptyList();
+        }
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        List<PropertyGetter> redundantGetters = new ArrayList<>();
+        collectRedundantSingleTableGetters(redundantGetters, rootType, targetType);
+        for (ImmutableType derivedType : rootType.getAllDerivedTypes()) {
+            collectRedundantSingleTableGetters(redundantGetters, derivedType, targetType);
+        }
+        return redundantGetters;
+    }
+
+    private void collectRedundantSingleTableGetters(
+            List<PropertyGetter> getters,
+            ImmutableType declaringType,
+            ImmutableType targetType
+    ) {
+        if (declaringType.isAssignableFrom(targetType)) {
+            return;
+        }
+        for (ImmutableProp prop : declaringType.getDeclaredProps().values()) {
+            if (prop.isId() || prop.isVersion() || !prop.isColumnDefinition() || prop.isDiscriminator()) {
+                continue;
+            }
+            getters.addAll(PropertyGetter.propertyGetters(ctx.options.getSqlClient(), prop));
+        }
+    }
+
+    private void deleteRedundantJoinedRows(Batch<DraftSpi> batch, InheritanceInfo inheritanceInfo) {
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        ImmutableType targetType = batch.shape().getType();
+        Set<ImmutableType> retainedTypes = new HashSet<>(joinedTableTypes(rootType, targetType));
+        PropId idPropId = rootType.getIdProp().getId();
+        MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
+        for (ImmutableType concreteType : inheritanceInfo.getConcreteTypes()) {
+            if (concreteType == rootType || !concreteType.isEntity() || retainedTypes.contains(concreteType)) {
+                continue;
+            }
+            BatchSqlBuilder builder = new BatchSqlBuilder(
+                    ctx.options.getSqlClient(),
+                    batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+            );
+            builder.sql("delete from ")
+                    .sql(concreteType.getTableName(strategy))
+                    .sql(" where ")
+                    .sql(rootType.getIdProp().<SingleColumn>getStorage(strategy).getName())
+                    .sql(" = ")
+                    .variable(row -> ((DraftSpi) row).__get(idPropId));
+            execute(builder, batch, true, false);
+        }
     }
 
     private boolean isFilteredLogicalDeletedKey(ImmutableType type) {
@@ -1127,6 +1360,8 @@ class Operator {
 
         private final BatchSqlBuilder builder;
 
+        private final ImmutableType tableType;
+
         private final Shape shape;
 
         private final PropertyGetter idGetter;
@@ -1135,24 +1370,40 @@ class Operator {
 
         private final List<PropertyGetter> updatedGetters;
 
+        @Nullable
+        private final String discriminatorColumnName;
+
+        @Nullable
+        private final String discriminatorValue;
+
+        private final List<PropertyGetter> nullGetters;
+
         private final Predicate userOptimisticLockPredicate;
 
         private final PropertyGetter versionGetter;
 
         UpdateContextImpl(
                 BatchSqlBuilder builder,
+                ImmutableType tableType,
                 Shape shape,
                 PropertyGetter idGetter,
                 Set<ImmutableProp> keyProps,
                 List<PropertyGetter> updatedGetters,
+                @Nullable String discriminatorColumnName,
+                @Nullable String discriminatorValue,
+                List<PropertyGetter> nullGetters,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter
         ) {
             this.builder = builder;
+            this.tableType = tableType;
             this.shape = shape;
             this.idGetter = idGetter;
             this.keyProps = keyProps;
             this.updatedGetters = updatedGetters;
+            this.discriminatorColumnName = discriminatorColumnName;
+            this.discriminatorValue = discriminatorValue;
+            this.nullGetters = nullGetters;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
         }
@@ -1202,12 +1453,23 @@ class Operator {
         @Override
         public Dialect.UpdateContext appendTableName() {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-            builder.sql(ctx.path.getType().getTableName(strategy));
+            builder.sql(tableType.getTableName(strategy));
             return this;
         }
 
         @Override
         public Dialect.UpdateContext appendAssignments() {
+            if (discriminatorColumnName != null) {
+                builder.separator()
+                        .sql(discriminatorColumnName)
+                        .sql(" = ")
+                        .rawVariable(discriminatorValue);
+            }
+            for (PropertyGetter getter : nullGetters) {
+                builder.separator()
+                        .sql(getter)
+                        .sql(" = null");
+            }
             for (PropertyGetter getter : updatedGetters) {
                 if (getter != versionGetter) {
                     builder.separator()
@@ -1244,6 +1506,21 @@ class Operator {
                 Map<ImmutableProp, List<PropertyGetter>> getterMap = shape.getGetterMap();
                 for (ImmutableProp keyProp : keyProps) {
                     List<PropertyGetter> getters = getterMap.get(keyProp);
+                    if (getters == null) {
+                        if (keyProp.isDiscriminator()) {
+                            String columnName = discriminatorColumnName(tableType.getInheritanceInfo());
+                            if (columnName != null) {
+                                getters = PropertyGetter.discriminatorGetters(
+                                        ctx.options.getSqlClient(),
+                                        keyProp,
+                                        columnName
+                                );
+                            }
+                        }
+                    }
+                    if (getters == null) {
+                        getters = PropertyGetter.propertyGetters(ctx.options.getSqlClient(), keyProp);
+                    }
                     for (PropertyGetter getter : getters) {
                         builder.separator()
                                 .sql(getter)
@@ -1305,6 +1582,8 @@ class Operator {
         @Nullable
         private final String discriminatorValue;
 
+        private final List<PropertyGetter> nullGetters;
+
         private final List<PropertyGetter> conflictGetters;
 
         private final LogicalDeletedInfo conflictPredicate;
@@ -1327,6 +1606,7 @@ class Operator {
                 List<PropertyGetter> insertedGetters,
                 @Nullable String discriminatorColumnName,
                 @Nullable String discriminatorValue,
+                List<PropertyGetter> nullGetters,
                 List<PropertyGetter> conflictGetters,
                 LogicalDeletedInfo conflictPredicate,
                 List<PropertyGetter> updatedGetters,
@@ -1355,6 +1635,7 @@ class Operator {
             this.insertedGetters = insertedGetters;
             this.discriminatorColumnName = discriminatorColumnName;
             this.discriminatorValue = discriminatorValue;
+            this.nullGetters = nullGetters;
             this.conflictGetters = conflictGetters;
             this.conflictPredicate = conflictPredicate;
             this.updatedGetters = updatedGetters;
@@ -1365,7 +1646,8 @@ class Operator {
 
         @Override
         public boolean hasUpdatedColumns() {
-            return !updatedGetters.isEmpty();
+            return !updateIgnored &&
+                    (!updatedGetters.isEmpty() || discriminatorColumnName != null || !nullGetters.isEmpty());
         }
 
         @Override
@@ -1488,6 +1770,9 @@ class Operator {
                     builder.separator().sql(prefix).sql(getter);
                 }
             }
+            for (PropertyGetter getter : nullGetters) {
+                builder.separator().sql(prefix).sql(getter);
+            }
             return this;
         }
 
@@ -1523,12 +1808,26 @@ class Operator {
                     builder.separator().variable(getter);
                 }
             }
+            for (PropertyGetter ignored : nullGetters) {
+                builder.separator().sql("null");
+            }
             builder.leave();
             return this;
         }
 
         @Override
         public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
+            if (discriminatorColumnName != null) {
+                builder.separator()
+                        .sql(discriminatorColumnName)
+                        .sql(" = ")
+                        .rawVariable(discriminatorValue);
+            }
+            for (PropertyGetter getter : nullGetters) {
+                builder.separator()
+                        .sql(getter)
+                        .sql(" = null");
+            }
             for (PropertyGetter getter : updatedGetters) {
                 builder.separator()
                         .sql(getter)

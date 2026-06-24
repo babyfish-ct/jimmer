@@ -20,6 +20,12 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
     public Object get(Object value) {
         ImmutableSpi spi = (ImmutableSpi) value;
         PropId propId = prop.getId();
+        if (prop.isDiscriminator() && !spi.__isLoaded(propId)) {
+            String discriminatorValue = spi.__type().getDiscriminatorValue();
+            if (discriminatorValue != null) {
+                return valueGetter.get(discriminatorValue);
+            }
+        }
         if (spi.__isLoaded(propId) && !prop.isLogicalDeleted()) {
             return valueGetter.get(spi.__get(propId));
         }
