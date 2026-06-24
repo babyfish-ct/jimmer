@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationDraft;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.PersonDraft;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -41,6 +39,40 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         ", " +
                         rs.getString(5) +
                         "]";
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static String joinedClientProjectTargetId(Connection con, long id) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "select CLIENT_ID from JOINED_CLIENT_PROJECT where ID = ?"
+        )) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                Object value = rs.getObject(1);
+                return value != null ? value.toString() : null;
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static String joinedOrgProjectTargetId(Connection con, long id) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "select ORGANIZATION_ID from JOINED_ORG_PROJECT where ID = ?"
+        )) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                Object value = rs.getObject(1);
+                return value != null ? value.toString() : null;
             }
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
@@ -277,6 +309,56 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(200L, "ORG");
                     });
                     ctx.value("null; [Person, Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteSubtypeWithAssociationTargets() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Organization.class, 200L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setDissociateAction(ClientProjectProps.CLIENT, DissociateAction.SET_NULL)
+                            .setDissociateAction(OrganizationProjectProps.ORGANIZATION, DissociateAction.SET_NULL)
+                            .execute(con);
+                    return joinedClientProjectTargetId(con, 2000L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2001L) +
+                            "; " +
+                            joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID " +
+                                        "from JOINED_CLIENT " +
+                                        "where ID = ? and CLIENT_TYPE = ? " +
+                                        "order by ID for update"
+                        );
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.value("null; null; null; [Person, Alice, null, Alice, Smith]");
                 }
         );
     }

@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.singletable
 
+import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.key.KNaturalOrganization
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganizationProject
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KPerson
 import java.sql.Connection
 import kotlin.test.Test
@@ -200,6 +203,35 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
         }
     }
 
+    @Test
+    fun testDeleteSubtypeWithAssociationTargets() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).delete(KOrganization::class, 100L) {
+                setMode(DeleteMode.PHYSICAL)
+                setDissociateAction(KClientProject::client, DissociateAction.SET_NULL)
+                setDissociateAction(KOrganizationProject::organization, DissociateAction.SET_NULL)
+            }
+            "${singleClientProjectTargetId(con, 1000L)}; " +
+                "${singleOrgProjectTargetId(con, 1001L)}; " +
+                "${clientRow(con, 100L)}; " +
+                "${clientRow(con, 101L)}"
+        }) {
+            statement {
+                sql("update SINGLE_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?")
+                variables(100L)
+            }
+            statement {
+                sql("update SINGLE_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?")
+                variables(100L)
+            }
+            statement {
+                sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?")
+                variables(100L, "ORG")
+            }
+            value("null; null; null; [KPerson, Bob, null, Bob, Brown]")
+        }
+    }
+
     private fun clientRow(con: Connection, id: Long): String? =
         con.prepareStatement(
             "select CLIENT_TYPE, NAME, TAX_CODE, FIRST_NAME, LAST_NAME from CLIENT where ID = ?"
@@ -230,6 +262,34 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                         )
                     }
                 }.joinToString("; ")
+            }
+        }
+
+    private fun singleClientProjectTargetId(con: Connection, id: Long): String? =
+        con.prepareStatement(
+            "select CLIENT_ID from SINGLE_CLIENT_PROJECT where ID = ?"
+        ).use { stmt ->
+            stmt.setLong(1, id)
+            stmt.executeQuery().use { rs ->
+                if (!rs.next()) {
+                    null
+                } else {
+                    rs.getObject(1)?.toString()
+                }
+            }
+        }
+
+    private fun singleOrgProjectTargetId(con: Connection, id: Long): String? =
+        con.prepareStatement(
+            "select ORGANIZATION_ID from SINGLE_ORG_PROJECT where ID = ?"
+        ).use { stmt ->
+            stmt.setLong(1, id)
+            stmt.executeQuery().use { rs ->
+                if (!rs.next()) {
+                    null
+                } else {
+                    rs.getObject(1)?.toString()
+                }
             }
         }
 }

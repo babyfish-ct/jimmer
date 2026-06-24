@@ -100,7 +100,12 @@ public class EntityManager {
                                             "\" is not manged by the current entity manager"
                             );
                         }
-                        targetInfo.backProps.add(prop);
+                        for (Map.Entry<ImmutableType, ImmutableTypeInfo> targetEntry : map.entrySet()) {
+                            ImmutableType backPropOwnerType = targetEntry.getKey();
+                            if (backPropOwnerType.isEntity() && isBackPropOwnerType(backPropOwnerType, targetType)) {
+                                addBackProp(targetEntry.getValue(), prop);
+                            }
+                        }
                     }
                 }
             }
@@ -343,6 +348,23 @@ public class EntityManager {
             }
         }
         return false;
+    }
+
+    private static boolean isBackPropOwnerType(ImmutableType backPropOwnerType, ImmutableType targetType) {
+        if (backPropOwnerType == targetType) {
+            return true;
+        }
+        InheritanceInfo ownerInheritanceInfo = backPropOwnerType.getInheritanceInfo();
+        InheritanceInfo targetInheritanceInfo = targetType.getInheritanceInfo();
+        return ownerInheritanceInfo != null &&
+                targetInheritanceInfo != null &&
+                ownerInheritanceInfo.getRootType() == targetInheritanceInfo.getRootType();
+    }
+
+    private static void addBackProp(ImmutableTypeInfo info, ImmutableProp prop) {
+        if (!info.backProps.contains(prop)) {
+            info.backProps.add(prop);
+        }
     }
 
     private static class ImmutableTypeInfo {

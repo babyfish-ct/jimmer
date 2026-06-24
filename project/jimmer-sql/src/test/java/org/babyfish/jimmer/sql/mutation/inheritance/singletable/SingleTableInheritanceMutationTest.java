@@ -1,13 +1,12 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.inheritance.key.NaturalOrganizationDraft;
-import org.babyfish.jimmer.sql.model.inheritance.singletable.Organization;
-import org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationDraft;
-import org.babyfish.jimmer.sql.model.inheritance.singletable.PersonDraft;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.*;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -222,6 +221,43 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testDeleteSubtypeWithAssociationTargets() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Organization.class, 100L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setDissociateAction(ClientProjectProps.CLIENT, DissociateAction.SET_NULL)
+                            .setDissociateAction(OrganizationProjectProps.ORGANIZATION, DissociateAction.SET_NULL)
+                            .execute(con);
+                    return singleClientProjectTargetId(con, 1000L) +
+                            "; " +
+                            singleOrgProjectTargetId(con, 1001L) +
+                            "; " +
+                            clientRow(con, 100L) +
+                            "; " +
+                            clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update SINGLE_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?");
+                        it.variables(100L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update SINGLE_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?");
+                        it.variables(100L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?");
+                        it.variables(100L, "ORG");
+                    });
+                    ctx.value("null; null; null; [Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
     private static String clientRow(Connection con, long id) {
         try (PreparedStatement stmt = con.prepareStatement(
                 "select CLIENT_TYPE, NAME, TAX_CODE, FIRST_NAME, LAST_NAME from CLIENT where ID = ?"
@@ -277,6 +313,40 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                             .append(']');
                 }
                 return builder.toString();
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static String singleClientProjectTargetId(Connection con, long id) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "select CLIENT_ID from SINGLE_CLIENT_PROJECT where ID = ?"
+        )) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                Object value = rs.getObject(1);
+                return value != null ? value.toString() : null;
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static String singleOrgProjectTargetId(Connection con, long id) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "select ORGANIZATION_ID from SINGLE_ORG_PROJECT where ID = ?"
+        )) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                Object value = rs.getObject(1);
+                return value != null ? value.toString() : null;
             }
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
