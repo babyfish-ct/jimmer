@@ -8,9 +8,9 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.className
-import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
@@ -24,7 +24,7 @@ class PropsGenerator(
     private val file: KSFile,
     private val modelClassDeclaration: KSClassDeclaration
 ) {
-    fun generate(allFiles: List<KSFile>) {
+    fun generate() {
         val outputFileName =
             file.fileName.let {
                 var lastDotIndex = it.lastIndexOf('.')
@@ -35,7 +35,7 @@ class PropsGenerator(
                 }
             }
         codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(false, file),
             file.packageName.asString(),
             outputFileName
         ).use {
@@ -64,7 +64,13 @@ class PropsGenerator(
                             addProp(type, prop, nonNullTable = true, outerJoin = true, isTableEx = true)
                             addProp(type, prop, nonNullTable = false, outerJoin = true, isTableEx = true)
                             addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = true, isTableEx = false)
-                            addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = false, isTableEx = false)
+                            addIdProp(
+                                type,
+                                prop,
+                                type.getIdPropName(prop.name),
+                                nonNullTable = false,
+                                isTableEx = false
+                            )
                             addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = true, isTableEx = true)
                             addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = false, isTableEx = true)
                         }
@@ -133,24 +139,28 @@ class PropsGenerator(
                     } else {
                         K_NON_NULL_REMOTE_REF
                     }
+
                 prop.isAssociation(true) && isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_EX_CLASS_NAME
                     } else {
                         K_NON_NULL_TABLE_EX_CLASS_NAME
                     }
+
                 !prop.isList && prop.isAssociation(true) && !isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
                         K_NON_NULL_TABLE_CLASS_NAME
                     }
+
                 prop.isEmbedded ->
                     if (nonNullTable) {
                         K_NON_NULL_EMBEDDED_PROP_EXPRESSION
                     } else {
                         K_NULLABLE_EMBEDDED_PROP_EXPRESSION
                     }
+
                 else ->
                     if (nonNullTable) {
                         K_NON_NULL_PROP_EXPRESSION
