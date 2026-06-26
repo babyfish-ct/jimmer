@@ -927,6 +927,10 @@ class Operator {
         SubtypeChangeRows subtypeChangeRows = ctx.options.isSubtypeChangeAllowed() ?
                 prelockForSubtypeChange(rootBatch, inheritanceInfo) :
                 null;
+        boolean forceRootOneByOne =
+                !ctx.options.isSubtypeChangeAllowed() &&
+                        ignoreUpdate &&
+                        sqlClient.getDialect().isBatchDumb();
         int[] rootRowCounts = upsert(
                 rootBatch,
                 rootType,
@@ -935,7 +939,8 @@ class Operator {
                 ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
                 ignoreUpdate,
-                !ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate
+                !ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate,
+                forceRootOneByOne
         );
         int[] acceptedRowCounts = null;
         Batch<DraftSpi> acceptanceBatch = null;
@@ -1065,6 +1070,30 @@ class Operator {
             boolean ignoreUpdate,
             boolean forceMatchedUpdate
     ) {
+        return upsert(
+                batch,
+                tableType,
+                discriminatorProp,
+                updateDiscriminator,
+                discriminatorGuardProp,
+                nullGetters,
+                ignoreUpdate,
+                forceMatchedUpdate,
+                false
+        );
+    }
+
+    private int[] upsert(
+            Batch<DraftSpi> batch,
+            ImmutableType tableType,
+            @Nullable ImmutableProp discriminatorProp,
+            boolean updateDiscriminator,
+            @Nullable ImmutableProp discriminatorGuardProp,
+            List<PropertyGetter> nullGetters,
+            boolean ignoreUpdate,
+            boolean forceMatchedUpdate,
+            boolean forceOneByOne
+    ) {
 
         validate(batch.shape(), false);
         if (batch.entities().isEmpty()) {
@@ -1158,7 +1187,7 @@ class Operator {
 
         BatchSqlBuilder builder = new BatchSqlBuilder(
                 sqlClient,
-                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+                batch.entities().size() < 2 || ctx.options.isBatchForbidden() || forceOneByOne
         );
         UpsertContextImpl upsertContext = new UpsertContextImpl(
                 builder,
@@ -1184,7 +1213,8 @@ class Operator {
                 batch.shape(),
                 batch.entities(),
                 true,
-                ignoreUpdate
+                ignoreUpdate,
+                forceOneByOne
         );
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
         return rowCounts;
@@ -1403,10 +1433,21 @@ class Operator {
             boolean updatable,
             boolean ignoreUpdate
     ) {
+        return executeAndGetRowCounts(builder, shape, entities, updatable, ignoreUpdate, false);
+    }
+
+    private int[] executeAndGetRowCounts(
+            BatchSqlBuilder builder,
+            Shape shape,
+            EntityCollection<DraftSpi> entities,
+            boolean updatable,
+            boolean ignoreUpdate,
+            boolean forceOneByOne
+    ) {
         if (entities.isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
-        if (entities.size() < 2 || ctx.options.isBatchForbidden() || isForcedOneByOne(shape, entities)) {
+        if (forceOneByOne || entities.size() < 2 || ctx.options.isBatchForbidden() || isForcedOneByOne(shape, entities)) {
             return executeAndGetRowCountsOneByOne(builder, shape, entities, updatable, ignoreUpdate);
         }
         return executeAndGetRowCountsByBatch(builder, shape, entities, updatable, ignoreUpdate);

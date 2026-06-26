@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
 import org.junit.jupiter.api.Test;
@@ -633,6 +634,197 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.value("[ORG, Globex, GLOBEX-004, null, null]; " +
                             "[Person, Alice, null, Alice, Smith]; " +
                             "200; null");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeBatchRoutesOnlyInsertedRows() {
+        connectAndExpect(
+                con -> {
+                    Organization inserted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(300L);
+                        organization.setName("New Batch Org");
+                        organization.setTaxCode("NEW-BATCH-001");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2307L);
+                            project.setName("Inserted batch project");
+                        });
+                    });
+                    Organization existingSame = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2308L);
+                            project.setName("Rejected same batch project");
+                        });
+                    });
+                    Organization existingDifferent = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2309L);
+                            project.setName("Rejected different batch project");
+                        });
+                    });
+                    getSqlClient()
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(inserted, existingSame, existingDifferent))
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 300L) +
+                            "; " +
+                            joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2307L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2308L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2309L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.batchVariables(0, 300L, "ORG", "New Batch Org");
+                        it.batchVariables(1, 200L, "ORG", "Should not update");
+                        it.batchVariables(2, 201L, "ORG", "Should not update");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "values(?, ?)"
+                        );
+                        it.variables(300L, "NEW-BATCH-001");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(2307L, "Inserted batch project", 300L);
+                    });
+                    ctx.value("[ORG, New Batch Org, NEW-BATCH-001, null, null]; " +
+                            "[ORG, Globex, GLOBEX-001, null, null]; " +
+                            "[Person, Alice, null, Alice, Smith]; " +
+                            "300; null; null");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeDumbBatchUsesOneByOneRootAcceptance() {
+        connectAndExpect(
+                con -> {
+                    Organization inserted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(301L);
+                        organization.setName("New Dumb Org");
+                        organization.setTaxCode("NEW-DUMB-001");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2310L);
+                            project.setName("Inserted dumb project");
+                        });
+                    });
+                    Organization existingSame = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2311L);
+                            project.setName("Rejected same dumb project");
+                        });
+                    });
+                    Organization existingDifferent = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2312L);
+                            project.setName("Rejected different dumb project");
+                        });
+                    });
+                    getSqlClient(it -> it.setDialect(new H2Dialect() {
+                        @Override
+                        public boolean isBatchDumb() {
+                            return true;
+                        }
+                    }))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(inserted, existingSame, existingDifferent))
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 301L) +
+                            "; " +
+                            joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2310L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2311L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2312L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(301L, "ORG", "New Dumb Org");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(200L, "ORG", "Should not update");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(201L, "ORG", "Should not update");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "values(?, ?)"
+                        );
+                        it.variables(301L, "NEW-DUMB-001");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(2310L, "Inserted dumb project", 301L);
+                    });
+                    ctx.value("[ORG, New Dumb Org, NEW-DUMB-001, null, null]; " +
+                            "[ORG, Globex, GLOBEX-001, null, null]; " +
+                            "[Person, Alice, null, Alice, Smith]; " +
+                            "301; null; null");
                 }
         );
     }
