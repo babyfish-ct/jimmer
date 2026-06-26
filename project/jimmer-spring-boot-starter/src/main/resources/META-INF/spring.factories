@@ -2,3 +2,6 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.babyfish.jimmer.spring.cfg.JimmerAutoConfiguration,\
 org.babyfish.jimmer.spring.cfg.JimmerSpringGraphQLAutoConfiguration,\
 org.babyfish.jimmer.spring.cfg.ServletControllerConfiguration
+
+org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitializationDetector=\
+org.babyfish.jimmer.spring.cfg.JimmerDependsOnDatabaseInitializationDetector
