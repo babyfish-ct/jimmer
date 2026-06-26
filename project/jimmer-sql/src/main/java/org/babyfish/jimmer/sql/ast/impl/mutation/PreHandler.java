@@ -120,6 +120,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private Map<Object, ImmutableSpi> idObjMap;
 
+    private Map<Object, ImmutableSpi> rootIdObjMap;
+
     private Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyObjMap;
 
     private Fetcher<ImmutableSpi> originalFetcher;
@@ -258,6 +260,59 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return keyObjMap;
+    }
+
+    final boolean isExistingDifferentSubtypeById(QueryReason queryReason, DraftSpi draft) {
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null ||
+                inheritanceInfo.getRootType() == type ||
+                ctx.options.isSubtypeChangeAllowed()) {
+            return false;
+        }
+        ImmutableSpi rootRow = findRootMapByIds(queryReason).get(
+                draft.__get(type.getIdProp().getId())
+        );
+        return rootRow != null && rootRow.__type() != draft.__type();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<Object, ImmutableSpi> findRootMapByIds(QueryReason queryReason) {
+        Map<Object, ImmutableSpi> rootIdObjMap = this.rootIdObjMap;
+        if (rootIdObjMap == null) {
+            ImmutableType type = ctx.path.getType();
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            ImmutableType rootType = inheritanceInfo.getRootType();
+            FetcherImplementor<ImmutableSpi> fetcher =
+                    new FetcherImpl<>((Class<ImmutableSpi>) rootType.getJavaClass())
+                            .add(inheritanceInfo.getDiscriminatorProp().getName());
+            PropId draftIdPropId = type.getIdProp().getId();
+            PropId rootIdPropId = rootType.getIdProp().getId();
+            Set<Object> ids = new LinkedHashSet<>((draftsWithId.size() * 4 + 2) / 3);
+            for (DraftSpi draft : draftsWithId) {
+                if (draft.__isLoaded(draftIdPropId)) {
+                    ids.add(draft.__get(draftIdPropId));
+                }
+            }
+            if (ids.isEmpty()) {
+                rootIdObjMap = Collections.emptyMap();
+            } else {
+                List<ImmutableSpi> rows = Rows.findRows(
+                        ctx.options.getSqlClient(),
+                        ctx.con,
+                        rootType,
+                        queryReason,
+                        fetcher,
+                        (q, t) -> q.where(t.getId().in(ids))
+                );
+                rootIdObjMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
+                for (ImmutableSpi row : rows) {
+                    rootIdObjMap.put(row.__get(rootIdPropId), row);
+                }
+            }
+            this.rootIdObjMap = rootIdObjMap;
+        }
+        return rootIdObjMap;
     }
 
     boolean isWildObjectAcceptable() {
@@ -980,9 +1035,12 @@ class UpsertPreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     ImmutableSpi original = idMap.get(draft.__get(idPropId));
                     if (original == null) {
-                        insertedList.add(draft);
+                        boolean existingDifferentSubtype = isExistingDifferentSubtypeById(queryReason, draft);
                         itr.remove();
-                        items.add(newItem(draft, null));
+                        if (!existingDifferentSubtype) {
+                            insertedList.add(draft);
+                            items.add(newItem(draft, null));
+                        }
                     } else if (!ignoreUpdate) {
                         updatedList.add(draft);
                         items.add(newItem(draft, original));
