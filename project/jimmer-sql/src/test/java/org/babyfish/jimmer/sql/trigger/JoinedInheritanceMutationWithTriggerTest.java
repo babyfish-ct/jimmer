@@ -10,12 +10,14 @@ import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.cache.UsedCache;
 import org.babyfish.jimmer.sql.common.CacheImpl;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -103,6 +105,63 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                                         "where tb_1_.ID = ?"
                         );
                         it.variables(201L);
+                    });
+                    ctx.value("[]");
+                }
+        );
+        assertEvents();
+        Assertions.assertEquals("[]", cacheOpRecords.toString());
+    }
+
+    @Test
+    public void testInsertIfAbsentExistingSubtypeDoesNotFireTriggerOrEvictCache() {
+        cacheOpRecords.clear();
+        connectAndExpect(
+                con -> {
+                    Organization existingSame = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2403L);
+                            project.setName("Should not be saved");
+                        });
+                    });
+                    Organization existingDifferent = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2404L);
+                            project.setName("Should not be saved");
+                        });
+                    });
+                    sqlClientWithCacheOperator()
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(existingSame, existingDifferent))
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return cacheOpRecords.toString();
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "on tb_1_.ID = tb_1__sub.ID " +
+                                        "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables(200L, 201L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "where tb_1_.ID in (?, ?)"
+                        );
+                        it.variables(200L, 201L);
                     });
                     ctx.value("[]");
                 }
