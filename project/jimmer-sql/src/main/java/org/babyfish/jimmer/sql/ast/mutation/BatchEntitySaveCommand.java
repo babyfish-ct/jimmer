@@ -191,6 +191,16 @@ public interface BatchEntitySaveCommand<E>
     BatchEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode);
 
     @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setSubtypeChangeAllowed() {
+        return setSubtypeChangeAllowed(true);
+    }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed);
+
+    @NewChain
     BatchEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
 
     @NewChain

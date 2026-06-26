@@ -86,8 +86,13 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    "merge into CLIENT(ID, CLIENT_TYPE, NAME, TAX_CODE, FIRST_NAME, LAST_NAME) " +
-                        "key(ID) values(?, ?, ?, ?, null, null)"
+                    "merge into CLIENT tb_1_ " +
+                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                        "on tb_1_.ID = tb_2_.ID " +
+                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                        "then update set NAME = tb_2_.NAME, TAX_CODE = tb_2_.TAX_CODE " +
+                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
                 )
                 variables(300L, "ORG", "New Org", "NEW-001")
             }
@@ -116,10 +121,10 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update CLIENT " +
-                        "set CLIENT_TYPE = ?, FIRST_NAME = null, LAST_NAME = null, NAME = ?, TAX_CODE = ? " +
-                        "where ID = ?"
+                        "set NAME = ?, TAX_CODE = ? " +
+                        "where ID = ? and CLIENT_TYPE = ?"
                 )
-                variables("ORG", "Acme+", "ACME-002", 100L)
+                variables("Acme+", "ACME-002", 100L, "ORG")
             }
             value("[ORG, Acme+, ACME-002, null, null]")
         }
@@ -137,7 +142,9 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                     firstName = "Ann"
                     lastName = "Smith"
                 }
-            ).execute(con)
+            ) {
+                setSubtypeChangeAllowed()
+            }.execute(con)
             clientRow(con, 100L)
         }) {
             statement {
@@ -163,6 +170,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
+                setSubtypeChangeAllowed()
             }
             clientRow(con, 100L)
         }) {
@@ -203,10 +211,10 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update NATURAL_CLIENT " +
-                        "set CLIENT_TYPE = ?, FIRST_NAME = null, LAST_NAME = null, NAME = ?, TAX_CODE = ? " +
+                        "set NAME = ?, TAX_CODE = ? " +
                         "where CLIENT_TYPE = ? and CODE = ?"
                 )
-                variables("ORG", "Acme Natural+", "ACME-N-002", "ORG", "same-code")
+                variables("Acme Natural+", "ACME-N-002", "ORG", "same-code")
             }
             value(
                 "[300, ORG, same-code, Acme Natural+, ACME-N-002, null, null]; " +

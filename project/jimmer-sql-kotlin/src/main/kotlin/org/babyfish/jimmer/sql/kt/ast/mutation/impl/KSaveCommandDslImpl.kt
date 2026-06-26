@@ -165,6 +165,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
     }
 
+    override fun setSubtypeChangeAllowed(allowed: Boolean) {
+        javaCommand = javaCommand.setSubtypeChangeAllowed(allowed)
+    }
+
     override fun setDumbBatchAcceptable(acceptable: Boolean) {
         javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
     }

@@ -189,6 +189,14 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
+    default AbstractEntitySaveCommand setSubtypeChangeAllowed() {
+        return setSubtypeChangeAllowed(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setSubtypeChangeAllowed(boolean allowed);
+
+    @NewChain
     AbstractEntitySaveCommand setMaxCommandJoinCount(int count);
 
     @NewChain

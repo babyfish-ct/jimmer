@@ -339,6 +339,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setForeignKeyEnabledByDefault(enabled)
     }
 
+    fun setDefaultSubtypeChangeAllowed(allowed: Boolean) {
+        javaBuilder.setDefaultSubtypeChangeAllowed(allowed)
+    }
+
     fun addCustomizers(vararg customers: KCustomizer) {
         javaBuilder.addCustomizers(customers.map { JavaCustomizer(it) })
     }

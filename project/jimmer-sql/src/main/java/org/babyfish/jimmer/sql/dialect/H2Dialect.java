@@ -144,7 +144,7 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (!ctx.hasConflictPredicate() && !ctx.isUpdateIgnored() && ctx.isComplete()) {
+        if (!ctx.hasConflictPredicate() && !ctx.isUpdateIgnored() && !ctx.hasUpdateCondition() && ctx.isComplete()) {
             ctx.sql("merge into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
@@ -185,7 +185,11 @@ public class H2Dialect extends DefaultDialect {
         }
         ctx.leave();
         if (!ctx.isUpdateIgnored() && (ctx.hasGeneratedId()) || ctx.hasUpdatedColumns()) {
-            ctx.sql(" when matched then update").enter(AbstractSqlBuilder.ScopeType.SET);
+            ctx.sql(" when matched");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" and ").appendUpdateCondition("tb_1_.", "", "tb_2_.", "");
+            }
+            ctx.sql(" then update").enter(AbstractSqlBuilder.ScopeType.SET);
             if (ctx.hasUpdatedColumns()) {
                 ctx.appendUpdatingAssignments("tb_2_.", "");
             } else {

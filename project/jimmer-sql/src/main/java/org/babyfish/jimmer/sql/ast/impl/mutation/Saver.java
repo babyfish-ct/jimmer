@@ -5,29 +5,21 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Function;
 
 public class Saver {
 
@@ -139,21 +131,22 @@ public class Saver {
             preHandler.add(draft);
         }
 
-        boolean detach = saveSelf(preHandler);
+        boolean ownerAcceptanceRequired = isOwnerAcceptanceRequired(preHandler);
+        SaveSelfResult selfResult = saveSelf(preHandler, ownerAcceptanceRequired);
 
-        for (Batch<DraftSpi> batch : preHandler.associationBatches()) {
+        for (Batch<DraftSpi> batch : associationBatches(preHandler, selfResult.acceptedDrafts)) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (isVisitable(prop) && prop.isAssociation(TargetLevel.ENTITY)) {
                     if (ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.VIOLENTLY_REPLACE) {
                         clearAssociations(batch.entities(), prop);
                     }
                     setBackReference(prop, batch);
-                    savePostAssociation(prop, batch, detach);
+                    savePostAssociation(prop, batch, selfResult.detach);
                 }
             }
         }
 
-        fetch(drafts, preHandler.batches());
+        fetch(fetchDrafts(drafts, selfResult.acceptedDrafts), batches(preHandler, selfResult.acceptedDrafts));
     }
 
     @SuppressWarnings("unchecked")
@@ -417,20 +410,24 @@ public class Saver {
         return backRef == null || backRef != prop;
     }
 
-    private boolean saveSelf(PreHandler preHandler) {
-        Operator operator = new Operator(ctx);
+    private SaveSelfResult saveSelf(PreHandler preHandler, boolean ownerAcceptanceRequired) {
+        Operator operator = new Operator(ctx, ownerAcceptanceRequired);
         boolean detach = false;
+        Set<DraftSpi> acceptedDrafts = ownerAcceptanceRequired ?
+                Collections.newSetFromMap(new IdentityHashMap<>()) :
+                null;
         for (Batch<DraftSpi> batch : preHandler.batches()) {
+            Operator.MutationRows mutationRows;
             switch (batch.mode()) {
                 case INSERT_ONLY:
-                    operator.insert(batch);
+                    mutationRows = operator.insert(batch);
                     break;
                 case INSERT_IF_ABSENT:
-                    operator.upsert(batch, true);
+                    mutationRows = operator.upsert(batch, true);
                     break;
                 case UPDATE_ONLY:
                     detach = true;
-                    operator.update(
+                    mutationRows = operator.update(
                             preHandler.originalIdObjMap(),
                             preHandler.originalkeyObjMap(),
                             batch
@@ -438,11 +435,109 @@ public class Saver {
                     break;
                 default:
                     detach = true;
-                    operator.upsert(batch, false);
+                    mutationRows = operator.upsert(batch, false);
                     break;
             }
+            if (acceptedDrafts != null) {
+                if (mutationRows.acceptedDrafts != null) {
+                    acceptedDrafts.addAll(mutationRows.acceptedDrafts);
+                } else {
+                    acceptedDrafts.addAll(batch.entities());
+                }
+            }
         }
-        return detach;
+        return new SaveSelfResult(detach, acceptedDrafts);
+    }
+
+    private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
+        if (ctx.trigger != null) {
+            return isJoinedSubtypeInvariantMutation();
+        }
+        if (!isJoinedSubtypeInvariantMutation()) {
+            return false;
+        }
+        for (Batch<DraftSpi> batch : preHandler.batches()) {
+            for (DraftSpi draft : batch.entities()) {
+                for (ImmutableProp prop : draft.__type().getProps().values()) {
+                    if (isVisitable(prop) &&
+                            prop.isAssociation(TargetLevel.ENTITY) &&
+                            !prop.isColumnDefinition() &&
+                            draft.__isLoaded(prop.getId())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isJoinedSubtypeInvariantMutation() {
+        if (ctx.options.isSubtypeChangeAllowed()) {
+            return false;
+        }
+        switch (ctx.options.getMode()) {
+            case UPDATE_ONLY:
+            case UPSERT:
+            case NON_IDEMPOTENT_UPSERT:
+                break;
+            default:
+                return false;
+        }
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type;
+    }
+
+    private Iterable<Batch<DraftSpi>> associationBatches(
+            PreHandler preHandler,
+            @Nullable Set<DraftSpi> acceptedDrafts
+    ) {
+        return acceptedDrafts != null ?
+                filterBatches(preHandler.associationBatches(), acceptedDrafts) :
+                preHandler.associationBatches();
+    }
+
+    private Iterable<Batch<DraftSpi>> batches(
+            PreHandler preHandler,
+            @Nullable Set<DraftSpi> acceptedDrafts
+    ) {
+        return acceptedDrafts != null ?
+                filterBatches(preHandler.batches(), acceptedDrafts) :
+                preHandler.batches();
+    }
+
+    private List<DraftSpi> fetchDrafts(List<DraftSpi> drafts, @Nullable Set<DraftSpi> acceptedDrafts) {
+        if (acceptedDrafts == null) {
+            return drafts;
+        }
+        List<DraftSpi> filteredDrafts = new ArrayList<>(acceptedDrafts.size());
+        for (DraftSpi draft : drafts) {
+            if (acceptedDrafts.contains(draft)) {
+                filteredDrafts.add(draft);
+            }
+        }
+        return filteredDrafts;
+    }
+
+    private Iterable<Batch<DraftSpi>> filterBatches(
+            Iterable<Batch<DraftSpi>> batches,
+            Set<DraftSpi> acceptedDrafts
+    ) {
+        List<Batch<DraftSpi>> filteredBatches = new ArrayList<>();
+        for (Batch<DraftSpi> batch : batches) {
+            EntityList<DraftSpi> entities = new EntityList<>();
+            for (DraftSpi draft : batch.entities()) {
+                if (acceptedDrafts.contains(draft)) {
+                    entities.add(draft);
+                }
+            }
+            if (!entities.isEmpty()) {
+                filteredBatches.add(new FilteredBatch(batch, entities));
+            }
+        }
+        return filteredBatches;
     }
 
     private void clearAssociations(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
@@ -555,6 +650,51 @@ public class Saver {
             return middleTable.isReadonly();
         }
         return false;
+    }
+
+    private static class SaveSelfResult {
+
+        final boolean detach;
+
+        @Nullable
+        final Set<DraftSpi> acceptedDrafts;
+
+        SaveSelfResult(boolean detach, @Nullable Set<DraftSpi> acceptedDrafts) {
+            this.detach = detach;
+            this.acceptedDrafts = acceptedDrafts;
+        }
+    }
+
+    private static class FilteredBatch implements Batch<DraftSpi> {
+
+        private final Batch<DraftSpi> base;
+
+        private final EntityCollection<DraftSpi> entities;
+
+        private FilteredBatch(Batch<DraftSpi> base, EntityCollection<DraftSpi> entities) {
+            this.base = base;
+            this.entities = entities;
+        }
+
+        @Override
+        public Shape shape() {
+            return base.shape();
+        }
+
+        @Override
+        public EntityCollection<DraftSpi> entities() {
+            return entities;
+        }
+
+        @Override
+        public SaveMode mode() {
+            return base.mode();
+        }
+
+        @Override
+        public SaveMode originalMode() {
+            return base.originalMode();
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -192,6 +192,16 @@ public interface SimpleEntitySaveCommand<E>
     SimpleEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode);
 
     @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setSubtypeChangeAllowed() {
+        return setSubtypeChangeAllowed(true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed);
+
+    @NewChain
     SimpleEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
 
     @NewChain

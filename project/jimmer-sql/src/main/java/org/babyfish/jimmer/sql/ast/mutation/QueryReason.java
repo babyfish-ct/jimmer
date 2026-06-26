@@ -348,24 +348,6 @@ public enum QueryReason {
     CANNOT_DELETE_DIRECTLY,
 
     /**
-     * Physical delete of {@link org.babyfish.jimmer.sql.InheritanceType#JOINED}
-     * inheritance without database-level {@code ON DELETE CASCADE} must lock root
-     * rows before deleting joined subtype rows.
-     *
-     * <p>This select statement prevents lock-order inversion with joined
-     * update/upsert operations and, when the deleted type is polymorphic, reads
-     * discriminator values so Jimmer deletes only the joined subtype tables that
-     * are actually present.</p>
-     *
-     * <p>If the database and schema support it, prefer
-     * {@code ON DELETE CASCADE} on joined subtype foreign keys together with
-     * {@link org.babyfish.jimmer.sql.JoinedTableDeleteMode#DB_CASCADE}. That
-     * mode lets the database remove subtype rows and avoids this extra lock
-     * query.</p>
-     */
-    LOCK_ID_FOR_JOINED_INHERITANCE_DELETE,
-
-    /**
      * When explicitly updating objects based on
      * {@link org.babyfish.jimmer.sql.Key} properties,
      * the objects being saved do not have any other properties that
@@ -383,6 +365,17 @@ public enum QueryReason {
      * or this capability has not yet been integrated into Jimmer.
      */
     GET_ID_FOR_KEY_BASE_UPDATE,
+
+    /**
+     * When {@code subtypeChangeAllowed} is enabled for a joined inheritance
+     * update/upsert, Jimmer locks root rows and reads their old discriminator
+     * values before changing subtype-specific rows.
+     *
+     * <p>This pessimistic path is needed until dialect-specific update/upsert
+     * returning support can provide the same old-subtype information without a
+     * separate lock query.</p>
+     */
+    PRELOCK_FOR_SUBTYPE_CHANGE,
 
     /**
      * <p>Saving some objects without Ids using the

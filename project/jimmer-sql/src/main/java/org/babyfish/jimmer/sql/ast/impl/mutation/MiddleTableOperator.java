@@ -16,7 +16,9 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -782,7 +784,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
-        public boolean hasOptimisticLock() {
+        public boolean hasUpdateCondition() {
             return false;
         }
 
@@ -887,7 +889,22 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
-        public Dialect.UpsertContext appendOptimisticLockCondition(String sourceTablePrefix) {
+        public Dialect.UpsertContext appendConditionalUpdatingAssignments(
+                String sourcePrefix,
+                String sourceSuffix,
+                String valuePrefix,
+                String valueSuffix
+        ) {
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendUpdateCondition(
+                String targetPrefix,
+                String targetSuffix,
+                String sourcePrefix,
+                String sourceSuffix
+        ) {
             return this;
         }
 

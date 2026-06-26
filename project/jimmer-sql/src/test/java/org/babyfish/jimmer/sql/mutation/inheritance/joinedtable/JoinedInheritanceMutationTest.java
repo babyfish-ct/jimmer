@@ -2,9 +2,11 @@ package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JoinedInheritanceMutationTest extends AbstractMutationTest {
 
@@ -130,23 +134,39 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 })
                         ),
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                                        "key(ID) values(?, ?, ?)"
-                        );
-                        it.variables(300L, "ORG", "New Org");
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "merge into JOINED_CLIENT tb_1_ " +
+	                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+	                                        "on tb_1_.ID = tb_2_.ID " +
+	                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+	                                        "then update set NAME = tb_2_.NAME " +
+	                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+	                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+	                        );
+	                        it.variables(300L, "ORG", "New Org");
                     });
-                    ctx.statement(it -> {
-                        it.sql("delete from JOINED_PERSON where ID = ?");
-                        it.variables(300L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                                        "key(ID) values(?, ?)"
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "update JOINED_ORGANIZATION " +
+	                                        "set TAX_CODE = ? " +
+	                                        "where ID = ? and exists(" +
+	                                        "select 1 from JOINED_CLIENT " +
+	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
                         );
-                        it.variables(300L, "NEW-001");
+                        it.variables("NEW-001", 300L, 300L, "ORG");
+                    });
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+	                                        "select ?, ? " +
+	                                        "where exists(" +
+	                                        "select 1 from JOINED_CLIENT " +
+	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
+	                                        "and not exists(" +
+	                                        "select 1 from JOINED_ORGANIZATION where ID = ?)"
+	                        );
+	                        it.variables(300L, "NEW-001", 300L, "ORG", 300L);
                     });
                     ctx.rowCount(AffectedTable.of(Client.class), 1);
                     ctx.rowCount(AffectedTable.of(Organization.class), 1);
@@ -172,14 +192,19 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                         person.setLastName("Stone");
                                     })
                             )
+                            .setSubtypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L);
                 },
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                                        "key(ID) values(?, ?, ?)"
+	                    ctx.statement(it -> {
+	                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+	                        it.variables(200L);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
+	                                        "key(ID) values(?, ?, ?)"
                         );
                         it.variables(200L, "Person", "Globex Person");
                     });
@@ -214,14 +239,19 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L);
                 },
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update JOINED_CLIENT " +
-                                        "set CLIENT_TYPE = ?, NAME = ? " +
+	                    ctx.statement(it -> {
+	                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+	                        it.variables(200L);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "update JOINED_CLIENT " +
+	                                        "set CLIENT_TYPE = ?, NAME = ? " +
                                         "where ID = ?"
                         );
                         it.variables("Person", "Globex Person", 200L);
@@ -260,24 +290,35 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     return joinedClientRow(con, 200L);
                 },
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update JOINED_CLIENT " +
-                                        "set CLIENT_TYPE = ?, NAME = ? " +
-                                        "where ID = ?"
-                        );
-                        it.variables("ORG", "Globex+", 200L);
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "update JOINED_CLIENT " +
+	                                        "set NAME = ? " +
+	                                        "where ID = ? and CLIENT_TYPE = ?"
+	                        );
+	                        it.variables("Globex+", 200L, "ORG");
                     });
-                    ctx.statement(it -> {
-                        it.sql("delete from JOINED_PERSON where ID = ?");
-                        it.variables(200L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                                        "key(ID) values(?, ?)"
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "update JOINED_ORGANIZATION " +
+	                                        "set TAX_CODE = ? " +
+	                                        "where ID = ? and exists(" +
+	                                        "select 1 from JOINED_CLIENT " +
+	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
                         );
-                        it.variables(200L, "GLOBEX-002");
+                        it.variables("GLOBEX-002", 200L, 200L, "ORG");
+                    });
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+	                                        "select ?, ? " +
+	                                        "where exists(" +
+	                                        "select 1 from JOINED_CLIENT " +
+	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
+	                                        "and not exists(" +
+	                                        "select 1 from JOINED_ORGANIZATION where ID = ?)"
+	                        );
+	                        it.variables(200L, "GLOBEX-002", 200L, "ORG", 200L);
                     });
                     ctx.value("[ORG, Globex+, GLOBEX-002, null, null]");
                 }
@@ -341,29 +382,131 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtype() {
+    public void testUpdateSubtypeWithAcceptedPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
                             .getEntities()
-                            .deleteCommand(Organization.class, 200L)
-                            .setMode(DeleteMode.PHYSICAL)
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(200L);
+                                        organization.setTaxCode("GLOBEX-003");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2300L);
+                                            project.setName("Accepted project");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
                             .execute(con);
-                    return joinedClientRow(con, 200L) + "; " + joinedClientRow(con, 201L);
+                    return joinedClientRow(con, 200L) + "; " + joinedOrgProjectTargetId(con, 2300L);
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update");
+                        it.sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?");
                         it.variables(200L, "ORG");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
-                        it.variables(200L);
+                        it.sql(
+                                "update JOINED_ORGANIZATION " +
+                                        "set TAX_CODE = ? " +
+                                        "where ID = ? and exists(" +
+                                        "select 1 from JOINED_CLIENT " +
+                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                        );
+                        it.variables("GLOBEX-003", 200L, 200L, "ORG");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
-                        it.variables(200L, "ORG");
+                        it.sql(
+                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "select ?, ? " +
+                                        "where exists(" +
+                                        "select 1 from JOINED_CLIENT " +
+                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
+                                        "and not exists(" +
+                                        "select 1 from JOINED_ORGANIZATION where ID = ?)"
+                        );
+                        it.variables(200L, "GLOBEX-003", 200L, "ORG", 200L);
                     });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(2300L, "Accepted project", 200L);
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-003, null, null]; 200");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateSubtypeMismatchSkipsPostAssociation() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(201L);
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2301L);
+                                            project.setName("Should not be saved");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(con);
+                    return joinedClientRow(con, 201L) + "; " + joinedOrgProjectTargetId(con, 2301L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?");
+                        it.variables(201L, "ORG");
+                    });
+                    ctx.value("[Person, Alice, null, Alice, Smith]; null");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteSubtype() {
+        connectAndExpect(
+                con -> {
+	                    getSqlClient()
+	                            .getEntities()
+	                            .deleteCommand(Organization.class, 202L)
+	                            .setMode(DeleteMode.PHYSICAL)
+	                            .execute(con);
+	                    return joinedClientRow(con, 202L) + "; " + joinedClientRow(con, 201L);
+                },
+	                ctx -> {
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "select tb_1_.ID " +
+	                                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+	                                        "where tb_1_.CLIENT_ID = ? limit ?"
+	                        );
+	                        it.variables(202L, 1);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "select tb_1_.ID " +
+	                                        "from JOINED_ORG_PROJECT tb_1_ " +
+	                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+	                        );
+	                        it.variables(202L, 1);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+	                        it.variables(202L);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
+	                        it.variables(202L, "ORG");
+	                    });
                     ctx.value("null; [Person, Alice, null, Alice, Smith]");
                 }
         );
@@ -397,19 +540,10 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         it.sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?");
                         it.variables(200L);
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select ID " +
-                                        "from JOINED_CLIENT " +
-                                        "where ID = ? and CLIENT_TYPE = ? " +
-                                        "order by ID for update"
-                        );
-                        it.variables(200L, "ORG");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
-                        it.variables(200L);
-                    });
+	                    ctx.statement(it -> {
+	                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+	                        it.variables(200L);
+	                    });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
                         it.variables(200L, "ORG");
@@ -431,42 +565,59 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                             .getTotalAffectedRowCount();
                     return affectedRowCount + "; " + joinedClientRow(con, 201L);
                 },
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update");
-                        it.variables(201L, "ORG");
-                    });
-                    ctx.value("0; [Person, Alice, null, Alice, Smith]");
-                }
+	                ctx -> {
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "select tb_1_.ID " +
+	                                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+	                                        "where tb_1_.CLIENT_ID = ? limit ?"
+	                        );
+	                        it.variables(201L, 1);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "select tb_1_.ID " +
+	                                        "from JOINED_ORG_PROJECT tb_1_ " +
+	                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+	                        );
+	                        it.variables(201L, 1);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+	                        it.variables(201L);
+	                    });
+	                    ctx.statement(it -> {
+	                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
+	                        it.variables(201L, "ORG");
+	                    });
+	                    ctx.value("0; [Person, Alice, null, Alice, Smith]");
+	                }
         );
     }
 
     @Test
     public void testDeleteRoot() {
         connectAndExpect(
-                con -> {
-                    getSqlClient()
-                            .getEntities()
-                            .deleteCommand(Client.class, 200L)
-                            .setMode(DeleteMode.PHYSICAL)
-                            .execute(con);
-                    return joinedClientRow(con, 200L) + "; " + joinedClientRow(con, 201L);
-                },
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
-                        it.variables(200L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
-                        it.variables(200L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from JOINED_CLIENT where ID = ?");
-                        it.variables(200L);
-                    });
-                    ctx.value("null; [Person, Alice, null, Alice, Smith]");
-                }
-        );
+	                con -> {
+	                    ExecutionException ex = assertThrows(
+	                            ExecutionException.class,
+	                            () -> getSqlClient()
+	                                    .getEntities()
+	                                    .deleteCommand(Client.class, 200L)
+	                                    .setMode(DeleteMode.PHYSICAL)
+	                                    .execute(con)
+	                    );
+	                    return ex.getMessage();
+	                },
+	                ctx -> {
+	                    ctx.value(
+	                            "Cannot physically delete joined inheritance rows by root/base type " +
+	                                    "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client\" " +
+	                                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete concrete subtypes, " +
+	                                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select/lock concrete rows " +
+	                                    "and delete them as concrete subtypes."
+	                    );
+	                }
+	        );
     }
 }

@@ -538,6 +538,9 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         Builder setTargetTransferable(boolean targetTransferable);
 
         @OldChain
+        Builder setDefaultSubtypeChangeAllowed(boolean allowed);
+
+        @OldChain
         Builder setConstraintViolationTranslatable(boolean translatable);
 
         @OldChain

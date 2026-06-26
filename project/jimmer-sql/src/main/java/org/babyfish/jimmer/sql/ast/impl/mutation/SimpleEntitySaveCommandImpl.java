@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -18,7 +17,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Arrays;
-import java.util.function.Function;
 
 public class SimpleEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
@@ -169,6 +167,11 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public SimpleEntitySaveCommand<E> setDeleteMode(DeleteMode mode) {
         return new SimpleEntitySaveCommandImpl<>(new DeleteModeCfg(cfg, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new SubtypeChangeAllowedCfg(cfg, allowed));
     }
 
     @Override

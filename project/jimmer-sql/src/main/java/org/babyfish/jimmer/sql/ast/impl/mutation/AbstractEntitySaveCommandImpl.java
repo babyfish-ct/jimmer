@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -254,6 +253,16 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
+    static class SubtypeChangeAllowedCfg extends Cfg {
+
+        final boolean allowed;
+
+        SubtypeChangeAllowedCfg(Cfg prev, boolean allowed) {
+            super(prev);
+            this.allowed = allowed;
+        }
+    }
+
      static class PessimisticLockCfg extends Cfg {
 
          final MapNode<ImmutableType, Boolean> mapNode;
@@ -353,6 +362,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final TargetTransferMode targetTransferModeAll;
 
+        private final boolean subtypeChangeAllowed;
+
         private final Map<ImmutableType, Boolean> pessimisticLockMap;
 
         private final boolean pessimisticLockAll;
@@ -385,6 +396,7 @@ abstract class AbstractEntitySaveCommandImpl
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
+            SubtypeChangeAllowedCfg subtypeChangeAllowedCfg = cfg.as(SubtypeChangeAllowedCfg.class);
             PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
@@ -423,6 +435,9 @@ abstract class AbstractEntitySaveCommandImpl
             this.targetTransferModeAll = targetTransferModeCfg != null ?
                     targetTransferModeCfg.defaultMode :
                     TargetTransferMode.AUTO;
+            this.subtypeChangeAllowed = subtypeChangeAllowedCfg != null ?
+                    subtypeChangeAllowedCfg.allowed :
+                    sqlClient.isDefaultSubtypeChangeAllowed();
             this.pessimisticLockMap = MapNode.toMap(pessimisticLockCfg, it -> it.mapNode);
             this.pessimisticLockAll = pessimisticLockCfg != null ?
                     pessimisticLockCfg.defaultValue :
@@ -571,6 +586,11 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
+        public boolean isSubtypeChangeAllowed() {
+            return subtypeChangeAllowed;
+        }
+
+        @Override
         public boolean isPessimisticLocked(ImmutableType type) {
             Boolean value = pessimisticLockMap.get(type);
             return value != null ? value : pessimisticLockAll;
@@ -622,6 +642,7 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedModeMap,
                     targetTransferModeMap,
                     targetTransferModeAll,
+                    subtypeChangeAllowed,
                     pessimisticLockMap,
                     pessimisticLockAll,
                     deleteMode,
@@ -640,6 +661,7 @@ abstract class AbstractEntitySaveCommandImpl
             return sqlClient == other.sqlClient &&
                     autoCheckingAll == other.autoCheckingAll &&
                     associatedMode == other.associatedMode &&
+                    subtypeChangeAllowed == other.subtypeChangeAllowed &&
                     pessimisticLockAll == other.pessimisticLockAll &&
                     mode == other.mode &&
                     deleteMode == other.deleteMode &&
@@ -662,6 +684,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedModeMap=" + associatedModeMap +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", targetTransferModeAll=" + targetTransferModeAll +
+                    ", subtypeChangeAllowed=" + subtypeChangeAllowed +
                     ", pessimisticLockMap" + pessimisticLockMap +
                     ", pessimisticLockAll" + pessimisticLockAll +
                     ", deleteMode=" + deleteMode +

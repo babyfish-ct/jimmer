@@ -184,6 +184,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new SubtypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
         return new BatchEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
     }

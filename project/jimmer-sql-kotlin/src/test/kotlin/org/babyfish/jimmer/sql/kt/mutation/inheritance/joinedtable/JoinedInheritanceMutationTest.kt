@@ -1,13 +1,16 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable
 
 import org.babyfish.jimmer.sql.DissociateAction
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
+import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.*
 import java.sql.Connection
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class JoinedInheritanceMutationTest : AbstractMutationTest() {
 
@@ -62,21 +65,37 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                            "key(ID) values(?, ?, ?)"
+                    "merge into JOINED_CLIENT tb_1_ " +
+                            "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                            "on tb_1_.ID = tb_2_.ID " +
+                            "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                            "then update set NAME = tb_2_.NAME " +
+                            "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                            "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
                 )
                 variables(300L, "ORG", "New Org")
             }
             statement {
-                sql("delete from JOINED_PERSON where ID = ?")
-                variables(300L)
+                sql(
+                    "update JOINED_ORGANIZATION " +
+                            "set TAX_CODE = ? " +
+                            "where ID = ? and exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                )
+                variables("NEW-001", 300L, 300L, "ORG")
             }
             statement {
                 sql(
-                    "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                            "key(ID) values(?, ?)"
+                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                            "select ?, ? " +
+                            "where exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
+                            "and not exists(" +
+                            "select 1 from JOINED_ORGANIZATION where ID = ?)"
                 )
-                variables(300L, "NEW-001")
+                variables(300L, "NEW-001", 300L, "ORG", 300L)
             }
             rowCount(KClient::class, 1)
             rowCount(KOrganization::class, 1)
@@ -99,9 +118,15 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                     firstName = "Gary"
                     lastName = "Stone"
                 }
-            ).execute(con)
+            ) {
+                setSubtypeChangeAllowed()
+            }.execute(con)
             joinedClientRow(con, 200L)
         }) {
+            statement {
+                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update")
+                variables(200L)
+            }
             statement {
                 sql(
                     "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
@@ -136,9 +161,14 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
+                setSubtypeChangeAllowed()
             }
             joinedClientRow(con, 200L)
         }) {
+            statement {
+                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update")
+                variables(200L)
+            }
             statement {
                 sql(
                     "update JOINED_CLIENT " +
@@ -183,26 +213,32 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                            "set CLIENT_TYPE = ?, NAME = ? " +
-                            "where ID = ?"
+                            "set NAME = ? " +
+                            "where ID = ? and CLIENT_TYPE = ?"
                 )
-                variables("ORG", "Globex+", 200L)
-            }
-            statement {
-                sql("delete from JOINED_PERSON where ID = ?")
-                variables(200L)
-            }
-            statement {
-                sql("select ID from JOINED_ORGANIZATION where ID = ?")
-                variables(200L)
+                variables("Globex+", 200L, "ORG")
             }
             statement {
                 sql(
                     "update JOINED_ORGANIZATION " +
                             "set TAX_CODE = ? " +
-                            "where ID = ?"
+                            "where ID = ? and exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
                 )
-                variables("GLOBEX-002", 200L)
+                variables("GLOBEX-002", 200L, 200L, "ORG")
+            }
+            statement {
+                sql(
+                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                            "select ?, ? " +
+                            "where exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
+                            "and not exists(" +
+                            "select 1 from JOINED_ORGANIZATION where ID = ?)"
+                )
+                variables(200L, "GLOBEX-002", 200L, "ORG", 200L)
             }
             value("[ORG, Globex+, GLOBEX-002, null, null]")
         }
@@ -261,24 +297,116 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testDeleteSubtype() {
+    fun testUpdateSubtypeWithAcceptedPostAssociation() {
         connectAndExpect({ con ->
-            sqlClient.entities.forConnection(con).delete(KOrganization::class, 200L) {
-                setMode(DeleteMode.PHYSICAL)
+            sqlClient.entities.forConnection(con).save(
+                KOrganization {
+                    id = 200L
+                    taxCode = "GLOBEX-003"
+                    projects().addBy {
+                        id = 2300L
+                        name = "Accepted project"
+                    }
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setAssociatedMode(KOrganization::projects, AssociatedSaveMode.APPEND)
             }
-            "${joinedClientRow(con, 200L)}; ${joinedClientRow(con, 201L)}"
+            "${joinedClientRow(con, 200L)}; ${joinedOrgProjectTargetId(con, 2300L)}"
         }) {
             statement {
-                sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update")
+                sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?")
                 variables(200L, "ORG")
+            }
+            statement {
+                sql(
+                    "update JOINED_ORGANIZATION " +
+                            "set TAX_CODE = ? " +
+                            "where ID = ? and exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                )
+                variables("GLOBEX-003", 200L, 200L, "ORG")
+            }
+            statement {
+                sql(
+                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                            "select ?, ? " +
+                            "where exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
+                            "and not exists(" +
+                            "select 1 from JOINED_ORGANIZATION where ID = ?)"
+                )
+                variables(200L, "GLOBEX-003", 200L, "ORG", 200L)
+            }
+            statement {
+                sql(
+                    "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                            "values(?, ?, ?)"
+                )
+                variables(2300L, "Accepted project", 200L)
+            }
+            value("[ORG, Globex, GLOBEX-003, null, null]; 200")
+        }
+    }
+
+    @Test
+    fun testUpdateSubtypeMismatchSkipsPostAssociation() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KOrganization {
+                    id = 201L
+                    taxCode = "SHOULD-NOT-WRITE"
+                    projects().addBy {
+                        id = 2301L
+                        name = "Should not be saved"
+                    }
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+            "${joinedClientRow(con, 201L)}; ${joinedOrgProjectTargetId(con, 2301L)}"
+        }) {
+            statement {
+                sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?")
+                variables(201L, "ORG")
+            }
+            value("[KPerson, Alice, null, Alice, Smith]; null")
+        }
+    }
+
+    @Test
+    fun testDeleteSubtype() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).delete(KOrganization::class, 202L) {
+                setMode(DeleteMode.PHYSICAL)
+            }
+            "${joinedClientRow(con, 202L)}; ${joinedClientRow(con, 201L)}"
+        }) {
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+                        "where tb_1_.CLIENT_ID = ? limit ?"
+                )
+                variables(202L, 1)
+            }
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from JOINED_ORG_PROJECT tb_1_ " +
+                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                )
+                variables(202L, 1)
             }
             statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
-                variables(200L)
+                variables(202L)
             }
             statement {
                 sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?")
-                variables(200L, "ORG")
+                variables(202L, "ORG")
             }
             value("null; [KPerson, Alice, null, Alice, Smith]")
         }
@@ -306,10 +434,6 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 variables(200L)
             }
             statement {
-                sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update")
-                variables(200L, "ORG")
-            }
-            statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
                 variables(200L)
             }
@@ -330,7 +454,27 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "$affectedRowCount; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
-                sql("select ID from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ? order by ID for update")
+                sql(
+                    "select tb_1_.ID " +
+                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+                        "where tb_1_.CLIENT_ID = ? limit ?"
+                )
+                variables(201L, 1)
+            }
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from JOINED_ORG_PROJECT tb_1_ " +
+                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                )
+                variables(201L, 1)
+            }
+            statement {
+                sql("delete from JOINED_ORGANIZATION where ID = ?")
+                variables(201L)
+            }
+            statement {
+                sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?")
                 variables(201L, "ORG")
             }
             value("0; [KPerson, Alice, null, Alice, Smith]")
@@ -340,24 +484,20 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     @Test
     fun testDeleteRoot() {
         connectAndExpect({ con ->
-            sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
-                setMode(DeleteMode.PHYSICAL)
+            val ex = assertFailsWith<ExecutionException> {
+                sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
+                    setMode(DeleteMode.PHYSICAL)
+                }
             }
-            "${joinedClientRow(con, 200L)}; ${joinedClientRow(con, 201L)}"
+            ex.message
         }) {
-            statement {
-                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update")
-                variables(200L)
-            }
-            statement {
-                sql("delete from JOINED_ORGANIZATION where ID = ?")
-                variables(200L)
-            }
-            statement {
-                sql("delete from JOINED_CLIENT where ID = ?")
-                variables(200L)
-            }
-            value("null; [KPerson, Alice, null, Alice, Smith]")
+            value(
+                "Cannot physically delete joined inheritance rows by root/base type " +
+                    "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
+                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete concrete subtypes, " +
+                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select/lock concrete rows " +
+                    "and delete them as concrete subtypes."
+            )
         }
     }
 

@@ -90,11 +90,16 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                 })
                         ),
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into CLIENT(ID, CLIENT_TYPE, NAME, TAX_CODE, FIRST_NAME, LAST_NAME) " +
-                                        "key(ID) values(?, ?, ?, ?, null, null)"
-                        );
+	                    ctx.statement(it -> {
+	                        it.sql(
+	                                "merge into CLIENT tb_1_ " +
+	                                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+	                                        "on tb_1_.ID = tb_2_.ID " +
+	                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+	                                        "then update set NAME = tb_2_.NAME, TAX_CODE = tb_2_.TAX_CODE " +
+	                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+	                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
+	                        );
                         it.variables(300L, "ORG", "New Org", "NEW-001");
                     });
                     ctx.rowCount(AffectedTable.of(Organization.class), 1);
@@ -127,10 +132,10 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update CLIENT " +
-                                        "set CLIENT_TYPE = ?, FIRST_NAME = null, LAST_NAME = null, NAME = ?, TAX_CODE = ? " +
-                                        "where ID = ?"
+                                        "set NAME = ?, TAX_CODE = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
                         );
-                        it.variables("ORG", "Acme+", "ACME-002", 100L);
+                        it.variables("Acme+", "ACME-002", 100L, "ORG");
                     });
                     ctx.value("[ORG, Acme+, ACME-002, null, null]");
                 }
@@ -151,6 +156,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                         person.setLastName("Smith");
                                     })
                             )
+                            .setSubtypeChangeAllowed(true)
                             .execute(con);
                     return clientRow(con, 100L);
                 },
@@ -182,6 +188,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
                             .execute(con);
                     return clientRow(con, 100L);
                 },
@@ -220,10 +227,10 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update NATURAL_CLIENT " +
-                                        "set CLIENT_TYPE = ?, FIRST_NAME = null, LAST_NAME = null, NAME = ?, TAX_CODE = ? " +
+                                        "set NAME = ?, TAX_CODE = ? " +
                                         "where CLIENT_TYPE = ? and CODE = ?"
                         );
-                        it.variables("ORG", "Acme Natural+", "ACME-N-002", "ORG", "same-code");
+                        it.variables("Acme Natural+", "ACME-N-002", "ORG", "same-code");
                     });
                     ctx.value("[300, ORG, same-code, Acme Natural+, ACME-N-002, null, null]; " +
                             "[301, NaturalPerson, same-code, Bob Natural, null, Bob, Brown]");

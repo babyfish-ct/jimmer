@@ -78,7 +78,11 @@ public class MySqlDialect extends MySql5Dialect {
                         .sql(")");
             }
             if (ctx.hasUpdatedColumns()) {
-                ctx.separator().appendUpdatingAssignments("values(", ")");
+                if (ctx.hasUpdateCondition()) {
+                    ctx.separator().appendConditionalUpdatingAssignments("values(", ")", "values(", ")");
+                } else {
+                    ctx.separator().appendUpdatingAssignments("values(", ")");
+                }
             }
             ctx.leave();
         }

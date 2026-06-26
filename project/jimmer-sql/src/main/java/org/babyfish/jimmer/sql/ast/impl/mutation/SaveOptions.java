@@ -37,6 +37,8 @@ public interface SaveOptions {
 
     boolean isTargetTransferable(ImmutableProp prop);
 
+    boolean isSubtypeChangeAllowed();
+
     boolean isPessimisticLocked(ImmutableType type);
 
     UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type);
@@ -121,6 +123,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isTargetTransferable(ImmutableProp prop) {
         return raw.isTargetTransferable(prop);
+    }
+
+    @Override
+    public boolean isSubtypeChangeAllowed() {
+        return raw.isSubtypeChangeAllowed();
     }
 
     @Override

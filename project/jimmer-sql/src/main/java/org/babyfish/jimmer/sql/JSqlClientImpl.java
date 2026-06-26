@@ -109,6 +109,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean targetTransferable;
 
+    private final boolean defaultSubtypeChangeAllowed;
+
     private final boolean explicitBatchEnabled;
 
     private final boolean dumbBatchAcceptable;
@@ -181,6 +183,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int maxCommandJoinCount,
             boolean mutationTransactionRequired,
             boolean targetTransferable,
+            boolean defaultSubtypeChangeAllowed,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             boolean constraintViolationTranslatable,
@@ -234,6 +237,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
+        this.defaultSubtypeChangeAllowed = defaultSubtypeChangeAllowed;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable = constraintViolationTranslatable;
@@ -415,6 +419,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isTargetTransferable() {
         return targetTransferable;
+    }
+
+    @Override
+    public boolean isDefaultSubtypeChangeAllowed() {
+        return defaultSubtypeChangeAllowed;
     }
 
     @Override
@@ -711,6 +720,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultSubtypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -768,6 +778,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultSubtypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -820,6 +831,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultSubtypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -875,6 +887,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultSubtypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -1108,6 +1121,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean isForeignKeyEnabledByDefault = true;
 
         private boolean targetTransferable;
+
+        private boolean defaultSubtypeChangeAllowed;
 
         private boolean explicitBatchEnabled;
 
@@ -1749,6 +1764,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @Override
+        public Builder setDefaultSubtypeChangeAllowed(boolean allowed) {
+            this.defaultSubtypeChangeAllowed = allowed;
+            return this;
+        }
+
         @OldChain
         @Override
         public Builder setConstraintViolationTranslatable(boolean translatable) {
@@ -1960,6 +1981,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     maxCommandJoinCount,
                     mutationTransactionRequired,
                     targetTransferable,
+                    defaultSubtypeChangeAllowed,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,
                     constraintViolationTranslatable,

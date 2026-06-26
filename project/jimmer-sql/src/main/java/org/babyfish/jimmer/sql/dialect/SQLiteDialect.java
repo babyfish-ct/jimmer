@@ -69,8 +69,8 @@ public class SQLiteDialect extends DefaultDialect {
                     .enter(AbstractSqlBuilder.ScopeType.SET)
                     .appendUpdatingAssignments("excluded.", "")
                     .leave();
-            if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition("excluded.");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
             }
         } else if (ctx.hasGeneratedId()) {
             ctx.sql(" do update set ");
