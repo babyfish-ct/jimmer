@@ -510,7 +510,9 @@ class Operator {
                 originalKeyObjMap,
                 rootBatch,
                 rootType,
-                subtypeChangeAllowed ? discriminatorProp(inheritanceInfo) : null,
+                subtypeChangeAllowed && hasDifferentOldSubtype(subtypeChangeRows, batch.shape().getType()) ?
+                        discriminatorProp(inheritanceInfo) :
+                        null,
                 subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
                 !subtypeChangeAllowed,
@@ -553,6 +555,18 @@ class Operator {
                 (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne ?
                         MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts)) :
                         MutationRows.UNKNOWN);
+    }
+
+    private static boolean hasDifferentOldSubtype(@Nullable SubtypeChangeRows subtypeChangeRows, ImmutableType targetType) {
+        if (subtypeChangeRows == null) {
+            return false;
+        }
+        for (ImmutableType oldType : subtypeChangeRows.oldTypeIdMap.keySet()) {
+            if (oldType != targetType) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isOptimisticLockActive(Shape rootShape) {

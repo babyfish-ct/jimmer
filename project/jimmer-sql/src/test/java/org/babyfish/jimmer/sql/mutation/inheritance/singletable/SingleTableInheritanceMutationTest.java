@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
 
@@ -334,6 +335,56 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(100L, "Person", "Acme Person", "Ann", "Smith");
                     });
                     ctx.value("[Person, Acme Person, null, Ann, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertSubtypeWithSubtypeChangeAllowedMixedBatch() {
+        connectAndExpect(
+                con -> {
+                    Person changed = PersonDraft.$.produce(person -> {
+                        person.setId(100L);
+                        person.setName("Acme Person Batch");
+                        person.setFirstName("Ann");
+                        person.setLastName("Smith");
+                    });
+                    Person same = PersonDraft.$.produce(person -> {
+                        person.setId(101L);
+                        person.setName("Bob Person Batch");
+                        person.setFirstName("Bob+");
+                        person.setLastName("Brown+");
+                    });
+                    Person inserted = PersonDraft.$.produce(person -> {
+                        person.setId(399L);
+                        person.setName("Inserted Person Batch");
+                        person.setFirstName("Inserted");
+                        person.setLastName("Person");
+                    });
+                    getSqlClient()
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(changed, same, inserted))
+                            .setSubtypeChangeAllowed(true)
+                            .execute(con);
+                    return clientRow(con, 100L) +
+                            "; " +
+                            clientRow(con, 101L) +
+                            "; " +
+                            clientRow(con, 399L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME, TAX_CODE) " +
+                                        "key(ID) values(?, ?, ?, ?, ?, null)"
+                        );
+                        it.batchVariables(0, 100L, "Person", "Acme Person Batch", "Ann", "Smith");
+                        it.batchVariables(1, 101L, "Person", "Bob Person Batch", "Bob+", "Brown+");
+                        it.batchVariables(2, 399L, "Person", "Inserted Person Batch", "Inserted", "Person");
+                    });
+                    ctx.value("[Person, Acme Person Batch, null, Ann, Smith]; " +
+                            "[Person, Bob Person Batch, null, Bob+, Brown+]; " +
+                            "[Person, Inserted Person Batch, null, Inserted, Person]");
                 }
         );
     }

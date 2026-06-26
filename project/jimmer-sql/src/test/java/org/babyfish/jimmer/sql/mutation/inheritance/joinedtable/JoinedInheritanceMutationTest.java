@@ -260,6 +260,116 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateSubtypeWithSubtypeChangeAllowedButSameDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(200L);
+                                        organization.setName("Globex Same");
+                                        organization.setTaxCode("GLOBEX-SAME");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
+                            .execute(con);
+                    return joinedClientRow(con, 200L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set NAME = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Globex Same", 200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.variables(200L, "GLOBEX-SAME");
+                    });
+                    ctx.value("[ORG, Globex Same, GLOBEX-SAME, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateSubtypeWithSubtypeChangeAllowedMixedBatch() {
+        connectAndExpect(
+                con -> {
+                    Person changed = PersonDraft.$.produce(person -> {
+                        person.setId(200L);
+                        person.setName("Globex Person Batch");
+                        person.setFirstName("Gary");
+                        person.setLastName("Stone");
+                    });
+                    Person same = PersonDraft.$.produce(person -> {
+                        person.setId(201L);
+                        person.setName("Alice Person Batch");
+                        person.setFirstName("Alice+");
+                        person.setLastName("Smith+");
+                    });
+                    Person missing = PersonDraft.$.produce(person -> {
+                        person.setId(399L);
+                        person.setName("Missing Person Batch");
+                        person.setFirstName("Missing");
+                        person.setLastName("Person");
+                    });
+                    getSqlClient()
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(changed, same, missing))
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedClientRow(con, 399L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?, ?) order by ID for update");
+                        it.variables(200L, 201L, 399L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set CLIENT_TYPE = ?, NAME = ? " +
+                                        "where ID = ?"
+                        );
+                        it.batchVariables(0, "Person", "Globex Person Batch", 200L);
+                        it.batchVariables(1, "Person", "Alice Person Batch", 201L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
+                                        "key(ID) values(?, ?, ?)"
+                        );
+                        it.batchVariables(0, 200L, "Gary", "Stone");
+                        it.batchVariables(1, 201L, "Alice+", "Smith+");
+                    });
+                    ctx.value("[Person, Globex Person Batch, null, Gary, Stone]; " +
+                            "[Person, Alice Person Batch, null, Alice+, Smith+]; " +
+                            "null");
+                }
+        );
+    }
+
+    @Test
     public void testUpdateSubtypeWithChangingDiscriminatorMissingSkipsChildAndPostAssociation() {
         connectAndExpect(
                 con -> {
@@ -288,6 +398,73 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(399L);
                     });
                     ctx.value("null; null");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertSubtypeWithSubtypeChangeAllowedMixedBatch() {
+        connectAndExpect(
+                con -> {
+                    Person changed = PersonDraft.$.produce(person -> {
+                        person.setId(200L);
+                        person.setName("Globex Person Upsert");
+                        person.setFirstName("Gary");
+                        person.setLastName("Stone");
+                    });
+                    Person same = PersonDraft.$.produce(person -> {
+                        person.setId(201L);
+                        person.setName("Alice Person Upsert");
+                        person.setFirstName("Alice+");
+                        person.setLastName("Smith+");
+                    });
+                    Person inserted = PersonDraft.$.produce(person -> {
+                        person.setId(399L);
+                        person.setName("Inserted Person Upsert");
+                        person.setFirstName("Inserted");
+                        person.setLastName("Person");
+                    });
+                    getSqlClient()
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(changed, same, inserted))
+                            .setSubtypeChangeAllowed(true)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedClientRow(con, 399L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?, ?) order by ID for update");
+                        it.variables(200L, 201L, 399L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
+                                        "key(ID) values(?, ?, ?)"
+                        );
+                        it.batchVariables(0, 200L, "Person", "Globex Person Upsert");
+                        it.batchVariables(1, 201L, "Person", "Alice Person Upsert");
+                        it.batchVariables(2, 399L, "Person", "Inserted Person Upsert");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
+                                        "key(ID) values(?, ?, ?)"
+                        );
+                        it.batchVariables(0, 200L, "Gary", "Stone");
+                        it.batchVariables(1, 201L, "Alice+", "Smith+");
+                        it.batchVariables(2, 399L, "Inserted", "Person");
+                    });
+                    ctx.value("[Person, Globex Person Upsert, null, Gary, Stone]; " +
+                            "[Person, Alice Person Upsert, null, Alice+, Smith+]; " +
+                            "[Person, Inserted Person Upsert, null, Inserted, Person]");
                 }
         );
     }
