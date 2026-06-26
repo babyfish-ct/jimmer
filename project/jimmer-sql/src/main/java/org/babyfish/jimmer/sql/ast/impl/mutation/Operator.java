@@ -491,6 +491,9 @@ class Operator {
                 subtypeChangeRows.ids() :
                 Collections.emptySet();
         if (subtypeChangeAllowed) {
+            if (hasMissingSubtypeChangeRow(rootBatch, subtypeChangeIds) && isOptimisticLockActive(rootShape)) {
+                throwOptimisticLockErrorForMissingSubtypeChangeRow(rootBatch, subtypeChangeIds);
+            }
             rootBatch = batchOfRows(rootBatch, subtypeChangeIds);
             batch = batchOfRows(batch, subtypeChangeIds);
             if (batch.entities().isEmpty()) {
@@ -550,6 +553,33 @@ class Operator {
                 (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne ?
                         MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts)) :
                         MutationRows.UNKNOWN);
+    }
+
+    private boolean isOptimisticLockActive(Shape rootShape) {
+        if (ctx.options.getUserOptimisticLock(ctx.path.getType()) != null) {
+            userLockOptimisticPredicate();
+            return true;
+        }
+        return rootShape.getVersionGetter() != null;
+    }
+
+    private boolean hasMissingSubtypeChangeRow(Batch<DraftSpi> rootBatch, Set<Object> acceptedIds) {
+        PropId idPropId = rootBatch.shape().getType().getIdProp().getId();
+        for (DraftSpi draft : rootBatch.entities()) {
+            if (!acceptedIds.contains(draft.__get(idPropId))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void throwOptimisticLockErrorForMissingSubtypeChangeRow(Batch<DraftSpi> rootBatch, Set<Object> acceptedIds) {
+        PropId idPropId = rootBatch.shape().getType().getIdProp().getId();
+        for (DraftSpi draft : rootBatch.entities()) {
+            if (!acceptedIds.contains(draft.__get(idPropId))) {
+                ctx.throwOptimisticLockError(draft);
+            }
+        }
     }
 
     private void saveJoinedTableForUpdate(

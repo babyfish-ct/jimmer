@@ -129,6 +129,37 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
         );
     }
 
+    @Test
+    public void testRootVersionMissingSubtypeChangeIsOptimisticLockError() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                PersonDraft.$.produce(person -> {
+                                    person.setId(599L);
+                                    person.setVersion(0);
+                                    person.setFirstName("Missing");
+                                    person.setLastName("Person");
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setSubtypeChangeAllowed(true),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID for update");
+                        it.variables(599L);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.OptimisticLockError.class);
+                        it.detail(ex -> Assertions.assertEquals(
+                                SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
+                                ((SaveException) ex).getSaveErrorCode()
+                        ));
+                    });
+                }
+        );
+    }
+
     private static String joinedCascadeClientRow(Connection con, long id) {
         try (PreparedStatement stmt = con.prepareStatement(
                 "select c.CLIENT_TYPE, c.NAME, c.VERSION, o.TAX_CODE, p.FIRST_NAME, p.LAST_NAME " +
