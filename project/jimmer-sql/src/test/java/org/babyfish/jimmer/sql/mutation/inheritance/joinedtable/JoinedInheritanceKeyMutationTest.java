@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyOrganizationDraft;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
 
@@ -95,6 +97,148 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
                         it.variables(400L, "KEY-GLOBEX-003");
                     });
                     ctx.value("[400, ORG, same-code, Key Globex+, KEY-GLOBEX-003, null, null]; " +
+                            "[401, KeyPerson, same-code, Key Alice, null, Key Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertSubtypeByKeyBatchRoutesAcceptedIds() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(
+                                    KeyOrganizationDraft.$.produce(organization -> {
+                                        organization.setCode("same-code");
+                                        organization.setName("Key Globex Batch+");
+                                        organization.setTaxCode("KEY-GLOBEX-BATCH");
+                                    }),
+                                    KeyOrganizationDraft.$.produce(organization -> {
+                                        organization.setCode("batch-new-code");
+                                        organization.setName("New Batch Key Org");
+                                        organization.setTaxCode("NEW-KEY-BATCH");
+                                    })
+                            ))
+                            .execute(con);
+                    return joinedKeyClientRow(con, "ORG", "same-code") +
+                            "; " +
+                            joinedKeyClientRow(con, "ORG", "batch-new-code") +
+                            "; " +
+                            joinedKeyClientRow(con, "KeyPerson", "same-code");
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(CLIENT_TYPE, CODE, NAME) " +
+                                        "on tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE and tb_1_.CODE = tb_2_.CODE " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(CLIENT_TYPE, CODE, NAME) " +
+                                        "values(tb_2_.CLIENT_TYPE, tb_2_.CODE, tb_2_.NAME)"
+                        );
+                        it.batchVariables(0, "ORG", "same-code", "Key Globex Batch+");
+                        it.batchVariables(1, "ORG", "batch-new-code", "New Batch Key Org");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.batchVariables(0, 400L, "KEY-GLOBEX-BATCH");
+                        it.batchVariables(1, UNKNOWN_VARIABLE, "NEW-KEY-BATCH");
+                    });
+                    ctx.value("[400, ORG, same-code, Key Globex Batch+, KEY-GLOBEX-BATCH, null, null]; " +
+                            "[UNKNOWN, ORG, batch-new-code, New Batch Key Org, NEW-KEY-BATCH, null, null]; " +
+                            "[401, KeyPerson, same-code, Key Alice, null, Key Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertSubtypeByKeyDumbBatchUsesOneByOneRootIds() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient(it -> {
+                        it.setDialect(new H2Dialect() {
+                            @Override
+                            public boolean isBatchDumb() {
+                                return true;
+                            }
+                        });
+                        it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                    })
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(
+                                    KeyOrganizationDraft.$.produce(organization -> {
+                                        organization.setCode("same-code");
+                                        organization.setName("Key Globex Dumb+");
+                                        organization.setTaxCode("KEY-GLOBEX-DUMB");
+                                    }),
+                                    KeyOrganizationDraft.$.produce(organization -> {
+                                        organization.setCode("dumb-new-code");
+                                        organization.setName("New Dumb Key Org");
+                                        organization.setTaxCode("NEW-KEY-DUMB");
+                                    })
+                            ))
+                            .execute(con);
+                    return joinedKeyClientRow(con, "ORG", "same-code") +
+                            "; " +
+                            joinedKeyClientRow(con, "ORG", "dumb-new-code") +
+                            "; " +
+                            joinedKeyClientRow(con, "KeyPerson", "same-code");
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(CLIENT_TYPE, CODE, NAME) " +
+                                        "on tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE and tb_1_.CODE = tb_2_.CODE " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(CLIENT_TYPE, CODE, NAME) " +
+                                        "values(tb_2_.CLIENT_TYPE, tb_2_.CODE, tb_2_.NAME)"
+                        );
+                        it.variables("ORG", "same-code", "Key Globex Dumb+");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(CLIENT_TYPE, CODE, NAME) " +
+                                        "on tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE and tb_1_.CODE = tb_2_.CODE " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(CLIENT_TYPE, CODE, NAME) " +
+                                        "values(tb_2_.CLIENT_TYPE, tb_2_.CODE, tb_2_.NAME)"
+                        );
+                        it.variables("ORG", "dumb-new-code", "New Dumb Key Org");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.CODE " +
+                                        "from JOINED_KEY_CLIENT tb_1_ " +
+                                        "where (tb_1_.CLIENT_TYPE, tb_1_.CODE) in ((?, ?), (?, ?)) " +
+                                        "and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables("ORG", "same-code", "ORG", "dumb-new-code", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.variables(400L, "KEY-GLOBEX-DUMB");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.variables(UNKNOWN_VARIABLE, "NEW-KEY-DUMB");
+                    });
+                    ctx.value("[400, ORG, same-code, Key Globex Dumb+, KEY-GLOBEX-DUMB, null, null]; " +
+                            "[UNKNOWN, ORG, dumb-new-code, New Dumb Key Org, NEW-KEY-DUMB, null, null]; " +
                             "[401, KeyPerson, same-code, Key Alice, null, Key Alice, Smith]");
                 }
         );

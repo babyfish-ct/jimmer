@@ -847,8 +847,23 @@ class Operator {
         return rowCounts;
     }
 
-    @SuppressWarnings("unchecked")
     private void fillIds(
+            QueryReason queryReason,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch
+    ) {
+        int[] rowCounts = fillIdsAndGetRowCounts(queryReason, originalKeyObjMap, batch);
+        int index = 0;
+        for (Iterator<DraftSpi> itr = batch.entities().iterator(); itr.hasNext(); ) {
+            itr.next();
+            if (index >= rowCounts.length || rowCounts[index++] == 0) {
+                itr.remove();
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private int[] fillIdsAndGetRowCounts(
             QueryReason queryReason,
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch
@@ -878,15 +893,17 @@ class Operator {
         }
         Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
         PropId idPropId = ctx.path.getType().getIdProp().getId();
-        for (Iterator<DraftSpi> itr = batch.entities().iterator(); itr.hasNext(); ) {
-            DraftSpi draft = itr.next();
+        int[] rowCounts = new int[batch.entities().size()];
+        int index = 0;
+        for (DraftSpi draft : batch.entities()) {
             ImmutableSpi row = subMap.get(Keys.keyOf(draft, keyProps));
             if (row != null) {
                 draft.__set(idPropId, row.__get(idPropId));
-            } else {
-                itr.remove();
+                rowCounts[index] = 1;
             }
+            index++;
         }
+        return rowCounts;
     }
 
     public MutationRows upsert(Batch<DraftSpi> batch, boolean ignoreUpdate) {
@@ -929,7 +946,7 @@ class Operator {
                 null;
         boolean forceRootOneByOne =
                 !ctx.options.isSubtypeChangeAllowed() &&
-                        ignoreUpdate &&
+                        (ignoreUpdate || rootShape.getIdGetters().isEmpty()) &&
                         sqlClient.getDialect().isBatchDumb();
         int[] rootRowCounts = upsert(
                 rootBatch,
@@ -942,6 +959,13 @@ class Operator {
                 !ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate,
                 forceRootOneByOne
         );
+        if (forceRootOneByOne && !ignoreUpdate && rootShape.getIdGetters().isEmpty()) {
+            rootRowCounts = fillIdsAndGetRowCounts(
+                    QueryReason.GET_ID_FOR_KEY_BASE_UPSERT,
+                    null,
+                    rootBatch
+            );
+        }
         int[] acceptedRowCounts = null;
         Batch<DraftSpi> acceptanceBatch = null;
         if (ctx.options.isSubtypeChangeAllowed()) {

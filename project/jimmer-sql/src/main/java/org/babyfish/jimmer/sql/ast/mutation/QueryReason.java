@@ -367,6 +367,14 @@ public enum QueryReason {
     GET_ID_FOR_KEY_BASE_UPDATE,
 
     /**
+     * When saving joined-inheritance subtype objects by
+     * {@link org.babyfish.jimmer.sql.Key} properties without ids, the root
+     * upsert may not return all ids required for writing joined subtype rows.
+     * Jimmer resolves those ids by key after the root upsert.
+     */
+    GET_ID_FOR_KEY_BASE_UPSERT,
+
+    /**
      * When {@code subtypeChangeAllowed} is enabled for a joined inheritance
      * update/upsert, Jimmer locks root rows and reads their old discriminator
      * values before changing subtype-specific rows.
