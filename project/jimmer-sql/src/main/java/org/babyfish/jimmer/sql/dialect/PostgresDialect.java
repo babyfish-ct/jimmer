@@ -260,7 +260,7 @@ public class PostgresDialect extends DefaultDialect {
             if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
-        } else if (ctx.hasGeneratedId()) {
+        } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
             ctx.sql(" do update set ");
             List<ValueGetter> conflictGetters = ctx.getConflictGetters();
             ValueGetter cheapestGetter = conflictGetters.get(0);
@@ -277,7 +277,9 @@ public class PostgresDialect extends DefaultDialect {
                     .sql(cheapestGetter)
                     .sql(" = excluded.")
                     .sql(cheapestGetter);
-            ctx.sql(" returning ").appendGeneratedId();
+            if (ctx.hasGeneratedId()) {
+                ctx.sql(" returning ").appendGeneratedId();
+            }
         } else {
             ctx.sql(" do nothing");
         }

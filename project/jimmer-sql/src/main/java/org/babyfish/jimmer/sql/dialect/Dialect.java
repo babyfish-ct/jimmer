@@ -196,6 +196,8 @@ public interface Dialect extends SqlTypeStrategy {
 
         boolean isIdInteger();
         boolean isUpdatedByKey();
+        boolean hasUpdatedColumns();
+        boolean isFakeUpdateRequired();
 
         UpdateContext sql(String sql);
         UpdateContext sql(ValueGetter getter);
@@ -214,6 +216,7 @@ public interface Dialect extends SqlTypeStrategy {
         boolean hasUpdatedColumns();
         boolean hasUpdateCondition();
         boolean hasGeneratedId();
+        boolean isFakeUpdateRequired();
         boolean isUpdateIgnored();
         boolean isComplete();
         boolean isIdInteger();
@@ -235,6 +238,7 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
         UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);
         UpsertContext appendGeneratedId();
+        UpsertContext appendId();
     }
 
     default void renderLPad(

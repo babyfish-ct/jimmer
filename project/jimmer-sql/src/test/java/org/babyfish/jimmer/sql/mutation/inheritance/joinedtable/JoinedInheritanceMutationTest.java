@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -146,27 +147,12 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
 	                        );
 	                        it.variables(300L, "ORG", "New Org");
                     });
-	                    ctx.statement(it -> {
-	                        it.sql(
-	                                "update JOINED_ORGANIZATION " +
-	                                        "set TAX_CODE = ? " +
-	                                        "where ID = ? and exists(" +
-	                                        "select 1 from JOINED_CLIENT " +
-	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
-                        );
-                        it.variables("NEW-001", 300L, 300L, "ORG");
-                    });
-	                    ctx.statement(it -> {
-	                        it.sql(
-	                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-	                                        "select ?, ? " +
-	                                        "where exists(" +
-	                                        "select 1 from JOINED_CLIENT " +
-	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
-	                                        "and not exists(" +
-	                                        "select 1 from JOINED_ORGANIZATION where ID = ?)"
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
 	                        );
-	                        it.variables(300L, "NEW-001", 300L, "ORG", 300L);
+	                        it.variables(300L, "NEW-001");
                     });
                     ctx.rowCount(AffectedTable.of(Client.class), 1);
                     ctx.rowCount(AffectedTable.of(Organization.class), 1);
@@ -308,18 +294,6 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         );
                         it.variables("GLOBEX-002", 200L, 200L, "ORG");
                     });
-	                    ctx.statement(it -> {
-	                        it.sql(
-	                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-	                                        "select ?, ? " +
-	                                        "where exists(" +
-	                                        "select 1 from JOINED_CLIENT " +
-	                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
-	                                        "and not exists(" +
-	                                        "select 1 from JOINED_ORGANIZATION where ID = ?)"
-	                        );
-	                        it.variables(200L, "GLOBEX-002", 200L, "ORG", 200L);
-                    });
                     ctx.value("[ORG, Globex+, GLOBEX-002, null, null]");
                 }
         );
@@ -404,7 +378,11 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?");
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
                         it.variables(200L, "ORG");
                     });
                     ctx.statement(it -> {
@@ -416,18 +394,6 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                         "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
                         );
                         it.variables("GLOBEX-003", 200L, 200L, "ORG");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                                        "select ?, ? " +
-                                        "where exists(" +
-                                        "select 1 from JOINED_CLIENT " +
-                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
-                                        "and not exists(" +
-                                        "select 1 from JOINED_ORGANIZATION where ID = ?)"
-                        );
-                        it.variables(200L, "GLOBEX-003", 200L, "ORG", 200L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -463,10 +429,210 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?");
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
                         it.variables(201L, "ORG");
                     });
                     ctx.value("[Person, Alice, null, Alice, Smith]; null");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeWithAcceptedPostAssociation() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(300L);
+                                        organization.setName("New Org");
+                                        organization.setTaxCode("NEW-001");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2302L);
+                                            project.setName("Inserted project");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 300L) + "; " + joinedOrgProjectTargetId(con, 2302L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(300L, "ORG", "New Org");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "values(?, ?)"
+                        );
+                        it.variables(300L, "NEW-001");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(2302L, "Inserted project", 300L);
+                    });
+                    ctx.value("[ORG, New Org, NEW-001, null, null]; 300");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeExistingSameSkipsPostAssociation() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(200L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2303L);
+                                            project.setName("Should not be saved");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) + "; " + joinedOrgProjectTargetId(con, 2303L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(200L, "ORG", "Should not update");
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-001, null, null]; null");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeExistingDifferentSkipsPostAssociation() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(201L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2304L);
+                                            project.setName("Should not be saved");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 201L) + "; " + joinedOrgProjectTargetId(con, 2304L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(201L, "ORG", "Should not update");
+                    });
+                    ctx.value("[Person, Alice, null, Alice, Smith]; null");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateSubtypeBatchRoutesOnlyAcceptedRows() {
+        connectAndExpect(
+                con -> {
+                    Organization accepted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setTaxCode("GLOBEX-004");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2305L);
+                            project.setName("Accepted batch project");
+                        });
+                    });
+                    Organization rejected = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2306L);
+                            project.setName("Rejected batch project");
+                        });
+                    });
+                    getSqlClient()
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(accepted, rejected))
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2305L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2306L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.batchVariables(0, 200L, "ORG");
+                        it.batchVariables(1, 201L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORGANIZATION " +
+                                        "set TAX_CODE = ? " +
+                                        "where ID = ? and exists(" +
+                                        "select 1 from JOINED_CLIENT " +
+                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                        );
+                        it.variables("GLOBEX-004", 200L, 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(2305L, "Accepted batch project", 200L);
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-004, null, null]; " +
+                            "[Person, Alice, null, Alice, Smith]; " +
+                            "200; null");
                 }
         );
     }

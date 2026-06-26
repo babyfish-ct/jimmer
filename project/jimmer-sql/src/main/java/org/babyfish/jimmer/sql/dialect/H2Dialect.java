@@ -184,7 +184,8 @@ public class H2Dialect extends DefaultDialect {
             ctx.separator().appendConflictPredicate("tb_1_");
         }
         ctx.leave();
-        if (!ctx.isUpdateIgnored() && (ctx.hasGeneratedId()) || ctx.hasUpdatedColumns()) {
+        if (!ctx.isUpdateIgnored() &&
+                (ctx.hasGeneratedId() || ctx.hasUpdatedColumns() || ctx.isFakeUpdateRequired())) {
             ctx.sql(" when matched");
             if (ctx.hasUpdateCondition()) {
                 ctx.sql(" and ").appendUpdateCondition("tb_1_.", "", "tb_2_.", "");

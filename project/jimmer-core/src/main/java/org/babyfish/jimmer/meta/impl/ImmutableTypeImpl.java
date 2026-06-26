@@ -583,7 +583,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             } else {
                 arr = new ImmutableProp[getProps().size() + 1];
                 for (ImmutableProp prop : getProps().values()) {
-                    arr[prop.getId().asIndex()] = prop;
+                    int index = prop.getId().asIndex();
+                    if (index != -1) {
+                        arr[index] = prop;
+                    }
                 }
             }
             propArr = arr;

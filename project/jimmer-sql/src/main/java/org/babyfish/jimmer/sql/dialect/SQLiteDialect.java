@@ -72,7 +72,7 @@ public class SQLiteDialect extends DefaultDialect {
             if (ctx.hasUpdateCondition()) {
                 ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
             }
-        } else if (ctx.hasGeneratedId()) {
+        } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
             ctx.sql(" do update set ");
             List<ValueGetter> conflictGetters = ctx.getConflictGetters();
             ValueGetter cheapestGetter = conflictGetters.get(0);

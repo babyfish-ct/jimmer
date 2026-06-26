@@ -368,18 +368,22 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
             }
             if (!hasId) {
+                ImmutableType keyConstraintType = keyConstraintType();
                 KeyUniqueConstraint constraint = ctx
                         .path
                         .getType()
                         .getJavaClass()
                         .getAnnotation(KeyUniqueConstraint.class);
+                if (constraint == null && keyConstraintType != ctx.path.getType()) {
+                    constraint = keyConstraintType.getJavaClass().getAnnotation(KeyUniqueConstraint.class);
+                }
                 if (constraint == null) {
                     return QueryReason.KEY_UNIQUE_CONSTRAINT_REQUIRED;
                 }
-                if (!sqlClient.isUpsertWithUniqueConstraintSupported(ctx.path.getType())) {
+                if (!sqlClient.isUpsertWithUniqueConstraintSupported(keyConstraintType)) {
                     return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
                 }
-                LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+                LogicalDeletedInfo logicalDeletedInfo = keyConstraintType.getLogicalDeletedInfo();
                 if (logicalDeletedInfo != null &&
                         logicalDeletedInfo.getType() == boolean.class &&
                         !sqlClient.getDialect().isUpsertWithConflictPredicateSupported()) {
@@ -408,6 +412,12 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return QueryReason.NONE;
+    }
+
+    private ImmutableType keyConstraintType() {
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null ? inheritanceInfo.getRootType() : type;
     }
 
     private void callPreProcessor(DraftSpi draft, KeyMatcher.Group group) {

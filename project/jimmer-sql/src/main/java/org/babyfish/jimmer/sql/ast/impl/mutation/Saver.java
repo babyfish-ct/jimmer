@@ -413,49 +413,66 @@ public class Saver {
     private SaveSelfResult saveSelf(PreHandler preHandler, boolean ownerAcceptanceRequired) {
         Operator operator = new Operator(ctx, ownerAcceptanceRequired);
         boolean detach = false;
-        Set<DraftSpi> acceptedDrafts = ownerAcceptanceRequired ?
-                Collections.newSetFromMap(new IdentityHashMap<>()) :
-                null;
-        for (Batch<DraftSpi> batch : preHandler.batches()) {
-            Operator.MutationRows mutationRows;
-            switch (batch.mode()) {
-                case INSERT_ONLY:
-                    mutationRows = operator.insert(batch);
-                    break;
-                case INSERT_IF_ABSENT:
-                    mutationRows = operator.upsert(batch, true);
-                    break;
-                case UPDATE_ONLY:
+        if (!ownerAcceptanceRequired) {
+            for (Batch<DraftSpi> batch : preHandler.batches()) {
+                if (isDetachRequired(batch.mode())) {
                     detach = true;
-                    mutationRows = operator.update(
-                            preHandler.originalIdObjMap(),
-                            preHandler.originalkeyObjMap(),
-                            batch
-                    );
-                    break;
-                default:
-                    detach = true;
-                    mutationRows = operator.upsert(batch, false);
-                    break;
-            }
-            if (acceptedDrafts != null) {
-                if (mutationRows.acceptedDrafts != null) {
-                    acceptedDrafts.addAll(mutationRows.acceptedDrafts);
-                } else {
-                    acceptedDrafts.addAll(batch.entities());
                 }
+                saveBatch(preHandler, operator, batch);
+            }
+            return new SaveSelfResult(detach, null);
+        }
+
+        Set<DraftSpi> acceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Batch<DraftSpi> batch : preHandler.batches()) {
+            if (isDetachRequired(batch.mode())) {
+                detach = true;
+            }
+            Operator.MutationRows mutationRows = saveBatch(preHandler, operator, batch);
+            if (mutationRows.acceptedDrafts != null) {
+                acceptedDrafts.addAll(mutationRows.acceptedDrafts);
+            } else {
+                acceptedDrafts.addAll(batch.entities());
             }
         }
         return new SaveSelfResult(detach, acceptedDrafts);
     }
 
-    private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
-        if (ctx.trigger != null) {
-            return isJoinedSubtypeInvariantMutation();
+    private Operator.MutationRows saveBatch(PreHandler preHandler, Operator operator, Batch<DraftSpi> batch) {
+        switch (batch.mode()) {
+            case INSERT_ONLY:
+                return operator.insert(batch);
+            case INSERT_IF_ABSENT:
+                return operator.upsert(batch, true);
+            case UPDATE_ONLY:
+                return operator.update(
+                        preHandler.originalIdObjMap(),
+                        preHandler.originalkeyObjMap(),
+                        batch
+                );
+            default:
+                return operator.upsert(batch, false);
         }
-        if (!isJoinedSubtypeInvariantMutation()) {
+    }
+
+    private static boolean isDetachRequired(SaveMode mode) {
+        return mode != SaveMode.INSERT_ONLY && mode != SaveMode.INSERT_IF_ABSENT;
+    }
+
+    private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
+        if (!isJoinedSubtypeTarget()) {
             return false;
         }
+        if (ctx.trigger != null) {
+            return isOwnerAcceptanceMode();
+        }
+        if (!isOwnerAcceptanceMode()) {
+            return false;
+        }
+        return hasLoadedPostAssociation(preHandler);
+    }
+
+    private boolean hasLoadedPostAssociation(PreHandler preHandler) {
         for (Batch<DraftSpi> batch : preHandler.batches()) {
             for (DraftSpi draft : batch.entities()) {
                 for (ImmutableProp prop : draft.__type().getProps().values()) {
@@ -471,18 +488,20 @@ public class Saver {
         return false;
     }
 
-    private boolean isJoinedSubtypeInvariantMutation() {
-        if (ctx.options.isSubtypeChangeAllowed()) {
-            return false;
-        }
+    private boolean isOwnerAcceptanceMode() {
         switch (ctx.options.getMode()) {
+            case INSERT_IF_ABSENT:
+                return true;
             case UPDATE_ONLY:
             case UPSERT:
             case NON_IDEMPOTENT_UPSERT:
-                break;
+                return !ctx.options.isSubtypeChangeAllowed();
             default:
                 return false;
         }
+    }
+
+    private boolean isJoinedSubtypeTarget() {
         ImmutableType type = ctx.path.getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         return inheritanceInfo != null &&

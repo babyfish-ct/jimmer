@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -41,6 +42,32 @@ public final class InheritanceInfo {
 
     public ImmutableProp getDiscriminatorProp() {
         return discriminatorProp;
+    }
+
+    @NotNull
+    public ImmutableProp getDiscriminatorProp(@NotNull ImmutableType type) {
+        if (!rootType.isAssignableFrom(type)) {
+            throw new IllegalArgumentException(
+                    "The type \"" + type + "\" does not belong to the inheritance hierarchy of \"" +
+                            rootType +
+                            "\""
+            );
+        }
+        ImmutableProp prop = type.getProps().get(discriminatorProp.getName());
+        if (prop == null ||
+                !prop.isDiscriminator() ||
+                prop.toOriginal() != discriminatorProp.toOriginal()) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            type +
+                            "\" does not have the discriminator property \"" +
+                            discriminatorProp.getName() +
+                            "\" of \"" +
+                            rootType +
+                            "\""
+            );
+        }
+        return prop;
     }
 
     public Collection<ImmutableType> getConcreteTypes() {

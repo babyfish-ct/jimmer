@@ -114,7 +114,8 @@ class Operator {
                     tableType,
                     sample,
                     prop -> prop.isId() ||
-                            (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
+                            (prop.isColumnDefinition() &&
+                                    prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
             insert(batchOf(batch, shape), tableType, null, true);
@@ -216,7 +217,9 @@ class Operator {
             builder.separator().sql(discriminatorGetter);
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (!getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
+            if (!getter.prop().isId() &&
+                    getter.prop().isColumnDefinition() &&
+                    getter.isInsertable(conflictProps, upsertMask)) {
                 builder.separator().sql(getter);
             }
         }
@@ -249,7 +252,9 @@ class Operator {
             builder.separator().variable(discriminatorGetter);
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (!getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
+            if (!getter.prop().isId() &&
+                    getter.prop().isColumnDefinition() &&
+                    getter.isInsertable(conflictProps, upsertMask)) {
                 builder.separator().variable(getter);
             }
         }
@@ -416,7 +421,9 @@ class Operator {
                 prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
         );
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
-        if (rootShape.getIdGetters().isEmpty()) {
+        if (!ctx.options.isSubtypeChangeAllowed() &&
+                rootShape.getIdGetters().isEmpty() &&
+                !sqlClient.getDialect().isIdFetchableByKeyUpdate()) {
             fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, rootBatch);
             if (rootBatch.entities().isEmpty()) {
                 return MutationRows.EMPTY;
@@ -430,20 +437,10 @@ class Operator {
             );
             rootBatch = batchOf(batch, rootShape);
         }
-        int[] acceptedRowCounts = null;
-        Batch<DraftSpi> acceptanceBatch = null;
-        if (!ctx.options.isSubtypeChangeAllowed() && ownerAcceptanceRequired) {
-            acceptanceBatch = rootBatch;
-            acceptedRowCounts = fakeRootUpdate(rootBatch, inheritanceInfo);
-            batch = batchOfChangedRows(batch, acceptedRowCounts);
-            if (batch.entities().isEmpty()) {
-                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedRowCounts));
-            }
-            rootBatch = batchOf(rootBatch, rootShape, batch.entities());
-        }
         SubtypeChangeRows subtypeChangeRows = ctx.options.isSubtypeChangeAllowed() ?
                 prelockForSubtypeChange(rootBatch, inheritanceInfo) :
                 null;
+        Batch<DraftSpi> acceptanceBatch = rootBatch;
         int[] rootRowCounts = update(
                 originalIdObjMap,
                 originalKeyObjMap,
@@ -456,6 +453,13 @@ class Operator {
         );
         if (ctx.options.isSubtypeChangeAllowed()) {
             deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
+        } else {
+            batch = batchOfChangedRows(batch, rootRowCounts);
+            if (batch.entities().isEmpty()) {
+                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts));
+            }
+            rootBatch = batchOf(rootBatch, rootShape, batch.entities());
+            sample = batch.entities().iterator().next();
         }
         ImmutableType previousTableType = rootType;
         for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
@@ -465,20 +469,21 @@ class Operator {
                     tableType,
                     sample,
                     prop -> prop.isId() ||
-                            (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
+                            (prop.isColumnDefinition() &&
+                                    prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
             Batch<DraftSpi> childBatch = batchOf(batch, shape);
             if (ctx.options.isSubtypeChangeAllowed()) {
                 saveJoinedTableForUpdate(originalIdObjMap, originalKeyObjMap, childBatch, tableType);
             } else {
-                upsertJoinedChildWithRootGuard(childBatch, tableType, rootType, inheritanceInfo, false);
+                updateJoinedChildWithRootGuard(childBatch, tableType, rootType, inheritanceInfo);
             }
             previousTableType = tableType;
         }
-        return acceptedRowCounts != null ?
-                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedRowCounts)) :
-                MutationRows.UNKNOWN;
+        return ctx.options.isSubtypeChangeAllowed() ?
+                MutationRows.UNKNOWN :
+                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts));
     }
 
     private void saveJoinedTableForUpdate(
@@ -488,7 +493,7 @@ class Operator {
             ImmutableType tableType
     ) {
         if (ctx.options.getSqlClient().getDialect().isUpsertSupported()) {
-            upsert(batch, tableType, null, false, null, Collections.emptyList(), false);
+            upsert(batch, tableType, null, false, null, Collections.emptyList(), false, false);
             return;
         }
         Set<Object> existingIds = findExistingIds(tableType, batch);
@@ -652,124 +657,6 @@ class Operator {
         );
     }
 
-    private int[] fakeRootUpdate(Batch<DraftSpi> rootBatch, InheritanceInfo inheritanceInfo) {
-        if (rootBatch.entities().isEmpty()) {
-            return EMPTY_ROW_COUNTS;
-        }
-        List<PropertyGetter> idGetters = rootBatch.shape().getIdGetters();
-        if (idGetters.isEmpty()) {
-            throw new ExecutionException(
-                    "Cannot gate downstream mutation work for joined inheritance without root id"
-            );
-        }
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        ImmutableType rootType = inheritanceInfo.getRootType();
-        PropertyGetter idGetter = idGetters.get(0);
-        PropertyGetter discriminatorGetter = discriminatorGetterForBatch(rootBatch, inheritanceInfo);
-        Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        PropertyGetter versionGetter = rootBatch.shape().getVersionGetter();
-
-        BatchSqlBuilder builder = new BatchSqlBuilder(
-                sqlClient,
-                rootBatch.entities().size() < 2 ||
-                        ctx.options.isBatchForbidden() ||
-                        sqlClient.getDialect().isBatchDumb()
-        );
-        builder.sql("update ")
-                .sql(rootType.getTableName(strategy))
-                .enter(BatchSqlBuilder.ScopeType.SET)
-                .separator()
-                .sql(idGetter)
-                .sql(" = ")
-                .sql(idGetter)
-                .leave()
-                .enter(BatchSqlBuilder.ScopeType.WHERE);
-        for (PropertyGetter getter : idGetters) {
-            builder.separator()
-                    .sql(getter)
-                    .sql(" = ")
-                    .variable(getter);
-        }
-        builder.separator()
-                .sql(discriminatorGetter)
-                .sql(" = ")
-                .variable(discriminatorGetter);
-        if (versionGetter != null) {
-            builder.separator()
-                    .sql(versionGetter)
-                    .sql(" = ")
-                    .variable(versionGetter);
-        }
-        if (userOptimisticLockPredicate != null) {
-            builder.separator();
-            AbstractExpression.renderChild(
-                    (Ast) userOptimisticLockPredicate,
-                    ExpressionPrecedences.AND,
-                    builder
-            );
-        }
-        builder.leave();
-        int[] rowCounts = executeGateAndGetRowCounts(builder, rootBatch);
-        if (versionGetter != null || userOptimisticLockPredicate != null) {
-            int index = 0;
-            for (DraftSpi row : rootBatch.entities()) {
-                if (rowCounts[index++] == 0) {
-                    ctx.throwOptimisticLockError(row);
-                }
-            }
-        }
-        return rowCounts;
-    }
-
-    private int[] executeGateAndGetRowCounts(BatchSqlBuilder builder, Batch<DraftSpi> batch) {
-        if (batch.entities().isEmpty()) {
-            return EMPTY_ROW_COUNTS;
-        }
-        JSqlClientImplementor sqlClient = builder.sqlClient();
-        Tuple3<String, BatchSqlBuilder.VariableMapper, List<Integer>> tuple = builder.build();
-        String sql = tuple.get_1();
-        BatchSqlBuilder.VariableMapper mapper = tuple.get_2();
-        if (batch.entities().size() < 2 ||
-                ctx.options.isBatchForbidden() ||
-                sqlClient.getDialect().isBatchDumb()) {
-            int[] rowCounts = new int[batch.entities().size()];
-            int index = 0;
-            for (DraftSpi draft : batch.entities()) {
-                rowCounts[index++] = sqlClient.getExecutor().execute(
-                        new Executor.Args<>(
-                                sqlClient,
-                                ctx.con,
-                                sql,
-                                mapper.variables(draft),
-                                tuple.get_3(),
-                                ExecutionPurpose.MUTATE,
-                                ctx.options.getExceptionTranslator(),
-                                null,
-                                (stmt, args) -> stmt.executeUpdate()
-                        )
-                );
-            }
-            return rowCounts;
-        }
-        try (Executor.BatchContext batchContext = sqlClient
-                .getExecutor()
-                .executeBatch(
-                        ctx.con,
-                        sql,
-                        null,
-                        ExecutionPurpose.command(QueryReason.NONE),
-                        sqlClient,
-                        ctx.options.isConstraintViolationTranslatable()
-                )
-        ) {
-            for (DraftSpi draft : batch.entities()) {
-                batchContext.add(mapper.variables(draft));
-            }
-            return batchContext.execute((ex, args) -> convertFinalException(ex, args));
-        }
-    }
-
     private int[] update(
             Map<Object, ImmutableSpi> originalIdObjMap,
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
@@ -808,7 +695,8 @@ class Operator {
             return EMPTY_ROW_COUNTS;
         }
 
-        if (ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
+        if (!forceAllRows &&
+                ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
                 ctx.options.getUnloadedVersionBehavior(shape.getType()) == UnloadedVersionBehavior.IGNORE &&
                 shape.isIdOnly()) {
             return EMPTY_ROW_COUNTS;
@@ -859,9 +747,13 @@ class Operator {
             }
             updatedGetters.add(getter);
         }
+        boolean fakeUpdate = false;
         if (updatedGetters.isEmpty() && discriminatorProp == null && nullGetters.isEmpty() && !hasOptimisticLock) {
-            fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
-            return EMPTY_ROW_COUNTS;
+            if (!forceAllRows) {
+                fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
+                return EMPTY_ROW_COUNTS;
+            }
+            fakeUpdate = true;
         }
         if (keyProps != null && !sqlClient.getDialect().isIdFetchableByKeyUpdate()) {
             fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, batch);
@@ -884,7 +776,8 @@ class Operator {
                 discriminatorGuardProp,
                 nullGetters,
                 userOptimisticLockPredicate,
-                versionGetter
+                versionGetter,
+                fakeUpdate
         );
         sqlClient.getDialect().update(updateContext);
 
@@ -1009,7 +902,8 @@ class Operator {
                 ctx.options.isSubtypeChangeAllowed(),
                 ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
                 ctx.options.isSubtypeChangeAllowed() ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
-                ignoreUpdate
+                ignoreUpdate,
+                false
         );
         return MutationRows.UNKNOWN;
     }
@@ -1035,36 +929,21 @@ class Operator {
                 ctx.options.isSubtypeChangeAllowed(),
                 ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
-                ignoreUpdate
+                ignoreUpdate,
+                !ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate
         );
         int[] acceptedRowCounts = null;
         Batch<DraftSpi> acceptanceBatch = null;
         if (ctx.options.isSubtypeChangeAllowed()) {
             deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
-        } else if (ignoreUpdate) {
+        } else {
             acceptedRowCounts = rootRowCounts;
             acceptanceBatch = rootBatch;
             batch = batchOfChangedRows(batch, rootRowCounts);
             if (batch.entities().isEmpty()) {
                 return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedRowCounts));
             }
-        } else if (ownerAcceptanceRequired) {
-            if (rootBatch.shape().getIdGetters().isEmpty()) {
-                sample = rootBatch.entities().iterator().next();
-                rootShape = Shape.of(
-                        sqlClient,
-                        rootType,
-                        sample,
-                        prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
-                );
-                rootBatch = batchOf(batch, rootShape);
-            }
-            acceptanceBatch = rootBatch;
-            acceptedRowCounts = fakeRootUpdate(rootBatch, inheritanceInfo);
-            batch = batchOfChangedRows(batch, acceptedRowCounts);
-            if (batch.entities().isEmpty()) {
-                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedRowCounts));
-            }
+            sample = batch.entities().iterator().next();
         }
         ImmutableType previousTableType = rootType;
         for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
@@ -1079,31 +958,17 @@ class Operator {
             );
             Batch<DraftSpi> childBatch = batchOf(batch, shape);
             if (ctx.options.isSubtypeChangeAllowed()) {
-                upsert(childBatch, tableType, null, false, null, Collections.emptyList(), ignoreUpdate);
+                upsert(childBatch, tableType, null, false, null, Collections.emptyList(), ignoreUpdate, false);
+            } else if (ignoreUpdate) {
+                insert(childBatch, tableType, null, true);
             } else {
-                upsertJoinedChildWithRootGuard(childBatch, tableType, rootType, inheritanceInfo, ignoreUpdate);
+                upsert(childBatch, tableType, null, false, null, Collections.emptyList(), false, false);
             }
             previousTableType = tableType;
         }
         return acceptedRowCounts != null ?
                 MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedRowCounts)) :
                 MutationRows.UNKNOWN;
-    }
-
-    private void upsertJoinedChildWithRootGuard(
-            Batch<DraftSpi> batch,
-            ImmutableType tableType,
-            ImmutableType rootType,
-            InheritanceInfo inheritanceInfo,
-            boolean ignoreUpdate
-    ) {
-        if (batch.entities().isEmpty()) {
-            return;
-        }
-        if (!ignoreUpdate) {
-            updateJoinedChildWithRootGuard(batch, tableType, rootType, inheritanceInfo);
-        }
-        insertJoinedChildIfAbsentWithRootGuard(batch, tableType, rootType, inheritanceInfo);
     }
 
     private void updateJoinedChildWithRootGuard(
@@ -1176,105 +1041,12 @@ class Operator {
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
     }
 
-    private void insertJoinedChildIfAbsentWithRootGuard(
-            Batch<DraftSpi> batch,
-            ImmutableType tableType,
-            ImmutableType rootType,
-            InheritanceInfo inheritanceInfo
-    ) {
-        if (batch.entities().isEmpty()) {
-            return;
-        }
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        Shape fullShape = Shape.fullOf(sqlClient, tableType.getJavaClass());
-        List<PropertyGetter> insertedGetters = new ArrayList<>();
-        insertedGetters.addAll(fullShape.getIdGetters());
-        for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
-            if (!getter.prop().isId()) {
-                insertedGetters.add(getter);
-            }
-        }
-        List<PropertyGetter> defaultGetters = new ArrayList<>();
-        for (PropertyGetter getter : fullShape.getColumnDefinitionGetters()) {
-            if (!getter.prop().isId() && getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
-                defaultGetters.add(getter);
-            }
-        }
-        insertedGetters.addAll(defaultGetters);
-
-        List<PropertyGetter> idGetters = fullShape.getIdGetters();
-        PropertyGetter discriminatorGetter = discriminatorGetterForBatch(batch, inheritanceInfo);
-        String rootTableName = rootType.getTableName(strategy);
-        String childTableName = tableType.getTableName(strategy);
-        String rootIdColumnName = rootType.getIdProp().<SingleColumn>getStorage(strategy).getName();
-        String childIdColumnName = tableType.getIdProp().<SingleColumn>getStorage(strategy).getName();
-        String discriminatorColumnName = inheritanceInfo
-                .getDiscriminatorProp()
-                .<SingleColumn>getStorage(strategy)
-                .getName();
-
-        BatchSqlBuilder builder = new BatchSqlBuilder(
-                sqlClient,
-                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
-        );
-        builder.sql("insert into ")
-                .sql(childTableName)
-                .enter(BatchSqlBuilder.ScopeType.TUPLE);
-        for (PropertyGetter getter : insertedGetters) {
-            builder.separator().sql(getter);
-        }
-        builder.leave()
-                .sql(" select ");
-        boolean addComma = false;
-        for (PropertyGetter getter : insertedGetters) {
-            if (addComma) {
-                builder.sql(", ");
-            } else {
-                addComma = true;
-            }
-            if (defaultGetters.contains(getter)) {
-                builder.defaultVariable(getter);
-            } else {
-                builder.variable(getter);
-            }
-        }
-        String constantTableName = sqlClient.getDialect().getConstantTableName();
-        if (constantTableName != null) {
-            builder.sql(" from ").sql(constantTableName);
-        }
-        builder.sql(" where exists(select 1 from ")
-                .sql(rootTableName)
-                .sql(" where ")
-                .sql(rootTableName)
-                .sql(".")
-                .sql(rootIdColumnName)
-                .sql(" = ");
-        for (PropertyGetter idGetter : idGetters) {
-            builder.variable(idGetter);
-        }
-        builder.sql(" and ")
-                .sql(discriminatorColumnName)
-                .sql(" = ")
-                .variable(discriminatorGetter)
-                .sql(") and not exists(select 1 from ")
-                .sql(childTableName)
-                .sql(" where ")
-                .sql(childIdColumnName)
-                .sql(" = ");
-        for (PropertyGetter idGetter : idGetters) {
-            builder.variable(idGetter);
-        }
-        builder.sql(")");
-        int rowCount = execute(builder, batch, false, false);
-        AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
-    }
-
     private PropertyGetter discriminatorGetterForBatch(Batch<DraftSpi> batch, InheritanceInfo inheritanceInfo) {
-        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
-        ImmutableProp prop = batch.shape().getType().getProps().get(discriminatorProp.getName());
         return PropertyGetter
-                .propertyGetters(ctx.options.getSqlClient(), prop != null ? prop : discriminatorProp)
+                .propertyGetters(
+                        ctx.options.getSqlClient(),
+                        inheritanceInfo.getDiscriminatorProp(batch.shape().getType())
+                )
                 .get(0);
     }
 
@@ -1285,14 +1057,17 @@ class Operator {
             boolean updateDiscriminator,
             @Nullable ImmutableProp discriminatorGuardProp,
             List<PropertyGetter> nullGetters,
-            boolean ignoreUpdate
+            boolean ignoreUpdate,
+            boolean forceMatchedUpdate
     ) {
 
         validate(batch.shape(), false);
         if (batch.entities().isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
-        if (ctx.options.isIdOnlyAsReference(ctx.path.getProp()) && batch.shape().isIdOnly()) {
+        if (!forceMatchedUpdate &&
+                ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
+                batch.shape().isIdOnly()) {
             return EMPTY_ROW_COUNTS;
         }
 
@@ -1395,7 +1170,8 @@ class Operator {
                 updatedGetters,
                 ignoreUpdate,
                 userOptimisticLockPredicate,
-                versionGetter
+                versionGetter,
+                forceMatchedUpdate
         );
         sqlClient.getDialect().upsert(upsertContext);
         int[] rowCounts = executeAndGetRowCounts(
@@ -1980,6 +1756,8 @@ class Operator {
 
         private final PropertyGetter versionGetter;
 
+        private final boolean fakeUpdate;
+
         UpdateContextImpl(
                 BatchSqlBuilder builder,
                 ImmutableType tableType,
@@ -1991,7 +1769,8 @@ class Operator {
                 @Nullable ImmutableProp discriminatorGuardProp,
                 List<PropertyGetter> nullGetters,
                 Predicate userOptimisticLockPredicate,
-                PropertyGetter versionGetter
+                PropertyGetter versionGetter,
+                boolean fakeUpdate
         ) {
             this.builder = builder;
             this.tableType = tableType;
@@ -2003,9 +1782,12 @@ class Operator {
                     PropertyGetter.propertyGetters(ctx.options.getSqlClient(), discriminatorProp).get(0) :
                     null;
             if (discriminatorGuardProp != null) {
-                ImmutableProp prop = shape.getType().getProps().get(discriminatorGuardProp.getName());
+                ImmutableProp prop = shape
+                        .getType()
+                        .getInheritanceInfo()
+                        .getDiscriminatorProp(shape.getType());
                 this.discriminatorGuardGetter = PropertyGetter
-                        .propertyGetters(ctx.options.getSqlClient(), prop != null ? prop : discriminatorGuardProp)
+                        .propertyGetters(ctx.options.getSqlClient(), prop)
                         .get(0);
             } else {
                 this.discriminatorGuardGetter = null;
@@ -2013,6 +1795,7 @@ class Operator {
             this.nullGetters = nullGetters;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
+            this.fakeUpdate = fakeUpdate;
         }
 
         @Override
@@ -2025,6 +1808,16 @@ class Operator {
         @Override
         public boolean isUpdatedByKey() {
             return shape.getIdGetters().isEmpty();
+        }
+
+        @Override
+        public boolean hasUpdatedColumns() {
+            return discriminatorGetter != null || !nullGetters.isEmpty() || !updatedGetters.isEmpty();
+        }
+
+        @Override
+        public boolean isFakeUpdateRequired() {
+            return fakeUpdate;
         }
 
         @Override
@@ -2066,16 +1859,19 @@ class Operator {
 
         @Override
         public Dialect.UpdateContext appendAssignments() {
+            boolean hasAssignment = false;
             if (discriminatorGetter != null) {
                 builder.separator()
                         .sql(discriminatorGetter)
                         .sql(" = ")
                         .variable(discriminatorGetter);
+                hasAssignment = true;
             }
             for (PropertyGetter getter : nullGetters) {
                 builder.separator()
                         .sql(getter)
                         .sql(" = null");
+                hasAssignment = true;
             }
             for (PropertyGetter getter : updatedGetters) {
                 if (getter != versionGetter) {
@@ -2083,6 +1879,7 @@ class Operator {
                             .sql(getter)
                             .sql(" = ")
                             .variable(getter);
+                    hasAssignment = true;
                 }
             }
 
@@ -2103,6 +1900,15 @@ class Operator {
                         .sql(" = ")
                         .sql(actualVersionGetter)
                         .sql(" + 1");
+                hasAssignment = true;
+            }
+            if (!hasAssignment && fakeUpdate) {
+                builder.separator()
+                        .sql(Dialect.FAKE_UPDATE_COMMENT)
+                        .sql(" ")
+                        .sql(idGetter)
+                        .sql(" = ")
+                        .sql(idGetter);
             }
             return this;
         }
@@ -2201,6 +2007,8 @@ class Operator {
 
         private final boolean updateIgnored;
 
+        private final boolean fakeUpdate;
+
         private final Predicate userOptimisticLockPredicate;
 
         private final PropertyGetter versionGetter;
@@ -2222,7 +2030,8 @@ class Operator {
                 List<PropertyGetter> updatedGetters,
                 boolean updateIgnored,
                 Predicate userOptimisticLockPredicate,
-                PropertyGetter versionGetter
+                PropertyGetter versionGetter,
+                boolean fakeUpdate
         ) {
             if (generatedIdProp != null && generatedIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                 throw new IllegalArgumentException("Generated id prop cannot be embeddable");
@@ -2255,6 +2064,7 @@ class Operator {
             this.conflictPredicate = conflictPredicate;
             this.updatedGetters = updatedGetters;
             this.updateIgnored = updateIgnored;
+            this.fakeUpdate = fakeUpdate;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
         }
@@ -2277,6 +2087,11 @@ class Operator {
         @Override
         public boolean hasGeneratedId() {
             return generatedIdGetter != null;
+        }
+
+        @Override
+        public boolean isFakeUpdateRequired() {
+            return fakeUpdate;
         }
 
         @Override
@@ -2562,6 +2377,16 @@ class Operator {
             if (generatedIdGetter != null) {
                 builder.sql(generatedIdGetter);
             }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendId() {
+            builder.sql(
+                    Shape.fullOf(builder.sqlClient(), tableType.getJavaClass())
+                            .getIdGetters()
+                            .get(0)
+            );
             return this;
         }
     }

@@ -77,25 +77,10 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    "update JOINED_ORGANIZATION " +
-                            "set TAX_CODE = ? " +
-                            "where ID = ? and exists(" +
-                            "select 1 from JOINED_CLIENT " +
-                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                    "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                            "key(ID) values(?, ?)"
                 )
-                variables("NEW-001", 300L, 300L, "ORG")
-            }
-            statement {
-                sql(
-                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                            "select ?, ? " +
-                            "where exists(" +
-                            "select 1 from JOINED_CLIENT " +
-                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
-                            "and not exists(" +
-                            "select 1 from JOINED_ORGANIZATION where ID = ?)"
-                )
-                variables(300L, "NEW-001", 300L, "ORG", 300L)
+                variables(300L, "NEW-001")
             }
             rowCount(KClient::class, 1)
             rowCount(KOrganization::class, 1)
@@ -228,18 +213,6 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 )
                 variables("GLOBEX-002", 200L, 200L, "ORG")
             }
-            statement {
-                sql(
-                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                            "select ?, ? " +
-                            "where exists(" +
-                            "select 1 from JOINED_CLIENT " +
-                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
-                            "and not exists(" +
-                            "select 1 from JOINED_ORGANIZATION where ID = ?)"
-                )
-                variables(200L, "GLOBEX-002", 200L, "ORG", 200L)
-            }
             value("[ORG, Globex+, GLOBEX-002, null, null]")
         }
     }
@@ -315,7 +288,11 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "${joinedClientRow(con, 200L)}; ${joinedOrgProjectTargetId(con, 2300L)}"
         }) {
             statement {
-                sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?")
+                sql(
+                    "update JOINED_CLIENT " +
+                        "set /* fake update to return all ids */ ID = ID " +
+                        "where ID = ? and CLIENT_TYPE = ?"
+                )
                 variables(200L, "ORG")
             }
             statement {
@@ -327,18 +304,6 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                             "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
                 )
                 variables("GLOBEX-003", 200L, 200L, "ORG")
-            }
-            statement {
-                sql(
-                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                            "select ?, ? " +
-                            "where exists(" +
-                            "select 1 from JOINED_CLIENT " +
-                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?) " +
-                            "and not exists(" +
-                            "select 1 from JOINED_ORGANIZATION where ID = ?)"
-                )
-                variables(200L, "GLOBEX-003", 200L, "ORG", 200L)
             }
             statement {
                 sql(
@@ -369,10 +334,196 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "${joinedClientRow(con, 201L)}; ${joinedOrgProjectTargetId(con, 2301L)}"
         }) {
             statement {
-                sql("update JOINED_CLIENT set ID = ID where ID = ? and CLIENT_TYPE = ?")
+                sql(
+                    "update JOINED_CLIENT " +
+                        "set /* fake update to return all ids */ ID = ID " +
+                        "where ID = ? and CLIENT_TYPE = ?"
+                )
                 variables(201L, "ORG")
             }
             value("[KPerson, Alice, null, Alice, Smith]; null")
+        }
+    }
+
+    @Test
+    fun testInsertIfAbsentSubtypeWithAcceptedPostAssociation() {
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.entities.forConnection(con).save(
+                KOrganization {
+                    id = 300L
+                    name = "New Org"
+                    taxCode = "NEW-001"
+                    projects().addBy {
+                        id = 2302L
+                        name = "Inserted project"
+                    }
+                }
+            ) {
+                setMode(SaveMode.INSERT_IF_ABSENT)
+                setAssociatedMode(KOrganization::projects, AssociatedSaveMode.APPEND)
+            }
+            "${joinedClientRow(con, 300L)}; ${joinedOrgProjectTargetId(con, 2302L)}"
+        }) {
+            statement {
+                sql(
+                    "merge into JOINED_CLIENT tb_1_ " +
+                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                        "on tb_1_.ID = tb_2_.ID " +
+                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                )
+                variables(300L, "ORG", "New Org")
+            }
+            statement {
+                sql(
+                    "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                        "values(?, ?)"
+                )
+                variables(300L, "NEW-001")
+            }
+            statement {
+                sql(
+                    "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                        "values(?, ?, ?)"
+                )
+                variables(2302L, "Inserted project", 300L)
+            }
+            value("[ORG, New Org, NEW-001, null, null]; 300")
+        }
+    }
+
+    @Test
+    fun testInsertIfAbsentSubtypeExistingSameSkipsPostAssociation() {
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.entities.forConnection(con).save(
+                KOrganization {
+                    id = 200L
+                    name = "Should not update"
+                    taxCode = "SHOULD-NOT-WRITE"
+                    projects().addBy {
+                        id = 2303L
+                        name = "Should not be saved"
+                    }
+                }
+            ) {
+                setMode(SaveMode.INSERT_IF_ABSENT)
+                setAssociatedMode(KOrganization::projects, AssociatedSaveMode.APPEND)
+            }
+            "${joinedClientRow(con, 200L)}; ${joinedOrgProjectTargetId(con, 2303L)}"
+        }) {
+            statement {
+                sql(
+                    "merge into JOINED_CLIENT tb_1_ " +
+                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                        "on tb_1_.ID = tb_2_.ID " +
+                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                )
+                variables(200L, "ORG", "Should not update")
+            }
+            value("[ORG, Globex, GLOBEX-001, null, null]; null")
+        }
+    }
+
+    @Test
+    fun testInsertIfAbsentSubtypeExistingDifferentSkipsPostAssociation() {
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.entities.forConnection(con).save(
+                KOrganization {
+                    id = 201L
+                    name = "Should not update"
+                    taxCode = "SHOULD-NOT-WRITE"
+                    projects().addBy {
+                        id = 2304L
+                        name = "Should not be saved"
+                    }
+                }
+            ) {
+                setMode(SaveMode.INSERT_IF_ABSENT)
+                setAssociatedMode(KOrganization::projects, AssociatedSaveMode.APPEND)
+            }
+            "${joinedClientRow(con, 201L)}; ${joinedOrgProjectTargetId(con, 2304L)}"
+        }) {
+            statement {
+                sql(
+                    "merge into JOINED_CLIENT tb_1_ " +
+                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                        "on tb_1_.ID = tb_2_.ID " +
+                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                )
+                variables(201L, "ORG", "Should not update")
+            }
+            value("[KPerson, Alice, null, Alice, Smith]; null")
+        }
+    }
+
+    @Test
+    fun testUpdateSubtypeBatchRoutesOnlyAcceptedRows() {
+        connectAndExpect({ con ->
+            val accepted = KOrganization {
+                id = 200L
+                taxCode = "GLOBEX-004"
+                projects().addBy {
+                    id = 2305L
+                    name = "Accepted batch project"
+                }
+            }
+            val rejected = KOrganization {
+                id = 201L
+                taxCode = "SHOULD-NOT-WRITE"
+                projects().addBy {
+                    id = 2306L
+                    name = "Rejected batch project"
+                }
+            }
+            sqlClient.entities.forConnection(con).saveEntities(
+                listOf(accepted, rejected),
+                SaveMode.UPDATE_ONLY,
+                AssociatedSaveMode.APPEND
+            )
+            "${joinedClientRow(con, 200L)}; " +
+                "${joinedClientRow(con, 201L)}; " +
+                "${joinedOrgProjectTargetId(con, 2305L)}; " +
+                "${joinedOrgProjectTargetId(con, 2306L)}"
+        }) {
+            statement {
+                sql(
+                    "update JOINED_CLIENT " +
+                        "set /* fake update to return all ids */ ID = ID " +
+                        "where ID = ? and CLIENT_TYPE = ?"
+                )
+                batchVariables(0, 200L, "ORG")
+                batchVariables(1, 201L, "ORG")
+            }
+            statement {
+                sql(
+                    "update JOINED_ORGANIZATION " +
+                        "set TAX_CODE = ? " +
+                        "where ID = ? and exists(" +
+                        "select 1 from JOINED_CLIENT " +
+                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                )
+                variables("GLOBEX-004", 200L, 200L, "ORG")
+            }
+            statement {
+                sql(
+                    "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                        "values(?, ?, ?)"
+                )
+                variables(2305L, "Accepted batch project", 200L)
+            }
+            value(
+                "[ORG, Globex, GLOBEX-004, null, null]; " +
+                    "[KPerson, Alice, null, Alice, Smith]; " +
+                    "200; null"
+            )
         }
     }
 

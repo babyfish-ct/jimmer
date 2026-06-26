@@ -222,8 +222,10 @@ public class KeyMatcherImpl implements KeyMatcher {
         public boolean isLoaded(ImmutableSpi spi) {
             for (PropId propId : propIds) {
                 ImmutableProp prop = type.getProp(propId);
-                if (!spi.__isLoaded(propId) &&
-                        (!prop.isDiscriminator() || spi.__type().getDiscriminatorValue() == null)) {
+                if (prop.isDiscriminator() && spi.__type().getDiscriminatorValue() != null) {
+                    continue;
+                }
+                if (!spi.__isLoaded(prop.getId())) {
                     return false;
                 }
             }

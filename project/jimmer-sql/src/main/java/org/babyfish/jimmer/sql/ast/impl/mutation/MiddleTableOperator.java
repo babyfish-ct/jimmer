@@ -794,6 +794,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public boolean isFakeUpdateRequired() {
+            return false;
+        }
+
+        @Override
         public boolean isUpdateIgnored() {
             return true;
         }
@@ -910,6 +915,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
         @Override
         public Dialect.UpsertContext appendGeneratedId() {
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendId() {
             return this;
         }
     }
