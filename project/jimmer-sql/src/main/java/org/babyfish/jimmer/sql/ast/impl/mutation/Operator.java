@@ -556,10 +556,13 @@ class Operator {
                     forceRootOneByOne
             );
         }
+        boolean rootRowCountsReliable = false;
         if (subtypeChangeAllowed) {
             deleteRedundantJoinedRows(batch, inheritanceInfo, acceptedSubtypeChangeRows);
         } else {
-            boolean rootRowCountsReliable = !sqlClient.getDialect().isBatchDumb() || forceRootOneByOne;
+            rootRowCountsReliable =
+                    rootRowCounts.length != 0 &&
+                            (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne);
             if (rootRowCountsReliable) {
                 batch = batchOfChangedRows(batch, rootRowCounts);
                 if (batch.entities().isEmpty()) {
@@ -595,7 +598,7 @@ class Operator {
         }
         return subtypeChangeAllowed ?
                 MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedSubtypeChangeIds)) :
-                (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne ?
+                (rootRowCountsReliable ?
                         MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts)) :
                         MutationRows.UNKNOWN);
     }
@@ -756,48 +759,6 @@ class Operator {
         }
     }
 
-    private void saveJoinedTableForUpdate(
-            Map<Object, ImmutableSpi> originalIdObjMap,
-            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
-            Batch<DraftSpi> batch,
-            ImmutableType tableType
-    ) {
-        boolean fireTrigger = ctx.trigger == null;
-        if (fireTrigger && ctx.options.getSqlClient().getDialect().isUpsertSupported()) {
-            upsert(batch, tableType, null, false, null, Collections.emptyList(), false, false);
-            return;
-        }
-        Set<Object> existingIds = findExistingIds(tableType, batch);
-        EntityList<DraftSpi> existingEntities = new EntityList<>();
-        EntityList<DraftSpi> missingEntities = new EntityList<>();
-        PropId idPropId = tableType.getIdProp().getId();
-        for (DraftSpi draft : batch.entities()) {
-            if (existingIds.contains(draft.__get(idPropId))) {
-                existingEntities.add(draft);
-            } else {
-                missingEntities.add(draft);
-            }
-        }
-        if (!existingEntities.isEmpty()) {
-            update(
-                    originalIdObjMap,
-                    originalKeyObjMap,
-                    batchOf(batch, batch.shape(), existingEntities),
-                    tableType,
-                    null,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    false,
-                    false,
-                    fireTrigger
-            );
-        }
-        if (!missingEntities.isEmpty()) {
-            insert(batchOf(batch, batch.shape(), missingEntities), tableType, null, true, fireTrigger);
-        }
-    }
-
     private void saveJoinedTableForSubtypeChange(
             Batch<DraftSpi> batch,
             ImmutableType tableType,
@@ -854,56 +815,6 @@ class Operator {
             }
         }
         return ids;
-    }
-
-    private Set<Object> findExistingIds(ImmutableType tableType, Batch<DraftSpi> batch) {
-        Set<Object> ids = new LinkedHashSet<>((batch.entities().size() * 4 + 2) / 3);
-        PropId idPropId = tableType.getIdProp().getId();
-        for (DraftSpi draft : batch.entities()) {
-            ids.add(draft.__get(idPropId));
-        }
-        if (ids.isEmpty()) {
-            return Collections.emptySet();
-        }
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .sql("select ")
-                .definition(tableType.getIdProp().getStorage(sqlClient.getMetadataStrategy()))
-                .sql(" from ")
-                .sql(tableType.getTableName(sqlClient.getMetadataStrategy()))
-                .sql(" where ");
-        ComparisonPredicates.renderIn(
-                false,
-                ValueGetter.valueGetters(sqlClient, tableType.getIdProp()),
-                ids,
-                builder
-        );
-        Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
-        Reader<?> reader = sqlClient.getReader(tableType.getIdProp());
-        return sqlClient.getExecutor().execute(
-                new Executor.Args<>(
-                        sqlClient,
-                        ctx.con,
-                        tuple.get_1(),
-                        tuple.get_2(),
-                        tuple.get_3(),
-                        ExecutionPurpose.command(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE),
-                        ctx.options.getExceptionTranslator(),
-                        null,
-                        (stmt, args) -> {
-                            Set<Object> existingIds = new LinkedHashSet<>();
-                            Reader.Context readerContext = new Reader.Context(null, sqlClient);
-                            try (ResultSet rs = stmt.executeQuery()) {
-                                while (rs.next()) {
-                                    readerContext.resetCol();
-                                    existingIds.add(reader.read(rs, readerContext));
-                                }
-                            }
-                            return existingIds;
-                        }
-                )
-        );
     }
 
     private SubtypeChangeRows resolveOldSubtypeForChange(Batch<DraftSpi> rootBatch, InheritanceInfo inheritanceInfo) {
@@ -1371,7 +1282,8 @@ class Operator {
                             missingRootBatch,
                             rootType,
                             discriminatorProp(inheritanceInfo),
-                            true
+                            true,
+                            false
                     );
                     collectIds(acceptedSubtypeChangeIds, missingRootBatch);
                 } else {

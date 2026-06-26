@@ -28,11 +28,12 @@ class JoinedInheritanceKeyMutationTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    "update JOINED_KEY_CLIENT " +
-                        "set /* fake update to return all ids */ ID = ID " +
-                        "where CLIENT_TYPE = ? and CODE = ?"
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.CODE " +
+                        "from JOINED_KEY_CLIENT tb_1_ " +
+                        "where (tb_1_.CLIENT_TYPE, tb_1_.CODE) = (?, ?) " +
+                        "and tb_1_.CLIENT_TYPE = ?"
                 )
-                variables("ORG", "same-code")
+                variables("ORG", "same-code", "ORG")
             }
             statement {
                 sql(
