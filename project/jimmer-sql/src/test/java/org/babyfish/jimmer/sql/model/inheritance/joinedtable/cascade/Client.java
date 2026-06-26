@@ -19,4 +19,7 @@ public interface Client {
     String type();
 
     String name();
+
+    @Version
+    int version();
 }

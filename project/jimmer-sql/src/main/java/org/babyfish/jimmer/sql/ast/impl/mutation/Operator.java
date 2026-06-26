@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
@@ -748,12 +749,16 @@ class Operator {
             updatedGetters.add(getter);
         }
         boolean fakeUpdate = false;
-        if (updatedGetters.isEmpty() && discriminatorProp == null && nullGetters.isEmpty() && !hasOptimisticLock) {
-            if (!forceAllRows) {
-                fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
-                return EMPTY_ROW_COUNTS;
+        if (updatedGetters.isEmpty() && discriminatorProp == null && nullGetters.isEmpty()) {
+            if (hasOptimisticLock) {
+                fakeUpdate = versionGetter == null;
+            } else {
+                if (!forceAllRows) {
+                    fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
+                    return EMPTY_ROW_COUNTS;
+                }
+                fakeUpdate = true;
             }
-            fakeUpdate = true;
         }
         if (keyProps != null && !sqlClient.getDialect().isIdFetchableByKeyUpdate()) {
             fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, batch);
@@ -1321,10 +1326,48 @@ class Operator {
         } else {
             table = ((TableProxy<?>) table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
         }
-        return userOptimisticLock.predicate(
+        Predicate predicate = userOptimisticLock.predicate(
                 (Table<Object>) table,
                 OptimisticLockValueFactoryFactories.<Object>of()
         );
+        validateUserOptimisticLockPredicate(predicate);
+        return predicate;
+    }
+
+    private void validateUserOptimisticLockPredicate(Predicate predicate) {
+        InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return;
+        }
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        ((Ast) predicate).accept(new AstVisitor(new AstContext(ctx.options.getSqlClient())) {
+
+            @Override
+            public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
+                validateRootOptimisticLockProp(rootType, prop);
+            }
+
+            @Override
+            public void visitOptimisticLockNewValue(ImmutableProp prop) {
+                validateRootOptimisticLockProp(rootType, prop);
+            }
+        });
+    }
+
+    private static void validateRootOptimisticLockProp(ImmutableType rootType, @Nullable ImmutableProp prop) {
+        if (prop == null) {
+            return;
+        }
+        ImmutableProp originalProp = prop.toOriginal();
+        if (!originalProp.getDeclaringType().isAssignableFrom(rootType)) {
+            throw new IllegalArgumentException(
+                    "User optimistic lock predicate for joined inheritance type \"" +
+                            rootType +
+                            "\" can only reference root-table properties, but \"" +
+                            prop +
+                            "\" is not declared by the inheritance root or its mapped superclasses"
+            );
+        }
     }
 
     private boolean isChanged(Set<ImmutableProp> props, ImmutableSpi oldRow, ImmutableSpi newRow) {
