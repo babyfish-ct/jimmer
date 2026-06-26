@@ -639,6 +639,205 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateSubtypeDumbBatchUsesSelfGuardedChildDml() {
+        connectAndExpect(
+                con -> {
+                    Organization accepted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setTaxCode("GLOBEX-DUMB-UPDATE");
+                    });
+                    Organization rejected = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                    });
+                    getSqlClient(it -> it.setDialect(new H2Dialect() {
+                        @Override
+                        public boolean isBatchDumb() {
+                            return true;
+                        }
+                    }))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(accepted, rejected))
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setDumbBatchAcceptable(true)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.batchVariables(0, 200L, "ORG");
+                        it.batchVariables(1, 201L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORGANIZATION " +
+                                        "set TAX_CODE = ? " +
+                                        "where ID = ? and exists(" +
+                                        "select 1 from JOINED_CLIENT " +
+                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                        );
+                        it.batchVariables(0, "GLOBEX-DUMB-UPDATE", 200L, 200L, "ORG");
+                        it.batchVariables(1, "SHOULD-NOT-WRITE", 201L, 201L, "ORG");
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-DUMB-UPDATE, null, null]; " +
+                            "[Person, Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateSubtypeDumbBatchUsesOneByOneRootAcceptanceWhenDownstreamIsLoaded() {
+        connectAndExpect(
+                con -> {
+                    Organization accepted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setTaxCode("GLOBEX-DUMB-DOWNSTREAM");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2313L);
+                            project.setName("Accepted dumb project");
+                        });
+                    });
+                    Organization rejected = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                        organization.addIntoProjects(project -> {
+                            project.setId(2314L);
+                            project.setName("Rejected dumb project");
+                        });
+                    });
+                    getSqlClient(it -> it.setDialect(new H2Dialect() {
+                        @Override
+                        public boolean isBatchDumb() {
+                            return true;
+                        }
+                    }))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(accepted, rejected))
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2313L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2314L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables(201L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORGANIZATION " +
+                                        "set TAX_CODE = ? " +
+                                        "where ID = ? and exists(" +
+                                        "select 1 from JOINED_CLIENT " +
+                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                        );
+                        it.variables("GLOBEX-DUMB-DOWNSTREAM", 200L, 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(2313L, "Accepted dumb project", 200L);
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-DUMB-DOWNSTREAM, null, null]; " +
+                            "[Person, Alice, null, Alice, Smith]; " +
+                            "200; null");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertSubtypeDumbBatchUsesOneByOneRootAcceptance() {
+        connectAndExpect(
+                con -> {
+                    Organization accepted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setName("Globex Dumb Upsert");
+                        organization.setTaxCode("GLOBEX-DUMB-UPSERT");
+                    });
+                    Organization rejected = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setName("Should not update");
+                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                    });
+                    getSqlClient(it -> it.setDialect(new H2Dialect() {
+                        @Override
+                        public boolean isBatchDumb() {
+                            return true;
+                        }
+                    }))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(accepted, rejected))
+                            .execute(con);
+                    return joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(200L, "ORG", "Globex Dumb Upsert");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(201L, "ORG", "Should not update");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.variables(200L, "GLOBEX-DUMB-UPSERT");
+                    });
+                    ctx.value("[ORG, Globex Dumb Upsert, GLOBEX-DUMB-UPSERT, null, null]; " +
+                            "[Person, Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
     public void testInsertIfAbsentSubtypeBatchRoutesOnlyInsertedRows() {
         connectAndExpect(
                 con -> {

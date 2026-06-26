@@ -401,6 +401,7 @@ class Operator {
                 ctx.options.isSubtypeChangeAllowed() ? discriminatorProp(inheritanceInfo) : null,
                 ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
                 ctx.options.isSubtypeChangeAllowed() ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
+                false,
                 false
         );
         return MutationRows.UNKNOWN;
@@ -442,6 +443,10 @@ class Operator {
                 prelockForSubtypeChange(rootBatch, inheritanceInfo) :
                 null;
         Batch<DraftSpi> acceptanceBatch = rootBatch;
+        boolean forceRootOneByOne =
+                !ctx.options.isSubtypeChangeAllowed() &&
+                        ownerAcceptanceRequired &&
+                        sqlClient.getDialect().isBatchDumb();
         int[] rootRowCounts = update(
                 originalIdObjMap,
                 originalKeyObjMap,
@@ -450,17 +455,20 @@ class Operator {
                 ctx.options.isSubtypeChangeAllowed() ? discriminatorProp(inheritanceInfo) : null,
                 ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
-                !ctx.options.isSubtypeChangeAllowed()
+                !ctx.options.isSubtypeChangeAllowed(),
+                forceRootOneByOne
         );
         if (ctx.options.isSubtypeChangeAllowed()) {
             deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
         } else {
-            batch = batchOfChangedRows(batch, rootRowCounts);
-            if (batch.entities().isEmpty()) {
-                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts));
+            boolean rootRowCountsReliable = !sqlClient.getDialect().isBatchDumb() || forceRootOneByOne;
+            if (rootRowCountsReliable) {
+                batch = batchOfChangedRows(batch, rootRowCounts);
+                if (batch.entities().isEmpty()) {
+                    return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts));
+                }
+                sample = batch.entities().iterator().next();
             }
-            rootBatch = batchOf(rootBatch, rootShape, batch.entities());
-            sample = batch.entities().iterator().next();
         }
         ImmutableType previousTableType = rootType;
         for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
@@ -484,7 +492,9 @@ class Operator {
         }
         return ctx.options.isSubtypeChangeAllowed() ?
                 MutationRows.UNKNOWN :
-                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts));
+                (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne ?
+                        MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts)) :
+                        MutationRows.UNKNOWN);
     }
 
     private void saveJoinedTableForUpdate(
@@ -517,6 +527,7 @@ class Operator {
                     null,
                     null,
                     Collections.emptyList(),
+                    false,
                     false
             );
         }
@@ -666,7 +677,8 @@ class Operator {
             @Nullable ImmutableProp discriminatorProp,
             @Nullable ImmutableProp discriminatorGuardProp,
             List<PropertyGetter> nullGetters,
-            boolean forceAllRows
+            boolean forceAllRows,
+            boolean forceOneByOne
     ) {
         Shape shape = batch.shape();
         validate(shape, false);
@@ -768,7 +780,7 @@ class Operator {
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(
                 sqlClient,
-                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+                batch.entities().size() < 2 || ctx.options.isBatchForbidden() || forceOneByOne
         );
         Dialect.UpdateContext updateContext = new UpdateContextImpl(
                 builder,
@@ -833,7 +845,8 @@ class Operator {
                 shape,
                 entities,
                 true,
-                false
+                false,
+                forceOneByOne
         );
         if (versionGetter != null || userOptimisticLockPredicate != null) {
             int index = 0;
@@ -946,7 +959,6 @@ class Operator {
                 null;
         boolean forceRootOneByOne =
                 !ctx.options.isSubtypeChangeAllowed() &&
-                        (ignoreUpdate || rootShape.getIdGetters().isEmpty()) &&
                         sqlClient.getDialect().isBatchDumb();
         int[] rootRowCounts = upsert(
                 rootBatch,
