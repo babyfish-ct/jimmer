@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProps;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.PersonDraft;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -168,6 +169,151 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
         );
         assertEvents();
         Assertions.assertEquals("[]", cacheOpRecords.toString());
+    }
+
+    @Test
+    public void testExplicitSameSubtypeUpdateFiresTriggerAndEvictsCacheOnce() {
+        cacheOpRecords.clear();
+        connectAndExpect(
+                con -> {
+                    sqlClientWithCacheOperator()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(200L);
+                                        organization.setName("Globex Explicit");
+                                        organization.setTaxCode("GLOBEX-EXPLICIT");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
+                            .execute(con);
+                    return cacheOpRecords.toString();
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "on tb_1_.ID = tb_1__sub.ID " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables("Globex Explicit", 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORGANIZATION " +
+                                        "set TAX_CODE = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("GLOBEX-EXPLICIT", 200L);
+                    });
+                    ctx.value("[Organization-200, Client-200]");
+                }
+        );
+        assertEvents(
+                "Event{" +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->newEntity={\"id\":200,\"name\":\"Globex Explicit\",\"taxCode\":\"GLOBEX-EXPLICIT\"}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->newEntity={\"id\":200,\"name\":\"Globex Explicit\",\"taxCode\":\"GLOBEX-EXPLICIT\"}, " +
+                        "--->reason=null" +
+                        "}"
+        );
+        Assertions.assertEquals("[Organization-200, Client-200]", cacheOpRecords.toString());
+    }
+
+    @Test
+    public void testExplicitDifferentSubtypeUpdateFiresTriggerAndEvictsOldAndNewSubtypeCaches() {
+        cacheOpRecords.clear();
+        connectAndExpect(
+                con -> {
+                    sqlClientWithCacheOperator()
+                            .getEntities()
+                            .saveCommand(
+                                    PersonDraft.$.produce(person -> {
+                                        person.setId(200L);
+                                        person.setName("Globex Person");
+                                        person.setFirstName("Gary");
+                                        person.setLastName("Stone");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
+                            .execute(con);
+                    return cacheOpRecords.toString();
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "on tb_1_.ID = tb_1__sub.ID " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables(200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set CLIENT_TYPE = ?, NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables("Person", "Globex Person", 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(200L, "Gary", "Stone");
+                    });
+                    ctx.value("[Organization-200, Client-200, Person-200]");
+                }
+        );
+        assertEvents(
+                "Event{" +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->newEntity={\"id\":200,\"name\":\"Globex Person\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->newEntity={\"id\":200,\"name\":\"Globex Person\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->newEntity={\"id\":200,\"name\":\"Globex Person\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
+                        "--->reason=null" +
+                        "}"
+        );
+        Assertions.assertEquals("[Organization-200, Client-200, Person-200]", cacheOpRecords.toString());
     }
 
     private JSqlClient sqlClientWithCacheOperator() {

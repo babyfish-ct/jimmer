@@ -8,6 +8,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -266,8 +267,7 @@ abstract class AbstractPreHandler implements PreHandler {
         ImmutableType type = ctx.path.getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null ||
-                inheritanceInfo.getRootType() == type ||
-                ctx.options.isSubtypeChangeAllowed()) {
+                inheritanceInfo.getRootType() == type) {
             return false;
         }
         ImmutableSpi rootRow = findRootMapByIds(queryReason).get(
@@ -347,7 +347,7 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     final QueryReason queryReason(boolean hasId, Collection<DraftSpi> drafts) {
-        if (ctx.trigger != null) {
+        if (ctx.trigger != null && !isExplicitJoinedSubtypeChange()) {
             return QueryReason.TRIGGER;
         }
         if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
@@ -467,6 +467,18 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return QueryReason.NONE;
+    }
+
+    private boolean isExplicitJoinedSubtypeChange() {
+        if (!ctx.options.isSubtypeChangeAllowed() ||
+                ctx.options.getMode() == SaveMode.INSERT_IF_ABSENT) {
+            return false;
+        }
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type;
     }
 
     private ImmutableType keyConstraintType() {
@@ -931,6 +943,9 @@ class UpdatePreHandler extends AbstractPreHandler {
                     ImmutableSpi original = idMap.get(id);
                     if (original != null) {
                         items.add(newItem(draft, original));
+                    } else if (ctx.options.isSubtypeChangeAllowed() &&
+                            isExistingDifferentSubtypeById(queryReason, draft)) {
+                        items.add(newItem(draft, null));
                     } else {
                         itr.remove();
                     }
@@ -1037,7 +1052,10 @@ class UpsertPreHandler extends AbstractPreHandler {
                     if (original == null) {
                         boolean existingDifferentSubtype = isExistingDifferentSubtypeById(queryReason, draft);
                         itr.remove();
-                        if (!existingDifferentSubtype) {
+                        if (ctx.options.isSubtypeChangeAllowed() && existingDifferentSubtype && !ignoreUpdate) {
+                            updatedList.add(draft);
+                            items.add(newItem(draft, null));
+                        } else if (!existingDifferentSubtype) {
                             insertedList.add(draft);
                             items.add(newItem(draft, null));
                         }

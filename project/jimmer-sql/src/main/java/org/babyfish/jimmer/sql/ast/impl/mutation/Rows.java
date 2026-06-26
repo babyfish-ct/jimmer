@@ -283,6 +283,29 @@ class Rows {
         });
     }
 
+    @SuppressWarnings("unchecked")
+    static List<ImmutableSpi> findRows(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType type,
+            QueryReason queryReason,
+            BiConsumer<MutableQuery, Table<?>> block
+    ) {
+        return Internal.requiresNewDraftContext(draftContext -> {
+            List<ImmutableSpi> list = Queries.createQuery(
+                    sqlClient,
+                    type,
+                    ExecutionPurpose.command(queryReason),
+                    FilterLevel.IGNORE_USER_FILTERS,
+                    (q, table) -> {
+                        block.accept(q, table);
+                        return q.select((Table<ImmutableSpi>) table);
+                    }
+            ).execute(con);
+            return draftContext.resolveList(list);
+        });
+    }
+
     private static List<ImmutableSpi> findByKeys(
             SaveContext ctx,
             QueryReason queryReason,

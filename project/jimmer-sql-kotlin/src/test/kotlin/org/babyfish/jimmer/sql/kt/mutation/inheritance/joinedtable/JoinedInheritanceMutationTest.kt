@@ -109,15 +109,16 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             joinedClientRow(con, 200L)
         }) {
             statement {
-                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update")
+                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID")
                 variables(200L)
             }
             statement {
                 sql(
-                    "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                            "key(ID) values(?, ?, ?)"
+                    "update JOINED_CLIENT " +
+                            "set CLIENT_TYPE = ?, NAME = ? " +
+                            "where ID = ? and CLIENT_TYPE = ?"
                 )
-                variables(200L, "KPerson", "Globex Person")
+                variables("KPerson", "Globex Person", 200L, "ORG")
             }
             statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
@@ -151,23 +152,19 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             joinedClientRow(con, 200L)
         }) {
             statement {
-                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update")
+                sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID")
                 variables(200L)
             }
             statement {
                 sql(
                     "update JOINED_CLIENT " +
                             "set CLIENT_TYPE = ?, NAME = ? " +
-                            "where ID = ?"
+                            "where ID = ? and CLIENT_TYPE = ?"
                 )
-                variables("KPerson", "Globex Person", 200L)
+                variables("KPerson", "Globex Person", 200L, "ORG")
             }
             statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
-                variables(200L)
-            }
-            statement {
-                sql("select ID from JOINED_PERSON where ID = ?")
                 variables(200L)
             }
             statement {
