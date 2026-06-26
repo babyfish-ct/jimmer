@@ -143,6 +143,137 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateSubtypeWithMismatchedDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(101L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(con);
+                    return clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update CLIENT " +
+                                        "set NAME = ?, TAX_CODE = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables("Should not update", "SHOULD-NOT-WRITE", 101L, "ORG");
+                    });
+                    ctx.value("[Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertSubtypeWithMismatchedDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(101L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                    })
+                            )
+                            .execute(con);
+                    return clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME, TAX_CODE = tb_2_.TAX_CODE " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
+                        );
+                        it.variables(101L, "ORG", "Should not update", "SHOULD-NOT-WRITE");
+                    });
+                    ctx.value("[Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeExistingSameDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(100L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                    })
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .execute(con);
+                    return clientRow(con, 100L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
+                        );
+                        it.variables(100L, "ORG", "Should not update", "SHOULD-NOT-WRITE");
+                    });
+                    ctx.value("[ORG, Acme, ACME-001, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentSubtypeExistingDifferentDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(101L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                    })
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .execute(con);
+                    return clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
+                        );
+                        it.variables(101L, "ORG", "Should not update", "SHOULD-NOT-WRITE");
+                    });
+                    ctx.value("[Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
     public void testUpsertSubtypeWithChangingDiscriminator() {
         connectAndExpect(
                 con -> {
