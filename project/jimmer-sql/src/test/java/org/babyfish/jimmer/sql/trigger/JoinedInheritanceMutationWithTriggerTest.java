@@ -23,6 +23,15 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
 
     private final List<String> cacheOpRecords = new ArrayList<>();
 
+    private static final String POLYMORPHIC_OLD_ROW_SQL =
+            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                    "tb_1__sub_1_.TAX_CODE, tb_1__sub_2_.FIRST_NAME, tb_1__sub_2_.LAST_NAME " +
+                    "from JOINED_CLIENT tb_1_ " +
+                    "left join JOINED_ORGANIZATION tb_1__sub_1_ " +
+                    "on tb_1__sub_1_.ID = tb_1_.ID and tb_1_.CLIENT_TYPE = ? " +
+                    "left join JOINED_PERSON tb_1__sub_2_ " +
+                    "on tb_1__sub_2_.ID = tb_1_.ID and tb_1_.CLIENT_TYPE = ? ";
+
     @Test
     public void testRejectedSubtypeUpdateDoesNotFireTriggerOrEvictCache() {
         cacheOpRecords.clear();
@@ -189,18 +198,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
-                        it.variables(200L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
-                                        "from JOINED_CLIENT tb_1_ " +
-                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
-                                        "on tb_1_.ID = tb_1__sub.ID " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
-                        );
-                        it.variables(200L, "ORG");
+                        it.sql(POLYMORPHIC_OLD_ROW_SQL + "where tb_1_.ID = ? order by tb_1_.ID");
+                        it.variables("ORG", "Person", 200L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -258,18 +257,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
-                        it.variables(200L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
-                                        "from JOINED_CLIENT tb_1_ " +
-                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
-                                        "on tb_1_.ID = tb_1__sub.ID " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
-                        );
-                        it.variables(200L, "ORG");
+                        it.sql(POLYMORPHIC_OLD_ROW_SQL + "where tb_1_.ID = ? order by tb_1_.ID");
+                        it.variables("ORG", "Person", 200L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -339,18 +328,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?) order by ID");
-                        it.variables(200L, 399L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
-                                        "from JOINED_CLIENT tb_1_ " +
-                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
-                                        "on tb_1_.ID = tb_1__sub.ID " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
-                        );
-                        it.variables(200L, "ORG");
+                        it.sql(POLYMORPHIC_OLD_ROW_SQL + "where tb_1_.ID in (?, ?) order by tb_1_.ID");
+                        it.variables("ORG", "Person", 200L, 399L);
                     });
                     ctx.statement(it -> {
                         it.sql(

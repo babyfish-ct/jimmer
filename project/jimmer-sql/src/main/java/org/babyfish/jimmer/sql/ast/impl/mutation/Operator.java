@@ -502,12 +502,17 @@ class Operator {
             );
             rootBatch = batchOf(batch, rootShape);
         }
+        Map<Object, ImmutableSpi> subtypeChangeOldRowMap =
+                subtypeChangeAllowed && ctx.trigger != null ?
+                        findSubtypeChangeOldRows(rootBatch, inheritanceInfo) :
+                        Collections.emptyMap();
         SubtypeChangeRows subtypeChangeRows = subtypeChangeAllowed ?
-                resolveOldSubtypeForChange(rootBatch, inheritanceInfo) :
+                (
+                        ctx.trigger != null ?
+                                subtypeChangeRows(subtypeChangeOldRowMap.values()) :
+                                resolveOldSubtypeForChange(rootBatch, inheritanceInfo)
+                ) :
                 null;
-        Map<Object, ImmutableSpi> subtypeChangeOldRowMap = subtypeChangeAllowed ?
-                findSubtypeChangeOldRows(subtypeChangeRows) :
-                Collections.emptyMap();
         Batch<DraftSpi> acceptanceBatch = rootBatch;
         Set<Object> subtypeChangeIds = subtypeChangeRows != null ?
                 subtypeChangeRows.ids() :
@@ -662,30 +667,48 @@ class Operator {
         }
     }
 
-    private Map<Object, ImmutableSpi> findSubtypeChangeOldRows(@Nullable SubtypeChangeRows subtypeChangeRows) {
-        if (ctx.trigger == null ||
-                subtypeChangeRows == null ||
-                subtypeChangeRows.oldTypeIdMap.isEmpty()) {
+    private Map<Object, ImmutableSpi> findSubtypeChangeOldRows(
+            Batch<DraftSpi> rootBatch,
+            InheritanceInfo inheritanceInfo
+    ) {
+        Set<Object> ids = new LinkedHashSet<>((rootBatch.entities().size() * 4 + 2) / 3);
+        PropId idPropId = inheritanceInfo.getRootType().getIdProp().getId();
+        for (DraftSpi draft : rootBatch.entities()) {
+            Object id = draft.__get(idPropId);
+            if (id != null) {
+                ids.add(id);
+            }
+        }
+        if (ids.isEmpty()) {
             return Collections.emptyMap();
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         Map<Object, ImmutableSpi> oldRowMap = new LinkedHashMap<>();
-        for (Map.Entry<ImmutableType, Set<Object>> e : subtypeChangeRows.oldTypeIdMap.entrySet()) {
-            ImmutableType oldType = e.getKey();
-            Set<Object> ids = e.getValue();
-            PropId idPropId = oldType.getIdProp().getId();
-            List<ImmutableSpi> oldRows = Rows.findRows(
-                    sqlClient,
-                    ctx.con,
-                    oldType,
-                    QueryReason.TRIGGER,
-                    (q, t) -> q.where(t.getId().in(ids))
-            );
-            for (ImmutableSpi oldRow : oldRows) {
-                oldRowMap.put(oldRow.__get(idPropId), oldRow);
-            }
+        List<ImmutableSpi> oldRows = PolymorphicEntityReadPlan.readByIds(
+                sqlClient,
+                ctx.con,
+                inheritanceInfo.getRootType(),
+                QueryReason.TRIGGER,
+                ids,
+                ctx.options.getExceptionTranslator()
+        );
+        for (ImmutableSpi oldRow : oldRows) {
+            oldRowMap.put(oldRow.__get(oldRow.__type().getIdProp().getId()), oldRow);
         }
         return oldRowMap;
+    }
+
+    private SubtypeChangeRows subtypeChangeRows(Collection<ImmutableSpi> oldRows) {
+        if (oldRows.isEmpty()) {
+            return SubtypeChangeRows.EMPTY;
+        }
+        Map<ImmutableType, Set<Object>> oldTypeIdMap = new LinkedHashMap<>();
+        for (ImmutableSpi oldRow : oldRows) {
+            oldTypeIdMap
+                    .computeIfAbsent(oldRow.__type(), it -> new LinkedHashSet<>())
+                    .add(oldRow.__get(oldRow.__type().getIdProp().getId()));
+        }
+        return new SubtypeChangeRows(oldTypeIdMap);
     }
 
     private void fireSubtypeChangeTriggers(
@@ -1249,12 +1272,17 @@ class Operator {
                     rootBatch
             );
         }
+        Map<Object, ImmutableSpi> subtypeChangeOldRowMap =
+                subtypeChangeAllowed && ctx.trigger != null ?
+                        findSubtypeChangeOldRows(rootBatch, inheritanceInfo) :
+                        Collections.emptyMap();
         SubtypeChangeRows subtypeChangeRows = subtypeChangeAllowed ?
-                resolveOldSubtypeForChange(rootBatch, inheritanceInfo) :
+                (
+                        ctx.trigger != null ?
+                                subtypeChangeRows(subtypeChangeOldRowMap.values()) :
+                                resolveOldSubtypeForChange(rootBatch, inheritanceInfo)
+                ) :
                 null;
-        Map<Object, ImmutableSpi> subtypeChangeOldRowMap = subtypeChangeAllowed ?
-                findSubtypeChangeOldRows(subtypeChangeRows) :
-                Collections.emptyMap();
         boolean forceRootOneByOne =
                 !subtypeChangeAllowed &&
                         sqlClient.getDialect().isBatchDumb();
