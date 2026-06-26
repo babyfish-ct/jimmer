@@ -109,6 +109,21 @@ public class ComplexExprTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testCoalescePrimitiveAndBoxType() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
+                    return q.select(book.edition().coalesce(0));
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select coalesce(tb_1_.EDITION, ?) from BOOK tb_1_"
+                    );
+                    ctx.variables(0);
+                }
+        );
+    }
+
+    @Test
     public void testSimpleCase() {
         executeAndExpect(
                 getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
