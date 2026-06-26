@@ -113,7 +113,9 @@ public class DatabaseValidatorTest extends AbstractTest {
                     new EntityManager(
                             org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client.class,
                             org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization.class,
-                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.Person.class
+                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.Person.class,
+                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.ClientProject.class,
+                            org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProject.class
                     ),
                     "",
                     true,

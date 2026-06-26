@@ -1287,6 +1287,12 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private void acceptMappedBy(ImmutableProp prop) {
         if (acceptedMappedBy != null) {
+            if (acceptedMappedBy.toOriginal() == prop.toOriginal()) {
+                if (!acceptedMappedBy.getDeclaringType().isEntity() && prop.getDeclaringType().isEntity()) {
+                    acceptedMappedBy = prop;
+                }
+                return;
+            }
             throw new ModelException(
                     "Both `" +
                             acceptedMappedBy +

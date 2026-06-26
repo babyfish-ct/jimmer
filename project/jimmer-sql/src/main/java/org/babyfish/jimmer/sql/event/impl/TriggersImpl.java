@@ -364,7 +364,9 @@ public class TriggersImpl implements Triggers {
         if (!event.isEvict()) {
             Set<ImmutableProp> props = new LinkedHashSet<>();
             for (ImmutableType affectedType : event.getAffectedTypes()) {
-                props.addAll(affectedType.getProps().values());
+                if (affectedType.isEntity()) {
+                    props.addAll(affectedType.getProps().values());
+                }
             }
             for (ImmutableProp prop : props) {
                 if (prop.isColumnDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
