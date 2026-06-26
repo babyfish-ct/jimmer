@@ -185,15 +185,16 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
 	                    ctx.statement(it -> {
-	                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+	                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
 	                        it.variables(200L);
 	                    });
 	                    ctx.statement(it -> {
 	                        it.sql(
-	                                "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-	                                        "key(ID) values(?, ?, ?)"
+	                                "update JOINED_CLIENT " +
+	                                        "set CLIENT_TYPE = ?, NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
                         );
-                        it.variables(200L, "Person", "Globex Person");
+                        it.variables("Person", "Globex Person", 200L, "ORG");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
@@ -232,16 +233,16 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
 	                    ctx.statement(it -> {
-	                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+	                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
 	                        it.variables(200L);
 	                    });
 	                    ctx.statement(it -> {
 	                        it.sql(
 	                                "update JOINED_CLIENT " +
 	                                        "set CLIENT_TYPE = ?, NAME = ? " +
-                                        "where ID = ?"
+                                        "where ID = ? and CLIENT_TYPE = ?"
                         );
-                        it.variables("Person", "Globex Person", 200L);
+                        it.variables("Person", "Globex Person", 200L, "ORG");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
@@ -279,16 +280,16 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
                         it.variables(200L);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
                                         "set NAME = ? " +
-                                        "where ID = ?"
+                                        "where ID = ? and CLIENT_TYPE = ?"
                         );
-                        it.variables("Globex Same", 200L);
+                        it.variables("Globex Same", 200L, "ORG");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -338,17 +339,24 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?, ?) order by ID for update");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?, ?) order by ID");
                         it.variables(200L, 201L, 399L);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
                                         "set CLIENT_TYPE = ?, NAME = ? " +
-                                        "where ID = ?"
+                                        "where ID = ? and CLIENT_TYPE = ?"
                         );
-                        it.batchVariables(0, "Person", "Globex Person Batch", 200L);
-                        it.batchVariables(1, "Person", "Alice Person Batch", 201L);
+                        it.variables("Person", "Globex Person Batch", 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables("Alice Person Batch", 201L, "Person");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
@@ -394,7 +402,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
                         it.variables(399L);
                     });
                     ctx.value("null; null");
@@ -437,17 +445,34 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?, ?) order by ID for update");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID in (?, ?, ?) order by ID");
                         it.variables(200L, 201L, 399L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
-                                        "key(ID) values(?, ?, ?)"
+                                "update JOINED_CLIENT " +
+                                        "set CLIENT_TYPE = ?, NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
                         );
-                        it.batchVariables(0, 200L, "Person", "Globex Person Upsert");
-                        it.batchVariables(1, 201L, "Person", "Alice Person Upsert");
-                        it.batchVariables(2, 399L, "Person", "Inserted Person Upsert");
+                        it.variables("Person", "Globex Person Upsert", 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables("Alice Person Upsert", 201L, "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(399L, "Person", "Inserted Person Upsert");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
@@ -915,15 +940,6 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                             joinedClientRow(con, 201L);
                 },
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
-                                        "where ID = ? and CLIENT_TYPE = ?"
-                        );
-                        it.batchVariables(0, 200L, "ORG");
-                        it.batchVariables(1, 201L, "ORG");
-                    });
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_ORGANIZATION " +

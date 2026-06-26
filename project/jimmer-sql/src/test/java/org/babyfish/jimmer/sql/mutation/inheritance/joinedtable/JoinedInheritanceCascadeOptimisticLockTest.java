@@ -107,16 +107,16 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
                         .setSubtypeChangeAllowed(true),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID for update");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID");
                         it.variables(500L);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CASCADE_CLIENT " +
                                         "set CLIENT_TYPE = ?, VERSION = VERSION + 1 " +
-                                        "where ID = ? and VERSION = ?"
+                                        "where ID = ? and VERSION = ? and CLIENT_TYPE = ?"
                         );
-                        it.variables("Person", 500L, 9);
+                        it.variables("Person", 500L, 9, "ORG");
                     });
                     ctx.throwable(it -> {
                         it.type(SaveException.OptimisticLockError.class);
@@ -146,7 +146,7 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
                         .setSubtypeChangeAllowed(true),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID for update");
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID");
                         it.variables(599L);
                     });
                     ctx.throwable(it -> {

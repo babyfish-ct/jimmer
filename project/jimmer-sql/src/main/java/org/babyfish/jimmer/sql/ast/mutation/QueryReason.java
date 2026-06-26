@@ -376,14 +376,10 @@ public enum QueryReason {
 
     /**
      * When {@code subtypeChangeAllowed} is enabled for a joined inheritance
-     * update/upsert, Jimmer locks root rows and reads their old discriminator
-     * values before changing subtype-specific rows.
-     *
-     * <p>This pessimistic path is needed until dialect-specific update/upsert
-     * returning support can provide the same old-subtype information without a
-     * separate lock query.</p>
+     * update/upsert, Jimmer reads root rows and their old discriminator values
+     * before the guarded root mutation decides which rows are accepted.
      */
-    PRELOCK_FOR_SUBTYPE_CHANGE,
+    RESOLVE_OLD_SUBTYPE_FOR_CHANGE,
 
     /**
      * <p>Saving some objects without Ids using the

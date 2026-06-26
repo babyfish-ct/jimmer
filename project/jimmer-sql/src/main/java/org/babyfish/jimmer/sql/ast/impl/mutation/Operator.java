@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
@@ -18,8 +17,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.query.LockMode;
-import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
@@ -347,6 +344,18 @@ class Operator {
         return batchOf(base, base.shape(), entities);
     }
 
+    private static Batch<DraftSpi> batchOfRowsNotIn(Batch<DraftSpi> base, Set<Object> ids) {
+        EntityList<DraftSpi> entities = new EntityList<>();
+        PropId idPropId = base.shape().getType().getIdProp().getId();
+        for (EntityCollection.Item<DraftSpi> item : base.entities().items()) {
+            Object id = item.getEntity().__get(idPropId);
+            if (id == null || !ids.contains(id)) {
+                entities.add(item.getEntity());
+            }
+        }
+        return batchOf(base, base.shape(), entities);
+    }
+
     private static EntityList<DraftSpi> acceptedOriginalEntities(Batch<DraftSpi> base, Set<Object> ids) {
         EntityList<DraftSpi> entities = new EntityList<>();
         if (ids.isEmpty()) {
@@ -484,20 +493,34 @@ class Operator {
             rootBatch = batchOf(batch, rootShape);
         }
         SubtypeChangeRows subtypeChangeRows = subtypeChangeAllowed ?
-                prelockForSubtypeChange(rootBatch, inheritanceInfo) :
+                resolveOldSubtypeForChange(rootBatch, inheritanceInfo) :
                 null;
         Batch<DraftSpi> acceptanceBatch = rootBatch;
         Set<Object> subtypeChangeIds = subtypeChangeRows != null ?
                 subtypeChangeRows.ids() :
                 Collections.emptySet();
+        Set<Object> acceptedSubtypeChangeIds = null;
+        SubtypeChangeRows acceptedSubtypeChangeRows = subtypeChangeRows;
         if (subtypeChangeAllowed) {
             if (hasMissingSubtypeChangeRow(rootBatch, subtypeChangeIds) && isOptimisticLockActive(rootShape)) {
                 throwOptimisticLockErrorForMissingSubtypeChangeRow(rootBatch, subtypeChangeIds);
             }
-            rootBatch = batchOfRows(rootBatch, subtypeChangeIds);
-            batch = batchOfRows(batch, subtypeChangeIds);
+            acceptedSubtypeChangeIds = updateRootForSubtypeChange(
+                    originalIdObjMap,
+                    originalKeyObjMap,
+                    rootBatch,
+                    rootType,
+                    batch.shape().getType(),
+                    inheritanceInfo,
+                    subtypeChangeRows
+            );
+            acceptedSubtypeChangeRows = subtypeChangeRows != null ?
+                    subtypeChangeRows.filteredBy(acceptedSubtypeChangeIds) :
+                    null;
+            rootBatch = batchOfRows(rootBatch, acceptedSubtypeChangeIds);
+            batch = batchOfRows(batch, acceptedSubtypeChangeIds);
             if (batch.entities().isEmpty()) {
-                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, subtypeChangeIds));
+                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedSubtypeChangeIds));
             }
             sample = batch.entities().iterator().next();
         }
@@ -505,21 +528,22 @@ class Operator {
                 !subtypeChangeAllowed &&
                         ownerAcceptanceRequired &&
                         sqlClient.getDialect().isBatchDumb();
-        int[] rootRowCounts = update(
-                originalIdObjMap,
-                originalKeyObjMap,
-                rootBatch,
-                rootType,
-                subtypeChangeAllowed && hasDifferentOldSubtype(subtypeChangeRows, batch.shape().getType()) ?
-                        discriminatorProp(inheritanceInfo) :
-                        null,
-                subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
-                Collections.emptyList(),
-                !subtypeChangeAllowed,
-                forceRootOneByOne
-        );
+        int[] rootRowCounts = EMPTY_ROW_COUNTS;
+        if (!subtypeChangeAllowed) {
+            rootRowCounts = update(
+                    originalIdObjMap,
+                    originalKeyObjMap,
+                    rootBatch,
+                    rootType,
+                    null,
+                    discriminatorProp(inheritanceInfo),
+                    Collections.emptyList(),
+                    ownerAcceptanceRequired,
+                    forceRootOneByOne
+            );
+        }
         if (subtypeChangeAllowed) {
-            deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
+            deleteRedundantJoinedRows(batch, inheritanceInfo, acceptedSubtypeChangeRows);
         } else {
             boolean rootRowCountsReliable = !sqlClient.getDialect().isBatchDumb() || forceRootOneByOne;
             if (rootRowCountsReliable) {
@@ -551,22 +575,58 @@ class Operator {
             previousTableType = tableType;
         }
         return subtypeChangeAllowed ?
-                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, subtypeChangeIds)) :
+                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedSubtypeChangeIds)) :
                 (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne ?
                         MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts)) :
                         MutationRows.UNKNOWN);
     }
 
-    private static boolean hasDifferentOldSubtype(@Nullable SubtypeChangeRows subtypeChangeRows, ImmutableType targetType) {
-        if (subtypeChangeRows == null) {
-            return false;
+    private Set<Object> updateRootForSubtypeChange(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> rootBatch,
+            ImmutableType rootType,
+            ImmutableType targetType,
+            InheritanceInfo inheritanceInfo,
+            @Nullable SubtypeChangeRows subtypeChangeRows
+    ) {
+        if (subtypeChangeRows == null || subtypeChangeRows.oldTypeIdMap.isEmpty()) {
+            return Collections.emptySet();
         }
-        for (ImmutableType oldType : subtypeChangeRows.oldTypeIdMap.keySet()) {
-            if (oldType != targetType) {
-                return true;
+        ImmutableProp discriminatorProp = discriminatorProp(inheritanceInfo);
+        Set<Object> acceptedIds = new LinkedHashSet<>();
+        boolean forceOneByOne = ctx.options.getSqlClient().getDialect().isBatchDumb();
+        for (Map.Entry<ImmutableType, Set<Object>> e : subtypeChangeRows.oldTypeIdMap.entrySet()) {
+            ImmutableType oldType = e.getKey();
+            Batch<DraftSpi> groupBatch = batchOfRows(rootBatch, e.getValue());
+            int[] rowCounts = update(
+                    originalIdObjMap,
+                    originalKeyObjMap,
+                    groupBatch,
+                    rootType,
+                    oldType != targetType ? discriminatorProp : null,
+                    discriminatorProp,
+                    DiscriminatorValues.of(oldType),
+                    Collections.emptyList(),
+                    true,
+                    forceOneByOne
+            );
+            collectAcceptedIds(acceptedIds, groupBatch, rowCounts);
+        }
+        return acceptedIds;
+    }
+
+    private static void collectAcceptedIds(Set<Object> output, Batch<DraftSpi> batch, int[] rowCounts) {
+        PropId idPropId = batch.shape().getType().getIdProp().getId();
+        int index = 0;
+        for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
+            if (index < rowCounts.length && rowCounts[index++] != 0) {
+                Object id = item.getEntity().__get(idPropId);
+                if (id != null) {
+                    output.add(id);
+                }
             }
         }
-        return false;
     }
 
     private boolean isOptimisticLockActive(Shape rootShape) {
@@ -685,7 +745,7 @@ class Operator {
         );
     }
 
-    private SubtypeChangeRows prelockForSubtypeChange(Batch<DraftSpi> rootBatch, InheritanceInfo inheritanceInfo) {
+    private SubtypeChangeRows resolveOldSubtypeForChange(Batch<DraftSpi> rootBatch, InheritanceInfo inheritanceInfo) {
         ImmutableType rootType = inheritanceInfo.getRootType();
         Set<Object> ids = new LinkedHashSet<>((rootBatch.entities().size() * 4 + 2) / 3);
         PropId idPropId = rootType.getIdProp().getId();
@@ -719,7 +779,6 @@ class Operator {
         );
         builder.sql(" order by ")
                 .definition(idProp.getStorage(strategy));
-        sqlClient.getDialect().renderForUpdate(builder, new ForUpdate(LockMode.UPDATE, LockWait.DEFAULT));
         Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
         Reader<?> idReader = sqlClient.getReader(idProp);
         Reader<?> discriminatorReader = sqlClient.getReader(discriminatorProp);
@@ -731,7 +790,7 @@ class Operator {
                         tuple.get_1(),
                         tuple.get_2(),
                         tuple.get_3(),
-                        ExecutionPurpose.command(QueryReason.PRELOCK_FOR_SUBTYPE_CHANGE),
+                        ExecutionPurpose.command(QueryReason.RESOLVE_OLD_SUBTYPE_FOR_CHANGE),
                         ctx.options.getExceptionTranslator(),
                         null,
                         (stmt, args) -> {
@@ -775,6 +834,32 @@ class Operator {
             ImmutableType tableType,
             @Nullable ImmutableProp discriminatorProp,
             @Nullable ImmutableProp discriminatorGuardProp,
+            List<PropertyGetter> nullGetters,
+            boolean forceAllRows,
+            boolean forceOneByOne
+    ) {
+        return update(
+                originalIdObjMap,
+                originalKeyObjMap,
+                batch,
+                tableType,
+                discriminatorProp,
+                discriminatorGuardProp,
+                null,
+                nullGetters,
+                forceAllRows,
+                forceOneByOne
+        );
+    }
+
+    private int[] update(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch,
+            ImmutableType tableType,
+            @Nullable ImmutableProp discriminatorProp,
+            @Nullable ImmutableProp discriminatorGuardProp,
+            @Nullable Object discriminatorGuardValue,
             List<PropertyGetter> nullGetters,
             boolean forceAllRows,
             boolean forceOneByOne
@@ -890,6 +975,7 @@ class Operator {
                 updatedGetters,
                 discriminatorProp,
                 discriminatorGuardProp,
+                discriminatorGuardValue,
                 nullGetters,
                 userOptimisticLockPredicate,
                 versionGetter,
@@ -1063,33 +1149,75 @@ class Operator {
             );
         }
         SubtypeChangeRows subtypeChangeRows = subtypeChangeAllowed ?
-                prelockForSubtypeChange(rootBatch, inheritanceInfo) :
+                resolveOldSubtypeForChange(rootBatch, inheritanceInfo) :
                 null;
         boolean forceRootOneByOne =
                 !subtypeChangeAllowed &&
                         sqlClient.getDialect().isBatchDumb();
-        int[] rootRowCounts = upsert(
-                rootBatch,
-                rootType,
-                discriminatorProp(inheritanceInfo),
-                subtypeChangeAllowed,
-                subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
-                Collections.emptyList(),
-                ignoreUpdate,
-                !subtypeChangeAllowed && !ignoreUpdate,
-                forceRootOneByOne
-        );
-        if (forceRootOneByOne && !ignoreUpdate && rootShape.getIdGetters().isEmpty()) {
-            rootRowCounts = fillIdsAndGetRowCounts(
-                    QueryReason.GET_ID_FOR_KEY_BASE_UPSERT,
+        int[] rootRowCounts = EMPTY_ROW_COUNTS;
+        Set<Object> acceptedSubtypeChangeIds = null;
+        SubtypeChangeRows acceptedSubtypeChangeRows = subtypeChangeRows;
+        Batch<DraftSpi> acceptanceBatch = rootBatch;
+        if (subtypeChangeAllowed) {
+            Set<Object> existingIds = subtypeChangeRows != null ?
+                    subtypeChangeRows.ids() :
+                    Collections.emptySet();
+            acceptedSubtypeChangeIds = updateRootForSubtypeChange(
                     null,
-                    rootBatch
+                    null,
+                    rootBatch,
+                    rootType,
+                    batch.shape().getType(),
+                    inheritanceInfo,
+                    subtypeChangeRows
             );
+            Batch<DraftSpi> missingRootBatch = batchOfRowsNotIn(rootBatch, existingIds);
+            if (!missingRootBatch.entities().isEmpty()) {
+                int[] insertedRowCounts = upsert(
+                        missingRootBatch,
+                        rootType,
+                        discriminatorProp(inheritanceInfo),
+                        false,
+                        null,
+                        Collections.emptyList(),
+                        true,
+                        false,
+                        sqlClient.getDialect().isBatchDumb()
+                );
+                collectAcceptedIds(acceptedSubtypeChangeIds, missingRootBatch, insertedRowCounts);
+            }
+            acceptedSubtypeChangeRows = subtypeChangeRows != null ?
+                    subtypeChangeRows.filteredBy(acceptedSubtypeChangeIds) :
+                    null;
+            rootBatch = batchOfRows(rootBatch, acceptedSubtypeChangeIds);
+            batch = batchOfRows(batch, acceptedSubtypeChangeIds);
+            if (batch.entities().isEmpty()) {
+                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedSubtypeChangeIds));
+            }
+            sample = batch.entities().iterator().next();
+        } else {
+            rootRowCounts = upsert(
+                    rootBatch,
+                    rootType,
+                    discriminatorProp(inheritanceInfo),
+                    false,
+                    discriminatorProp(inheritanceInfo),
+                    Collections.emptyList(),
+                    ignoreUpdate,
+                    !ignoreUpdate,
+                    forceRootOneByOne
+            );
+            if (forceRootOneByOne && !ignoreUpdate && rootShape.getIdGetters().isEmpty()) {
+                rootRowCounts = fillIdsAndGetRowCounts(
+                        QueryReason.GET_ID_FOR_KEY_BASE_UPSERT,
+                        null,
+                        rootBatch
+                );
+            }
         }
         int[] acceptedRowCounts = null;
-        Batch<DraftSpi> acceptanceBatch = null;
         if (subtypeChangeAllowed) {
-            deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
+            deleteRedundantJoinedRows(batch, inheritanceInfo, acceptedSubtypeChangeRows);
         } else {
             acceptedRowCounts = rootRowCounts;
             acceptanceBatch = rootBatch;
@@ -1122,7 +1250,7 @@ class Operator {
         }
         return acceptedRowCounts != null ?
                 MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedRowCounts)) :
-                MutationRows.UNKNOWN;
+                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, acceptedSubtypeChangeIds));
     }
 
     private void updateJoinedChildWithRootGuard(
@@ -1978,6 +2106,9 @@ class Operator {
         @Nullable
         private final PropertyGetter discriminatorGuardGetter;
 
+        @Nullable
+        private final Object discriminatorGuardValue;
+
         private final List<PropertyGetter> nullGetters;
 
         private final Predicate userOptimisticLockPredicate;
@@ -1995,6 +2126,7 @@ class Operator {
                 List<PropertyGetter> updatedGetters,
                 @Nullable ImmutableProp discriminatorProp,
                 @Nullable ImmutableProp discriminatorGuardProp,
+                @Nullable Object discriminatorGuardValue,
                 List<PropertyGetter> nullGetters,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter,
@@ -2020,6 +2152,7 @@ class Operator {
             } else {
                 this.discriminatorGuardGetter = null;
             }
+            this.discriminatorGuardValue = discriminatorGuardValue;
             this.nullGetters = nullGetters;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
@@ -2192,8 +2325,12 @@ class Operator {
                     (keyProps == null || !keyProps.contains(discriminatorGuardGetter.prop()))) {
                 builder.separator()
                         .sql(discriminatorGuardGetter)
-                        .sql(" = ")
-                        .variable(discriminatorGuardGetter);
+                        .sql(" = ");
+                if (discriminatorGuardValue != null) {
+                    builder.variable(row -> discriminatorGuardValue);
+                } else {
+                    builder.variable(discriminatorGuardGetter);
+                }
             }
             return this;
         }
@@ -2635,6 +2772,25 @@ class Operator {
                 ids.addAll(typeIds);
             }
             return ids;
+        }
+
+        SubtypeChangeRows filteredBy(Set<Object> ids) {
+            if (ids.isEmpty() || oldTypeIdMap.isEmpty()) {
+                return EMPTY;
+            }
+            Map<ImmutableType, Set<Object>> filteredMap = new LinkedHashMap<>();
+            for (Map.Entry<ImmutableType, Set<Object>> e : oldTypeIdMap.entrySet()) {
+                Set<Object> filteredIds = new LinkedHashSet<>();
+                for (Object id : e.getValue()) {
+                    if (ids.contains(id)) {
+                        filteredIds.add(id);
+                    }
+                }
+                if (!filteredIds.isEmpty()) {
+                    filteredMap.put(e.getKey(), filteredIds);
+                }
+            }
+            return filteredMap.isEmpty() ? EMPTY : new SubtypeChangeRows(filteredMap);
         }
     }
 
