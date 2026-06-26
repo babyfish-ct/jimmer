@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.SaveErrorCode;
 import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.OrganizationDraft;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.PersonDraft;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -77,6 +78,45 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
                                         "where ID = ? and VERSION = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(501L, 0, "ORG");
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.OptimisticLockError.class);
+                        it.detail(ex -> Assertions.assertEquals(
+                                SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
+                                ((SaveException) ex).getSaveErrorCode()
+                        ));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testRootVersionFailureStopsSubtypeChangeCleanup() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                PersonDraft.$.produce(person -> {
+                                    person.setId(500L);
+                                    person.setVersion(9);
+                                    person.setFirstName("Should");
+                                    person.setLastName("Not Write");
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setSubtypeChangeAllowed(true),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID for update");
+                        it.variables(500L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CASCADE_CLIENT " +
+                                        "set CLIENT_TYPE = ?, VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
+                        );
+                        it.variables("Person", 500L, 9);
                     });
                     ctx.throwable(it -> {
                         it.type(SaveException.OptimisticLockError.class);

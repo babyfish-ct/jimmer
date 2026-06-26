@@ -260,6 +260,78 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateSubtypeWithChangingDiscriminatorMissingSkipsChildAndPostAssociation() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(399L);
+                                        organization.setName("Missing Org");
+                                        organization.setTaxCode("MISSING-ORG");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2313L);
+                                            project.setName("Should not be saved");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setSubtypeChangeAllowed(true)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 399L) + "; " + joinedOrgProjectTargetId(con, 2313L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID for update");
+                        it.variables(399L);
+                    });
+                    ctx.value("null; null");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentIgnoresSubtypeChangeAllowed() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(201L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                        organization.addIntoProjects(project -> {
+                                            project.setId(2314L);
+                                            project.setName("Should not be saved");
+                                        });
+                                    })
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .setSubtypeChangeAllowed(true)
+                            .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
+                            .execute(con);
+                    return joinedClientRow(con, 201L) + "; " + joinedOrgProjectTargetId(con, 2314L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(201L, "ORG", "Should not update");
+                    });
+                    ctx.value("[Person, Alice, null, Alice, Smith]; null");
+                }
+        );
+    }
+
+    @Test
     public void testUpdateSubtypeWithoutChangingDiscriminator() {
         connectAndExpect(
                 con -> {

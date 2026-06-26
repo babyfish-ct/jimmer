@@ -495,7 +495,7 @@ public class Saver {
             case UPDATE_ONLY:
             case UPSERT:
             case NON_IDEMPOTENT_UPSERT:
-                return !ctx.options.isSubtypeChangeAllowed();
+                return true;
             default:
                 return false;
         }

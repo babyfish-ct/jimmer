@@ -333,6 +333,36 @@ class Operator {
         return entities;
     }
 
+    private static Batch<DraftSpi> batchOfRows(Batch<DraftSpi> base, Set<Object> ids) {
+        if (ids.isEmpty()) {
+            return batchOf(base, base.shape(), new EntityList<>());
+        }
+        EntityList<DraftSpi> entities = new EntityList<>();
+        PropId idPropId = base.shape().getType().getIdProp().getId();
+        for (EntityCollection.Item<DraftSpi> item : base.entities().items()) {
+            if (ids.contains(item.getEntity().__get(idPropId))) {
+                entities.add(item.getEntity());
+            }
+        }
+        return batchOf(base, base.shape(), entities);
+    }
+
+    private static EntityList<DraftSpi> acceptedOriginalEntities(Batch<DraftSpi> base, Set<Object> ids) {
+        EntityList<DraftSpi> entities = new EntityList<>();
+        if (ids.isEmpty()) {
+            return entities;
+        }
+        PropId idPropId = base.shape().getType().getIdProp().getId();
+        for (EntityCollection.Item<DraftSpi> item : base.entities().items()) {
+            if (ids.contains(item.getEntity().__get(idPropId))) {
+                for (DraftSpi draft : item.getOriginalEntities()) {
+                    entities.add(draft);
+                }
+            }
+        }
+        return entities;
+    }
+
     private static Batch<DraftSpi> batchOf(Batch<DraftSpi> base, Shape shape) {
         return batchOf(base, shape, base.entities());
     }
@@ -423,7 +453,21 @@ class Operator {
                 prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
         );
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
-        if (!ctx.options.isSubtypeChangeAllowed() &&
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed();
+        if (subtypeChangeAllowed && rootShape.getIdGetters().isEmpty()) {
+            fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, rootBatch);
+            if (rootBatch.entities().isEmpty()) {
+                return MutationRows.EMPTY;
+            }
+            sample = rootBatch.entities().iterator().next();
+            rootShape = Shape.of(
+                    sqlClient,
+                    rootType,
+                    sample,
+                    prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
+            );
+            rootBatch = batchOf(batch, rootShape);
+        } else if (!subtypeChangeAllowed &&
                 rootShape.getIdGetters().isEmpty() &&
                 !sqlClient.getDialect().isIdFetchableByKeyUpdate()) {
             fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, rootBatch);
@@ -439,12 +483,23 @@ class Operator {
             );
             rootBatch = batchOf(batch, rootShape);
         }
-        SubtypeChangeRows subtypeChangeRows = ctx.options.isSubtypeChangeAllowed() ?
+        SubtypeChangeRows subtypeChangeRows = subtypeChangeAllowed ?
                 prelockForSubtypeChange(rootBatch, inheritanceInfo) :
                 null;
         Batch<DraftSpi> acceptanceBatch = rootBatch;
+        Set<Object> subtypeChangeIds = subtypeChangeRows != null ?
+                subtypeChangeRows.ids() :
+                Collections.emptySet();
+        if (subtypeChangeAllowed) {
+            rootBatch = batchOfRows(rootBatch, subtypeChangeIds);
+            batch = batchOfRows(batch, subtypeChangeIds);
+            if (batch.entities().isEmpty()) {
+                return MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, subtypeChangeIds));
+            }
+            sample = batch.entities().iterator().next();
+        }
         boolean forceRootOneByOne =
-                !ctx.options.isSubtypeChangeAllowed() &&
+                !subtypeChangeAllowed &&
                         ownerAcceptanceRequired &&
                         sqlClient.getDialect().isBatchDumb();
         int[] rootRowCounts = update(
@@ -452,13 +507,13 @@ class Operator {
                 originalKeyObjMap,
                 rootBatch,
                 rootType,
-                ctx.options.isSubtypeChangeAllowed() ? discriminatorProp(inheritanceInfo) : null,
-                ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
+                subtypeChangeAllowed ? discriminatorProp(inheritanceInfo) : null,
+                subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
-                !ctx.options.isSubtypeChangeAllowed(),
+                !subtypeChangeAllowed,
                 forceRootOneByOne
         );
-        if (ctx.options.isSubtypeChangeAllowed()) {
+        if (subtypeChangeAllowed) {
             deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
         } else {
             boolean rootRowCountsReliable = !sqlClient.getDialect().isBatchDumb() || forceRootOneByOne;
@@ -483,15 +538,15 @@ class Operator {
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
             Batch<DraftSpi> childBatch = batchOf(batch, shape);
-            if (ctx.options.isSubtypeChangeAllowed()) {
+            if (subtypeChangeAllowed) {
                 saveJoinedTableForUpdate(originalIdObjMap, originalKeyObjMap, childBatch, tableType);
             } else {
                 updateJoinedChildWithRootGuard(childBatch, tableType, rootType, inheritanceInfo);
             }
             previousTableType = tableType;
         }
-        return ctx.options.isSubtypeChangeAllowed() ?
-                MutationRows.UNKNOWN :
+        return subtypeChangeAllowed ?
+                MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, subtypeChangeIds)) :
                 (!sqlClient.getDialect().isBatchDumb() || forceRootOneByOne ?
                         MutationRows.accepted(acceptedOriginalEntities(acceptanceBatch, rootRowCounts)) :
                         MutationRows.UNKNOWN);
@@ -930,13 +985,14 @@ class Operator {
                 inheritanceInfo.getRootType() != type) {
             return upsertJoined(batch, inheritanceInfo, ignoreUpdate);
         }
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate;
         upsert(
                 batch,
                 ctx.path.getType(),
                 discriminatorProp(inheritanceInfo),
-                ctx.options.isSubtypeChangeAllowed(),
-                ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
-                ctx.options.isSubtypeChangeAllowed() ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
+                subtypeChangeAllowed,
+                subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
+                subtypeChangeAllowed ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
                 ignoreUpdate,
                 false
         );
@@ -954,21 +1010,29 @@ class Operator {
                 prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
         );
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
-        SubtypeChangeRows subtypeChangeRows = ctx.options.isSubtypeChangeAllowed() ?
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate;
+        if (subtypeChangeAllowed && rootShape.getIdGetters().isEmpty()) {
+            fillIdsAndGetRowCounts(
+                    QueryReason.GET_ID_FOR_KEY_BASE_UPSERT,
+                    null,
+                    rootBatch
+            );
+        }
+        SubtypeChangeRows subtypeChangeRows = subtypeChangeAllowed ?
                 prelockForSubtypeChange(rootBatch, inheritanceInfo) :
                 null;
         boolean forceRootOneByOne =
-                !ctx.options.isSubtypeChangeAllowed() &&
+                !subtypeChangeAllowed &&
                         sqlClient.getDialect().isBatchDumb();
         int[] rootRowCounts = upsert(
                 rootBatch,
                 rootType,
                 discriminatorProp(inheritanceInfo),
-                ctx.options.isSubtypeChangeAllowed(),
-                ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
+                subtypeChangeAllowed,
+                subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
                 Collections.emptyList(),
                 ignoreUpdate,
-                !ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate,
+                !subtypeChangeAllowed && !ignoreUpdate,
                 forceRootOneByOne
         );
         if (forceRootOneByOne && !ignoreUpdate && rootShape.getIdGetters().isEmpty()) {
@@ -980,7 +1044,7 @@ class Operator {
         }
         int[] acceptedRowCounts = null;
         Batch<DraftSpi> acceptanceBatch = null;
-        if (ctx.options.isSubtypeChangeAllowed()) {
+        if (subtypeChangeAllowed) {
             deleteRedundantJoinedRows(batch, inheritanceInfo, subtypeChangeRows);
         } else {
             acceptedRowCounts = rootRowCounts;
@@ -1003,7 +1067,7 @@ class Operator {
                                     !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
             );
             Batch<DraftSpi> childBatch = batchOf(batch, shape);
-            if (ctx.options.isSubtypeChangeAllowed()) {
+            if (subtypeChangeAllowed) {
                 upsert(childBatch, tableType, null, false, null, Collections.emptyList(), ignoreUpdate, false);
             } else if (ignoreUpdate) {
                 insert(childBatch, tableType, null, true);
@@ -2519,6 +2583,14 @@ class Operator {
 
         SubtypeChangeRows(Map<ImmutableType, Set<Object>> oldTypeIdMap) {
             this.oldTypeIdMap = oldTypeIdMap;
+        }
+
+        Set<Object> ids() {
+            Set<Object> ids = new LinkedHashSet<>();
+            for (Set<Object> typeIds : oldTypeIdMap.values()) {
+                ids.addAll(typeIds);
+            }
+            return ids;
         }
     }
 
