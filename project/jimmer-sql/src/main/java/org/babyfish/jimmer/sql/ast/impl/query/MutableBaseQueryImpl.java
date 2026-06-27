@@ -26,6 +26,8 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     private StatementContext ctx;
 
+    private boolean globalFiltersApplied;
+
     public MutableBaseQueryImpl(
             JSqlClientImplementor sqlClient,
             TableLike<?> table
@@ -188,6 +190,19 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     public void resolveVirtualPredicate(AstContext ctx) {
         bindParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
+    }
+
+    public void applyGlobalFiltersOnce(AstContext astContext, List<Selection<?>> selections) {
+        if (globalFiltersApplied) {
+            return;
+        }
+        globalFiltersApplied = true;
+        applyVirtualPredicates(astContext);
+        applyGlobalFilters(
+                astContext,
+                ctx != null ? ctx.getFilterLevel() : FilterLevel.DEFAULT,
+                selections
+        );
     }
 
     @Override
