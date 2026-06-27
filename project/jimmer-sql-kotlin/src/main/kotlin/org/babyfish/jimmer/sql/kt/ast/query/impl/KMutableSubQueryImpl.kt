@@ -33,11 +33,12 @@ internal class KMutableSubQueryImpl<PP: KPropsLike, E: Any>(
         KNonNullTableExImpl(javaSubQuery.getTable())
 
     @Suppress("UNCHECKED_CAST")
-    override val parentTable: PP =
+    override val parentTable: PP by lazy {
         parentTable ?: KNonNullTableExImpl<Any>(
             javaSubQuery.parent.getTable(),
             "The parent of sub query does not support join"
         ) as PP
+    }
 
     override val where: Where by lazy {
         Where(this)
@@ -232,7 +233,7 @@ internal class KMutableSubQueryImpl<PP: KPropsLike, E: Any>(
         )
 
     override val subQueries: KSubQueries<KNonNullTableEx<E>> =
-        KSubQueriesImpl(javaSubQuery)
+        KSubQueriesImpl(javaSubQuery, table)
 
     override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
         KWildSubQueriesImpl(javaSubQuery)
