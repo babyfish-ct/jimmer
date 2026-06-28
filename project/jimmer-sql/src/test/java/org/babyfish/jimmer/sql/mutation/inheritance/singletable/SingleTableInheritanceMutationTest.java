@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.key.NaturalOrganizationDraft;
@@ -16,6 +17,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
 
@@ -46,6 +50,79 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.modified("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
                     });
                 }
+        );
+    }
+
+    @Test
+    public void testInsertAbstractRoot() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                ClientDraft.$.produce(client -> {
+                                    client.setId(300L);
+                                    client.setName("Base");
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute()
+        );
+        assertEquals(
+                "Cannot save inheritance entity type " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
+                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testUpdateAbstractRoot() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientDraft.$.produce(client -> {
+                                        client.setId(100L);
+                                        client.setName("Acme Base+");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(con);
+                    return clientRow(con, 100L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update CLIENT set NAME = ? where ID = ?");
+                        it.variables("Acme Base+", 100L);
+                    });
+                    ctx.value("[ORG, Acme Base+, ACME-001, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateAbstractRootWithSubtypeChangeAllowedIsRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                ClientDraft.$.produce(client -> {
+                                    client.setId(100L);
+                                    client.setName("Acme Base+");
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setSubtypeChangeAllowed(true)
+                        .execute()
+        );
+        assertEquals(
+                "Cannot save inheritance entity type " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
+                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                ex.getMessage()
         );
     }
 
@@ -483,6 +560,102 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testAssociatedSubtypeChangeDefaultNoOp() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientProjectDraft.$.produce(project -> {
+                                        project.setId(1000L);
+                                        project.setName("Single associated no-op");
+                                        project.setClient(
+                                                PersonDraft.$.produce(person -> {
+                                                    person.setId(100L);
+                                                    person.setName("Should not replace");
+                                                    person.setFirstName("Should");
+                                                    person.setLastName("NotReplace");
+                                                })
+                                        );
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(con);
+                    return clientRow(con, 100L) + "; " + singleClientProjectTargetId(con, 1000L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME, FIRST_NAME = tb_2_.FIRST_NAME, LAST_NAME = tb_2_.LAST_NAME " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.FIRST_NAME, tb_2_.LAST_NAME)"
+                        );
+                        it.variables(100L, "Person", "Should not replace", "Should", "NotReplace");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update SINGLE_CLIENT_PROJECT " +
+                                        "set NAME = ?, CLIENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Single associated no-op", 100L, 1000L);
+                    });
+                    ctx.value("[ORG, Acme, ACME-001, null, null]; 100");
+                }
+        );
+    }
+
+    @Test
+    public void testAssociatedSubtypeChangeAllowedByProp() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientProjectDraft.$.produce(project -> {
+                                        project.setId(1000L);
+                                        project.setName("Single associated replace");
+                                        project.setClient(
+                                                PersonDraft.$.produce(person -> {
+                                                    person.setId(100L);
+                                                    person.setName("Acme Associated Person");
+                                                    person.setFirstName("Ann");
+                                                    person.setLastName("Smith");
+                                                })
+                                        );
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setAssociatedSubtypeChangeAllowed(ClientProjectProps.CLIENT)
+                            .execute(con);
+                    return clientRow(con, 100L) + "; " + singleClientProjectTargetId(con, 1000L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME, TAX_CODE) " +
+                                        "key(ID) values(?, ?, ?, ?, ?, null)"
+                        );
+                        it.variables(100L, "Person", "Acme Associated Person", "Ann", "Smith");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update SINGLE_CLIENT_PROJECT " +
+                                        "set NAME = ?, CLIENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Single associated replace", 100L, 1000L);
+                    });
+                    ctx.value("[Person, Acme Associated Person, null, Ann, Smith]; 100");
+                }
+        );
+    }
+
+    @Test
     public void testUpdateSubtypeAssociationToSubtypeTarget() {
         executeAndExpectResult(
                 getSqlClient()
@@ -541,6 +714,68 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?");
                         it.variables(102L, "ORG");
+                    });
+                    ctx.value("null; [Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteAbstractRootExactly() {
+        connectAndExpect(
+                con -> {
+                    ExecutionException ex = assertThrows(
+                            ExecutionException.class,
+                            () -> getSqlClient()
+                                    .getEntities()
+                                    .deleteCommand(Client.class, 102L)
+                                    .setMode(DeleteMode.PHYSICAL)
+                                    .execute(con)
+                    );
+                    return ex.getMessage();
+                },
+                ctx -> ctx.value(
+                        "Cannot delete inheritance entity type " +
+                                "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
+                                "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                )
+        );
+    }
+
+    @Test
+    public void testDeleteRootPolymorphically() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Client.class, 102L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setPolymorphic()
+                            .execute(con);
+                    return clientRow(con, 102L) + "; " + clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                                        "where tb_1_.CLIENT_ID = ? limit ?"
+                        );
+                        it.variables(102L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from SINGLE_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                        );
+                        it.variables(102L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from CLIENT where ID = ? and CLIENT_TYPE in (?, ?)"
+                        );
+                        it.variables(102L, "ORG", "Person");
                     });
                     ctx.value("null; [Person, Bob, null, Bob, Brown]");
                 }

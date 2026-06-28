@@ -8,6 +8,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -126,34 +127,48 @@ public class Deleter {
         if (ids == null) {
             ids = rowMap.keySet();
         }
-        validateJoinedExplicitDelete();
+        validateInheritanceDeleteTarget();
 
-        SaveContext saveCtx = new SaveContext(
-                saveOptions(),
-                ctx.con,
-                ctx.path.getType(),
-                null,
-                ctx.trigger,
-                ctx.affectedRowCountMap
-        );
-        List<MiddleTableOperator> middleOperators = AbstractAssociationOperator.createMiddleTableOperators(
-                ctx.options.getSqlClient(),
-                ctx.path,
-                ctx.isLogicalDeleted() ? DisconnectingType.LOGICAL_DELETE : DisconnectingType.PHYSICAL_DELETE,
-                prop -> new MiddleTableOperator(saveCtx.prop(prop), ctx.isLogicalDeleted()),
-                backProp -> new MiddleTableOperator(saveCtx.backProp(backProp), ctx.isLogicalDeleted())
-        );
-        for (MiddleTableOperator middleTableOperator : middleOperators) {
-            middleTableOperator.disconnect(ids);
-        }
-        List<ChildTableOperator> subOperators = AbstractAssociationOperator.createSubOperators(
-                ctx.options.getSqlClient(),
-                ctx.path,
-                ctx.isLogicalDeleted() ? DisconnectingType.LOGICAL_DELETE : DisconnectingType.PHYSICAL_DELETE,
-                backProp -> new ChildTableOperator(ctx.backPropOf(backProp), false)
-        );
-        for (ChildTableOperator subOperator : subOperators) {
-            subOperator.disconnect(ids);
+        DisconnectingType disconnectingType = ctx.isLogicalDeleted() ?
+                DisconnectingType.LOGICAL_DELETE :
+                DisconnectingType.PHYSICAL_DELETE;
+        Set<ImmutableProp> handledMiddleProps = new HashSet<>();
+        Set<ImmutableProp> handledMiddleBackProps = new HashSet<>();
+        Set<ImmutableProp> handledChildBackProps = new HashSet<>();
+        for (DeleteContext cleanupCtx : associationCleanupContexts()) {
+            SaveContext saveCtx = new SaveContext(
+                    saveOptions(),
+                    cleanupCtx.con,
+                    cleanupCtx.path.getType(),
+                    null,
+                    cleanupCtx.trigger,
+                    cleanupCtx.affectedRowCountMap
+            );
+            List<MiddleTableOperator> middleOperators = AbstractAssociationOperator.createMiddleTableOperators(
+                    cleanupCtx.options.getSqlClient(),
+                    cleanupCtx.path,
+                    disconnectingType,
+                    prop -> handledMiddleProps.add(prop) ?
+                            new MiddleTableOperator(saveCtx.prop(prop), cleanupCtx.isLogicalDeleted()) :
+                            null,
+                    backProp -> handledMiddleBackProps.add(backProp) ?
+                            new MiddleTableOperator(saveCtx.backProp(backProp), cleanupCtx.isLogicalDeleted()) :
+                            null
+            );
+            for (MiddleTableOperator middleTableOperator : middleOperators) {
+                middleTableOperator.disconnect(ids);
+            }
+            List<ChildTableOperator> subOperators = AbstractAssociationOperator.createSubOperators(
+                    cleanupCtx.options.getSqlClient(),
+                    cleanupCtx.path,
+                    disconnectingType,
+                    backProp -> handledChildBackProps.add(backProp) ?
+                            new ChildTableOperator(cleanupCtx.backPropOf(backProp), false) :
+                            null
+            );
+            for (ChildTableOperator subOperator : subOperators) {
+                subOperator.disconnect(ids);
+            }
         }
 
         int rowCount = executeImpl(ids, rowMap, ctx.getOptions().getExceptionTranslator());
@@ -165,27 +180,57 @@ public class Deleter {
         return new DeleteResult(ctx.affectedRowCountMap);
     }
 
-    private void validateJoinedExplicitDelete() {
-        if (ctx.isLogicalDeleted()) {
-            return;
+    private List<DeleteContext> associationCleanupContexts() {
+        if (!ctx.options.isPolymorphic() || ctx.path.getParent() != null) {
+            return Collections.singletonList(ctx);
         }
+        InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return Collections.singletonList(ctx);
+        }
+        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, ctx.path.getType(), true);
+        if (deletedTypes.size() == 1 && deletedTypes.iterator().next() == ctx.path.getType()) {
+            return Collections.singletonList(ctx);
+        }
+        List<DeleteContext> contexts = new ArrayList<>(deletedTypes.size() + 1);
+        contexts.add(ctx);
+        for (ImmutableType deletedType : deletedTypes) {
+            if (deletedType != ctx.path.getType()) {
+                contexts.add(
+                        new DeleteContext(
+                                ctx.options,
+                                ctx.con,
+                                ctx.trigger,
+                                ctx.affectedRowCountMap,
+                                MutationPath.root(deletedType)
+                        )
+                );
+            }
+        }
+        return contexts;
+    }
+
+    private void validateInheritanceDeleteTarget() {
         ImmutableType type = ctx.path.getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        if (inheritanceInfo == null ||
+        if (inheritanceInfo == null) {
+            return;
+        }
+        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, ctx.options.isPolymorphic());
+        if (ctx.isLogicalDeleted() ||
                 inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
                 inheritanceInfo.getJoinedTableDeleteMode() == JoinedTableDeleteMode.DB_CASCADE) {
             return;
         }
-        ImmutableType rootType = inheritanceInfo.getRootType();
-        if (type == rootType || hasEntityDerivedTypes(type)) {
+        if (ctx.options.isPolymorphic() && (deletedTypes.size() != 1 || deletedTypes.iterator().next() != type)) {
             throw new ExecutionException(
-                    "Cannot physically delete joined inheritance rows by root/base type \"" +
+                    "Cannot physically delete joined inheritance rows polymorphically by type \"" +
                             type +
                             "\" when joinedTableDeleteMode is \"" +
                             JoinedTableDeleteMode.EXPLICIT +
-                            "\". Delete concrete subtypes, use joinedTableDeleteMode = " +
+                            "\". Delete exact concrete subtypes, use joinedTableDeleteMode = " +
                             JoinedTableDeleteMode.DB_CASCADE +
-                            ", or explicitly select/lock concrete rows and delete them as concrete subtypes."
+                            ", or explicitly select concrete rows and delete them as exact concrete subtypes."
             );
         }
     }
@@ -203,6 +248,7 @@ public class Deleter {
                 rowMap,
                 ctx.trigger,
                 ctx.isLogicalDeleted(),
+                ctx.options.isPolymorphic(),
                 exceptionTranslator
         );
     }
@@ -215,6 +261,7 @@ public class Deleter {
             Map<Object, ImmutableSpi> rowMap,
             MutationTrigger trigger,
             boolean logicalDeleted,
+            boolean polymorphic,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
@@ -230,6 +277,7 @@ public class Deleter {
                     trigger,
                     info,
                     generator != null ? generator.generate() : null,
+                    polymorphic,
                     exceptionTranslator
             );
         }
@@ -240,6 +288,7 @@ public class Deleter {
                 ids != null ? ids : rowMap.keySet(),
                 info,
                 generator != null ? generator.generate() : null,
+                polymorphic,
                 exceptionTranslator
         );
     }
@@ -253,8 +302,11 @@ public class Deleter {
             MutationTrigger trigger,
             LogicalDeletedInfo info,
             Object generatedValue,
+            boolean polymorphic,
             ExceptionTranslator<?> exceptionTranslator
     ) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, polymorphic);
         if (rowMap == null) {
             MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
                     sqlClient,
@@ -264,6 +316,7 @@ public class Deleter {
             );
             Table<ImmutableSpi> t = q.getTable();
             q.where(t.get(type.getIdProp().getName()).in(ids));
+            addDiscriminatorPredicate(q, t, inheritanceInfo, deletedTypes);
             List<ImmutableSpi> rows = q.select(t).execute(con);
             rowMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
             PropId idPropId = type.getIdProp().getId();
@@ -281,7 +334,7 @@ public class Deleter {
                 fireEvent(row, null, null, trigger);
             }
         }
-        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue, exceptionTranslator);
+        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue, polymorphic, exceptionTranslator);
     }
 
     private static int deleteWithoutTrigger(
@@ -291,17 +344,19 @@ public class Deleter {
             Collection<Object> ids,
             LogicalDeletedInfo info,
             Object generatedDeletedValue,
+            boolean polymorphic,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo != null) {
             ImmutableType rootType = inheritanceInfo.getRootType();
+            Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, polymorphic);
             if (info != null) {
                 return deleteFromSingleTable(
                         sqlClient,
                         con,
                         rootType,
-                        type,
+                        deletedTypes,
                         ids,
                         info,
                         generatedDeletedValue,
@@ -310,21 +365,15 @@ public class Deleter {
             }
             if (inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
                     inheritanceInfo.getJoinedTableDeleteMode() != JoinedTableDeleteMode.DB_CASCADE) {
-                if (type == rootType || hasEntityDerivedTypes(type)) {
-                    throw new ExecutionException(
-                            "Cannot physically delete joined inheritance rows by root/base type \"" +
-                                    type +
-                                    "\" when joinedTableDeleteMode is \"" +
-                                    JoinedTableDeleteMode.EXPLICIT +
-                                    "\". Delete concrete subtypes, use joinedTableDeleteMode = " +
-                                    JoinedTableDeleteMode.DB_CASCADE +
-                                    ", or explicitly select/lock concrete rows and delete them as concrete subtypes."
-                    );
-                }
                 deleteJoinedSubtypeTables(
                         sqlClient,
                         con,
-                        joinedSubtypeTableIdMap(rootType, type, ids, sqlClient.getMetadataStrategy()),
+                        joinedSubtypeTableIdMap(
+                                rootType,
+                                deletedTypes.iterator().next(),
+                                ids,
+                                sqlClient.getMetadataStrategy()
+                        ),
                         exceptionTranslator
                 );
             }
@@ -332,7 +381,7 @@ public class Deleter {
                     sqlClient,
                     con,
                     rootType,
-                    type,
+                    deletedTypes,
                     ids,
                     null,
                     null,
@@ -343,7 +392,7 @@ public class Deleter {
                 sqlClient,
                 con,
                 type,
-                type,
+                Collections.singleton(type),
                 ids,
                 info,
                 generatedDeletedValue,
@@ -355,7 +404,7 @@ public class Deleter {
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType tableType,
-            ImmutableType deletedType,
+            Collection<ImmutableType> deletedTypes,
             Collection<Object> ids,
             LogicalDeletedInfo info,
             Object generatedDeletedValue,
@@ -384,17 +433,8 @@ public class Deleter {
                 ids,
                 builder
         );
-        renderDiscriminatorPredicate(builder, tableType, deletedType);
+        renderDiscriminatorPredicate(builder, tableType, deletedTypes);
         return execute(sqlClient, con, builder, exceptionTranslator);
-    }
-
-    private static boolean hasEntityDerivedTypes(ImmutableType type) {
-        for (ImmutableType derivedType : type.getAllDerivedTypes()) {
-            if (derivedType.isEntity()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static void deleteJoinedSubtypeTables(
@@ -466,18 +506,15 @@ public class Deleter {
     private static void renderDiscriminatorPredicate(
             SqlBuilder builder,
             ImmutableType tableType,
-            ImmutableType deletedType
+            Collection<ImmutableType> deletedTypes
     ) {
-        if (deletedType == tableType) {
-            return;
-        }
         InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
         if (inheritanceInfo == null || inheritanceInfo.getRootType() != tableType) {
             return;
         }
         ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
         List<Object> values = new ArrayList<>();
-        for (ImmutableType type : deletedTypes(deletedType)) {
+        for (ImmutableType type : deletedTypes) {
             String value = type.getDiscriminatorValue();
             if (value != null) {
                 values.add(inheritanceInfo.discriminatorValue(value));
@@ -501,11 +538,56 @@ public class Deleter {
         }
     }
 
-    private static Collection<ImmutableType> deletedTypes(ImmutableType type) {
-        Set<ImmutableType> types = new LinkedHashSet<>();
-        types.add(type);
-        types.addAll(type.getAllDerivedTypes());
+    private static Collection<ImmutableType> deletedTypes(
+            @Nullable InheritanceInfo inheritanceInfo,
+            ImmutableType type,
+            boolean polymorphic
+    ) {
+        if (inheritanceInfo == null) {
+            return Collections.singleton(type);
+        }
+        if (!polymorphic) {
+            if (!type.isInstantiable()) {
+                throw new ExecutionException(
+                        "Cannot delete inheritance entity type \"" +
+                                type +
+                                "\" exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                );
+            }
+            return Collections.singleton(type);
+        }
+        Collection<ImmutableType> types = inheritanceInfo.getConcreteTypes(type);
+        if (types.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot delete inheritance entity type \"" +
+                            type +
+                            "\" polymorphically because it has no instantiable subtype"
+            );
+        }
         return types;
+    }
+
+    private static void addDiscriminatorPredicate(
+            MutableRootQueryImpl<Table<?>> query,
+            Table<ImmutableSpi> table,
+            @Nullable InheritanceInfo inheritanceInfo,
+            Collection<ImmutableType> deletedTypes
+    ) {
+        if (inheritanceInfo == null) {
+            return;
+        }
+        List<Object> values = new ArrayList<>();
+        for (ImmutableType type : deletedTypes) {
+            String value = type.getDiscriminatorValue();
+            if (value != null) {
+                values.add(inheritanceInfo.discriminatorValue(value));
+            }
+        }
+        if (values.isEmpty()) {
+            return;
+        }
+        PropExpression<Object> expr = table.get(inheritanceInfo.getDiscriminatorProp().getName());
+        query.where(values.size() == 1 ? expr.eq(values.get(0)) : expr.in(values));
     }
 
     private static int execute(
@@ -591,6 +673,11 @@ public class Deleter {
 
             @Override
             public boolean isSubtypeChangeAllowed() {
+                return false;
+            }
+
+            @Override
+            public boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
                 return false;
             }
 

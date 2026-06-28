@@ -201,6 +201,51 @@ public interface BatchEntitySaveCommand<E>
     BatchEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed);
 
     @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll() {
+        return setAssociatedSubtypeChangeAllowedAll(true);
+    }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedSubtypeChangeAllowed(entityType, true);
+    }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedSubtypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(
+            TypedProp.Association<?, ?> prop,
+            boolean allowed
+    ) {
+        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), allowed);
+    }
+
+    @NewChain
     BatchEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
 
     @NewChain

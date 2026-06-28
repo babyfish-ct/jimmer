@@ -202,6 +202,51 @@ public interface SimpleEntitySaveCommand<E>
     SimpleEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed);
 
     @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll() {
+        return setAssociatedSubtypeChangeAllowedAll(true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedSubtypeChangeAllowed(entityType, true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedSubtypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(
+            TypedProp.Association<?, ?> prop,
+            boolean allowed
+    ) {
+        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), allowed);
+    }
+
+    @NewChain
     SimpleEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
 
     @NewChain

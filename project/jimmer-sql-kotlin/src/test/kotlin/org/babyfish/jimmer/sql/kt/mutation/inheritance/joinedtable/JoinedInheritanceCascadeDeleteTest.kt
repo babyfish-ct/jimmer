@@ -30,12 +30,13 @@ class JoinedInheritanceCascadeDeleteTest : AbstractMutationTest() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KClient::class, 500L) {
                 setMode(DeleteMode.PHYSICAL)
+                setPolymorphic()
             }
             "${joinedClientRow(con, 500L)}; ${joinedClientRow(con, 501L)}"
         }) {
             statement {
-                sql("delete from JOINED_CASCADE_CLIENT where ID = ?")
-                variables(500L)
+                sql("delete from JOINED_CASCADE_CLIENT where ID = ? and CLIENT_TYPE in (?, ?)")
+                variables(500L, "ORG", "KPerson")
             }
             value("null; [KPerson, Cascade Alice, null, Alice, Smith]")
         }

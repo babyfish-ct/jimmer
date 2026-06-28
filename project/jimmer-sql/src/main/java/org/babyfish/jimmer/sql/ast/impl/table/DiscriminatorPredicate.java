@@ -9,18 +9,25 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.List;
+
 class DiscriminatorPredicate extends AbstractPredicate {
 
     private final TableImplementor<?> table;
 
     private final ImmutableProp prop;
 
-    private final Object value;
+    private final List<Object> values;
 
     DiscriminatorPredicate(TableImplementor<?> table, ImmutableProp prop, Object value) {
+        this(table, prop, Collections.singletonList(value));
+    }
+
+    DiscriminatorPredicate(TableImplementor<?> table, ImmutableProp prop, List<Object> values) {
         this.table = table;
         this.prop = prop;
-        this.value = value;
+        this.values = values;
     }
 
     @Override
@@ -43,7 +50,20 @@ class DiscriminatorPredicate extends AbstractPredicate {
                 null,
                 null
         );
-        sqlBuilder.sql(" = ").variable(Variables.process(value, prop, builder.getAstContext().getSqlClient()));
+        if (values.size() == 1) {
+            sqlBuilder
+                    .sql(" = ")
+                    .variable(Variables.process(values.get(0), prop, builder.getAstContext().getSqlClient()));
+        } else {
+            sqlBuilder.sql(" in ");
+            sqlBuilder.enter(SqlBuilder.ScopeType.LIST);
+            for (Object value : values) {
+                sqlBuilder
+                        .separator()
+                        .variable(Variables.process(value, prop, builder.getAstContext().getSqlClient()));
+            }
+            sqlBuilder.leave();
+        }
     }
 
     @Override

@@ -17,6 +17,8 @@ public interface DeleteOptions {
 
     DeleteMode getMode();
 
+    boolean isPolymorphic();
+
     int getMaxCommandJoinCount();
 
     DissociateAction getDissociateAction(ImmutableProp backReferenceProp);
@@ -65,6 +67,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return mode;
+    }
+
+    @Override
+    public boolean isPolymorphic() {
+        return raw.isPolymorphic();
     }
 
     @Override
@@ -126,6 +133,11 @@ class DetachOptions implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return saveOptions.getDeleteMode();
+    }
+
+    @Override
+    public boolean isPolymorphic() {
+        return false;
     }
 
     @Override

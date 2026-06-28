@@ -15,6 +15,10 @@ internal class KDeleteCommandDslImpl(
         javaCommand = javaCommand.setMode(mode)
     }
 
+    override fun setPolymorphic(polymorphic: Boolean) {
+        javaCommand = javaCommand.setPolymorphic(polymorphic)
+    }
+
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
         javaCommand = javaCommand.setDissociateAction(prop.toImmutableProp(), action)
     }

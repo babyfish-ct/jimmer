@@ -192,6 +192,8 @@ class ImmutableType(
 
     val inheritanceStrategy: InheritanceType?
 
+    val isInstantiable: Boolean
+
     val discriminatorValue: String?
 
     val declaredProperties: Map<String, ImmutableProp>
@@ -216,6 +218,7 @@ class ImmutableType(
             }
             inheritanceRoot = null
             inheritanceStrategy = null
+            isInstantiable = false
             this.discriminatorValue = null
         } else if (primarySuperType?.isEntity == true) {
             if (inheritance !== null) {
@@ -231,8 +234,19 @@ class ImmutableType(
                 )
             inheritanceRoot = root
             inheritanceStrategy = null
+            isInstantiable = determineInstantiable(inheritanceRoot)
+            if (!isInstantiable && discriminatorValue !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${DiscriminatorValue::class.java.name} can only be declared by instantiable inheritance entity types"
+                )
+            }
             this.discriminatorValue =
-                discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
+                if (isInstantiable) {
+                    discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
+                } else {
+                    null
+                }
         } else if (inheritance !== null) {
             inheritanceRoot = this
             val strategy = when (val value: Any? = inheritance["strategy"]) {
@@ -262,8 +276,19 @@ class ImmutableType(
                 )
             }
             inheritanceStrategy = strategy
+            isInstantiable = determineInstantiable(inheritanceRoot)
+            if (!isInstantiable && discriminatorValue !== null) {
+                throw MetaException(
+                    classDeclaration,
+                    "@${DiscriminatorValue::class.java.name} can only be declared by instantiable inheritance entity types"
+                )
+            }
             this.discriminatorValue =
-                discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
+                if (isInstantiable) {
+                    discriminatorValue?.get(DiscriminatorValue::value) ?: classDeclaration.simpleName.asString()
+                } else {
+                    null
+                }
         } else {
             if (discriminatorValue !== null) {
                 throw MetaException(
@@ -273,6 +298,7 @@ class ImmutableType(
             }
             inheritanceRoot = null
             inheritanceStrategy = null
+            isInstantiable = determineInstantiable(null)
             this.discriminatorValue = null
         }
 
@@ -571,6 +597,39 @@ class ImmutableType(
 
     val validationMessages: Map<ClassName, String> =
         parseValidationMessages(classDeclaration)
+
+    private fun determineInstantiable(inheritanceRoot: ImmutableType?): Boolean =
+        when (val instantiability = entityInstantiability()) {
+            EntityInstantiability.AUTO ->
+                inheritanceRoot == null || inheritanceRoot !== this
+            EntityInstantiability.ABSTRACT -> {
+                if (inheritanceRoot == null) {
+                    throw MetaException(
+                        classDeclaration,
+                        "@${Entity::class.java.name}(instantiability = ${EntityInstantiability.ABSTRACT}) " +
+                                "can only be used by inheritance entity types"
+                    )
+                }
+                false
+            }
+            EntityInstantiability.INSTANTIABLE ->
+                true
+        }
+
+    private fun entityInstantiability(): EntityInstantiability =
+        when (val value = classDeclaration
+            .annotation(Entity::class)
+            ?.arguments
+            ?.firstOrNull { it.name?.asString() == Entity::instantiability.name }
+            ?.value
+        ) {
+            null -> EntityInstantiability.AUTO
+            is KSClassDeclaration -> EntityInstantiability.valueOf(value.simpleName.asString())
+            else -> throw MetaException(
+                classDeclaration,
+                "Illegal value of @${Entity::class.java.name}.instantiability: $value"
+            )
+        }
 
     override fun toString(): String =
         classDeclaration.fullName

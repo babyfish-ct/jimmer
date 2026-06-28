@@ -3,13 +3,14 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.Nullable;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -155,12 +156,14 @@ abstract class AbstractAssociationOperator {
         List<ChildTableOperator> subOperators = null;
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
-                if (backProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
+                if (backProp.getTargetType().isAssignableFrom(path.getType()) &&
+                        backProp.isColumnDefinition() &&
+                        disconnectingType != DisconnectingType.NONE) {
                     if (subOperators == null) {
                         subOperators = new ArrayList<>();
                     }
                     ChildTableOperator subOperator = backPropCreator.apply(backProp);
-                    if (subOperator.disconnectingType != DisconnectingType.NONE) {
+                    if (subOperator != null && subOperator.disconnectingType != DisconnectingType.NONE) {
                         subOperators.add(subOperator);
                     }
                 }
@@ -182,23 +185,26 @@ abstract class AbstractAssociationOperator {
         List<MiddleTableOperator> middleTableOperators = null;
         for (ImmutableProp prop : path.getType().getProps().values()) {
             if (prop.isMiddleTableDefinition()) {
-                if (middleTableOperators == null) {
-                    middleTableOperators = new ArrayList<>();
+                    if (middleTableOperators == null) {
+                        middleTableOperators = new ArrayList<>();
+                    }
+                    MiddleTableOperator middleTableOperator = propCreator.apply(prop);
+                    if (middleTableOperator != null &&
+                            isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
+                        middleTableOperators.add(middleTableOperator);
+                    }
                 }
-                MiddleTableOperator middleTableOperator = propCreator.apply(prop);
-                if (isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
-                    middleTableOperators.add(middleTableOperator);
-                }
-            }
         }
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
-                if (backProp.isMiddleTableDefinition()) {
+                if (backProp.getTargetType().isAssignableFrom(path.getType()) &&
+                        backProp.isMiddleTableDefinition()) {
                     if (middleTableOperators == null) {
                         middleTableOperators = new ArrayList<>();
                     }
                     MiddleTableOperator middleTableOperator = backPropCreator.apply(backProp);
-                    if (isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
+                    if (middleTableOperator != null &&
+                            isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
                         middleTableOperators.add(middleTableOperator);
                     }
                 }

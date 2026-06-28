@@ -52,6 +52,11 @@ public abstract class AbstractImmutableTypeImpl implements ImmutableType {
     }
 
     @Override
+    public boolean isInstantiable() {
+        return false;
+    }
+
+    @Override
     public Set<ImmutableType> getDirectDerivedTypes() {
         return Collections.emptySet();
     }

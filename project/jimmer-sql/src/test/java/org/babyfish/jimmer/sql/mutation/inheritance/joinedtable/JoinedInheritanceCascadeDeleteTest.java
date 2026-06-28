@@ -72,13 +72,14 @@ public class JoinedInheritanceCascadeDeleteTest extends AbstractMutationTest {
                             .getEntities()
                             .deleteCommand(Client.class, 500L)
                             .setMode(DeleteMode.PHYSICAL)
+                            .setPolymorphic()
                             .execute(con);
                     return joinedClientRow(con, 500L) + "; " + joinedClientRow(con, 501L);
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("delete from JOINED_CASCADE_CLIENT where ID = ?");
-                        it.variables(500L);
+                        it.sql("delete from JOINED_CASCADE_CLIENT where ID = ? and CLIENT_TYPE in (?, ?)");
+                        it.variables(500L, "ORG", "Person");
                     });
                     ctx.value("null; [Person, Cascade Alice, null, Alice, Smith]");
                 }

@@ -191,6 +191,16 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class DeletePolymorphicCfg extends Cfg {
+
+        final boolean polymorphic;
+
+        DeletePolymorphicCfg(Cfg prev, boolean polymorphic) {
+            super(prev);
+            this.polymorphic = polymorphic;
+        }
+    }
+
     static class DumbBatchAcceptableCfg extends Cfg {
 
         final boolean acceptable;

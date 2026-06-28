@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator;
 
 import org.babyfish.jimmer.sql.*;
 
-@Entity
+@Entity(instantiability = EntityInstantiability.INSTANTIABLE)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorValue("CLIENT")
 public interface EnumClient {

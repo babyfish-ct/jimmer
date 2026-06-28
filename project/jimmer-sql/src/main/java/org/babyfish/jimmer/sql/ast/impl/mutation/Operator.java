@@ -142,7 +142,7 @@ class Operator {
         if (batch.entities().isEmpty() || (!allowIdOnly && batch.shape().isIdOnly())) {
             return;
         }
-        validate(batch.shape(), true);
+        validate(batch.shape(), true, implicitKeyProps(discriminatorProp, null));
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         PropertyGetter discriminatorGetter = discriminatorProp != null ?
@@ -192,7 +192,8 @@ class Operator {
                 conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
             } else {
                 Set<ImmutableProp> keyProps = batch.shape().keyProps(
-                        ctx.options.getKeyMatcher(tableType)
+                        ctx.options.getKeyMatcher(tableType),
+                        implicitKeyProps(discriminatorProp, null)
                 );
                 conflictProps = new ArrayList<>(keyProps);
                 LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
@@ -297,6 +298,27 @@ class Operator {
             return null;
         }
         return inheritanceInfo.getDiscriminatorProp();
+    }
+
+    private ImmutableProp discriminatorGuardProp(@Nullable InheritanceInfo inheritanceInfo, ImmutableType type) {
+        if (inheritanceInfo == null) {
+            return null;
+        }
+        if (!type.isInstantiable() && inheritanceInfo.getRootType() == type) {
+            return null;
+        }
+        return inheritanceInfo.getDiscriminatorProp();
+    }
+
+    private static Collection<ImmutableProp> implicitKeyProps(
+            @Nullable ImmutableProp discriminatorProp,
+            @Nullable ImmutableProp discriminatorGuardProp
+    ) {
+        ImmutableProp prop = discriminatorGuardProp != null ? discriminatorGuardProp : discriminatorProp;
+        if (prop != null) {
+            return Collections.singleton(prop);
+        }
+        return Collections.emptySet();
     }
 
     private static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
@@ -437,6 +459,7 @@ class Operator {
         }
         ImmutableType type = batch.shape().getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(type);
         if (inheritanceInfo != null &&
                 inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
                 inheritanceInfo.getRootType() != type) {
@@ -447,9 +470,9 @@ class Operator {
                 originalKeyObjMap,
                 batch,
                 ctx.path.getType(),
-                ctx.options.isSubtypeChangeAllowed() ? discriminatorProp(inheritanceInfo) : null,
-                ctx.options.isSubtypeChangeAllowed() ? null : discriminatorProp(inheritanceInfo),
-                ctx.options.isSubtypeChangeAllowed() ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
+                subtypeChangeAllowed ? discriminatorProp(inheritanceInfo) : null,
+                subtypeChangeAllowed ? null : discriminatorGuardProp(inheritanceInfo, type),
+                subtypeChangeAllowed ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
                 false,
                 false
         );
@@ -472,7 +495,7 @@ class Operator {
                 prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
         );
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
-        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed();
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(batch.shape().getType());
         if (subtypeChangeAllowed && rootShape.getIdGetters().isEmpty()) {
             fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, rootBatch);
             if (rootBatch.entities().isEmpty()) {
@@ -989,9 +1012,10 @@ class Operator {
             boolean fireTrigger
     ) {
         Shape shape = batch.shape();
-        validate(shape, false);
+        Collection<ImmutableProp> implicitKeyProps = implicitKeyProps(discriminatorProp, discriminatorGuardProp);
+        validate(shape, false, implicitKeyProps);
         KeyMatcher.Group group = shape.getIdGetters().isEmpty() ?
-                shape.group(ctx.options.getKeyMatcher(shape.getType())) :
+                shape.group(ctx.options.getKeyMatcher(shape.getType()), implicitKeyProps) :
                 null;
         Set<ImmutableProp> keyProps = group != null ? group.getProps() : null;
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
@@ -1017,6 +1041,7 @@ class Operator {
         }
 
         if (!forceAllRows &&
+                !hasOptimisticLock &&
                 ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
                 ctx.options.getUnloadedVersionBehavior(shape.getType()) == UnloadedVersionBehavior.IGNORE &&
                 shape.isIdOnly()) {
@@ -1239,13 +1264,13 @@ class Operator {
                 inheritanceInfo.getRootType() != type) {
             return upsertJoined(batch, inheritanceInfo, ignoreUpdate);
         }
-        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate;
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(type) && !ignoreUpdate;
         upsert(
                 batch,
                 ctx.path.getType(),
                 discriminatorProp(inheritanceInfo),
                 subtypeChangeAllowed,
-                subtypeChangeAllowed ? null : discriminatorProp(inheritanceInfo),
+                subtypeChangeAllowed ? null : discriminatorGuardProp(inheritanceInfo, type),
                 subtypeChangeAllowed ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
                 ignoreUpdate,
                 false
@@ -1264,7 +1289,7 @@ class Operator {
                 prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
         );
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
-        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed() && !ignoreUpdate;
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(batch.shape().getType()) && !ignoreUpdate;
         if (subtypeChangeAllowed && rootShape.getIdGetters().isEmpty()) {
             fillIdsAndGetRowCounts(
                     QueryReason.GET_ID_FOR_KEY_BASE_UPSERT,
@@ -1516,7 +1541,8 @@ class Operator {
             boolean forceOneByOne
     ) {
 
-        validate(batch.shape(), false);
+        Collection<ImmutableProp> implicitKeyProps = implicitKeyProps(discriminatorProp, discriminatorGuardProp);
+        validate(batch.shape(), false, implicitKeyProps);
         if (batch.entities().isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
@@ -1563,7 +1589,8 @@ class Operator {
             conflictPredicate = null;
         } else {
             Set<ImmutableProp> keyProps = batch.shape().keyProps(
-                    ctx.options.getKeyMatcher(tableType)
+                    ctx.options.getKeyMatcher(tableType),
+                    implicitKeyProps
             );
             conflictProps = new ArrayList<>(keyProps);
             LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
@@ -1722,7 +1749,14 @@ class Operator {
     }
 
     private void validate(Shape shape, boolean insertOnly) {
-        Set<ImmutableProp> keyProps = shape.keyProps(ctx.options.getKeyMatcher(shape.getType()));
+        validate(shape, insertOnly, Collections.emptySet());
+    }
+
+    private void validate(Shape shape, boolean insertOnly, Collection<ImmutableProp> implicitKeyProps) {
+        Set<ImmutableProp> keyProps = shape.keyProps(
+                ctx.options.getKeyMatcher(shape.getType()),
+                implicitKeyProps
+        );
         if (!insertOnly) {
             if (shape.isWild(keyProps)) {
                 ctx.throwNeitherIdNorKey(shape.getType(), keyProps);

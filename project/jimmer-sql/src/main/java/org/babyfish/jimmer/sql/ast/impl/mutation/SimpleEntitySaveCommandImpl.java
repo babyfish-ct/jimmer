@@ -175,6 +175,21 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, entityType, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, prop, allowed));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
         return new SimpleEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
     }
@@ -209,7 +224,8 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @Override
     public SimpleSaveResult<E> execute(Connection con, Fetcher<E> fetcher) {
-        SaveOptions options = options();
+        OptionsImpl options = options();
+        Saver.validateInstantiableSaveType(((ImmutableSpi) options.getArument()).__type(), options);
         return options.getSqlClient()
                 .getConnectionManager()
                 .execute(
@@ -222,7 +238,8 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @Override
     public <V extends View<E>> SimpleSaveResult.View<E, V> execute(Connection con, Class<V> viewType) {
-        SaveOptions options = options();
+        OptionsImpl options = options();
+        Saver.validateInstantiableSaveType(((ImmutableSpi) options.getArument()).__type(), options);
         DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
         SimpleSaveResult<E> result = options.getSqlClient()
                 .getConnectionManager()

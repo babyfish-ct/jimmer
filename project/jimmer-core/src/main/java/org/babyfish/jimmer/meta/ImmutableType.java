@@ -57,6 +57,8 @@ public interface ImmutableType {
 
     boolean isEntity();
 
+    boolean isInstantiable();
+
     boolean isMappedSuperclass();
 
     boolean isEmbeddable();

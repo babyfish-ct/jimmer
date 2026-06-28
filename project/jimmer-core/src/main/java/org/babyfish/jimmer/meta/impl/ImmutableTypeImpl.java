@@ -57,6 +57,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private final Set<ImmutableType> superTypes;
     private final ImmutableType inheritanceRoot;
     private final Inheritance declaredInheritance;
+    private final boolean instantiable;
     private InheritanceInfo declaredInheritanceInfo;
     /*
      * TODO(inheritance): Replace this lazy runtime registry with a frozen
@@ -145,9 +146,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         isMappedSupperClass = immutableAnnotation instanceof MappedSuperclass;
         isEmbeddable = immutableAnnotation instanceof Embeddable;
 
+        DiscriminatorValue discriminatorValue = javaClass.getAnnotation(DiscriminatorValue.class);
         if (isEntity) {
             Inheritance inheritance = javaClass.getAnnotation(Inheritance.class);
-            DiscriminatorValue discriminatorValue = javaClass.getAnnotation(DiscriminatorValue.class);
             if (primarySuperType != null && primarySuperType.isEntity()) {
                 if (inheritance != null) {
                     throw new ModelException(
@@ -200,6 +201,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 declaredInheritance = null;
                 declaredInheritanceInfo = null;
             }
+            instantiable = determineInstantiable(javaClass, inheritanceRoot);
+            if (!instantiable && discriminatorValue != null) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", @" +
+                                DiscriminatorValue.class.getName() +
+                                " can only be declared by instantiable inheritance entity types"
+                );
+            }
         } else {
             if (javaClass.isAnnotationPresent(Inheritance.class)) {
                 throw new ModelException(
@@ -220,6 +231,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             inheritanceRoot = null;
             declaredInheritance = null;
             declaredInheritanceInfo = null;
+            instantiable = false;
         }
 
         if (isEntity) {
@@ -254,6 +266,11 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     @Override
     public boolean isEntity() {
         return isEntity;
+    }
+
+    @Override
+    public boolean isInstantiable() {
+        return instantiable;
     }
 
     @Override
@@ -386,11 +403,36 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     @Nullable
     @Override
     public String getDiscriminatorValue() {
-        if (!isEntity || inheritanceRoot == null) {
+        if (!instantiable || inheritanceRoot == null) {
             return null;
         }
         DiscriminatorValue value = javaClass.getAnnotation(DiscriminatorValue.class);
         return value != null ? value.value() : javaClass.getSimpleName();
+    }
+
+    private static boolean determineInstantiable(Class<?> javaClass, ImmutableType inheritanceRoot) {
+        EntityInstantiability instantiability = javaClass.getAnnotation(Entity.class).instantiability();
+        switch (instantiability) {
+            case AUTO:
+                return inheritanceRoot == null || inheritanceRoot.getJavaClass() != javaClass;
+            case ABSTRACT:
+                if (inheritanceRoot == null) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", @" +
+                                    Entity.class.getName() +
+                                    "(instantiability = " +
+                                    EntityInstantiability.ABSTRACT +
+                                    ") can only be used by inheritance entity types"
+                    );
+                }
+                return false;
+            case INSTANTIABLE:
+                return true;
+            default:
+                throw new AssertionError("Internal bug: unexpected instantiability \"" + instantiability + "\"");
+        }
     }
 
     private void collectAllSuperTypes(Set<ImmutableType> allSuperTypes) {

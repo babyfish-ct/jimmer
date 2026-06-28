@@ -169,6 +169,26 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setSubtypeChangeAllowed(allowed)
     }
 
+    override fun setAssociatedSubtypeChangeAllowedAll(allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowedAll(allowed)
+    }
+
+    override fun <E : Any> setAssociatedSubtypeChangeAllowed(entityType: KClass<E>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(entityType.java, allowed)
+    }
+
+    override fun setAssociatedSubtypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(prop.toImmutableProp(), allowed)
+    }
+
+    override fun setAssociatedSubtypeChangeAllowed(prop: ImmutableProp, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(prop, allowed)
+    }
+
+    override fun setAssociatedSubtypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(prop, allowed)
+    }
+
     override fun setDumbBatchAcceptable(acceptable: Boolean) {
         javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
     }

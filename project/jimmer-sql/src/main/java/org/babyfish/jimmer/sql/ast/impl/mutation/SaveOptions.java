@@ -39,6 +39,12 @@ public interface SaveOptions {
 
     boolean isSubtypeChangeAllowed();
 
+    default boolean isSubtypeChangeAllowed(ImmutableType type) {
+        return isSubtypeChangeAllowed();
+    }
+
+    boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType);
+
     boolean isPessimisticLocked(ImmutableType type);
 
     UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type);
@@ -75,6 +81,10 @@ public interface SaveOptions {
         }
         return new SaveOptionsWithSqlClient(this, sqlClient);
     }
+
+    default SaveOptions withAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
+        return new SaveOptionsWithAssociatedSubtypeChangeAllowed(this, prop);
+    }
 }
 
 abstract class AbstractSaveOptionsWrapper implements SaveOptions {
@@ -82,7 +92,7 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     private final SaveOptions raw;
 
     AbstractSaveOptionsWrapper(SaveOptions raw) {
-        this.raw = unwrap(raw);
+        this.raw = raw;
     }
 
     @Override
@@ -128,6 +138,16 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isSubtypeChangeAllowed() {
         return raw.isSubtypeChangeAllowed();
+    }
+
+    @Override
+    public boolean isSubtypeChangeAllowed(ImmutableType type) {
+        return raw.isSubtypeChangeAllowed(type);
+    }
+
+    @Override
+    public boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+        return raw.isAssociatedSubtypeChangeAllowed(prop, targetType);
     }
 
     @Override
@@ -201,13 +221,6 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
         return raw.isDissociationLogicalDeleteEnabled();
     }
 
-    private static SaveOptions unwrap(SaveOptions options) {
-        if (options instanceof AbstractSaveOptionsWrapper) {
-            return unwrap(((AbstractSaveOptionsWrapper)options).raw);
-        }
-        return options;
-    }
-
     @Override
     public String toString() {
         return "SaveOptionsProxy";
@@ -241,5 +254,25 @@ class SaveOptionsWithSqlClient extends AbstractSaveOptionsWrapper {
     @Override
     public JSqlClientImplementor getSqlClient() {
         return sqlClient;
+    }
+}
+
+class SaveOptionsWithAssociatedSubtypeChangeAllowed extends AbstractSaveOptionsWrapper {
+
+    private final ImmutableProp prop;
+
+    SaveOptionsWithAssociatedSubtypeChangeAllowed(SaveOptions raw, ImmutableProp prop) {
+        super(raw);
+        this.prop = prop;
+    }
+
+    @Override
+    public boolean isSubtypeChangeAllowed() {
+        return super.isAssociatedSubtypeChangeAllowed(prop, prop.getTargetType());
+    }
+
+    @Override
+    public boolean isSubtypeChangeAllowed(ImmutableType type) {
+        return super.isAssociatedSubtypeChangeAllowed(prop, type);
     }
 }

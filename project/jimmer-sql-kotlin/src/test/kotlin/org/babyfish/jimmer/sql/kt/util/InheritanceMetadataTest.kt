@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KPerson
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class InheritanceMetadataTest {
@@ -28,16 +29,15 @@ class InheritanceMetadataTest {
         assertEquals("type", info.discriminatorProp.name)
         assertEquals("CLIENT_TYPE", info.discriminatorProp.getAnnotation(Column::class.java).name)
 
-        assertEquals("KClient", clientType.discriminatorValue)
+        assertNull(clientType.discriminatorValue)
         assertEquals("ORG", organizationType.discriminatorValue)
         assertEquals("KPerson", personType.discriminatorValue)
         assertEquals(
-            "[KClient, KOrganization, KPerson]",
+            "[KOrganization, KPerson]",
             info.concreteTypes.map { it.javaClass.simpleName }.toString()
         )
         assertEquals(
-            "{KClient=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient, " +
-                    "ORG=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization, " +
+            "{ORG=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization, " +
                     "KPerson=org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KPerson}",
             info.discriminatorTypeMap.toString()
         )

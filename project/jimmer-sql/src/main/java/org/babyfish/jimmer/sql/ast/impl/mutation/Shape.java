@@ -158,15 +158,24 @@ class Shape {
     }
 
     public KeyMatcher.Group group(KeyMatcher keyMatcher) {
+        return group(keyMatcher, Collections.emptySet());
+    }
+
+    public KeyMatcher.Group group(KeyMatcher keyMatcher, Collection<ImmutableProp> implicitProps) {
         List<ImmutableProp> props = new ArrayList<>(getters.size());
         for (PropertyGetter getter : getters) {
             props.add(getter.prop());
         }
+        props.addAll(implicitProps);
         return keyMatcher.match(props);
     }
 
     public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher) {
-        KeyMatcher.Group group = group(keyMatcher);
+        return keyProps(keyMatcher, Collections.emptySet());
+    }
+
+    public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher, Collection<ImmutableProp> implicitProps) {
+        KeyMatcher.Group group = group(keyMatcher, implicitProps);
         if (group == null) {
             return Collections.emptySet();
         }

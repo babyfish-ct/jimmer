@@ -15,6 +15,14 @@ public interface DeleteCommand extends Executable<DeleteResult> {
     DeleteCommand setMode(DeleteMode mode);
 
     @NewChain
+    default DeleteCommand setPolymorphic() {
+        return setPolymorphic(true);
+    }
+
+    @NewChain
+    DeleteCommand setPolymorphic(boolean polymorphic);
+
+    @NewChain
     DeleteCommand setMaxCommandJoinCount(int count);
 
     @NewChain

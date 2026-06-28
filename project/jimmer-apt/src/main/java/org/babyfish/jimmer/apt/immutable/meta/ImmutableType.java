@@ -44,6 +44,8 @@ public class ImmutableType implements BaseType {
 
     private final Inheritance inheritance;
 
+    private final boolean instantiable;
+
     private final String discriminatorValue;
 
     private final Map<String, ImmutableProp> declaredProps;
@@ -207,6 +209,7 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = null;
             this.inheritance = null;
+            this.instantiable = false;
             this.discriminatorValue = null;
         } else if (this.primarySuperType != null && this.primarySuperType.isEntity) {
             if (inheritance != null) {
@@ -226,9 +229,18 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = root;
             this.inheritance = null;
-            this.discriminatorValue = discriminatorValue != null ?
-                    discriminatorValue.value() :
-                    typeElement.getSimpleName().toString();
+            this.instantiable = determineInstantiable();
+            if (!instantiable && discriminatorValue != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + DiscriminatorValue.class.getName() + " can only be declared by instantiable inheritance entity types"
+                );
+            }
+            this.discriminatorValue = instantiable ?
+                    discriminatorValue != null ?
+                            discriminatorValue.value() :
+                            typeElement.getSimpleName().toString() :
+                    null;
         } else if (inheritance != null) {
             if (inheritance.strategy() != InheritanceType.JOINED &&
                     inheritance.joinedTableDeleteMode() != JoinedTableDeleteMode.EXPLICIT) {
@@ -245,9 +257,18 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = this;
             this.inheritance = inheritance;
-            this.discriminatorValue = discriminatorValue != null ?
-                    discriminatorValue.value() :
-                    typeElement.getSimpleName().toString();
+            this.instantiable = determineInstantiable();
+            if (!instantiable && discriminatorValue != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + DiscriminatorValue.class.getName() + " can only be declared by instantiable inheritance entity types"
+                );
+            }
+            this.discriminatorValue = instantiable ?
+                    discriminatorValue != null ?
+                            discriminatorValue.value() :
+                            typeElement.getSimpleName().toString() :
+                    null;
         } else {
             if (discriminatorValue != null) {
                 throw new MetaException(
@@ -257,6 +278,7 @@ public class ImmutableType implements BaseType {
             }
             this.inheritanceRoot = null;
             this.inheritance = null;
+            this.instantiable = determineInstantiable();
             this.discriminatorValue = null;
         }
 
@@ -648,6 +670,10 @@ public class ImmutableType implements BaseType {
         return isEntity;
     }
 
+    public boolean isInstantiable() {
+        return instantiable;
+    }
+
     public boolean isMappedSuperClass() {
         return isMappedSuperClass;
     }
@@ -697,6 +723,30 @@ public class ImmutableType implements BaseType {
 
     public String getDiscriminatorValue() {
         return discriminatorValue;
+    }
+
+    private boolean determineInstantiable() {
+        EntityInstantiability instantiability = typeElement.getAnnotation(Entity.class).instantiability();
+        switch (instantiability) {
+            case AUTO:
+                return inheritanceRoot == null || inheritanceRoot != this;
+            case ABSTRACT:
+                if (inheritanceRoot == null) {
+                    throw new MetaException(
+                            typeElement,
+                            "@" +
+                                    Entity.class.getName() +
+                                    "(instantiability = " +
+                                    EntityInstantiability.ABSTRACT +
+                                    ") can only be used by inheritance entity types"
+                    );
+                }
+                return false;
+            case INSTANTIABLE:
+                return true;
+            default:
+                throw new AssertionError("Internal bug: unexpected instantiability \"" + instantiability + "\"");
+        }
     }
 
     public Map<String, ImmutableProp> getDeclaredProps() {

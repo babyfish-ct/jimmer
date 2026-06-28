@@ -189,6 +189,21 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, entityType, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, prop, allowed));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
         return new BatchEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
     }
@@ -240,6 +255,7 @@ public class BatchEntitySaveCommandImpl<E>
         if (entities.isEmpty()) {
             return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
+        Saver.validateInstantiableSaveType(ImmutableType.get(entities.iterator().next().getClass()), options);
         return options
                 .getSqlClient()
                 .getConnectionManager()
@@ -260,6 +276,7 @@ public class BatchEntitySaveCommandImpl<E>
                     Collections.emptyList()
             ).toView(metadata.getConverter());
         }
+        Saver.validateInstantiableSaveType(ImmutableType.get(entities.iterator().next().getClass()), options);
         BatchSaveResult<E> result = options
                 .getSqlClient()
                 .getConnectionManager()

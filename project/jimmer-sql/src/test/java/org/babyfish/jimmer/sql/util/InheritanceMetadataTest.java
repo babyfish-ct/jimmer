@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class InheritanceMetadataTest {
@@ -32,11 +33,11 @@ public class InheritanceMetadataTest {
         assertEquals("type", info.getDiscriminatorProp().getName());
         assertEquals("CLIENT_TYPE", info.getDiscriminatorProp().getAnnotation(Column.class).name());
 
-        assertEquals("Client", clientType.getDiscriminatorValue());
+        assertNull(clientType.getDiscriminatorValue());
         assertEquals("ORG", organizationType.getDiscriminatorValue());
         assertEquals("Person", personType.getDiscriminatorValue());
         assertEquals(
-                "[Client, Organization, Person]",
+                "[Organization, Person]",
                 info
                         .getConcreteTypes()
                         .stream()
@@ -45,8 +46,7 @@ public class InheritanceMetadataTest {
                         .toString()
         );
         assertEquals(
-                "{Client=org.babyfish.jimmer.sql.model.inheritance.singletable.Client, " +
-                        "ORG=org.babyfish.jimmer.sql.model.inheritance.singletable.Organization, " +
+                "{ORG=org.babyfish.jimmer.sql.model.inheritance.singletable.Organization, " +
                         "Person=org.babyfish.jimmer.sql.model.inheritance.singletable.Person}",
                 info.getDiscriminatorTypeMap().toString()
         );

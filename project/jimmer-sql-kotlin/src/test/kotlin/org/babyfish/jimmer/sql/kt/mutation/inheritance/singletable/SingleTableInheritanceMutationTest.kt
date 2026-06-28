@@ -4,15 +4,15 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
+import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.key.KNaturalOrganization
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganizationProject
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KPerson
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.*
 import java.sql.Connection
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class SingleTableInheritanceMutationTest : AbstractMutationTest() {
 
@@ -42,6 +42,68 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 modified("""{"id":300,"name":"New Org","taxCode":"NEW-001"}""")
             }
         }
+    }
+
+    @Test
+    fun testInsertAbstractRoot() {
+        val ex = assertFailsWith<IllegalArgumentException> {
+            sqlClient.entities.saveCommand(
+                KClient {
+                    id = 300L
+                    name = "Base"
+                }
+            ) {
+                setMode(SaveMode.INSERT_ONLY)
+            }.execute()
+        }
+        assertEquals(
+            "Cannot save inheritance entity type " +
+                "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
+                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+            ex.message
+        )
+    }
+
+    @Test
+    fun testUpdateAbstractRoot() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClient {
+                    id = 100L
+                    name = "Acme Base+"
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+            clientRow(con, 100L)
+        }) {
+            statement {
+                sql("update CLIENT set NAME = ? where ID = ?")
+                variables("Acme Base+", 100L)
+            }
+            value("[ORG, Acme Base+, ACME-001, null, null]")
+        }
+    }
+
+    @Test
+    fun testUpdateAbstractRootWithSubtypeChangeAllowedIsRejected() {
+        val ex = assertFailsWith<IllegalArgumentException> {
+            sqlClient.entities.saveCommand(
+                KClient {
+                    id = 100L
+                    name = "Acme Base+"
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setSubtypeChangeAllowed()
+            }.execute()
+        }
+        assertEquals(
+            "Cannot save inheritance entity type " +
+                "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
+                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+            ex.message
+        )
     }
 
     @Test
@@ -302,6 +364,57 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql("delete from CLIENT where ID = ? and CLIENT_TYPE = ?")
                 variables(102L, "ORG")
+            }
+            value("null; [KPerson, Bob, null, Bob, Brown]")
+        }
+    }
+
+    @Test
+    fun testDeleteAbstractRootExactly() {
+        connectAndExpect({ con ->
+            val ex = assertFailsWith<ExecutionException> {
+                sqlClient.entities.forConnection(con).delete(KClient::class, 102L) {
+                    setMode(DeleteMode.PHYSICAL)
+                }
+            }
+            ex.message
+        }) {
+            value(
+                "Cannot delete inheritance entity type " +
+                    "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
+                    "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+            )
+        }
+    }
+
+    @Test
+    fun testDeleteRootPolymorphically() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).delete(KClient::class, 102L) {
+                setMode(DeleteMode.PHYSICAL)
+                setPolymorphic()
+            }
+            "${clientRow(con, 102L)}; ${clientRow(con, 101L)}"
+        }) {
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                        "where tb_1_.CLIENT_ID = ? limit ?"
+                )
+                variables(102L, 1)
+            }
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                        "from SINGLE_ORG_PROJECT tb_1_ " +
+                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                )
+                variables(102L, 1)
+            }
+            statement {
+                sql("delete from CLIENT where ID = ? and CLIENT_TYPE in (?, ?)")
+                variables(102L, "ORG", "KPerson")
             }
             value("null; [KPerson, Bob, null, Bob, Brown]")
         }

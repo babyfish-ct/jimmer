@@ -124,6 +124,40 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateAbstractRootWithUserOptimisticLock() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientDraft.$.produce(client -> {
+                                        client.setId(200L);
+                                        client.setName("Globex Base+");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setOptimisticLock(
+                                    ClientTable.class,
+                                    (table, it) -> table.name().eq("Globex")
+                            )
+                            .execute(con);
+                    return joinedClientRow(con, 200L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set NAME = ? " +
+                                        "where ID = ? and NAME = ?"
+                        );
+                        it.variables("Globex Base+", 200L, "Globex");
+                    });
+                    ctx.value("[ORG, Globex Base+, GLOBEX-001, null, null]");
+                }
+        );
+    }
+
+    @Test
     public void testUpsertSubtype() {
         executeAndExpectResult(
                 getSqlClient()
@@ -598,6 +632,118 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.rowCount(AffectedTable.of(ClientProject.class), 1);
                     ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testAssociatedSubtypeChangeDefaultNoOp() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientProjectDraft.$.produce(project -> {
+                                        project.setId(2000L);
+                                        project.setName("Joined associated no-op");
+                                        project.setClient(
+                                                PersonDraft.$.produce(person -> {
+                                                    person.setId(200L);
+                                                    person.setName("Should not replace");
+                                                    person.setFirstName("Should");
+                                                    person.setLastName("NotReplace");
+                                                })
+                                        );
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) + "; " + joinedClientProjectTargetId(con, 2000L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(200L, "Person", "Should not replace");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT_PROJECT " +
+                                        "set NAME = ?, CLIENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Joined associated no-op", 200L, 2000L);
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-001, null, null]; 200");
+                }
+        );
+    }
+
+    @Test
+    public void testAssociatedSubtypeChangeAllowedByClass() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientProjectDraft.$.produce(project -> {
+                                        project.setId(2000L);
+                                        project.setName("Joined associated replace");
+                                        project.setClient(
+                                                PersonDraft.$.produce(person -> {
+                                                    person.setId(200L);
+                                                    person.setName("Globex Associated Person");
+                                                    person.setFirstName("Gary");
+                                                    person.setLastName("Stone");
+                                                })
+                                        );
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setAssociatedSubtypeChangeAllowed(Client.class)
+                            .execute(con);
+                    return joinedClientRow(con, 200L) + "; " + joinedClientProjectTargetId(con, 2000L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select ID, CLIENT_TYPE from JOINED_CLIENT where ID = ? order by ID");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT " +
+                                        "set CLIENT_TYPE = ?, NAME = ? " +
+                                        "where ID = ? and CLIENT_TYPE = ?"
+                        );
+                        it.variables("Person", "Globex Associated Person", 200L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
+                                        "key(ID) values(?, ?, ?)"
+                        );
+                        it.variables(200L, "Gary", "Stone");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT_PROJECT " +
+                                        "set NAME = ?, CLIENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Joined associated replace", 200L, 2000L);
+                    });
+                    ctx.value("[Person, Globex Associated Person, null, Gary, Stone]; 200");
                 }
         );
     }
@@ -1433,13 +1579,38 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
 	                },
 	                ctx -> {
 	                    ctx.value(
-	                            "Cannot physically delete joined inheritance rows by root/base type " +
+	                            "Cannot delete inheritance entity type " +
 	                                    "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client\" " +
-	                                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete concrete subtypes, " +
-	                                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select/lock concrete rows " +
-	                                    "and delete them as concrete subtypes."
+	                                    "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
 	                    );
 	                }
 	        );
+    }
+
+    @Test
+    public void testDeleteRootPolymorphically() {
+        connectAndExpect(
+                con -> {
+                    ExecutionException ex = assertThrows(
+                            ExecutionException.class,
+                            () -> getSqlClient()
+                                    .getEntities()
+                                    .deleteCommand(Client.class, 200L)
+                                    .setMode(DeleteMode.PHYSICAL)
+                                    .setPolymorphic()
+                                    .execute(con)
+                    );
+                    return ex.getMessage();
+                },
+                ctx -> {
+                    ctx.value(
+                            "Cannot physically delete joined inheritance rows polymorphically by type " +
+                                    "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client\" " +
+                                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete exact concrete subtypes, " +
+                                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select concrete rows " +
+                                    "and delete them as exact concrete subtypes."
+                    );
+                }
+        );
     }
 }

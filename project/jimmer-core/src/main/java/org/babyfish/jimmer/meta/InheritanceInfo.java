@@ -71,9 +71,23 @@ public final class InheritanceInfo {
     }
 
     public Collection<ImmutableType> getConcreteTypes() {
+        return getConcreteTypes(rootType);
+    }
+
+    public Collection<ImmutableType> getConcreteTypes(@NotNull ImmutableType baseType) {
+        if (!rootType.isAssignableFrom(baseType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" + baseType + "\" does not belong to the inheritance hierarchy of \"" +
+                            rootType +
+                            "\""
+            );
+        }
         Set<ImmutableType> types = new LinkedHashSet<>();
-        types.add(rootType);
-        types.addAll(rootType.getAllDerivedTypes());
+        if (baseType.isInstantiable()) {
+            types.add(baseType);
+        }
+        types.addAll(baseType.getAllDerivedTypes());
+        types.removeIf(type -> !type.isInstantiable());
         return Collections.unmodifiableSet(types);
     }
 

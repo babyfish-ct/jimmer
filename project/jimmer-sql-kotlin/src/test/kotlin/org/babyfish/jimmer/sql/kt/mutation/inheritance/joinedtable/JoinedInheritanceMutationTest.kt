@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
+import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.*
 import java.sql.Connection
@@ -47,6 +48,34 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 original("""{"id":300,"name":"New Org","taxCode":"NEW-001"}""")
                 modified("""{"id":300,"name":"New Org","taxCode":"NEW-001"}""")
             }
+        }
+    }
+
+    @Test
+    fun testUpdateAbstractRootWithUserOptimisticLock() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClient {
+                    id = 200L
+                    name = "Globex Base+"
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setOptimisticLock(KClient::class) {
+                    table.name eq "Globex"
+                }
+            }
+            joinedClientRow(con, 200L)
+        }) {
+            statement {
+                sql(
+                    "update JOINED_CLIENT " +
+                            "set NAME = ? " +
+                            "where ID = ? and NAME = ?"
+                )
+                variables("Globex Base+", 200L, "Globex")
+            }
+            value("[ORG, Globex Base+, GLOBEX-001, null, null]")
         }
     }
 
@@ -640,11 +669,30 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             ex.message
         }) {
             value(
-                "Cannot physically delete joined inheritance rows by root/base type " +
+                "Cannot delete inheritance entity type " +
                     "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
-                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete concrete subtypes, " +
-                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select/lock concrete rows " +
-                    "and delete them as concrete subtypes."
+                    "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+            )
+        }
+    }
+
+    @Test
+    fun testDeleteRootPolymorphically() {
+        connectAndExpect({ con ->
+            val ex = assertFailsWith<ExecutionException> {
+                sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
+                    setMode(DeleteMode.PHYSICAL)
+                    setPolymorphic()
+                }
+            }
+            ex.message
+        }) {
+            value(
+                "Cannot physically delete joined inheritance rows polymorphically by type " +
+                    "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
+                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete exact concrete subtypes, " +
+                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select concrete rows " +
+                    "and delete them as exact concrete subtypes."
             )
         }
     }

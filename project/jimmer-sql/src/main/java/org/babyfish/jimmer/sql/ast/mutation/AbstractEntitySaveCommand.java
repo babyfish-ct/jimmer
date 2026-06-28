@@ -197,6 +197,43 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setSubtypeChangeAllowed(boolean allowed);
 
     @NewChain
+    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowedAll() {
+        return setAssociatedSubtypeChangeAllowedAll(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowedAll(boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedSubtypeChangeAllowed(entityType, true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedSubtypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedSubtypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(
+            TypedProp.Association<?, ?> prop,
+            boolean allowed
+    ) {
+        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), allowed);
+    }
+
+    @NewChain
     AbstractEntitySaveCommand setMaxCommandJoinCount(int count);
 
     @NewChain

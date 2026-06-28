@@ -48,6 +48,7 @@ public class Saver {
     @SuppressWarnings("unchecked")
     public <E> SimpleSaveResult<E> save(E entity) {
         ImmutableType immutableType = ImmutableType.get(entity.getClass());
+        validateInstantiableSaveType(immutableType, ctx.options);
         MutationTrigger trigger = ctx.trigger;
         // single object save also call `produceList` because `fetch` may change draft
         E newEntity = (E) Internal.produceList(
@@ -74,6 +75,7 @@ public class Saver {
             return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
         ImmutableType immutableType = ImmutableType.get(entities.iterator().next().getClass());
+        validateInstantiableSaveType(immutableType, ctx.options);
         MutationTrigger trigger = ctx.trigger;
         List<E> newEntities = (List<E>) Internal.produceList(
                 immutableType,
@@ -98,6 +100,22 @@ public class Saver {
             );
         }
         return new BatchSaveResult<>(ctx.affectedRowCountMap, items);
+    }
+
+    static void validateInstantiableSaveType(ImmutableType type, SaveOptions options) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null && !type.isInstantiable()) {
+            if (inheritanceInfo.getRootType() == type &&
+                    options.getMode() == SaveMode.UPDATE_ONLY &&
+                    !options.isSubtypeChangeAllowed(type)) {
+                return;
+            }
+            throw new IllegalArgumentException(
+                    "Cannot save inheritance entity type \"" +
+                            type +
+                            "\" because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed"
+            );
+        }
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {

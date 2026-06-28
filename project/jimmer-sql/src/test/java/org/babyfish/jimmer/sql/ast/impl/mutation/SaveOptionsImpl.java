@@ -77,6 +77,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+        return false;
+    }
+
+    @Override
     public DeleteMode getDeleteMode() {
         return DeleteMode.PHYSICAL;
     }

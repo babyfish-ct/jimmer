@@ -178,6 +178,16 @@ interface KSaveCommandPartialDsl {
 
     fun setSubtypeChangeAllowed(allowed: Boolean = true)
 
+    fun setAssociatedSubtypeChangeAllowedAll(allowed: Boolean = true)
+
+    fun <E: Any> setAssociatedSubtypeChangeAllowed(entityType: KClass<E>, allowed: Boolean = true)
+
+    fun setAssociatedSubtypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean = true)
+
+    fun setAssociatedSubtypeChangeAllowed(prop: ImmutableProp, allowed: Boolean = true)
+
+    fun setAssociatedSubtypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean = true)
+
     fun setDumbBatchAcceptable(acceptable: Boolean = true)
 
     fun setConstraintViolationTranslatable(translatable: Boolean = true)

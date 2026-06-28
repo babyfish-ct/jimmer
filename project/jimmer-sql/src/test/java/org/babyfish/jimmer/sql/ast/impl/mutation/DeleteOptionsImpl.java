@@ -66,6 +66,11 @@ class DeleteOptionsImpl implements DeleteOptions {
     }
 
     @Override
+    public boolean isPolymorphic() {
+        return false;
+    }
+
+    @Override
     public ExceptionTranslator<?> getExceptionTranslator() {
         return sqlClient.getExceptionTranslator();
     }

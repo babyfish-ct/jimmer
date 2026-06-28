@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator
 
 import org.babyfish.jimmer.sql.*
 
-@Entity
+@Entity(instantiability = EntityInstantiability.INSTANTIABLE)
 @Table(name = "K_ENUM_CLIENT")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorValue("CLIENT")

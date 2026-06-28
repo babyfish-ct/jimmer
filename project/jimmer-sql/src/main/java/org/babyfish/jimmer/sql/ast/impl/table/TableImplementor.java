@@ -15,9 +15,13 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
@@ -93,14 +97,25 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (inheritanceInfo == null || inheritanceInfo.getRootType() == type) {
             return null;
         }
-        String value = type.getDiscriminatorValue();
-        if (value == null) {
-            return null;
+        List<Object> values = new ArrayList<>();
+        Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(type);
+        if (concreteTypes.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot query inheritance entity type \"" +
+                            type +
+                            "\" because it is abstract and has no instantiable subtype"
+            );
+        }
+        for (ImmutableType concreteType : concreteTypes) {
+            String value = concreteType.getDiscriminatorValue();
+            if (value != null) {
+                values.add(inheritanceInfo.discriminatorValue(value));
+            }
         }
         return new DiscriminatorPredicate(
                 this,
                 inheritanceInfo.getDiscriminatorProp(),
-                inheritanceInfo.discriminatorValue(value)
+                values
         );
     }
 
@@ -111,8 +126,18 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         }
         ImmutableType type = getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        if (inheritanceInfo == null ||
-                inheritanceInfo.getRootType() != type) {
+        if (inheritanceInfo == null) {
+            return null;
+        }
+        Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(type);
+        if (concreteTypes.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot query inheritance entity type \"" +
+                            type +
+                            "\" because it is abstract and has no instantiable subtype"
+            );
+        }
+        if (concreteTypes.size() == 1 && concreteTypes.iterator().next() == type) {
             return null;
         }
         return inheritanceInfo.getDiscriminatorProp();
