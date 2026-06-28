@@ -14,4 +14,6 @@ interface KEnumClient {
     @Discriminator
     @Column(name = "CLIENT_TYPE")
     val type: KClientType
+
+    val name: String?
 }

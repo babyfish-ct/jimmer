@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.ClientType;
-import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumClientFetcher;
-import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumClientTable;
-import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.*;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.*;
 import org.junit.jupiter.api.Test;
 
@@ -117,6 +114,30 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                         assertEquals(EnumOrganization.class, ((ImmutableSpi) row).__type().getJavaClass());
                         assertEquals(110L, row.id());
                         assertLoadState(row, "id");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testEnumDiscriminatorRootFetcherMaterializesInstantiableRootWithoutUserDiscriminator() {
+        EnumClientTable table = EnumClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(111L))
+                        .select(table.fetch(EnumClientFetcher.$.name())),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                                    "from ENUM_CLIENT tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(111L);
+                    ctx.row(0, row -> {
+                        assertEquals(EnumClient.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertEquals(111L, row.id());
+                        assertEquals("Enum Root", row.name());
+                        assertLoadState(row, "id", "name");
                     });
                 }
         );

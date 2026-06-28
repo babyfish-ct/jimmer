@@ -462,7 +462,7 @@ class Operator {
         boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(type);
         if (inheritanceInfo != null &&
                 inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
-                inheritanceInfo.getRootType() != type) {
+                (inheritanceInfo.getRootType() != type || subtypeChangeAllowed)) {
             return updateJoined(originalIdObjMap, originalKeyObjMap, batch, inheritanceInfo);
         }
         update(
@@ -1259,12 +1259,12 @@ class Operator {
         }
         ImmutableType type = batch.shape().getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(type) && !ignoreUpdate;
         if (inheritanceInfo != null &&
                 inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
-                inheritanceInfo.getRootType() != type) {
+                (inheritanceInfo.getRootType() != type || subtypeChangeAllowed)) {
             return upsertJoined(batch, inheritanceInfo, ignoreUpdate);
         }
-        boolean subtypeChangeAllowed = ctx.options.isSubtypeChangeAllowed(type) && !ignoreUpdate;
         upsert(
                 batch,
                 ctx.path.getType(),

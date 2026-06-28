@@ -6,6 +6,4 @@ import org.babyfish.jimmer.sql.Entity;
 @Entity
 @DiscriminatorValue("ORG")
 public interface EnumOrganization extends EnumClient {
-
-    String name();
 }

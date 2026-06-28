@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator;
 
 import org.babyfish.jimmer.sql.*;
+import org.jspecify.annotations.Nullable;
 
 @Entity(instantiability = EntityInstantiability.INSTANTIABLE)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -13,4 +14,7 @@ public interface EnumClient {
     @Discriminator
     @Column(name = "CLIENT_TYPE")
     ClientType type();
+
+    @Nullable
+    String name();
 }

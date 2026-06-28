@@ -5,7 +5,4 @@ import org.babyfish.jimmer.sql.Entity
 
 @Entity
 @DiscriminatorValue("ORG")
-interface KEnumOrganization : KEnumClient {
-
-    val name: String
-}
+interface KEnumOrganization : KEnumClient

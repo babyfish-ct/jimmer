@@ -124,6 +124,31 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testEnumDiscriminatorRootFetcherMaterializesInstantiableRootWithoutUserDiscriminator() {
+        executeAndExpect(
+            sqlClient.createQuery(KEnumClient::class) {
+                where(table.id eq 111L)
+                select(table.fetchBy {
+                    name()
+                })
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                    "from K_ENUM_CLIENT tb_1_ " +
+                    "where tb_1_.ID = ?"
+            )
+            variables(111L)
+            row(0) {
+                assertEquals(KEnumClient::class.java, (it as ImmutableSpi).__type().javaClass)
+                assertEquals(111L, it.id)
+                assertEquals("Enum Root", it.name)
+                assertFalse(ImmutableObjects.isLoaded(it, KEnumClientProps.TYPE))
+            }
+        }
+    }
+
+    @Test
     fun testEnumDiscriminatorRootFetcherMaterializesSubtype() {
         executeAndExpect(
             sqlClient.createQuery(KEnumClient::class) {
