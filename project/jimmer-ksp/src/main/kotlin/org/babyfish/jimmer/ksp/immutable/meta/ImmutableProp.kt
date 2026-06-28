@@ -78,7 +78,7 @@ class ImmutableProp(
                 "the property whose name starts with \"is\" return returns boolean type"
             )
         }
-        if (realDeclaration.modifiers.contains(Modifier.VALUE)) {
+        if (realDeclaration is KSClassDeclaration && realDeclaration.modifiers.contains(Modifier.VALUE)) {
             throw MetaException(
                 propDeclaration,
                 "the property whose type is kotlin value class is not supported now"
