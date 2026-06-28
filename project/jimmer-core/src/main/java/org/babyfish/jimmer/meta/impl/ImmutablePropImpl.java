@@ -9,6 +9,7 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
@@ -19,8 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,6 +58,10 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     private final ImmutablePropCategory category;
 
     private final Class<?> elementClass;
+
+    private final Class<?> returnClass;
+
+    private final Type genericType;
 
     private final boolean nullable;
 
@@ -199,6 +208,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             );
         }
         this.javaGetter = javaGetter;
+        this.returnClass = javaGetter.getReturnType();
+        this.genericType = javaGetter.getGenericReturnType();
 
         OneToMany oneToMany = getAnnotation(OneToMany.class);
         OneToOne oneToOne = getAnnotation(OneToOne.class);
@@ -340,7 +351,15 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         this.id = id != null ? id : original.id;
         this.name = original.name;
         this.category = original.category;
-        this.elementClass = original.elementClass;
+        this.genericType = Generics.resolve(
+                original.javaGetter.getGenericReturnType(),
+                declaringType.getJavaClass(),
+                original.declaringType.getJavaClass()
+        );
+        this.returnClass = rawClass(genericType);
+        this.elementClass = category.isList() ?
+                elementClass(genericType, original.elementClass) :
+                returnClass;
         this.nullable = original.nullable;
         this.inputNotNull = original.inputNotNull;
         this.kotlinProp = original.kotlinProp;
@@ -388,13 +407,13 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @NotNull
     @Override
     public Class<?> getReturnClass() {
-        return javaGetter.getReturnType();
+        return returnClass;
     }
 
     @NotNull
     @Override
     public Type getGenericType() {
-        return javaGetter.getGenericReturnType();
+        return genericType;
     }
 
     @Override
@@ -1653,5 +1672,37 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             declaringType = targetType;
         }
         return new Dependency(props);
+    }
+
+    private static Class<?> elementClass(Type type, Class<?> defaultType) {
+        if (type instanceof ParameterizedType) {
+            Type[] arguments = ((ParameterizedType) type).getActualTypeArguments();
+            if (arguments.length != 0) {
+                return rawClass(arguments[0]);
+            }
+        }
+        return defaultType;
+    }
+
+    private static Class<?> rawClass(Type type) {
+        if (type instanceof Class<?>) {
+            return (Class<?>) type;
+        }
+        if (type instanceof ParameterizedType) {
+            return rawClass(((ParameterizedType) type).getRawType());
+        }
+        if (type instanceof GenericArrayType) {
+            Class<?> componentType = rawClass(((GenericArrayType) type).getGenericComponentType());
+            return java.lang.reflect.Array.newInstance(componentType, 0).getClass();
+        }
+        if (type instanceof TypeVariable<?>) {
+            Type[] bounds = ((TypeVariable<?>) type).getBounds();
+            return bounds.length == 0 ? Object.class : rawClass(bounds[0]);
+        }
+        if (type instanceof WildcardType) {
+            Type[] upperBounds = ((WildcardType) type).getUpperBounds();
+            return upperBounds.length == 0 ? Object.class : rawClass(upperBounds[0]);
+        }
+        return Object.class;
     }
 }

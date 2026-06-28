@@ -34,13 +34,14 @@ public class DraftGenerator {
     public void generate() {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Draft")
-                .addSuperinterface(type.getClassName())
+                .addTypeVariables(type.getTypeVariableNames())
+                .addSuperinterface(type.getTypeName())
                 .addAnnotation(generatedAnnotation(type));
         if (type.getSuperTypes().isEmpty()) {
             typeBuilder.addSuperinterface(Draft.class);
         } else {
             for (ImmutableType superType : type.getSuperTypes()) {
-                typeBuilder.addSuperinterface(superType.getDraftClassName());
+                typeBuilder.addSuperinterface(type.getDraftSuperTypeName(superType));
             }
         }
         addMembers(type);
@@ -108,6 +109,9 @@ public class DraftGenerator {
         if (prop.getManyToManyViewBaseProp() != null || prop.isFormula()) {
             return;
         }
+        if (prop.getTargetType() == null && prop.isAssociation(false)) {
+            return;
+        }
         if (!autoCreate && (!prop.isAssociation(false) || prop.isList())) {
             return;
         }
@@ -143,7 +147,7 @@ public class DraftGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addAnnotation(OldChain.class)
                 .addParameter(TypeName.get(prop.getReturnType()), prop.getName())
-                .returns(type.getDraftClassName());
+                .returns(type.getDraftTypeName());
 
         Doc doc = prop.context().getDocMetadata().getDoc(prop.toElement());
         if (doc != null) {
@@ -157,6 +161,9 @@ public class DraftGenerator {
         if (prop.getManyToManyViewBaseProp() != null || !prop.isAssociation(false) || prop.isJavaFormula()) {
             return;
         }
+        if (prop.getTargetType() == null) {
+            return;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(
                         prop.isList() ?
@@ -165,7 +172,7 @@ public class DraftGenerator {
                 )
                 .addAnnotation(OldChain.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(type.getDraftClassName());
+                .returns(type.getDraftTypeName());
         if (withBase) {
             builder.addParameter(prop.getElementTypeName(), "base");
         }

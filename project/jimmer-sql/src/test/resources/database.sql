@@ -81,6 +81,7 @@ drop table province if exists;
 drop table country if exists;
 drop table book_store if exists;
 drop view tree_node_2 if exists;
+drop table generic_tree_node if exists;
 drop table tree_node if exists;
 drop table array_model if exists;
 drop table person if exists;
@@ -403,6 +404,19 @@ insert into author_country_mapping(author_id, country_code) values
     ('c14665c8-c689-4ac7-b8cc-6f065b8d835d', 'USA'),
     ('718795ad-77c1-4fcf-994a-fec6a5a11f0f', 'USA'),
     ('eb4963fd-5223-43e8-b06b-81e6172ee7ae', 'USA');
+
+create table generic_tree_node(
+    id bigint not null,
+    name varchar(50) not null,
+    parent_id bigint
+);
+alter table generic_tree_node
+    add constraint pk_generic_tree_node
+        primary key(id);
+alter table generic_tree_node
+    add constraint fk_generic_tree_node__parent
+        foreign key(parent_id)
+            references generic_tree_node(id);
 
 create table tree_node(
     node_id bigint not null,

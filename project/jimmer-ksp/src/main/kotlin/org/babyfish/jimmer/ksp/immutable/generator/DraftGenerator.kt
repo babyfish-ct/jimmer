@@ -71,20 +71,23 @@ class DraftGenerator(
         addType(
             TypeSpec
                 .interfaceBuilder("${type.simpleName}$DRAFT")
+                .addTypeVariables(type.typeVariableNames)
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
-                .addSuperinterface(type.className)
+                .addSuperinterface(type.typeName)
                 .addAnnotation(generatedAnnotation(type))
                 .apply {
                     if (type.superTypes.isEmpty()) {
                         addSuperinterface(DRAFT_CLASS_NAME)
                     } else {
                         for (superType in type.superTypes) {
-                            addSuperinterface(superType.draftClassName)
+                            addSuperinterface(type.draftSuperTypeName(superType))
                         }
                     }
                 }
                 .apply {
-                    for (prop in type.declaredProperties.values) {
+                    val props = type.declaredProperties.values +
+                        type.redefinedProps.values.filter { it.isGenericSourceTarget }
+                    for (prop in props) {
                         if (prop.manyToManyViewBaseProp === null) {
                             addProp(prop)
                             addFun(prop)
@@ -117,7 +120,7 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addFun(prop: ImmutableProp) {
-        if ((prop.isAssociation(false) || prop.isList) && prop.manyToManyViewBaseProp == null && !prop.isFormula) {
+        if ((prop.isAssociation(false) || prop.isList) && !prop.isGenericTarget && prop.manyToManyViewBaseProp == null && !prop.isFormula) {
             addFunction(
                 FunSpec
                     .builder(prop.name)
@@ -129,7 +132,7 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addRefFun(prop: ImmutableProp) {
-        if (!prop.isAssociation(false) || prop.isList || prop.isFormula) {
+        if (!prop.isAssociation(false) || prop.isGenericTarget || prop.isList || prop.isFormula) {
             return
         }
         addFunction(

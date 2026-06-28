@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.apt.immutable.meta;
 
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeVariableName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
@@ -8,6 +11,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.util.*;
@@ -40,6 +44,8 @@ public class ImmutableType implements BaseType {
 
     private final Set<ImmutableType> superTypes;
 
+    private final Map<ImmutableType, TypeMirror> superTypeMirrorMap;
+
     private final Map<String, ImmutableProp> declaredProps;
 
     private final Map<String, ImmutableProp> redefinedProps;
@@ -57,6 +63,10 @@ public class ImmutableType implements BaseType {
     private ImmutableProp logicalDeletedProp;
 
     private final ClassName className;
+
+    private final TypeName typeName;
+
+    private final List<TypeVariableName> typeVariableNames;
 
     private final ClassName draftClassName;
 
@@ -114,6 +124,12 @@ public class ImmutableType implements BaseType {
         }
         isMappedSuperClass = annotationType == MappedSuperclass.class;
         isEmbeddable = annotationType == Embeddable.class;
+        if (!isMappedSuperClass && !typeElement.getTypeParameters().isEmpty()) {
+            throw new MetaException(
+                    typeElement,
+                    "generic immutable type is only supported for mapped super class"
+            );
+        }
 
         packageName = ((PackageElement)typeElement.getEnclosingElement()).getQualifiedName().toString();
         name = typeElement.getSimpleName().toString();
@@ -122,10 +138,12 @@ public class ImmutableType implements BaseType {
 
         ImmutableType primarySuperType = null;
         Set<ImmutableType> superTypes = new LinkedHashSet<>();
+        Map<ImmutableType, TypeMirror> superTypeMirrorMap = new LinkedHashMap<>();
         for (TypeMirror itf : typeElement.getInterfaces()) {
             if (context.isImmutable(itf)) {
                 ImmutableType superType = context.getImmutableType(itf);
                 superTypes.add(superType);
+                superTypeMirrorMap.put(superType, itf);
                 if (!superType.isMappedSuperClass) {
                     if (primarySuperType == null) {
                         primarySuperType = superType;
@@ -199,7 +217,8 @@ public class ImmutableType implements BaseType {
             }
         }
         this.primarySuperType = primarySuperType;
-        this.superTypes = superTypes;
+        this.superTypes = Collections.unmodifiableSet(superTypes);
+        this.superTypeMirrorMap = Collections.unmodifiableMap(superTypeMirrorMap);
         for (ImmutableType superType : superTypes) {
             if (!superType.isMappedSuperClass) {
                 primarySuperType = superType;
@@ -526,6 +545,16 @@ public class ImmutableType implements BaseType {
         }
 
         className = toClassName(null);
+        typeVariableNames = typeElement.getTypeParameters()
+                .stream()
+                .map(TypeVariableName::get)
+                .collect(Collectors.toList());
+        typeName = typeVariableNames.isEmpty() ?
+                className :
+                ParameterizedTypeName.get(
+                        className,
+                        typeVariableNames.toArray(new TypeName[0])
+                );
         draftClassName = toClassName(name -> name + "Draft");
         producerClassName = toClassName(name -> name + "Draft", "Producer");
         implementorClassName = toClassName(name -> name + "Draft", "Producer", "Implementor");
@@ -728,8 +757,44 @@ public class ImmutableType implements BaseType {
         return className;
     }
 
+    public TypeName getTypeName() {
+        return typeName;
+    }
+
+    public List<TypeVariableName> getTypeVariableNames() {
+        return typeVariableNames;
+    }
+
+    public TypeName getDraftSuperTypeName(ImmutableType superType) {
+        TypeMirror typeMirror = superTypeMirrorMap.get(superType);
+        if (!(typeMirror instanceof DeclaredType)) {
+            return superType.getDraftClassName();
+        }
+        List<? extends TypeMirror> arguments = ((DeclaredType) typeMirror).getTypeArguments();
+        if (arguments.isEmpty()) {
+            return superType.getDraftClassName();
+        }
+        TypeName[] argumentTypeNames = arguments
+                .stream()
+                .map(TypeName::get)
+                .toArray(TypeName[]::new);
+        return ParameterizedTypeName.get(
+                superType.getDraftClassName(),
+                argumentTypeNames
+        );
+    }
+
     public ClassName getDraftClassName() {
         return draftClassName;
+    }
+
+    public TypeName getDraftTypeName() {
+        return typeVariableNames.isEmpty() ?
+                draftClassName :
+                ParameterizedTypeName.get(
+                        draftClassName,
+                        typeVariableNames.toArray(new TypeName[0])
+                );
     }
 
     public ClassName getProducerClassName() {
