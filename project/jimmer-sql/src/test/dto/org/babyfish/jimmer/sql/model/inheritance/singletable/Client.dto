@@ -1,8 +1,8 @@
 ClientDefaultView {
     id
     name
-    #subtypes {
-        #default class Other {
+    #types {
+        default class Other {
         }
         Organization {
             taxCode
@@ -13,11 +13,21 @@ ClientDefaultView {
 ClientImplicitDefaultView {
     id
     name
-    #subtypes {
-        #default {
+    #types {
+        default {
         }
         Person {
             firstName
+        }
+    }
+}
+
+ClientImplicitCatchAllView {
+    id
+    name
+    #types {
+        Organization {
+            taxCode
         }
     }
 }

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.model.inheritance.joinedtable.dto.ClientExhaustiv
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultView;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientExhaustiveView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientDefaultView;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientImplicitCatchAllView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientImplicitDefaultView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,23 @@ public class PolymorphicDtoGenerationTest {
         person.setName("Person");
         person.setFirstName("Sam");
         Assertions.assertEquals("Sam", person.getFirstName());
+    }
+
+    @Test
+    public void testAbstractRootWithImplicitCatchAllBranch() {
+        ClientImplicitCatchAllView.Default defaultBranch = new ClientImplicitCatchAllView.Default();
+        defaultBranch.setId(10L);
+        defaultBranch.setName("Implicit catch all");
+
+        ClientImplicitCatchAllView view = defaultBranch;
+        Assertions.assertEquals(10L, view.getId());
+        Assertions.assertEquals("Implicit catch all", view.getName());
+
+        ClientImplicitCatchAllView.Organization organization = new ClientImplicitCatchAllView.Organization();
+        organization.setId(11L);
+        organization.setName("Organization");
+        organization.setTaxCode("T-4");
+        Assertions.assertEquals("T-4", organization.getTaxCode());
     }
 
     @Test

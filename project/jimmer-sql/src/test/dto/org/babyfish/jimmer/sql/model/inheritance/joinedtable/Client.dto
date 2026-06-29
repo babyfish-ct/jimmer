@@ -5,7 +5,7 @@ import testpkg.Named
 ClientExhaustiveView {
     id
     name
-    #subtypes {
+    #types {
         #exhaustive
         @Deprecated
         Organization class OrganizationBranch implements Named {

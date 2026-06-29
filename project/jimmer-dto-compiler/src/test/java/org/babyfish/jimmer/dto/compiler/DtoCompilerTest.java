@@ -1142,7 +1142,7 @@ public class DtoCompilerTest {
                 "ClientView {\n" +
                         "    id\n" +
                         "    name\n" +
-                        "    #subtypes {\n" +
+                        "    #types {\n" +
                         "        Organization class Org implements marker.Marker {\n" +
                         "            taxCode\n" +
                         "        }\n" +
@@ -1155,8 +1155,8 @@ public class DtoCompilerTest {
         Assertions.assertNotNull(polymorphism.getDefaultBranch());
         Assertions.assertTrue(polymorphism.getDefaultBranch().isImplicit());
         Assertions.assertEquals("Default", polymorphism.getDefaultBranch().getClassName());
-        Assertions.assertEquals(1, polymorphism.getSubtypeBranches().size());
-        DtoPolymorphicBranch<BaseType, BaseProp> branch = polymorphism.getSubtypeBranches().get(0);
+        Assertions.assertEquals(1, polymorphism.getTypeBranches().size());
+        DtoPolymorphicBranch<BaseType, BaseProp> branch = polymorphism.getTypeBranches().get(0);
         Assertions.assertEquals("org.babyfish.jimmer.sql.model.Organization", branch.getTargetType().getQualifiedName());
         Assertions.assertEquals("Org", branch.getClassName());
         Assertions.assertEquals(
@@ -1174,8 +1174,8 @@ public class DtoCompilerTest {
         DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
                 "ClientView {\n" +
                         "    name\n" +
-                        "    #subtypes {\n" +
-                        "        #default class Other implements marker.UnlistedClientView {\n" +
+                        "    #types {\n" +
+                        "        default class Other implements marker.UnlistedClientView {\n" +
                         "        }\n" +
                         "        Person {\n" +
                         "            firstName\n" +
@@ -1198,7 +1198,7 @@ public class DtoCompilerTest {
         DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
                 "ClientView {\n" +
                         "    name\n" +
-                        "    #subtypes {\n" +
+                        "    #types {\n" +
                         "        #exhaustive\n" +
                         "        Person {\n" +
                         "            firstName\n" +
@@ -1214,12 +1214,12 @@ public class DtoCompilerTest {
                         "org.babyfish.jimmer.sql.model.Organization",
                         "org.babyfish.jimmer.sql.model.Person"
                 )),
-                polymorphism.getSubtypeBranches()
+                polymorphism.getTypeBranches()
                         .stream()
                         .map(it -> it.getTargetType().getQualifiedName())
                         .collect(Collectors.toCollection(LinkedHashSet::new))
         );
-        DtoPolymorphicBranch<BaseType, BaseProp> personBranch = polymorphism.getSubtypeBranches()
+        DtoPolymorphicBranch<BaseType, BaseProp> personBranch = polymorphism.getTypeBranches()
                 .stream()
                 .filter(it -> it.getTargetType().getName().equals("Person"))
                 .findFirst()
@@ -1229,7 +1229,7 @@ public class DtoCompilerTest {
                 Collections.singletonList("firstName"),
                 personBranch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
         );
-        DtoPolymorphicBranch<BaseType, BaseProp> organizationBranch = polymorphism.getSubtypeBranches()
+        DtoPolymorphicBranch<BaseType, BaseProp> organizationBranch = polymorphism.getTypeBranches()
                 .stream()
                 .filter(it -> it.getTargetType().getName().equals("Organization"))
                 .findFirst()
@@ -1244,7 +1244,7 @@ public class DtoCompilerTest {
         DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.payment(
                 "PaymentView {\n" +
                         "    amount\n" +
-                        "    #subtypes {\n" +
+                        "    #types {\n" +
                         "        #exhaustive\n" +
                         "        Payment class Root {\n" +
                         "        }\n" +
@@ -1256,7 +1256,7 @@ public class DtoCompilerTest {
         Assertions.assertNull(polymorphism.getDefaultBranch());
         Assertions.assertEquals(
                 new LinkedHashSet<>(Arrays.asList("Root", "WirePayment")),
-                polymorphism.getSubtypeBranches()
+                polymorphism.getTypeBranches()
                         .stream()
                         .map(DtoPolymorphicBranch::getClassName)
                         .collect(Collectors.toCollection(LinkedHashSet::new))
@@ -1264,12 +1264,12 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testSubtypesBlockCannotBeUsedBySpecification() {
+    public void testTypesBlockCannotBeUsedBySpecification() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.client(
                     "specification ClientSpec {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
+                            "    #types {\n" +
                             "        Person {\n" +
                             "            firstName\n" +
                             "        }\n" +
@@ -1278,8 +1278,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #subtypes\n" +
-                        "    #subtypes {\n" +
+                "/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #types\n" +
+                        "    #types {\n" +
                         "    ^",
                 ex.getMessage()
         );
@@ -1291,9 +1291,9 @@ public class DtoCompilerTest {
             MyDtoCompiler.client(
                     "ClientView {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
+                            "    #types {\n" +
                             "        #exhaustive\n" +
-                            "        #default {\n" +
+                            "        default {\n" +
                             "        }\n" +
                             "        Person {\n" +
                             "            firstName\n" +
@@ -1303,8 +1303,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:5 : #default branch cannot be used together with #exhaustive\n" +
-                        "        #default {\n" +
+                "/User/test/Client.dto:5 : default branch cannot be used together with #exhaustive\n" +
+                        "        default {\n" +
                         "        ^",
                 ex.getMessage()
         );
@@ -1316,8 +1316,8 @@ public class DtoCompilerTest {
             MyDtoCompiler.client(
                     "ClientView {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
-                            "        #default {\n" +
+                            "    #types {\n" +
+                            "        default {\n" +
                             "            id\n" +
                             "        }\n" +
                             "        Person {\n" +
@@ -1328,20 +1328,20 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:4 : The body of #default branch must be empty\n" +
-                        "        #default {\n" +
-                        "                 ^",
+                "/User/test/Client.dto:4 : The body of default branch must be empty\n" +
+                        "        default {\n" +
+                        "                ^",
                 ex.getMessage()
         );
     }
 
     @Test
-    public void testAbstractRootCannotBeSubtypeBranch() {
+    public void testAbstractRootCannotBeTypeBranch() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.client(
                     "ClientView {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
+                            "    #types {\n" +
                             "        Client {\n" +
                             "        }\n" +
                             "    }\n" +
@@ -1349,7 +1349,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:4 : Illegal subtype branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
+                "/User/test/Client.dto:4 : Illegal type branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
                         "        Client {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1357,12 +1357,12 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testDuplicateSubtypeBranchClassName() {
+    public void testDuplicateTypeBranchClassName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.client(
                     "ClientView {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
+                            "    #types {\n" +
                             "        Organization class Person {\n" +
                             "            taxCode\n" +
                             "        }\n" +
@@ -1387,7 +1387,7 @@ public class DtoCompilerTest {
             MyDtoCompiler.client(
                     "ClientView {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
+                            "    #types {\n" +
                             "        Person {\n" +
                             "            firstName as name\n" +
                             "        }\n" +
@@ -1404,15 +1404,15 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testNestedSubtypesBlockInSubtypeBranchIsRejected() {
+    public void testNestedTypesBlockInTypeBranchIsRejected() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.client(
                     "ClientView {\n" +
                             "    name\n" +
-                            "    #subtypes {\n" +
+                            "    #types {\n" +
                             "        Person {\n" +
                             "            firstName\n" +
-                            "            #subtypes {\n" +
+                            "            #types {\n" +
                             "                Person {\n" +
                             "                    lastName\n" +
                             "                }\n" +
@@ -1423,8 +1423,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:6 : Nested #subtypes block is not supported inside polymorphic DTO branch\n" +
-                        "            #subtypes {\n" +
+                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO type branch\n" +
+                        "            #types {\n" +
                         "            ^",
                 ex.getMessage()
         );

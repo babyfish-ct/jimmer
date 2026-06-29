@@ -9,7 +9,7 @@ public class DtoPolymorphicBranch<T extends BaseType, P extends BaseProp> {
 
     public enum Kind {
         DEFAULT,
-        SUBTYPE
+        TYPE
     }
 
     private final Kind kind;
@@ -91,7 +91,7 @@ public class DtoPolymorphicBranch<T extends BaseType, P extends BaseProp> {
             builder.append("@implicit ");
         }
         if (kind == Kind.DEFAULT) {
-            builder.append("#default");
+            builder.append("default");
         } else {
             builder.append(targetType.getQualifiedName());
         }

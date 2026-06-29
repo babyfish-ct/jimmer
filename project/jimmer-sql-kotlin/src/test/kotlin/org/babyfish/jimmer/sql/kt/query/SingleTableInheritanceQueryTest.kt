@@ -40,17 +40,17 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testRootFetcherWithSubtypeBranches() {
+    fun testRootFetcherWithTypeBranches() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(table.id valueIn listOf(100L, 101L))
                 orderBy(table.id)
                 select(table.fetchBy {
                     name()
-                    forSubtype(KOrganization::class) {
+                    forType(KOrganization::class) {
                         taxCode()
                     }
-                    forSubtype(KPerson::class) {
+                    forType(KPerson::class) {
                         firstName()
                         lastName()
                     }

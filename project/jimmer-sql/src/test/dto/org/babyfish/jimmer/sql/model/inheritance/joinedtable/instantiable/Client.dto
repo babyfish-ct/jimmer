@@ -1,8 +1,8 @@
 InstantiableClientDefaultView {
     id
     name
-    #subtypes {
-        #default class Base {
+    #types {
+        default class Base {
         }
         Organization {
             taxCode
@@ -13,7 +13,7 @@ InstantiableClientDefaultView {
 InstantiableClientExhaustiveView {
     id
     name
-    #subtypes {
+    #types {
         #exhaustive
         Client class Root {
         }

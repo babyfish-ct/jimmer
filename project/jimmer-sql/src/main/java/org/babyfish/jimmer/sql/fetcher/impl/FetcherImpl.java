@@ -615,7 +615,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     @NewChain
     @Override
-    public FetcherImplementor<E> __forSubtype(Fetcher<?> subtypeFetcher) {
+    public FetcherImplementor<E> __forType(Fetcher<?> subtypeFetcher) {
         Objects.requireNonNull(subtypeFetcher, "'subtypeFetcher' cannot be null");
         ImmutableType subtype = subtypeFetcher.getImmutableType();
         InheritanceInfo inheritanceInfo = immutableType.getInheritanceInfo();
@@ -623,9 +623,9 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             throw new IllegalArgumentException(
                     "The fetcher type \"" +
                             subtype +
-                            "\" is not strict subtype of \"" +
+                            "\" is not supported type branch of \"" +
                             immutableType +
-                            "\""
+                            "\"; only strict subtype fetchers are supported currently"
             );
         }
         if (inheritanceInfo.getConcreteTypes(subtype).isEmpty()) {

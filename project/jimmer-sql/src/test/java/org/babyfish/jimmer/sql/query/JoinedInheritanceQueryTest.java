@@ -38,7 +38,7 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRootFetcherWithSubtypeBranches() {
+    public void testRootFetcherWithTypeBranches() {
         ClientTable table = ClientTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -49,8 +49,8 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                                 table.fetch(
                                         ClientFetcher.$
                                                 .name()
-                                                .forSubtype(OrganizationFetcher.$.taxCode())
-                                                .forSubtype(PersonFetcher.$.firstName().lastName())
+                                                .forType(OrganizationFetcher.$.taxCode())
+                                                .forType(PersonFetcher.$.firstName().lastName())
                                 )
                         ),
                 ctx -> {
@@ -96,7 +96,7 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                                 table.fetch(
                                         ClientFetcher.$
                                                 .name()
-                                                .forSubtype(
+                                                .forType(
                                                         OrganizationFetcher.$.projects(OrganizationProjectFetcher.$.name())
                                                 )
                                 )
@@ -131,9 +131,9 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
     public void testRootFetcherWithSelfSubtypeIsRejected() {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> ClientFetcher.$.forSubtype(ClientFetcher.$.name())
+                () -> ClientFetcher.$.forType(ClientFetcher.$.name())
         );
-        assertTrue(ex.getMessage().contains("not strict subtype"));
+        assertTrue(ex.getMessage().contains("only strict subtype fetchers are supported currently"));
     }
 
     @Test

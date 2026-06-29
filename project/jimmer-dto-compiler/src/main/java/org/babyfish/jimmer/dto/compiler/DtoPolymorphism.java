@@ -14,16 +14,16 @@ public class DtoPolymorphism<T extends BaseType, P extends BaseProp> {
     @Nullable
     private final DtoPolymorphicBranch<T, P> defaultBranch;
 
-    private final List<DtoPolymorphicBranch<T, P>> subtypeBranches;
+    private final List<DtoPolymorphicBranch<T, P>> typeBranches;
 
     DtoPolymorphism(
             boolean exhaustive,
             @Nullable DtoPolymorphicBranch<T, P> defaultBranch,
-            List<DtoPolymorphicBranch<T, P>> subtypeBranches
+            List<DtoPolymorphicBranch<T, P>> typeBranches
     ) {
         this.exhaustive = exhaustive;
         this.defaultBranch = defaultBranch;
-        this.subtypeBranches = Collections.unmodifiableList(subtypeBranches);
+        this.typeBranches = Collections.unmodifiableList(typeBranches);
     }
 
     public boolean isExhaustive() {
@@ -35,14 +35,14 @@ public class DtoPolymorphism<T extends BaseType, P extends BaseProp> {
         return defaultBranch;
     }
 
-    public List<DtoPolymorphicBranch<T, P>> getSubtypeBranches() {
-        return subtypeBranches;
+    public List<DtoPolymorphicBranch<T, P>> getTypeBranches() {
+        return typeBranches;
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("#subtypes {");
+        builder.append("#types {");
         boolean addComma = false;
         if (exhaustive) {
             builder.append("#exhaustive");
@@ -56,7 +56,7 @@ public class DtoPolymorphism<T extends BaseType, P extends BaseProp> {
             }
             builder.append(defaultBranch);
         }
-        for (DtoPolymorphicBranch<T, P> branch : subtypeBranches) {
+        for (DtoPolymorphicBranch<T, P> branch : typeBranches) {
             if (addComma) {
                 builder.append(", ");
             } else {

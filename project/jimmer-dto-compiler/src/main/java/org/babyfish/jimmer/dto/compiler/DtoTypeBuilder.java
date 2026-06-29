@@ -45,7 +45,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private Map<String, AbstractProp> declaredProps;
 
-    private DtoParser.SubtypesBlockContext subtypesBlock;
+    private DtoParser.TypesBlockContext typesBlock;
 
     DtoTypeBuilder(
             DtoPropBuilder<T, P> parentProp,
@@ -147,24 +147,24 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
         }
 
-        if (!body.subtypesBlocks.isEmpty()) {
-            if (body.subtypesBlocks.size() > 1) {
-                DtoParser.SubtypesBlockContext block = body.subtypesBlocks.get(1);
+        if (!body.typesBlocks.isEmpty()) {
+            if (body.typesBlocks.size() > 1) {
+                DtoParser.TypesBlockContext block = body.typesBlocks.get(1);
                 throw ctx.exception(
                         block.start.getLine(),
                         block.start.getCharPositionInLine(),
-                        "Duplicated #subtypes block"
+                        "Duplicated #types block"
                 );
             }
             if (modifiers.contains(DtoModifier.SPECIFICATION)) {
-                DtoParser.SubtypesBlockContext block = body.subtypesBlocks.get(0);
+                DtoParser.TypesBlockContext block = body.typesBlocks.get(0);
                 throw ctx.exception(
                         block.start.getLine(),
                         block.start.getCharPositionInLine(),
-                        "Polymorphic specification DTOs are not supported by #subtypes"
+                        "Polymorphic specification DTOs are not supported by #types"
                 );
             }
-            subtypesBlock = body.subtypesBlocks.get(0);
+            typesBlock = body.typesBlocks.get(0);
         }
     }
 
@@ -620,22 +620,22 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private DtoPolymorphism<T, P> buildPolymorphism() {
-        DtoParser.SubtypesBlockContext block = subtypesBlock;
+        DtoParser.TypesBlockContext block = typesBlock;
         if (block == null) {
             return null;
         }
-        if (block.subtypesElements.isEmpty()) {
+        if (block.typesElements.isEmpty()) {
             throw ctx.exception(
                     block.start.getLine(),
                     block.start.getCharPositionInLine(),
-                    "The #subtypes block cannot be empty"
+                    "The #types block cannot be empty"
             );
         }
 
         boolean exhaustive = false;
         DtoParser.DefaultBranchContext defaultBranch = null;
-        Map<String, DtoParser.SubtypeBranchContext> subtypeBranchMap = new LinkedHashMap<>();
-        for (DtoParser.SubtypesElementContext element : block.subtypesElements) {
+        Map<String, DtoParser.TypeBranchContext> typeBranchMap = new LinkedHashMap<>();
+        for (DtoParser.TypesElementContext element : block.typesElements) {
             if (element.exhaustiveMacro() != null) {
                 Token token = element.exhaustiveMacro().start;
                 if (exhaustive) {
@@ -652,20 +652,20 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     throw ctx.exception(
                             branch.start.getLine(),
                             branch.start.getCharPositionInLine(),
-                            "Duplicated #default branch"
+                            "Duplicated default branch"
                     );
                 }
                 defaultBranch = branch;
             } else {
-                DtoParser.SubtypeBranchContext branch = element.subtypeBranch();
-                T targetType = resolveSubtypeBranchType(branch);
+                DtoParser.TypeBranchContext branch = element.typeBranch();
+                T targetType = resolveTypeBranchType(branch);
                 String key = targetType.getQualifiedName();
-                DtoParser.SubtypeBranchContext conflict = subtypeBranchMap.put(key, branch);
+                DtoParser.TypeBranchContext conflict = typeBranchMap.put(key, branch);
                 if (conflict != null) {
                     throw ctx.exception(
                             branch.targetType.start.getLine(),
                             branch.targetType.start.getCharPositionInLine(),
-                            "Duplicated subtype branch \"" +
+                            "Duplicated type branch \"" +
                                     key +
                                     "\""
                     );
@@ -677,7 +677,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     defaultBranch.start.getLine(),
                     defaultBranch.start.getCharPositionInLine(),
-                    "#default branch cannot be used together with #exhaustive"
+                    "default branch cannot be used together with #exhaustive"
             );
         }
 
@@ -688,22 +688,22 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     implicitDefaultBranch(block);
         }
 
-        List<DtoPolymorphicBranch<T, P>> subtypeBranches = exhaustive ?
-                buildExhaustiveSubtypeBranches(block, subtypeBranchMap) :
-                buildExplicitSubtypeBranches(subtypeBranchMap.values());
-        validateBranchClassNames(defaultDtoBranch, subtypeBranches);
-        validateBranchPropAliases(defaultDtoBranch, subtypeBranches);
-        return new DtoPolymorphism<>(exhaustive, defaultDtoBranch, subtypeBranches);
+        List<DtoPolymorphicBranch<T, P>> typeBranches = exhaustive ?
+                buildExhaustiveTypeBranches(block, typeBranchMap) :
+                buildExplicitTypeBranches(typeBranchMap.values());
+        validateBranchClassNames(defaultDtoBranch, typeBranches);
+        validateBranchPropAliases(defaultDtoBranch, typeBranches);
+        return new DtoPolymorphism<>(exhaustive, defaultDtoBranch, typeBranches);
     }
 
     private DtoPolymorphicBranch<T, P> buildDefaultBranch(DtoParser.DefaultBranchContext branch) {
         if (!branch.dtoBody().macros.isEmpty() ||
                 !branch.dtoBody().explicitProps.isEmpty() ||
-                !branch.dtoBody().subtypesBlocks.isEmpty()) {
+                !branch.dtoBody().typesBlocks.isEmpty()) {
             throw ctx.exception(
                     branch.dtoBody().start.getLine(),
                     branch.dtoBody().start.getCharPositionInLine(),
-                    "The body of #default branch must be empty"
+                    "The body of default branch must be empty"
             );
         }
         DtoType<T, P> branchType = new DtoTypeBuilder<>(
@@ -728,7 +728,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         );
     }
 
-    private DtoPolymorphicBranch<T, P> implicitDefaultBranch(DtoParser.SubtypesBlockContext block) {
+    private DtoPolymorphicBranch<T, P> implicitDefaultBranch(DtoParser.TypesBlockContext block) {
         return new DtoPolymorphicBranch<>(
                 DtoPolymorphicBranch.Kind.DEFAULT,
                 null,
@@ -740,19 +740,19 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         );
     }
 
-    private List<DtoPolymorphicBranch<T, P>> buildExplicitSubtypeBranches(
-            Collection<DtoParser.SubtypeBranchContext> branches
+    private List<DtoPolymorphicBranch<T, P>> buildExplicitTypeBranches(
+            Collection<DtoParser.TypeBranchContext> branches
     ) {
         List<DtoPolymorphicBranch<T, P>> dtoBranches = new ArrayList<>(branches.size());
-        for (DtoParser.SubtypeBranchContext branch : branches) {
-            dtoBranches.add(buildSubtypeBranch(branch));
+        for (DtoParser.TypeBranchContext branch : branches) {
+            dtoBranches.add(buildTypeBranch(branch));
         }
         return dtoBranches;
     }
 
-    private List<DtoPolymorphicBranch<T, P>> buildExhaustiveSubtypeBranches(
-            DtoParser.SubtypesBlockContext block,
-            Map<String, DtoParser.SubtypeBranchContext> explicitBranchMap
+    private List<DtoPolymorphicBranch<T, P>> buildExhaustiveTypeBranches(
+            DtoParser.TypesBlockContext block,
+            Map<String, DtoParser.TypeBranchContext> explicitBranchMap
     ) {
         List<T> instantiableTypes = new ArrayList<>();
         collectInstantiableTypes(baseType, instantiableTypes);
@@ -767,23 +767,23 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         Set<String> handledTypeNames = new LinkedHashSet<>();
         for (T instantiableType : instantiableTypes) {
             String typeName = instantiableType.getQualifiedName();
-            DtoParser.SubtypeBranchContext explicitBranch = explicitBranchMap.get(typeName);
+            DtoParser.TypeBranchContext explicitBranch = explicitBranchMap.get(typeName);
             dtoBranches.add(explicitBranch != null ?
-                    buildSubtypeBranch(explicitBranch) :
-                    implicitSubtypeBranch(block, instantiableType)
+                    buildTypeBranch(explicitBranch) :
+                    implicitTypeBranch(block, instantiableType)
             );
             handledTypeNames.add(typeName);
         }
-        for (Map.Entry<String, DtoParser.SubtypeBranchContext> e : explicitBranchMap.entrySet()) {
+        for (Map.Entry<String, DtoParser.TypeBranchContext> e : explicitBranchMap.entrySet()) {
             if (!handledTypeNames.contains(e.getKey())) {
-                dtoBranches.add(buildSubtypeBranch(e.getValue()));
+                dtoBranches.add(buildTypeBranch(e.getValue()));
             }
         }
         return dtoBranches;
     }
 
-    private DtoPolymorphicBranch<T, P> buildSubtypeBranch(DtoParser.SubtypeBranchContext branch) {
-        T targetType = resolveSubtypeBranchType(branch);
+    private DtoPolymorphicBranch<T, P> buildTypeBranch(DtoParser.TypeBranchContext branch) {
+        T targetType = resolveTypeBranchType(branch);
         DtoType<T, P> branchType = new DtoTypeBuilder<>(
                 null,
                 targetType,
@@ -796,15 +796,15 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 ctx
         ).build();
         if (branchType.getPolymorphism() != null) {
-            DtoParser.SubtypesBlockContext block = branch.dtoBody().subtypesBlocks.get(0);
+            DtoParser.TypesBlockContext block = branch.dtoBody().typesBlocks.get(0);
             throw ctx.exception(
                     block.start.getLine(),
                     block.start.getCharPositionInLine(),
-                    "Nested #subtypes block is not supported inside polymorphic DTO branch"
+                    "Nested #types block is not supported inside polymorphic DTO type branch"
             );
         }
         return new DtoPolymorphicBranch<>(
-                DtoPolymorphicBranch.Kind.SUBTYPE,
+                DtoPolymorphicBranch.Kind.TYPE,
                 targetType,
                 branch.className != null ? branch.className.getText() : null,
                 branchType,
@@ -814,12 +814,12 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         );
     }
 
-    private DtoPolymorphicBranch<T, P> implicitSubtypeBranch(
-            DtoParser.SubtypesBlockContext block,
+    private DtoPolymorphicBranch<T, P> implicitTypeBranch(
+            DtoParser.TypesBlockContext block,
             T targetType
     ) {
         return new DtoPolymorphicBranch<>(
-                DtoPolymorphicBranch.Kind.SUBTYPE,
+                DtoPolymorphicBranch.Kind.TYPE,
                 targetType,
                 null,
                 emptyBranchType(targetType),
@@ -844,14 +844,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return branchType;
     }
 
-    private T resolveSubtypeBranchType(DtoParser.SubtypeBranchContext branch) {
+    private T resolveTypeBranchType(DtoParser.TypeBranchContext branch) {
         String qualifiedName = ctx.resolve(branch.targetType);
         T targetType = ctx.getType(qualifiedName);
         if (targetType == null) {
             throw ctx.exception(
                     branch.targetType.start.getLine(),
                     branch.targetType.start.getCharPositionInLine(),
-                    "Illegal subtype branch \"" +
+                    "Illegal type branch \"" +
                             qualifiedName +
                             "\", it cannot be resolved as immutable type"
             );
@@ -860,7 +860,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     branch.targetType.start.getLine(),
                     branch.targetType.start.getCharPositionInLine(),
-                    "Illegal subtype branch \"" +
+                    "Illegal type branch \"" +
                             qualifiedName +
                             "\", it is not subtype of \"" +
                             baseType.getQualifiedName() +
@@ -871,7 +871,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     branch.targetType.start.getLine(),
                     branch.targetType.start.getCharPositionInLine(),
-                    "Illegal subtype branch \"" +
+                    "Illegal type branch \"" +
                             qualifiedName +
                             "\", it is not instantiable"
             );
@@ -902,13 +902,13 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private void validateBranchClassNames(
             DtoPolymorphicBranch<T, P> defaultBranch,
-            List<DtoPolymorphicBranch<T, P>> subtypeBranches
+            List<DtoPolymorphicBranch<T, P>> typeBranches
     ) {
         Map<String, DtoPolymorphicBranch<T, P>> branchMap = new LinkedHashMap<>();
         if (defaultBranch != null) {
             branchMap.put(defaultBranch.getClassName(), defaultBranch);
         }
-        for (DtoPolymorphicBranch<T, P> branch : subtypeBranches) {
+        for (DtoPolymorphicBranch<T, P> branch : typeBranches) {
             DtoPolymorphicBranch<T, P> conflict = branchMap.put(branch.getClassName(), branch);
             if (conflict != null) {
                 throw ctx.exception(
@@ -924,7 +924,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private void validateBranchPropAliases(
             DtoPolymorphicBranch<T, P> defaultBranch,
-            List<DtoPolymorphicBranch<T, P>> subtypeBranches
+            List<DtoPolymorphicBranch<T, P>> typeBranches
     ) {
         Set<String> baseAliases = new HashSet<>();
         for (AbstractProp prop : dtoType.getProps()) {
@@ -933,7 +933,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (defaultBranch != null) {
             validateBranchPropAliases(baseAliases, defaultBranch);
         }
-        for (DtoPolymorphicBranch<T, P> branch : subtypeBranches) {
+        for (DtoPolymorphicBranch<T, P> branch : typeBranches) {
             validateBranchPropAliases(baseAliases, branch);
         }
     }

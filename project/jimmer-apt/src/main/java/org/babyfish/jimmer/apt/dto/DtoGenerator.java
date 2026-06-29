@@ -292,7 +292,7 @@ public class DtoGenerator {
         if (defaultBranch != null) {
             generatePolymorphicBranch(defaultBranch, superInterfaceName);
         }
-        for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getSubtypeBranches()) {
+        for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getTypeBranches()) {
             generatePolymorphicBranch(branch, superInterfaceName);
         }
 

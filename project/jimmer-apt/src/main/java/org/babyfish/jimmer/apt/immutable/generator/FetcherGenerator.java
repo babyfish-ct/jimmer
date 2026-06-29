@@ -73,7 +73,7 @@ public class FetcherGenerator {
             add$();
             add$from();
             addConstructor();
-            addForSubtype();
+            addForType();
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isId()) {
                     continue;
@@ -462,20 +462,20 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addForSubtype() {
+    private void addForType() {
         if (!isKnownNonLeaf()) {
             return;
         }
-        ImmutableProp conflictProp = type.getProps().get("forSubtype");
+        ImmutableProp conflictProp = type.getProps().get("forType");
         if (conflictProp != null) {
             throw new MetaException(
                     conflictProp.toElement(),
-                    "Illegal property name \"forSubtype\", it conflicts with the generated fetcher method for inheritance subtype branches"
+                    "Illegal property name \"forType\", it conflicts with the generated fetcher method for inheritance type branches"
             );
         }
         TypeVariableName subtypeTypeVariable = TypeVariableName.get("ST", type.getClassName());
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("forSubtype")
+                .methodBuilder("forType")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(NewChain.class)
                 .addTypeVariable(subtypeTypeVariable)
@@ -487,7 +487,7 @@ public class FetcherGenerator {
                         "subtypeFetcher"
                 )
                 .returns(type.getFetcherClassName())
-                .addStatement("return ($T)__forSubtype(subtypeFetcher)", type.getFetcherClassName());
+                .addStatement("return ($T)__forType(subtypeFetcher)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 

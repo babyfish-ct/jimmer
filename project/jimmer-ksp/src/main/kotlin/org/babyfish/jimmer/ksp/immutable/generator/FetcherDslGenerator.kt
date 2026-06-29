@@ -27,7 +27,7 @@ class FetcherDslGenerator(
                     addInternallyGetFetcher()
                     addDeleteFun("allScalarFields")
                     addDeleteFun("allTableFields")
-                    addForSubtype()
+                    addForType()
                     for (prop in type.properties.values) {
                         if (!prop.isId) {
                             addSimpleProp(prop)
@@ -108,27 +108,27 @@ class FetcherDslGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addForSubtype() {
+    private fun TypeSpec.Builder.addForType() {
         if (!isKnownNonLeaf()) {
             return
         }
-        type.properties["forSubtype"]?.let {
+        type.properties["forType"]?.let {
             throw MetaException(
                 it.propDeclaration,
-                "Illegal property name \"forSubtype\", it conflicts with the generated fetcher method for inheritance subtype branches"
+                "Illegal property name \"forType\", it conflicts with the generated fetcher method for inheritance type branches"
             )
         }
         val typeVariable = TypeVariableName("S", type.className)
         addFunction(
             FunSpec
-                .builder("forSubtype")
+                .builder("forType")
                 .addTypeVariable(typeVariable)
                 .addParameter(
                     "subtypeFetcher",
                     FETCHER_CLASS_NAME.parameterizedBy(typeVariable)
                 )
                 .addStatement(
-                    "_fetcher = (_fetcher as %T<%T>).__forSubtype(subtypeFetcher)",
+                    "_fetcher = (_fetcher as %T<%T>).__forType(subtypeFetcher)",
                     FETCHER_IMPLEMENTOR_CLASS_NAME,
                     type.className
                 )
@@ -137,7 +137,7 @@ class FetcherDslGenerator(
         for (subtype in knownStrictSubtypes()) {
             addFunction(
                 FunSpec
-                    .builder("forSubtype")
+                    .builder("forType")
                     .addAnnotation(
                         AnnotationSpec
                             .builder(ClassName("kotlin", "Suppress"))
@@ -147,7 +147,7 @@ class FetcherDslGenerator(
                     .addAnnotation(
                         AnnotationSpec
                             .builder(ClassName("kotlin.jvm", "JvmName"))
-                            .addMember("%S", "forSubtype_${subtype.qualifiedName.replace('.', '_')}")
+                            .addMember("%S", "forType_${subtype.qualifiedName.replace('.', '_')}")
                             .build()
                     )
                     .addParameter(
@@ -165,7 +165,7 @@ class FetcherDslGenerator(
                     .addStatement("val dsl = %T()", subtype.fetcherDslClassName)
                     .addStatement("dsl.block()")
                     .addStatement(
-                        "_fetcher = (_fetcher as %T<%T>).__forSubtype(dsl.internallyGetFetcher())",
+                        "_fetcher = (_fetcher as %T<%T>).__forType(dsl.internallyGetFetcher())",
                         FETCHER_IMPLEMENTOR_CLASS_NAME,
                         type.className
                     )

@@ -48,7 +48,7 @@ dtoBody
     :
     '{'
     (macros += macro)*
-    (((subtypesBlocks += subtypesBlock | explicitProps += explicitProp)) (',' | ';')?)*
+    (((typesBlocks += typesBlock | explicitProps += explicitProp)) (',' | ';')?)*
     '}'
     ;
 
@@ -57,14 +57,14 @@ explicitProp
     aliasGroup | foldProp | positiveProp | negativeProp | userProp
     ;
 
-subtypesBlock
+typesBlock
     :
-    '#subtypes' '{' (subtypesElements += subtypesElement)* '}'
+    '#types' '{' (typesElements += typesElement)* '}'
     ;
 
-subtypesElement
+typesElement
     :
-    exhaustiveMacro | defaultBranch | subtypeBranch
+    exhaustiveMacro | defaultBranch | typeBranch
     ;
 
 exhaustiveMacro
@@ -76,13 +76,13 @@ defaultBranch
     :
     (doc = DocComment)?
     (annotations += annotation)*
-    '#default'
+    'default'
     ('class' className = Identifier)?
     ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
     dtoBody
     ;
 
-subtypeBranch
+typeBranch
     :
     (doc = DocComment)?
     (annotations += annotation)*

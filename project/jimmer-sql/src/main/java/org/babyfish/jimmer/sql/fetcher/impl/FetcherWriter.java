@@ -129,7 +129,7 @@ class FetcherWriter {
 
     private void write(Map.Entry<ImmutableType, Fetcher<?>> subtypeFetcherEntry) {
         builder
-                .append("forSubtype(")
+                .append("forType(")
                 .append(subtypeFetcherEntry.getKey())
                 .append(')');
         write(subtypeFetcherEntry.getValue());

@@ -53,7 +53,7 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
     FetcherImplementor<E> remove(String prop);
 
     @NewChain
-    FetcherImplementor<E> __forSubtype(Fetcher<?> subtypeFetcher);
+    FetcherImplementor<E> __forType(Fetcher<?> subtypeFetcher);
 
     Map<ImmutableType, Fetcher<?>> __getSubtypeFetcherMap();
 
