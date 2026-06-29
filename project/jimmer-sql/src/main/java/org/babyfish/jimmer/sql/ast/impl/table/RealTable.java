@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 public interface RealTable extends Iterable<RealTable> {
 
@@ -51,6 +52,16 @@ public interface RealTable extends Iterable<RealTable> {
             boolean foreignKeyInBaseQuery,
             BaseQueryReadSupport readSupport,
             BaseTableOwner baseTableOwner
+    );
+
+    void renderSelection(
+            ImmutableProp prop,
+            boolean rawId,
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition optionalDefinition,
+            boolean withPrefix,
+            Function<Integer, String> asBlock,
+            boolean idViewAllowed
     );
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);

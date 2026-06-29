@@ -117,6 +117,7 @@ public class ReaderManager {
                 nonIdReaderMap,
                 ObjectReader.discriminatorReader(sqlClient, immutableType),
                 null,
+                null,
                 null
         );
     }

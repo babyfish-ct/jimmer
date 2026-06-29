@@ -813,6 +813,7 @@ public class Saver {
 
         private boolean isOptimizableImpl(Fetcher<?> fetcher) {
             if (fetcher.getFieldMap().size() == 1 &&
+                    ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap().isEmpty() &&
                     fetcher.getFieldMap().values().iterator().next().getProp().isId()) {
                 return true;
             }

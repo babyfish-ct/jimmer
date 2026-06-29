@@ -24,7 +24,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Collections
+import java.util.*
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
@@ -181,6 +181,10 @@ internal val FETCHER_CLASS_NAME = ClassName(
 internal val FETCHER_IMPL_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher.impl",
     "FetcherImpl"
+)
+internal val FETCHER_IMPLEMENTOR_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.fetcher.impl",
+    "FetcherImplementor"
 )
 internal val JAVA_FIELD_CONFIG_UTILS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher.impl",

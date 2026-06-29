@@ -25,7 +25,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                 "from CLIENT tb_1_ " +
                     "where tb_1_.ID = ?"
             )
@@ -35,6 +35,56 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
                 assertEquals(101L, it.id)
                 assertEquals("Bob", it.name)
                 assertFalse(ImmutableObjects.isLoaded(it, KClientProps.TYPE))
+            }
+        }
+    }
+
+    @Test
+    fun testRootFetcherWithSubtypeBranches() {
+        executeAndExpect(
+            sqlClient.createQuery(KClient::class) {
+                where(table.id valueIn listOf(100L, 101L))
+                orderBy(table.id)
+                select(table.fetchBy {
+                    name()
+                    forSubtype(KOrganization::class) {
+                        taxCode()
+                    }
+                    forSubtype(KPerson::class) {
+                        firstName()
+                        lastName()
+                    }
+                })
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                    "tb_2_.TAX_CODE, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                    "from CLIENT tb_1_ " +
+                    "left join CLIENT tb_2_ " +
+                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
+                    "left join CLIENT tb_3_ " +
+                    "on tb_1_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
+                    "where tb_1_.ID in (?, ?) " +
+                    "order by tb_1_.ID asc"
+            )
+            variables("ORG", "KPerson", 100L, 101L)
+            row(0) {
+                assertEquals(KOrganization::class.java, (it as ImmutableSpi).__type().javaClass)
+                val organization = it as KOrganization
+                assertEquals(100L, organization.id)
+                assertEquals("Acme", organization.name)
+                assertEquals("ACME-001", organization.taxCode)
+                assertFalse(ImmutableObjects.isLoaded(organization, KClientProps.TYPE))
+            }
+            row(1) {
+                assertEquals(KPerson::class.java, (it as ImmutableSpi).__type().javaClass)
+                val person = it as KPerson
+                assertEquals(101L, person.id)
+                assertEquals("Bob", person.name)
+                assertEquals("Bob", person.firstName)
+                assertEquals("Brown", person.lastName)
+                assertFalse(ImmutableObjects.isLoaded(person, KClientProps.TYPE))
             }
         }
     }
@@ -85,7 +135,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
             )
             variables(1000L)
             statement(1).sql(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                     "from CLIENT tb_1_ " +
                     "where tb_1_.ID = ?"
             )
@@ -136,7 +186,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                     "from K_ENUM_CLIENT tb_1_ " +
                     "where tb_1_.ID = ?"
             )
@@ -216,7 +266,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testTreatAsRootRendersDiscriminatorPredicate() {
+    fun testTreatAsRootIsNoOp() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 val client = table.asTableEx().treatAs<KClient>()
@@ -225,13 +275,10 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "select tb_1_.ID, tb_2_.NAME " +
+                "select tb_1_.ID, tb_1_.NAME " +
                     "from CLIENT tb_1_ " +
-                    "inner join CLIENT tb_2_ " +
-                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE in (?, ?) " +
                     "order by tb_1_.ID asc"
             )
-            variables("ORG", "KPerson")
             row(0) {
                 assertEquals(100L, it._1)
                 assertEquals("Acme", it._2)

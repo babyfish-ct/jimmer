@@ -24,7 +24,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.fetch(ClientFetcher.$.name())),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(101L);
@@ -36,6 +36,62 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                     });
                 }
         );
+    }
+
+    @Test
+    public void testRootFetcherWithSubtypeBranches() {
+        ClientTable table = ClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().in(Arrays.asList(100L, 101L)))
+                        .orderBy(table.id())
+                        .select(
+                                table.fetch(
+                                        ClientFetcher.$
+                                                .name()
+                                                .forSubtype(OrganizationFetcher.$.taxCode())
+                                                .forSubtype(PersonFetcher.$.firstName().lastName())
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                    "tb_2_.TAX_CODE, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                    "from CLIENT tb_1_ " +
+                                    "left join CLIENT tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
+                                    "left join CLIENT tb_3_ " +
+                                    "on tb_1_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
+                                    "where tb_1_.ID in (?, ?) " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("ORG", "Person", 100L, 101L);
+                    ctx.row(0, row -> {
+                        assertEquals(Organization.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertEquals(100L, row.id());
+                        assertEquals("Acme", row.name());
+                        assertEquals("ACME-001", ((Organization) row).taxCode());
+                        assertLoadState(row, "id", "name", "taxCode");
+                    });
+                    ctx.row(1, row -> {
+                        assertEquals(Person.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertEquals(101L, row.id());
+                        assertEquals("Bob", row.name());
+                        assertEquals("Bob", ((Person) row).firstName());
+                        assertEquals("Brown", ((Person) row).lastName());
+                        assertLoadState(row, "id", "name", "firstName", "lastName");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testRootFetcherWithSelfSubtypeIsRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> ClientFetcher.$.forSubtype(ClientFetcher.$.name())
+        );
+        assertTrue(ex.getMessage().contains("not strict subtype"));
     }
 
     @Test
@@ -83,7 +139,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                                     "where tb_1_.ID = ?"
                     ).variables(1000L);
                     ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(100L);
@@ -133,7 +189,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.fetch(EnumClientFetcher.$.name())),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from ENUM_CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(111L);
@@ -248,7 +304,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testTreatAsRootRendersDiscriminatorPredicate() {
+    public void testTreatAsRootIsNoOp() {
         ClientTable table = ClientTable.$;
         ClientTable client = table.treatAs(ClientTable.class);
         executeAndExpect(
@@ -258,12 +314,10 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.id(), client.name()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_2_.NAME " +
+                            "select tb_1_.ID, tb_1_.NAME " +
                                     "from CLIENT tb_1_ " +
-                                    "inner join CLIENT tb_2_ " +
-                                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE in (?, ?) " +
                                     "order by tb_1_.ID asc"
-                    ).variables("ORG", "Person");
+                    );
                     ctx.row(0, row -> {
                         assertEquals(100L, row.get_1());
                         assertEquals("Acme", row.get_2());

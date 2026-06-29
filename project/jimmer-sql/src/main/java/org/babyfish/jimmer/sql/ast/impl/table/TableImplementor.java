@@ -19,9 +19,7 @@ import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
@@ -101,7 +99,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (inheritanceInfo == null || inheritanceInfo.getRootType() == type) {
             return null;
         }
-        List<Object> values = new ArrayList<>();
         Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(type);
         if (concreteTypes.isEmpty()) {
             throw new ExecutionException(
@@ -110,16 +107,10 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                             "\" because it is abstract and has no instantiable subtype"
             );
         }
-        for (ImmutableType concreteType : concreteTypes) {
-            String value = concreteType.getDiscriminatorValue();
-            if (value != null) {
-                values.add(inheritanceInfo.discriminatorValue(value));
-            }
-        }
         return new DiscriminatorPredicate(
                 this,
                 inheritanceInfo.getDiscriminatorProp(),
-                values
+                DiscriminatorPredicate.values(inheritanceInfo, type)
         );
     }
 
@@ -149,7 +140,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                             "\""
             );
         }
-        List<Object> values = new ArrayList<>();
         Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(targetType);
         if (concreteTypes.isEmpty()) {
             throw new ExecutionException(
@@ -160,16 +150,10 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                             "\" because it is abstract and has no instantiable subtype"
             );
         }
-        for (ImmutableType concreteType : concreteTypes) {
-            String value = concreteType.getDiscriminatorValue();
-            if (value != null) {
-                values.add(inheritanceInfo.discriminatorValue(value));
-            }
-        }
         return new DiscriminatorPredicate(
                 this,
                 inheritanceInfo.getDiscriminatorProp(),
-                values
+                DiscriminatorPredicate.values(inheritanceInfo, targetType)
         );
     }
 

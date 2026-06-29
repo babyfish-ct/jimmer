@@ -23,7 +23,7 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.fetch(ClientFetcher.$.name())),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from JOINED_CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(201L);
@@ -35,6 +35,105 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                     });
                 }
         );
+    }
+
+    @Test
+    public void testRootFetcherWithSubtypeBranches() {
+        ClientTable table = ClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().in(Arrays.asList(200L, 201L)))
+                        .orderBy(table.id())
+                        .select(
+                                table.fetch(
+                                        ClientFetcher.$
+                                                .name()
+                                                .forSubtype(OrganizationFetcher.$.taxCode())
+                                                .forSubtype(PersonFetcher.$.firstName().lastName())
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                    "tb_2_.TAX_CODE, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "left join JOINED_ORGANIZATION tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "left join JOINED_PERSON tb_3_ " +
+                                    "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "where tb_1_.ID in (?, ?) " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("ORG", "Person", 200L, 201L);
+                    ctx.row(0, row -> {
+                        assertEquals(Organization.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertEquals(200L, row.id());
+                        assertEquals("Globex", row.name());
+                        assertEquals("GLOBEX-001", ((Organization) row).taxCode());
+                        assertLoadState(row, "id", "name", "taxCode");
+                    });
+                    ctx.row(1, row -> {
+                        assertEquals(Person.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertEquals(201L, row.id());
+                        assertEquals("Alice", row.name());
+                        assertEquals("Alice", ((Person) row).firstName());
+                        assertEquals("Smith", ((Person) row).lastName());
+                        assertLoadState(row, "id", "name", "firstName", "lastName");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testRootFetcherWithSubtypeAssociationBranch() {
+        ClientTable table = ClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().in(Arrays.asList(200L, 201L)))
+                        .orderBy(table.id())
+                        .select(
+                                table.fetch(
+                                        ClientFetcher.$
+                                                .name()
+                                                .forSubtype(
+                                                        OrganizationFetcher.$.projects(OrganizationProjectFetcher.$.name())
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "where tb_1_.ID in (?, ?) " +
+                                    "order by tb_1_.ID asc"
+                    ).variables(200L, 201L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from JOINED_ORG_PROJECT tb_1_ " +
+                                    "where tb_1_.ORGANIZATION_ID = ?"
+                    ).variables(200L);
+                    ctx.row(0, row -> {
+                        assertEquals(Organization.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertLoadState(row, "id", "name", "projects");
+                        assertEquals(1, ((Organization) row).projects().size());
+                        assertEquals("Joined organization project", ((Organization) row).projects().get(0).name());
+                    });
+                    ctx.row(1, row -> {
+                        assertEquals(Person.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertLoadState(row, "id", "name");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testRootFetcherWithSelfSubtypeIsRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> ClientFetcher.$.forSubtype(ClientFetcher.$.name())
+        );
+        assertTrue(ex.getMessage().contains("not strict subtype"));
     }
 
     @Test
@@ -82,7 +181,7 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                                     "where tb_1_.ID = ?"
                     ).variables(2000L);
                     ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from JOINED_CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(200L);
@@ -221,7 +320,7 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testTreatAsRootRendersDiscriminatorPredicate() {
+    public void testTreatAsRootIsNoOp() {
         ClientTable table = ClientTable.$;
         ClientTable client = table.treatAs(ClientTable.class);
         executeAndExpect(
@@ -231,12 +330,10 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.id(), client.name()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_2_.NAME " +
+                            "select tb_1_.ID, tb_1_.NAME " +
                                     "from JOINED_CLIENT tb_1_ " +
-                                    "inner join JOINED_CLIENT tb_2_ " +
-                                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE in (?, ?) " +
                                     "order by tb_1_.ID asc"
-                    ).variables("ORG", "Person");
+                    );
                     ctx.row(0, row -> {
                         assertEquals(200L, row.get_1());
                         assertEquals("Globex", row.get_2());
@@ -291,12 +388,10 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.id(), organization.taxCode()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_2__sub.TAX_CODE " +
+                            "select tb_1_.ID, tb_2_.TAX_CODE " +
                                     "from JOINED_CLIENT tb_1_ " +
-                                    "inner join JOINED_CLIENT tb_2_ " +
-                                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
-                                    "inner join JOINED_ORGANIZATION tb_2__sub " +
-                                    "on tb_2_.ID = tb_2__sub.ID " +
+                                    "inner join JOINED_ORGANIZATION tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.ID asc"
                     ).variables("ORG", 200L, 201L);
@@ -320,12 +415,10 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.id(), organization.taxCode()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_2__sub.TAX_CODE " +
+                            "select tb_1_.ID, tb_2_.TAX_CODE " +
                                     "from JOINED_CLIENT tb_1_ " +
-                                    "left join JOINED_CLIENT tb_2_ " +
-                                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
-                                    "left join JOINED_ORGANIZATION tb_2__sub " +
-                                    "on tb_2_.ID = tb_2__sub.ID " +
+                                    "left join JOINED_ORGANIZATION tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.ID asc"
                     ).variables("ORG", 200L, 201L);
@@ -356,13 +449,11 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.id(), organization.taxCode()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_3__sub.TAX_CODE " +
+                            "select tb_1_.ID, tb_3_.TAX_CODE " +
                                     "from JOINED_CLIENT_PROJECT tb_1_ " +
                                     "left join JOINED_CLIENT tb_2_ on tb_1_.CLIENT_ID = tb_2_.ID " +
-                                    "inner join JOINED_CLIENT tb_3_ " +
-                                    "on tb_2_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
-                                    "inner join JOINED_ORGANIZATION tb_3__sub " +
-                                    "on tb_3_.ID = tb_3__sub.ID " +
+                                    "inner join JOINED_ORGANIZATION tb_3_ " +
+                                    "on tb_2_.ID = tb_3_.ID and tb_2_.CLIENT_TYPE = ? " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.ID asc"
                     ).variables("ORG", 2000L, 2002L);
@@ -389,13 +480,11 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table.id(), organization.taxCode()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_3__sub.TAX_CODE " +
+                            "select tb_1_.ID, tb_3_.TAX_CODE " +
                                     "from JOINED_CLIENT_PROJECT tb_1_ " +
                                     "left join JOINED_CLIENT tb_2_ on tb_1_.CLIENT_ID = tb_2_.ID " +
-                                    "left join JOINED_CLIENT tb_3_ " +
-                                    "on tb_2_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
-                                    "left join JOINED_ORGANIZATION tb_3__sub " +
-                                    "on tb_3_.ID = tb_3__sub.ID " +
+                                    "left join JOINED_ORGANIZATION tb_3_ " +
+                                    "on tb_2_.ID = tb_3_.ID and tb_2_.CLIENT_TYPE = ? " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.ID asc"
                     ).variables("ORG", 2000L, 2002L);

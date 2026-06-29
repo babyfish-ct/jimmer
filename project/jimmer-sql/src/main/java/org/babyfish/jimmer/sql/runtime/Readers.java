@@ -221,6 +221,20 @@ class Readers {
         }
 
         @Override
+        protected Object enterSubtype(ImmutableType subtype) {
+            Args parentArgs = this.args;
+            this.args = new Args(subtype);
+            return parentArgs;
+        }
+
+        @Override
+        protected void leaveSubtype(ImmutableType subtype, Object enterValue) {
+            Args parentArgs = (Args) enterValue;
+            parentArgs.addSubtypeReader(args.createSubtypeReader());
+            this.args = parentArgs;
+        }
+
+        @Override
         protected void visit(Field field, int depth) {
             ImmutableProp prop = field.getProp();
             if (!prop.isId() && (prop.hasStorage() || prop.getSqlTemplate() != null)) {
@@ -254,6 +268,8 @@ class Readers {
 
             private List<PropId> hiddenPropIds;
 
+            private List<ObjectReader.SubtypeReader> subtypeReaders;
+
             private Args(ImmutableType type) {
                 this.type = type;
             }
@@ -282,12 +298,30 @@ class Readers {
                 list.add(prop.getId());
             }
 
+            void addSubtypeReader(ObjectReader.SubtypeReader subtypeReader) {
+                List<ObjectReader.SubtypeReader> list = subtypeReaders;
+                if (list == null) {
+                    subtypeReaders = list = new ArrayList<>();
+                }
+                list.add(subtypeReader);
+            }
+
             ObjectReader create(JSqlClientImplementor sqlClient) {
                 return new ObjectReader(
                         type,
                         sqlClient.getReader(type.getIdProp()),
                         nonIdReaderMap,
                         ObjectReader.discriminatorReader(sqlClient, type),
+                        subtypeReaders,
+                        shownPropIds,
+                        hiddenPropIds
+                );
+            }
+
+            ObjectReader.SubtypeReader createSubtypeReader() {
+                return new ObjectReader.SubtypeReader(
+                        type,
+                        nonIdReaderMap,
                         shownPropIds,
                         hiddenPropIds
                 );

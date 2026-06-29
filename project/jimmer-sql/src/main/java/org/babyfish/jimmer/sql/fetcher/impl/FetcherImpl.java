@@ -5,8 +5,8 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ManyToManyView;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.OneToOne;
-import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +46,11 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     final FetcherImpl<?> childFetcher;
 
+    final FetcherImpl<?> subtypeFetcher;
+
     private Map<String, Field> fieldMap;
+
+    private Map<ImmutableType, Fetcher<?>> subtypeFetcherMap;
 
     private Boolean isSimpleFetcher;
 
@@ -78,6 +82,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.recursionStrategy = base.recursionStrategy;
             this.fetchType = base.fetchType;
             this.childFetcher = base.childFetcher;
+            this.subtypeFetcher = base.subtypeFetcher;
         } else {
             this.prev = null;
             this.immutableType = ImmutableType.get(javaClass);
@@ -92,6 +97,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.recursionStrategy = null;
             this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
+            this.subtypeFetcher = null;
         }
     }
 
@@ -118,6 +124,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         } else {
             this.childFetcher = new FetcherImpl<>(prop.getTargetType().getJavaClass());
         }
+        this.subtypeFetcher = null;
     }
 
     @SuppressWarnings("unchecked")
@@ -150,6 +157,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
         }
+        this.subtypeFetcher = null;
     }
 
     FetcherImpl(
@@ -170,6 +178,27 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.recursionStrategy = child != null ? base.recursionStrategy : null;
         this.fetchType = child != null ? base.fetchType : ReferenceFetchType.AUTO;
         this.childFetcher = child;
+        this.subtypeFetcher = base.subtypeFetcher;
+    }
+
+    protected FetcherImpl(
+            FetcherImpl<E> prev,
+            FetcherImpl<?> subtypeFetcher
+    ) {
+        this.prev = prev;
+        this.immutableType = prev.immutableType;
+        this.negative = false;
+        this.implicit = false;
+        this.rawId = false;
+        this.prop = null;
+        this.filter = null;
+        this.batchSize = 0;
+        this.limit = Integer.MAX_VALUE;
+        this.offset = 0;
+        this.recursionStrategy = null;
+        this.fetchType = ReferenceFetchType.AUTO;
+        this.childFetcher = null;
+        this.subtypeFetcher = subtypeFetcher;
     }
 
     public FetcherImpl(
@@ -191,6 +220,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.recursionStrategy = null;
         this.fetchType = ReferenceFetchType.AUTO;
         this.childFetcher = child;
+        this.subtypeFetcher = null;
     }
 
     @SuppressWarnings("unchecked")
@@ -355,6 +385,54 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
             map = Collections.unmodifiableMap(orderedMap);
             fieldMap = map;
+        }
+        return map;
+    }
+
+    @Override
+    public Map<ImmutableType, Fetcher<?>> __getSubtypeFetcherMap() {
+        Map<ImmutableType, Fetcher<?>> map = subtypeFetcherMap;
+        if (map == null) {
+            LinkedList<FetcherImpl<?>> subtypeFetchers = new LinkedList<>();
+            for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
+                if (fetcher.subtypeFetcher != null) {
+                    subtypeFetchers.addFirst(fetcher.subtypeFetcher);
+                }
+            }
+            if (subtypeFetchers.isEmpty()) {
+                map = Collections.emptyMap();
+            } else {
+                Map<ImmutableType, Fetcher<?>> mergedMap = new LinkedHashMap<>();
+                for (FetcherImpl<?> subtypeFetcher : subtypeFetchers) {
+                    ImmutableType subtype = subtypeFetcher.getImmutableType();
+                    Fetcher<?> oldFetcher = mergedMap.get(subtype);
+                    if (oldFetcher == null) {
+                        mergedMap.put(subtype, subtypeFetcher);
+                    } else {
+                        try {
+                            mergedMap.put(
+                                    subtype,
+                                    new FetcherMergeContext().merge(
+                                            oldFetcher,
+                                            subtypeFetcher,
+                                            false
+                                    )
+                            );
+                        } catch (FetcherMergeContext.ConflictException ex) {
+                            throw new IllegalArgumentException(
+                                    "Cannot merge the subtype fetcher \"" +
+                                            subtype +
+                                            ex.path +
+                                            "\", the configuration `" +
+                                            ex.cfgName +
+                                            "` is conflict"
+                            );
+                        }
+                    }
+                }
+                map = Collections.unmodifiableMap(mergedMap);
+            }
+            subtypeFetcherMap = map;
         }
         return map;
     }
@@ -536,6 +614,31 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     }
 
     @NewChain
+    @Override
+    public FetcherImplementor<E> __forSubtype(Fetcher<?> subtypeFetcher) {
+        Objects.requireNonNull(subtypeFetcher, "'subtypeFetcher' cannot be null");
+        ImmutableType subtype = subtypeFetcher.getImmutableType();
+        InheritanceInfo inheritanceInfo = immutableType.getInheritanceInfo();
+        if (inheritanceInfo == null || subtype == immutableType || !immutableType.isAssignableFrom(subtype)) {
+            throw new IllegalArgumentException(
+                    "The fetcher type \"" +
+                            subtype +
+                            "\" is not strict subtype of \"" +
+                            immutableType +
+                            "\""
+            );
+        }
+        if (inheritanceInfo.getConcreteTypes(subtype).isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot add subtype fetcher for \"" +
+                            subtype +
+                            "\" because it is abstract and has no instantiable subtype"
+            );
+        }
+        return createFetcher((FetcherImpl<?>) subtypeFetcher);
+    }
+
+    @NewChain
     private FetcherImpl<E> addImpl(ImmutableProp prop, boolean negative, IdOnlyFetchType idOnlyFetchType) {
         if (prop.isId()) {
             return this;
@@ -582,7 +685,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     public int hashCode() {
         int h = hash;
         if (h == 0) {
-            h = immutableType.hashCode() ^ getFieldMap().hashCode();
+            h = immutableType.hashCode() ^ getFieldMap().hashCode() ^ __getSubtypeFetcherMap().hashCode();
             if (h == 0) {
                 h = -1;
             }
@@ -601,7 +704,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         }
         Fetcher<?> other = (Fetcher<?>) obj;
         return this.immutableType == other.getImmutableType() &&
-                this.getFieldMap().equals(other.getFieldMap());
+                this.getFieldMap().equals(other.getFieldMap()) &&
+                this.__getSubtypeFetcherMap().equals(subtypeFetcherMap(other));
     }
 
     @Override
@@ -620,11 +724,13 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     public boolean __isSimpleFetcher() {
         Boolean isSimple = isSimpleFetcher;
         if (isSimple == null) {
-            isSimple = true;
-            for (Field field : getFieldMap().values()) {
-                if (!field.isSimpleField()) {
-                    isSimple = false;
-                    break;
+            isSimple = __getSubtypeFetcherMap().isEmpty();
+            if (isSimple) {
+                for (Field field : getFieldMap().values()) {
+                    if (!field.isSimpleField()) {
+                        isSimple = false;
+                        break;
+                    }
                 }
             }
             isSimpleFetcher = isSimple;
@@ -635,7 +741,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     @Override
     public boolean __contains(String prop) {
         for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
-            if (fetcher.prop.getName().equals(prop)) {
+            if (fetcher.prop != null && fetcher.prop.getName().equals(prop)) {
                 return !fetcher.negative;
             }
         }
@@ -648,6 +754,17 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     protected FetcherImpl<E> createFetcher(ImmutableProp prop, FieldConfig<?, ? extends Table<?>> fieldConfig) {
         return new FetcherImpl<>(this, prop, fieldConfig);
+    }
+
+    protected FetcherImpl<E> createFetcher(FetcherImpl<?> subtypeFetcher) {
+        return new FetcherImpl<>(this, subtypeFetcher);
+    }
+
+    private static Map<ImmutableType, Fetcher<?>> subtypeFetcherMap(Fetcher<?> fetcher) {
+        if (fetcher instanceof FetcherImplementor<?>) {
+            return ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
+        }
+        return Collections.emptyMap();
     }
 
     private static FetcherImpl<?> standardChildFetcher(FieldConfigImpl<?, Table<?>> loaderImpl) {

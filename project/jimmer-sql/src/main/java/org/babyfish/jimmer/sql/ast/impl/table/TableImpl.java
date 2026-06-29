@@ -553,6 +553,9 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                             "\" because it is abstract and has no instantiable subtype"
             );
         }
+        if (treatedAs == immutableType) {
+            return (TableImplementor<X>) this;
+        }
         Key key = new Key("treatAs(" + treatedAs + ")", joinType, null, false);
         TableImpl<?> table = (TableImpl<?>) getValue(key);
         if (table != null) {

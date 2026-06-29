@@ -403,16 +403,21 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         Map<String, ImmutableProp> selectableProps = table
                 .getImmutableType()
                 .getSelectableProps();
+        ImmutableProp discriminatorProp = null;
+        if (table instanceof TableImplementor<?>) {
+            discriminatorProp = ((TableImplementor<?>) table).getPolymorphicDiscriminatorProp();
+        }
         for (ImmutableProp prop : selectableProps.values()) {
+            if (discriminatorProp != null &&
+                    prop.isDiscriminator() &&
+                    prop.toOriginal() == discriminatorProp.toOriginal()) {
+                continue;
+            }
             builder.separator();
             table.renderSelection(prop, !prop.isId(), builder, null, true, null, false);
-        }
-        if (table instanceof TableImplementor<?>) {
-            TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
-            ImmutableProp discriminatorProp = tableImplementor.getPolymorphicDiscriminatorProp();
-            if (discriminatorProp != null && selectableProps.values().stream().noneMatch(ImmutableProp::isDiscriminator)) {
+            if (discriminatorProp != null && prop.isId()) {
                 builder.separator();
-                tableImplementor
+                ((TableImplementor<?>) table)
                         .realTableForRender(builder)
                         .renderColumn(
                                 builder,

@@ -52,7 +52,7 @@ class FetcherGenerator(
                     }
                     addCreateFun(type, false)
                     addCreateFun(type, true)
-                    FetcherDslGenerator(type, this).generate()
+                    FetcherDslGenerator(ctx, type, this).generate()
                     addEmptyFetcher(type)
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)

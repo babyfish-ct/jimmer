@@ -227,6 +227,7 @@ class FieldImpl implements Field {
         if (prop.isColumnDefinition()) {
             return childFetcher == null || (
                     childFetcher.getFieldMap().size() == 1 &&
+                            childFetcher.__getSubtypeFetcherMap().isEmpty() &&
                             childFetcher.getFieldMap().values().iterator().next().getProp().isId()
             );
         }

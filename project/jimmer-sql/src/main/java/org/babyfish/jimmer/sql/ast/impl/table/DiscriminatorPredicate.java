@@ -1,14 +1,16 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,11 +43,41 @@ class DiscriminatorPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        SqlBuilder sqlBuilder = builder.assertSimple();
         Storage storage = prop.getStorage(builder.getAstContext().getSqlClient().getMetadataStrategy());
-        table.realTableForRender(builder).renderColumn(
+        render(
                 builder,
+                table.realTableForRender(builder),
                 ((SingleColumn) storage).getName(),
+                prop,
+                values
+        );
+    }
+
+    static List<Object> values(
+            InheritanceInfo inheritanceInfo,
+            ImmutableType targetType
+    ) {
+        List<Object> values = new ArrayList<>();
+        for (ImmutableType concreteType : inheritanceInfo.getConcreteTypes(targetType)) {
+            String value = concreteType.getDiscriminatorValue();
+            if (value != null) {
+                values.add(inheritanceInfo.discriminatorValue(value));
+            }
+        }
+        return values;
+    }
+
+    static void render(
+            AbstractSqlBuilder<?> builder,
+            RealTable table,
+            String columnName,
+            ImmutableProp prop,
+            List<Object> values
+    ) {
+        SqlBuilder sqlBuilder = builder.assertSimple();
+        table.renderColumn(
+                builder,
+                columnName,
                 false,
                 null,
                 null

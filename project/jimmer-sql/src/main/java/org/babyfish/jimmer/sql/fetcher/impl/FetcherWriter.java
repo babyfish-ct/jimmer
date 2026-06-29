@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 
+import java.util.Map;
 import java.util.StringJoiner;
 
 class FetcherWriter {
@@ -47,6 +49,14 @@ class FetcherWriter {
                 }
                 write(field);
             }
+            for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap(fetcher).entrySet()) {
+                if (!first) {
+                    builder.append(", ");
+                } else {
+                    first = false;
+                }
+                write(e);
+            }
             builder.append(" }");
         } else {
             builder.append('{');
@@ -56,6 +66,10 @@ class FetcherWriter {
                     newLine();
                     write(field);
                 }
+            }
+            for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap(fetcher).entrySet()) {
+                newLine();
+                write(e);
             }
             depth--;
             newLine();
@@ -111,6 +125,21 @@ class FetcherWriter {
         if (field.getRecursionStrategy() == null && childFetcher != null) {
             write(childFetcher);
         }
+    }
+
+    private void write(Map.Entry<ImmutableType, Fetcher<?>> subtypeFetcherEntry) {
+        builder
+                .append("forSubtype(")
+                .append(subtypeFetcherEntry.getKey())
+                .append(')');
+        write(subtypeFetcherEntry.getValue());
+    }
+
+    private static Map<ImmutableType, Fetcher<?>> subtypeFetcherMap(Fetcher<?> fetcher) {
+        if (fetcher instanceof FetcherImplementor<?>) {
+            return ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
+        }
+        return java.util.Collections.emptyMap();
     }
 
     @Override

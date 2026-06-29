@@ -383,6 +383,24 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         ImmutableType rootType = inheritanceInfo.getRootType();
         TableImplementor<?> parentImplementor = tableImplementor.getParent();
         String alias = builder.alias(this);
+        if (inheritanceInfo.getStrategy() == InheritanceType.JOINED) {
+            renderJoinImpl(
+                    builder,
+                    joinType,
+                    builder.alias(parent),
+                    parent,
+                    parentImplementor.getImmutableType().getIdProp().getStorage(strategy),
+                    type.getTableName(strategy),
+                    alias,
+                    type.getIdProp().getStorage(strategy),
+                    mode
+            );
+            if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
+                builder.sql(" and ");
+                renderTreatedDiscriminator(builder, inheritanceInfo, type);
+            }
+            return;
+        }
         renderJoinImpl(
                 builder,
                 joinType,
@@ -398,21 +416,22 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             builder.sql(" and ");
             ((Ast) tableImplementor.discriminatorPredicate(type)).renderTo(builder);
         }
-        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
-        if (inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
-                queryRenderContext != null && !queryRenderContext.isJoinedSubtypeTableRequired(tableImplementor)) {
-            return;
-        }
-        renderJoinImpl(
+    }
+
+    private void renderTreatedDiscriminator(
+            SqlBuilder builder,
+            InheritanceInfo inheritanceInfo,
+            ImmutableType treatedType
+    ) {
+        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
+        DiscriminatorPredicate.render(
                 builder,
-                joinType,
-                alias,
-                this,
-                rootType.getIdProp().getStorage(strategy),
-                type.getTableName(strategy),
-                joinedSubtypeAlias(builder),
-                type.getIdProp().getStorage(strategy),
-                TableImplementor.RenderMode.NORMAL
+                parent,
+                ((SingleColumn) discriminatorProp.getStorage(
+                        builder.getAstContext().getSqlClient().getMetadataStrategy()
+                )).getName(),
+                discriminatorProp,
+                DiscriminatorPredicate.values(inheritanceInfo, treatedType)
         );
     }
 
@@ -952,6 +971,27 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         ImmutableType rootType = owner.immutableType.getInheritanceInfo().getRootType();
         boolean rootProp = prop.toOriginal().getDeclaringType().isAssignableFrom(rootType);
         SqlTemplate template = prop.getSqlTemplate();
+        if (owner.isTreated()) {
+            RealTableImpl sourceTable = rootProp ? (RealTableImpl) parent : this;
+            if (template instanceof FormulaTemplate) {
+                builder.sql(((FormulaTemplate) template).toSql(builder.assertSimple().alias(sourceTable)));
+                if (asBlock != null) {
+                    builder.sql(" ").sql(asBlock.apply(0));
+                }
+                return;
+            }
+            renderDefinition(
+                    builder,
+                    sourceTable,
+                    optionalDefinition != null ? optionalDefinition : prop.getStorage(strategy),
+                    false,
+                    withPrefix,
+                    asBlock,
+                    null,
+                    null
+            );
+            return;
+        }
         if (template instanceof FormulaTemplate) {
             String alias = rootProp ?
                     builder.assertSimple().alias(this) :
