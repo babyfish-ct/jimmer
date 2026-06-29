@@ -22,7 +22,7 @@ public class JoinedInstantiableRootQueryTest extends AbstractQueryTest {
                         .select(table.fetch(ClientFetcher.$.name())),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from JOINED_INST_CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(600L);
@@ -46,7 +46,7 @@ public class JoinedInstantiableRootQueryTest extends AbstractQueryTest {
                         .select(table.fetch(ClientFetcher.$.name())),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from JOINED_INST_CLIENT tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(601L);

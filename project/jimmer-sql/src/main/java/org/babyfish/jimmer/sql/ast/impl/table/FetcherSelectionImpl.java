@@ -287,7 +287,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         );
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator();
-                        table.renderSelection(prop, field.isRawId(), builder, null, true, null, true);
+                        table.renderSelection(prop, field.isRawId(), builder, null, true, null, false);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         BaseQueryRead read = readSupport != null ?
