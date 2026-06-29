@@ -26,6 +26,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Collections
 import java.util.regex.Pattern
+import kotlin.reflect.KClass
 
 internal const val DRAFT = "Draft"
 internal const val PRODUCER = "$"
@@ -38,6 +39,7 @@ internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
 internal val CLASS_CLASS_NAME = Class::class.asClassName()
+internal val K_CLASS_CLASS_NAME = KClass::class.asClassName()
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val DESCRIPTION_CLASS_NAME = Description::class.asClassName()
@@ -147,6 +149,10 @@ internal val K_NONNULL_EXPRESSION = ClassName(
 internal val K_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KTableEx"
+)
+internal val K_POLYMORPHIC_TABLES_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table.impl",
+    "KPolymorphicTables"
 )
 internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",

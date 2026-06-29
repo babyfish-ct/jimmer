@@ -1,10 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -24,6 +25,9 @@ public class TableProxies {
 
     private static final ClassCache<TableProxy<?>> ROOT_PROXY_CACHE =
             new ClassCache<>(TableProxies::createRootProxy);
+
+    private static final ClassCache<ImmutableType> TABLE_TYPE_CACHE =
+            new ClassCache<>(TableProxies::createTableType);
 
     private TableProxies() {}
 
@@ -53,11 +57,50 @@ public class TableProxies {
         return invokeConstructor(constructor, delayedOperation);
     }
 
+    public static ImmutableType tableType(Class<? extends Table<?>> tableType) {
+        return TABLE_TYPE_CACHE.get(tableType);
+    }
+
+    public static Predicate instanceOf(Table<?> table, Class<?> type) {
+        return new InstanceOfPredicate(table, ImmutableType.get(type));
+    }
+
     private static Constructor<?> createWrapperConstructor(Class<?> javaClass) {
         return createConstructor(
                 ImmutableType.get(javaClass),
                 new Class[] {TableImplementor.class}
         );
+    }
+
+    private static ImmutableType createTableType(Class<?> tableType) {
+        if (!Table.class.isAssignableFrom(tableType)) {
+            throw new ModelException(
+                    "\"" +
+                            tableType +
+                            "\" is not derived type of \"" +
+                            Table.class.getName() +
+                            "\""
+            );
+        }
+        Field field;
+        try {
+            field = tableType.getField("$");
+        } catch (NoSuchFieldException ex) {
+            throw new ModelException(
+                    "\"" +
+                            tableType +
+                            "\" is not a generated table type because it does not declare public static field \"$\""
+            );
+        }
+        try {
+            return ((Table<?>) field.get(null)).getImmutableType();
+        } catch (IllegalAccessException ex) {
+            throw new AssertionError(
+                    "Internal bug: Cannot access field \"$\" of \"" +
+                            tableType.getName() +
+                            "\""
+            );
+        }
     }
 
     private static Constructor<?> createFluentConstructor(ImmutableType type) {

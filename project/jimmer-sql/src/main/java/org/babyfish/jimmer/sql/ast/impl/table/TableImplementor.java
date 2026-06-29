@@ -51,9 +51,13 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType);
 
-    <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs, long order);
+    <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, long order);
 
-    <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs, long order);
+    <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, long order);
+
+    <X> TableImplementor<X> treatAsImplementor(ImmutableType treatedAs, JoinType joinType);
+
+    boolean isTreated();
 
     <X> TableImplementor<X> inverseJoinImplementor(ImmutableProp prop);
 
@@ -103,6 +107,56 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
             throw new ExecutionException(
                     "Cannot query inheritance entity type \"" +
                             type +
+                            "\" because it is abstract and has no instantiable subtype"
+            );
+        }
+        for (ImmutableType concreteType : concreteTypes) {
+            String value = concreteType.getDiscriminatorValue();
+            if (value != null) {
+                values.add(inheritanceInfo.discriminatorValue(value));
+            }
+        }
+        return new DiscriminatorPredicate(
+                this,
+                inheritanceInfo.getDiscriminatorProp(),
+                values
+        );
+    }
+
+    default org.babyfish.jimmer.sql.ast.Predicate instanceOf(ImmutableType targetType) {
+        ImmutableType type = getImmutableType();
+        if (!type.isAssignableFrom(targetType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            targetType +
+                            "\" is not subtype of \"" +
+                            type +
+                            "\""
+            );
+        }
+        return discriminatorPredicate(targetType);
+    }
+
+    default org.babyfish.jimmer.sql.ast.Predicate discriminatorPredicate(ImmutableType targetType) {
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || !type.isAssignableFrom(targetType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            targetType +
+                            "\" is not subtype of \"" +
+                            type +
+                            "\""
+            );
+        }
+        List<Object> values = new ArrayList<>();
+        Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(targetType);
+        if (concreteTypes.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot check whether table \"" +
+                            this +
+                            "\" is instance of \"" +
+                            targetType +
                             "\" because it is abstract and has no instantiable subtype"
             );
         }

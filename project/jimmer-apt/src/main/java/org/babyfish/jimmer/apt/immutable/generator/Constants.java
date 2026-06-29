@@ -196,6 +196,12 @@ public class Constants {
                     "TableEx"
             );
 
+    public static final ClassName POLYMORPHIC_TABLE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table",
+                    "PolymorphicTable"
+            );
+
     public static final ClassName TABLE_IMPLEMENTOR_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.impl.table",

@@ -350,6 +350,8 @@ insert into enum_client(id, client_type, name)
     values(111, 'CLIENT', 'Enum Root');
 insert into single_client_project(id, name, client_id)
     values(1000, 'Single root project', 100);
+insert into single_client_project(id, name, client_id)
+    values(1002, 'Single person project', 101);
 insert into single_org_project(id, name, organization_id)
     values(1001, 'Single organization project', 100);
 
@@ -372,6 +374,8 @@ insert into joined_person(id, first_name, last_name)
     values(201, 'Alice', 'Smith');
 insert into joined_client_project(id, name, client_id)
     values(2000, 'Joined root project', 200);
+insert into joined_client_project(id, name, client_id)
+    values(2002, 'Joined person project', 201);
 insert into joined_org_project(id, name, organization_id)
     values(2001, 'Joined organization project', 200);
 

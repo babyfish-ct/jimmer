@@ -3,12 +3,14 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.runtime.ImmutableSpi
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
+import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.*
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 
 class SingleTableInheritanceQueryTest : AbstractQueryTest() {
 
@@ -189,6 +191,89 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
                 assertEquals("ORG", it._1)
                 assertEquals("Acme", it._2)
                 assertEquals("ACME-001", it._3)
+            }
+        }
+    }
+
+    @Test
+    fun testInstanceOfRootRendersDiscriminatorPredicate() {
+        executeAndExpect(
+            sqlClient.createQuery(KClient::class) {
+                where(table.asTableEx().instanceOf<KClient>())
+                orderBy(table.id)
+                select(table.id)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID " +
+                    "from CLIENT tb_1_ " +
+                    "where tb_1_.CLIENT_TYPE in (?, ?) " +
+                    "order by tb_1_.ID asc"
+            )
+            variables("ORG", "KPerson")
+            rows("[100,101,102]")
+        }
+    }
+
+    @Test
+    fun testTreatAsRootRendersDiscriminatorPredicate() {
+        executeAndExpect(
+            sqlClient.createQuery(KClient::class) {
+                val client = table.asTableEx().treatAs<KClient>()
+                orderBy(table.id)
+                select(table.id, client.name)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_2_.NAME " +
+                    "from CLIENT tb_1_ " +
+                    "inner join CLIENT tb_2_ " +
+                    "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE in (?, ?) " +
+                    "order by tb_1_.ID asc"
+            )
+            variables("ORG", "KPerson")
+            row(0) {
+                assertEquals(100L, it._1)
+                assertEquals("Acme", it._2)
+            }
+            row(1) {
+                assertEquals(101L, it._1)
+                assertEquals("Bob", it._2)
+            }
+            row(2) {
+                assertEquals(102L, it._1)
+                assertEquals("Umbrella", it._2)
+            }
+        }
+    }
+
+    @Test
+    fun testTryTreatAsOnNullableAssociationPath() {
+        executeAndExpect(
+            sqlClient.createQuery(KClientProject::class) {
+                val organization = table.asTableEx().`client?`.tryTreatAs<KOrganization>()
+                where(table.id valueIn listOf(1000L, 1002L))
+                orderBy(table.id)
+                select(table.id, organization.taxCode)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_3_.TAX_CODE " +
+                    "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                    "left join CLIENT tb_2_ on tb_1_.CLIENT_ID = tb_2_.ID " +
+                    "left join CLIENT tb_3_ " +
+                    "on tb_2_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
+                    "where tb_1_.ID in (?, ?) " +
+                    "order by tb_1_.ID asc"
+            )
+            variables("ORG", 1000L, 1002L)
+            row(0) {
+                assertEquals(1000L, it._1)
+                assertEquals("ACME-001", it._2)
+            }
+            row(1) {
+                assertEquals(1002L, it._1)
+                assertNull(it._2)
             }
         }
     }

@@ -2,7 +2,9 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -135,7 +137,13 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             TableImpl<?> owner,
             @Nullable JoinType requiredJoinType
     ) {
-        Key key = new Key(scope, owner.isInverse, owner.joinProp, owner.weakJoinHandle);
+        Key key = new Key(
+                scope,
+                owner.isInverse,
+                owner.joinProp,
+                owner.weakJoinHandle,
+                owner.isTreated() ? owner.immutableType : null
+        );
         JoinType joinType = requiredJoinType != null ? requiredJoinType : owner.getJoinType();
         RealTableImpl child = (RealTableImpl) getValue(key);
         if (child != null) {
@@ -291,7 +299,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
             AbstractMutableStatementImpl statement = tableImplementor.getStatement();
             Predicate filterPredicate;
-            if (tableImplementor.isInverse()) {
+            if (tableImplementor.isTreated()) {
+                renderTreatedJoin(builder, tableImplementor, mode);
+                filterPredicate = null;
+            } else if (tableImplementor.isInverse()) {
                 renderInverseJoin(builder, mode);
                 filterPredicate = statement.getFilterPredicate(tableImplementor, builder.getAstContext());
             } else if (tableImplementor.getJoinProp() != null || tableImplementor.getWeakJoinHandle() != null) {
@@ -347,6 +358,55 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder,
                 JoinType.INNER,
                 rootAlias,
+                this,
+                rootType.getIdProp().getStorage(strategy),
+                type.getTableName(strategy),
+                joinedSubtypeAlias(builder),
+                type.getIdProp().getStorage(strategy),
+                TableImplementor.RenderMode.NORMAL
+        );
+    }
+
+    private void renderTreatedJoin(
+            SqlBuilder builder,
+            TableImplementor<?> tableImplementor,
+            TableImplementor.RenderMode mode
+    ) {
+        if (mode != TableImplementor.RenderMode.NORMAL &&
+                mode != TableImplementor.RenderMode.FROM_ONLY &&
+                mode != TableImplementor.RenderMode.WHERE_ONLY) {
+            throw new AssertionError("Internal bug: Illegal render mode for treated table");
+        }
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
+        ImmutableType type = tableImplementor.getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        TableImplementor<?> parentImplementor = tableImplementor.getParent();
+        String alias = builder.alias(this);
+        renderJoinImpl(
+                builder,
+                joinType,
+                builder.alias(parent),
+                parent,
+                parentImplementor.getImmutableType().getIdProp().getStorage(strategy),
+                rootType.getTableName(strategy),
+                alias,
+                rootType.getIdProp().getStorage(strategy),
+                mode
+        );
+        if (mode == TableImplementor.RenderMode.NORMAL || mode == TableImplementor.RenderMode.WHERE_ONLY) {
+            builder.sql(" and ");
+            ((Ast) tableImplementor.discriminatorPredicate(type)).renderTo(builder);
+        }
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                queryRenderContext != null && !queryRenderContext.isJoinedSubtypeTableRequired(tableImplementor)) {
+            return;
+        }
+        renderJoinImpl(
+                builder,
+                joinType,
+                alias,
                 this,
                 rootType.getIdProp().getStorage(strategy),
                 type.getTableName(strategy),

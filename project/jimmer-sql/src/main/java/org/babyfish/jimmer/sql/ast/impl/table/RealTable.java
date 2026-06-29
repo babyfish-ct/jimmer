@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
@@ -60,6 +61,8 @@ public interface RealTable extends Iterable<RealTable> {
 
         final WeakJoinHandle weakJoinHandle;
 
+        final ImmutableType treatedType;
+
         final String joinName;
 
         Key(
@@ -68,10 +71,23 @@ public interface RealTable extends Iterable<RealTable> {
                 ImmutableProp joinProp,
                 WeakJoinHandle weakJoinHandle
         ) {
+            this(scope, inverse, joinProp, weakJoinHandle, null);
+        }
+
+        Key(
+                JoinTypeMergeScope scope,
+                boolean inverse,
+                ImmutableProp joinProp,
+                WeakJoinHandle weakJoinHandle,
+                ImmutableType treatedType
+        ) {
             this.scope = scope;
             this.weakJoinHandle = weakJoinHandle;
+            this.treatedType = treatedType;
             String joinName;
-            if (joinProp == null) {
+            if (treatedType != null) {
+                joinName = "treatAs(" + treatedType + ")";
+            } else if (joinProp == null) {
                 joinName = "";
             } else if (inverse) {
                 ImmutableProp opposite = joinProp.getOpposite();
@@ -91,6 +107,7 @@ public interface RealTable extends Iterable<RealTable> {
             int result = System.identityHashCode(scope);
             result = 31 * result + joinName.hashCode();
             result = 31 * result + Objects.hashCode(weakJoinHandle);
+            result = 31 * result + Objects.hashCode(treatedType);
             return result;
         }
 
@@ -110,7 +127,8 @@ public interface RealTable extends Iterable<RealTable> {
             if (!joinName.equals(other.joinName)) {
                 return false;
             }
-            return Objects.equals(weakJoinHandle, other.weakJoinHandle);
+            return Objects.equals(weakJoinHandle, other.weakJoinHandle) &&
+                    treatedType == other.treatedType;
         }
 
         @Override
@@ -119,6 +137,7 @@ public interface RealTable extends Iterable<RealTable> {
                     "scope=" + scope +
                     ", joinName=" + joinName +
                     ", weakJoinHandle=" + weakJoinHandle +
+                    ", treatedType=" + treatedType +
                     "}";
         }
     }
