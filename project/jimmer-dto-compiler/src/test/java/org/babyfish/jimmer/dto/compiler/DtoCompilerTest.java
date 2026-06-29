@@ -1382,6 +1382,55 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testDuplicateAliasBetweenPolymorphicBaseAndBranch() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #subtypes {\n" +
+                            "        Person {\n" +
+                            "            firstName as name\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:5 : Duplicated property alias \"name\" between polymorphic DTO base and branch\n" +
+                        "            firstName as name\n" +
+                        "                         ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testNestedSubtypesBlockInSubtypeBranchIsRejected() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #subtypes {\n" +
+                            "        Person {\n" +
+                            "            firstName\n" +
+                            "            #subtypes {\n" +
+                            "                Person {\n" +
+                            "                    lastName\n" +
+                            "                }\n" +
+                            "            }\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:6 : Nested #subtypes block is not supported inside polymorphic DTO branch\n" +
+                        "            #subtypes {\n" +
+                        "            ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
     public void testDuplicateAlias() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(

@@ -1,0 +1,23 @@
+ClientDefaultView {
+    id
+    name
+    #subtypes {
+        #default class Other {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+ClientImplicitDefaultView {
+    id
+    name
+    #subtypes {
+        #default {
+        }
+        Person {
+            firstName
+        }
+    }
+}

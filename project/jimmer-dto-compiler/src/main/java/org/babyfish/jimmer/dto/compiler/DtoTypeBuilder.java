@@ -692,6 +692,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 buildExhaustiveSubtypeBranches(block, subtypeBranchMap) :
                 buildExplicitSubtypeBranches(subtypeBranchMap.values());
         validateBranchClassNames(defaultDtoBranch, subtypeBranches);
+        validateBranchPropAliases(defaultDtoBranch, subtypeBranches);
         return new DtoPolymorphism<>(exhaustive, defaultDtoBranch, subtypeBranches);
     }
 
@@ -794,6 +795,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 branch.superInterfaces,
                 ctx
         ).build();
+        if (branchType.getPolymorphism() != null) {
+            DtoParser.SubtypesBlockContext block = branch.dtoBody().subtypesBlocks.get(0);
+            throw ctx.exception(
+                    block.start.getLine(),
+                    block.start.getCharPositionInLine(),
+                    "Nested #subtypes block is not supported inside polymorphic DTO branch"
+            );
+        }
         return new DtoPolymorphicBranch<>(
                 DtoPolymorphicBranch.Kind.SUBTYPE,
                 targetType,
@@ -908,6 +917,39 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         "Duplicated polymorphic DTO branch class name \"" +
                                 branch.getClassName() +
                                 "\""
+                );
+            }
+        }
+    }
+
+    private void validateBranchPropAliases(
+            DtoPolymorphicBranch<T, P> defaultBranch,
+            List<DtoPolymorphicBranch<T, P>> subtypeBranches
+    ) {
+        Set<String> baseAliases = new HashSet<>();
+        for (AbstractProp prop : dtoType.getProps()) {
+            baseAliases.add(prop.getAlias());
+        }
+        if (defaultBranch != null) {
+            validateBranchPropAliases(baseAliases, defaultBranch);
+        }
+        for (DtoPolymorphicBranch<T, P> branch : subtypeBranches) {
+            validateBranchPropAliases(baseAliases, branch);
+        }
+    }
+
+    private void validateBranchPropAliases(
+            Set<String> baseAliases,
+            DtoPolymorphicBranch<T, P> branch
+    ) {
+        for (AbstractProp prop : branch.getDtoType().getProps()) {
+            if (baseAliases.contains(prop.getAlias())) {
+                throw ctx.exception(
+                        prop.getAliasLine(),
+                        prop.getAliasColumn(),
+                        "Duplicated property alias \"" +
+                                prop.getAlias() +
+                                "\" between polymorphic DTO base and branch"
                 );
             }
         }

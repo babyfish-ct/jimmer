@@ -199,6 +199,24 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return new DtoType<>(this, recursionProp);
     }
 
+    public DtoType<T, P> mergedWith(DtoType<T, P> branchType) {
+        List<AbstractProp> mergedProps = new ArrayList<>(props.size() + branchType.props.size());
+        mergedProps.addAll(props);
+        mergedProps.addAll(branchType.props);
+        DtoType<T, P> mergedType = new DtoType<>(
+                branchType.baseType,
+                branchType.packageName,
+                branchType.modifiers,
+                branchType.annotations,
+                branchType.superInterfaces,
+                branchType.name,
+                branchType.dtoFile,
+                branchType.doc
+        );
+        mergedType.setProps(Collections.unmodifiableList(mergedProps));
+        return mergedType;
+    }
+
     void setProps(List<AbstractProp> props) {
         if (props == null) {
             throw new IllegalArgumentException("`props` cannot be null");

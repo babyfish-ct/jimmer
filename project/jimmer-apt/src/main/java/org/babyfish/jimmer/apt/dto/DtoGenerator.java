@@ -19,7 +19,9 @@ import org.babyfish.jimmer.sql.Id;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.lang.model.element.*;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
@@ -45,6 +47,11 @@ public class DtoGenerator {
 
     private final String innerClassName;
 
+    @Nullable
+    private final TypeName polymorphicSuperInterfaceName;
+
+    private final boolean polymorphicBranch;
+
     private final Set<String> interfaceMethodNames;
 
     private TypeSpec.Builder typeBuilder;
@@ -64,6 +71,18 @@ public class DtoGenerator {
             DtoGenerator parent,
             String innerClassName
     ) {
+        this(ctx, docMetadata, dtoType, parent, innerClassName, null, false);
+    }
+
+    private DtoGenerator(
+            Context ctx,
+            DocMetadata docMetadata,
+            DtoType<ImmutableType, ImmutableProp> dtoType,
+            DtoGenerator parent,
+            String innerClassName,
+            @Nullable TypeName polymorphicSuperInterfaceName,
+            boolean polymorphicBranch
+    ) {
         if ((parent == null) != (innerClassName == null)) {
             throw new IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same");
         }
@@ -74,15 +93,26 @@ public class DtoGenerator {
         this.parent = parent;
         this.root = parent != null ? parent.root : this;
         this.innerClassName = innerClassName;
+        this.polymorphicSuperInterfaceName = polymorphicSuperInterfaceName;
+        this.polymorphicBranch = polymorphicBranch;
         this.interfaceMethodNames = DtoInterfaces.abstractMethodNames(ctx, dtoType);
     }
 
     public void generate() {
+        if (dtoType.getPolymorphism() != null) {
+            generatePolymorphic();
+            return;
+        }
         String simpleName = getSimpleName();
         typeBuilder = TypeSpec
                 .classBuilder(simpleName)
                 .addModifiers(Modifier.PUBLIC);
-        if (isImpl() && dtoType.getBaseType().isEntity()) {
+        if (polymorphicBranch) {
+            typeBuilder.addModifiers(Modifier.FINAL);
+        }
+        if (polymorphicSuperInterfaceName != null) {
+            typeBuilder.addSuperinterface(polymorphicSuperInterfaceName);
+        } else if (isImpl() && dtoType.getBaseType().isEntity()) {
             typeBuilder.addSuperinterface(
                     dtoType.getModifiers().contains(DtoModifier.SPECIFICATION) ?
                             ParameterizedTypeName.get(
@@ -172,7 +202,7 @@ public class DtoGenerator {
             addMembers();
         }
         if (innerClassName != null) {
-            assert  parent != null;
+            assert parent != null;
             parent.typeBuilder.addType(typeBuilder.build());
         } else {
             try {
@@ -195,6 +225,116 @@ public class DtoGenerator {
                 );
             }
         }
+    }
+
+    private void generatePolymorphic() {
+        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+            throw new GeneratorException(
+                    "Polymorphic input DTO generation is not supported yet",
+                    null
+            );
+        }
+        if (!dtoType.getBaseType().isEntity()) {
+            throw new GeneratorException(
+                    "Polymorphic DTO generation is only supported for entity types",
+                    null
+            );
+        }
+        String simpleName = getSimpleName();
+        typeBuilder = TypeSpec
+                .interfaceBuilder(simpleName)
+                .addModifiers(Modifier.PUBLIC);
+        typeBuilder.addSuperinterface(
+                ParameterizedTypeName.get(
+                        org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
+                        dtoType.getBaseType().getClassName()
+                )
+        );
+        for (TypeRef typeRef : dtoType.getSuperInterfaces()) {
+            typeBuilder.addSuperinterface(getTypeName(typeRef));
+        }
+        if (parent == null) {
+            typeBuilder.addAnnotation(GeneratedAnnotation.generatedAnnotation(dtoType.getDtoFile()));
+        } else {
+            typeBuilder.addAnnotation(GeneratedAnnotation.generatedAnnotation());
+            typeBuilder.addModifiers(Modifier.STATIC);
+        }
+        String doc = document.get();
+        if (doc == null) {
+            doc = baseDocComment();
+        }
+        if (doc != null && !doc.isEmpty()) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.DESCRIPTION_CLASS_NAME)
+                            .addMember("value", "$S", doc)
+                            .build()
+            );
+        }
+        for (AnnotationMirror annotationMirror : dtoType.getBaseType().getTypeElement().getAnnotationMirrors()) {
+            if (isCopyableAnnotation(annotationMirror, dtoType.getAnnotations(), null)) {
+                typeBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+            }
+        }
+        for (Anno anno : dtoType.getAnnotations()) {
+            if (!anno.getQualifiedName().equals(KOTLIN_DTO_TYPE_NAME)) {
+                typeBuilder.addAnnotation(annotationOf(anno));
+            }
+        }
+        for (AbstractProp prop : dtoType.getProps()) {
+            addAccessorDeclaration(prop);
+        }
+
+        DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism = dtoType.getPolymorphism();
+        assert polymorphism != null;
+        ClassName superInterfaceName = getDtoClassName();
+        DtoPolymorphicBranch<ImmutableType, ImmutableProp> defaultBranch = polymorphism.getDefaultBranch();
+        if (defaultBranch != null) {
+            generatePolymorphicBranch(defaultBranch, superInterfaceName);
+        }
+        for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getSubtypeBranches()) {
+            generatePolymorphicBranch(branch, superInterfaceName);
+        }
+
+        if (innerClassName != null) {
+            assert parent != null;
+            parent.typeBuilder.addType(typeBuilder.build());
+        } else {
+            try {
+                JavaFile
+                        .builder(
+                                root.dtoType.getPackageName(),
+                                typeBuilder.build()
+                        )
+                        .indent("    ")
+                        .build()
+                        .writeTo(ctx.getFiler());
+            } catch (IOException ex) {
+                throw new GeneratorException(
+                        String.format(
+                                "Cannot generate dto type '%s' for '%s'",
+                                dtoType.getName(),
+                                dtoType.getBaseType().getQualifiedName()
+                        ),
+                        ex
+                );
+            }
+        }
+    }
+
+    private void generatePolymorphicBranch(
+            DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch,
+            TypeName superInterfaceName
+    ) {
+        new DtoGenerator(
+                ctx,
+                docMetadata,
+                dtoType.mergedWith(branch.getDtoType()),
+                this,
+                branch.getClassName(),
+                superInterfaceName,
+                true
+        ).generate();
     }
 
     public String getSimpleName() {
@@ -414,7 +554,7 @@ public class DtoGenerator {
             cb.add("\n.filter(it -> it$>\n");
             List<PropConfig.Predicate> realPredicates;
             if (cfg.getPredicate() instanceof PropConfig.Predicate.And) {
-                realPredicates = ((PropConfig.Predicate.And)cfg.getPredicate()).getPredicates();
+                realPredicates = ((PropConfig.Predicate.And) cfg.getPredicate()).getPredicates();
             } else if (cfg.getPredicate() != null) {
                 realPredicates = Collections.singletonList(cfg.getPredicate());
             } else {
@@ -512,7 +652,7 @@ public class DtoGenerator {
         if (predicate instanceof PropConfig.Predicate.And) {
             cb.add("$T.and(\n$>", Constants.PREDICATE_CLASS_NAME);
             boolean addComma = false;
-            for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.And)predicate).getPredicates()) {
+            for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.And) predicate).getPredicates()) {
                 if (addComma) {
                     cb.add(",\n");
                 } else {
@@ -524,7 +664,7 @@ public class DtoGenerator {
         } else if (predicate instanceof PropConfig.Predicate.Or) {
             cb.add("$T.or(\n$>", Constants.PREDICATE_CLASS_NAME);
             boolean addComma = false;
-            for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.Or)predicate).getPredicates()) {
+            for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.Or) predicate).getPredicates()) {
                 if (addComma) {
                     cb.add(",\n");
                 } else {
@@ -730,7 +870,7 @@ public class DtoGenerator {
                 cb.add(",\narg -> {\n");
                 cb.indent();
                 cb.beginControlFlow("switch (($T)arg)", enumTypeName);
-                for (Map.Entry<String, String> e: enumType.getValueMap().entrySet()) {
+                for (Map.Entry<String, String> e : enumType.getValueMap().entrySet()) {
                     cb.add("case $L:\n", e.getKey());
                     cb.indent();
                     cb.addStatement("return $L", e.getValue());
@@ -780,7 +920,7 @@ public class DtoGenerator {
         EnumType enumType = prop.getEnumType();
         TypeName enumTypeName = prop.toTailProp().getBaseProp().getTypeName();
         cb.beginControlFlow("switch (($T)$L)", enumType.isNumeric() ? TypeName.INT : org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME, variableName);
-        for (Map.Entry<String, String> e: enumType.getConstantMap().entrySet()) {
+        for (Map.Entry<String, String> e : enumType.getConstantMap().entrySet()) {
             cb.add("case $L:\n", e.getKey());
             cb.indent();
             cb.addStatement("return $T.$L", enumTypeName, e.getValue());
@@ -923,6 +1063,47 @@ public class DtoGenerator {
         );
     }
 
+    private void addAccessorDeclaration(AbstractProp prop) {
+        TypeName typeName = getPropTypeName(prop);
+        MethodSpec.Builder getterBuilder = MethodSpec
+                .methodBuilder(getterName(prop))
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .returns(typeName);
+        if (!(prop instanceof DtoProp<?, ?>) || ((DtoProp<?, ?>) prop).getNextProp() == null) {
+            String doc = doc(prop, false);
+            if (doc != null && !doc.isEmpty()) {
+                getterBuilder.addAnnotation(
+                        AnnotationSpec.builder(
+                                org.babyfish.jimmer.apt.immutable.generator.Constants.DESCRIPTION_CLASS_NAME
+                        ).addMember(
+                                "value", "$S", doc
+                        ).build()
+                );
+            }
+        }
+        if (!typeName.isPrimitive()) {
+            if (prop.isNullable()) {
+                getterBuilder.addAnnotation(Nullable.class);
+            } else {
+                getterBuilder.addAnnotation(NonNull.class);
+            }
+        }
+        if (prop instanceof DtoProp<?, ?>) {
+            DtoProp<ImmutableType, ImmutableProp> dtoProp = asDtoProp(prop);
+            for (AnnotationMirror annotationMirror : dtoProp.toTailProp().getBaseProp().getAnnotations()) {
+                if (isCopyableAnnotation(annotationMirror, dtoProp.getAnnotations(), true)) {
+                    getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+                }
+            }
+        }
+        for (Anno anno : prop.getAnnotations()) {
+            if (hasElementType(anno, ElementType.METHOD)) {
+                getterBuilder.addAnnotation(annotationOf(anno));
+            }
+        }
+        typeBuilder.addMethod(getterBuilder.build());
+    }
+
     private void addAccessors(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String getterName = getterName(prop);
@@ -936,7 +1117,7 @@ public class DtoGenerator {
         if (interfaceMethodNames.contains(getterName)) {
             getterBuilder.addAnnotation(Override.class);
         }
-        if (!(prop instanceof DtoProp<?, ?>) || ((DtoProp<?, ?>)prop).getNextProp() == null) {
+        if (!(prop instanceof DtoProp<?, ?>) || ((DtoProp<?, ?>) prop).getNextProp() == null) {
             String doc = doc(prop, false);
             if (doc != null && !doc.isEmpty()) {
                 getterBuilder.addAnnotation(
@@ -1092,15 +1273,17 @@ public class DtoGenerator {
     }
 
     private void addConverterConstructor() {
+        ParameterSpec.Builder parameterBuilder =
+                ParameterSpec.builder(
+                        dtoType.getBaseType().getClassName().annotated(
+                                AnnotationSpec.builder(NonNull.class).build()
+                        ),
+                        "base"
+                );
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(
-                        ParameterSpec
-                                .builder(dtoType.getBaseType().getClassName(), "base")
-                                .addAnnotation(NonNull.class)
-                                .build()
-                );
+                .addParameter(parameterBuilder.build());
         for (AbstractProp abstractProp : dtoType.getProps()) {
             if (abstractProp instanceof FoldProp<?, ?>) {
                 FoldProp<ImmutableType, ImmutableProp> foldProp = asFoldProp(abstractProp);
@@ -1234,7 +1417,7 @@ public class DtoGenerator {
     private void addToEntity(boolean withId) {
         boolean idOverridable =
                 dtoType.getModifiers().contains(DtoModifier.INPUT) &&
-                dtoType.getBaseType().isEntity();
+                        dtoType.getBaseType().isEntity();
         if (withId && !idOverridable) {
             return;
         }
@@ -1570,7 +1753,7 @@ public class DtoGenerator {
         if (prop instanceof FoldProp<?, ?>) {
             return getDtoClassName(targetSimpleName(asFoldProp(prop)));
         }
-        return getTypeName(((UserProp)prop).getTypeRef());
+        return getTypeName(((UserProp) prop).getTypeRef());
     }
 
     @SuppressWarnings("unchecked")
@@ -1611,7 +1794,7 @@ public class DtoGenerator {
                                         metadata.getTargetTypeName() :
                                         toListType(
                                                 propElementName,
-                                            baseProp.isList()
+                                                baseProp.isList()
                                         )
                         );
                     case "id":
@@ -1839,9 +2022,9 @@ public class DtoGenerator {
         builder.addStatement("builder.append($S).append('(')", simpleNamePath());
         String separator = "\"\"";
         boolean dynamicSeparator = dtoType.getDtoProps().stream().anyMatch(prop ->
-            stateFieldName(prop, false) != null || (
-                    prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable()
-            )
+                stateFieldName(prop, false) != null || (
+                        prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable()
+                )
         );
         if (dynamicSeparator) {
             builder.addStatement("String _sp = \"\"");
@@ -2120,7 +2303,7 @@ public class DtoGenerator {
         if (value instanceof Anno.ArrayValue) {
             builder.add("{\n$>");
             boolean addSeparator = false;
-            for (Anno.Value element : ((Anno.ArrayValue)value).elements) {
+            for (Anno.Value element : ((Anno.ArrayValue) value).elements) {
                 if (addSeparator) {
                     builder.add(", \n");
                 } else {
@@ -2130,17 +2313,17 @@ public class DtoGenerator {
             }
             builder.add("$<\n}");
         } else if (value instanceof Anno.AnnoValue) {
-            builder.add("$L", annotationOf(((Anno.AnnoValue)value).anno));
-        } else if(value instanceof Anno.TypeRefValue) {
-            builder.add("$T.class", getTypeName(((Anno.TypeRefValue)value).typeRef));
+            builder.add("$L", annotationOf(((Anno.AnnoValue) value).anno));
+        } else if (value instanceof Anno.TypeRefValue) {
+            builder.add("$T.class", getTypeName(((Anno.TypeRefValue) value).typeRef));
         } else if (value instanceof Anno.EnumValue) {
             builder.add(
                     "$T.$L",
-                    ClassName.bestGuess(((Anno.EnumValue)value).qualifiedName),
-                    ((Anno.EnumValue)value).constant
+                    ClassName.bestGuess(((Anno.EnumValue) value).qualifiedName),
+                    ((Anno.EnumValue) value).constant
             );
         } else if (value instanceof Anno.LiteralValue) {
-            builder.add(((Anno.LiteralValue)value).value.replace("$", "$$"));
+            builder.add(((Anno.LiteralValue) value).value.replace("$", "$$"));
         }
         return builder.build();
     }
