@@ -185,15 +185,15 @@ abstract class AbstractAssociationOperator {
         List<MiddleTableOperator> middleTableOperators = null;
         for (ImmutableProp prop : path.getType().getProps().values()) {
             if (prop.isMiddleTableDefinition()) {
-                    if (middleTableOperators == null) {
-                        middleTableOperators = new ArrayList<>();
-                    }
-                    MiddleTableOperator middleTableOperator = propCreator.apply(prop);
-                    if (middleTableOperator != null &&
-                            isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
-                        middleTableOperators.add(middleTableOperator);
-                    }
+                if (middleTableOperators == null) {
+                    middleTableOperators = new ArrayList<>();
                 }
+                MiddleTableOperator middleTableOperator = propCreator.apply(prop);
+                if (middleTableOperator != null &&
+                        isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
+                    middleTableOperators.add(middleTableOperator);
+                }
+            }
         }
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
@@ -226,6 +226,10 @@ abstract class AbstractAssociationOperator {
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
             return middleTable.isDeletedWhenEndpointIsLogicallyDeleted() ||
                     middleTable.getLogicalDeletedInfo() != null;
+        }
+        if (disconnectingType == DisconnectingType.PHYSICAL_DELETE &&
+                middleTable.isCascadeDeletedBySource()) {
+            return false;
         }
         return true;
     }

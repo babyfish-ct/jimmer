@@ -7,7 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
-import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
+import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -28,6 +29,7 @@ import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 public class Deleter {
@@ -129,49 +131,35 @@ public class Deleter {
         }
         validateInheritanceDeleteTarget();
 
-        DisconnectingType disconnectingType = ctx.isLogicalDeleted() ?
-                DisconnectingType.LOGICAL_DELETE :
-                DisconnectingType.PHYSICAL_DELETE;
-        Set<ImmutableProp> handledMiddleProps = new HashSet<>();
-        Set<ImmutableProp> handledMiddleBackProps = new HashSet<>();
-        Set<ImmutableProp> handledChildBackProps = new HashSet<>();
-        for (DeleteContext cleanupCtx : associationCleanupContexts()) {
-            SaveContext saveCtx = new SaveContext(
-                    saveOptions(),
-                    cleanupCtx.con,
-                    cleanupCtx.path.getType(),
-                    null,
-                    cleanupCtx.trigger,
-                    cleanupCtx.affectedRowCountMap
-            );
-            List<MiddleTableOperator> middleOperators = AbstractAssociationOperator.createMiddleTableOperators(
-                    cleanupCtx.options.getSqlClient(),
-                    cleanupCtx.path,
-                    disconnectingType,
-                    prop -> handledMiddleProps.add(prop) ?
-                            new MiddleTableOperator(saveCtx.prop(prop), cleanupCtx.isLogicalDeleted()) :
-                            null,
-                    backProp -> handledMiddleBackProps.add(backProp) ?
-                            new MiddleTableOperator(saveCtx.backProp(backProp), cleanupCtx.isLogicalDeleted()) :
-                            null
-            );
-            for (MiddleTableOperator middleTableOperator : middleOperators) {
-                middleTableOperator.disconnect(ids);
-            }
-            List<ChildTableOperator> subOperators = AbstractAssociationOperator.createSubOperators(
-                    cleanupCtx.options.getSqlClient(),
-                    cleanupCtx.path,
-                    disconnectingType,
-                    backProp -> handledChildBackProps.add(backProp) ?
-                            new ChildTableOperator(cleanupCtx.backPropOf(backProp), false) :
-                            null
-            );
-            for (ChildTableOperator subOperator : subOperators) {
-                subOperator.disconnect(ids);
+        AssociationCleanup cleanup = associationCleanup();
+        InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
+        Collection<ImmutableType> deletedTypes = deletedTypes(
+                inheritanceInfo,
+                ctx.path.getType(),
+                ctx.options.isPolymorphic()
+        );
+        if (inheritanceInfo != null && (
+                !cleanup.isEmpty() ||
+                        isJoinedSubtypeCleanupRequired(inheritanceInfo, deletedTypes)
+        )) {
+            Set<Object> acceptedIds = resolveAcceptedTargetIds(ids, inheritanceInfo, deletedTypes);
+            if (acceptedIds.isEmpty()) {
+                ids = Collections.emptySet();
+                rowMap = null;
+            } else {
+                ids = acceptedIds;
+                if (rowMap != null) {
+                    rowMap = filterRowMap(rowMap, acceptedIds);
+                }
             }
         }
+        if (!ids.isEmpty()) {
+            cleanup.disconnect(ids);
+        }
 
-        int rowCount = executeImpl(ids, rowMap, ctx.getOptions().getExceptionTranslator());
+        int rowCount = ids.isEmpty() ?
+                0 :
+                executeImpl(ids, rowMap, ctx.getOptions().getExceptionTranslator());
         if (ctx.trigger != null) {
             ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
@@ -210,6 +198,51 @@ public class Deleter {
         return contexts;
     }
 
+    private AssociationCleanup associationCleanup() {
+        DisconnectingType disconnectingType = ctx.isLogicalDeleted() ?
+                DisconnectingType.LOGICAL_DELETE :
+                DisconnectingType.PHYSICAL_DELETE;
+        List<MiddleTableOperator> middleOperators = new ArrayList<>();
+        List<ChildTableOperator> childOperators = new ArrayList<>();
+        Set<ImmutableProp> handledMiddleProps = new HashSet<>();
+        Set<ImmutableProp> handledMiddleBackProps = new HashSet<>();
+        Set<ImmutableProp> handledChildBackProps = new HashSet<>();
+        for (DeleteContext cleanupCtx : associationCleanupContexts()) {
+            SaveContext saveCtx = new SaveContext(
+                    saveOptions(),
+                    cleanupCtx.con,
+                    cleanupCtx.path.getType(),
+                    null,
+                    cleanupCtx.trigger,
+                    cleanupCtx.affectedRowCountMap
+            );
+            middleOperators.addAll(
+                    AbstractAssociationOperator.createMiddleTableOperators(
+                            cleanupCtx.options.getSqlClient(),
+                            cleanupCtx.path,
+                            disconnectingType,
+                            prop -> handledMiddleProps.add(prop) ?
+                                    new MiddleTableOperator(saveCtx.prop(prop), cleanupCtx.isLogicalDeleted()) :
+                                    null,
+                            backProp -> handledMiddleBackProps.add(backProp) ?
+                                    new MiddleTableOperator(saveCtx.backProp(backProp), cleanupCtx.isLogicalDeleted()) :
+                                    null
+                    )
+            );
+            childOperators.addAll(
+                    AbstractAssociationOperator.createSubOperators(
+                            cleanupCtx.options.getSqlClient(),
+                            cleanupCtx.path,
+                            disconnectingType,
+                            backProp -> handledChildBackProps.add(backProp) ?
+                                    new ChildTableOperator(cleanupCtx.backPropOf(backProp), false) :
+                                    null
+                    )
+            );
+        }
+        return new AssociationCleanup(middleOperators, childOperators);
+    }
+
     private void validateInheritanceDeleteTarget() {
         ImmutableType type = ctx.path.getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
@@ -219,20 +252,93 @@ public class Deleter {
         Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, ctx.options.isPolymorphic());
         if (ctx.isLogicalDeleted() ||
                 inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
-                inheritanceInfo.getJoinedTableDeleteMode() == JoinedTableDeleteMode.DB_CASCADE) {
+                inheritanceInfo.getJoinedTableDissociateAction() == JoinedTableDissociateAction.LAX) {
             return;
         }
         if (ctx.options.isPolymorphic() && (deletedTypes.size() != 1 || deletedTypes.iterator().next() != type)) {
             throw new ExecutionException(
                     "Cannot physically delete joined inheritance rows polymorphically by type \"" +
                             type +
-                            "\" when joinedTableDeleteMode is \"" +
-                            JoinedTableDeleteMode.EXPLICIT +
-                            "\". Delete exact concrete subtypes, use joinedTableDeleteMode = " +
-                            JoinedTableDeleteMode.DB_CASCADE +
+                            "\" when joinedTableDissociateAction is \"" +
+                            JoinedTableDissociateAction.DELETE +
+                            "\". Delete exact concrete subtypes, use joinedTableDissociateAction = " +
+                            JoinedTableDissociateAction.LAX +
                             ", or explicitly select concrete rows and delete them as exact concrete subtypes."
             );
         }
+    }
+
+    private boolean isJoinedSubtypeCleanupRequired(
+            InheritanceInfo inheritanceInfo,
+            Collection<ImmutableType> deletedTypes
+    ) {
+        if (ctx.isLogicalDeleted() ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE) {
+            return false;
+        }
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        for (ImmutableType deletedType : deletedTypes) {
+            if (!joinedTableTypes(rootType, deletedType).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<Object> resolveAcceptedTargetIds(
+            Collection<Object> ids,
+            InheritanceInfo inheritanceInfo,
+            Collection<ImmutableType> deletedTypes
+    ) {
+        if (ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
+                ctx.options.getSqlClient(),
+                rootType,
+                ExecutionPurpose.command(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS),
+                FilterLevel.IGNORE_ALL
+        );
+        Table<ImmutableSpi> table = query.getTable();
+        PropExpression<Object> idExpr = table.get(rootType.getIdProp().getName());
+        if (ids.size() == 1) {
+            query.where(idExpr.eq(ids.iterator().next()));
+        } else {
+            query.where(idExpr.in(ids));
+        }
+        addDiscriminatorPredicate(query, table, inheritanceInfo, deletedTypes);
+        ConfigurableRootQuery<?, Object> acceptedIdQuery = query.select(idExpr);
+        if (isDeleteTargetResolveForUpdateRequired()) {
+            acceptedIdQuery = acceptedIdQuery.forUpdate(true);
+        }
+        return new LinkedHashSet<>(acceptedIdQuery.execute(ctx.con));
+    }
+
+    private boolean isDeleteTargetResolveForUpdateRequired() {
+        try {
+            return !ctx.con.getAutoCommit();
+        } catch (SQLException ex) {
+            throw new ExecutionException(
+                    "Failed to retrieve the auto-commit mode of the connection",
+                    ex
+            );
+        }
+    }
+
+    private static Map<Object, ImmutableSpi> filterRowMap(
+            Map<Object, ImmutableSpi> rowMap,
+            Set<Object> acceptedIds
+    ) {
+        Map<Object, ImmutableSpi> filteredMap = new LinkedHashMap<>((acceptedIds.size() * 4 + 2) / 3);
+        for (Object id : acceptedIds) {
+            ImmutableSpi row = rowMap.get(id);
+            if (row != null) {
+                filteredMap.put(id, row);
+            }
+        }
+        return filteredMap;
     }
 
     private int executeImpl(
@@ -364,7 +470,7 @@ public class Deleter {
                 );
             }
             if (inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
-                    inheritanceInfo.getJoinedTableDeleteMode() != JoinedTableDeleteMode.DB_CASCADE) {
+                    inheritanceInfo.getJoinedTableDissociateAction() == JoinedTableDissociateAction.DELETE) {
                 deleteJoinedSubtypeTables(
                         sqlClient,
                         con,
@@ -751,6 +857,34 @@ public class Deleter {
                 return false;
             }
         };
+    }
+
+    private static class AssociationCleanup {
+
+        private final List<MiddleTableOperator> middleOperators;
+
+        private final List<ChildTableOperator> childOperators;
+
+        AssociationCleanup(
+                List<MiddleTableOperator> middleOperators,
+                List<ChildTableOperator> childOperators
+        ) {
+            this.middleOperators = middleOperators;
+            this.childOperators = childOperators;
+        }
+
+        boolean isEmpty() {
+            return middleOperators.isEmpty() && childOperators.isEmpty();
+        }
+
+        void disconnect(Collection<Object> ids) {
+            for (MiddleTableOperator middleOperator : middleOperators) {
+                middleOperator.disconnect(ids);
+            }
+            for (ChildTableOperator childOperator : childOperators) {
+                childOperator.disconnect(ids);
+            }
+        }
     }
 
 }

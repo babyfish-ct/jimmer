@@ -9,5 +9,5 @@ public @interface Inheritance {
 
     InheritanceType strategy() default InheritanceType.SINGLE_TABLE;
 
-    JoinedTableDeleteMode joinedTableDeleteMode() default JoinedTableDeleteMode.EXPLICIT;
+    JoinedTableDissociateAction joinedTableDissociateAction() default JoinedTableDissociateAction.DELETE;
 }

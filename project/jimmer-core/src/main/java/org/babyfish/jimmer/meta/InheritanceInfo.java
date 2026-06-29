@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.sql.InheritanceType;
-import org.babyfish.jimmer.sql.JoinedTableDeleteMode;
+import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -12,19 +12,19 @@ public final class InheritanceInfo {
 
     private final InheritanceType strategy;
 
-    private final JoinedTableDeleteMode joinedTableDeleteMode;
+    private final JoinedTableDissociateAction joinedTableDissociateAction;
 
     private final ImmutableProp discriminatorProp;
 
     public InheritanceInfo(
             ImmutableType rootType,
             InheritanceType strategy,
-            JoinedTableDeleteMode joinedTableDeleteMode,
+            JoinedTableDissociateAction joinedTableDissociateAction,
             ImmutableProp discriminatorProp
     ) {
         this.rootType = rootType;
         this.strategy = strategy;
-        this.joinedTableDeleteMode = joinedTableDeleteMode;
+        this.joinedTableDissociateAction = joinedTableDissociateAction;
         this.discriminatorProp = discriminatorProp;
     }
 
@@ -36,8 +36,8 @@ public final class InheritanceInfo {
         return strategy;
     }
 
-    public JoinedTableDeleteMode getJoinedTableDeleteMode() {
-        return joinedTableDeleteMode;
+    public JoinedTableDissociateAction getJoinedTableDissociateAction() {
+        return joinedTableDissociateAction;
     }
 
     public ImmutableProp getDiscriminatorProp() {
@@ -116,7 +116,7 @@ public final class InheritanceInfo {
         return "InheritanceInfo{" +
                 "rootType=" + rootType +
                 ", strategy=" + strategy +
-                ", joinedTableDeleteMode=" + joinedTableDeleteMode +
+                ", joinedTableDissociateAction=" + joinedTableDissociateAction +
                 ", discriminatorProp=" + discriminatorProp +
                 '}';
     }

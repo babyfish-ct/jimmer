@@ -43,6 +43,22 @@ public class JoinedInheritanceCascadeDeleteTest extends AbstractMutationTest {
         }
     }
 
+    private static Long joinedCascadeProjectTargetId(Connection con, long id) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "select CLIENT_ID from JOINED_CASCADE_PROJECT where ID = ?"
+        )) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return rs.getObject(1, Long.class);
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     @Test
     public void testDeleteSubtypeByDatabaseCascade() {
         connectAndExpect(
@@ -52,14 +68,18 @@ public class JoinedInheritanceCascadeDeleteTest extends AbstractMutationTest {
                             .deleteCommand(Organization.class, 500L)
                             .setMode(DeleteMode.PHYSICAL)
                             .execute(con);
-                    return joinedClientRow(con, 500L) + "; " + joinedClientRow(con, 501L);
+                    return joinedClientRow(con, 500L) +
+                            "; " +
+                            joinedClientRow(con, 501L) +
+                            "; " +
+                            joinedCascadeProjectTargetId(con, 5000L);
                 },
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_CASCADE_CLIENT where ID = ? and CLIENT_TYPE = ?");
                         it.variables(500L, "ORG");
                     });
-                    ctx.value("null; [Person, Cascade Alice, null, Alice, Smith]");
+                    ctx.value("null; [Person, Cascade Alice, null, Alice, Smith]; null");
                 }
         );
     }

@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.*;
 @Table(name = "JOINED_CASCADE_CLIENT")
 @Inheritance(
         strategy = InheritanceType.JOINED,
-        joinedTableDeleteMode = JoinedTableDeleteMode.DB_CASCADE
+        joinedTableDissociateAction = JoinedTableDissociateAction.LAX
 )
 public interface Client {
 

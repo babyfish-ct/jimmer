@@ -258,20 +258,20 @@ class ImmutableType(
                     "Illegal value of @${Inheritance::class.java.name}.strategy: $value"
                 )
             }
-            val joinedTableDeleteMode = when (val value: Any? = inheritance["joinedTableDeleteMode"]) {
-                null -> JoinedTableDeleteMode.EXPLICIT
-                is JoinedTableDeleteMode -> value
-                is KSClassDeclaration -> JoinedTableDeleteMode.valueOf(value.simpleName.asString())
+            val joinedTableDissociateAction = when (val value: Any? = inheritance["joinedTableDissociateAction"]) {
+                null -> JoinedTableDissociateAction.DELETE
+                is JoinedTableDissociateAction -> value
+                is KSClassDeclaration -> JoinedTableDissociateAction.valueOf(value.simpleName.asString())
                 else -> throw MetaException(
                     classDeclaration,
-                    "Illegal value of @${Inheritance::class.java.name}.joinedTableDeleteMode: $value"
+                    "Illegal value of @${Inheritance::class.java.name}.joinedTableDissociateAction: $value"
                 )
             }
-            if (strategy != InheritanceType.JOINED && joinedTableDeleteMode != JoinedTableDeleteMode.EXPLICIT) {
+            if (strategy != InheritanceType.JOINED && joinedTableDissociateAction != JoinedTableDissociateAction.DELETE) {
                 throw MetaException(
                     classDeclaration,
-                    "the `joinedTableDeleteMode` of @${Inheritance::class.java.name} " +
-                            "can only be \"${JoinedTableDeleteMode.DB_CASCADE}\" when the inheritance strategy is " +
+                    "the `joinedTableDissociateAction` of @${Inheritance::class.java.name} " +
+                            "can only be \"${JoinedTableDissociateAction.LAX}\" when the inheritance strategy is " +
                             "\"${InheritanceType.JOINED}\""
                 )
             }
@@ -602,6 +602,7 @@ class ImmutableType(
         when (val instantiability = entityInstantiability()) {
             EntityInstantiability.AUTO ->
                 inheritanceRoot == null || inheritanceRoot !== this
+
             EntityInstantiability.ABSTRACT -> {
                 if (inheritanceRoot == null) {
                     throw MetaException(
@@ -612,6 +613,7 @@ class ImmutableType(
                 }
                 false
             }
+
             EntityInstantiability.INSTANTIABLE ->
                 true
         }

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
@@ -696,6 +697,15 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                        );
+                        it.variables(102L, "ORG");
+                    });
+                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from SINGLE_CLIENT_PROJECT tb_1_ " +
@@ -756,6 +766,15 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?) for update"
+                        );
+                        it.variables(102L, "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from SINGLE_CLIENT_PROJECT tb_1_ " +
@@ -802,6 +821,15 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                             clientRow(con, 101L);
                 },
                 ctx -> {
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                        );
+                        it.variables(100L, "ORG");
+                    });
                     ctx.statement(it -> {
                         it.sql("update SINGLE_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?");
                         it.variables(100L);

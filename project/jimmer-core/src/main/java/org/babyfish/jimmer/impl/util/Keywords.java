@@ -66,6 +66,7 @@ public class Keywords {
                             "__beforeJoin",
                             "__disableJoin",
                             "joinOperation",
+                            "treatAsOperation",
                             "__joinType",
                             "__refEquals",
                             "__baseTableOwner",
@@ -83,6 +84,8 @@ public class Keywords {
                             "fieldMap",
                             "__isSimpleFetcher",
                             "__contains",
+                            "__forSubtype",
+                            "__getSubtypeFetcherMap",
 
                             // KNonNullTableEx
                             "get",

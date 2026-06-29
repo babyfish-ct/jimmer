@@ -22,8 +22,8 @@ class JoinedInheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
-                "from JOINED_CLIENT tb_1_ " +
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
+                    "from JOINED_CLIENT tb_1_ " +
                     "where tb_1_.ID = ?"
             )
             variables(201L)
@@ -82,7 +82,7 @@ class JoinedInheritanceQueryTest : AbstractQueryTest() {
             )
             variables(2000L)
             statement(1).sql(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.CLIENT_TYPE " +
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                     "from JOINED_CLIENT tb_1_ " +
                     "where tb_1_.ID = ?"
             )

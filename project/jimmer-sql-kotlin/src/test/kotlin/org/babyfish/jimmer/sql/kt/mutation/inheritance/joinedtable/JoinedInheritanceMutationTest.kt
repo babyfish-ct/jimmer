@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
@@ -259,8 +260,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT_PROJECT " +
-                        "set NAME = ?, CLIENT_ID = ? " +
-                        "where ID = ?"
+                            "set NAME = ?, CLIENT_ID = ? " +
+                            "where ID = ?"
                 )
                 variables("Joined root project+", 201L, 2000L)
             }
@@ -285,8 +286,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_ORG_PROJECT " +
-                        "set NAME = ?, ORGANIZATION_ID = ? " +
-                        "where ID = ?"
+                            "set NAME = ?, ORGANIZATION_ID = ? " +
+                            "where ID = ?"
                 )
                 variables("Joined organization project+", 202L, 2001L)
             }
@@ -316,8 +317,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                        "set /* fake update to return all ids */ ID = ID " +
-                        "where ID = ? and CLIENT_TYPE = ?"
+                            "set /* fake update to return all ids */ ID = ID " +
+                            "where ID = ? and CLIENT_TYPE = ?"
                 )
                 variables(200L, "ORG")
             }
@@ -362,8 +363,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                        "set /* fake update to return all ids */ ID = ID " +
-                        "where ID = ? and CLIENT_TYPE = ?"
+                            "set /* fake update to return all ids */ ID = ID " +
+                            "where ID = ? and CLIENT_TYPE = ?"
                 )
                 variables(201L, "ORG")
             }
@@ -395,24 +396,24 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_CLIENT tb_1_ " +
-                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
-                        "on tb_1_.ID = tb_2_.ID " +
-                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
-                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                            "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                            "on tb_1_.ID = tb_2_.ID " +
+                            "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                            "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
                 )
                 variables(300L, "ORG", "New Org")
             }
             statement {
                 sql(
                     "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
-                        "values(?, ?)"
+                            "values(?, ?)"
                 )
                 variables(300L, "NEW-001")
             }
             statement {
                 sql(
                     "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
-                        "values(?, ?, ?)"
+                            "values(?, ?, ?)"
                 )
                 variables(2302L, "Inserted project", 300L)
             }
@@ -444,10 +445,10 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_CLIENT tb_1_ " +
-                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
-                        "on tb_1_.ID = tb_2_.ID " +
-                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
-                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                            "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                            "on tb_1_.ID = tb_2_.ID " +
+                            "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                            "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
                 )
                 variables(200L, "ORG", "Should not update")
             }
@@ -479,10 +480,10 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "merge into JOINED_CLIENT tb_1_ " +
-                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
-                        "on tb_1_.ID = tb_2_.ID " +
-                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
-                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                            "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                            "on tb_1_.ID = tb_2_.ID " +
+                            "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                            "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
                 )
                 variables(201L, "ORG", "Should not update")
             }
@@ -515,15 +516,15 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 AssociatedSaveMode.APPEND
             )
             "${joinedClientRow(con, 200L)}; " +
-                "${joinedClientRow(con, 201L)}; " +
-                "${joinedOrgProjectTargetId(con, 2305L)}; " +
-                "${joinedOrgProjectTargetId(con, 2306L)}"
+                    "${joinedClientRow(con, 201L)}; " +
+                    "${joinedOrgProjectTargetId(con, 2305L)}; " +
+                    "${joinedOrgProjectTargetId(con, 2306L)}"
         }) {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                        "set /* fake update to return all ids */ ID = ID " +
-                        "where ID = ? and CLIENT_TYPE = ?"
+                            "set /* fake update to return all ids */ ID = ID " +
+                            "where ID = ? and CLIENT_TYPE = ?"
                 )
                 batchVariables(0, 200L, "ORG")
                 batchVariables(1, 201L, "ORG")
@@ -531,24 +532,24 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_ORGANIZATION " +
-                        "set TAX_CODE = ? " +
-                        "where ID = ? and exists(" +
-                        "select 1 from JOINED_CLIENT " +
-                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                            "set TAX_CODE = ? " +
+                            "where ID = ? and exists(" +
+                            "select 1 from JOINED_CLIENT " +
+                            "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
                 )
                 variables("GLOBEX-004", 200L, 200L, "ORG")
             }
             statement {
                 sql(
                     "insert into JOINED_ORG_PROJECT(ID, NAME, ORGANIZATION_ID) " +
-                        "values(?, ?, ?)"
+                            "values(?, ?, ?)"
                 )
                 variables(2305L, "Accepted batch project", 200L)
             }
             value(
                 "[ORG, Globex, GLOBEX-004, null, null]; " +
-                    "[KPerson, Alice, null, Alice, Smith]; " +
-                    "200; null"
+                        "[KPerson, Alice, null, Alice, Smith]; " +
+                        "200; null"
             )
         }
     }
@@ -562,18 +563,27 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "${joinedClientRow(con, 202L)}; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
                 sql(
                     "select tb_1_.ID " +
-                        "from JOINED_CLIENT_PROJECT tb_1_ " +
-                        "where tb_1_.CLIENT_ID = ? limit ?"
+                            "from JOINED_CLIENT tb_1_ " +
+                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                )
+                variables(202L, "ORG")
+            }
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                            "from JOINED_CLIENT_PROJECT tb_1_ " +
+                            "where tb_1_.CLIENT_ID = ? limit ?"
                 )
                 variables(202L, 1)
             }
             statement {
                 sql(
                     "select tb_1_.ID " +
-                        "from JOINED_ORG_PROJECT tb_1_ " +
-                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                            "from JOINED_ORG_PROJECT tb_1_ " +
+                            "where tb_1_.ORGANIZATION_ID = ? limit ?"
                 )
                 variables(202L, 1)
             }
@@ -598,10 +608,19 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 setDissociateAction(KOrganizationProject::organization, DissociateAction.SET_NULL)
             }
             "${joinedClientProjectTargetId(con, 2000L)}; " +
-                "${joinedOrgProjectTargetId(con, 2001L)}; " +
-                "${joinedClientRow(con, 200L)}; " +
-                "${joinedClientRow(con, 201L)}"
+                    "${joinedOrgProjectTargetId(con, 2001L)}; " +
+                    "${joinedClientRow(con, 200L)}; " +
+                    "${joinedClientRow(con, 201L)}"
         }) {
+            statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
+                sql(
+                    "select tb_1_.ID " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                )
+                variables(200L, "ORG")
+            }
             statement {
                 sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?")
                 variables(200L)
@@ -631,27 +650,12 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "$affectedRowCount; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
                 sql(
                     "select tb_1_.ID " +
-                        "from JOINED_CLIENT_PROJECT tb_1_ " +
-                        "where tb_1_.CLIENT_ID = ? limit ?"
+                            "from JOINED_CLIENT tb_1_ " +
+                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
                 )
-                variables(201L, 1)
-            }
-            statement {
-                sql(
-                    "select tb_1_.ID " +
-                        "from JOINED_ORG_PROJECT tb_1_ " +
-                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
-                )
-                variables(201L, 1)
-            }
-            statement {
-                sql("delete from JOINED_ORGANIZATION where ID = ?")
-                variables(201L)
-            }
-            statement {
-                sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?")
                 variables(201L, "ORG")
             }
             value("0; [KPerson, Alice, null, Alice, Smith]")
@@ -670,8 +674,8 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
         }) {
             value(
                 "Cannot delete inheritance entity type " +
-                    "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
-                    "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                        "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
+                        "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
             )
         }
     }
@@ -689,10 +693,10 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
         }) {
             value(
                 "Cannot physically delete joined inheritance rows polymorphically by type " +
-                    "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
-                    "when joinedTableDeleteMode is \"EXPLICIT\". Delete exact concrete subtypes, " +
-                    "use joinedTableDeleteMode = DB_CASCADE, or explicitly select concrete rows " +
-                    "and delete them as exact concrete subtypes."
+                        "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
+                        "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete subtypes, " +
+                        "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
+                        "and delete them as exact concrete subtypes."
             )
         }
     }

@@ -113,7 +113,7 @@ public enum QueryReason {
      *     ...
      *     (Vm1, Vm2, ... Vmn)
      * }</pre>
-     *
+     * <p>
      * However, the current database does not support multi-column in,
      * for example: org.babyfish.jimmer.sql.dialect.SqlServerDialect
      */
@@ -285,9 +285,9 @@ public enum QueryReason {
      * <p>Fortunately, some databases can configure the behavior of
      * null values in unique constraints, such as
      * <a href="https://www.postgresql.org/about/featurematrix/detail/392/">
-     *     "Nulls not distinct" of Postgres
+     * "Nulls not distinct" of Postgres
      * </a></p>
-     *
+     * <p>
      * If you have already set the uniqueness constraint based on
      * {@link org.babyfish.jimmer.sql.Key} properties and
      * {@link org.babyfish.jimmer.sql.LogicalDeleted} property in
@@ -380,6 +380,19 @@ public enum QueryReason {
      * before the guarded root mutation decides which rows are accepted.
      */
     RESOLVE_OLD_SUBTYPE_FOR_CHANGE,
+
+    /**
+     * When deleting an inheritance entity exactly, Jimmer may need to clean up
+     * associations or joined subtype tables before the root row delete.
+     *
+     * <p>In this case, Jimmer first resolves the root ids accepted by the
+     * requested discriminator predicate. If the requested id belongs to a
+     * different subtype, downstream cleanup is skipped and the delete result is
+     * simply not modified. When the command runs inside a transaction, this
+     * planning query can use {@code for update}; in auto-commit mode it remains
+     * a weaker non-locking resolve query.</p>
+     */
+    RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS,
 
     /**
      * <p>Saving some objects without Ids using the

@@ -243,13 +243,13 @@ public class ImmutableType implements BaseType {
                     null;
         } else if (inheritance != null) {
             if (inheritance.strategy() != InheritanceType.JOINED &&
-                    inheritance.joinedTableDeleteMode() != JoinedTableDeleteMode.EXPLICIT) {
+                    inheritance.joinedTableDissociateAction() != JoinedTableDissociateAction.DELETE) {
                 throw new MetaException(
                         typeElement,
-                        "the `joinedTableDeleteMode` of @" +
+                        "the `joinedTableDissociateAction` of @" +
                                 Inheritance.class.getName() +
                                 " can only be \"" +
-                                JoinedTableDeleteMode.DB_CASCADE +
+                                JoinedTableDissociateAction.LAX +
                                 "\" when the inheritance strategy is \"" +
                                 InheritanceType.JOINED +
                                 "\""

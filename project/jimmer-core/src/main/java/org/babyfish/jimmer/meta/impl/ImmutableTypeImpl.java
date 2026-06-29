@@ -174,14 +174,14 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             } else if (inheritance != null) {
                 inheritanceRoot = this;
                 if (inheritance.strategy() != InheritanceType.JOINED &&
-                        inheritance.joinedTableDeleteMode() != JoinedTableDeleteMode.EXPLICIT) {
+                        inheritance.joinedTableDissociateAction() != JoinedTableDissociateAction.DELETE) {
                     throw new ModelException(
                             "Illegal type \"" +
                                     javaClass.getName() +
-                                    "\", the `joinedTableDeleteMode` of @" +
+                                    "\", the `joinedTableDissociateAction` of @" +
                                     Inheritance.class.getName() +
                                     " can only be \"" +
-                                    JoinedTableDeleteMode.DB_CASCADE +
+                                    JoinedTableDissociateAction.LAX +
                                     "\" when the inheritance strategy is \"" +
                                     InheritanceType.JOINED +
                                     "\""
@@ -836,7 +836,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         declaredInheritanceInfo = new InheritanceInfo(
                 this,
                 declaredInheritance.strategy(),
-                declaredInheritance.joinedTableDeleteMode(),
+                declaredInheritance.joinedTableDissociateAction(),
                 discriminatorProp
         );
     }

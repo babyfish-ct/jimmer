@@ -256,8 +256,8 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                 ctx -> ctx.value(
                         "Cannot physically delete joined inheritance rows polymorphically by type " +
                                 "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client\" " +
-                                "when joinedTableDeleteMode is \"EXPLICIT\". Delete exact concrete subtypes, " +
-                                "use joinedTableDeleteMode = DB_CASCADE, or explicitly select concrete rows " +
+                                "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete subtypes, " +
+                                "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
                                 "and delete them as exact concrete subtypes."
                 )
         );

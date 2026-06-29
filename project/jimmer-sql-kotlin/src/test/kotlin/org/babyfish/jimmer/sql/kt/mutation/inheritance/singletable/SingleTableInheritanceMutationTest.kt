@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.mutation.inheritance.singletable
 
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
@@ -346,6 +347,15 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             "${clientRow(con, 102L)}; ${clientRow(con, 101L)}"
         }) {
             statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
+                sql(
+                    "select tb_1_.ID " +
+                        "from CLIENT tb_1_ " +
+                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                )
+                variables(102L, "ORG")
+            }
+            statement {
                 sql(
                     "select tb_1_.ID " +
                         "from SINGLE_CLIENT_PROJECT tb_1_ " +
@@ -397,6 +407,15 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             "${clientRow(con, 102L)}; ${clientRow(con, 101L)}"
         }) {
             statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
+                sql(
+                    "select tb_1_.ID " +
+                        "from CLIENT tb_1_ " +
+                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?) for update"
+                )
+                variables(102L, "ORG", "KPerson")
+            }
+            statement {
                 sql(
                     "select tb_1_.ID " +
                         "from SINGLE_CLIENT_PROJECT tb_1_ " +
@@ -433,6 +452,15 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 "${clientRow(con, 100L)}; " +
                 "${clientRow(con, 101L)}"
         }) {
+            statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
+                sql(
+                    "select tb_1_.ID " +
+                        "from CLIENT tb_1_ " +
+                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                )
+                variables(100L, "ORG")
+            }
             statement {
                 sql("update SINGLE_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?")
                 variables(100L)
