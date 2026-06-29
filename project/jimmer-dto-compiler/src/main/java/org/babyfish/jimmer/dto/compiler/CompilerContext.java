@@ -218,6 +218,23 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getSuperTypes(baseType);
     }
 
+    @Nullable
+    public T getType(String qualifiedName) {
+        return compiler.getType(qualifiedName);
+    }
+
+    public Collection<T> getDirectSubTypes(T baseType) {
+        return compiler.getDirectSubTypes(baseType);
+    }
+
+    public boolean isSameType(T baseType1, T baseType2) {
+        return compiler.isSameType(baseType1, baseType2);
+    }
+
+    public boolean isInstantiable(T baseType) {
+        return compiler.isInstantiable(baseType);
+    }
+
     public List<String> getEnumConstants(P baseProp) {
         return compiler.getEnumConstants(baseProp);
     }
@@ -226,12 +243,14 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return importing.resolve(ctx, compiler);
     }
 
-    public String resolve(DtoParser.QualifiedNameContext ctx) { return importing.resolve(ctx); }
+    public String resolve(DtoParser.QualifiedNameContext ctx) {
+        return importing.resolve(ctx);
+    }
 
     public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
         return importing.resolve(qualifiedName, qualifiedNameLine, qualifiedNameCol);
     }
-    
+
     public DtoAstException exception(int line, int col, String message) {
         return compiler.exception(line, col, message);
     }

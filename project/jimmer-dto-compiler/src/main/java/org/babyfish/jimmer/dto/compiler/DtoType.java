@@ -40,6 +40,9 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private List<DtoProp<T, P>> hiddenFlatProps;
 
+    @Nullable
+    private DtoPolymorphism<T, P> polymorphism;
+
     DtoType(
             T baseType,
             @Nullable String packageName,
@@ -75,6 +78,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         this.dtoFile = original.dtoFile;
         this.doc = original.doc;
         this.focusedRecursion = true;
+        this.polymorphism = original.polymorphism;
         List<AbstractProp> props = new ArrayList<>(original.props.size());
         for (AbstractProp prop : original.props) {
             if (prop instanceof DtoProp<?, ?>) {
@@ -186,6 +190,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return hfps;
     }
 
+    @Nullable
+    public DtoPolymorphism<T, P> getPolymorphism() {
+        return polymorphism;
+    }
+
     DtoType<T, P> recursiveOne(DtoProp<T, P> recursionProp) {
         return new DtoType<>(this, recursionProp);
     }
@@ -199,6 +208,13 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         }
         this.props = props;
         this.props = standardProps(props);
+    }
+
+    void setPolymorphism(@Nullable DtoPolymorphism<T, P> polymorphism) {
+        if (this.polymorphism != null) {
+            throw new IllegalArgumentException("`polymorphism` has already been set");
+        }
+        this.polymorphism = polymorphism;
     }
 
     public boolean isFocusedRecursion() {
@@ -235,11 +251,25 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         }
         builder.append('{');
         boolean addComma = false;
-        boolean isInput = modifiers.contains(DtoModifier.INPUT);
         if (config != null) {
             builder.append(config);
             addComma = true;
         }
+        bodyToString(builder, addComma);
+        builder.append('}');
+        return builder.toString();
+    }
+
+    String bodyToString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append('{');
+        bodyToString(builder, false);
+        builder.append('}');
+        return builder.toString();
+    }
+
+    private void bodyToString(StringBuilder builder, boolean addComma) {
+        boolean isInput = modifiers.contains(DtoModifier.INPUT);
         for (AbstractProp prop : props) {
             if (addComma) {
                 builder.append(", ");
@@ -252,8 +282,12 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
                 builder.append(prop);
             }
         }
-        builder.append('}');
-        return builder.toString();
+        if (polymorphism != null) {
+            if (addComma) {
+                builder.append(", ");
+            }
+            builder.append(polymorphism);
+        }
     }
 
     private class FlatDtoBuilder<T extends BaseType, P extends BaseProp> {

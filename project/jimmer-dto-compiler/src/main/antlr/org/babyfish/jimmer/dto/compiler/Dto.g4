@@ -48,13 +48,48 @@ dtoBody
     :
     '{'
     (macros += macro)*
-    ((explicitProps += explicitProp) (',' | ';')?)*
+    (((subtypesBlocks += subtypesBlock | explicitProps += explicitProp)) (',' | ';')?)*
     '}'
     ;
 
 explicitProp
     :
     aliasGroup | foldProp | positiveProp | negativeProp | userProp
+    ;
+
+subtypesBlock
+    :
+    '#subtypes' '{' (subtypesElements += subtypesElement)* '}'
+    ;
+
+subtypesElement
+    :
+    exhaustiveMacro | defaultBranch | subtypeBranch
+    ;
+
+exhaustiveMacro
+    :
+    '#exhaustive'
+    ;
+
+defaultBranch
+    :
+    (doc = DocComment)?
+    (annotations += annotation)*
+    '#default'
+    ('class' className = Identifier)?
+    ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
+    dtoBody
+    ;
+
+subtypeBranch
+    :
+    (doc = DocComment)?
+    (annotations += annotation)*
+    targetType = qualifiedName
+    ('class' className = Identifier)?
+    ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
+    dtoBody
     ;
 
 foldProp
@@ -71,7 +106,7 @@ foldProp
 
 macro
     :
-    '#' name = Identifier
+    '#' name = ('allScalars' | 'allReferences')
     ('(' args+=qualifiedName (',' args+=qualifiedName)* ')')?
     (optional = '?' | required = '!')?
     ;

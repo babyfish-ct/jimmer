@@ -45,6 +45,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private Map<String, AbstractProp> declaredProps;
 
+    private DtoParser.SubtypesBlockContext subtypesBlock;
+
     DtoTypeBuilder(
             DtoPropBuilder<T, P> parentProp,
             T baseType,
@@ -143,6 +145,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             } else {
                 handleUserProp(prop.userProp());
             }
+        }
+
+        if (!body.subtypesBlocks.isEmpty()) {
+            if (body.subtypesBlocks.size() > 1) {
+                DtoParser.SubtypesBlockContext block = body.subtypesBlocks.get(1);
+                throw ctx.exception(
+                        block.start.getLine(),
+                        block.start.getCharPositionInLine(),
+                        "Duplicated #subtypes block"
+                );
+            }
+            if (modifiers.contains(DtoModifier.SPECIFICATION)) {
+                DtoParser.SubtypesBlockContext block = body.subtypesBlocks.get(0);
+                throw ctx.exception(
+                        block.start.getLine(),
+                        block.start.getCharPositionInLine(),
+                        "Polymorphic specification DTOs are not supported by #subtypes"
+                );
+            }
+            subtypesBlock = body.subtypesBlocks.get(0);
         }
     }
 
@@ -463,7 +485,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     case "Float":
                     case "Double":
                         if (prop.defaultValue.getType() != DtoParser.FloatingPointLiteral &&
-                        prop.defaultValue.getType() != DtoParser.IntegerLiteral) {
+                                prop.defaultValue.getType() != DtoParser.IntegerLiteral) {
                             throw ctx.exception(
                                     prop.defaultValue.getLine(),
                                     prop.defaultValue.getCharPositionInLine(),
@@ -593,7 +615,302 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
         }
         dtoType.setProps(Collections.unmodifiableList(props));
+        dtoType.setPolymorphism(buildPolymorphism());
         return dtoType;
+    }
+
+    private DtoPolymorphism<T, P> buildPolymorphism() {
+        DtoParser.SubtypesBlockContext block = subtypesBlock;
+        if (block == null) {
+            return null;
+        }
+        if (block.subtypesElements.isEmpty()) {
+            throw ctx.exception(
+                    block.start.getLine(),
+                    block.start.getCharPositionInLine(),
+                    "The #subtypes block cannot be empty"
+            );
+        }
+
+        boolean exhaustive = false;
+        DtoParser.DefaultBranchContext defaultBranch = null;
+        Map<String, DtoParser.SubtypeBranchContext> subtypeBranchMap = new LinkedHashMap<>();
+        for (DtoParser.SubtypesElementContext element : block.subtypesElements) {
+            if (element.exhaustiveMacro() != null) {
+                Token token = element.exhaustiveMacro().start;
+                if (exhaustive) {
+                    throw ctx.exception(
+                            token.getLine(),
+                            token.getCharPositionInLine(),
+                            "Duplicated #exhaustive macro"
+                    );
+                }
+                exhaustive = true;
+            } else if (element.defaultBranch() != null) {
+                DtoParser.DefaultBranchContext branch = element.defaultBranch();
+                if (defaultBranch != null) {
+                    throw ctx.exception(
+                            branch.start.getLine(),
+                            branch.start.getCharPositionInLine(),
+                            "Duplicated #default branch"
+                    );
+                }
+                defaultBranch = branch;
+            } else {
+                DtoParser.SubtypeBranchContext branch = element.subtypeBranch();
+                T targetType = resolveSubtypeBranchType(branch);
+                String key = targetType.getQualifiedName();
+                DtoParser.SubtypeBranchContext conflict = subtypeBranchMap.put(key, branch);
+                if (conflict != null) {
+                    throw ctx.exception(
+                            branch.targetType.start.getLine(),
+                            branch.targetType.start.getCharPositionInLine(),
+                            "Duplicated subtype branch \"" +
+                                    key +
+                                    "\""
+                    );
+                }
+            }
+        }
+
+        if (exhaustive && defaultBranch != null) {
+            throw ctx.exception(
+                    defaultBranch.start.getLine(),
+                    defaultBranch.start.getCharPositionInLine(),
+                    "#default branch cannot be used together with #exhaustive"
+            );
+        }
+
+        DtoPolymorphicBranch<T, P> defaultDtoBranch = null;
+        if (!exhaustive) {
+            defaultDtoBranch = defaultBranch != null ?
+                    buildDefaultBranch(defaultBranch) :
+                    implicitDefaultBranch(block);
+        }
+
+        List<DtoPolymorphicBranch<T, P>> subtypeBranches = exhaustive ?
+                buildExhaustiveSubtypeBranches(block, subtypeBranchMap) :
+                buildExplicitSubtypeBranches(subtypeBranchMap.values());
+        validateBranchClassNames(defaultDtoBranch, subtypeBranches);
+        return new DtoPolymorphism<>(exhaustive, defaultDtoBranch, subtypeBranches);
+    }
+
+    private DtoPolymorphicBranch<T, P> buildDefaultBranch(DtoParser.DefaultBranchContext branch) {
+        if (!branch.dtoBody().macros.isEmpty() ||
+                !branch.dtoBody().explicitProps.isEmpty() ||
+                !branch.dtoBody().subtypesBlocks.isEmpty()) {
+            throw ctx.exception(
+                    branch.dtoBody().start.getLine(),
+                    branch.dtoBody().start.getCharPositionInLine(),
+                    "The body of #default branch must be empty"
+            );
+        }
+        DtoType<T, P> branchType = new DtoTypeBuilder<>(
+                null,
+                baseType,
+                branch.dtoBody(),
+                null,
+                Docs.parse(branch.doc),
+                modifiers,
+                branch.annotations,
+                branch.superInterfaces,
+                ctx
+        ).build();
+        return new DtoPolymorphicBranch<>(
+                DtoPolymorphicBranch.Kind.DEFAULT,
+                null,
+                branch.className != null ? branch.className.getText() : null,
+                branchType,
+                false,
+                branch.start.getLine(),
+                branch.start.getCharPositionInLine()
+        );
+    }
+
+    private DtoPolymorphicBranch<T, P> implicitDefaultBranch(DtoParser.SubtypesBlockContext block) {
+        return new DtoPolymorphicBranch<>(
+                DtoPolymorphicBranch.Kind.DEFAULT,
+                null,
+                null,
+                emptyBranchType(baseType),
+                true,
+                block.start.getLine(),
+                block.start.getCharPositionInLine()
+        );
+    }
+
+    private List<DtoPolymorphicBranch<T, P>> buildExplicitSubtypeBranches(
+            Collection<DtoParser.SubtypeBranchContext> branches
+    ) {
+        List<DtoPolymorphicBranch<T, P>> dtoBranches = new ArrayList<>(branches.size());
+        for (DtoParser.SubtypeBranchContext branch : branches) {
+            dtoBranches.add(buildSubtypeBranch(branch));
+        }
+        return dtoBranches;
+    }
+
+    private List<DtoPolymorphicBranch<T, P>> buildExhaustiveSubtypeBranches(
+            DtoParser.SubtypesBlockContext block,
+            Map<String, DtoParser.SubtypeBranchContext> explicitBranchMap
+    ) {
+        List<T> instantiableTypes = new ArrayList<>();
+        collectInstantiableTypes(baseType, instantiableTypes);
+        if (instantiableTypes.isEmpty()) {
+            throw ctx.exception(
+                    block.start.getLine(),
+                    block.start.getCharPositionInLine(),
+                    "The #exhaustive macro cannot be used because no instantiable subtype is known"
+            );
+        }
+        List<DtoPolymorphicBranch<T, P>> dtoBranches = new ArrayList<>(instantiableTypes.size());
+        Set<String> handledTypeNames = new LinkedHashSet<>();
+        for (T instantiableType : instantiableTypes) {
+            String typeName = instantiableType.getQualifiedName();
+            DtoParser.SubtypeBranchContext explicitBranch = explicitBranchMap.get(typeName);
+            dtoBranches.add(explicitBranch != null ?
+                    buildSubtypeBranch(explicitBranch) :
+                    implicitSubtypeBranch(block, instantiableType)
+            );
+            handledTypeNames.add(typeName);
+        }
+        for (Map.Entry<String, DtoParser.SubtypeBranchContext> e : explicitBranchMap.entrySet()) {
+            if (!handledTypeNames.contains(e.getKey())) {
+                dtoBranches.add(buildSubtypeBranch(e.getValue()));
+            }
+        }
+        return dtoBranches;
+    }
+
+    private DtoPolymorphicBranch<T, P> buildSubtypeBranch(DtoParser.SubtypeBranchContext branch) {
+        T targetType = resolveSubtypeBranchType(branch);
+        DtoType<T, P> branchType = new DtoTypeBuilder<>(
+                null,
+                targetType,
+                branch.dtoBody(),
+                null,
+                Docs.parse(branch.doc),
+                modifiers,
+                branch.annotations,
+                branch.superInterfaces,
+                ctx
+        ).build();
+        return new DtoPolymorphicBranch<>(
+                DtoPolymorphicBranch.Kind.SUBTYPE,
+                targetType,
+                branch.className != null ? branch.className.getText() : null,
+                branchType,
+                false,
+                branch.targetType.start.getLine(),
+                branch.targetType.start.getCharPositionInLine()
+        );
+    }
+
+    private DtoPolymorphicBranch<T, P> implicitSubtypeBranch(
+            DtoParser.SubtypesBlockContext block,
+            T targetType
+    ) {
+        return new DtoPolymorphicBranch<>(
+                DtoPolymorphicBranch.Kind.SUBTYPE,
+                targetType,
+                null,
+                emptyBranchType(targetType),
+                true,
+                block.start.getLine(),
+                block.start.getCharPositionInLine()
+        );
+    }
+
+    private DtoType<T, P> emptyBranchType(T targetType) {
+        DtoType<T, P> branchType = new DtoType<>(
+                targetType,
+                ctx.getTargetPackageName(),
+                modifiers,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                null,
+                ctx.getDtoFile(),
+                null
+        );
+        branchType.setProps(Collections.emptyList());
+        return branchType;
+    }
+
+    private T resolveSubtypeBranchType(DtoParser.SubtypeBranchContext branch) {
+        String qualifiedName = ctx.resolve(branch.targetType);
+        T targetType = ctx.getType(qualifiedName);
+        if (targetType == null) {
+            throw ctx.exception(
+                    branch.targetType.start.getLine(),
+                    branch.targetType.start.getCharPositionInLine(),
+                    "Illegal subtype branch \"" +
+                            qualifiedName +
+                            "\", it cannot be resolved as immutable type"
+            );
+        }
+        if (!isUnderBaseType(targetType)) {
+            throw ctx.exception(
+                    branch.targetType.start.getLine(),
+                    branch.targetType.start.getCharPositionInLine(),
+                    "Illegal subtype branch \"" +
+                            qualifiedName +
+                            "\", it is not subtype of \"" +
+                            baseType.getQualifiedName() +
+                            "\""
+            );
+        }
+        if (!ctx.isInstantiable(targetType)) {
+            throw ctx.exception(
+                    branch.targetType.start.getLine(),
+                    branch.targetType.start.getCharPositionInLine(),
+                    "Illegal subtype branch \"" +
+                            qualifiedName +
+                            "\", it is not instantiable"
+            );
+        }
+        return targetType;
+    }
+
+    private boolean isUnderBaseType(T targetType) {
+        if (ctx.isSameType(targetType, baseType)) {
+            return true;
+        }
+        for (T superType : ctx.getSuperTypes(targetType)) {
+            if (isUnderBaseType(superType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void collectInstantiableTypes(T type, List<T> out) {
+        if (ctx.isInstantiable(type)) {
+            out.add(type);
+        }
+        for (T subType : ctx.getDirectSubTypes(type)) {
+            collectInstantiableTypes(subType, out);
+        }
+    }
+
+    private void validateBranchClassNames(
+            DtoPolymorphicBranch<T, P> defaultBranch,
+            List<DtoPolymorphicBranch<T, P>> subtypeBranches
+    ) {
+        Map<String, DtoPolymorphicBranch<T, P>> branchMap = new LinkedHashMap<>();
+        if (defaultBranch != null) {
+            branchMap.put(defaultBranch.getClassName(), defaultBranch);
+        }
+        for (DtoPolymorphicBranch<T, P> branch : subtypeBranches) {
+            DtoPolymorphicBranch<T, P> conflict = branchMap.put(branch.getClassName(), branch);
+            if (conflict != null) {
+                throw ctx.exception(
+                        branch.getLine(),
+                        branch.getCol(),
+                        "Duplicated polymorphic DTO branch class name \"" +
+                                branch.getClassName() +
+                                "\""
+                );
+            }
+        }
     }
 
     private Map<String, AbstractProp> resolveDeclaredProps() {
@@ -618,7 +935,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             List<AbstractProp> deeperProps = builder.getTargetBuilder().build().getProps();
             for (AbstractProp deeperProp : deeperProps) {
                 if (deeperProp instanceof UserProp) {
-                    UserProp userProp = (UserProp)deeperProp;
+                    UserProp userProp = (UserProp) deeperProp;
                     throw ctx.exception(
                             userProp.getAliasLine(),
                             userProp.getAliasColumn(),
@@ -646,8 +963,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     @SuppressWarnings("unchecked")
     private void addProps(AbstractPropBuilder propBuilder, Map<String, AbstractProp> outMap) {
         AbstractProp prop = propBuilder.build(dtoType);
-        if (prop instanceof DtoProp<?, ?> && ((DtoProp<?, ?>)prop).isFlat()) {
-            for (AbstractProp deeperProp : ((DtoProp<?, ?>)prop).getTargetType().getProps()) {
+        if (prop instanceof DtoProp<?, ?> && ((DtoProp<?, ?>) prop).isFlat()) {
+            for (AbstractProp deeperProp : ((DtoProp<?, ?>) prop).getTargetType().getProps()) {
                 AbstractProp flattedProp = flatProp(
                         (DtoProp<T, P>) prop,
                         deeperProp,
