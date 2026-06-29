@@ -18,3 +18,17 @@ ClientExhaustiveView {
         }
     }
 }
+
+ClientRuntimeView {
+    id
+    name
+    #types {
+        #exhaustive
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+        }
+    }
+}

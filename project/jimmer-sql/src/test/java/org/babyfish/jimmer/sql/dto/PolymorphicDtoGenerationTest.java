@@ -37,6 +37,10 @@ public class PolymorphicDtoGenerationTest {
         Assertions.assertEquals(Arrays.asList(10L, 11L), organization.getProjectIds());
         Assertions.assertTrue(Named.class.isAssignableFrom(ClientExhaustiveView.OrganizationBranch.class));
         Assertions.assertTrue(ClientExhaustiveView.OrganizationBranch.class.isAnnotationPresent(Deprecated.class));
+        Assertions.assertThrows(
+                NoSuchFieldException.class,
+                () -> ClientExhaustiveView.OrganizationBranch.class.getDeclaredField("METADATA")
+        );
     }
 
     @Test
