@@ -1480,6 +1480,55 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testBatchDeleteSubtype() {
+        connectAndExpect(
+                con -> {
+                    int affectedRowCount = getSqlClient()
+                            .getEntities()
+                            .deleteAllCommand(Organization.class, Arrays.asList(202L, 201L))
+                            .setMode(DeleteMode.PHYSICAL)
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    return affectedRowCount +
+                            "; " +
+                            joinedClientRow(con, 202L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedClientProjectTargetId(con, 2002L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from JOINED_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID in (?, ?) limit ?"
+                        );
+                        it.variables(202L, 201L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.batchVariables(0, 202L);
+                        it.batchVariables(1, 201L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+                                        "where tb_1_.CLIENT_ID = ? limit ?"
+                        );
+                        it.variables(202L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
+                        it.variables(202L, "ORG");
+                    });
+                    ctx.value("1; null; [Person, Alice, null, Alice, Smith]; 201");
+                }
+        );
+    }
+
+    @Test
     public void testDeleteSubtypeWithAssociationTargets() {
         connectAndExpect(
                 con -> {
