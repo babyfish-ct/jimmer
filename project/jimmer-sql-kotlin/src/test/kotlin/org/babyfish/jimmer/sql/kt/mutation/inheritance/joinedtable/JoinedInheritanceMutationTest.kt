@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
@@ -17,7 +18,7 @@ import kotlin.test.assertFailsWith
 class JoinedInheritanceMutationTest : AbstractMutationTest() {
 
     @Test
-    fun testInsertSubtype() {
+    fun testInsertDerivedType() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganization {
@@ -81,7 +82,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpsertSubtype() {
+    fun testUpsertDerivedType() {
         executeAndExpectResult({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -122,7 +123,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpsertSubtypeWithChangingDiscriminator() {
+    fun testUpsertDerivedTypeWithChangingDiscriminator() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -134,7 +135,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                     lastName = "Stone"
                 }
             ) {
-                setSubtypeChangeAllowed()
+                setTypeChangeAllowed()
             }.execute(con)
             joinedClientRow(con, 200L)
         }) {
@@ -166,7 +167,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeWithChangingDiscriminator() {
+    fun testUpdateDerivedTypeWithChangingDiscriminator() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KPerson {
@@ -177,7 +178,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                 }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
-                setSubtypeChangeAllowed()
+                setTypeChangeAllowed()
             }
             joinedClientRow(con, 200L)
         }) {
@@ -209,7 +210,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeWithoutChangingDiscriminator() {
+    fun testUpdateDerivedTypeWithoutChangingDiscriminator() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganization {
@@ -245,7 +246,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateRootAssociationToSubtypeTarget() {
+    fun testUpdateRootAssociationToDerivedTypeTarget() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KClientProject {
@@ -271,7 +272,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeAssociationToSubtypeTarget() {
+    fun testUpdateDerivedTypeAssociationToDerivedTypeTarget() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganizationProject {
@@ -297,7 +298,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeWithAcceptedPostAssociation() {
+    fun testUpdateDerivedTypeWithAcceptedPostAssociation() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganization {
@@ -344,7 +345,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeMismatchSkipsPostAssociation() {
+    fun testUpdateDerivedTypeMismatchSkipsPostAssociation() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganization {
@@ -373,7 +374,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertIfAbsentSubtypeWithAcceptedPostAssociation() {
+    fun testInsertIfAbsentDerivedTypeWithAcceptedPostAssociation() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -422,7 +423,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertIfAbsentSubtypeExistingSameSkipsPostAssociation() {
+    fun testInsertIfAbsentDerivedTypeExistingSameSkipsPostAssociation() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -457,7 +458,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertIfAbsentSubtypeExistingDifferentSkipsPostAssociation() {
+    fun testInsertIfAbsentDerivedTypeExistingDifferentSkipsPostAssociation() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -492,7 +493,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeBatchRoutesOnlyAcceptedRows() {
+    fun testUpdateDerivedTypeBatchRoutesOnlyAcceptedRows() {
         connectAndExpect({ con ->
             val accepted = KOrganization {
                 id = 200L
@@ -555,7 +556,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testDeleteSubtype() {
+    fun testDeleteDerivedType() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 202L) {
                 setMode(DeleteMode.PHYSICAL)
@@ -591,7 +592,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testDeleteSubtypeWithAssociationTargets() {
+    fun testDeleteDerivedTypeWithAssociationTargets() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 200L) {
                 setMode(DeleteMode.PHYSICAL)
@@ -624,7 +625,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testDeleteSubtypeWithMismatchedDiscriminator() {
+    fun testDeleteDerivedTypeWithMismatchedDiscriminator() {
         connectAndExpect({ con ->
             val affectedRowCount = sqlClient.entities.forConnection(con).delete(KOrganization::class, 201L) {
                 setMode(DeleteMode.PHYSICAL)
@@ -653,6 +654,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             val ex = assertFailsWith<ExecutionException> {
                 sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
                     setMode(DeleteMode.PHYSICAL)
+                    setTypeMatchMode(TypeMatchMode.EXACT)
                 }
             }
             ex.message
@@ -660,7 +662,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             value(
                 "Cannot delete inheritance entity type " +
                         "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
-                        "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                        "exactly because it is abstract. Delete an instantiable type or use POLYMORPHIC type match mode."
             )
         }
     }
@@ -671,7 +673,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             val ex = assertFailsWith<ExecutionException> {
                 sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
                     setMode(DeleteMode.PHYSICAL)
-                    setPolymorphic()
+                    setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
                 }
             }
             ex.message
@@ -679,9 +681,9 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             value(
                 "Cannot physically delete joined inheritance rows polymorphically by type " +
                         "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
-                        "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete subtypes, " +
+                        "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete types, " +
                         "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
-                        "and delete them as exact concrete subtypes."
+                        "and delete them as exact concrete types."
             )
         }
     }

@@ -32,7 +32,7 @@ class PolymorphicDtoInputTest {
     }
 
     @Test
-    fun testExplicitBranchInputCreatesSubtypeEntityShape() {
+    fun testExplicitBranchInputCreatesDerivedTypeEntityShape() {
         val entity = KClientPatchInput.Organization(
             id = 11L,
             name = "Org patch",
@@ -46,7 +46,7 @@ class PolymorphicDtoInputTest {
     }
 
     @Test
-    fun testDefaultInputWithDiscriminatorCreatesSubtypeEntityShape() {
+    fun testDefaultInputWithDiscriminatorCreatesDerivedTypeEntityShape() {
         val entity = KClientDiscriminatorInput.Default(
             id = 12L,
             type = "KPerson",
@@ -107,7 +107,7 @@ class PolymorphicDtoInputTest {
     }
 
     @Test
-    fun testEnumDefaultInputWithSubtypeDiscriminatorCreatesSubtypeEntityShape() {
+    fun testEnumDefaultInputWithDerivedTypeDiscriminatorCreatesDerivedTypeEntityShape() {
         val entity = KEnumClientDiscriminatorInput.Default(
             id = 131L,
             type = KClientType.PERSON,
@@ -139,7 +139,7 @@ class PolymorphicDtoInputTest {
     }
 
     @Test
-    fun testExhaustiveGeneratedSubtypeInputCreatesSubtypeEntityShape() {
+    fun testExhaustiveGeneratedDerivedTypeInputCreatesDerivedTypeEntityShape() {
         val entity = KClientExhaustiveInput.Person(
             id = 14L,
             name = "Person patch",

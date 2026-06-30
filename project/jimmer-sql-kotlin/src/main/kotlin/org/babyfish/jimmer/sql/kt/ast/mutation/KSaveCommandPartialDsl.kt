@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
 import org.babyfish.jimmer.sql.ast.mutation.UpsertMask
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -176,17 +177,29 @@ interface KSaveCommandPartialDsl {
 
     fun setTargetTransferModeAll(mode: TargetTransferMode)
 
-    fun setSubtypeChangeAllowed(allowed: Boolean = true)
+    fun setTypeMatchMode(mode: TypeMatchMode)
 
-    fun setAssociatedSubtypeChangeAllowedAll(allowed: Boolean = true)
+    fun setAssociatedTypeMatchModeAll(mode: TypeMatchMode)
 
-    fun <E: Any> setAssociatedSubtypeChangeAllowed(entityType: KClass<E>, allowed: Boolean = true)
+    fun <E: Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode)
 
-    fun setAssociatedSubtypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean = true)
+    fun setAssociatedTypeMatchMode(prop: KProperty1<*, *>, mode: TypeMatchMode)
 
-    fun setAssociatedSubtypeChangeAllowed(prop: ImmutableProp, allowed: Boolean = true)
+    fun setAssociatedTypeMatchMode(prop: ImmutableProp, mode: TypeMatchMode)
 
-    fun setAssociatedSubtypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean = true)
+    fun setAssociatedTypeMatchMode(prop: TypedProp.Association<*, *>, mode: TypeMatchMode)
+
+    fun setTypeChangeAllowed(allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowedAll(allowed: Boolean = true)
+
+    fun <E: Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowed(prop: ImmutableProp, allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean = true)
 
     fun setDumbBatchAcceptable(acceptable: Boolean = true)
 

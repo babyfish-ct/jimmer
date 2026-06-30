@@ -170,7 +170,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             return;
         }
         TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
-        for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap(fetcher).entrySet()) {
+        for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap(fetcher).entrySet()) {
             if (!JoinFetchFieldVisitor.hasTableFields(e.getValue(), visitor.getAstContext().getSqlClient(), true)) {
                 continue;
             }
@@ -195,7 +195,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
             private RealTable table = realTable;
 
-            private int subtypeDepth;
+            private int typeBranchDepth;
 
             @Override
             protected Object enter(Field field) {
@@ -216,26 +216,26 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
 
             @Override
-            protected boolean shouldVisitSubtype(ImmutableType subtype, Fetcher<?> fetcher) {
+            protected boolean shouldVisitTypeBranch(ImmutableType branchType, Fetcher<?> fetcher) {
                 return JoinFetchFieldVisitor.hasTableFields(fetcher, builder.sqlClient(), true);
             }
 
             @Override
-            protected Object enterSubtype(ImmutableType subtype) {
+            protected Object enterTypeBranch(ImmutableType branchType) {
                 RealTable oldTable = table;
                 TableLikeImplementor<?> implementor = oldTable.getTableLikeImplementor();
                 if (implementor instanceof TableImplementor<?>) {
                     this.table = ((TableImplementor<?>) implementor)
-                            .treatAsImplementor(subtype, JoinType.LEFT)
+                            .treatAsImplementor(branchType, JoinType.LEFT)
                             .realTable(builder.getQueryRenderContext());
                 }
-                subtypeDepth++;
+                typeBranchDepth++;
                 return oldTable;
             }
 
             @Override
-            protected void leaveSubtype(ImmutableType subtype, Object enterValue) {
-                subtypeDepth--;
+            protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
+                typeBranchDepth--;
                 this.table = (RealTable) enterValue;
             }
 
@@ -245,11 +245,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     return;
                 }
                 ImmutableProp prop = field.getProp();
-                if (subtypeDepth != 0 && prop.isId()) {
+                if (typeBranchDepth != 0 && prop.isId()) {
                     return;
                 }
                 if (prop.isDiscriminator() && (
-                        subtypeDepth != 0 ||
+                        typeBranchDepth != 0 ||
                                 isRenderedByDiscriminatorSlot(table, prop)
                 )) {
                     return;
@@ -300,7 +300,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         }
                     }
                 }
-                if (subtypeDepth == 0 && prop.isId()) {
+                if (typeBranchDepth == 0 && prop.isId()) {
                     renderDiscriminator(table);
                 }
             }
@@ -402,9 +402,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         visitor.visit(fetcher);
     }
 
-    private static Map<ImmutableType, Fetcher<?>> subtypeFetcherMap(Fetcher<?> fetcher) {
+    private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
         if (fetcher instanceof FetcherImplementor<?>) {
-            return ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
+            return ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
         }
         return Collections.emptyMap();
     }

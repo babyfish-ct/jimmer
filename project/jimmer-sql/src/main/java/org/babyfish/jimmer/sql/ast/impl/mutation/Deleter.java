@@ -135,7 +135,7 @@ public class Deleter {
         Collection<ImmutableType> deletedTypes = deletedTypes(
                 inheritanceInfo,
                 ctx.path.getType(),
-                ctx.options.isPolymorphic()
+                ctx.options.getTypeMatchMode()
         );
         if (isStagedJoinedExactDeleteAvailable(inheritanceInfo, deletedTypes)) {
             int rowCount = executeStagedJoinedExactDelete(ids);
@@ -149,7 +149,7 @@ public class Deleter {
         AssociationCleanup cleanup = associationCleanup();
         if (inheritanceInfo != null && (
                 !cleanup.isEmpty() ||
-                        isJoinedSubtypeCleanupRequired(inheritanceInfo, deletedTypes)
+                        isJoinedTypeBranchCleanupRequired(inheritanceInfo, deletedTypes)
         )) {
             Set<Object> acceptedIds = resolveAcceptedTargetIds(ids, inheritanceInfo, deletedTypes);
             if (acceptedIds.isEmpty()) {
@@ -183,7 +183,7 @@ public class Deleter {
     ) {
         if (inheritanceInfo == null ||
                 ctx.isLogicalDeleted() ||
-                ctx.options.isPolymorphic() ||
+                TypeMatchModes.isPolymorphic(ctx.path.getType(), ctx.options.getTypeMatchMode()) ||
                 ctx.trigger != null ||
                 inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
                 inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE ||
@@ -221,7 +221,7 @@ public class Deleter {
             throw new ExecutionException(
                     "Cannot complete staged joined inheritance delete for \"" +
                             ctx.path.getType() +
-                            "\" because a parent stage was not accepted after a subtype stage had been deleted"
+                            "\" because a parent stage was not accepted after a type-branch stage had been deleted"
             );
         }
         return rowCount;
@@ -312,14 +312,19 @@ public class Deleter {
     }
 
     private List<DeleteContext> associationCleanupContexts() {
-        if (!ctx.options.isPolymorphic() || ctx.path.getParent() != null) {
+        if (!TypeMatchModes.isPolymorphic(ctx.path.getType(), ctx.options.getTypeMatchMode()) ||
+                ctx.path.getParent() != null) {
             return Collections.singletonList(ctx);
         }
         InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
         if (inheritanceInfo == null) {
             return Collections.singletonList(ctx);
         }
-        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, ctx.path.getType(), true);
+        Collection<ImmutableType> deletedTypes = deletedTypes(
+                inheritanceInfo,
+                ctx.path.getType(),
+                TypeMatchMode.POLYMORPHIC
+        );
         if (deletedTypes.size() == 1 && deletedTypes.iterator().next() == ctx.path.getType()) {
             return Collections.singletonList(ctx);
         }
@@ -433,26 +438,27 @@ public class Deleter {
         if (inheritanceInfo == null) {
             return;
         }
-        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, ctx.options.isPolymorphic());
+        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, ctx.options.getTypeMatchMode());
         if (ctx.isLogicalDeleted() ||
                 inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
                 inheritanceInfo.getJoinedTableDissociateAction() == JoinedTableDissociateAction.LAX) {
             return;
         }
-        if (ctx.options.isPolymorphic() && (deletedTypes.size() != 1 || deletedTypes.iterator().next() != type)) {
+        if (TypeMatchModes.isPolymorphic(type, ctx.options.getTypeMatchMode()) &&
+                (deletedTypes.size() != 1 || deletedTypes.iterator().next() != type)) {
             throw new ExecutionException(
                     "Cannot physically delete joined inheritance rows polymorphically by type \"" +
                             type +
                             "\" when joinedTableDissociateAction is \"" +
                             JoinedTableDissociateAction.DELETE +
-                            "\". Delete exact concrete subtypes, use joinedTableDissociateAction = " +
+                            "\". Delete exact concrete types, use joinedTableDissociateAction = " +
                             JoinedTableDissociateAction.LAX +
-                            ", or explicitly select concrete rows and delete them as exact concrete subtypes."
+                            ", or explicitly select concrete rows and delete them as exact concrete types."
             );
         }
     }
 
-    private boolean isJoinedSubtypeCleanupRequired(
+    private boolean isJoinedTypeBranchCleanupRequired(
             InheritanceInfo inheritanceInfo,
             Collection<ImmutableType> deletedTypes
     ) {
@@ -524,7 +530,7 @@ public class Deleter {
                 rowMap,
                 ctx.trigger,
                 ctx.isLogicalDeleted(),
-                ctx.options.isPolymorphic(),
+                ctx.options.getTypeMatchMode(),
                 exceptionTranslator
         );
     }
@@ -537,7 +543,7 @@ public class Deleter {
             Map<Object, ImmutableSpi> rowMap,
             MutationTrigger trigger,
             boolean logicalDeleted,
-            boolean polymorphic,
+            TypeMatchMode typeMatchMode,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
@@ -553,7 +559,7 @@ public class Deleter {
                     trigger,
                     info,
                     generator != null ? generator.generate() : null,
-                    polymorphic,
+                    typeMatchMode,
                     exceptionTranslator
             );
         }
@@ -564,7 +570,7 @@ public class Deleter {
                 ids != null ? ids : rowMap.keySet(),
                 info,
                 generator != null ? generator.generate() : null,
-                polymorphic,
+                typeMatchMode,
                 exceptionTranslator
         );
     }
@@ -578,11 +584,11 @@ public class Deleter {
             MutationTrigger trigger,
             LogicalDeletedInfo info,
             Object generatedValue,
-            boolean polymorphic,
+            TypeMatchMode typeMatchMode,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, polymorphic);
+        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, typeMatchMode);
         if (rowMap == null) {
             MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
                     sqlClient,
@@ -610,7 +616,7 @@ public class Deleter {
                 fireEvent(row, null, null, trigger);
             }
         }
-        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue, polymorphic, exceptionTranslator);
+        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue, typeMatchMode, exceptionTranslator);
     }
 
     private static int deleteWithoutTrigger(
@@ -620,13 +626,13 @@ public class Deleter {
             Collection<Object> ids,
             LogicalDeletedInfo info,
             Object generatedDeletedValue,
-            boolean polymorphic,
+            TypeMatchMode typeMatchMode,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo != null) {
             ImmutableType rootType = inheritanceInfo.getRootType();
-            Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, polymorphic);
+            Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, typeMatchMode);
             if (info != null) {
                 return deleteFromSingleTable(
                         sqlClient,
@@ -641,10 +647,10 @@ public class Deleter {
             }
             if (inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
                     inheritanceInfo.getJoinedTableDissociateAction() == JoinedTableDissociateAction.DELETE) {
-                deleteJoinedSubtypeTables(
+                deleteJoinedTypeBranchTables(
                         sqlClient,
                         con,
-                        joinedSubtypeTableIdMap(
+                        joinedTypeBranchTableIdMap(
                                 rootType,
                                 deletedTypes.iterator().next(),
                                 ids,
@@ -713,7 +719,7 @@ public class Deleter {
         return execute(sqlClient, con, builder, exceptionTranslator);
     }
 
-    private static void deleteJoinedSubtypeTables(
+    private static void deleteJoinedTypeBranchTables(
             JSqlClientImplementor sqlClient,
             Connection con,
             Map<ImmutableType, Set<Object>> tableIdMap,
@@ -735,7 +741,7 @@ public class Deleter {
         }
     }
 
-    private static Map<ImmutableType, Set<Object>> joinedSubtypeTableIdMap(
+    private static Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap(
             ImmutableType rootType,
             ImmutableType concreteType,
             Collection<Object> ids,
@@ -817,17 +823,20 @@ public class Deleter {
     private static Collection<ImmutableType> deletedTypes(
             @Nullable InheritanceInfo inheritanceInfo,
             ImmutableType type,
-            boolean polymorphic
+            TypeMatchMode typeMatchMode
     ) {
         if (inheritanceInfo == null) {
             return Collections.singleton(type);
         }
-        if (!polymorphic) {
+        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, typeMatchMode);
+        if (resolvedMode == TypeMatchMode.EXACT) {
             if (!type.isInstantiable()) {
                 throw new ExecutionException(
                         "Cannot delete inheritance entity type \"" +
                                 type +
-                                "\" exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                                "\" exactly because it is abstract. Delete an instantiable type or use " +
+                                TypeMatchMode.POLYMORPHIC +
+                                " type match mode."
                 );
             }
             return Collections.singleton(type);
@@ -837,7 +846,7 @@ public class Deleter {
             throw new ExecutionException(
                     "Cannot delete inheritance entity type \"" +
                             type +
-                            "\" polymorphically because it has no instantiable subtype"
+                            "\" polymorphically because it has no instantiable type"
             );
         }
         return types;
@@ -948,12 +957,22 @@ public class Deleter {
             }
 
             @Override
-            public boolean isSubtypeChangeAllowed() {
+            public TypeMatchMode getTypeMatchMode() {
+                return TypeMatchMode.AUTO;
+            }
+
+            @Override
+            public TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType) {
+                return TypeMatchMode.AUTO;
+            }
+
+            @Override
+            public boolean isTypeChangeAllowed() {
                 return false;
             }
 
             @Override
-            public boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+            public boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
                 return false;
             }
 

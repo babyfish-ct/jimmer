@@ -85,16 +85,16 @@ class FetcherContext {
         }
 
         @Override
-        protected Object enterSubtype(ImmutableType subtype) {
+        protected Object enterTypeBranch(ImmutableType branchType) {
             DraftSpi oldDraft = draft;
-            if (oldDraft != null && !subtype.isAssignableFrom(oldDraft.__type())) {
+            if (oldDraft != null && !branchType.isAssignableFrom(oldDraft.__type())) {
                 draft = null;
             }
             return oldDraft;
         }
 
         @Override
-        protected void leaveSubtype(ImmutableType subtype, Object enterValue) {
+        protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
             draft = (DraftSpi) enterValue;
         }
 

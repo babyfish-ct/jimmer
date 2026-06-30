@@ -16,7 +16,7 @@ import java.util.Arrays;
 public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
 
     @Test
-    public void testUpdateSubtypeByKey() {
+    public void testUpdateDerivedTypeByKey() {
         connectAndExpect(
                 con -> {
                     getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
@@ -60,7 +60,7 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeByKey() {
+    public void testUpsertDerivedTypeByKey() {
         connectAndExpect(
                 con -> {
                     getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
@@ -104,7 +104,7 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeByKeyBatchRoutesAcceptedIds() {
+    public void testUpsertDerivedTypeByKeyBatchRoutesAcceptedIds() {
         connectAndExpect(
                 con -> {
                     getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
@@ -158,7 +158,7 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeByKeyDumbBatchUsesOneByOneRootIds() {
+    public void testUpsertDerivedTypeByKeyDumbBatchUsesOneByOneRootIds() {
         connectAndExpect(
                 con -> {
                     getSqlClient(it -> {
@@ -246,7 +246,7 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeByKeyExistingSkipsChildTable() {
+    public void testInsertIfAbsentDerivedTypeByKeyExistingSkipsChildTable() {
         connectAndExpect(
                 con -> {
                     getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
@@ -282,7 +282,7 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeByKeyMissingInsertsChildTable() {
+    public void testInsertIfAbsentDerivedTypeByKeyMissingInsertsChildTable() {
         connectAndExpect(
                 con -> {
                     getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))

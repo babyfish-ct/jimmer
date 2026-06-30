@@ -85,7 +85,7 @@ public class Keywords {
                             "__isSimpleFetcher",
                             "__contains",
                             "__forType",
-                            "__getSubtypeFetcherMap",
+                            "__getTypeBranchFetcherMap",
 
                             // KNonNullTableEx
                             "get",

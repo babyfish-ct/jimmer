@@ -539,7 +539,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             throw new IllegalArgumentException(
                     "The type \"" +
                             treatedAs +
-                            "\" is not subtype of \"" +
+                            "\" is not a derived type of \"" +
                             immutableType +
                             "\""
             );
@@ -550,7 +550,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                             this +
                             "\" as \"" +
                             treatedAs +
-                            "\" because it is abstract and has no instantiable subtype"
+                            "\" because it is abstract and has no instantiable type"
             );
         }
         if (treatedAs == immutableType) {

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable
 
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.cascade.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.cascade.KOrganization
@@ -10,7 +11,7 @@ import kotlin.test.Test
 class JoinedInheritanceCascadeDeleteTest : AbstractMutationTest() {
 
     @Test
-    fun testDeleteSubtypeByDatabaseCascade() {
+    fun testDeleteDerivedTypeByDatabaseCascade() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 500L) {
                 setMode(DeleteMode.PHYSICAL)
@@ -30,7 +31,7 @@ class JoinedInheritanceCascadeDeleteTest : AbstractMutationTest() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KClient::class, 500L) {
                 setMode(DeleteMode.PHYSICAL)
-                setPolymorphic()
+                setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
             }
             "${joinedClientRow(con, 500L)}; ${joinedClientRow(con, 501L)}"
         }) {

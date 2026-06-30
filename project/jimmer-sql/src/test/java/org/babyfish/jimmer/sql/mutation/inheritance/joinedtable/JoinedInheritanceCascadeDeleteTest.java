@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.Client;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.Organization;
@@ -60,7 +61,7 @@ public class JoinedInheritanceCascadeDeleteTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtypeByDatabaseCascade() {
+    public void testDeleteDerivedTypeByDatabaseCascade() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -92,7 +93,7 @@ public class JoinedInheritanceCascadeDeleteTest extends AbstractMutationTest {
                             .getEntities()
                             .deleteCommand(Client.class, 500L)
                             .setMode(DeleteMode.PHYSICAL)
-                            .setPolymorphic()
+                            .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
                             .execute(con);
                     return joinedClientRow(con, 500L) + "; " + joinedClientRow(con, 501L);
                 },

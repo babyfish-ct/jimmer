@@ -100,7 +100,7 @@ class SaveContext extends MutationContext {
         }
         SaveOptions options = parent.options.withMode(saveMode);
         if (prop != null) {
-            options = options.withAssociatedSubtypeChangeAllowed(prop);
+            options = options.withAssociatedOptions(prop);
         }
         this.options = options;
         this.con = parent.con;

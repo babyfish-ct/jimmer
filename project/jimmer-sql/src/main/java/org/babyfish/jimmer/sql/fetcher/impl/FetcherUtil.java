@@ -182,8 +182,8 @@ public class FetcherUtil {
             }
         }
         if (fetcher instanceof FetcherImplementor<?>) {
-            for (Fetcher<?> subtypeFetcher : ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap().values()) {
-                if (requiresPostFetch(sqlClient, subtypeFetcher)) {
+            for (Fetcher<?> typeBranchFetcher : ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().values()) {
+                if (requiresPostFetch(sqlClient, typeBranchFetcher)) {
                     return true;
                 }
             }

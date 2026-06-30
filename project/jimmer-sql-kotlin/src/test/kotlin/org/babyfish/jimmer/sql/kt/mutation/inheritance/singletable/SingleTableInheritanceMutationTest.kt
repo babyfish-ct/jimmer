@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -21,7 +22,7 @@ import kotlin.test.assertFailsWith
 class SingleTableInheritanceMutationTest : AbstractMutationTest() {
 
     @Test
-    fun testInsertSubtype() {
+    fun testInsertDerivedType() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganization {
@@ -63,7 +64,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
         assertEquals(
             "Cannot save inheritance entity type " +
                 "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
-                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
             ex.message
         )
     }
@@ -83,7 +84,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
         assertEquals(
             "Cannot save inheritance entity type " +
                 "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
-                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
             ex.message
         )
     }
@@ -101,7 +102,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
         assertEquals(
             "Cannot save inheritance entity type " +
                 "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
-                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
             ex.message
         )
     }
@@ -149,7 +150,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertDefaultInputWithDiscriminatorRoutesSubtype() {
+    fun testInsertDefaultInputWithDiscriminatorRoutesDerivedType() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KClientDiscriminatorInput.Default(
@@ -218,7 +219,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateAbstractRootWithSubtypeChangeAllowedIsRejected() {
+    fun testUpdateAbstractRootWithTypeChangeAllowedIsRejected() {
         val ex = assertFailsWith<IllegalArgumentException> {
             sqlClient.entities.saveCommand(
                 KClient {
@@ -227,19 +228,19 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
-                setSubtypeChangeAllowed()
+                setTypeChangeAllowed()
             }.execute()
         }
         assertEquals(
             "Cannot save inheritance entity type " +
                 "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
-                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                "with POLYMORPHIC type match mode because typeChangeAllowed is true",
             ex.message
         )
     }
 
     @Test
-    fun testInsertSubtypeWithEnumDiscriminator() {
+    fun testInsertDerivedTypeWithEnumDiscriminator() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KEnumOrganization {
@@ -266,7 +267,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpsertSubtype() {
+    fun testUpsertDerivedType() {
         executeAndExpectResult({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -299,7 +300,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeWithoutChangingDiscriminator() {
+    fun testUpdateDerivedTypeWithoutChangingDiscriminator() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganization {
@@ -325,7 +326,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpsertSubtypeWithChangingDiscriminator() {
+    fun testUpsertDerivedTypeWithChangingDiscriminator() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -337,7 +338,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                     lastName = "Smith"
                 }
             ) {
-                setSubtypeChangeAllowed()
+                setTypeChangeAllowed()
             }.execute(con)
             clientRow(con, 100L)
         }) {
@@ -353,7 +354,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeWithChangingDiscriminator() {
+    fun testUpdateDerivedTypeWithChangingDiscriminator() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KPerson {
@@ -364,7 +365,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
-                setSubtypeChangeAllowed()
+                setTypeChangeAllowed()
             }
             clientRow(con, 100L)
         }) {
@@ -418,7 +419,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateRootAssociationToSubtypeTarget() {
+    fun testUpdateRootAssociationToDerivedTypeTarget() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KClientProject {
@@ -444,7 +445,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateSubtypeAssociationToSubtypeTarget() {
+    fun testUpdateDerivedTypeAssociationToDerivedTypeTarget() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
                 KOrganizationProject {
@@ -470,7 +471,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testDeleteSubtype() {
+    fun testDeleteDerivedType() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 102L) {
                 setMode(DeleteMode.PHYSICAL)
@@ -516,6 +517,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             val ex = assertFailsWith<ExecutionException> {
                 sqlClient.entities.forConnection(con).delete(KClient::class, 102L) {
                     setMode(DeleteMode.PHYSICAL)
+                    setTypeMatchMode(TypeMatchMode.EXACT)
                 }
             }
             ex.message
@@ -523,7 +525,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             value(
                 "Cannot delete inheritance entity type " +
                     "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
-                    "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                    "exactly because it is abstract. Delete an instantiable type or use POLYMORPHIC type match mode."
             )
         }
     }
@@ -533,7 +535,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KClient::class, 102L) {
                 setMode(DeleteMode.PHYSICAL)
-                setPolymorphic()
+                setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
             }
             "${clientRow(con, 102L)}; ${clientRow(con, 101L)}"
         }) {
@@ -571,7 +573,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testDeleteSubtypeWithAssociationTargets() {
+    fun testDeleteDerivedTypeWithAssociationTargets() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 100L) {
                 setMode(DeleteMode.PHYSICAL)

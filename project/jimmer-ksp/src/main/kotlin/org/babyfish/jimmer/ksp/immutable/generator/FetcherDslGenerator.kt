@@ -124,17 +124,17 @@ class FetcherDslGenerator(
                 .builder("forType")
                 .addTypeVariable(typeVariable)
                 .addParameter(
-                    "subtypeFetcher",
+                    "typeBranchFetcher",
                     FETCHER_CLASS_NAME.parameterizedBy(typeVariable)
                 )
                 .addStatement(
-                    "_fetcher = (_fetcher as %T<%T>).__forType(subtypeFetcher)",
+                    "_fetcher = (_fetcher as %T<%T>).__forType(typeBranchFetcher)",
                     FETCHER_IMPLEMENTOR_CLASS_NAME,
                     type.className
                 )
                 .build()
         )
-        for (subtype in knownStrictSubtypes()) {
+        for (typeBranch in knownStrictTypeBranches()) {
             addFunction(
                 FunSpec
                     .builder("forType")
@@ -147,22 +147,22 @@ class FetcherDslGenerator(
                     .addAnnotation(
                         AnnotationSpec
                             .builder(ClassName("kotlin.jvm", "JvmName"))
-                            .addMember("%S", "forType_${subtype.qualifiedName.replace('.', '_')}")
+                            .addMember("%S", "forType_${typeBranch.qualifiedName.replace('.', '_')}")
                             .build()
                     )
                     .addParameter(
                         "type",
-                        K_CLASS_CLASS_NAME.parameterizedBy(subtype.className)
+                        K_CLASS_CLASS_NAME.parameterizedBy(typeBranch.className)
                     )
                     .addParameter(
                         "block",
                         LambdaTypeName.get(
-                            subtype.fetcherDslClassName,
+                            typeBranch.fetcherDslClassName,
                             emptyList(),
                             UNIT
                         )
                     )
-                    .addStatement("val dsl = %T()", subtype.fetcherDslClassName)
+                    .addStatement("val dsl = %T()", typeBranch.fetcherDslClassName)
                     .addStatement("dsl.block()")
                     .addStatement(
                         "_fetcher = (_fetcher as %T<%T>).__forType(dsl.internallyGetFetcher())",
@@ -474,10 +474,10 @@ class FetcherDslGenerator(
     }
 
     private fun isKnownNonLeaf(): Boolean {
-        return knownStrictSubtypes().isNotEmpty()
+        return knownStrictTypeBranches().isNotEmpty()
     }
 
-    private fun knownStrictSubtypes(): List<ImmutableType> {
+    private fun knownStrictTypeBranches(): List<ImmutableType> {
         if (!type.isEntity || type.inheritanceRoot == null) {
             return emptyList()
         }

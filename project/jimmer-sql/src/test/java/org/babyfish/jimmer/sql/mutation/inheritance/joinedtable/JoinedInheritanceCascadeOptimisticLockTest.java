@@ -58,7 +58,7 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
     }
 
     @Test
-    public void testRootVersionSubtypeMismatchIsOptimisticLockError() {
+    public void testRootVersionDerivedTypeMismatchIsOptimisticLockError() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -91,7 +91,7 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
     }
 
     @Test
-    public void testRootVersionFailureStopsSubtypeChangeCleanup() {
+    public void testRootVersionFailureStopsTypeChangeCleanup() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -104,7 +104,7 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
                                 })
                         )
                         .setMode(SaveMode.UPDATE_ONLY)
-                        .setSubtypeChangeAllowed(true),
+                        .setTypeChangeAllowed(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID");
@@ -130,7 +130,7 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
     }
 
     @Test
-    public void testRootVersionMissingSubtypeChangeIsOptimisticLockError() {
+    public void testRootVersionMissingTypeChangeIsOptimisticLockError() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -143,7 +143,7 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
                                 })
                         )
                         .setMode(SaveMode.UPDATE_ONLY)
-                        .setSubtypeChangeAllowed(true),
+                        .setTypeChangeAllowed(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select ID, CLIENT_TYPE from JOINED_CASCADE_CLIENT where ID = ? order by ID");

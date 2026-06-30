@@ -98,7 +98,7 @@ public class JoinedInheritanceOptimisticLockTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUserOptimisticLockRejectsSubtypeProp() {
+    public void testUserOptimisticLockRejectsDerivedTypeProp() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()

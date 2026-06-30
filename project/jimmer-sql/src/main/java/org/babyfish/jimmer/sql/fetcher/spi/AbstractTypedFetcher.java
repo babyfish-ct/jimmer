@@ -35,9 +35,9 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
 
     protected AbstractTypedFetcher(
             FetcherImpl<E> prev,
-            FetcherImpl<?> subtypeFetcher
+            FetcherImpl<?> typeBranchFetcher
     ) {
-        super(prev, subtypeFetcher);
+        super(prev, typeBranchFetcher);
     }
 
     @SuppressWarnings("unchecked")
@@ -117,5 +117,5 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     protected abstract T createFetcher(ImmutableProp prop, FieldConfig<?, ? extends Table<?>> fieldConfig);
 
     @Override
-    protected abstract T createFetcher(FetcherImpl<?> subtypeFetcher);
+    protected abstract T createFetcher(FetcherImpl<?> typeBranchFetcher);
 }

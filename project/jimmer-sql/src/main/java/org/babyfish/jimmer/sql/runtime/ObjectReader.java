@@ -42,7 +42,7 @@ class ObjectReader implements Reader<Object> {
     @Nullable
     private final Map<Object, ImmutableType> discriminatorTypeMap;
 
-    private final SubtypeReader[] subtypeReaders;
+    private final TypeBranchReader[] typeBranchReaders;
 
     @Nullable
     private final List<PropId> shownPropIds;
@@ -55,7 +55,7 @@ class ObjectReader implements Reader<Object> {
             Reader<?> idReader,
             Map<ImmutableProp, Reader<?>> nonIdReaders,
             @Nullable Reader<?> discriminatorReader,
-            @Nullable List<SubtypeReader> subtypeReaders,
+            @Nullable List<TypeBranchReader> typeBranchReaders,
             @Nullable List<PropId> shownPropIds,
             @Nullable List<PropId> hiddenPropsIds
     ) {
@@ -91,9 +91,9 @@ class ObjectReader implements Reader<Object> {
         this.discriminatorTypeMap = actualDiscriminatorReader != null ?
                 type.getInheritanceInfo().getDiscriminatorTypeMap() :
                 null;
-        this.subtypeReaders = subtypeReaders != null ?
-                subtypeReaders.toArray(new SubtypeReader[0]) :
-                new SubtypeReader[0];
+        this.typeBranchReaders = typeBranchReaders != null ?
+                typeBranchReaders.toArray(new TypeBranchReader[0]) :
+                new TypeBranchReader[0];
         this.shownPropIds = shownPropIds;
         this.hiddenPropsIds = hiddenPropsIds;
     }
@@ -137,8 +137,8 @@ class ObjectReader implements Reader<Object> {
         for (Reader<?> reader : nonIdReaders) {
             reader.skip(ctx);
         }
-        for (SubtypeReader subtypeReader : subtypeReaders) {
-            subtypeReader.skip(ctx);
+        for (TypeBranchReader typeBranchReader : typeBranchReaders) {
+            typeBranchReader.skip(ctx);
         }
     }
 
@@ -152,8 +152,8 @@ class ObjectReader implements Reader<Object> {
             for (Reader<?> reader : nonIdReaders) {
                 reader.skip(ctx);
             }
-            for (SubtypeReader subtypeReader : subtypeReaders) {
-                subtypeReader.skip(ctx);
+            for (TypeBranchReader typeBranchReader : typeBranchReaders) {
+                typeBranchReader.skip(ctx);
             }
             return null;
         }
@@ -167,8 +167,8 @@ class ObjectReader implements Reader<Object> {
             set(spi, nonIdPropIds[i], nonIdReaders[i].read(rs, ctx));
         }
         showOrHide(spi);
-        for (SubtypeReader subtypeReader : subtypeReaders) {
-            subtypeReader.read(rs, ctx, actualType, spi);
+        for (TypeBranchReader typeBranchReader : typeBranchReaders) {
+            typeBranchReader.read(rs, ctx, actualType, spi);
         }
         return ctx.resolve(spi);
     }
@@ -192,7 +192,7 @@ class ObjectReader implements Reader<Object> {
             throw new ExecutionException(
                     "Cannot resolve the concrete type of \"" +
                             type +
-                            "\" because there is no subtype mapped by discriminator value \"" +
+                            "\" because there is no type mapped by discriminator value \"" +
                             discriminatorValue +
                             "\""
             );
@@ -236,7 +236,7 @@ class ObjectReader implements Reader<Object> {
         }
     }
 
-    static class SubtypeReader {
+    static class TypeBranchReader {
 
         private final ImmutableType type;
 
@@ -254,7 +254,7 @@ class ObjectReader implements Reader<Object> {
         @Nullable
         private final List<PropId> hiddenPropsIds;
 
-        SubtypeReader(
+        TypeBranchReader(
                 ImmutableType type,
                 Map<ImmutableProp, Reader<?>> nonIdReaders,
                 @Nullable List<PropId> shownPropIds,

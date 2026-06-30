@@ -37,7 +37,7 @@ public class JoinedInstantiableRootQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    public void testRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         ClientTable table = ClientTable.$;
         executeAndExpect(
                 getSqlClient()

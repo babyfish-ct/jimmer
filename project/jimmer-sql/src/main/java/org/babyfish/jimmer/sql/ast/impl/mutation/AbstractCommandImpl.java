@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
@@ -191,13 +192,13 @@ abstract class AbstractCommandImpl {
         }
     }
 
-    static class DeletePolymorphicCfg extends Cfg {
+    static class TypeMatchModeCfg extends Cfg {
 
-        final boolean polymorphic;
+        final TypeMatchMode mode;
 
-        DeletePolymorphicCfg(Cfg prev, boolean polymorphic) {
+        TypeMatchModeCfg(Cfg prev, TypeMatchMode mode) {
             super(prev);
-            this.polymorphic = polymorphic;
+            this.mode = mode != null ? mode : TypeMatchMode.AUTO;
         }
     }
 

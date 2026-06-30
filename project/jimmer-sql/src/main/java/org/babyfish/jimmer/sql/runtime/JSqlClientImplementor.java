@@ -77,7 +77,7 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isTargetTransferable();
 
-    boolean isDefaultSubtypeChangeAllowed();
+    boolean isDefaultTypeChangeAllowed();
 
     boolean isBatchForbidden(boolean dumbBatchAcceptable);
 

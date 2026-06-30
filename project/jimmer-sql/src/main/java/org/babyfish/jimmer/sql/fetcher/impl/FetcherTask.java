@@ -131,7 +131,7 @@ class FetcherTask {
                     return false;
                 }
             }
-            if (!isLoadedBySubtypeFetchers(childValue, childFetcher)) {
+            if (!isLoadedByTypeBranchFetchers(childValue, childFetcher)) {
                 return false;
             }
         }
@@ -139,25 +139,25 @@ class FetcherTask {
     }
 
     @SuppressWarnings("unchecked")
-    private static boolean isLoadedBySubtypeFetchers(Object obj, Fetcher<?> fetcher) {
+    private static boolean isLoadedByTypeBranchFetchers(Object obj, Fetcher<?> fetcher) {
         if (!(fetcher instanceof FetcherImplementor<?>)) {
             return true;
         }
-        Map<ImmutableType, Fetcher<?>> subtypeFetcherMap =
-                ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
-        if (subtypeFetcherMap.isEmpty()) {
+        Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap =
+                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
+        if (typeBranchFetcherMap.isEmpty()) {
             return true;
         }
         if (obj instanceof List<?>) {
             for (Object element : (List<?>) obj) {
-                if (!isLoadedBySubtypeFetchers(element, fetcher)) {
+                if (!isLoadedByTypeBranchFetchers(element, fetcher)) {
                     return false;
                 }
             }
             return true;
         }
         ImmutableType actualType = ((ImmutableSpi) obj).__type();
-        for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap.entrySet()) {
+        for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap.entrySet()) {
             if (!e.getKey().isAssignableFrom(actualType)) {
                 continue;
             }
@@ -169,7 +169,7 @@ class FetcherTask {
                     return false;
                 }
             }
-            if (!isLoadedBySubtypeFetchers(obj, e.getValue())) {
+            if (!isLoadedByTypeBranchFetchers(obj, e.getValue())) {
                 return false;
             }
         }

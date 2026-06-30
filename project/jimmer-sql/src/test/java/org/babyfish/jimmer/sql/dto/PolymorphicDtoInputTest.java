@@ -31,7 +31,7 @@ public class PolymorphicDtoInputTest {
     }
 
     @Test
-    public void testExplicitBranchInputCreatesSubtypeEntityShape() {
+    public void testExplicitBranchInputCreatesDerivedTypeEntityShape() {
         ClientPatchInput.Organization input = new ClientPatchInput.Organization();
         input.setId(11L);
         input.setName("Org patch");
@@ -46,7 +46,7 @@ public class PolymorphicDtoInputTest {
     }
 
     @Test
-    public void testDefaultInputWithDiscriminatorCreatesSubtypeEntityShape() {
+    public void testDefaultInputWithDiscriminatorCreatesDerivedTypeEntityShape() {
         ClientDiscriminatorInput.Default input = new ClientDiscriminatorInput.Default();
         input.setId(12L);
         input.setType("Person");
@@ -112,7 +112,7 @@ public class PolymorphicDtoInputTest {
     }
 
     @Test
-    public void testEnumDefaultInputWithSubtypeDiscriminatorCreatesSubtypeEntityShape() {
+    public void testEnumDefaultInputWithDerivedTypeDiscriminatorCreatesDerivedTypeEntityShape() {
         EnumClientDiscriminatorInput.Default input = new EnumClientDiscriminatorInput.Default();
         input.setId(131L);
         input.setType(ClientType.PERSON);
@@ -147,7 +147,7 @@ public class PolymorphicDtoInputTest {
     }
 
     @Test
-    public void testExhaustiveGeneratedSubtypeInputCreatesSubtypeEntityShape() {
+    public void testExhaustiveGeneratedDerivedTypeInputCreatesDerivedTypeEntityShape() {
         ClientExhaustiveInput.Person input = new ClientExhaustiveInput.Person();
         input.setId(14L);
         input.setName("Person patch");

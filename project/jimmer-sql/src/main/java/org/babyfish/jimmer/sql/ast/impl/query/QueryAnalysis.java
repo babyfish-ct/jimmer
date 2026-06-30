@@ -43,8 +43,8 @@ public final class QueryAnalysis {
         return model.getJoinRequirements().get(table);
     }
 
-    boolean isJoinedSubtypeTableRequired(TableImplementor<?> table) {
-        return model.getJoinedSubtypeTableUsages().isRequired(table);
+    boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
+        return model.getJoinedTypeBranchTableUsages().isRequired(table);
     }
 
     TableAliases getTableAliases() {

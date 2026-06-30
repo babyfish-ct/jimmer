@@ -48,13 +48,13 @@ public abstract class JoinFetchFieldVisitor {
                 }
             }
         }
-        for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap(fetcher).entrySet()) {
-            if (!shouldVisitSubtype(e.getKey(), e.getValue())) {
+        for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap(fetcher).entrySet()) {
+            if (!shouldVisitTypeBranch(e.getKey(), e.getValue())) {
                 continue;
             }
-            Object enterValue = enterSubtype(e.getKey());
+            Object enterValue = enterTypeBranch(e.getKey());
             visit0(e.getValue(), depth);
-            leaveSubtype(e.getKey(), enterValue);
+            leaveTypeBranch(e.getKey(), enterValue);
         }
     }
 
@@ -62,21 +62,21 @@ public abstract class JoinFetchFieldVisitor {
 
     protected abstract void leave(Field field, Object enterValue);
 
-    protected Object enterSubtype(ImmutableType subtype) {
+    protected Object enterTypeBranch(ImmutableType branchType) {
         return null;
     }
 
-    protected boolean shouldVisitSubtype(ImmutableType subtype, Fetcher<?> fetcher) {
+    protected boolean shouldVisitTypeBranch(ImmutableType branchType, Fetcher<?> fetcher) {
         return true;
     }
 
-    protected void leaveSubtype(ImmutableType subtype, Object enterValue) {}
+    protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {}
 
     protected void visit(Field field, int depth) {}
 
-    private static Map<ImmutableType, Fetcher<?>> subtypeFetcherMap(Fetcher<?> fetcher) {
+    private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
         if (fetcher instanceof FetcherImplementor<?>) {
-            return ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
+            return ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
         }
         return Collections.emptyMap();
     }
@@ -122,7 +122,7 @@ public abstract class JoinFetchFieldVisitor {
 
     private static boolean isIdOnlyFetcher(Fetcher<?> fetcher) {
         return fetcher.getFieldMap().size() == 1 &&
-                subtypeFetcherMap(fetcher).isEmpty();
+                typeBranchFetcherMap(fetcher).isEmpty();
     }
 
     public static boolean hasTableFields(
@@ -141,8 +141,8 @@ public abstract class JoinFetchFieldVisitor {
                 return true;
             }
         }
-        for (Fetcher<?> subtypeFetcher : subtypeFetcherMap(fetcher).values()) {
-            if (hasTableFields(subtypeFetcher, sqlClient, true)) {
+        for (Fetcher<?> typeBranchFetcher : typeBranchFetcherMap(fetcher).values()) {
+            if (hasTableFields(typeBranchFetcher, sqlClient, true)) {
                 return true;
             }
         }

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
 
     @Test
-    public void testInsertSubtype() {
+    public void testInsertDerivedType() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -75,7 +76,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
         assertEquals(
                 "Cannot save inheritance entity type " +
                         "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
-                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                        "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
                 ex.getMessage()
         );
     }
@@ -97,7 +98,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
         assertEquals(
                 "Cannot save inheritance entity type " +
                         "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
-                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                        "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
                 ex.getMessage()
         );
     }
@@ -118,7 +119,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
         assertEquals(
                 "Cannot save inheritance entity type " +
                         "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
-                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                        "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
                 ex.getMessage()
         );
     }
@@ -174,7 +175,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateAbstractRootWithSubtypeChangeAllowedIsRejected() {
+    public void testUpdateAbstractRootWithTypeChangeAllowedIsRejected() {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> getSqlClient()
@@ -186,19 +187,43 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                 })
                         )
                         .setMode(SaveMode.UPDATE_ONLY)
-                        .setSubtypeChangeAllowed(true)
+                        .setTypeChangeAllowed(true)
                         .execute()
         );
         assertEquals(
                 "Cannot save inheritance entity type " +
                         "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
-                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                        "with POLYMORPHIC type match mode because typeChangeAllowed is true",
                 ex.getMessage()
         );
     }
 
     @Test
-    public void testInsertDefaultInputWithDiscriminatorRoutesSubtype() {
+    public void testUpdateAbstractRootExactlyIsRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                ClientDraft.$.produce(client -> {
+                                    client.setId(100L);
+                                    client.setName("Acme Base+");
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setTypeMatchMode(TypeMatchMode.EXACT)
+                        .execute()
+        );
+        assertEquals(
+                "Cannot save inheritance entity type " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
+                        "because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and typeMatchMode=AUTO/POLYMORPHIC is allowed",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testInsertDefaultInputWithDiscriminatorRoutesDerivedType() {
         connectAndExpect(
                 con -> {
                     ClientDiscriminatorInput.Default input = new ClientDiscriminatorInput.Default();
@@ -273,7 +298,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertSubtypeWithEnumDiscriminator() {
+    public void testInsertDerivedTypeWithEnumDiscriminator() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -302,7 +327,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtype() {
+    public void testUpsertDerivedType() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -336,7 +361,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithoutChangingDiscriminator() {
+    public void testUpdateDerivedTypeWithoutChangingDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -367,7 +392,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithMismatchedDiscriminator() {
+    public void testUpdateDerivedTypeWithMismatchedDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -398,7 +423,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeWithMismatchedDiscriminator() {
+    public void testUpsertDerivedTypeWithMismatchedDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -432,7 +457,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeExistingSameDiscriminator() {
+    public void testInsertIfAbsentDerivedTypeExistingSameDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -465,7 +490,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeExistingDifferentDiscriminator() {
+    public void testInsertIfAbsentDerivedTypeExistingDifferentDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -498,7 +523,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentIgnoresSubtypeChangeAllowed() {
+    public void testInsertIfAbsentIgnoresTypeChangeAllowed() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -511,7 +536,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.INSERT_IF_ABSENT)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return clientRow(con, 101L);
                 },
@@ -532,7 +557,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeWithChangingDiscriminator() {
+    public void testUpsertDerivedTypeWithChangingDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -545,7 +570,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                         person.setLastName("Smith");
                                     })
                             )
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return clientRow(con, 100L);
                 },
@@ -563,7 +588,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeWithSubtypeChangeAllowedMixedBatch() {
+    public void testUpsertDerivedTypeWithTypeChangeAllowedMixedBatch() {
         connectAndExpect(
                 con -> {
                     Person changed = PersonDraft.$.produce(person -> {
@@ -587,7 +612,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     getSqlClient()
                             .getEntities()
                             .saveEntitiesCommand(Arrays.asList(changed, same, inserted))
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return clientRow(con, 100L) +
                             "; " +
@@ -613,7 +638,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithChangingDiscriminator() {
+    public void testUpdateDerivedTypeWithChangingDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -627,7 +652,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return clientRow(con, 100L);
                 },
@@ -678,7 +703,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateRootAssociationToSubtypeTarget() {
+    public void testUpdateRootAssociationToDerivedTypeTarget() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -706,7 +731,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAssociatedSubtypeChangeDefaultNoOp() {
+    public void testAssociatedTypeChangeDefaultNoOp() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -726,6 +751,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
+                            .setAssociatedTypeMatchMode(ClientProjectProps.CLIENT, TypeMatchMode.EXACT)
                             .execute(con);
                     return clientRow(con, 100L) + "; " + singleClientProjectTargetId(con, 1000L);
                 },
@@ -756,7 +782,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAssociatedSubtypeChangeAllowedByProp() {
+    public void testAssociatedTypeChangeAllowedByProp() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -776,7 +802,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setAssociatedSubtypeChangeAllowed(ClientProjectProps.CLIENT)
+                            .setAssociatedTypeChangeAllowed(ClientProjectProps.CLIENT)
                             .execute(con);
                     return clientRow(con, 100L) + "; " + singleClientProjectTargetId(con, 1000L);
                 },
@@ -802,7 +828,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeAssociationToSubtypeTarget() {
+    public void testUpdateDerivedTypeAssociationToDerivedTypeTarget() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -830,7 +856,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtype() {
+    public void testDeleteDerivedType() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -885,6 +911,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                     .getEntities()
                                     .deleteCommand(Client.class, 102L)
                                     .setMode(DeleteMode.PHYSICAL)
+                                    .setTypeMatchMode(TypeMatchMode.EXACT)
                                     .execute(con)
                     );
                     return ex.getMessage();
@@ -892,20 +919,19 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> ctx.value(
                         "Cannot delete inheritance entity type " +
                                 "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
-                                "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                                "exactly because it is abstract. Delete an instantiable type or use POLYMORPHIC type match mode."
                 )
         );
     }
 
     @Test
-    public void testDeleteRootPolymorphically() {
+    public void testDeleteAbstractRootWithAutoTypeMatchMode() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
                             .getEntities()
                             .deleteCommand(Client.class, 102L)
                             .setMode(DeleteMode.PHYSICAL)
-                            .setPolymorphic()
                             .execute(con);
                     return clientRow(con, 102L) + "; " + clientRow(con, 101L);
                 },
@@ -947,7 +973,56 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtypeWithAssociationTargets() {
+    public void testDeleteRootPolymorphically() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Client.class, 102L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                            .execute(con);
+                    return clientRow(con, 102L) + "; " + clientRow(con, 101L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
+                        );
+                        it.variables(102L, "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                                        "where tb_1_.CLIENT_ID = ? limit ?"
+                        );
+                        it.variables(102L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from SINGLE_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                        );
+                        it.variables(102L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from CLIENT where ID = ? and CLIENT_TYPE in (?, ?)"
+                        );
+                        it.variables(102L, "ORG", "Person");
+                    });
+                    ctx.value("null; [Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteDerivedTypeWithAssociationTargets() {
         connectAndExpect(
                 con -> {
                     getSqlClient()

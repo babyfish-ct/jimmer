@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable.instantiable;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client;
@@ -15,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
@@ -136,6 +138,37 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateRootBranchPolymorphically() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientDraft.$.produce(client -> {
+                                        client.setId(601L);
+                                        client.setName("Joined Root Polymorphic+");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                            .execute(con);
+                    return joinedClientRow(con, 601L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_INST_CLIENT " +
+                                        "set NAME = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("Joined Root Polymorphic+", 601L);
+                    });
+                    ctx.value("[ORG, Joined Root Polymorphic+, J-ORG-001, null, null]");
+                }
+        );
+    }
+
+    @Test
     public void testUpsertRootBranchWithMismatchedDiscriminator() {
         connectAndExpect(
                 con -> {
@@ -169,7 +202,40 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateRootBranchWithSubtypeChangeAllowed() {
+    public void testUpsertRootBranchPolymorphically() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientDraft.$.produce(client -> {
+                                        client.setId(601L);
+                                        client.setName("Joined Root Polymorphic+");
+                                    })
+                            )
+                            .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                            .execute(con);
+                    return joinedClientRow(con, 601L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_INST_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(601L, "CLIENT", "Joined Root Polymorphic+");
+                    });
+                    ctx.value("[ORG, Joined Root Polymorphic+, J-ORG-001, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateRootBranchWithTypeChangeAllowed() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -181,7 +247,7 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 601L);
                 },
@@ -208,7 +274,32 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertRootBranchWithSubtypeChangeAllowed() {
+    public void testUpdateRootBranchWithPolymorphicTypeMatchAndTypeChangeAllowedIsRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                ClientDraft.$.produce(client -> {
+                                    client.setId(601L);
+                                    client.setName("Joined Root Replacement");
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                        .setTypeChangeAllowed(true)
+                        .execute()
+        );
+        assertEquals(
+                "Cannot save inheritance entity type " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client\" " +
+                        "with POLYMORPHIC type match mode because typeChangeAllowed is true",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testUpsertRootBranchWithTypeChangeAllowed() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -219,7 +310,7 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                                         client.setName("Joined Root Replacement");
                                     })
                             )
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 601L);
                 },
@@ -276,7 +367,7 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                                     .getEntities()
                                     .deleteCommand(Client.class, 600L)
                                     .setMode(DeleteMode.PHYSICAL)
-                                    .setPolymorphic()
+                                    .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
                                     .execute(con)
                     );
                     return ex.getMessage();
@@ -284,9 +375,9 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                 ctx -> ctx.value(
                         "Cannot physically delete joined inheritance rows polymorphically by type " +
                                 "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client\" " +
-                                "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete subtypes, " +
+                                "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete types, " +
                                 "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
-                                "and delete them as exact concrete subtypes."
+                                "and delete them as exact concrete types."
                 )
         );
     }

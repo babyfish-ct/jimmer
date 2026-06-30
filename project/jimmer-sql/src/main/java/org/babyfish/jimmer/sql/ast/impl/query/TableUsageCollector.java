@@ -22,7 +22,7 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>();
 
-    private final Set<TableImplementor<?>> joinedSubtypeTableRequirements =
+    private final Set<TableImplementor<?>> joinedTypeBranchTableRequirements =
             Collections.newSetFromMap(new IdentityHashMap<>());
 
     private final BaseQueryExportUsages.Builder baseQueryExportUsagesBuilder =
@@ -44,13 +44,13 @@ public class TableUsageCollector extends TableUsageVisitor {
         return baseQueryExportUsagesBuilder.build();
     }
 
-    public JoinedSubtypeTableUsages toJoinedSubtypeTableUsages() {
-        return new JoinedSubtypeTableUsages(joinedSubtypeTableRequirements);
+    public JoinedTypeBranchTableUsages toJoinedTypeBranchTableUsages() {
+        return new JoinedTypeBranchTableUsages(joinedTypeBranchTableRequirements);
     }
 
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
-        collectJoinedSubtypeTableRequirement(table, prop);
+        collectJoinedTypeBranchTableRequirement(table, prop);
         super.visitTableReference(table, prop, rawId);
     }
 
@@ -71,7 +71,7 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     @Override
     public void visitTableFetcherField(RealTable table, Field field) {
-        collectJoinedSubtypeTableRequirement(table, field.getProp());
+        collectJoinedTypeBranchTableRequirement(table, field.getProp());
         BaseTableOwner baseTableOwner = table.getBaseTableOwner();
         if (baseTableOwner == null) {
             super.visitTableFetcherField(table, field);
@@ -118,12 +118,12 @@ public class TableUsageCollector extends TableUsageVisitor {
         return state != null ? state : TableUsedState.NONE;
     }
 
-    private void collectJoinedSubtypeTableRequirement(RealTable table, @Nullable ImmutableProp prop) {
+    private void collectJoinedTypeBranchTableRequirement(RealTable table, @Nullable ImmutableProp prop) {
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (implementor instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
-            if (tableImplementor.isJoinedSubtypeTableRequiredBy(prop)) {
-                joinedSubtypeTableRequirements.add(tableImplementor);
+            if (tableImplementor.isJoinedTypeBranchTableRequiredBy(prop)) {
+                joinedTypeBranchTableRequirements.add(tableImplementor);
             }
         }
     }

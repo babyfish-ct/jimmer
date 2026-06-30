@@ -170,23 +170,43 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed) {
-        return new SimpleEntitySaveCommandImpl<>(new SubtypeChangeAllowedCfg(cfg, allowed));
+    public SimpleEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new TypeMatchModeCfg(cfg, mode));
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed) {
-        return new SimpleEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, allowed));
+    public SimpleEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, mode));
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed) {
-        return new SimpleEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, entityType, allowed));
+    public SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, entityType, mode));
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed) {
-        return new SimpleEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, prop, allowed));
+    public SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, prop, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new TypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, entityType, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, prop, allowed));
     }
 
     @Override

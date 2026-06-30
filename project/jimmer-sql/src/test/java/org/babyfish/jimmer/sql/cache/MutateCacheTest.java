@@ -551,7 +551,7 @@ public class MutateCacheTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testChangeInheritanceSubtype() {
+    public void testChangeInheritanceDerivedType() {
         lambdaClient.getTriggers().fireEntityTableChange(
                 OrganizationDraft.$.produce(organization -> {
                     organization.setId(100L);

@@ -8,7 +8,7 @@ import kotlin.test.Test
 class JoinedInheritanceLogicalDeleteTest : AbstractMutationTest() {
 
     @Test
-    fun testLogicalDeleteSubtype() {
+    fun testLogicalDeleteDerivedType() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).delete(KOrganization::class, 500L)
             "${joinedClientRow(con, 500L)}; ${joinedClientRow(con, 501L)}"

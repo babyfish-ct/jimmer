@@ -104,18 +104,34 @@ public class Saver {
 
     static void validateInstantiableSaveType(ImmutableType type, SaveOptions options) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        if (inheritanceInfo != null && !type.isInstantiable()) {
-            if (inheritanceInfo.getRootType() == type &&
-                    options.getMode() == SaveMode.UPDATE_ONLY &&
-                    !options.isSubtypeChangeAllowed(type)) {
-                return;
-            }
+        if (inheritanceInfo == null) {
+            return;
+        }
+        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, options.getTypeMatchMode(type));
+        if (resolvedMode == TypeMatchMode.POLYMORPHIC && options.isTypeChangeAllowed(type)) {
             throw new IllegalArgumentException(
                     "Cannot save inheritance entity type \"" +
                             type +
-                            "\" because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed"
+                            "\" with " +
+                            TypeMatchMode.POLYMORPHIC +
+                            " type match mode because typeChangeAllowed is true"
             );
         }
+        if (type.isInstantiable()) {
+            return;
+        }
+        if (inheritanceInfo.getRootType() == type &&
+                options.getMode() == SaveMode.UPDATE_ONLY &&
+                !options.isTypeChangeAllowed(type) &&
+                resolvedMode == TypeMatchMode.POLYMORPHIC) {
+            return;
+        }
+        throw new IllegalArgumentException(
+                "Cannot save inheritance entity type \"" +
+                        type +
+                        "\" because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and " +
+                        "typeMatchMode=AUTO/POLYMORPHIC is allowed"
+        );
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {
@@ -136,6 +152,10 @@ public class Saver {
         // will be interrupted. In this case, setting a
         // conditional breakpoint using `ctx.path` will
         // become very helpful.
+
+        if (!drafts.isEmpty() && !isIdOnlyAssociationReference(drafts)) {
+            validateInstantiableSaveType(drafts.get(0).__type(), ctx.options);
+        }
 
         for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
             if (isVisitable(prop) && prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
@@ -165,6 +185,24 @@ public class Saver {
         }
 
         fetch(fetchDrafts(drafts, selfResult.acceptedDrafts), batches(preHandler, selfResult.acceptedDrafts));
+    }
+
+    private boolean isIdOnlyAssociationReference(List<DraftSpi> drafts) {
+        ImmutableProp prop = ctx.path.getProp();
+        if (prop == null || !ctx.options.isIdOnlyAsReference(prop)) {
+            return false;
+        }
+        for (DraftSpi draft : drafts) {
+            if (!draft.__isLoaded(draft.__type().getIdProp().getId())) {
+                return false;
+            }
+            for (ImmutableProp draftProp : draft.__type().getProps().values()) {
+                if (!draftProp.isId() && draft.__isLoaded(draftProp.getId())) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -478,7 +516,7 @@ public class Saver {
     }
 
     private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
-        if (!isJoinedSubtypeTarget()) {
+        if (!isJoinedTypeBranchTarget()) {
             return false;
         }
         if (ctx.trigger != null) {
@@ -519,7 +557,7 @@ public class Saver {
         }
     }
 
-    private boolean isJoinedSubtypeTarget() {
+    private boolean isJoinedTypeBranchTarget() {
         ImmutableType type = ctx.path.getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         return inheritanceInfo != null &&
@@ -813,7 +851,7 @@ public class Saver {
 
         private boolean isOptimizableImpl(Fetcher<?> fetcher) {
             if (fetcher.getFieldMap().size() == 1 &&
-                    ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap().isEmpty() &&
+                    ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty() &&
                     fetcher.getFieldMap().values().iterator().next().getProp().isId()) {
                 return true;
             }

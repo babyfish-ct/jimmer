@@ -15,7 +15,7 @@ import kotlin.test.assertNull
 class SingleTableInheritanceQueryTest : AbstractQueryTest() {
 
     @Test
-    fun testRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    fun testRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(table.id eq 101L)
@@ -90,7 +90,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testRootFetcherMaterializesSubtype() {
+    fun testRootFetcherMaterializesDerivedType() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(table.id eq 100L)
@@ -116,7 +116,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testReferenceFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    fun testReferenceFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         executeAndExpect(
             sqlClient.createQuery(KClientProject::class) {
                 where(table.id eq 1000L)
@@ -153,7 +153,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testEnumDiscriminatorRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    fun testEnumDiscriminatorRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         executeAndExpect(
             sqlClient.createQuery(KEnumClient::class) {
                 where(table.id eq 110L)
@@ -201,7 +201,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testEnumDiscriminatorRootFetcherMaterializesSubtype() {
+    fun testEnumDiscriminatorRootFetcherMaterializesDerivedType() {
         executeAndExpect(
             sqlClient.createQuery(KEnumClient::class) {
                 where(table.id eq 110L)
@@ -225,7 +225,7 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testSubtypeQueryWithRootAndSubtypeFields() {
+    fun testDerivedTypeQueryWithRootAndDerivedTypeFields() {
         executeAndExpect(
             sqlClient.createQuery(KOrganization::class) {
                 select(table.type, table.name, table.taxCode)

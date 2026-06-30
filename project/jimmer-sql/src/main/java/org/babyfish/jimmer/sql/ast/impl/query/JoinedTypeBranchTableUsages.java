@@ -6,13 +6,13 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
-final class JoinedSubtypeTableUsages {
+final class JoinedTypeBranchTableUsages {
 
-    static final JoinedSubtypeTableUsages EMPTY = new JoinedSubtypeTableUsages(Collections.emptySet());
+    static final JoinedTypeBranchTableUsages EMPTY = new JoinedTypeBranchTableUsages(Collections.emptySet());
 
     private final Set<TableImplementor<?>> requiredTables;
 
-    JoinedSubtypeTableUsages(Set<TableImplementor<?>> requiredTables) {
+    JoinedTypeBranchTableUsages(Set<TableImplementor<?>> requiredTables) {
         if (requiredTables.isEmpty()) {
             this.requiredTables = Collections.emptySet();
         } else {

@@ -37,15 +37,15 @@ public class FetcherFactory {
             return null;
         }
         FetcherImpl<E> filteredPrevFetcher = filterImpl(self.prev, typePredicate, propPredicate, path);
-        if (self.subtypeFetcher != null) {
-            FetcherImpl<?> filteredSubtypeFetcher = filterImpl(
-                    self.subtypeFetcher,
+        if (self.typeBranchFetcher != null) {
+            FetcherImpl<?> filteredTypeBranchFetcher = filterImpl(
+                    self.typeBranchFetcher,
                     typePredicate,
                     propPredicate,
                     path
             );
-            return filteredSubtypeFetcher != null ?
-                    new FetcherImpl<>(filteredPrevFetcher, filteredSubtypeFetcher) :
+            return filteredTypeBranchFetcher != null ?
+                    new FetcherImpl<>(filteredPrevFetcher, filteredTypeBranchFetcher) :
                     filteredPrevFetcher;
         }
         if (!self.negative && self.prop != null && !self.prop.isId()) {

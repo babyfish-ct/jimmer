@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 class JoinedInheritanceKeyMutationTest : AbstractMutationTest() {
 
     @Test
-    fun testUpdateSubtypeByKey() {
+    fun testUpdateDerivedTypeByKey() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -53,7 +53,7 @@ class JoinedInheritanceKeyMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpsertSubtypeByKey() {
+    fun testUpsertDerivedTypeByKey() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -94,7 +94,7 @@ class JoinedInheritanceKeyMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertIfAbsentSubtypeByKeyExistingSkipsChildTable() {
+    fun testInsertIfAbsentDerivedTypeByKeyExistingSkipsChildTable() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
@@ -128,7 +128,7 @@ class JoinedInheritanceKeyMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertIfAbsentSubtypeByKeyMissingInsertsChildTable() {
+    fun testInsertIfAbsentDerivedTypeByKeyMissingInsertsChildTable() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())

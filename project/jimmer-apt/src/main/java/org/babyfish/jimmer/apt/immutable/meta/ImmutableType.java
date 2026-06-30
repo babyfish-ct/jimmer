@@ -446,7 +446,7 @@ public class ImmutableType implements BaseType {
                             prop.toElement(),
                             "property decorated by @" +
                                     Discriminator.class.getName() +
-                                    " can only be used by inheritance root type or its subtypes"
+                                    " can only be used by inheritance root type or its derived types"
                     );
                 }
             }
@@ -457,7 +457,7 @@ public class ImmutableType implements BaseType {
                             prop.toElement(),
                             "property decorated by @" +
                                     Discriminator.class.getName() +
-                                    " cannot be declared by inheritance subtype"
+                                    " cannot be declared by inheritance derived type"
                     );
                 }
             }

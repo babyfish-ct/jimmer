@@ -251,7 +251,7 @@ class TypedQueryData {
             Table<?> table = null;
             if (selection instanceof FetcherSelection<?>) {
                 Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
-                if (hasNonIdFieldOrSubtype(fetcher)) {
+                if (hasNonIdFieldOrTypeBranch(fetcher)) {
                     table = ((FetcherSelectionImpl<?>) selection).getTable();
                 }
             } else if (selection instanceof Table<?>){
@@ -267,12 +267,12 @@ class TypedQueryData {
         return idOnlyExpression;
     }
 
-    private static boolean hasNonIdFieldOrSubtype(Fetcher<?> fetcher) {
+    private static boolean hasNonIdFieldOrTypeBranch(Fetcher<?> fetcher) {
         if (fetcher.getFieldMap().size() > 1) {
             return true;
         }
         return fetcher instanceof FetcherImplementor<?> &&
-                !((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap().isEmpty();
+                !((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty();
     }
 
     private static List<Selection<?>> processSelections(List<Selection<?>> selections) {

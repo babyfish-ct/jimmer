@@ -295,7 +295,7 @@ public final class PolymorphicEntityReadPlan {
             throw new ExecutionException(
                     "Cannot resolve the concrete type of \"" +
                             rootType +
-                            "\" because there is no subtype mapped by discriminator value \"" +
+                            "\" because there is no type mapped by discriminator value \"" +
                             discriminator +
                             "\""
             );

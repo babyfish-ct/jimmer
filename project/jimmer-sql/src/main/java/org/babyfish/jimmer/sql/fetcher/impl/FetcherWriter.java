@@ -49,7 +49,7 @@ class FetcherWriter {
                 }
                 write(field);
             }
-            for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap(fetcher).entrySet()) {
+            for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap(fetcher).entrySet()) {
                 if (!first) {
                     builder.append(", ");
                 } else {
@@ -67,7 +67,7 @@ class FetcherWriter {
                     write(field);
                 }
             }
-            for (Map.Entry<ImmutableType, Fetcher<?>> e : subtypeFetcherMap(fetcher).entrySet()) {
+            for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap(fetcher).entrySet()) {
                 newLine();
                 write(e);
             }
@@ -127,17 +127,17 @@ class FetcherWriter {
         }
     }
 
-    private void write(Map.Entry<ImmutableType, Fetcher<?>> subtypeFetcherEntry) {
+    private void write(Map.Entry<ImmutableType, Fetcher<?>> typeBranchFetcherEntry) {
         builder
                 .append("forType(")
-                .append(subtypeFetcherEntry.getKey())
+                .append(typeBranchFetcherEntry.getKey())
                 .append(')');
-        write(subtypeFetcherEntry.getValue());
+        write(typeBranchFetcherEntry.getValue());
     }
 
-    private static Map<ImmutableType, Fetcher<?>> subtypeFetcherMap(Fetcher<?> fetcher) {
+    private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
         if (fetcher instanceof FetcherImplementor<?>) {
-            return ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
+            return ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
         }
         return java.util.Collections.emptyMap();
     }

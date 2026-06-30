@@ -33,7 +33,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                     "on tb_1__sub_2_.ID = tb_1_.ID and tb_1_.CLIENT_TYPE = ? ";
 
     @Test
-    public void testRejectedSubtypeUpdateDoesNotFireTriggerOrEvictCache() {
+    public void testRejectedDerivedTypeUpdateDoesNotFireTriggerOrEvictCache() {
         cacheOpRecords.clear();
         connectAndExpect(
                 con -> {
@@ -73,7 +73,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
     }
 
     @Test
-    public void testRejectedSubtypeUpsertDoesNotFireTriggerOrEvictCache() {
+    public void testRejectedDerivedTypeUpsertDoesNotFireTriggerOrEvictCache() {
         cacheOpRecords.clear();
         connectAndExpect(
                 con -> {
@@ -121,7 +121,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
     }
 
     @Test
-    public void testInsertIfAbsentExistingSubtypeDoesNotFireTriggerOrEvictCache() {
+    public void testInsertIfAbsentExistingDerivedTypeDoesNotFireTriggerOrEvictCache() {
         cacheOpRecords.clear();
         connectAndExpect(
                 con -> {
@@ -178,7 +178,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
     }
 
     @Test
-    public void testExplicitSameSubtypeUpdateFiresTriggerAndEvictsCacheOnce() {
+    public void testExplicitSameDerivedTypeUpdateFiresTriggerAndEvictsCacheOnce() {
         cacheOpRecords.clear();
         connectAndExpect(
                 con -> {
@@ -192,7 +192,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return cacheOpRecords.toString();
                 },
@@ -236,7 +236,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
     }
 
     @Test
-    public void testExplicitDifferentSubtypeUpdateFiresTriggerAndEvictsOldAndNewSubtypeCaches() {
+    public void testExplicitDifferentDerivedTypeUpdateFiresTriggerAndEvictsOldAndNewDerivedTypeCaches() {
         cacheOpRecords.clear();
         connectAndExpect(
                 con -> {
@@ -251,7 +251,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return cacheOpRecords.toString();
                 },
@@ -303,7 +303,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
     }
 
     @Test
-    public void testExplicitDifferentSubtypeUpsertFiresTriggerAndEvictsOldAndNewSubtypeCaches() {
+    public void testExplicitDifferentDerivedTypeUpsertFiresTriggerAndEvictsOldAndNewDerivedTypeCaches() {
         cacheOpRecords.clear();
         connectAndExpect(
                 con -> {
@@ -322,7 +322,7 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                     sqlClientWithCacheOperator()
                             .getEntities()
                             .saveEntitiesCommand(Arrays.asList(changed, inserted))
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return cacheOpRecords.toString();
                 },

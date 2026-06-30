@@ -184,23 +184,43 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed) {
-        return new BatchEntitySaveCommandImpl<>(new SubtypeChangeAllowedCfg(cfg, allowed));
+    public BatchEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new TypeMatchModeCfg(cfg, mode));
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed) {
-        return new BatchEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, allowed));
+    public BatchEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, mode));
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed) {
-        return new BatchEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, entityType, allowed));
+    public BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, entityType, mode));
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed) {
-        return new BatchEntitySaveCommandImpl<>(new AssociatedSubtypeChangeAllowedCfg(cfg, prop, allowed));
+    public BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, prop, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new TypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, entityType, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, prop, allowed));
     }
 
     @Override

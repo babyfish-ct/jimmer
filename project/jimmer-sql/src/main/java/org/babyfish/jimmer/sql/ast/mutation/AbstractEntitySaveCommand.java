@@ -189,48 +189,68 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
-    default AbstractEntitySaveCommand setSubtypeChangeAllowed() {
-        return setSubtypeChangeAllowed(true);
+    AbstractEntitySaveCommand setTypeMatchMode(TypeMatchMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeMatchModeAll(TypeMatchMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeMatchMode(
+            TypedProp.Association<?, ?> prop,
+            TypeMatchMode mode
+    ) {
+        return setAssociatedTypeMatchMode(prop.unwrap(), mode);
     }
 
     @NewChain
-    AbstractEntitySaveCommand setSubtypeChangeAllowed(boolean allowed);
-
-    @NewChain
-    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowedAll() {
-        return setAssociatedSubtypeChangeAllowedAll(true);
+    default AbstractEntitySaveCommand setTypeChangeAllowed() {
+        return setTypeChangeAllowed(true);
     }
 
     @NewChain
-    AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowedAll(boolean allowed);
+    AbstractEntitySaveCommand setTypeChangeAllowed(boolean allowed);
 
     @NewChain
-    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(Class<?> entityType) {
-        return setAssociatedSubtypeChangeAllowed(entityType, true);
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowedAll() {
+        return setAssociatedTypeChangeAllowedAll(true);
     }
 
     @NewChain
-    AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed);
+    AbstractEntitySaveCommand setAssociatedTypeChangeAllowedAll(boolean allowed);
 
     @NewChain
-    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
-        return setAssociatedSubtypeChangeAllowed(prop, true);
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedTypeChangeAllowed(entityType, true);
     }
 
     @NewChain
-    AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed);
+    AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed);
 
     @NewChain
-    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(TypedProp.Association<?, ?> prop) {
-        return setAssociatedSubtypeChangeAllowed(prop, true);
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
     }
 
     @NewChain
-    default AbstractEntitySaveCommand setAssociatedSubtypeChangeAllowed(
+    AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(
             TypedProp.Association<?, ?> prop,
             boolean allowed
     ) {
-        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), allowed);
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), allowed);
     }
 
     @NewChain

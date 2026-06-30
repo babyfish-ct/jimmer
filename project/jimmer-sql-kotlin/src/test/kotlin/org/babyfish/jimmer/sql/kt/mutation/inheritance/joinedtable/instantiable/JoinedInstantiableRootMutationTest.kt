@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable.instantiable
 
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto.KInstantiableClientDefaultInput
@@ -34,7 +35,7 @@ class JoinedInstantiableRootMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateRootBranchWithSubtypeChangeAllowed() {
+    fun testUpdateRootBranchWithTypeChangeAllowed() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KClient {
@@ -43,7 +44,7 @@ class JoinedInstantiableRootMutationTest : AbstractMutationTest() {
                 }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
-                setSubtypeChangeAllowed()
+                setTypeChangeAllowed()
             }
             joinedClientRow(con, 601L)
         }) {
@@ -64,6 +65,32 @@ class JoinedInstantiableRootMutationTest : AbstractMutationTest() {
                 variables(601L)
             }
             value("[CLIENT, Joined Root Replacement, null, null, null]")
+        }
+    }
+
+    @Test
+    fun testUpdateRootBranchPolymorphically() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClient {
+                    id = 601L
+                    name = "Joined Root Polymorphic+"
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+            }
+            joinedClientRow(con, 601L)
+        }) {
+            statement {
+                sql(
+                    "update JOINED_INST_CLIENT " +
+                        "set NAME = ? " +
+                        "where ID = ?"
+                )
+                variables("Joined Root Polymorphic+", 601L)
+            }
+            value("[ORG, Joined Root Polymorphic+, J-ORG-001, null, null]")
         }
     }
 

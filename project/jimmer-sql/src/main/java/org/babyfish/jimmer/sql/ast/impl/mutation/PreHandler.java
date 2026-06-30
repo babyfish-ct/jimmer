@@ -263,7 +263,7 @@ abstract class AbstractPreHandler implements PreHandler {
         return keyObjMap;
     }
 
-    final boolean isExistingDifferentSubtypeById(QueryReason queryReason, DraftSpi draft) {
+    final boolean isExistingDifferentTypeById(QueryReason queryReason, DraftSpi draft) {
         ImmutableType type = ctx.path.getType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo == null ||
@@ -347,7 +347,7 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     final QueryReason queryReason(boolean hasId, Collection<DraftSpi> drafts) {
-        if (ctx.trigger != null && !isExplicitJoinedSubtypeChange(drafts)) {
+        if (ctx.trigger != null && !isExplicitJoinedTypeChange(drafts)) {
             return QueryReason.TRIGGER;
         }
         if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
@@ -469,13 +469,13 @@ abstract class AbstractPreHandler implements PreHandler {
         return QueryReason.NONE;
     }
 
-    private boolean isExplicitJoinedSubtypeChange(Collection<DraftSpi> drafts) {
+    private boolean isExplicitJoinedTypeChange(Collection<DraftSpi> drafts) {
         if (ctx.options.getMode() == SaveMode.INSERT_IF_ABSENT || drafts.isEmpty()) {
             return false;
         }
         for (DraftSpi draft : drafts) {
             ImmutableType type = draft.__type();
-            if (!ctx.options.isSubtypeChangeAllowed(type)) {
+            if (!ctx.options.isTypeChangeAllowed(type)) {
                 return false;
             }
             InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
@@ -950,8 +950,8 @@ class UpdatePreHandler extends AbstractPreHandler {
                     ImmutableSpi original = idMap.get(id);
                     if (original != null) {
                         items.add(newItem(draft, original));
-                    } else if (ctx.options.isSubtypeChangeAllowed(draft.__type()) &&
-                            isExistingDifferentSubtypeById(queryReason, draft)) {
+                    } else if (ctx.options.isTypeChangeAllowed(draft.__type()) &&
+                            isExistingDifferentTypeById(queryReason, draft)) {
                         items.add(newItem(draft, null));
                     } else {
                         itr.remove();
@@ -1057,12 +1057,12 @@ class UpsertPreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     ImmutableSpi original = idMap.get(draft.__get(idPropId));
                     if (original == null) {
-                        boolean existingDifferentSubtype = isExistingDifferentSubtypeById(queryReason, draft);
+                        boolean existingDifferentType = isExistingDifferentTypeById(queryReason, draft);
                         itr.remove();
-                        if (ctx.options.isSubtypeChangeAllowed(draft.__type()) && existingDifferentSubtype && !ignoreUpdate) {
+                        if (ctx.options.isTypeChangeAllowed(draft.__type()) && existingDifferentType && !ignoreUpdate) {
                             updatedList.add(draft);
                             items.add(newItem(draft, null));
-                        } else if (!existingDifferentSubtype) {
+                        } else if (!existingDifferentType) {
                             insertedList.add(draft);
                             items.add(newItem(draft, null));
                         }

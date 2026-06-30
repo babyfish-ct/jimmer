@@ -221,16 +221,16 @@ class Readers {
         }
 
         @Override
-        protected Object enterSubtype(ImmutableType subtype) {
+        protected Object enterTypeBranch(ImmutableType branchType) {
             Args parentArgs = this.args;
-            this.args = new Args(subtype);
+            this.args = new Args(branchType);
             return parentArgs;
         }
 
         @Override
-        protected void leaveSubtype(ImmutableType subtype, Object enterValue) {
+        protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
             Args parentArgs = (Args) enterValue;
-            parentArgs.addSubtypeReader(args.createSubtypeReader());
+            parentArgs.addTypeBranchReader(args.createTypeBranchReader());
             this.args = parentArgs;
         }
 
@@ -268,7 +268,7 @@ class Readers {
 
             private List<PropId> hiddenPropIds;
 
-            private List<ObjectReader.SubtypeReader> subtypeReaders;
+            private List<ObjectReader.TypeBranchReader> typeBranchReaders;
 
             private Args(ImmutableType type) {
                 this.type = type;
@@ -298,12 +298,12 @@ class Readers {
                 list.add(prop.getId());
             }
 
-            void addSubtypeReader(ObjectReader.SubtypeReader subtypeReader) {
-                List<ObjectReader.SubtypeReader> list = subtypeReaders;
+            void addTypeBranchReader(ObjectReader.TypeBranchReader typeBranchReader) {
+                List<ObjectReader.TypeBranchReader> list = typeBranchReaders;
                 if (list == null) {
-                    subtypeReaders = list = new ArrayList<>();
+                    typeBranchReaders = list = new ArrayList<>();
                 }
-                list.add(subtypeReader);
+                list.add(typeBranchReader);
             }
 
             ObjectReader create(JSqlClientImplementor sqlClient) {
@@ -312,14 +312,14 @@ class Readers {
                         sqlClient.getReader(type.getIdProp()),
                         nonIdReaderMap,
                         ObjectReader.discriminatorReader(sqlClient, type),
-                        subtypeReaders,
+                        typeBranchReaders,
                         shownPropIds,
                         hiddenPropIds
                 );
             }
 
-            ObjectReader.SubtypeReader createSubtypeReader() {
-                return new ObjectReader.SubtypeReader(
+            ObjectReader.TypeBranchReader createTypeBranchReader() {
+                return new ObjectReader.TypeBranchReader(
                         type,
                         nonIdReaderMap,
                         shownPropIds,

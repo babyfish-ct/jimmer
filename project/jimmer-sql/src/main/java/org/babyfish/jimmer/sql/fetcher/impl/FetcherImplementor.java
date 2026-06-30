@@ -53,9 +53,9 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
     FetcherImplementor<E> remove(String prop);
 
     @NewChain
-    FetcherImplementor<E> __forType(Fetcher<?> subtypeFetcher);
+    FetcherImplementor<E> __forType(Fetcher<?> typeBranchFetcher);
 
-    Map<ImmutableType, Fetcher<?>> __getSubtypeFetcherMap();
+    Map<ImmutableType, Fetcher<?>> __getTypeBranchFetcherMap();
 
     /**
      * Are all fetched properties simple fields?

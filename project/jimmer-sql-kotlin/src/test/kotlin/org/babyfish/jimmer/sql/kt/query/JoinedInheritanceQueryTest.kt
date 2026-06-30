@@ -12,7 +12,7 @@ import kotlin.test.assertFalse
 class JoinedInheritanceQueryTest : AbstractQueryTest() {
 
     @Test
-    fun testRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    fun testRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(table.id eq 201L)
@@ -37,7 +37,7 @@ class JoinedInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testRootFetcherMaterializesSubtype() {
+    fun testRootFetcherMaterializesDerivedType() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(table.id eq 200L)
@@ -63,7 +63,7 @@ class JoinedInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testReferenceFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    fun testReferenceFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         executeAndExpect(
             sqlClient.createQuery(KClientProject::class) {
                 where(table.id eq 2000L)
@@ -100,7 +100,7 @@ class JoinedInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testSubtypeQueryWithRootAndSubtypeFields() {
+    fun testDerivedTypeQueryWithRootAndDerivedTypeFields() {
         executeAndExpect(
             sqlClient.createQuery(KOrganization::class) {
                 select(table.type, table.name, table.taxCode)
@@ -123,7 +123,7 @@ class JoinedInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testSubtypeQueryWithRootFieldsOnly() {
+    fun testDerivedTypeQueryWithRootFieldsOnly() {
         executeAndExpect(
             sqlClient.createQuery(KOrganization::class) {
                 select(table.type, table.name)

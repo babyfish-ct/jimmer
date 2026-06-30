@@ -193,57 +193,82 @@ public interface SimpleEntitySaveCommand<E>
 
     @NewChain
     @Override
-    default SimpleEntitySaveCommand<E> setSubtypeChangeAllowed() {
-        return setSubtypeChangeAllowed(true);
+    SimpleEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(
+            TypedProp.Association<?, ?> prop,
+            TypeMatchMode mode
+    ) {
+        return setAssociatedTypeMatchMode(prop.unwrap(), mode);
     }
 
     @NewChain
     @Override
-    SimpleEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed);
-
-    @NewChain
-    @Override
-    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll() {
-        return setAssociatedSubtypeChangeAllowedAll(true);
+    default SimpleEntitySaveCommand<E> setTypeChangeAllowed() {
+        return setTypeChangeAllowed(true);
     }
 
     @NewChain
     @Override
-    SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed);
+    SimpleEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed);
 
     @NewChain
     @Override
-    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType) {
-        return setAssociatedSubtypeChangeAllowed(entityType, true);
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll() {
+        return setAssociatedTypeChangeAllowedAll(true);
     }
 
     @NewChain
     @Override
-    SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed);
+    SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed);
 
     @NewChain
     @Override
-    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
-        return setAssociatedSubtypeChangeAllowed(prop, true);
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedTypeChangeAllowed(entityType, true);
     }
 
     @NewChain
     @Override
-    SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed);
+    SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed);
 
     @NewChain
     @Override
-    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(TypedProp.Association<?, ?> prop) {
-        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), true);
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
     }
 
     @NewChain
     @Override
-    default SimpleEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(
+    SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(
             TypedProp.Association<?, ?> prop,
             boolean allowed
     ) {
-        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), allowed);
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), allowed);
     }
 
     @NewChain

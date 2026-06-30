@@ -37,7 +37,7 @@ class JoinedInstantiableRootQueryTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    fun testRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(table.id eq 601L)

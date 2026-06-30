@@ -12,7 +12,7 @@ import java.sql.SQLException;
 public class JoinedInheritanceLogicalDeleteTest extends AbstractMutationTest {
 
     @Test
-    public void testLogicalDeleteSubtype() {
+    public void testLogicalDeleteDerivedType() {
         connectAndExpect(
                 con -> {
                     getSqlClient()

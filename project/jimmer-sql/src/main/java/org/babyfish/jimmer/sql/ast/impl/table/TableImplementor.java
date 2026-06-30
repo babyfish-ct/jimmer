@@ -104,7 +104,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
             throw new ExecutionException(
                     "Cannot query inheritance entity type \"" +
                             type +
-                            "\" because it is abstract and has no instantiable subtype"
+                            "\" because it is abstract and has no instantiable type"
             );
         }
         return new DiscriminatorPredicate(
@@ -120,7 +120,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
             throw new IllegalArgumentException(
                     "The type \"" +
                             targetType +
-                            "\" is not subtype of \"" +
+                            "\" is not a derived type of \"" +
                             type +
                             "\""
             );
@@ -135,7 +135,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
             throw new IllegalArgumentException(
                     "The type \"" +
                             targetType +
-                            "\" is not subtype of \"" +
+                            "\" is not a derived type of \"" +
                             type +
                             "\""
             );
@@ -147,7 +147,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                             this +
                             "\" is instance of \"" +
                             targetType +
-                            "\" because it is abstract and has no instantiable subtype"
+                            "\" because it is abstract and has no instantiable type"
             );
         }
         return new DiscriminatorPredicate(
@@ -172,7 +172,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
             throw new ExecutionException(
                     "Cannot query inheritance entity type \"" +
                             type +
-                            "\" because it is abstract and has no instantiable subtype"
+                            "\" because it is abstract and has no instantiable type"
             );
         }
         if (concreteTypes.size() == 1 && concreteTypes.iterator().next() == type) {
@@ -181,7 +181,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         return inheritanceInfo.getDiscriminatorProp();
     }
 
-    default boolean isJoinedSubtypeRoot() {
+    default boolean isJoinedTypeBranchRoot() {
         ImmutableType type = getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         return inheritanceInfo != null &&
@@ -189,8 +189,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                 inheritanceInfo.getRootType() != type;
     }
 
-    default boolean isJoinedSubtypeTableRequiredBy(@Nullable ImmutableProp prop) {
-        if (!isJoinedSubtypeRoot()) {
+    default boolean isJoinedTypeBranchTableRequiredBy(@Nullable ImmutableProp prop) {
+        if (!isJoinedTypeBranchRoot()) {
             return false;
         }
         return prop != null && !isRootTableProp(prop);

@@ -46,11 +46,11 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     final FetcherImpl<?> childFetcher;
 
-    final FetcherImpl<?> subtypeFetcher;
+    final FetcherImpl<?> typeBranchFetcher;
 
     private Map<String, Field> fieldMap;
 
-    private Map<ImmutableType, Fetcher<?>> subtypeFetcherMap;
+    private Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap;
 
     private Boolean isSimpleFetcher;
 
@@ -82,7 +82,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.recursionStrategy = base.recursionStrategy;
             this.fetchType = base.fetchType;
             this.childFetcher = base.childFetcher;
-            this.subtypeFetcher = base.subtypeFetcher;
+            this.typeBranchFetcher = base.typeBranchFetcher;
         } else {
             this.prev = null;
             this.immutableType = ImmutableType.get(javaClass);
@@ -97,7 +97,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.recursionStrategy = null;
             this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
-            this.subtypeFetcher = null;
+            this.typeBranchFetcher = null;
         }
     }
 
@@ -124,7 +124,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         } else {
             this.childFetcher = new FetcherImpl<>(prop.getTargetType().getJavaClass());
         }
-        this.subtypeFetcher = null;
+        this.typeBranchFetcher = null;
     }
 
     @SuppressWarnings("unchecked")
@@ -157,7 +157,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
         }
-        this.subtypeFetcher = null;
+        this.typeBranchFetcher = null;
     }
 
     FetcherImpl(
@@ -178,12 +178,12 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.recursionStrategy = child != null ? base.recursionStrategy : null;
         this.fetchType = child != null ? base.fetchType : ReferenceFetchType.AUTO;
         this.childFetcher = child;
-        this.subtypeFetcher = base.subtypeFetcher;
+        this.typeBranchFetcher = base.typeBranchFetcher;
     }
 
     protected FetcherImpl(
             FetcherImpl<E> prev,
-            FetcherImpl<?> subtypeFetcher
+            FetcherImpl<?> typeBranchFetcher
     ) {
         this.prev = prev;
         this.immutableType = prev.immutableType;
@@ -198,7 +198,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.recursionStrategy = null;
         this.fetchType = ReferenceFetchType.AUTO;
         this.childFetcher = null;
-        this.subtypeFetcher = subtypeFetcher;
+        this.typeBranchFetcher = typeBranchFetcher;
     }
 
     public FetcherImpl(
@@ -220,7 +220,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.recursionStrategy = null;
         this.fetchType = ReferenceFetchType.AUTO;
         this.childFetcher = child;
-        this.subtypeFetcher = null;
+        this.typeBranchFetcher = null;
     }
 
     @SuppressWarnings("unchecked")
@@ -390,38 +390,38 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     }
 
     @Override
-    public Map<ImmutableType, Fetcher<?>> __getSubtypeFetcherMap() {
-        Map<ImmutableType, Fetcher<?>> map = subtypeFetcherMap;
+    public Map<ImmutableType, Fetcher<?>> __getTypeBranchFetcherMap() {
+        Map<ImmutableType, Fetcher<?>> map = typeBranchFetcherMap;
         if (map == null) {
-            LinkedList<FetcherImpl<?>> subtypeFetchers = new LinkedList<>();
+            LinkedList<FetcherImpl<?>> typeBranchFetchers = new LinkedList<>();
             for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
-                if (fetcher.subtypeFetcher != null) {
-                    subtypeFetchers.addFirst(fetcher.subtypeFetcher);
+                if (fetcher.typeBranchFetcher != null) {
+                    typeBranchFetchers.addFirst(fetcher.typeBranchFetcher);
                 }
             }
-            if (subtypeFetchers.isEmpty()) {
+            if (typeBranchFetchers.isEmpty()) {
                 map = Collections.emptyMap();
             } else {
                 Map<ImmutableType, Fetcher<?>> mergedMap = new LinkedHashMap<>();
-                for (FetcherImpl<?> subtypeFetcher : subtypeFetchers) {
-                    ImmutableType subtype = subtypeFetcher.getImmutableType();
-                    Fetcher<?> oldFetcher = mergedMap.get(subtype);
+                for (FetcherImpl<?> typeBranchFetcher : typeBranchFetchers) {
+                    ImmutableType branchType = typeBranchFetcher.getImmutableType();
+                    Fetcher<?> oldFetcher = mergedMap.get(branchType);
                     if (oldFetcher == null) {
-                        mergedMap.put(subtype, subtypeFetcher);
+                        mergedMap.put(branchType, typeBranchFetcher);
                     } else {
                         try {
                             mergedMap.put(
-                                    subtype,
+                                    branchType,
                                     new FetcherMergeContext().merge(
                                             oldFetcher,
-                                            subtypeFetcher,
+                                            typeBranchFetcher,
                                             false
                                     )
                             );
                         } catch (FetcherMergeContext.ConflictException ex) {
                             throw new IllegalArgumentException(
-                                    "Cannot merge the subtype fetcher \"" +
-                                            subtype +
+                                    "Cannot merge the type branch fetcher \"" +
+                                            branchType +
                                             ex.path +
                                             "\", the configuration `" +
                                             ex.cfgName +
@@ -432,7 +432,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                 }
                 map = Collections.unmodifiableMap(mergedMap);
             }
-            subtypeFetcherMap = map;
+            typeBranchFetcherMap = map;
         }
         return map;
     }
@@ -615,27 +615,27 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     @NewChain
     @Override
-    public FetcherImplementor<E> __forType(Fetcher<?> subtypeFetcher) {
-        Objects.requireNonNull(subtypeFetcher, "'subtypeFetcher' cannot be null");
-        ImmutableType subtype = subtypeFetcher.getImmutableType();
+    public FetcherImplementor<E> __forType(Fetcher<?> typeBranchFetcher) {
+        Objects.requireNonNull(typeBranchFetcher, "'typeBranchFetcher' cannot be null");
+        ImmutableType branchType = typeBranchFetcher.getImmutableType();
         InheritanceInfo inheritanceInfo = immutableType.getInheritanceInfo();
-        if (inheritanceInfo == null || subtype == immutableType || !immutableType.isAssignableFrom(subtype)) {
+        if (inheritanceInfo == null || branchType == immutableType || !immutableType.isAssignableFrom(branchType)) {
             throw new IllegalArgumentException(
                     "The fetcher type \"" +
-                            subtype +
+                            branchType +
                             "\" is not supported type branch of \"" +
                             immutableType +
-                            "\"; only strict subtype fetchers are supported currently"
+                            "\"; only strict derived type branch fetchers are supported currently"
             );
         }
-        if (inheritanceInfo.getConcreteTypes(subtype).isEmpty()) {
+        if (inheritanceInfo.getConcreteTypes(branchType).isEmpty()) {
             throw new ExecutionException(
-                    "Cannot add subtype fetcher for \"" +
-                            subtype +
-                            "\" because it is abstract and has no instantiable subtype"
+                    "Cannot add type branch fetcher for \"" +
+                            branchType +
+                            "\" because it is abstract and has no instantiable type"
             );
         }
-        return createFetcher((FetcherImpl<?>) subtypeFetcher);
+        return createFetcher((FetcherImpl<?>) typeBranchFetcher);
     }
 
     @NewChain
@@ -685,7 +685,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     public int hashCode() {
         int h = hash;
         if (h == 0) {
-            h = immutableType.hashCode() ^ getFieldMap().hashCode() ^ __getSubtypeFetcherMap().hashCode();
+            h = immutableType.hashCode() ^ getFieldMap().hashCode() ^ __getTypeBranchFetcherMap().hashCode();
             if (h == 0) {
                 h = -1;
             }
@@ -705,7 +705,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         Fetcher<?> other = (Fetcher<?>) obj;
         return this.immutableType == other.getImmutableType() &&
                 this.getFieldMap().equals(other.getFieldMap()) &&
-                this.__getSubtypeFetcherMap().equals(subtypeFetcherMap(other));
+                this.__getTypeBranchFetcherMap().equals(typeBranchFetcherMap(other));
     }
 
     @Override
@@ -724,7 +724,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     public boolean __isSimpleFetcher() {
         Boolean isSimple = isSimpleFetcher;
         if (isSimple == null) {
-            isSimple = __getSubtypeFetcherMap().isEmpty();
+            isSimple = __getTypeBranchFetcherMap().isEmpty();
             if (isSimple) {
                 for (Field field : getFieldMap().values()) {
                     if (!field.isSimpleField()) {
@@ -756,13 +756,13 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         return new FetcherImpl<>(this, prop, fieldConfig);
     }
 
-    protected FetcherImpl<E> createFetcher(FetcherImpl<?> subtypeFetcher) {
-        return new FetcherImpl<>(this, subtypeFetcher);
+    protected FetcherImpl<E> createFetcher(FetcherImpl<?> typeBranchFetcher) {
+        return new FetcherImpl<>(this, typeBranchFetcher);
     }
 
-    private static Map<ImmutableType, Fetcher<?>> subtypeFetcherMap(Fetcher<?> fetcher) {
+    private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
         if (fetcher instanceof FetcherImplementor<?>) {
-            return ((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap();
+            return ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
         }
         return Collections.emptyMap();
     }

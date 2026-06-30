@@ -157,22 +157,22 @@ public abstract class TableUsageVisitor extends AstVisitor {
         }
 
         @Override
-        protected boolean shouldVisitSubtype(ImmutableType subtype, Fetcher<?> fetcher) {
+        protected boolean shouldVisitTypeBranch(ImmutableType branchType, Fetcher<?> fetcher) {
             return JoinFetchFieldVisitor.hasTableFields(fetcher, ctx.getSqlClient(), true);
         }
 
         @Override
-        protected Object enterSubtype(ImmutableType subtype) {
+        protected Object enterTypeBranch(ImmutableType branchType) {
             TableImplementor<?> oldTableImplementor = this.tableImplementor;
             TableImplementor<?> newTableImplementor =
-                    oldTableImplementor.treatAsImplementor(subtype, JoinType.LEFT);
+                    oldTableImplementor.treatAsImplementor(branchType, JoinType.LEFT);
             useTable(newTableImplementor.realTable(ctx));
             this.tableImplementor = newTableImplementor;
             return oldTableImplementor;
         }
 
         @Override
-        protected void leaveSubtype(ImmutableType subtype, Object enterValue) {
+        protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
             this.tableImplementor = (TableImplementor<?>) enterValue;
         }
 
@@ -189,7 +189,7 @@ public abstract class TableUsageVisitor extends AstVisitor {
 
         private boolean isIdOnlyFetcher(Fetcher<?> fetcher) {
             if (fetcher instanceof FetcherImplementor<?> &&
-                    !((FetcherImplementor<?>) fetcher).__getSubtypeFetcherMap().isEmpty()) {
+                    !((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
                 return false;
             }
             for (Field field : fetcher.getFieldMap().values()) {

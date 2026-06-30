@@ -11,7 +11,7 @@ final class QueryAnalysisModel {
 
     private final TableUsages tableUsages;
 
-    private final JoinedSubtypeTableUsages joinedSubtypeTableUsages;
+    private final JoinedTypeBranchTableUsages joinedTypeBranchTableUsages;
 
     private final TableAliases tableAliases;
 
@@ -23,7 +23,7 @@ final class QueryAnalysisModel {
             JoinRequirements joinRequirements,
             BaseQueryExportUsages baseQueryExportUsages,
             TableUsages tableUsages,
-            JoinedSubtypeTableUsages joinedSubtypeTableUsages,
+            JoinedTypeBranchTableUsages joinedTypeBranchTableUsages,
             TableAliases tableAliases,
             BaseQueryExports baseQueryExports,
             CteTableDependencies cteTableDependencies
@@ -31,7 +31,7 @@ final class QueryAnalysisModel {
         this.joinRequirements = joinRequirements;
         this.baseQueryExportUsages = baseQueryExportUsages;
         this.tableUsages = tableUsages;
-        this.joinedSubtypeTableUsages = joinedSubtypeTableUsages;
+        this.joinedTypeBranchTableUsages = joinedTypeBranchTableUsages;
         this.tableAliases = tableAliases;
         this.baseQueryExports = baseQueryExports;
         this.cteTableDependencies = cteTableDependencies;
@@ -49,8 +49,8 @@ final class QueryAnalysisModel {
         return tableUsages;
     }
 
-    JoinedSubtypeTableUsages getJoinedSubtypeTableUsages() {
-        return joinedSubtypeTableUsages;
+    JoinedTypeBranchTableUsages getJoinedTypeBranchTableUsages() {
+        return joinedTypeBranchTableUsages;
     }
 
     TableAliases getTableAliases() {

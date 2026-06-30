@@ -72,12 +72,22 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
-    public boolean isSubtypeChangeAllowed() {
+    public TypeMatchMode getTypeMatchMode() {
+        return TypeMatchMode.AUTO;
+    }
+
+    @Override
+    public TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType) {
+        return TypeMatchMode.AUTO;
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed() {
         return false;
     }
 
     @Override
-    public boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+    public boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
         return false;
     }
 

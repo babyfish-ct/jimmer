@@ -165,28 +165,52 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
     }
 
-    override fun setSubtypeChangeAllowed(allowed: Boolean) {
-        javaCommand = javaCommand.setSubtypeChangeAllowed(allowed)
+    override fun setTypeMatchMode(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setTypeMatchMode(mode)
     }
 
-    override fun setAssociatedSubtypeChangeAllowedAll(allowed: Boolean) {
-        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowedAll(allowed)
+    override fun setAssociatedTypeMatchModeAll(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchModeAll(mode)
     }
 
-    override fun <E : Any> setAssociatedSubtypeChangeAllowed(entityType: KClass<E>, allowed: Boolean) {
-        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(entityType.java, allowed)
+    override fun <E : Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(entityType.java, mode)
     }
 
-    override fun setAssociatedSubtypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean) {
-        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(prop.toImmutableProp(), allowed)
+    override fun setAssociatedTypeMatchMode(prop: KProperty1<*, *>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop.toImmutableProp(), mode)
     }
 
-    override fun setAssociatedSubtypeChangeAllowed(prop: ImmutableProp, allowed: Boolean) {
-        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(prop, allowed)
+    override fun setAssociatedTypeMatchMode(prop: ImmutableProp, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop, mode)
     }
 
-    override fun setAssociatedSubtypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean) {
-        javaCommand = javaCommand.setAssociatedSubtypeChangeAllowed(prop, allowed)
+    override fun setAssociatedTypeMatchMode(prop: TypedProp.Association<*, *>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop, mode)
+    }
+
+    override fun setTypeChangeAllowed(allowed: Boolean) {
+        javaCommand = javaCommand.setTypeChangeAllowed(allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowedAll(allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowedAll(allowed)
+    }
+
+    override fun <E : Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(entityType.java, allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop.toImmutableProp(), allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: ImmutableProp, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop, allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop, allowed)
     }
 
     override fun setDumbBatchAcceptable(acceptable: Boolean) {

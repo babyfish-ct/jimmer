@@ -812,7 +812,7 @@ public abstract class AbstractDataLoader {
     }
 
     private boolean isIdOnlyFetcher() {
-        return fetcher.getFieldMap().size() < 2 && fetcher.__getSubtypeFetcherMap().isEmpty();
+        return fetcher.getFieldMap().size() < 2 && fetcher.__getTypeBranchFetcherMap().isEmpty();
     }
 
     private List<ImmutableSpi> makeIdOnlyTargets(Collection<Object> targetIds) {

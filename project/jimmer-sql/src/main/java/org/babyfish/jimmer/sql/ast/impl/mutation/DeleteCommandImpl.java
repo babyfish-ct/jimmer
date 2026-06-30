@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -116,7 +117,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         private final DeleteMode mode;
 
-        private final boolean polymorphic;
+        private final TypeMatchMode typeMatchMode;
 
         private final int maxCommandJoinCount;
 
@@ -134,7 +135,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
-            DeletePolymorphicCfg deletePolymorphicCfg = cfg.as(DeletePolymorphicCfg.class);
+            TypeMatchModeCfg typeMatchModeCfg = cfg.as(TypeMatchModeCfg.class);
             MaxCommandJoinCountCfg maxCommandJoinCountCfg = cfg.as(MaxCommandJoinCountCfg.class);
             AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg exceptionTranslatorCfg =
                     cfg.as(AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg.class);
@@ -146,7 +147,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.sqlClient = rootCfg.sqlClient;
             this.con = connectionCfg != null ? connectionCfg.con : null;
             this.mode = deleteModeCfg != null ? deleteModeCfg.mode : DeleteMode.AUTO;
-            this.polymorphic = deletePolymorphicCfg != null && deletePolymorphicCfg.polymorphic;
+            this.typeMatchMode = typeMatchModeCfg != null ? typeMatchModeCfg.mode : TypeMatchMode.AUTO;
             this.maxCommandJoinCount = maxCommandJoinCountCfg != null ?
                     maxCommandJoinCountCfg.maxCommandJoinCount :
                     sqlClient.getMaxCommandJoinCount();
@@ -178,7 +179,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.sqlClient = sqlClient;
             this.con = con;
             this.mode = mode;
-            this.polymorphic = false;
+            this.typeMatchMode = TypeMatchMode.AUTO;
             this.maxCommandJoinCount = sqlClient.getMaxCommandJoinCount();
             this.exceptionTranslator = sqlClient.getExceptionTranslator();
             this.dissociateActionMap = Collections.emptyMap();
@@ -207,8 +208,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
         }
 
         @Override
-        public boolean isPolymorphic() {
-            return polymorphic;
+        public TypeMatchMode getTypeMatchMode() {
+            return typeMatchMode;
         }
 
         @Override
@@ -272,8 +273,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
     }
 
     @Override
-    public DeleteCommand setPolymorphic(boolean polymorphic) {
-        return new DeleteCommandImpl(new DeletePolymorphicCfg(cfg, polymorphic));
+    public DeleteCommand setTypeMatchMode(TypeMatchMode mode) {
+        return new DeleteCommandImpl(new TypeMatchModeCfg(cfg, mode));
     }
 
     @Override

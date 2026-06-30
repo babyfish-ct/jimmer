@@ -51,8 +51,8 @@ public final class QueryRenderContext {
         return analysis.getRequiredJoinType(table);
     }
 
-    public boolean isJoinedSubtypeTableRequired(TableImplementor<?> table) {
-        return analysis.isJoinedSubtypeTableRequired(table);
+    public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
+        return analysis.isJoinedTypeBranchTableRequired(table);
     }
 
     @Nullable

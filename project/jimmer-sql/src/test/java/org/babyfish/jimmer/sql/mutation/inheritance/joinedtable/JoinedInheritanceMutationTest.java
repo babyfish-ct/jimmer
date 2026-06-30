@@ -83,7 +83,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertSubtype() {
+    public void testInsertDerivedType() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -155,7 +155,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtype() {
+    public void testUpsertDerivedType() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -197,7 +197,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeWithChangingDiscriminator() {
+    public void testUpsertDerivedTypeWithChangingDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -210,7 +210,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                         person.setLastName("Stone");
                                     })
                             )
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L);
                 },
@@ -244,7 +244,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithChangingDiscriminator() {
+    public void testUpdateDerivedTypeWithChangingDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -258,7 +258,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L);
                 },
@@ -292,7 +292,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithSubtypeChangeAllowedButSameDiscriminator() {
+    public void testUpdateDerivedTypeWithTypeChangeAllowedButSameDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -305,7 +305,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L);
                 },
@@ -335,7 +335,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithSubtypeChangeAllowedMixedBatch() {
+    public void testUpdateDerivedTypeWithTypeChangeAllowedMixedBatch() {
         connectAndExpect(
                 con -> {
                     Person changed = PersonDraft.$.produce(person -> {
@@ -360,7 +360,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                             .getEntities()
                             .saveEntitiesCommand(Arrays.asList(changed, same, missing))
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L) +
                             "; " +
@@ -409,7 +409,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithChangingDiscriminatorMissingSkipsChildAndPostAssociation() {
+    public void testUpdateDerivedTypeWithChangingDiscriminatorMissingSkipsChildAndPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -426,7 +426,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
                             .execute(con);
                     return joinedClientRow(con, 399L) + "; " + joinedOrgProjectTargetId(con, 2313L);
@@ -442,7 +442,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeWithSubtypeChangeAllowedMixedBatch() {
+    public void testUpsertDerivedTypeWithTypeChangeAllowedMixedBatch() {
         connectAndExpect(
                 con -> {
                     Person changed = PersonDraft.$.produce(person -> {
@@ -466,7 +466,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     getSqlClient()
                             .getEntities()
                             .saveEntitiesCommand(Arrays.asList(changed, same, inserted))
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .execute(con);
                     return joinedClientRow(con, 200L) +
                             "; " +
@@ -526,7 +526,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentIgnoresSubtypeChangeAllowed() {
+    public void testInsertIfAbsentIgnoresTypeChangeAllowed() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -543,7 +543,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.INSERT_IF_ABSENT)
-                            .setSubtypeChangeAllowed(true)
+                            .setTypeChangeAllowed(true)
                             .setAssociatedMode(OrganizationProps.PROJECTS, AssociatedSaveMode.APPEND)
                             .execute(con);
                     return joinedClientRow(con, 201L) + "; " + joinedOrgProjectTargetId(con, 2314L);
@@ -565,7 +565,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithoutChangingDiscriminator() {
+    public void testUpdateDerivedTypeWithoutChangingDiscriminator() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -606,7 +606,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateRootAssociationToSubtypeTarget() {
+    public void testUpdateRootAssociationToDerivedTypeTarget() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -635,7 +635,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAssociatedSubtypeChangeDefaultNoOp() {
+    public void testAssociatedTypeChangeDefaultNoOp() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -685,7 +685,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAssociatedSubtypeChangeAllowedByClass() {
+    public void testAssociatedTypeChangeAllowedByClass() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -705,7 +705,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     })
                             )
                             .setMode(SaveMode.UPDATE_ONLY)
-                            .setAssociatedSubtypeChangeAllowed(Client.class)
+                            .setAssociatedTypeChangeAllowed(Client.class)
                             .execute(con);
                     return joinedClientRow(con, 200L) + "; " + joinedClientProjectTargetId(con, 2000L);
                 },
@@ -747,7 +747,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeAssociationToSubtypeTarget() {
+    public void testUpdateDerivedTypeAssociationToDerivedTypeTarget() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -776,7 +776,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeWithAcceptedPostAssociation() {
+    public void testUpdateDerivedTypeWithAcceptedPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -828,7 +828,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeMismatchSkipsPostAssociation() {
+    public void testUpdateDerivedTypeMismatchSkipsPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -862,7 +862,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeWithAcceptedPostAssociation() {
+    public void testInsertIfAbsentDerivedTypeWithAcceptedPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -914,7 +914,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeExistingSameSkipsPostAssociation() {
+    public void testInsertIfAbsentDerivedTypeExistingSameSkipsPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -952,7 +952,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeExistingDifferentSkipsPostAssociation() {
+    public void testInsertIfAbsentDerivedTypeExistingDifferentSkipsPostAssociation() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -990,7 +990,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeBatchRoutesOnlyAcceptedRows() {
+    public void testUpdateDerivedTypeBatchRoutesOnlyAcceptedRows() {
         connectAndExpect(
                 con -> {
                     Organization accepted = OrganizationDraft.$.produce(organization -> {
@@ -1058,7 +1058,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeDumbBatchUsesSelfGuardedChildDml() {
+    public void testUpdateDerivedTypeDumbBatchUsesSelfGuardedChildDml() {
         connectAndExpect(
                 con -> {
                     Organization accepted = OrganizationDraft.$.produce(organization -> {
@@ -1103,7 +1103,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateSubtypeDumbBatchUsesOneByOneRootAcceptanceWhenDownstreamIsLoaded() {
+    public void testUpdateDerivedTypeDumbBatchUsesOneByOneRootAcceptanceWhenDownstreamIsLoaded() {
         connectAndExpect(
                 con -> {
                     Organization accepted = OrganizationDraft.$.produce(organization -> {
@@ -1183,7 +1183,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertSubtypeDumbBatchUsesOneByOneRootAcceptance() {
+    public void testUpsertDerivedTypeDumbBatchUsesOneByOneRootAcceptance() {
         connectAndExpect(
                 con -> {
                     Organization accepted = OrganizationDraft.$.produce(organization -> {
@@ -1248,7 +1248,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeBatchRoutesOnlyInsertedRows() {
+    public void testInsertIfAbsentDerivedTypeBatchRoutesOnlyInsertedRows() {
         connectAndExpect(
                 con -> {
                     Organization inserted = OrganizationDraft.$.produce(organization -> {
@@ -1332,7 +1332,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertIfAbsentSubtypeDumbBatchUsesOneByOneRootAcceptance() {
+    public void testInsertIfAbsentDerivedTypeDumbBatchUsesOneByOneRootAcceptance() {
         connectAndExpect(
                 con -> {
                     Organization inserted = OrganizationDraft.$.produce(organization -> {
@@ -1439,7 +1439,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtype() {
+    public void testDeleteDerivedType() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -1480,7 +1480,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testBatchDeleteSubtype() {
+    public void testBatchDeleteDerivedType() {
         connectAndExpect(
                 con -> {
                     int affectedRowCount = getSqlClient()
@@ -1529,7 +1529,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtypeWithAssociationTargets() {
+    public void testDeleteDerivedTypeWithAssociationTargets() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -1570,7 +1570,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtypeWithMismatchedDiscriminator() {
+    public void testDeleteDerivedTypeWithMismatchedDiscriminator() {
         connectAndExpect(
                 con -> {
                     int affectedRowCount = getSqlClient()
@@ -1600,7 +1600,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteSubtypeWithMismatchedDiscriminatorDoesNotCleanBaseAssociations() {
+    public void testDeleteDerivedTypeWithMismatchedDiscriminatorDoesNotCleanBaseAssociations() {
         connectAndExpect(
                 con -> {
                     int affectedRowCount = getSqlClient()
@@ -1641,6 +1641,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     .getEntities()
                                     .deleteCommand(Client.class, 200L)
                                     .setMode(DeleteMode.PHYSICAL)
+                                    .setTypeMatchMode(TypeMatchMode.EXACT)
                                     .execute(con)
                     );
                     return ex.getMessage();
@@ -1649,7 +1650,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.value(
                             "Cannot delete inheritance entity type " +
                                     "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client\" " +
-                                    "exactly because it is abstract. Delete an instantiable subtype or enable polymorphic delete."
+                                    "exactly because it is abstract. Delete an instantiable type or use POLYMORPHIC type match mode."
                     );
                 }
         );
@@ -1665,7 +1666,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     .getEntities()
                                     .deleteCommand(Client.class, 200L)
                                     .setMode(DeleteMode.PHYSICAL)
-                                    .setPolymorphic()
+                                    .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
                                     .execute(con)
                     );
                     return ex.getMessage();
@@ -1674,9 +1675,9 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.value(
                             "Cannot physically delete joined inheritance rows polymorphically by type " +
                                     "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client\" " +
-                                    "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete subtypes, " +
+                                    "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete types, " +
                                     "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
-                                    "and delete them as exact concrete subtypes."
+                                    "and delete them as exact concrete types."
                     );
                 }
         );

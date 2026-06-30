@@ -101,10 +101,10 @@ public class FetcherGenerator {
             }
             addConstructorByNegativeAndReferenceType();
             addConstructorByFieldConfig();
-            addConstructorBySubtypeFetcher();
+            addConstructorByTypeBranchFetcher();
             addCreatorByBoolean();
             addCreatorByFieldConfig();
-            addCreatorBySubtypeFetcher();
+            addCreatorByTypeBranchFetcher();
         } finally {
             typeBuilder = oldBuilder;
         }
@@ -386,7 +386,7 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addConstructorBySubtypeFetcher() {
+    private void addConstructorByTypeBranchFetcher() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
@@ -396,9 +396,9 @@ public class FetcherGenerator {
                                 Constants.FETCHER_IMPL_CLASS_NAME,
                                 WildcardTypeName.subtypeOf(Object.class)
                         ),
-                        "subtypeFetcher"
+                        "typeBranchFetcher"
                 )
-                .addStatement("super(prev, subtypeFetcher)");
+                .addStatement("super(prev, typeBranchFetcher)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -445,7 +445,7 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addCreatorBySubtypeFetcher() {
+    private void addCreatorByTypeBranchFetcher() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("createFetcher")
                 .addModifiers(Modifier.PROTECTED)
@@ -454,11 +454,11 @@ public class FetcherGenerator {
                                 Constants.FETCHER_IMPL_CLASS_NAME,
                                 WildcardTypeName.subtypeOf(Object.class)
                         ),
-                        "subtypeFetcher"
+                        "typeBranchFetcher"
                 )
                 .returns(type.getFetcherClassName())
                 .addAnnotation(Override.class)
-                .addStatement("return new $T(this, subtypeFetcher)", type.getFetcherClassName());
+                .addStatement("return new $T(this, typeBranchFetcher)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 
@@ -473,21 +473,21 @@ public class FetcherGenerator {
                     "Illegal property name \"forType\", it conflicts with the generated fetcher method for inheritance type branches"
             );
         }
-        TypeVariableName subtypeTypeVariable = TypeVariableName.get("ST", type.getClassName());
+        TypeVariableName typeBranchTypeVariable = TypeVariableName.get("ST", type.getClassName());
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("forType")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(NewChain.class)
-                .addTypeVariable(subtypeTypeVariable)
+                .addTypeVariable(typeBranchTypeVariable)
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.FETCHER_CLASS_NAME,
-                                subtypeTypeVariable
+                                typeBranchTypeVariable
                         ),
-                        "subtypeFetcher"
+                        "typeBranchFetcher"
                 )
                 .returns(type.getFetcherClassName())
-                .addStatement("return ($T)__forType(subtypeFetcher)", type.getFetcherClassName());
+                .addStatement("return ($T)__forType(typeBranchFetcher)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 

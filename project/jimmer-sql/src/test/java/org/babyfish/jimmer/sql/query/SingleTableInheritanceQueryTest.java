@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
 
     @Test
-    public void testRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    public void testRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         ClientTable table = ClientTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -86,16 +86,16 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRootFetcherWithSelfSubtypeIsRejected() {
+    public void testRootFetcherWithSelfDerivedTypeIsRejected() {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> ClientFetcher.$.forType(ClientFetcher.$.name())
         );
-        assertTrue(ex.getMessage().contains("only strict subtype fetchers are supported currently"));
+        assertTrue(ex.getMessage().contains("only strict derived type branch fetchers are supported currently"));
     }
 
     @Test
-    public void testRootFetcherMaterializesSubtype() {
+    public void testRootFetcherMaterializesDerivedType() {
         ClientTable table = ClientTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -119,7 +119,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testReferenceFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    public void testReferenceFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         ClientProjectTable table = ClientProjectTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -157,7 +157,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testEnumDiscriminatorRootFetcherMaterializesSubtypeWithoutUserDiscriminator() {
+    public void testEnumDiscriminatorRootFetcherMaterializesDerivedTypeWithoutUserDiscriminator() {
         EnumClientTable table = EnumClientTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -204,7 +204,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testEnumDiscriminatorRootFetcherMaterializesSubtype() {
+    public void testEnumDiscriminatorRootFetcherMaterializesDerivedType() {
         EnumClientTable table = EnumClientTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -227,7 +227,7 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testSubtypeQueryWithRootAndSubtypeFields() {
+    public void testDerivedTypeQueryWithRootAndDerivedTypeFields() {
         OrganizationTable table = OrganizationTable.$;
         executeAndExpect(
                 getSqlClient()

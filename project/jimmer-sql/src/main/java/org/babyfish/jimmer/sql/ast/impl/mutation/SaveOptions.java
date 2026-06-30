@@ -37,13 +37,21 @@ public interface SaveOptions {
 
     boolean isTargetTransferable(ImmutableProp prop);
 
-    boolean isSubtypeChangeAllowed();
+    TypeMatchMode getTypeMatchMode();
 
-    default boolean isSubtypeChangeAllowed(ImmutableType type) {
-        return isSubtypeChangeAllowed();
+    default TypeMatchMode getTypeMatchMode(ImmutableType type) {
+        return getTypeMatchMode();
     }
 
-    boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType);
+    TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType);
+
+    boolean isTypeChangeAllowed();
+
+    default boolean isTypeChangeAllowed(ImmutableType type) {
+        return isTypeChangeAllowed();
+    }
+
+    boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType);
 
     boolean isPessimisticLocked(ImmutableType type);
 
@@ -82,8 +90,8 @@ public interface SaveOptions {
         return new SaveOptionsWithSqlClient(this, sqlClient);
     }
 
-    default SaveOptions withAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
-        return new SaveOptionsWithAssociatedSubtypeChangeAllowed(this, prop);
+    default SaveOptions withAssociatedOptions(ImmutableProp prop) {
+        return new SaveOptionsForAssociatedProp(this, prop);
     }
 }
 
@@ -136,18 +144,33 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public boolean isSubtypeChangeAllowed() {
-        return raw.isSubtypeChangeAllowed();
+    public TypeMatchMode getTypeMatchMode() {
+        return raw.getTypeMatchMode();
     }
 
     @Override
-    public boolean isSubtypeChangeAllowed(ImmutableType type) {
-        return raw.isSubtypeChangeAllowed(type);
+    public TypeMatchMode getTypeMatchMode(ImmutableType type) {
+        return raw.getTypeMatchMode(type);
     }
 
     @Override
-    public boolean isAssociatedSubtypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
-        return raw.isAssociatedSubtypeChangeAllowed(prop, targetType);
+    public TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType) {
+        return raw.getAssociatedTypeMatchMode(prop, targetType);
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed() {
+        return raw.isTypeChangeAllowed();
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed(ImmutableType type) {
+        return raw.isTypeChangeAllowed(type);
+    }
+
+    @Override
+    public boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+        return raw.isAssociatedTypeChangeAllowed(prop, targetType);
     }
 
     @Override
@@ -257,22 +280,32 @@ class SaveOptionsWithSqlClient extends AbstractSaveOptionsWrapper {
     }
 }
 
-class SaveOptionsWithAssociatedSubtypeChangeAllowed extends AbstractSaveOptionsWrapper {
+class SaveOptionsForAssociatedProp extends AbstractSaveOptionsWrapper {
 
     private final ImmutableProp prop;
 
-    SaveOptionsWithAssociatedSubtypeChangeAllowed(SaveOptions raw, ImmutableProp prop) {
+    SaveOptionsForAssociatedProp(SaveOptions raw, ImmutableProp prop) {
         super(raw);
         this.prop = prop;
     }
 
     @Override
-    public boolean isSubtypeChangeAllowed() {
-        return super.isAssociatedSubtypeChangeAllowed(prop, prop.getTargetType());
+    public TypeMatchMode getTypeMatchMode() {
+        return super.getAssociatedTypeMatchMode(prop, prop.getTargetType());
     }
 
     @Override
-    public boolean isSubtypeChangeAllowed(ImmutableType type) {
-        return super.isAssociatedSubtypeChangeAllowed(prop, type);
+    public TypeMatchMode getTypeMatchMode(ImmutableType type) {
+        return super.getAssociatedTypeMatchMode(prop, type);
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed() {
+        return super.isAssociatedTypeChangeAllowed(prop, prop.getTargetType());
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed(ImmutableType type) {
+        return super.isAssociatedTypeChangeAllowed(prop, type);
     }
 }

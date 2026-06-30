@@ -367,27 +367,27 @@ public enum QueryReason {
     GET_ID_FOR_KEY_BASE_UPDATE,
 
     /**
-     * When saving joined-inheritance subtype objects by
+     * When saving joined-inheritance derived type objects by
      * {@link org.babyfish.jimmer.sql.Key} properties without ids, the root
-     * upsert may not return all ids required for writing joined subtype rows.
+     * upsert may not return all ids required for writing joined type-branch rows.
      * Jimmer resolves those ids by key after the root upsert.
      */
     GET_ID_FOR_KEY_BASE_UPSERT,
 
     /**
-     * When {@code subtypeChangeAllowed} is enabled for a joined inheritance
+     * When {@code typeChangeAllowed} is enabled for a joined inheritance
      * update/upsert, Jimmer reads root rows and their old discriminator values
      * before the guarded root mutation decides which rows are accepted.
      */
-    RESOLVE_OLD_SUBTYPE_FOR_CHANGE,
+    RESOLVE_OLD_TYPE_FOR_CHANGE,
 
     /**
      * When deleting an inheritance entity exactly, Jimmer may need to clean up
-     * associations or joined subtype tables before the root row delete.
+     * associations or joined type branch tables before the root row delete.
      *
      * <p>In this case, Jimmer first resolves the root ids accepted by the
      * requested discriminator predicate. If the requested id belongs to a
-     * different subtype, downstream cleanup is skipped and the delete result is
+     * different type, downstream cleanup is skipped and the delete result is
      * simply not modified. When the command runs inside a transaction, this
      * planning query can use {@code for update}; in auto-commit mode it remains
      * a weaker non-locking resolve query.</p>

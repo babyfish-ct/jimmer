@@ -109,7 +109,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean targetTransferable;
 
-    private final boolean defaultSubtypeChangeAllowed;
+    private final boolean defaultTypeChangeAllowed;
 
     private final boolean explicitBatchEnabled;
 
@@ -183,7 +183,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int maxCommandJoinCount,
             boolean mutationTransactionRequired,
             boolean targetTransferable,
-            boolean defaultSubtypeChangeAllowed,
+            boolean defaultTypeChangeAllowed,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             boolean constraintViolationTranslatable,
@@ -237,7 +237,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
-        this.defaultSubtypeChangeAllowed = defaultSubtypeChangeAllowed;
+        this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable = constraintViolationTranslatable;
@@ -422,8 +422,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public boolean isDefaultSubtypeChangeAllowed() {
-        return defaultSubtypeChangeAllowed;
+    public boolean isDefaultTypeChangeAllowed() {
+        return defaultTypeChangeAllowed;
     }
 
     @Override
@@ -720,7 +720,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
-                defaultSubtypeChangeAllowed,
+                defaultTypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -778,7 +778,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
-                defaultSubtypeChangeAllowed,
+                defaultTypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -831,7 +831,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
-                defaultSubtypeChangeAllowed,
+                defaultTypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -887,7 +887,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
-                defaultSubtypeChangeAllowed,
+                defaultTypeChangeAllowed,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -1122,7 +1122,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private boolean targetTransferable;
 
-        private boolean defaultSubtypeChangeAllowed;
+        private boolean defaultTypeChangeAllowed;
 
         private boolean explicitBatchEnabled;
 
@@ -1765,8 +1765,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setDefaultSubtypeChangeAllowed(boolean allowed) {
-            this.defaultSubtypeChangeAllowed = allowed;
+        public Builder setDefaultTypeChangeAllowed(boolean allowed) {
+            this.defaultTypeChangeAllowed = allowed;
             return this;
         }
 
@@ -1981,7 +1981,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     maxCommandJoinCount,
                     mutationTransactionRequired,
                     targetTransferable,
-                    defaultSubtypeChangeAllowed,
+                    defaultTypeChangeAllowed,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,
                     constraintViolationTranslatable,

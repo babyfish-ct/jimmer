@@ -82,13 +82,14 @@ public final class InheritanceInfo {
                             "\""
             );
         }
-        Set<ImmutableType> types = new LinkedHashSet<>();
+        List<ImmutableType> types = new ArrayList<>();
         if (baseType.isInstantiable()) {
             types.add(baseType);
         }
         types.addAll(baseType.getAllDerivedTypes());
         types.removeIf(type -> !type.isInstantiable());
-        return Collections.unmodifiableSet(types);
+        types.sort(Comparator.comparing(type -> type.getJavaClass().getName()));
+        return Collections.unmodifiableList(types);
     }
 
     public Map<Object, ImmutableType> getDiscriminatorTypeMap() {

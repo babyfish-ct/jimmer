@@ -192,57 +192,82 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
-    default BatchEntitySaveCommand<E> setSubtypeChangeAllowed() {
-        return setSubtypeChangeAllowed(true);
+    BatchEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(
+            TypedProp.Association<?, ?> prop,
+            TypeMatchMode mode
+    ) {
+        return setAssociatedTypeMatchMode(prop.unwrap(), mode);
     }
 
     @NewChain
     @Override
-    BatchEntitySaveCommand<E> setSubtypeChangeAllowed(boolean allowed);
-
-    @NewChain
-    @Override
-    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll() {
-        return setAssociatedSubtypeChangeAllowedAll(true);
+    default BatchEntitySaveCommand<E> setTypeChangeAllowed() {
+        return setTypeChangeAllowed(true);
     }
 
     @NewChain
     @Override
-    BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowedAll(boolean allowed);
+    BatchEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed);
 
     @NewChain
     @Override
-    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType) {
-        return setAssociatedSubtypeChangeAllowed(entityType, true);
+    default BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll() {
+        return setAssociatedTypeChangeAllowedAll(true);
     }
 
     @NewChain
     @Override
-    BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(Class<?> entityType, boolean allowed);
+    BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed);
 
     @NewChain
     @Override
-    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop) {
-        return setAssociatedSubtypeChangeAllowed(prop, true);
+    default BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedTypeChangeAllowed(entityType, true);
     }
 
     @NewChain
     @Override
-    BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(ImmutableProp prop, boolean allowed);
+    BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed);
 
     @NewChain
     @Override
-    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(TypedProp.Association<?, ?> prop) {
-        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), true);
+    default BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
     }
 
     @NewChain
     @Override
-    default BatchEntitySaveCommand<E> setAssociatedSubtypeChangeAllowed(
+    BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(
             TypedProp.Association<?, ?> prop,
             boolean allowed
     ) {
-        return setAssociatedSubtypeChangeAllowed(prop.unwrap(), allowed);
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), allowed);
     }
 
     @NewChain

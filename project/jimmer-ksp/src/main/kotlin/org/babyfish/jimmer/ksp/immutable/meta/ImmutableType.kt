@@ -482,7 +482,7 @@ class ImmutableType(
                 throw MetaException(
                     it.propDeclaration,
                     "property decorated by @${Discriminator::class.qualifiedName} " +
-                            "can only be used by inheritance root type or its subtypes"
+                            "can only be used by inheritance root type or its derived types"
                 )
             }
         } else if (inheritanceRoot !== this && isEntity) {
@@ -490,7 +490,7 @@ class ImmutableType(
                 throw MetaException(
                     it.propDeclaration,
                     "property decorated by @${Discriminator::class.qualifiedName} " +
-                            "cannot be declared by inheritance subtype"
+                            "cannot be declared by inheritance derived type"
                 )
             }
         } else if (inheritanceRoot === this) {

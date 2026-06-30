@@ -63,7 +63,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
      * TODO(inheritance): Replace this lazy runtime registry with a frozen
      * metadata lifecycle. The long-term model should build the full model
      * scope, resolve all derived-type graphs and discriminator maps once, and
-     * publish immutable snapshots instead of accepting late subtype
+     * publish immutable snapshots instead of accepting late derived-type
      * registration.
      */
     private final ConcurrentHashMap<ImmutableTypeImpl, Set<ImmutableType>> directDerivedTypeMap =
@@ -791,7 +791,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 javaClass.getName() +
                                 "\", property decorated by @" +
                                 Discriminator.class.getName() +
-                                " can only be used by inheritance root type or its subtypes"
+                                " can only be used by inheritance root type or its derived types"
                 );
             }
             return;
@@ -803,7 +803,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 javaClass.getName() +
                                 "\", @" +
                                 Discriminator.class.getName() +
-                                " cannot be declared by inheritance subtype"
+                                " cannot be declared by inheritance derived type"
                 );
             }
             return;
@@ -1262,7 +1262,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
-            validateNotInheritanceSubtype("@Version");
+            validateNotInheritanceDerivedType("@Version");
             for (ImmutableType superType : superTypes) {
                 if (superType.getVersionProp() != null) {
                     throw new IllegalStateException(
@@ -1304,7 +1304,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
-            validateNotInheritanceSubtype("@LogicalDeleted");
+            validateNotInheritanceDerivedType("@LogicalDeleted");
             for (ImmutableType superType : superTypes) {
                 if (superType.getLogicalDeletedInfo() != null) {
                     throw new IllegalStateException(
@@ -1331,7 +1331,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             return add(id, name, ImmutablePropCategory.SCALAR, elementType, nullable);
         }
 
-        private void validateNotInheritanceSubtype(String annotation) {
+        private void validateNotInheritanceDerivedType(String annotation) {
             if (!javaClass.isAnnotationPresent(Entity.class)) {
                 return;
             }
