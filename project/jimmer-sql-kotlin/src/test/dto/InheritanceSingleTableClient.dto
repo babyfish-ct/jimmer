@@ -1,0 +1,26 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto
+
+KClientImplicitCatchAllView {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+KClientRuntimeView {
+    id
+    name
+    #types {
+        #exhaustive
+        KOrganization class Organization {
+            taxCode
+        }
+        KPerson class Person {
+            firstName
+        }
+    }
+}

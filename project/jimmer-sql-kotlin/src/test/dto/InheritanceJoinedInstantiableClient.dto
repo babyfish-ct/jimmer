@@ -1,0 +1,32 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto
+
+KInstantiableClientSimpleView {
+    id
+    name
+}
+
+KInstantiableClientDefaultView {
+    id
+    name
+    #types {
+        default class Base {
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+KInstantiableClientExhaustiveView {
+    id
+    name
+    #types {
+        #exhaustive
+        KClient class Root {
+        }
+        KPerson class Person {
+            firstName
+        }
+    }
+}

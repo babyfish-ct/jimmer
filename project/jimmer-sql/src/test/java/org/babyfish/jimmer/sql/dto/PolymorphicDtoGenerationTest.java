@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.dto;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.dto.ClientExhaustiveView;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultView;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientExhaustiveView;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientSimpleView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientDefaultView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientImplicitCatchAllView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientImplicitDefaultView;
@@ -92,6 +93,22 @@ public class PolymorphicDtoGenerationTest {
         organization.setName("Organization");
         organization.setTaxCode("T-4");
         Assertions.assertEquals("T-4", organization.getTaxCode());
+    }
+
+    @Test
+    public void testConcreteRootWithoutTypesIsOrdinaryDtoClass() {
+        Assertions.assertFalse(InstantiableClientSimpleView.class.isInterface());
+        Assertions.assertThrows(
+                ClassNotFoundException.class,
+                () -> Class.forName(InstantiableClientSimpleView.class.getName() + "$Default")
+        );
+
+        InstantiableClientSimpleView view = new InstantiableClientSimpleView();
+        view.setId(12L);
+        view.setName("Ordinary concrete root view");
+
+        Assertions.assertEquals(12L, view.getId());
+        Assertions.assertEquals("Ordinary concrete root view", view.getName());
     }
 
     @Test

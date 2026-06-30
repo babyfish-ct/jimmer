@@ -932,14 +932,25 @@ public class DtoGenerator {
             if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
-                cb.add(
-                        ",\n$T.<$T, $T>$L($T::new)",
-                        org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
-                        tailProp.getBaseProp().getTargetType().getClassName(),
-                        getPropElementName(tailProp),
-                        tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
-                        getPropElementName(tailProp)
-                );
+                if (tailProp.getTargetType().getPolymorphism() != null) {
+                    cb.add(
+                            ",\n$T.<$T, $T>$L($T.METADATA.getConverter())",
+                            org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                            tailProp.getBaseProp().getTargetType().getClassName(),
+                            getPropElementName(tailProp),
+                            tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
+                            getPropElementName(tailProp)
+                    );
+                } else {
+                    cb.add(
+                            ",\n$T.<$T, $T>$L($T::new)",
+                            org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                            tailProp.getBaseProp().getTargetType().getClassName(),
+                            getPropElementName(tailProp),
+                            tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
+                            getPropElementName(tailProp)
+                    );
+                }
                 cb.add(
                         ",\n$T.$L($T::$L)",
                         org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
