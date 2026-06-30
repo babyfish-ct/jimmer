@@ -84,7 +84,7 @@ public class Keywords {
                             "fieldMap",
                             "__isSimpleFetcher",
                             "__contains",
-                            "__forSubtype",
+                            "__forType",
                             "__getSubtypeFetcherMap",
 
                             // KNonNullTableEx
