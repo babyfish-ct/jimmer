@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.meta.TypeDefinition;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,10 @@ public interface ObjectType extends NamedType {
     TypeDefinition.Error getError();
 
     Map<String, Property> getProperties();
+
+    default List<ObjectType> getPolymorphicBranches() {
+        return Collections.emptyList();
+    }
 
     boolean isRecursiveFetchedType();
 

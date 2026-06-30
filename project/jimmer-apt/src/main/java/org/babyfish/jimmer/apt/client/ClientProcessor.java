@@ -811,7 +811,31 @@ public class ClientProcessor {
                     }
                 }
             }
+            if (typeElement.getKind() == ElementKind.INTERFACE) {
+                for (Element enclosedElement : typeElement.getEnclosedElements()) {
+                    if (!(enclosedElement instanceof TypeElement) ||
+                            enclosedElement.getKind() != ElementKind.CLASS ||
+                            !isPolymorphicBranch(typeElement, (TypeElement) enclosedElement)) {
+                        continue;
+                    }
+                    TypeElement branchElement = (TypeElement) enclosedElement;
+                    builder.typeRef(type -> {
+                        type.setTypeName(typeName(branchElement));
+                        typeDefinition.addPolymorphicBranch(type);
+                    });
+                }
+            }
         }
+    }
+
+    private boolean isPolymorphicBranch(TypeElement ownerElement, TypeElement branchElement) {
+        TypeMirror ownerType = context.getTypes().erasure(ownerElement.asType());
+        for (TypeMirror itf : branchElement.getInterfaces()) {
+            if (context.getTypes().isSameType(context.getTypes().erasure(itf), ownerType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void fillEnumDefinition(TypeElement typeElement) {
