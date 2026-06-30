@@ -21,7 +21,45 @@ public class MutationTrigger {
     private final List<MutationTrigger.ChangedData> changedList = new ArrayList<>();
 
     public void modifyEntityTable(Object oldEntity, Object newEntity) {
-        changedList.add(new MutationTrigger.EntityChangedData(oldEntity, newEntity));
+        changedList.add(new MutationTrigger.EntityChangedData(oldEntity, snapshot(newEntity)));
+    }
+
+    /**
+     * `newEntity` is usually a live draft that keeps participating in the rest
+     * of the save process. For example, `Saver.fetchImpl`/`replaceDraft` may
+     * later reshape that same draft in place - including unloading real-FK
+     * `@Key` props that were already loaded - to match an explicitly requested
+     * `Fetcher`. Since trigger events are only fired after the whole save
+     * command finishes, holding onto the live reference here would let that
+     * later reshaping retroactively corrupt the event already recorded.
+     * <p>
+     * Take an immediate, independent shallow snapshot of the currently loaded
+     * props instead, so later mutation of the original draft cannot affect
+     * the data already captured for this event. No extra SQL is involved:
+     * everything copied here is already in memory.
+     */
+    private static Object snapshot(Object obj) {
+        if (!(obj instanceof DraftSpi)) {
+            return obj;
+        }
+        DraftSpi spi = (DraftSpi) obj;
+        if (spi.__isResolved()) {
+            return obj;
+        }
+        DraftContext draftContext = spi.__draftContext();
+        if (draftContext == null) {
+            return obj;
+        }
+        ImmutableType type = spi.__type();
+        DraftSpi snapshot = (DraftSpi) type.getDraftFactory().apply(draftContext, null);
+        for (ImmutableProp prop : type.getProps().values()) {
+            PropId propId = prop.getId();
+            if (spi.__isLoaded(propId)) {
+                snapshot.__set(propId, spi.__get(propId));
+                snapshot.__show(propId, spi.__isVisible(propId));
+            }
+        }
+        return snapshot;
     }
 
     public void insertMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {

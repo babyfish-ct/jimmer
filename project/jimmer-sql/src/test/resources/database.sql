@@ -4,6 +4,7 @@ create schema if not exists C;
 create schema if not exists D;
 
 
+drop table endorsement if exists;
 drop table issue1125_mp_role_perm if exists;
 drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
@@ -1688,4 +1689,19 @@ create table dual_parent_child(
     constraint fk_dual_parent_child__right
         foreign key(right_id)
             references tenant(id)
+);
+
+create table endorsement(
+    id uuid not null,
+    code varchar(50),
+    book_store_id uuid not null,
+    author_id uuid not null,
+    level varchar(20) not null,
+    constraint pk_endorsement primary key(id),
+    constraint fk_endorsement__book_store
+        foreign key(book_store_id)
+            references book_store(id),
+    constraint fk_endorsement__author
+        foreign key(author_id)
+            references author(id)
 );
