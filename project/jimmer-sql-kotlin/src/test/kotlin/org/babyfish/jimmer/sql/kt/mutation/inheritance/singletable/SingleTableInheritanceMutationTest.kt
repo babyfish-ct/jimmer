@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.key.KNaturalOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.*
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientDiscriminatorInput
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientExhaustiveInput
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientPatchInput
 import java.sql.Connection
 import kotlin.test.Test
@@ -67,6 +69,44 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testInsertAbstractRootByDefaultInputWithoutDiscriminatorIsRejected() {
+        val ex = assertFailsWith<IllegalArgumentException> {
+            sqlClient.entities.saveCommand(
+                KClientPatchInput.Default(
+                    id = 300L,
+                    name = "Base"
+                )
+            ) {
+                setMode(SaveMode.INSERT_ONLY)
+            }.execute()
+        }
+        assertEquals(
+            "Cannot save inheritance entity type " +
+                "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
+                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+            ex.message
+        )
+    }
+
+    @Test
+    fun testUpsertAbstractRootByDefaultInputWithoutDiscriminatorIsRejected() {
+        val ex = assertFailsWith<IllegalArgumentException> {
+            sqlClient.entities.saveCommand(
+                KClientPatchInput.Default(
+                    id = 300L,
+                    name = "Base"
+                )
+            ).execute()
+        }
+        assertEquals(
+            "Cannot save inheritance entity type " +
+                "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient\" " +
+                "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+            ex.message
+        )
+    }
+
+    @Test
     fun testUpdateAbstractRoot() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
@@ -106,6 +146,75 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             }
             value("[ORG, Acme Input+, ACME-001, null, null]")
         }
+    }
+
+    @Test
+    fun testInsertDefaultInputWithDiscriminatorRoutesSubtype() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClientDiscriminatorInput.Default(
+                    id = 301L,
+                    type = "KPerson",
+                    name = "New Person"
+                )
+            ) {
+                setMode(SaveMode.INSERT_ONLY)
+            }
+            clientRow(con, 301L)
+        }) {
+            statement {
+                sql("insert into CLIENT(ID, CLIENT_TYPE, NAME) values(?, ?, ?)")
+                variables(301L, "KPerson", "New Person")
+            }
+            value("[KPerson, New Person, null, null, null]")
+        }
+    }
+
+    @Test
+    fun testInsertExhaustiveInputBranch() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClientExhaustiveInput.Person(
+                    id = 302L,
+                    name = "Exhaustive Person",
+                    firstName = "Eve",
+                    lastName = "Stone"
+                )
+            ) {
+                setMode(SaveMode.INSERT_ONLY)
+            }
+            clientRow(con, 302L)
+        }) {
+            statement {
+                sql(
+                    "insert into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                        "values(?, ?, ?, ?, ?)"
+                )
+                variables(302L, "KPerson", "Exhaustive Person", "Eve", "Stone")
+            }
+            value("[KPerson, Exhaustive Person, null, Eve, Stone]")
+        }
+    }
+
+    @Test
+    fun testInsertBranchInputWithMismatchedDiscriminatorIsRejected() {
+        val ex = assertFailsWith<IllegalArgumentException> {
+            sqlClient.entities.saveCommand(
+                KClientDiscriminatorInput.Organization(
+                    id = 303L,
+                    type = "KPerson",
+                    name = "Wrong Org",
+                    taxCode = "WRONG"
+                )
+            )
+        }
+        assertEquals(
+            "Discriminator value \"KPerson\" does not match polymorphic input DTO branch " +
+                "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto." +
+                "KClientDiscriminatorInput.Organization\" whose entity type is " +
+                "\"org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization\"",
+            ex.message
+        )
     }
 
     @Test

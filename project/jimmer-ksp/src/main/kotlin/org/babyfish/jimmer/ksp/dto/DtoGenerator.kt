@@ -43,6 +43,7 @@ class DtoGenerator private constructor(
     private val innerClassName: String?,
     private val polymorphicSuperInterfaceName: TypeName? = null,
     private val polymorphicBranch: Boolean = false,
+    private val polymorphicBranchKind: DtoPolymorphicBranch.Kind? = null,
 ) {
     private val root: DtoGenerator = parent?.root ?: this
 
@@ -469,7 +470,8 @@ class DtoGenerator private constructor(
             this,
             branch.className,
             superInterfaceName,
-            true
+            true,
+            branch.kind
         ).generate(emptyList())
     }
 
@@ -1227,19 +1229,24 @@ class DtoGenerator private constructor(
     }
 
     private fun addToEntity() {
+        val discriminatorProp = polymorphicInputDiscriminatorProp()
         typeBuilder.addFunction(
             FunSpec
                 .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(dtoType.baseType.className)
                 .apply {
-                    addStatement(
-                        "return %M(%T::class).by(null, false, this@%L::%L)",
-                        NEW,
-                        dtoType.baseType.className,
-                        innerClassName ?: dtoType.name!!,
-                        if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
-                    )
+                    if (discriminatorProp !== null && isDefaultPolymorphicInputBranch) {
+                        addDefaultPolymorphicInputToEntityBody(discriminatorProp, null)
+                    } else {
+                        addStatement(
+                            "return %M(%T::class).by(null, false, this@%L::%L)",
+                            NEW,
+                            dtoType.baseType.className,
+                            innerClassName ?: dtoType.name!!,
+                            if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
+                        )
+                    }
                 }
                 .build()
         )
@@ -1290,6 +1297,7 @@ class DtoGenerator private constructor(
     }
 
     private fun addToEntityEx() {
+        val discriminatorProp = polymorphicInputDiscriminatorProp()
         typeBuilder.addFunction(
             FunSpec
                 .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
@@ -1303,19 +1311,53 @@ class DtoGenerator private constructor(
                 )
                 .returns(dtoType.baseType.className)
                 .apply {
-                    beginControlFlow(
-                        "return %M(%T::class).by",
-                        NEW,
-                        dtoType.baseType.className
-                    )
-                    addStatement(
-                        "%L(this)",
-                        if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
-                    )
-                    addStatement("block(this)")
-                    endControlFlow()
+                    if (discriminatorProp !== null && isDefaultPolymorphicInputBranch) {
+                        addDefaultPolymorphicInputToEntityBody(discriminatorProp, "block(this)")
+                    } else {
+                        beginControlFlow(
+                            "return %M(%T::class).by",
+                            NEW,
+                            dtoType.baseType.className
+                        )
+                        addStatement(
+                            "%L(this)",
+                            if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
+                        )
+                        addStatement("block(this)")
+                        endControlFlow()
+                    }
                 }
                 .build()
+        )
+    }
+
+    private fun FunSpec.Builder.addDefaultPolymorphicInputToEntityBody(
+        discriminatorProp: DtoProp<ImmutableType, ImmutableProp>,
+        extraStatement: String?,
+    ) {
+        for (concreteType in knownConcreteTypes(dtoType.baseType)) {
+            val value = concreteType.discriminatorValue ?: continue
+            beginControlFlow(
+                "if (%L == %T.get(%T::class.java).inheritanceInfo!!.discriminatorValue(%S))",
+                discriminatorProp.name,
+                IMMUTABLE_TYPE_CLASS_NAME,
+                polymorphicRootType.className,
+                value
+            )
+            beginControlFlow("return %M(%T::class).by", NEW, concreteType.className)
+            addStatement("%L(this)", if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl")
+            if (extraStatement != null) {
+                addStatement(extraStatement)
+            }
+            endControlFlow()
+            endControlFlow()
+        }
+        addStatement(
+            "throw %T(%S + %L + %S)",
+            IllegalArgumentException::class,
+            "Illegal discriminator value \"",
+            discriminatorProp.name,
+            "\" for polymorphic input DTO branch \"${getDtoClassName().canonicalName}\""
         )
     }
 
@@ -1339,6 +1381,9 @@ class DtoGenerator private constructor(
                 .addModifiers(KModifier.INTERNAL)
                 .addParameter("_draft", dtoType.baseType.draftClassName)
                 .apply {
+                    polymorphicInputDiscriminatorProp()
+                        ?.takeIf { isTypedPolymorphicInputBranch }
+                        ?.let { addTypedPolymorphicInputDiscriminatorValidation(it) }
                     for (prop in dtoType.props) {
                         when (prop) {
                             is FoldProp<*, *> -> {
@@ -1355,6 +1400,9 @@ class DtoGenerator private constructor(
                                 if (baseProp.isKotlinFormula) {
                                     continue
                                 }
+                                if (dtoProp.nextProp == null && dtoProp.baseProp.isDiscriminator) {
+                                    continue
+                                }
                                 val statePropName = statePropName(dtoProp, false)
                                 if (statePropName !== null) {
                                     beginControlFlow("if (%L)", statePropName)
@@ -1369,6 +1417,28 @@ class DtoGenerator private constructor(
                 }
                 .build()
         )
+    }
+
+    private fun FunSpec.Builder.addTypedPolymorphicInputDiscriminatorValidation(
+        discriminatorProp: DtoProp<ImmutableType, ImmutableProp>
+    ) {
+        val value = dtoType.baseType.discriminatorValue ?: return
+        beginControlFlow(
+            "if (%L != %T.get(%T::class.java).inheritanceInfo!!.discriminatorValue(%S))",
+            discriminatorProp.name,
+            IMMUTABLE_TYPE_CLASS_NAME,
+            polymorphicRootType.className,
+            value
+        )
+        addStatement(
+            "throw %T(%S + %L + %S)",
+            IllegalArgumentException::class,
+            "Discriminator value \"",
+            discriminatorProp.name,
+            "\" does not match polymorphic input DTO branch \"${getDtoClassName().canonicalName}\" " +
+                "whose entity type is \"${dtoType.baseType.qualifiedName}\""
+        )
+        endControlFlow()
     }
 
     private fun FunSpec.Builder.addDraftAssignment(prop: DtoProp<ImmutableType, ImmutableProp>, valueExpr: String) {
@@ -1390,6 +1460,57 @@ class DtoGenerator private constructor(
                 )
             }
         }
+    }
+
+    private fun polymorphicInputDiscriminatorProp(): DtoProp<ImmutableType, ImmutableProp>? {
+        if (!dtoType.modifiers.contains(DtoModifier.INPUT) ||
+            !polymorphicBranch ||
+            !dtoType.baseType.isEntity ||
+            dtoType.baseType.inheritanceRoot == null
+        ) {
+            return null
+        }
+        return dtoType.props
+            .asSequence()
+            .filterIsInstance<DtoProp<ImmutableType, ImmutableProp>>()
+            .firstOrNull { it.nextProp == null && it.baseProp.isDiscriminator }
+    }
+
+    private val isDefaultPolymorphicInputBranch: Boolean
+        get() = polymorphicBranchKind == DtoPolymorphicBranch.Kind.DEFAULT
+
+    private val isTypedPolymorphicInputBranch: Boolean
+        get() = polymorphicBranchKind == DtoPolymorphicBranch.Kind.TYPE
+
+    private val polymorphicRootType: ImmutableType
+        get() = dtoType.baseType.inheritanceRoot ?: dtoType.baseType
+
+    private fun knownConcreteTypes(baseType: ImmutableType): List<ImmutableType> {
+        val types = mutableListOf<ImmutableType>()
+        if (baseType.isInstantiable) {
+            types += baseType
+        }
+        for (type in ctx.types) {
+            if (type !== baseType &&
+                type.isEntity &&
+                type.isInstantiable &&
+                baseType.isAssignableFrom(type)
+            ) {
+                types += type
+            }
+        }
+        return types.sortedBy { it.qualifiedName }
+    }
+
+    private fun ImmutableType.isAssignableFrom(type: ImmutableType): Boolean {
+        var current: ImmutableType? = type
+        while (current != null) {
+            if (current === this) {
+                return true
+            }
+            current = current.primarySuperType
+        }
+        return false
     }
 
     private fun addEntityType() {

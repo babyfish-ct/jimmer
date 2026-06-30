@@ -52,6 +52,8 @@ public class DtoGenerator {
 
     private final boolean polymorphicBranch;
 
+    private final DtoPolymorphicBranch.Kind polymorphicBranchKind;
+
     private final Set<String> interfaceMethodNames;
 
     private TypeSpec.Builder typeBuilder;
@@ -71,7 +73,7 @@ public class DtoGenerator {
             DtoGenerator parent,
             String innerClassName
     ) {
-        this(ctx, docMetadata, dtoType, parent, innerClassName, null, false);
+        this(ctx, docMetadata, dtoType, parent, innerClassName, null, false, null);
     }
 
     private DtoGenerator(
@@ -81,7 +83,8 @@ public class DtoGenerator {
             DtoGenerator parent,
             String innerClassName,
             @Nullable TypeName polymorphicSuperInterfaceName,
-            boolean polymorphicBranch
+            boolean polymorphicBranch,
+            DtoPolymorphicBranch.Kind polymorphicBranchKind
     ) {
         if ((parent == null) != (innerClassName == null)) {
             throw new IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same");
@@ -95,6 +98,7 @@ public class DtoGenerator {
         this.innerClassName = innerClassName;
         this.polymorphicSuperInterfaceName = polymorphicSuperInterfaceName;
         this.polymorphicBranch = polymorphicBranch;
+        this.polymorphicBranchKind = polymorphicBranchKind;
         this.interfaceMethodNames = DtoInterfaces.abstractMethodNames(ctx, dtoType);
     }
 
@@ -330,7 +334,8 @@ public class DtoGenerator {
                 this,
                 branch.getClassName(),
                 superInterfaceName,
-                true
+                true,
+                branch.getKind()
         ).generate();
     }
 
@@ -1477,6 +1482,9 @@ public class DtoGenerator {
             if (prop.getBaseProp().isJavaFormula()) {
                 continue;
             }
+            if (prop.getNextProp() == null && prop.getBaseProp().isDiscriminator()) {
+                continue;
+            }
             String stateFieldName = stateFieldName(prop, false);
             boolean fuzzy = prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable();
             if (stateFieldName != null) {
@@ -1518,6 +1526,7 @@ public class DtoGenerator {
         if (withId && !idOverridable) {
             return;
         }
+        DtoProp<ImmutableType, ImmutableProp> discriminatorProp = polymorphicInputDiscriminatorProp();
         ImmutableProp baseIdProp = withId ? dtoType.getBaseType().getIdProp() : null;
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(dtoType.getBaseType().isEntity() ?
@@ -1537,7 +1546,12 @@ public class DtoGenerator {
                 .returns(dtoType.getBaseType().getClassName());
         if (!withId && idOverridable) {
             builder.addStatement("return toEntityById(null)");
+        } else if (discriminatorProp != null && isDefaultPolymorphicInputBranch()) {
+            addDefaultPolymorphicInputToEntityBody(builder, baseIdProp, discriminatorProp);
         } else {
+            if (discriminatorProp != null && isTypedPolymorphicInputBranch()) {
+                addTypedPolymorphicInputDiscriminatorValidation(builder, discriminatorProp);
+            }
             builder.addCode(
                     "return $T.$L.produce(__draft -> {$>\n",
                     dtoType.getBaseType().getDraftClassName(),
@@ -1552,6 +1566,138 @@ public class DtoGenerator {
             builder.addCode("$<});\n");
         }
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void addDefaultPolymorphicInputToEntityBody(
+            MethodSpec.Builder builder,
+            @Nullable ImmutableProp baseIdProp,
+            DtoProp<ImmutableType, ImmutableProp> discriminatorProp
+    ) {
+        String discriminatorGetter = "this." + getterName(discriminatorProp) + "()";
+        List<ImmutableType> concreteTypes = knownConcreteTypes(dtoType.getBaseType());
+        for (ImmutableType concreteType : concreteTypes) {
+            String value = concreteType.getDiscriminatorValue();
+            if (value == null) {
+                continue;
+            }
+            builder.beginControlFlow(
+                    "if ($T.equals($L, $T.get($T.class).getInheritanceInfo().discriminatorValue($S)))",
+                    Constants.OBJECTS_CLASS_NAME,
+                    discriminatorGetter,
+                    Constants.RUNTIME_TYPE_CLASS_NAME,
+                    polymorphicRootType().getClassName(),
+                    value
+            );
+            builder.addCode(
+                    "return $T.$L.produce(__draft -> {$>\n",
+                    concreteType.getDraftClassName(),
+                    "$"
+            );
+            builder.addStatement("this.__applyTo(__draft)");
+            if (baseIdProp != null) {
+                builder.beginControlFlow("if (id != null)");
+                builder.addStatement("__draft.$L($L)", baseIdProp.getSetterName(), "id");
+                builder.endControlFlow();
+            }
+            builder.addCode("$<});\n");
+            builder.endControlFlow();
+        }
+        builder.addStatement(
+                "throw new $T($S + $L + $S)",
+                IllegalArgumentException.class,
+                "Illegal discriminator value \"",
+                discriminatorGetter,
+                "\" for polymorphic input DTO branch \"" + getDtoClassName().canonicalName() + "\""
+        );
+    }
+
+    private void addTypedPolymorphicInputDiscriminatorValidation(
+            MethodSpec.Builder builder,
+            DtoProp<ImmutableType, ImmutableProp> discriminatorProp
+    ) {
+        String value = dtoType.getBaseType().getDiscriminatorValue();
+        if (value == null) {
+            return;
+        }
+        String discriminatorGetter = "this." + getterName(discriminatorProp) + "()";
+        builder.beginControlFlow(
+                "if (!$T.equals($L, $T.get($T.class).getInheritanceInfo().discriminatorValue($S)))",
+                Constants.OBJECTS_CLASS_NAME,
+                discriminatorGetter,
+                Constants.RUNTIME_TYPE_CLASS_NAME,
+                polymorphicRootType().getClassName(),
+                value
+        );
+        builder.addStatement(
+                "throw new $T($S + $L + $S)",
+                IllegalArgumentException.class,
+                "Discriminator value \"",
+                discriminatorGetter,
+                "\" does not match polymorphic input DTO branch \"" +
+                        getDtoClassName().canonicalName() +
+                        "\" whose entity type is \"" +
+                        dtoType.getBaseType().getQualifiedName() +
+                        "\""
+        );
+        builder.endControlFlow();
+    }
+
+    @Nullable
+    private DtoProp<ImmutableType, ImmutableProp> polymorphicInputDiscriminatorProp() {
+        if (!dtoType.getModifiers().contains(DtoModifier.INPUT) ||
+                !polymorphicBranch ||
+                !dtoType.getBaseType().isEntity() ||
+                dtoType.getBaseType().getInheritanceRoot() == null) {
+            return null;
+        }
+        for (AbstractProp abstractProp : dtoType.getProps()) {
+            if (abstractProp instanceof DtoProp<?, ?>) {
+                DtoProp<ImmutableType, ImmutableProp> prop = asDtoProp(abstractProp);
+                if (prop.getNextProp() == null && prop.getBaseProp().isDiscriminator()) {
+                    return prop;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isDefaultPolymorphicInputBranch() {
+        return polymorphicBranchKind == DtoPolymorphicBranch.Kind.DEFAULT;
+    }
+
+    private boolean isTypedPolymorphicInputBranch() {
+        return polymorphicBranchKind == DtoPolymorphicBranch.Kind.TYPE;
+    }
+
+    private ImmutableType polymorphicRootType() {
+        ImmutableType rootType = dtoType.getBaseType().getInheritanceRoot();
+        return rootType != null ? rootType : dtoType.getBaseType();
+    }
+
+    private List<ImmutableType> knownConcreteTypes(ImmutableType baseType) {
+        List<ImmutableType> types = new ArrayList<>();
+        if (baseType.isInstantiable()) {
+            types.add(baseType);
+        }
+        for (ImmutableType type : ctx.getImmutableTypes()) {
+            if (type != baseType &&
+                    type.isEntity() &&
+                    type.isInstantiable() &&
+                    isAssignableFrom(baseType, type)) {
+                types.add(type);
+            }
+        }
+        types.sort(Comparator.comparing(ImmutableType::getQualifiedName));
+        return types;
+    }
+
+    private static boolean isAssignableFrom(ImmutableType base, ImmutableType type) {
+        for (ImmutableType current = type; current != null; current = current.getPrimarySuperType()) {
+            if (current == base) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void addEntityType() {

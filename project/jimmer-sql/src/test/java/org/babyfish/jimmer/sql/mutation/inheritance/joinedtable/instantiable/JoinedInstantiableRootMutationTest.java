@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.ClientDraft;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultInput;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -42,6 +43,33 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original("{\"id\":610,\"name\":\"Joined Root New\"}");
                         it.modified("{\"id\":610,\"name\":\"Joined Root New\"}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testInsertRootBranchByDefaultInput() {
+        InstantiableClientDefaultInput.Base input = new InstantiableClientDefaultInput.Base();
+        input.setId(611L);
+        input.setName("Joined Root Input");
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(input)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_INST_CLIENT(ID, CLIENT_TYPE, NAME) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(611L, "CLIENT", "Joined Root Input");
+                    });
+                    ctx.rowCount(AffectedTable.of(Client.class), 1);
+                    ctx.entity(it -> {
+                        it.original("{\"id\":611,\"name\":\"Joined Root Input\"}");
+                        it.modified("{\"id\":611,\"name\":\"Joined Root Input\"}");
                     });
                 }
         );

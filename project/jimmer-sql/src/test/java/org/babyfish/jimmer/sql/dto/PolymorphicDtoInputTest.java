@@ -1,6 +1,10 @@
 package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.ClientType;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumClient;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumPerson;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.dto.EnumClientDiscriminatorInput;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultInput;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Client;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Organization;
@@ -42,7 +46,7 @@ public class PolymorphicDtoInputTest {
     }
 
     @Test
-    public void testExplicitDiscriminatorInputKeepsDiscriminatorLoaded() {
+    public void testDefaultInputWithDiscriminatorCreatesSubtypeEntityShape() {
         ClientDiscriminatorInput.Default input = new ClientDiscriminatorInput.Default();
         input.setId(12L);
         input.setType("Person");
@@ -50,9 +54,8 @@ public class PolymorphicDtoInputTest {
 
         Client entity = input.toEntity();
 
-        Assertions.assertEquals(Client.class, ((ImmutableSpi) entity).__type().getJavaClass());
+        Assertions.assertEquals(Person.class, ((ImmutableSpi) entity).__type().getJavaClass());
         Assertions.assertEquals(12L, entity.id());
-        Assertions.assertEquals("Person", entity.type());
         Assertions.assertEquals("Person patch", entity.name());
     }
 
@@ -68,9 +71,79 @@ public class PolymorphicDtoInputTest {
 
         Assertions.assertEquals(Organization.class, ((ImmutableSpi) entity).__type().getJavaClass());
         Assertions.assertEquals(13L, entity.id());
-        Assertions.assertEquals("ORG", entity.type());
         Assertions.assertEquals("Org patch", entity.name());
         Assertions.assertEquals("T-13", entity.taxCode());
+    }
+
+    @Test
+    public void testBranchAndDiscriminatorInputMismatchIsRejected() {
+        ClientDiscriminatorInput.Organization input = new ClientDiscriminatorInput.Organization();
+        input.setId(13L);
+        input.setType("Person");
+        input.setName("Org patch");
+        input.setTaxCode("T-13");
+
+        IllegalArgumentException ex = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                input::toEntity
+        );
+
+        Assertions.assertEquals(
+                "Discriminator value \"Person\" does not match polymorphic input DTO branch " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.dto." +
+                        "ClientDiscriminatorInput.Organization\" whose entity type is " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Organization\"",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testEnumDefaultInputWithRootDiscriminatorCreatesRootEntityShape() {
+        EnumClientDiscriminatorInput.Default input = new EnumClientDiscriminatorInput.Default();
+        input.setId(130L);
+        input.setType(ClientType.CLIENT);
+        input.setName("Enum client");
+
+        EnumClient entity = input.toEntity();
+
+        Assertions.assertEquals(EnumClient.class, ((ImmutableSpi) entity).__type().getJavaClass());
+        Assertions.assertEquals(130L, entity.id());
+        Assertions.assertEquals("Enum client", entity.name());
+    }
+
+    @Test
+    public void testEnumDefaultInputWithSubtypeDiscriminatorCreatesSubtypeEntityShape() {
+        EnumClientDiscriminatorInput.Default input = new EnumClientDiscriminatorInput.Default();
+        input.setId(131L);
+        input.setType(ClientType.PERSON);
+        input.setName("Enum person");
+
+        EnumClient entity = input.toEntity();
+
+        Assertions.assertEquals(EnumPerson.class, ((ImmutableSpi) entity).__type().getJavaClass());
+        Assertions.assertEquals(131L, entity.id());
+        Assertions.assertEquals("Enum person", entity.name());
+    }
+
+    @Test
+    public void testEnumBranchAndDiscriminatorInputMismatchIsRejected() {
+        EnumClientDiscriminatorInput.Organization input = new EnumClientDiscriminatorInput.Organization();
+        input.setId(132L);
+        input.setType(ClientType.PERSON);
+        input.setName("Enum org");
+
+        IllegalArgumentException ex = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                input::toEntity
+        );
+
+        Assertions.assertEquals(
+                "Discriminator value \"PERSON\" does not match polymorphic input DTO branch " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.dto." +
+                        "EnumClientDiscriminatorInput.Organization\" whose entity type is " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization\"",
+                ex.getMessage()
+        );
     }
 
     @Test

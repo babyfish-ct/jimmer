@@ -11,6 +11,8 @@ import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizat
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.key.NaturalOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.*;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientDiscriminatorInput;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientExhaustiveInput;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientPatchInput;
 import org.junit.jupiter.api.Test;
 
@@ -68,6 +70,49 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                 })
                         )
                         .setMode(SaveMode.INSERT_ONLY)
+                        .execute()
+        );
+        assertEquals(
+                "Cannot save inheritance entity type " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
+                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testInsertAbstractRootByDefaultInputWithoutDiscriminatorIsRejected() {
+        ClientPatchInput.Default input = new ClientPatchInput.Default();
+        input.setId(300L);
+        input.setName("Base");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(input)
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute()
+        );
+        assertEquals(
+                "Cannot save inheritance entity type " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
+                        "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testUpsertAbstractRootByDefaultInputWithoutDiscriminatorIsRejected() {
+        ClientPatchInput.Default input = new ClientPatchInput.Default();
+        input.setId(300L);
+        input.setName("Base");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(input)
                         .execute()
         );
         assertEquals(
@@ -148,6 +193,81 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                 "Cannot save inheritance entity type " +
                         "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Client\" " +
                         "because it is abstract; only UPDATE_ONLY with subtypeChangeAllowed=false is allowed",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testInsertDefaultInputWithDiscriminatorRoutesSubtype() {
+        connectAndExpect(
+                con -> {
+                    ClientDiscriminatorInput.Default input = new ClientDiscriminatorInput.Default();
+                    input.setId(301L);
+                    input.setType("Person");
+                    input.setName("New Person");
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(input)
+                            .setMode(SaveMode.INSERT_ONLY)
+                            .execute(con);
+                    return clientRow(con, 301L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into CLIENT(ID, CLIENT_TYPE, NAME) values(?, ?, ?)");
+                        it.variables(301L, "Person", "New Person");
+                    });
+                    ctx.value("[Person, New Person, null, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertExhaustiveInputBranch() {
+        connectAndExpect(
+                con -> {
+                    ClientExhaustiveInput.Person input = new ClientExhaustiveInput.Person();
+                    input.setId(302L);
+                    input.setName("Exhaustive Person");
+                    input.setFirstName("Eve");
+                    input.setLastName("Stone");
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(input)
+                            .setMode(SaveMode.INSERT_ONLY)
+                            .execute(con);
+                    return clientRow(con, 302L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(302L, "Person", "Exhaustive Person", "Eve", "Stone");
+                    });
+                    ctx.value("[Person, Exhaustive Person, null, Eve, Stone]");
+                }
+        );
+    }
+
+    @Test
+    public void testInsertBranchInputWithMismatchedDiscriminatorIsRejected() {
+        ClientDiscriminatorInput.Organization input = new ClientDiscriminatorInput.Organization();
+        input.setId(303L);
+        input.setType("Person");
+        input.setName("Wrong Org");
+        input.setTaxCode("WRONG");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient().getEntities().saveCommand(input)
+        );
+        assertEquals(
+                "Discriminator value \"Person\" does not match polymorphic input DTO branch " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.dto." +
+                        "ClientDiscriminatorInput.Organization\" whose entity type is " +
+                        "\"org.babyfish.jimmer.sql.model.inheritance.singletable.Organization\"",
                 ex.getMessage()
         );
     }

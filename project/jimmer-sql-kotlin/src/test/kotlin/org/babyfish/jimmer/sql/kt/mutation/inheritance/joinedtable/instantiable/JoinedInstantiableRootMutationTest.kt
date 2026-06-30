@@ -3,10 +3,35 @@ package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable.instantiable
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient
+import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto.KInstantiableClientDefaultInput
 import java.sql.Connection
 import kotlin.test.Test
 
 class JoinedInstantiableRootMutationTest : AbstractMutationTest() {
+
+    @Test
+    fun testInsertRootBranchByDefaultInput() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KInstantiableClientDefaultInput.Base(
+                    id = 611L,
+                    name = "Joined Root Input"
+                )
+            ) {
+                setMode(SaveMode.INSERT_ONLY)
+            }
+            joinedClientRow(con, 611L)
+        }) {
+            statement {
+                sql(
+                    "insert into JOINED_INST_CLIENT(ID, CLIENT_TYPE, NAME) " +
+                        "values(?, ?, ?)"
+                )
+                variables(611L, "CLIENT", "Joined Root Input")
+            }
+            value("[CLIENT, Joined Root Input, null, null, null]")
+        }
+    }
 
     @Test
     fun testUpdateRootBranchWithSubtypeChangeAllowed() {
