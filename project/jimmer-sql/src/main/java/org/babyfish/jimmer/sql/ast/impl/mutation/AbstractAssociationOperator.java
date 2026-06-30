@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 abstract class AbstractAssociationOperator {
 
@@ -153,12 +154,29 @@ abstract class AbstractAssociationOperator {
             DisconnectingType disconnectingType,
             Function<ImmutableProp, ChildTableOperator> backPropCreator
     ) {
+        return createSubOperators(
+                sqlClient,
+                path,
+                disconnectingType,
+                backPropCreator,
+                prop -> true
+        );
+    }
+
+    static List<ChildTableOperator> createSubOperators(
+            JSqlClientImplementor sqlClient,
+            MutationPath path,
+            DisconnectingType disconnectingType,
+            Function<ImmutableProp, ChildTableOperator> backPropCreator,
+            Predicate<ImmutableProp> backPropFilter
+    ) {
         List<ChildTableOperator> subOperators = null;
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
                 if (backProp.getTargetType().isAssignableFrom(path.getType()) &&
                         backProp.isColumnDefinition() &&
-                        disconnectingType != DisconnectingType.NONE) {
+                        disconnectingType != DisconnectingType.NONE &&
+                        backPropFilter.test(backProp)) {
                     if (subOperators == null) {
                         subOperators = new ArrayList<>();
                     }
@@ -182,9 +200,29 @@ abstract class AbstractAssociationOperator {
             Function<ImmutableProp, MiddleTableOperator> propCreator,
             Function<ImmutableProp, MiddleTableOperator> backPropCreator
     ) {
+        return createMiddleTableOperators(
+                sqlClient,
+                path,
+                disconnectingType,
+                propCreator,
+                backPropCreator,
+                prop -> true,
+                prop -> true
+        );
+    }
+
+    static List<MiddleTableOperator> createMiddleTableOperators(
+            JSqlClientImplementor sqlClient,
+            MutationPath path,
+            DisconnectingType disconnectingType,
+            Function<ImmutableProp, MiddleTableOperator> propCreator,
+            Function<ImmutableProp, MiddleTableOperator> backPropCreator,
+            Predicate<ImmutableProp> propFilter,
+            Predicate<ImmutableProp> backPropFilter
+    ) {
         List<MiddleTableOperator> middleTableOperators = null;
         for (ImmutableProp prop : path.getType().getProps().values()) {
-            if (prop.isMiddleTableDefinition()) {
+            if (prop.isMiddleTableDefinition() && propFilter.test(prop)) {
                 if (middleTableOperators == null) {
                     middleTableOperators = new ArrayList<>();
                 }
@@ -198,7 +236,8 @@ abstract class AbstractAssociationOperator {
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
                 if (backProp.getTargetType().isAssignableFrom(path.getType()) &&
-                        backProp.isMiddleTableDefinition()) {
+                        backProp.isMiddleTableDefinition() &&
+                        backPropFilter.test(backProp)) {
                     if (middleTableOperators == null) {
                         middleTableOperators = new ArrayList<>();
                     }

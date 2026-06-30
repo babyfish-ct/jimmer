@@ -482,7 +482,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     "select tb_1_.ID " +
                         "from CLIENT tb_1_ " +
-                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
                 )
                 variables(102L, "ORG")
             }
@@ -542,7 +542,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     "select tb_1_.ID " +
                         "from CLIENT tb_1_ " +
-                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?) for update"
+                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
                 )
                 variables(102L, "ORG", "KPerson")
             }
@@ -588,7 +588,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     "select tb_1_.ID " +
                         "from CLIENT tb_1_ " +
-                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
                 )
                 variables(100L, "ORG")
             }

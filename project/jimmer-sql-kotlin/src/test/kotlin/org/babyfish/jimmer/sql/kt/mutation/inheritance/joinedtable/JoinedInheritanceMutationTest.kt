@@ -563,23 +563,6 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "${joinedClientRow(con, 202L)}; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
-                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
-                sql(
-                    "select tb_1_.ID " +
-                            "from JOINED_CLIENT tb_1_ " +
-                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
-                )
-                variables(202L, "ORG")
-            }
-            statement {
-                sql(
-                    "select tb_1_.ID " +
-                            "from JOINED_CLIENT_PROJECT tb_1_ " +
-                            "where tb_1_.CLIENT_ID = ? limit ?"
-                )
-                variables(202L, 1)
-            }
-            statement {
                 sql(
                     "select tb_1_.ID " +
                             "from JOINED_ORG_PROJECT tb_1_ " +
@@ -590,6 +573,14 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
                 variables(202L)
+            }
+            statement {
+                sql(
+                    "select tb_1_.ID " +
+                            "from JOINED_CLIENT_PROJECT tb_1_ " +
+                            "where tb_1_.CLIENT_ID = ? limit ?"
+                )
+                variables(202L, 1)
             }
             statement {
                 sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?")
@@ -613,24 +604,15 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
                     "${joinedClientRow(con, 201L)}"
         }) {
             statement {
-                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
-                sql(
-                    "select tb_1_.ID " +
-                            "from JOINED_CLIENT tb_1_ " +
-                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
-                )
-                variables(200L, "ORG")
-            }
-            statement {
-                sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?")
-                variables(200L)
-            }
-            statement {
                 sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?")
                 variables(200L)
             }
             statement {
                 sql("delete from JOINED_ORGANIZATION where ID = ?")
+                variables(200L)
+            }
+            statement {
+                sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?")
                 variables(200L)
             }
             statement {
@@ -650,13 +632,16 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             "$affectedRowCount; ${joinedClientRow(con, 201L)}"
         }) {
             statement {
-                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
                 sql(
                     "select tb_1_.ID " +
-                            "from JOINED_CLIENT tb_1_ " +
-                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                            "from JOINED_ORG_PROJECT tb_1_ " +
+                            "where tb_1_.ORGANIZATION_ID = ? limit ?"
                 )
-                variables(201L, "ORG")
+                variables(201L, 1)
+            }
+            statement {
+                sql("delete from JOINED_ORGANIZATION where ID = ?")
+                variables(201L)
             }
             value("0; [KPerson, Alice, null, Alice, Smith]")
         }

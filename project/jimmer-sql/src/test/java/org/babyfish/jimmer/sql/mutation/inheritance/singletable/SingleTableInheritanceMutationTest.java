@@ -846,7 +846,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from CLIENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
                         );
                         it.variables(102L, "ORG");
                     });
@@ -915,7 +915,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from CLIENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?) for update"
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
                         );
                         it.variables(102L, "ORG", "Person");
                     });
@@ -971,7 +971,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from CLIENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
                         );
                         it.variables(100L, "ORG");
                     });

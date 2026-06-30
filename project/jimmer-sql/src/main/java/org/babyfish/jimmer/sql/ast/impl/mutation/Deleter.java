@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -29,7 +30,6 @@ import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 
 public class Deleter {
@@ -131,13 +131,22 @@ public class Deleter {
         }
         validateInheritanceDeleteTarget();
 
-        AssociationCleanup cleanup = associationCleanup();
         InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
         Collection<ImmutableType> deletedTypes = deletedTypes(
                 inheritanceInfo,
                 ctx.path.getType(),
                 ctx.options.isPolymorphic()
         );
+        if (isStagedJoinedExactDeleteAvailable(inheritanceInfo, deletedTypes)) {
+            int rowCount = executeStagedJoinedExactDelete(ids);
+            if (ctx.trigger != null) {
+                ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
+            }
+            AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+            return new DeleteResult(ctx.affectedRowCountMap);
+        }
+
+        AssociationCleanup cleanup = associationCleanup();
         if (inheritanceInfo != null && (
                 !cleanup.isEmpty() ||
                         isJoinedSubtypeCleanupRequired(inheritanceInfo, deletedTypes)
@@ -166,6 +175,140 @@ public class Deleter {
 
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
         return new DeleteResult(ctx.affectedRowCountMap);
+    }
+
+    private boolean isStagedJoinedExactDeleteAvailable(
+            @Nullable InheritanceInfo inheritanceInfo,
+            Collection<ImmutableType> deletedTypes
+    ) {
+        if (inheritanceInfo == null ||
+                ctx.isLogicalDeleted() ||
+                ctx.options.isPolymorphic() ||
+                ctx.trigger != null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE ||
+                deletedTypes.size() != 1) {
+            return false;
+        }
+        ImmutableType type = deletedTypes.iterator().next();
+        return type != inheritanceInfo.getRootType() && type.getAllDerivedTypes().isEmpty();
+    }
+
+    private int executeStagedJoinedExactDelete(Collection<Object> ids) {
+        InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        List<ImmutableType> stageTypes = joinedTableTypes(rootType, ctx.path.getType());
+        Collection<Object> acceptedIds = ids;
+        for (ImmutableType stageType : stageTypes) {
+            associationCleanup(stageType, true).disconnect(acceptedIds);
+            acceptedIds = deleteJoinedStageRows(stageType, acceptedIds);
+            if (acceptedIds.isEmpty()) {
+                return 0;
+            }
+        }
+        associationCleanup(rootType, true).disconnect(acceptedIds);
+        int rowCount = deleteFromSingleTable(
+                ctx.options.getSqlClient(),
+                ctx.con,
+                rootType,
+                Collections.singleton(ctx.path.getType()),
+                acceptedIds,
+                null,
+                null,
+                ctx.options.getExceptionTranslator()
+        );
+        if (rowCount != acceptedIds.size()) {
+            throw new ExecutionException(
+                    "Cannot complete staged joined inheritance delete for \"" +
+                            ctx.path.getType() +
+                            "\" because a parent stage was not accepted after a subtype stage had been deleted"
+            );
+        }
+        return rowCount;
+    }
+
+    private Set<Object> deleteJoinedStageRows(ImmutableType stageType, Collection<Object> ids) {
+        if (ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        if (ids.size() == 1 ||
+                ctx.options.isBatchForbidden() ||
+                ctx.options.getSqlClient().getDialect().isBatchDumb() ||
+                ValueGetter.valueGetters(ctx.options.getSqlClient(), stageType.getIdProp()).size() != 1) {
+            Set<Object> acceptedIds = new LinkedHashSet<>();
+            for (Object id : ids) {
+                int rowCount = deleteJoinedStageRowsOneByOne(stageType, Collections.singleton(id));
+                if (rowCount != 0) {
+                    acceptedIds.add(id);
+                }
+            }
+            return acceptedIds;
+        }
+        return deleteJoinedStageRowsByBatch(stageType, ids);
+    }
+
+    private int deleteJoinedStageRowsOneByOne(ImmutableType stageType, Collection<Object> ids) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(ctx.options.getSqlClient()));
+        builder.sql("delete from ")
+                .sql(stageType.getTableName(ctx.options.getSqlClient().getMetadataStrategy()))
+                .sql(" where ");
+        ComparisonPredicates.renderIn(
+                false,
+                ValueGetter.valueGetters(ctx.options.getSqlClient(), stageType.getIdProp()),
+                ids,
+                builder
+        );
+        return execute(ctx.options.getSqlClient(), ctx.con, builder, ctx.options.getExceptionTranslator());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<Object> deleteJoinedStageRowsByBatch(ImmutableType stageType, Collection<Object> ids) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        List<ValueGetter> idGetters = ValueGetter.valueGetters(sqlClient, stageType.getIdProp());
+        builder.sql("delete from ")
+                .sql(stageType.getTableName(sqlClient.getMetadataStrategy()))
+                .sql(" where ");
+        builder.enter(BatchSqlBuilder.ScopeType.AND);
+        for (ValueGetter idGetter : idGetters) {
+            builder.separator()
+                    .sql(idGetter)
+                    .sql(" = ")
+                    .variable(idGetter);
+        }
+        builder.leave();
+        Tuple3<String, BatchSqlBuilder.VariableMapper, List<Integer>> tuple = builder.build();
+        int[] rowCounts;
+        try (Executor.BatchContext batchContext = sqlClient
+                .getExecutor()
+                .executeBatch(
+                        ctx.con,
+                        tuple.get_1(),
+                        null,
+                        ExecutionPurpose.command(QueryReason.NONE),
+                        sqlClient,
+                        sqlClient.isConstraintViolationTranslatable()
+                )
+        ) {
+            for (Object id : ids) {
+                batchContext.add(tuple.get_2().variables(id));
+            }
+            rowCounts = batchContext.execute((ex, args) -> {
+                ExceptionTranslator<?> exceptionTranslator = ctx.options.getExceptionTranslator();
+                if (exceptionTranslator != null) {
+                    return ((ExceptionTranslator<Exception>) exceptionTranslator).translate(ex, args);
+                }
+                return ex;
+            });
+        }
+        Set<Object> acceptedIds = new LinkedHashSet<>();
+        int index = 0;
+        for (Object id : ids) {
+            if (index < rowCounts.length && rowCounts[index++] != 0) {
+                acceptedIds.add(id);
+            }
+        }
+        return acceptedIds;
     }
 
     private List<DeleteContext> associationCleanupContexts() {
@@ -199,6 +342,10 @@ public class Deleter {
     }
 
     private AssociationCleanup associationCleanup() {
+        return associationCleanup(null, false);
+    }
+
+    private AssociationCleanup associationCleanup(@Nullable ImmutableType stageType, boolean declaredOnly) {
         DisconnectingType disconnectingType = ctx.isLogicalDeleted() ?
                 DisconnectingType.LOGICAL_DELETE :
                 DisconnectingType.PHYSICAL_DELETE;
@@ -207,7 +354,7 @@ public class Deleter {
         Set<ImmutableProp> handledMiddleProps = new HashSet<>();
         Set<ImmutableProp> handledMiddleBackProps = new HashSet<>();
         Set<ImmutableProp> handledChildBackProps = new HashSet<>();
-        for (DeleteContext cleanupCtx : associationCleanupContexts()) {
+        for (DeleteContext cleanupCtx : associationCleanupContexts(stageType)) {
             SaveContext saveCtx = new SaveContext(
                     saveOptions(),
                     cleanupCtx.con,
@@ -226,7 +373,9 @@ public class Deleter {
                                     null,
                             backProp -> handledMiddleBackProps.add(backProp) ?
                                     new MiddleTableOperator(saveCtx.backProp(backProp), cleanupCtx.isLogicalDeleted()) :
-                                    null
+                                    null,
+                            prop -> !declaredOnly || isPropOwnedByStage(prop, cleanupCtx.path.getType()),
+                            backProp -> !declaredOnly || isBackPropOwnedByStage(backProp, cleanupCtx.path.getType())
                     )
             );
             childOperators.addAll(
@@ -236,11 +385,46 @@ public class Deleter {
                             disconnectingType,
                             backProp -> handledChildBackProps.add(backProp) ?
                                     new ChildTableOperator(cleanupCtx.backPropOf(backProp), false) :
-                                    null
+                                    null,
+                            backProp -> !declaredOnly || isBackPropOwnedByStage(backProp, cleanupCtx.path.getType())
                     )
             );
         }
         return new AssociationCleanup(middleOperators, childOperators);
+    }
+
+    private List<DeleteContext> associationCleanupContexts(@Nullable ImmutableType stageType) {
+        if (stageType != null) {
+            return Collections.singletonList(
+                    new DeleteContext(
+                            ctx.options,
+                            ctx.con,
+                            ctx.trigger,
+                            ctx.affectedRowCountMap,
+                            MutationPath.root(stageType)
+                    )
+            );
+        }
+        return associationCleanupContexts();
+    }
+
+    private static boolean isPropOwnedByStage(ImmutableProp prop, ImmutableType stageType) {
+        return isDeclaringTypeOwnedByStage(prop.getDeclaringType(), stageType);
+    }
+
+    private static boolean isBackPropOwnedByStage(ImmutableProp backProp, ImmutableType stageType) {
+        return backProp.getTargetType() == stageType;
+    }
+
+    private static boolean isDeclaringTypeOwnedByStage(ImmutableType declaringType, ImmutableType stageType) {
+        if (declaringType == stageType) {
+            return true;
+        }
+        if (!declaringType.isMappedSuperclass() || !stageType.getAllTypes().contains(declaringType)) {
+            return false;
+        }
+        ImmutableType superType = stageType.getPrimarySuperType();
+        return superType == null || !superType.getAllTypes().contains(declaringType);
     }
 
     private void validateInheritanceDeleteTarget() {
@@ -310,21 +494,7 @@ public class Deleter {
         }
         addDiscriminatorPredicate(query, table, inheritanceInfo, deletedTypes);
         ConfigurableRootQuery<?, Object> acceptedIdQuery = query.select(idExpr);
-        if (isDeleteTargetResolveForUpdateRequired()) {
-            acceptedIdQuery = acceptedIdQuery.forUpdate(true);
-        }
         return new LinkedHashSet<>(acceptedIdQuery.execute(ctx.con));
-    }
-
-    private boolean isDeleteTargetResolveForUpdateRequired() {
-        try {
-            return !ctx.con.getAutoCommit();
-        } catch (SQLException ex) {
-            throw new ExecutionException(
-                    "Failed to retrieve the auto-commit mode of the connection",
-                    ex
-            );
-        }
     }
 
     private static Map<Object, ImmutableSpi> filterRowMap(

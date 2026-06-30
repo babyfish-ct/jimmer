@@ -1451,23 +1451,6 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from JOINED_CLIENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
-                        );
-                        it.variables(202L, "ORG");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from JOINED_CLIENT_PROJECT tb_1_ " +
-                                        "where tb_1_.CLIENT_ID = ? limit ?"
-                        );
-                        it.variables(202L, 1);
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from JOINED_ORG_PROJECT tb_1_ " +
@@ -1478,6 +1461,14 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
                         it.variables(202L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+                                        "where tb_1_.CLIENT_ID = ? limit ?"
+                        );
+                        it.variables(202L, 1);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE = ?");
@@ -1509,24 +1500,15 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from JOINED_CLIENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
-                        );
-                        it.variables(200L, "ORG");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?");
-                        it.variables(200L);
-                    });
-                    ctx.statement(it -> {
                         it.sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?");
                         it.variables(200L);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID = ?");
                         it.variables(200L);
                     });
                     ctx.statement(it -> {
@@ -1552,15 +1534,50 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
                         it.sql(
                                 "select tb_1_.ID " +
-                                        "from JOINED_CLIENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ? for update"
+                                        "from JOINED_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
                         );
-                        it.variables(201L, "ORG");
+                        it.variables(201L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(201L);
                     });
                     ctx.value("0; [Person, Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteSubtypeWithMismatchedDiscriminatorDoesNotCleanBaseAssociations() {
+        connectAndExpect(
+                con -> {
+                    int affectedRowCount = getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Organization.class, 201L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setDissociateAction(ClientProjectProps.CLIENT, DissociateAction.SET_NULL)
+                            .setDissociateAction(OrganizationProjectProps.ORGANIZATION, DissociateAction.SET_NULL)
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    return affectedRowCount +
+                            "; " +
+                            joinedClientProjectTargetId(con, 2002L) +
+                            "; " +
+                            joinedClientRow(con, 201L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?");
+                        it.variables(201L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(201L);
+                    });
+                    ctx.value("0; 201; [Person, Alice, null, Alice, Smith]");
                 }
         );
     }
