@@ -228,12 +228,6 @@ public class DtoGenerator {
     }
 
     private void generatePolymorphic() {
-        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
-            throw new GeneratorException(
-                    "Polymorphic input DTO generation is not supported yet",
-                    null
-            );
-        }
         if (!dtoType.getBaseType().isEntity()) {
             throw new GeneratorException(
                     "Polymorphic DTO generation is only supported for entity types",
@@ -246,7 +240,9 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC);
         typeBuilder.addSuperinterface(
                 ParameterizedTypeName.get(
-                        org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
+                        dtoType.getModifiers().contains(DtoModifier.INPUT) ?
+                                org.babyfish.jimmer.apt.immutable.generator.Constants.INPUT_CLASS_NAME :
+                                org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
                         dtoType.getBaseType().getClassName()
                 )
         );
@@ -1050,6 +1046,9 @@ public class DtoGenerator {
 
     private boolean isSimpleProp(DtoProp<ImmutableType, ImmutableProp> prop) {
         if (prop.getNextProp() != null) {
+            return false;
+        }
+        if (prop.getBaseProp().isDiscriminator()) {
             return false;
         }
         if ((prop.isNullable() && (!prop.isBaseNullable() || dtoType.getModifiers().contains(DtoModifier.SPECIFICATION))) ||

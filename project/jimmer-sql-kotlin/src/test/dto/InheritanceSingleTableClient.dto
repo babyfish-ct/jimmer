@@ -24,3 +24,41 @@ KClientRuntimeView {
         }
     }
 }
+
+input KClientPatchInput {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KClientDiscriminatorInput {
+    id
+    type
+    name
+    #types {
+        default {
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        KOrganization class Organization {
+            taxCode
+        }
+        KPerson class Person {
+            firstName
+            lastName
+        }
+    }
+}

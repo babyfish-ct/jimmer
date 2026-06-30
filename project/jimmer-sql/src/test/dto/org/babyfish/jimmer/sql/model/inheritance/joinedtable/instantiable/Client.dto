@@ -30,3 +30,31 @@ InstantiableClientExhaustiveView {
         }
     }
 }
+
+input InstantiableClientDefaultInput {
+    id
+    name
+    #types {
+        default class Base {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input InstantiableClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Client class Root {
+        }
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+        }
+    }
+}

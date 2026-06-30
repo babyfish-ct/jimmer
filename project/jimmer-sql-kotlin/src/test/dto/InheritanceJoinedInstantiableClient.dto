@@ -30,3 +30,31 @@ KInstantiableClientExhaustiveView {
         }
     }
 }
+
+input KInstantiableClientDefaultInput {
+    id
+    name
+    #types {
+        default class Base {
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KInstantiableClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        KClient class Root {
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+        KPerson class Person {
+            firstName
+        }
+    }
+}

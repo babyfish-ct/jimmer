@@ -174,9 +174,6 @@ class DtoGenerator private constructor(
     }
 
     private fun generatePolymorphic(allFiles: List<KSFile>) {
-        if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
-            throw DtoException("Polymorphic input DTO generation is not supported yet")
-        }
         if (!dtoType.baseType.isEntity) {
             throw DtoException("Polymorphic DTO generation is only supported for entity types")
         }
@@ -366,13 +363,15 @@ class DtoGenerator private constructor(
         typeBuilder.addEquals()
         typeBuilder.addToString()
 
-        if (!isSpecification && !polymorphicBranch) {
+        if (!isSpecification && (!polymorphicBranch || hasAccessorFields())) {
             typeBuilder.addType(
                 TypeSpec
                     .companionObjectBuilder()
                     .addAnnotation(generatedAnnotation())
                     .apply {
-                        addMetadata()
+                        if (!polymorphicBranch) {
+                            addMetadata()
+                        }
                         for (prop in dtoType.dtoProps) {
                             addAccessorField(prop)
                         }
@@ -423,7 +422,13 @@ class DtoGenerator private constructor(
     }
 
     private fun addPolymorphicMembers() {
-        typeBuilder.addSuperinterface(VIEW_CLASS_NAME.parameterizedBy(dtoType.baseType.className))
+        typeBuilder.addSuperinterface(
+            (if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
+                INPUT_CLASS_NAME
+            } else {
+                VIEW_CLASS_NAME
+            }).parameterizedBy(dtoType.baseType.className)
+        )
         for (typeRef in dtoType.superInterfaces) {
             typeBuilder.addSuperinterface(typeName(typeRef))
         }
@@ -1566,6 +1571,9 @@ class DtoGenerator private constructor(
         if (prop.getNextProp() != null) {
             return false
         }
+        if (prop.baseProp.isDiscriminator) {
+            return false
+        }
         return if ((prop.isNullable() && (!prop.getBaseProp().isNullable || dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) ||
             (prop.baseProp.converterMetadata !== null &&
                     !dtoType.modifiers.contains(DtoModifier.INPUT) &&
@@ -1576,6 +1584,10 @@ class DtoGenerator private constructor(
             propTypeName(prop) == prop.getBaseProp().typeName()
         }
     }
+
+    private fun hasAccessorFields(): Boolean =
+        dtoType.dtoProps.any { !isSimpleProp(it) } ||
+            dtoType.foldProps.any { it.nullGuardProp !== null }
 
     private fun TypeSpec.Builder.addAccessorField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (isSimpleProp(prop)) {

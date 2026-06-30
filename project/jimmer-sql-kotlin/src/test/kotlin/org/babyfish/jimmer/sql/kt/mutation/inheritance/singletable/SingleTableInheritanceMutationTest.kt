@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.key.KNaturalOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.*
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientPatchInput
 import java.sql.Connection
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -83,6 +84,27 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
                 variables("Acme Base+", 100L)
             }
             value("[ORG, Acme Base+, ACME-001, null, null]")
+        }
+    }
+
+    @Test
+    fun testUpdateAbstractRootByDefaultInputWithoutDiscriminator() {
+        connectAndExpect({ con ->
+            sqlClient.entities.forConnection(con).save(
+                KClientPatchInput.Default(
+                    id = 100L,
+                    name = "Acme Input+"
+                )
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+            }
+            clientRow(con, 100L)
+        }) {
+            statement {
+                sql("update CLIENT set NAME = ? where ID = ?")
+                variables("Acme Input+", 100L)
+            }
+            value("[ORG, Acme Input+, ACME-001, null, null]")
         }
     }
 

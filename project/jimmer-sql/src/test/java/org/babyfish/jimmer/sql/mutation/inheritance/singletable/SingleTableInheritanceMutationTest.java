@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizat
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.key.NaturalOrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.*;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientPatchInput;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -99,6 +100,30 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables("Acme Base+", 100L);
                     });
                     ctx.value("[ORG, Acme Base+, ACME-001, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateAbstractRootByDefaultInputWithoutDiscriminator() {
+        connectAndExpect(
+                con -> {
+                    ClientPatchInput.Default input = new ClientPatchInput.Default();
+                    input.setId(100L);
+                    input.setName("Acme Input+");
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(input)
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(con);
+                    return clientRow(con, 100L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update CLIENT set NAME = ? where ID = ?");
+                        it.variables("Acme Input+", 100L);
+                    });
+                    ctx.value("[ORG, Acme Input+, ACME-001, null, null]");
                 }
         );
     }
