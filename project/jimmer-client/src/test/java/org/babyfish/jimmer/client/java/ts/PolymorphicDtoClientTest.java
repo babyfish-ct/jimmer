@@ -6,6 +6,7 @@ import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.openapi.OpenApiGenerator;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
 import org.babyfish.jimmer.client.java.model.dto.ClientView;
+import org.babyfish.jimmer.client.java.service.PolymorphicDtoService;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.source.Source;
@@ -41,6 +42,12 @@ public class PolymorphicDtoClientTest {
         Assertions.assertEquals(ClientView.Default.class, type.getPolymorphicBranches().get(0).getJavaType());
         Assertions.assertEquals(ClientView.Person.class, type.getPolymorphicBranches().get(1).getJavaType());
         Assertions.assertEquals(ClientView.Organization.class, type.getPolymorphicBranches().get(2).getJavaType());
+    }
+
+    @Test
+    public void testManualNestedClassIsNotPolymorphicBranch() {
+        ObjectType type = (ObjectType) METADATA.getType(PolymorphicDtoService.ManualView.class);
+        Assertions.assertTrue(type.getPolymorphicBranches().isEmpty());
     }
 
     @Test

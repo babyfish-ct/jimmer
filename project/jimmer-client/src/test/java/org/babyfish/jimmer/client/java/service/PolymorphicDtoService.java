@@ -12,4 +12,21 @@ public interface PolymorphicDtoService {
     @Api
     @GetMapping("/clients")
     List<ClientView> getClients();
+
+    @Api
+    @GetMapping("/manual-views")
+    List<ManualView> getManualViews();
+
+    interface ManualView {
+
+        String name();
+
+        class Branch implements ManualView {
+
+            @Override
+            public String name() {
+                return null;
+            }
+        }
+    }
 }

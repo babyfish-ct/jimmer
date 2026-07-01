@@ -8,6 +8,7 @@ import org.babyfish.jimmer.impl.util.DtoPropAccessor
 import org.babyfish.jimmer.impl.validation.Validator
 import org.babyfish.jimmer.internal.FixedInputField
 import org.babyfish.jimmer.internal.GeneratedBy
+import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
@@ -47,6 +48,7 @@ internal val JVM_FIELD_CLASS_NAME = JvmField::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val COLLECTIONS_CLASS_NAME = Collections::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
+internal val GENERATED_POLYMORPHIC_DTO_BRANCH_CLASS_NAME = GeneratedPolymorphicDtoBranch::class.asClassName()
 internal val FIXED_INPUT_FIELD_CLASS_NAME = FixedInputField::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()

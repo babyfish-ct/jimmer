@@ -17,6 +17,7 @@ import org.babyfish.jimmer.client.meta.impl.*;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.impl.util.StringUtil;
+import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
@@ -830,10 +831,24 @@ public class ClientProcessor {
 
     private boolean isPolymorphicBranch(TypeElement ownerElement, TypeElement branchElement) {
         TypeMirror ownerType = context.getTypes().erasure(ownerElement.asType());
-        for (TypeMirror itf : branchElement.getInterfaces()) {
-            if (context.getTypes().isSameType(context.getTypes().erasure(itf), ownerType)) {
-                return true;
+        String markerName = GeneratedPolymorphicDtoBranch.class.getName();
+        for (AnnotationMirror annotationMirror : branchElement.getAnnotationMirrors()) {
+            Element annotationElement = annotationMirror.getAnnotationType().asElement();
+            if (!(annotationElement instanceof TypeElement) ||
+                    !((TypeElement) annotationElement).getQualifiedName().contentEquals(markerName)) {
+                continue;
             }
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e :
+                    annotationMirror.getElementValues().entrySet()) {
+                if (e.getKey().getSimpleName().contentEquals("value") &&
+                        e.getValue().getValue() instanceof TypeMirror) {
+                    return context.getTypes().isSameType(
+                            context.getTypes().erasure((TypeMirror) e.getValue().getValue()),
+                            ownerType
+                    );
+                }
+            }
+            return false;
         }
         return false;
     }

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.common.ParameterParserImpl
 import org.babyfish.jimmer.client.generator.Context
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext
 import org.babyfish.jimmer.client.kotlin.model.dto.KClientView
+import org.babyfish.jimmer.client.kotlin.service.KPolymorphicDtoService
 import org.babyfish.jimmer.client.runtime.Metadata
 import org.babyfish.jimmer.client.runtime.ObjectType
 import org.junit.jupiter.api.Assertions
@@ -20,6 +21,12 @@ class KPolymorphicDtoClientTest {
         Assertions.assertEquals(KClientView.Default::class.java, type.polymorphicBranches[0].javaType)
         Assertions.assertEquals(KClientView.KPerson::class.java, type.polymorphicBranches[1].javaType)
         Assertions.assertEquals(KClientView.KOrganization::class.java, type.polymorphicBranches[2].javaType)
+    }
+
+    @Test
+    fun testManualNestedClassIsNotPolymorphicBranch() {
+        val type = METADATA.getType(KPolymorphicDtoService.ManualView::class.java) as ObjectType
+        Assertions.assertTrue(type.polymorphicBranches.isEmpty())
     }
 
     @Test

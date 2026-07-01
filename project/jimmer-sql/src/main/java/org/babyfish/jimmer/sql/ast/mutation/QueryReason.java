@@ -388,9 +388,9 @@ public enum QueryReason {
      * <p>In this case, Jimmer first resolves the root ids accepted by the
      * requested discriminator predicate. If the requested id belongs to a
      * different type, downstream cleanup is skipped and the delete result is
-     * simply not modified. When the command runs inside a transaction, this
-     * planning query can use {@code for update}; in auto-commit mode it remains
-     * a weaker non-locking resolve query.</p>
+     * simply not modified. This is a resolve query, not a hidden lock. If
+     * serialized delete semantics are required, applications should explicitly
+     * lock the target rows or use database cascade.</p>
      */
     RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS,
 

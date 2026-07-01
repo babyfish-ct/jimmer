@@ -13,6 +13,7 @@ import org.babyfish.jimmer.client.meta.impl.*
 import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
@@ -603,9 +604,8 @@ class ClientProcessor(
     }
 
     private fun KSClassDeclaration.isPolymorphicBranchOf(owner: KSClassDeclaration): Boolean =
-        superTypes.any {
-            it.realDeclaration == owner
-        }
+        annotation(GeneratedPolymorphicDtoBranch::class)
+            ?.getClassArgument("value") == owner
 
     private fun SchemaBuilder<KSDeclaration>.fillEnumDefinition(declaration: KSClassDeclaration) {
 

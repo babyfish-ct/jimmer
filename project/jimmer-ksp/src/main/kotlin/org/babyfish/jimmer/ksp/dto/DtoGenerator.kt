@@ -159,6 +159,13 @@ class DtoGenerator private constructor(
                 .apply {
                     if (!polymorphicBranch) {
                         addModifiers(KModifier.OPEN)
+                    } else {
+                        addAnnotation(
+                            AnnotationSpec
+                                .builder(GENERATED_POLYMORPHIC_DTO_BRANCH_CLASS_NAME)
+                                .addMember("%T::class", polymorphicSuperInterfaceName!!)
+                                .build()
+                        )
                     }
                 }
                 .addAnnotation(generatedAnnotation())

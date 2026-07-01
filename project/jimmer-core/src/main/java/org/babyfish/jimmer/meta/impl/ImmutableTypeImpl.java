@@ -797,14 +797,17 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             return;
         }
         if (inheritanceRoot != this) {
-            if (declaredProps.values().stream().anyMatch(ImmutableProp::isDiscriminator)) {
-                throw new ModelException(
-                        "Illegal type \"" +
-                                javaClass.getName() +
-                                "\", @" +
-                                Discriminator.class.getName() +
-                                " cannot be declared by inheritance derived type"
-                );
+            ImmutableProp rootDiscriminatorProp = inheritanceRoot.getInheritanceInfo().getDiscriminatorProp().toOriginal();
+            for (ImmutableProp prop : props.values()) {
+                if (prop.isDiscriminator() && prop.toOriginal() != rootDiscriminatorProp) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", @" +
+                                    Discriminator.class.getName() +
+                                    " cannot be declared or inherited by inheritance derived type except from inheritance root type"
+                    );
+                }
             }
             return;
         }

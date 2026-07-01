@@ -10,4 +10,17 @@ interface KPolymorphicDtoService {
     @Api
     @GetMapping("/k-clients")
     fun getClients(): List<KClientView>
+
+    @Api
+    @GetMapping("/k-manual-views")
+    fun getManualViews(): List<ManualView>
+
+    interface ManualView {
+
+        val name: String
+
+        class Branch(
+            override val name: String
+        ) : ManualView
+    }
 }

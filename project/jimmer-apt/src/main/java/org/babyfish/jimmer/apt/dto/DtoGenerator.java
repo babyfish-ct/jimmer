@@ -113,6 +113,12 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC);
         if (polymorphicBranch) {
             typeBuilder.addModifiers(Modifier.FINAL);
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(Constants.GENERATED_POLYMORPHIC_DTO_BRANCH_CLASS_NAME)
+                            .addMember("value", "$T.class", polymorphicSuperInterfaceName)
+                            .build()
+            );
         }
         if (polymorphicSuperInterfaceName != null) {
             typeBuilder.addSuperinterface(polymorphicSuperInterfaceName);
