@@ -175,6 +175,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setMaxCommandJoinCount(properties.getMaxCommandJoinCount());
         builder.setMutationTransactionRequired(properties.isMutationTransactionRequired());
         builder.setTargetTransferable(properties.isTargetTransferable());
+        builder.setDefaultTypeChangeAllowed(properties.isDefaultTypeChangeAllowed());
         builder.setExplicitBatchEnabled(properties.isExplicitBatchEnabled());
         builder.setDumbBatchAcceptable(properties.isDumbBatchAcceptable());
         builder.setConstraintViolationTranslatable(properties.isConstraintViolationTranslatable());
