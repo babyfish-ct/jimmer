@@ -426,12 +426,31 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
         DiscriminatorPredicate.render(
                 builder,
-                parent,
+                inheritanceRootTable(inheritanceInfo),
                 ((SingleColumn) discriminatorProp.getStorage(
                         builder.getAstContext().getSqlClient().getMetadataStrategy()
                 )).getName(),
                 discriminatorProp,
                 DiscriminatorPredicate.values(inheritanceInfo, treatedType)
+        );
+    }
+
+    private RealTable inheritanceRootTable(InheritanceInfo inheritanceInfo) {
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        RealTableImpl table = this;
+        while (table != null) {
+            if (table.owner instanceof TableImplementor<?> &&
+                    ((TableImplementor<?>) table.owner).getImmutableType() == rootType) {
+                return table;
+            }
+            table = table.parent;
+        }
+        throw new AssertionError(
+                "Internal bug: Cannot find inheritance root table \"" +
+                        rootType +
+                        "\" for treated table \"" +
+                        owner +
+                        "\""
         );
     }
 
