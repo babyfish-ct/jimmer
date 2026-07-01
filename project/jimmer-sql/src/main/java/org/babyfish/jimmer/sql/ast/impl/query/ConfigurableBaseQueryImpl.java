@@ -163,8 +163,16 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     }
 
     @Override
+    public void accept(@NotNull AstVisitor visitor) {
+        bindParent(visitor);
+        getMutableQuery().applyGlobalFiltersOnce(visitor.getAstContext(), getData().selections);
+        acceptImpl(visitor);
+    }
+
+    @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
         SqlBuilder builder = abstractBuilder.assertSimple();
+        getMutableQuery().applyGlobalFiltersOnce(builder.getAstContext(), getData().selections);
         renderTo(builder, builder.getQueryRenderContext().getBaseSelectionRender(this));
     }
 

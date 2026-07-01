@@ -11,6 +11,8 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.*
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.*
+import org.babyfish.jimmer.sql.kt.model.inheritance.Role
+import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import org.babyfish.jimmer.sql.kt.model.embedded.Transform
 import org.babyfish.jimmer.sql.kt.model.embedded.fetchBy
 import org.babyfish.jimmer.sql.kt.model.embedded.id
@@ -53,6 +55,33 @@ class CteBaseQueryTest : AbstractQueryTest() {
             assertTrue(page.totalRowCount > 0, "totalRowCount should be > 0")
             assertTrue(page.rows.isNotEmpty(), "rows should not be empty")
         }
+    }
+
+    @Test
+    fun testLogicalDeletedAppliedToSubQueryInBaseQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val roleCount = subQuery(Role::class) {
+                    where(table.name like "ADMIN")
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(roleCount)
+            }
+        }
+        clearExecutions()
+        jdbc { con ->
+            sqlClient.createQuery(baseTable) {
+                orderBy(table._2.desc())
+                select(table._1)
+            }.execute(con)
+        }
+        val sql = executions.last().sql
+        assertTrue(
+            sql.contains("DELETED", ignoreCase = true),
+            "logical-deleted filter must be applied to the Role sub-query under createBaseQuery, but SQL was:\n$sql"
+        )
     }
 
     @Test
