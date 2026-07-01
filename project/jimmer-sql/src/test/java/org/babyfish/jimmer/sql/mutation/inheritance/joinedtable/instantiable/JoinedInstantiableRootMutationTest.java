@@ -1,13 +1,10 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable.instantiable;
 
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.ClientDraft;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.ClientTable;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultInput;
 import org.junit.jupiter.api.Test;
 
@@ -358,27 +355,73 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteRootPolymorphicallyIsRejectedByExplicitJoinedDeleteMode() {
+    public void testDeleteRootPolymorphically() {
         connectAndExpect(
                 con -> {
-                    ExecutionException ex = assertThrows(
-                            ExecutionException.class,
-                            () -> getSqlClient()
-                                    .getEntities()
-                                    .deleteCommand(Client.class, 600L)
-                                    .setMode(DeleteMode.PHYSICAL)
-                                    .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
-                                    .execute(con)
-                    );
-                    return ex.getMessage();
+                    int affectedRowCount = getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Client.class, 600L)
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    return affectedRowCount + "; " + joinedClientRow(con, 600L) + "; " + joinedClientRow(con, 601L);
                 },
-                ctx -> ctx.value(
-                        "Cannot physically delete joined inheritance rows polymorphically by type " +
-                                "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.Client\" " +
-                                "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete types, " +
-                                "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
-                                "and delete them as exact concrete types."
-                )
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
+                                        "from JOINED_INST_CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?, ?)"
+                        );
+                        it.variables(600L, "CLIENT", "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_INST_CLIENT where ID = ? and CLIENT_TYPE in (?, ?, ?)");
+                        it.variables(600L, "CLIENT", "ORG", "Person");
+                    });
+                    ctx.value("1; null; [ORG, Joined Inst Org, J-ORG-001, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testCreateDeleteRootPolymorphicallyUsesAcceptedTargetFallback() {
+        executeAndExpectRowCount(
+                getLambdaClient().createDelete(ClientTable.class, (d, client) -> {
+                    d.setMode(DeleteMode.PHYSICAL);
+                    d.setTypeMatchMode(TypeMatchMode.POLYMORPHIC);
+                    d.where(client.id().eq(601L));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select distinct tb_1_.ID " +
+                                        "from JOINED_INST_CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?, ?)"
+                        );
+                        it.variables(601L, "CLIENT", "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
+                                        "from JOINED_INST_CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?, ?)"
+                        );
+                        it.variables(601L, "CLIENT", "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_INST_ORGANIZATION where ID = ?");
+                        it.variables(601L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_INST_CLIENT where ID = ? and CLIENT_TYPE in (?, ?, ?)");
+                        it.variables(601L, "CLIENT", "ORG", "Person");
+                    });
+                    ctx.rowCount(1);
+                }
         );
     }
 

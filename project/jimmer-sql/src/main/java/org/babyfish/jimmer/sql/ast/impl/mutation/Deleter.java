@@ -20,11 +20,11 @@ import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -130,10 +130,8 @@ public class Deleter {
         if (ids == null) {
             ids = rowMap.keySet();
         }
-        validateInheritanceDeleteTarget();
-
         InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
-        Collection<ImmutableType> deletedTypes = deletedTypes(
+        Collection<ImmutableType> deletedTypes = InheritanceMutationUtils.deletedTypes(
                 inheritanceInfo,
                 ctx.path.getType(),
                 ctx.options.getTypeMatchMode()
@@ -148,11 +146,13 @@ public class Deleter {
         }
 
         AssociationCleanup cleanup = associationCleanup();
+        AcceptedTargets acceptedTargets = null;
         if (inheritanceInfo != null && (
                 !cleanup.isEmpty() ||
                         isJoinedTypeBranchCleanupRequired(inheritanceInfo, deletedTypes)
         )) {
-            Set<Object> acceptedIds = resolveAcceptedTargetIds(ids, inheritanceInfo, deletedTypes);
+            acceptedTargets = resolveAcceptedTargets(ids, rowMap, inheritanceInfo, deletedTypes);
+            Set<Object> acceptedIds = acceptedTargets.ids();
             if (acceptedIds.isEmpty()) {
                 ids = Collections.emptySet();
                 rowMap = null;
@@ -164,12 +164,26 @@ public class Deleter {
             }
         }
         if (!ids.isEmpty()) {
-            cleanup.disconnect(ids);
+            if (acceptedTargets != null) {
+                disconnectAcceptedTargets(acceptedTargets, inheritanceInfo);
+            } else {
+                cleanup.disconnect(ids);
+            }
         }
 
         int rowCount = ids.isEmpty() ?
                 0 :
-                executeImpl(ids, rowMap, ctx.getOptions().getExceptionTranslator());
+                executeImpl(
+                        ids,
+                        rowMap,
+                        acceptedTargets != null ?
+                                acceptedTargets.joinedTypeBranchTableIdMap(
+                                        inheritanceInfo.getRootType(),
+                                        ctx.options.getSqlClient().getMetadataStrategy()
+                                ) :
+                                null,
+                        ctx.getOptions().getExceptionTranslator()
+                );
         if (ctx.trigger != null) {
             ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
@@ -198,7 +212,7 @@ public class Deleter {
     private int executeStagedJoinedExactDelete(Collection<Object> ids) {
         InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
         ImmutableType rootType = inheritanceInfo.getRootType();
-        List<ImmutableType> stageTypes = joinedTableTypes(rootType, ctx.path.getType());
+        List<ImmutableType> stageTypes = InheritanceMutationUtils.joinedTableTypes(rootType, ctx.path.getType());
         Collection<Object> acceptedIds = ids;
         for (ImmutableType stageType : stageTypes) {
             associationCleanup(stageType, true).disconnect(acceptedIds);
@@ -321,7 +335,7 @@ public class Deleter {
         if (inheritanceInfo == null) {
             return Collections.singletonList(ctx);
         }
-        Collection<ImmutableType> deletedTypes = deletedTypes(
+        Collection<ImmutableType> deletedTypes = InheritanceMutationUtils.deletedTypes(
                 inheritanceInfo,
                 ctx.path.getType(),
                 TypeMatchMode.POLYMORPHIC
@@ -418,32 +432,6 @@ public class Deleter {
         return backProp.getTargetType() == stageType;
     }
 
-    private void validateInheritanceDeleteTarget() {
-        ImmutableType type = ctx.path.getType();
-        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        if (inheritanceInfo == null) {
-            return;
-        }
-        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, ctx.options.getTypeMatchMode());
-        if (ctx.isLogicalDeleted() ||
-                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
-                inheritanceInfo.getJoinedTableDissociateAction() == JoinedTableDissociateAction.LAX) {
-            return;
-        }
-        if (TypeMatchModes.isPolymorphic(type, ctx.options.getTypeMatchMode()) &&
-                (deletedTypes.size() != 1 || deletedTypes.iterator().next() != type)) {
-            throw new ExecutionException(
-                    "Cannot physically delete joined inheritance rows polymorphically by type \"" +
-                            type +
-                            "\" when joinedTableDissociateAction is \"" +
-                            JoinedTableDissociateAction.DELETE +
-                            "\". Delete exact concrete types, use joinedTableDissociateAction = " +
-                            JoinedTableDissociateAction.LAX +
-                            ", or explicitly select concrete rows and delete them as exact concrete types."
-            );
-        }
-    }
-
     private boolean isJoinedTypeBranchCleanupRequired(
             InheritanceInfo inheritanceInfo,
             Collection<ImmutableType> deletedTypes
@@ -455,20 +443,24 @@ public class Deleter {
         }
         ImmutableType rootType = inheritanceInfo.getRootType();
         for (ImmutableType deletedType : deletedTypes) {
-            if (!joinedTableTypes(rootType, deletedType).isEmpty()) {
+            if (!InheritanceMutationUtils.joinedTableTypes(rootType, deletedType).isEmpty()) {
                 return true;
             }
         }
         return false;
     }
 
-    private Set<Object> resolveAcceptedTargetIds(
+    private AcceptedTargets resolveAcceptedTargets(
             Collection<Object> ids,
+            @Nullable Map<Object, ImmutableSpi> rowMap,
             InheritanceInfo inheritanceInfo,
             Collection<ImmutableType> deletedTypes
     ) {
         if (ids.isEmpty()) {
-            return Collections.emptySet();
+            return AcceptedTargets.EMPTY;
+        }
+        if (rowMap != null) {
+            return AcceptedTargets.ofRows(rowMap, deletedTypes);
         }
         ImmutableType rootType = inheritanceInfo.getRootType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
@@ -485,8 +477,43 @@ public class Deleter {
             query.where(idExpr.in(ids));
         }
         addDiscriminatorPredicate(query, table, inheritanceInfo, deletedTypes);
-        ConfigurableRootQuery<?, Object> acceptedIdQuery = query.select(idExpr);
-        return new LinkedHashSet<>(acceptedIdQuery.execute(ctx.con));
+        PropExpression<Object> discriminatorExpr = table.get(inheritanceInfo.getDiscriminatorProp().getName());
+        ConfigurableRootQuery<?, Tuple2<Object, Object>> acceptedTargetQuery = query.select(idExpr, discriminatorExpr);
+        Map<Object, ImmutableType> discriminatorTypeMap = inheritanceInfo.getDiscriminatorTypeMap();
+        Map<Object, ImmutableType> typeById = new LinkedHashMap<>();
+        for (Tuple2<Object, Object> tuple : acceptedTargetQuery.execute(ctx.con)) {
+            ImmutableType type = discriminatorTypeMap.get(tuple.get_2());
+            if (type == null) {
+                throw new ExecutionException(
+                        "Cannot delete inheritance rows, the discriminator value \"" +
+                                tuple.get_2() +
+                                "\" is not mapped by \"" +
+                                rootType +
+                                "\""
+                );
+            }
+            typeById.put(tuple.get_1(), type);
+        }
+        return AcceptedTargets.ofTypeById(ids, typeById, deletedTypes);
+    }
+
+    private void disconnectAcceptedTargets(AcceptedTargets acceptedTargets, InheritanceInfo inheritanceInfo) {
+        Set<Object> ids = acceptedTargets.ids();
+        if (ids.isEmpty()) {
+            return;
+        }
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        associationCleanup(rootType, true).disconnect(ids);
+        Map<ImmutableType, Set<Object>> stageIdMap = acceptedTargets.joinedTypeBranchTableIdMap(
+                rootType,
+                ctx.options.getSqlClient().getMetadataStrategy()
+        );
+        if (stageIdMap.isEmpty()) {
+            stageIdMap = acceptedTargets.typeIdMapForNonRoot(rootType);
+        }
+        for (Map.Entry<ImmutableType, Set<Object>> e : stageIdMap.entrySet()) {
+            associationCleanup(e.getKey(), true).disconnect(e.getValue());
+        }
     }
 
     private static Map<Object, ImmutableSpi> filterRowMap(
@@ -503,9 +530,94 @@ public class Deleter {
         return filteredMap;
     }
 
+    private static class AcceptedTargets {
+
+        static final AcceptedTargets EMPTY = new AcceptedTargets(Collections.emptyMap());
+
+        private final Map<ImmutableType, Set<Object>> typeIdMap;
+
+        private AcceptedTargets(Map<ImmutableType, Set<Object>> typeIdMap) {
+            this.typeIdMap = typeIdMap;
+        }
+
+        static AcceptedTargets ofRows(
+                Map<Object, ImmutableSpi> rowMap,
+                Collection<ImmutableType> deletedTypes
+        ) {
+            Set<ImmutableType> deletedTypeSet = new HashSet<>(deletedTypes);
+            Map<ImmutableType, Set<Object>> typeIdMap = new LinkedHashMap<>();
+            for (Map.Entry<Object, ImmutableSpi> e : rowMap.entrySet()) {
+                ImmutableType type = e.getValue().__type();
+                if (deletedTypeSet.contains(type)) {
+                    typeIdMap.computeIfAbsent(type, it -> new LinkedHashSet<>()).add(e.getKey());
+                }
+            }
+            return typeIdMap.isEmpty() ? EMPTY : new AcceptedTargets(typeIdMap);
+        }
+
+        static AcceptedTargets ofTypeById(
+                Collection<Object> ids,
+                Map<Object, ImmutableType> typeById,
+                Collection<ImmutableType> deletedTypes
+        ) {
+            Set<ImmutableType> deletedTypeSet = new HashSet<>(deletedTypes);
+            Map<ImmutableType, Set<Object>> typeIdMap = new LinkedHashMap<>();
+            for (Object id : ids) {
+                ImmutableType type = typeById.get(id);
+                if (type != null && deletedTypeSet.contains(type)) {
+                    typeIdMap.computeIfAbsent(type, it -> new LinkedHashSet<>()).add(id);
+                }
+            }
+            return typeIdMap.isEmpty() ? EMPTY : new AcceptedTargets(typeIdMap);
+        }
+
+        Set<Object> ids() {
+            if (typeIdMap.isEmpty()) {
+                return Collections.emptySet();
+            }
+            Set<Object> ids = new LinkedHashSet<>();
+            for (Set<Object> typeIds : typeIdMap.values()) {
+                ids.addAll(typeIds);
+            }
+            return ids;
+        }
+
+        Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap(
+                ImmutableType rootType,
+                org.babyfish.jimmer.sql.meta.MetadataStrategy strategy
+        ) {
+            Map<ImmutableType, Set<Object>> tableIdMap = new LinkedHashMap<>();
+            for (Map.Entry<ImmutableType, Set<Object>> e : typeIdMap.entrySet()) {
+                for (ImmutableType tableType : InheritanceMutationUtils.joinedTableTypes(rootType, e.getKey())) {
+                    tableIdMap.computeIfAbsent(tableType, it -> new LinkedHashSet<>()).addAll(e.getValue());
+                }
+            }
+            if (tableIdMap.size() > 1) {
+                List<Map.Entry<ImmutableType, Set<Object>>> entries = new ArrayList<>(tableIdMap.entrySet());
+                entries.sort(Map.Entry.comparingByKey(InheritanceMutationUtils.joinedCleanupTableTypeComparator(strategy)));
+                tableIdMap = new LinkedHashMap<>();
+                for (Map.Entry<ImmutableType, Set<Object>> e : entries) {
+                    tableIdMap.put(e.getKey(), e.getValue());
+                }
+            }
+            return tableIdMap;
+        }
+
+        Map<ImmutableType, Set<Object>> typeIdMapForNonRoot(ImmutableType rootType) {
+            Map<ImmutableType, Set<Object>> map = new LinkedHashMap<>();
+            for (Map.Entry<ImmutableType, Set<Object>> e : typeIdMap.entrySet()) {
+                if (e.getKey() != rootType) {
+                    map.put(e.getKey(), e.getValue());
+                }
+            }
+            return map;
+        }
+    }
+
     private int executeImpl(
             Collection<Object> ids,
             Map<Object, ImmutableSpi> rowMap,
+            @Nullable Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         return delete(
@@ -517,6 +629,7 @@ public class Deleter {
                 ctx.trigger,
                 ctx.isLogicalDeleted(),
                 ctx.options.getTypeMatchMode(),
+                joinedTypeBranchTableIdMap,
                 exceptionTranslator
         );
     }
@@ -530,6 +643,7 @@ public class Deleter {
             MutationTrigger trigger,
             boolean logicalDeleted,
             TypeMatchMode typeMatchMode,
+            @Nullable Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
@@ -546,6 +660,7 @@ public class Deleter {
                     info,
                     generator != null ? generator.generate() : null,
                     typeMatchMode,
+                    joinedTypeBranchTableIdMap,
                     exceptionTranslator
             );
         }
@@ -557,6 +672,7 @@ public class Deleter {
                 info,
                 generator != null ? generator.generate() : null,
                 typeMatchMode,
+                joinedTypeBranchTableIdMap,
                 exceptionTranslator
         );
     }
@@ -571,10 +687,11 @@ public class Deleter {
             LogicalDeletedInfo info,
             Object generatedValue,
             TypeMatchMode typeMatchMode,
+            @Nullable Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, typeMatchMode);
+        Collection<ImmutableType> deletedTypes = InheritanceMutationUtils.deletedTypes(inheritanceInfo, type, typeMatchMode);
         if (rowMap == null) {
             MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
                     sqlClient,
@@ -602,7 +719,17 @@ public class Deleter {
                 fireEvent(row, null, null, trigger);
             }
         }
-        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue, typeMatchMode, exceptionTranslator);
+        return deleteWithoutTrigger(
+                sqlClient,
+                con,
+                type,
+                rowMap.keySet(),
+                info,
+                generatedValue,
+                typeMatchMode,
+                joinedTypeBranchTableIdMap,
+                exceptionTranslator
+        );
     }
 
     private static int deleteWithoutTrigger(
@@ -613,12 +740,13 @@ public class Deleter {
             LogicalDeletedInfo info,
             Object generatedDeletedValue,
             TypeMatchMode typeMatchMode,
+            @Nullable Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap,
             ExceptionTranslator<?> exceptionTranslator
     ) {
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
         if (inheritanceInfo != null) {
             ImmutableType rootType = inheritanceInfo.getRootType();
-            Collection<ImmutableType> deletedTypes = deletedTypes(inheritanceInfo, type, typeMatchMode);
+            Collection<ImmutableType> deletedTypes = InheritanceMutationUtils.deletedTypes(inheritanceInfo, type, typeMatchMode);
             if (info != null) {
                 return deleteFromSingleTable(
                         sqlClient,
@@ -636,12 +764,14 @@ public class Deleter {
                 deleteJoinedTypeBranchTables(
                         sqlClient,
                         con,
-                        joinedTypeBranchTableIdMap(
-                                rootType,
-                                deletedTypes.iterator().next(),
-                                ids,
-                                sqlClient.getMetadataStrategy()
-                        ),
+                        joinedTypeBranchTableIdMap != null ?
+                                joinedTypeBranchTableIdMap :
+                                joinedTypeBranchTableIdMap(
+                                        rootType,
+                                        deletedTypes,
+                                        ids,
+                                        sqlClient.getMetadataStrategy()
+                                ),
                         exceptionTranslator
                 );
             }
@@ -701,7 +831,7 @@ public class Deleter {
                 ids,
                 builder
         );
-        renderDiscriminatorPredicate(builder, tableType, deletedTypes);
+        InheritanceMutationUtils.renderDiscriminatorPredicate(builder, tableType, deletedTypes);
         return execute(sqlClient, con, builder, exceptionTranslator);
     }
 
@@ -729,113 +859,24 @@ public class Deleter {
 
     private static Map<ImmutableType, Set<Object>> joinedTypeBranchTableIdMap(
             ImmutableType rootType,
-            ImmutableType concreteType,
+            Collection<ImmutableType> deletedTypes,
             Collection<Object> ids,
-            MetadataStrategy strategy
+            org.babyfish.jimmer.sql.meta.MetadataStrategy strategy
     ) {
         Set<Object> idSet = ids instanceof Set<?> ?
                 (Set<Object>) ids :
                 new LinkedHashSet<>(ids);
         Map<ImmutableType, Set<Object>> tableIdMap = new LinkedHashMap<>();
-        List<ImmutableType> tableTypes = joinedTableTypes(rootType, concreteType);
-        tableTypes.sort((a, b) -> compareJoinedCleanupTableTypes(strategy, a, b));
+        Set<ImmutableType> tableTypeSet = new LinkedHashSet<>();
+        for (ImmutableType deletedType : deletedTypes) {
+            tableTypeSet.addAll(InheritanceMutationUtils.joinedTableTypes(rootType, deletedType));
+        }
+        List<ImmutableType> tableTypes = new ArrayList<>(tableTypeSet);
+        tableTypes.sort(InheritanceMutationUtils.joinedCleanupTableTypeComparator(strategy));
         for (ImmutableType tableType : tableTypes) {
             tableIdMap.put(tableType, idSet);
         }
         return tableIdMap;
-    }
-
-    private static int compareJoinedCleanupTableTypes(
-            MetadataStrategy strategy,
-            ImmutableType a,
-            ImmutableType b
-    ) {
-        int cmp = Integer.compare(b.getAllTypes().size(), a.getAllTypes().size());
-        if (cmp != 0) {
-            return cmp;
-        }
-        cmp = a.getTableName(strategy).compareTo(b.getTableName(strategy));
-        if (cmp != 0) {
-            return cmp;
-        }
-        return a.getJavaClass().getName().compareTo(b.getJavaClass().getName());
-    }
-
-    private static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
-        List<ImmutableType> tableTypes = new ArrayList<>();
-        for (ImmutableType t = type; t != rootType; t = t.getPrimarySuperType()) {
-            if (t.isEntity()) {
-                tableTypes.add(t);
-            }
-        }
-        return tableTypes;
-    }
-
-    private static void renderDiscriminatorPredicate(
-            SqlBuilder builder,
-            ImmutableType tableType,
-            Collection<ImmutableType> deletedTypes
-    ) {
-        InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
-        if (inheritanceInfo == null || inheritanceInfo.getRootType() != tableType) {
-            return;
-        }
-        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
-        List<Object> values = new ArrayList<>();
-        for (ImmutableType type : deletedTypes) {
-            String value = type.getDiscriminatorValue();
-            if (value != null) {
-                values.add(inheritanceInfo.discriminatorValue(value));
-            }
-        }
-        if (values.isEmpty()) {
-            return;
-        }
-        builder.sql(" and ")
-                .sql(discriminatorProp.<SingleColumn>getStorage(builder.getAstContext().getSqlClient().getMetadataStrategy()).getName());
-        if (values.size() == 1) {
-            builder.sql(" = ")
-                    .variable(Variables.process(values.get(0), discriminatorProp, builder.getAstContext().getSqlClient()));
-        } else {
-            builder.sql(" in ");
-            builder.enter(SqlBuilder.ScopeType.LIST);
-            for (Object value : values) {
-                builder.separator().variable(Variables.process(value, discriminatorProp, builder.getAstContext().getSqlClient()));
-            }
-            builder.leave();
-        }
-    }
-
-    private static Collection<ImmutableType> deletedTypes(
-            @Nullable InheritanceInfo inheritanceInfo,
-            ImmutableType type,
-            TypeMatchMode typeMatchMode
-    ) {
-        if (inheritanceInfo == null) {
-            return Collections.singleton(type);
-        }
-        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, typeMatchMode);
-        if (resolvedMode == TypeMatchMode.EXACT) {
-            if (!type.isInstantiable()) {
-                throw new ExecutionException(
-                        "Cannot delete inheritance entity type \"" +
-                                type +
-                                "\" exactly because it is abstract. Delete an instantiable type or use " +
-                                TypeMatchMode.POLYMORPHIC +
-                                " type match mode."
-                );
-            }
-            return Collections.singleton(type);
-        }
-        Collection<ImmutableType> types = inheritanceInfo.getConcreteTypes(type);
-        if (types.isEmpty()) {
-            throw new ExecutionException(
-                    "Cannot delete inheritance entity type \"" +
-                            type +
-                            "\" polymorphically because it has no instantiable type"
-            );
-        }
-        return types;
     }
 
     private static void addDiscriminatorPredicate(
@@ -847,13 +888,7 @@ public class Deleter {
         if (inheritanceInfo == null) {
             return;
         }
-        List<Object> values = new ArrayList<>();
-        for (ImmutableType type : deletedTypes) {
-            String value = type.getDiscriminatorValue();
-            if (value != null) {
-                values.add(inheritanceInfo.discriminatorValue(value));
-            }
-        }
+        List<Object> values = InheritanceMutationUtils.discriminatorValues(inheritanceInfo, deletedTypes);
         if (values.isEmpty()) {
             return;
         }

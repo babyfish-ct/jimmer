@@ -1831,25 +1831,58 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     public void testDeleteRootPolymorphically() {
         connectAndExpect(
                 con -> {
-                    ExecutionException ex = assertThrows(
-                            ExecutionException.class,
-                            () -> getSqlClient()
-                                    .getEntities()
-                                    .deleteCommand(Client.class, 200L)
-                                    .setMode(DeleteMode.PHYSICAL)
-                                    .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
-                                    .execute(con)
-                    );
-                    return ex.getMessage();
+                    int affectedRowCount = getSqlClient()
+                            .getEntities()
+                            .deleteAllCommand(Client.class, Arrays.asList(200L, 201L))
+                            .setMode(DeleteMode.PHYSICAL)
+                            .setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                            .setDissociateAction(ClientProjectProps.CLIENT, DissociateAction.SET_NULL)
+                            .setDissociateAction(OrganizationProjectProps.ORGANIZATION, DissociateAction.SET_NULL)
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    return affectedRowCount +
+                            "; " +
+                            joinedClientRow(con, 200L) +
+                            "; " +
+                            joinedClientRow(con, 201L) +
+                            "; " +
+                            joinedClientProjectTargetId(con, 2000L) +
+                            "; " +
+                            joinedClientProjectTargetId(con, 2002L) +
+                            "; " +
+                            joinedOrgProjectTargetId(con, 2001L);
                 },
                 ctx -> {
-                    ctx.value(
-                            "Cannot physically delete joined inheritance rows polymorphically by type " +
-                                    "\"org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client\" " +
-                                    "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete types, " +
-                                    "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
-                                    "and delete them as exact concrete types."
-                    );
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE in (?, ?)"
+                        );
+                        it.variables(200L, 201L, "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID in (?, ?)");
+                        it.variables(200L, 201L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(200L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_PERSON where ID = ?");
+                        it.variables(201L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_CLIENT where ID in (?, ?) and CLIENT_TYPE in (?, ?)");
+                        it.variables(200L, 201L, "ORG", "Person");
+                    });
+                    ctx.value("5; null; null; null; null; null");
                 }
         );
     }

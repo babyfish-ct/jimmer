@@ -176,10 +176,19 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
                 Connection con,
                 DeleteMode mode
         ) {
+            this(sqlClient, con, mode, TypeMatchMode.AUTO);
+        }
+
+        public OptionsImpl(
+                JSqlClientImplementor sqlClient,
+                Connection con,
+                DeleteMode mode,
+                TypeMatchMode typeMatchMode
+        ) {
             this.sqlClient = sqlClient;
             this.con = con;
             this.mode = mode;
-            this.typeMatchMode = TypeMatchMode.AUTO;
+            this.typeMatchMode = typeMatchMode != null ? typeMatchMode : TypeMatchMode.AUTO;
             this.maxCommandJoinCount = sqlClient.getMaxCommandJoinCount();
             this.exceptionTranslator = sqlClient.getExceptionTranslator();
             this.dissociateActionMap = Collections.emptyMap();

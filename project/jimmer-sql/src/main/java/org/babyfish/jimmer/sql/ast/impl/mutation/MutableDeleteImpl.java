@@ -1,11 +1,17 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
@@ -14,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -25,7 +32,9 @@ import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
@@ -36,6 +45,10 @@ public class MutableDeleteImpl
     private boolean isDissociationDisabled;
 
     private DeleteMode mode;
+
+    private TypeMatchMode typeMatchMode = TypeMatchMode.AUTO;
+
+    private boolean typeMatchPredicateApplied;
 
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
@@ -101,6 +114,12 @@ public class MutableDeleteImpl
     }
 
     @Override
+    public MutableDelete setTypeMatchMode(TypeMatchMode mode) {
+        this.typeMatchMode = mode != null ? mode : TypeMatchMode.AUTO;
+        return this;
+    }
+
+    @Override
     public Integer execute(Connection con) {
         return getSqlClient()
                 .getConnectionManager()
@@ -110,6 +129,46 @@ public class MutableDeleteImpl
     @Override
     protected void onFrozen(AstContext astContext) {
         deleteQuery.freeze(astContext);
+    }
+
+    private void applyTypeMatchPredicate() {
+        if (typeMatchPredicateApplied) {
+            return;
+        }
+        typeMatchPredicateApplied = true;
+        ImmutableType type = getTableLikeImplementor().getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return;
+        }
+        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, typeMatchMode);
+        if (resolvedMode == TypeMatchMode.EXACT && !type.isInstantiable()) {
+            throw new ExecutionException(
+                    "Cannot delete inheritance entity type \"" +
+                            type +
+                            "\" exactly because it is abstract. Delete an instantiable type or use " +
+                            TypeMatchMode.POLYMORPHIC +
+                            " type match mode."
+            );
+        }
+        boolean manualPredicateRequired =
+                type == inheritanceInfo.getRootType() ||
+                        (resolvedMode == TypeMatchMode.EXACT && !type.getAllDerivedTypes().isEmpty());
+        if (!manualPredicateRequired) {
+            return;
+        }
+        Collection<ImmutableType> deletedTypes = InheritanceMutationUtils.deletedTypes(
+                inheritanceInfo,
+                type,
+                typeMatchMode
+        );
+        List<Object> values = InheritanceMutationUtils.discriminatorValues(inheritanceInfo, deletedTypes);
+        if (values.isEmpty()) {
+            return;
+        }
+        TableImplementor<?> table = getTableLikeImplementor();
+        PropExpression<Object> expr = table.get(inheritanceInfo.getDiscriminatorProp(type), false);
+        deleteQuery.where(values.size() == 1 ? expr.eq(values.get(0)) : expr.in(values));
     }
 
     @SuppressWarnings("unchecked")
@@ -125,6 +184,7 @@ public class MutableDeleteImpl
         AstContext astContext = new AstContext(sqlClient);
         deleteQuery.applyVirtualPredicates(astContext);
         deleteQuery.applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
+        applyTypeMatchPredicate();
 
         deleteQuery.freeze(astContext);
         astContext.pushStatement(deleteQuery);
@@ -173,27 +233,12 @@ public class MutableDeleteImpl
                                 info == null ||
                                 info.isDirectlyDeletable(sqlClient.getMetadataStrategy()
                 )
-        );
+        ) && isDirectlyDeletableByInheritance(logicalDeleted);
 
         if (directly) {
-            SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {
-                renderDirectly(builder, logicalDeleted);
-                Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-                return sqlClient.getExecutor().execute(
-                        new Executor.Args<>(
-                                getSqlClient(),
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.delete(QueryReason.NONE),
-                                null,
-                                null,
-                                (stmt, args) -> stmt.executeUpdate()
-                        )
-                );
+                return executeDirectly(con, astContext, logicalDeleted);
             } finally {
                 astContext.popStatement();
             }
@@ -219,7 +264,7 @@ public class MutableDeleteImpl
         }
         Deleter deleter = new Deleter(
                 table.getImmutableType(),
-                new DeleteCommandImpl.OptionsImpl(sqlClient, con, mode),
+                new DeleteCommandImpl.OptionsImpl(sqlClient, con, mode, typeMatchMode),
                 con,
                 binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()
@@ -230,6 +275,45 @@ public class MutableDeleteImpl
             deleter.addRows(rows);
         }
         return deleter.execute().getTotalAffectedRowCount();
+    }
+
+    private boolean isDirectlyDeletableByInheritance(boolean logicalDeleted) {
+        ImmutableType type = getTableLikeImplementor().getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || logicalDeleted) {
+            return true;
+        }
+        if (inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return true;
+        }
+        if (type != inheritanceInfo.getRootType()) {
+            return false;
+        }
+        return inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE ||
+                TypeMatchModes.resolve(type, typeMatchMode) == TypeMatchMode.EXACT;
+    }
+
+    private int executeDirectly(Connection con, AstContext astContext, boolean logicalDeleted) {
+        SqlBuilder builder = new SqlBuilder(astContext);
+        renderDirectly(builder, logicalDeleted);
+        return executeDirectSql(con, builder);
+    }
+
+    private int executeDirectSql(Connection con, SqlBuilder builder) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return getSqlClient().getExecutor().execute(
+                new Executor.Args<>(
+                        getSqlClient(),
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        sqlResult.get_3(),
+                        ExecutionPurpose.delete(QueryReason.NONE),
+                        null,
+                        null,
+                        (stmt, args) -> stmt.executeUpdate()
+                )
+        );
     }
 
     @SuppressWarnings("unchecked")

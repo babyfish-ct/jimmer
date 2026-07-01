@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -38,6 +39,10 @@ internal class KMutableDeleteImpl<E: Any>(
 
     override fun setMode(mode: DeleteMode) {
         javaDelete.setMode(mode)
+    }
+
+    override fun setTypeMatchMode(mode: TypeMatchMode) {
+        javaDelete.setTypeMatchMode(mode)
     }
 
     override val subQueries: KSubQueries<KNonNullTableEx<E>> =

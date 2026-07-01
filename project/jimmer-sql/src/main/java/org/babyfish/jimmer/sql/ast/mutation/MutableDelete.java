@@ -81,4 +81,6 @@ public interface MutableDelete extends Filterable, Executable<Integer> {
     MutableDelete disableDissociation();
 
     MutableDelete setMode(DeleteMode mode);
+
+    MutableDelete setTypeMatchMode(TypeMatchMode mode);
 }
