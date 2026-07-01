@@ -352,7 +352,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
                 data.forUpdate != null
         );
@@ -380,7 +380,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
                 getForUpdate() != null
         );
