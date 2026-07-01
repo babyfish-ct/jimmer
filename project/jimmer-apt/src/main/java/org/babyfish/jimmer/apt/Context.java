@@ -214,6 +214,9 @@ public class Context {
 
     public Class<? extends Annotation> getImmutableAnnotationType(TypeMirror typeMirror) {
         Element element = types.asElement(typeMirror);
+        if (!(element instanceof TypeElement)) {
+            return null;
+        }
         return getImmutableAnnotationType((TypeElement) element);
     }
 

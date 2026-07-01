@@ -20,8 +20,10 @@ import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -84,6 +86,8 @@ public class ImmutableProp implements BaseProp {
 
     private final boolean isAssociation;
 
+    private final boolean isGenericElementType;
+
     private final boolean isEntityAssociation;
 
     private final boolean isNullable;
@@ -139,7 +143,10 @@ public class ImmutableProp implements BaseProp {
         this.declaringType = declaringType;
         this.executableElement = executableElement;
         getterName = executableElement.getSimpleName().toString();
-        returnType = executableElement.getReturnType();
+        returnType = ((ExecutableType) context.getTypes().asMemberOf(
+                (DeclaredType) declaringType.getTypeElement().asType(),
+                executableElement
+        )).getReturnType();
         if (returnType.getKind() == TypeKind.VOID) {
             throw new MetaException(executableElement, "it cannot return void");
         }
@@ -257,6 +264,8 @@ public class ImmutableProp implements BaseProp {
                 isElementTypeValid = true;
             } else if (elementType instanceof DeclaredType) {
                 isElementTypeValid = ((DeclaredType)elementType).getTypeArguments().isEmpty();
+            } else if (elementType instanceof TypeVariable) {
+                isElementTypeValid = true;
             }
             if (!isElementTypeValid) {
                 throw new MetaException(
@@ -275,7 +284,9 @@ public class ImmutableProp implements BaseProp {
             elementType = returnType;
         }
 
-        if (context.isMappedSuperclass(elementType)) {
+        isGenericElementType = elementType instanceof TypeVariable;
+
+        if (!isGenericElementType && context.isMappedSuperclass(elementType)) {
             throw new MetaException(
                     executableElement,
                     "the target type \"" +
@@ -317,8 +328,9 @@ public class ImmutableProp implements BaseProp {
         }
         hasTransientResolver = hasResolver;
 
-        isAssociation = context.isImmutable(elementType);
-        if (declaringType.isAcrossMicroServices() && isAssociation && context.isEntity(elementType) && !isTransient) {
+        boolean hasAssociationAnnotation = hasAssociationAnnotation();
+        isAssociation = !isGenericElementType && context.isImmutable(elementType) || hasAssociationAnnotation;
+        if (declaringType.isAcrossMicroServices() && isAssociation && !isGenericElementType && context.isEntity(elementType) && !isTransient) {
             throw new MetaException(
                     executableElement,
                     "association property is not allowed here " +
@@ -327,8 +339,8 @@ public class ImmutableProp implements BaseProp {
                             "\" with the argument `acrossMicroServices`"
             );
         }
-        isEntityAssociation = context.isEntity(elementType);
-        if (isList && context.isEmbeddable(elementType)) {
+        isEntityAssociation = isGenericElementType ? hasAssociationAnnotation : context.isEntity(elementType);
+        if (isList && !isGenericElementType && context.isEmbeddable(elementType)) {
             throw new MetaException(
                     executableElement,
                     "the target type \"" +
@@ -352,8 +364,10 @@ public class ImmutableProp implements BaseProp {
                 declaringType.getTypeElement().getQualifiedName().toString(),
                 context.getImmutableAnnotationType(declaringType.getTypeElement()),
                 this.toString(),
-                ClassName.get(elementType).toString(),
-                context.getImmutableAnnotationType(elementType),
+                TypeName.get(elementType).toString(),
+                isGenericElementType && hasAssociationAnnotation ?
+                        Entity.class :
+                        context.getImmutableAnnotationType(elementType),
                 isList,
                 typeName.isPrimitive() || typeName.isBoxedPrimitive() ?
                         typeName.isBoxedPrimitive() :
@@ -396,7 +410,7 @@ public class ImmutableProp implements BaseProp {
             isReverse = false;
         }
 
-        if (isAssociation) {
+        if (isAssociation && !isGenericElementType) {
             draftElementTypeName = ClassName.get(
                     ((ClassName)elementTypeName).packageName(),
                     ((ClassName)elementTypeName).simpleName() + "Draft"
@@ -497,6 +511,14 @@ public class ImmutableProp implements BaseProp {
         return elementTypeName instanceof ParameterizedTypeName ?
                 ((ParameterizedTypeName)elementTypeName).rawType :
                 elementTypeName;
+    }
+
+    public TypeName getMetadataElementTypeName() {
+        return isGenericElementType ? ClassName.get(Object.class) : getRawElementTypeName();
+    }
+
+    public boolean isGenericElementType() {
+        return isGenericElementType;
     }
 
     public TypeName getDraftElementTypeName() {
@@ -628,7 +650,8 @@ public class ImmutableProp implements BaseProp {
     }
 
     public boolean isRecursive() {
-        return declaringType.isEntity() &&
+        return !isGenericElementType &&
+                declaringType.isEntity() &&
                 getManyToManyViewBaseProp() == null &&
                 !isRemote() &&
                 context.isSubType(
@@ -743,7 +766,7 @@ public class ImmutableProp implements BaseProp {
     public boolean isRemote() {
         Boolean remote = this.remote;
         if (remote == null) {
-            if (isAssociation) {
+            if (isAssociation && !isGenericElementType) {
                 Element targetElement = context.getTypes().asElement(getElementType());
                 Entity targetAnno = targetElement != null ? targetElement.getAnnotation(Entity.class) : null;
                 remote = targetAnno != null &&
@@ -763,6 +786,15 @@ public class ImmutableProp implements BaseProp {
             this.remote = remote;
         }
         return remote;
+    }
+
+
+    private boolean hasAssociationAnnotation() {
+        return executableElement.getAnnotation(OneToOne.class) != null ||
+                executableElement.getAnnotation(ManyToOne.class) != null ||
+                executableElement.getAnnotation(OneToMany.class) != null ||
+                executableElement.getAnnotation(ManyToMany.class) != null ||
+                executableElement.getAnnotation(ManyToManyView.class) != null;
     }
 
     private boolean isExplicitScalar() {
@@ -794,6 +826,10 @@ public class ImmutableProp implements BaseProp {
     public ImmutableType getTargetType() {
         if (!targetTypeResolved) {
             if (isAssociation) {
+                if (isGenericElementType) {
+                    targetTypeResolved = true;
+                    return null;
+                }
                 targetType = context.getImmutableType(elementType);
                 if (
                         (targetType.isEntity() || targetType.isMappedSuperClass()) &&
@@ -935,7 +971,24 @@ public class ImmutableProp implements BaseProp {
                             " nullable"
             );
         }
-        if (!elementTypeName.box().equals(baseProp.getTargetType().getIdProp().getElementTypeName().box())) {
+        ImmutableProp targetIdProp = baseProp.getTargetType() != null ?
+                baseProp.getTargetType().getIdProp() :
+                declaringType.getIdProp();
+        if (targetIdProp == null) {
+            if (baseProp.isGenericElementType && declaringType.isMappedSuperClass()) {
+                idViewBasePropResolved = true;
+                return null;
+            }
+            throw new MetaException(
+                    executableElement,
+                    "it is decorated by \"@" +
+                            IdView.class.getName() +
+                            "\", the base property \"" +
+                            baseProp +
+                            "\" returns generic entity type whose id cannot be resolved"
+            );
+        }
+        if (!elementTypeName.box().equals(targetIdProp.getElementTypeName().box())) {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
@@ -943,7 +996,7 @@ public class ImmutableProp implements BaseProp {
                             "\", the base property \"" +
                             baseProp +
                             "\" returns entity type whose id is \"" +
-                            baseProp.getTargetType().getIdProp().getElementTypeName() +
+                            targetIdProp.getElementTypeName() +
                             "\", but the current property does not return that type"
             );
         }

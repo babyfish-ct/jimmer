@@ -5,7 +5,13 @@ import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
+import com.squareup.kotlinpoet.ksp.toTypeVariableName
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.dto.compiler.spi.BaseType
@@ -50,6 +56,18 @@ class ImmutableType(
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
+
+    val typeParameterResolver = classDeclaration.typeParameters.toTypeParameterResolver()
+
+    val typeVariableNames =
+        classDeclaration.typeParameters.map { it.toTypeVariableName(typeParameterResolver) }
+
+    val typeName: TypeName =
+        if (typeVariableNames.isEmpty()) {
+            className
+        } else {
+            className.parameterizedBy(typeVariableNames)
+        }
 
     val propsClassName: ClassName = classDeclaration.className { "$it$PROPS" }
 
@@ -112,19 +130,27 @@ class ImmutableType(
             }
         }
 
-    val superTypes: List<ImmutableType> =
+    private val superTypePairs: List<Pair<ImmutableType, KSType>> =
         classDeclaration
             .superTypes
-            .map { it.fastResolve().declaration }
-            .filterIsInstance<KSClassDeclaration>()
-            .filter {
-                it.classKind == ClassKind.INTERFACE &&
-                    ctx.typeAnnotationOf(it) !== null
+            .map { it.fastResolve() }
+            .mapNotNull { superType ->
+                val declaration = superType.declaration as? KSClassDeclaration
+                if (declaration != null &&
+                    declaration.classKind == ClassKind.INTERFACE &&
+                    ctx.typeAnnotationOf(declaration) !== null
+                ) {
+                    ctx.typeOf(declaration) to superType
+                } else {
+                    null
+                }
             }
             .toList()
-            .map {
-                ctx.typeOf(it)
-            }.also {
+
+    val superTypes: List<ImmutableType> =
+        superTypePairs
+            .map { it.first }
+            .also {
                 if (it.isEmpty()) {
                     return@also
                 }
@@ -184,6 +210,16 @@ class ImmutableType(
                 }
             }
             .firstOrNull()
+
+    fun draftSuperTypeName(superType: ImmutableType): TypeName {
+        val superTypeRef = superTypePairs.first { it.first === superType }.second
+        if (superTypeRef.arguments.isEmpty()) {
+            return superType.draftClassName
+        }
+        return superType.draftClassName.parameterizedBy(
+            superTypeRef.arguments.map { it.toTypeName(typeParameterResolver) }
+        )
+    }
 
     val declaredProperties: Map<String, ImmutableProp>
 
@@ -304,7 +340,7 @@ class ImmutableType(
         redefinedProps = superPropMap.filterKeys {
             primarySuperType == null || !primarySuperType.properties.containsKey(it)
         }.mapValues {
-            ImmutableProp(ctx, this, propIdSequence++, it.value.propDeclaration)
+            ImmutableProp(ctx, this, propIdSequence++, it.value.propDeclaration, true)
         }
 
         declaredProperties =

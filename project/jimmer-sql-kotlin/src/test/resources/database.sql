@@ -31,6 +31,7 @@ drop table book if exists;
 drop table author if exists;
 drop table country if exists;
 drop table book_store if exists;
+drop table generic_tree_node if exists;
 drop table tree_node if exists;
 drop table primitive if exists;
 drop table personal if exists;
@@ -230,6 +231,19 @@ insert into author_country_mapping(author_id, country_code) values
     (3, 'USA'),
     (4, 'USA'),
     (5, 'USA');
+
+create table generic_tree_node(
+    id bigint not null,
+    name varchar(50) not null,
+    parent_id bigint
+);
+alter table generic_tree_node
+    add constraint pk_generic_tree_node
+        primary key(id);
+alter table generic_tree_node
+    add constraint fk_generic_tree_node__parent
+        foreign key(parent_id)
+            references generic_tree_node(id);
 
 create table tree_node(
     node_id bigint auto_increment(100) not null,

@@ -41,10 +41,11 @@ class ImmutableProcessor(
                                     "must be interface"
                             )
                         }
-                        if (classDeclaration.typeParameters.isNotEmpty()) {
+                        if (classDeclaration.typeParameters.isNotEmpty() &&
+                            classDeclaration.annotation(MappedSuperclass::class) == null) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "cannot have type parameters"
+                                    "cannot have type parameters unless it is mapped super class"
                             )
                         }
                         if (classDeclaration.isPrivate() || classDeclaration.isProtected()) {
@@ -91,8 +92,10 @@ class ImmutableProcessor(
             }
             if (sqlClassDeclarations.isNotEmpty()) {
                 val sqlClassDeclaration = sqlClassDeclarations[0]
-                PropsGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
-                    .generate(allFiles)
+                if (sqlClassDeclaration.typeParameters.isEmpty()) {
+                    PropsGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
+                        .generate(allFiles)
+                }
                 if (sqlClassDeclaration.annotation(Entity::class) !== null || sqlClassDeclaration.annotation(Embeddable::class) !== null) {
                     FetcherGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
                         .generate(allFiles)

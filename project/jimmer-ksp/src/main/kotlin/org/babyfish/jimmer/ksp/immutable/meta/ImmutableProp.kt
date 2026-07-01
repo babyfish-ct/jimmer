@@ -32,10 +32,21 @@ class ImmutableProp(
     val ctx: Context,
     val declaringType: ImmutableType,
     val id: Int,
-    val propDeclaration: KSPropertyDeclaration
+    val propDeclaration: KSPropertyDeclaration,
+    private val inherited: Boolean = false
 ): BaseProp {
 
-    val resolvedType: KSType = propDeclaration.type.fastResolve()
+    val resolvedType: KSType =
+        if (inherited) {
+            propDeclaration.asMemberOf(declaringType.classDeclaration.asStarProjectedType())
+        } else {
+            propDeclaration.type.fastResolve()
+        }
+
+    private val sourceResolvedType: KSType = propDeclaration.type.fastResolve()
+
+    val isGenericSourceTarget: Boolean =
+        inherited && sourceTargetType(sourceResolvedType).declaration is KSTypeParameter
 
     val typeAlias: KSTypeAlias? = resolvedType.declaration as? KSTypeAlias
 
@@ -61,13 +72,13 @@ class ImmutableProp(
             )
         }
         if (propDeclaration.name.let { it.startsWith("is") && it.length > 2 && it[2].isUpperCase() } &&
-            resolvedType.toTypeName().let { it != BOOLEAN && it != BOOLEAN.copy(nullable = true) }) {
+            resolvedType.toTypeName(declaringType.typeParameterResolver).let { it != BOOLEAN && it != BOOLEAN.copy(nullable = true) }) {
             throw MetaException(
                 propDeclaration,
                 "the property whose name starts with \"is\" return returns boolean type"
             )
         }
-        if (realDeclaration.modifiers.contains(Modifier.VALUE)) {
+        if (realDeclaration is KSClassDeclaration && realDeclaration.modifiers.contains(Modifier.VALUE)) {
             throw MetaException(
                 propDeclaration,
                 "the property whose type is kotlin value class is not supported now"
@@ -110,11 +121,11 @@ class ImmutableProp(
                 }
             }
         }
-        val expectedType = FORBIDDEN_TYPE_NAMES[propDeclaration.type.fastResolve().declaration.qualifiedName!!.asString()]
+        val expectedType = FORBIDDEN_TYPE_NAMES[resolvedType.declaration.qualifiedName?.asString()]
         if (expectedType !== null) {
             throw MetaException(
                 propDeclaration,
-                "Cannot use \"${propDeclaration.type.fastResolve().declaration.qualifiedName!!.asString()}\", " +
+                "Cannot use \"${resolvedType.declaration.qualifiedName!!.asString()}\", " +
                         "please use \"${expectedType}\""
             )
         }
@@ -160,11 +171,14 @@ class ImmutableProp(
         get() = if (isKotlinFormula || annotations { true }.any { isExplicitScalar(it, mutableSetOf()) }) {
             false
         } else {
-            (if (resolvedType.declaration is KSClassDeclaration) {
+            val classDeclaration = if (resolvedType.declaration is KSClassDeclaration) {
                 resolvedType.declaration as KSClassDeclaration
+            } else if (resolvedType.declaration is KSTypeParameter) {
+                null
             } else {
                 (resolvedType.declaration as KSTypeAlias).findActualType()
-            }).asStarProjectedType().let { starType ->
+            }
+            classDeclaration?.asStarProjectedType()?.let { starType ->
                 when {
                     isAssociation && ctx.mapType.isAssignableFrom(starType) ->
                         throw MetaException(propDeclaration, "it cannot be map")
@@ -178,7 +192,7 @@ class ImmutableProp(
                         }
                     else -> false
                 }
-            }
+            } ?: false
         }
 
     override val isReference
@@ -193,7 +207,7 @@ class ImmutableProp(
             else -> true
         }
 
-    private val targetDeclaration: KSClassDeclaration =
+    private val targetResolvedType: KSType =
         if (isList) {
             val arguments = resolvedType.arguments.takeIf { it.isNotEmpty() }
                 ?: throw MetaException(
@@ -203,7 +217,16 @@ class ImmutableProp(
             arguments[0].type!!.fastResolve()
         } else {
             resolvedType
-        }.declaration.also {
+        }
+
+    val isGenericTarget: Boolean =
+        targetResolvedType.declaration is KSTypeParameter
+
+    private val targetDeclaration: KSClassDeclaration? =
+        targetResolvedType.declaration.also {
+            if (isGenericTarget) {
+                return@also
+            }
             if (it.annotation(MappedSuperclass::class) !== null) {
                 throw MetaException(
                     propDeclaration,
@@ -211,6 +234,9 @@ class ImmutableProp(
                 )
             }
         }.let {
+            if (it is KSTypeParameter) {
+                return@let null
+            }
             if (it is KSClassDeclaration) {
                 it
             } else {
@@ -232,11 +258,12 @@ class ImmutableProp(
                 declaringType.toString(),
                 declaringType.sqlAnnotationType?.java ?: Immutable::class.java,
                 this.toString(),
-                targetDeclaration.fullName,
-                targetDeclaration.annotation(Entity::class)?.let { Entity::class.java }
-                    ?: targetDeclaration.annotation(MappedSuperclass::class)?.let { MappedSuperclass::class.java }
-                    ?: targetDeclaration.annotation(Embeddable::class)?.let { Embeddable::class.java }
-                    ?: targetDeclaration.annotation(Immutable::class)?.let { Immutable::class.java },
+                targetResolvedType.toString(),
+                targetDeclaration?.annotation(Entity::class)?.let { Entity::class.java }
+                    ?: targetDeclaration?.annotation(MappedSuperclass::class)?.let { MappedSuperclass::class.java }
+                    ?: targetDeclaration?.annotation(Embeddable::class)?.let { Embeddable::class.java }
+                    ?: targetDeclaration?.annotation(Immutable::class)?.let { Immutable::class.java }
+                    ?: if (isGenericTarget && hasAssociationAnnotation()) Entity::class.java else null,
                 isList,
                 resolvedType.isMarkedNullable
             ) {
@@ -258,41 +285,49 @@ class ImmutableProp(
     }
 
     private val isAssociation: Boolean =
-        (targetDeclaration.classKind === ClassKind.INTERFACE)
-            ?.takeIf {
-                it
-            }
-            ?.let {
-                ctx.typeAnnotationOf(targetDeclaration)
-            }?.also {
-                if (declaringType.isAcrossMicroServices && targetDeclaration.annotation(Entity::class) != null && !isTransient) {
-                    throw MetaException(
-                        propDeclaration,
-                        "association property is not allowed here " +
-                            "because the declaring type is decorated by \"@" +
-                            MappedSuperclass::class.java.name +
-                            "\" with the argument `acrossMicroServices`"
-                    )
+        if (primaryAnnotationType == OneToOne::class.java ||
+            primaryAnnotationType == ManyToOne::class.java ||
+            primaryAnnotationType == OneToMany::class.java ||
+            primaryAnnotationType == ManyToMany::class.java ||
+            primaryAnnotationType == ManyToManyView::class.java) {
+            true
+        } else {
+            (targetDeclaration?.classKind === ClassKind.INTERFACE)
+                .takeIf {
+                    it
                 }
-            } !== null
+                ?.let {
+                    ctx.typeAnnotationOf(targetDeclaration!!)
+                } !== null
+        }.also {
+            if (it && declaringType.isAcrossMicroServices && targetDeclaration?.annotation(Entity::class) != null && !isTransient) {
+                throw MetaException(
+                    propDeclaration,
+                    "association property is not allowed here " +
+                        "because the declaring type is decorated by \"@" +
+                        MappedSuperclass::class.java.name +
+                        "\" with the argument `acrossMicroServices`"
+                )
+            }
+        }
 
     override val isEmbedded: Boolean
         get() = targetType?.isEmbeddable ?: false
 
     override fun isAssociation(entityLevel: Boolean): Boolean =
-        isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
+        isAssociation && (!entityLevel || targetDeclaration?.annotation(Entity::class) != null || isGenericTarget)
 
     val targetClassName: ClassName =
-        targetDeclaration.nestedClassName()
+        targetDeclaration?.nestedClassName() ?: ANY_CLASS_NAME
 
     fun targetTypeName(
         draft: Boolean = false,
         overrideNullable: Boolean? = null
     ): TypeName =
         if (isList) {
-            (propDeclaration.type.toTypeName() as ParameterizedTypeName).typeArguments[0]
+            (resolvedType.toTypeName(declaringType.typeParameterResolver) as ParameterizedTypeName).typeArguments[0]
         } else {
-            propDeclaration.type.toTypeName()
+            resolvedType.toTypeName(declaringType.typeParameterResolver)
         }.let {
             if (draft && isAssociation && it is ClassName) {
                 ClassName(it.packageName, "${it.simpleName}$DRAFT")
@@ -309,9 +344,9 @@ class ImmutableProp(
 
     fun typeName(draft: Boolean = false, overrideNullable: Boolean? = null): TypeName =
         if (isList) {
-            (propDeclaration.type.toTypeName() as ParameterizedTypeName).typeArguments[0]
+            (resolvedType.toTypeName(declaringType.typeParameterResolver) as ParameterizedTypeName).typeArguments[0]
         } else {
-            propDeclaration.type.toTypeName()
+            resolvedType.toTypeName(declaringType.typeParameterResolver)
         }.let {
             if (draft && isAssociation && it is ClassName) {
                 ClassName(it.packageName, "${it.simpleName}$DRAFT")
@@ -339,7 +374,7 @@ class ImmutableProp(
 
     val targetType: ImmutableType? by lazy {
         targetDeclaration
-            .takeIf { isAssociation }
+            ?.takeIf { isAssociation }
             ?.let { ctx.typeOf(it) }
     }
 
@@ -398,9 +433,9 @@ class ImmutableProp(
         )?.get(OneToOne::mappedBy).isNullOrEmpty()
 
     override val isRecursive: Boolean by lazy {
-        declaringType.isEntity && manyToManyViewBaseProp === null && !isRemote &&
+        !isGenericTarget && declaringType.isEntity && manyToManyViewBaseProp === null && !isRemote &&
             declaringType.classDeclaration.asStarProjectedType().isAssignableFrom(
-                targetDeclaration.asStarProjectedType()
+                targetDeclaration!!.asStarProjectedType()
             )
     }
 
@@ -470,6 +505,26 @@ class ImmutableProp(
 
     fun annotations(predicate: (KSAnnotation) -> Boolean): List<KSAnnotation> =
         propDeclaration.annotations(predicate)
+
+    private fun hasAssociationAnnotation(): Boolean =
+        annotation(OneToOne::class) !== null ||
+            annotation(ManyToOne::class) !== null ||
+            annotation(OneToMany::class) !== null ||
+            annotation(ManyToMany::class) !== null ||
+            annotation(ManyToManyView::class) !== null
+
+    private fun sourceTargetType(type: KSType): KSType {
+        val declaration = type.declaration as? KSClassDeclaration ?: return type
+        val arguments = type.arguments
+        if (arguments.isEmpty()) {
+            return type
+        }
+        return if (ctx.collectionType.isAssignableFrom(declaration.asStarProjectedType())) {
+            arguments[0].type!!.fastResolve()
+        } else {
+            type
+        }
+    }
 
     val getterAnnotations: List<KSAnnotation>
         get() = propDeclaration.getter?.annotations?.toList() ?: emptyList()
@@ -626,7 +681,21 @@ class ImmutableProp(
                     " nullable"
             )
         }
-        val targetIdTypeName = baseProp.targetType!!.idProp!!.targetTypeName(
+        val targetIdProp = baseProp.targetType?.idProp ?: declaringType.idProp
+        if (targetIdProp == null) {
+            if (baseProp.isGenericTarget && declaringType.isMappedSuperclass) {
+                return
+            }
+            throw MetaException(
+                propDeclaration,
+                "it is decorated by \"@" +
+                    IdView::class.java.name +
+                    "\", the base property \"" +
+                    baseProp +
+                    "\" returns generic entity type whose id cannot be resolved"
+            )
+        }
+        val targetIdTypeName = targetIdProp.targetTypeName(
             overrideNullable = baseProp.isNullable
         )
         if (targetTypeName() != targetIdTypeName) {
@@ -747,6 +816,8 @@ class ImmutableProp(
     }
 
     companion object {
+
+        private val ANY_CLASS_NAME = ClassName("kotlin", "Any")
 
         val FORBIDDEN_TYPE_NAMES = mapOf(
 

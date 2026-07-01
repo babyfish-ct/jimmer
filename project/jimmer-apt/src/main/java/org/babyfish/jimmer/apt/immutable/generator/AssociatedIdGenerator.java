@@ -121,6 +121,7 @@ class AssociatedIdGenerator {
     private static boolean skip(ImmutableProp prop) {
         return !prop.isAssociation(true) ||
                 prop.isList() ||
+                prop.getTargetType() == null ||
                 prop.getIdViewProp() != null ||
                 prop.getDeclaringType().getProps().containsKey(StringUtil.identifier(prop.getName(), "Id"));
     }

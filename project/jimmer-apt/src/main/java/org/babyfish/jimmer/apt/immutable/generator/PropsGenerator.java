@@ -65,16 +65,24 @@ public class PropsGenerator {
                             .build()
             );
         }
+        boolean hasSuperProps = false;
         if (type.getSuperTypes().isEmpty()) {
             if (type.isEntity() || type.isMappedSuperClass()) {
                 typeBuilder.addSuperinterface(Constants.PROPS_CLASS_NAME);
             }
         } else {
             for (ImmutableType superType : type.getSuperTypes()) {
+                if (!superType.getTypeVariableNames().isEmpty()) {
+                    continue;
+                }
                 typeBuilder.addSuperinterface(
                         superType.getPropsClassName()
                 );
+                hasSuperProps = true;
             }
+        }
+        if (!type.getSuperTypes().isEmpty() && !hasSuperProps && (type.isEntity() || type.isMappedSuperClass())) {
+            typeBuilder.addSuperinterface(Constants.PROPS_CLASS_NAME);
         }
         if (type.isEntity()) {
             typeBuilder.addSuperinterface(
@@ -89,7 +97,7 @@ public class PropsGenerator {
                 addStaticProp(prop);
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
-                for (ImmutableProp prop : type.getDeclaredProps().values()) {
+                for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isDsl(false)) {
                         addProp(prop, false);
                         addProp(prop, true);

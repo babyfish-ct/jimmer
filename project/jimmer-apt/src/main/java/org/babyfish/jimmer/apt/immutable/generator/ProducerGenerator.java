@@ -205,7 +205,7 @@ public class ProducerGenerator {
                         ".id($L, $S, $T.class)\n",
                         slotName,
                         prop.getName(),
-                        prop.getRawElementTypeName()
+                        prop.getMetadataElementTypeName()
                 );
             } else if (prop == type.getVersionProp()) {
                 builder.add(
@@ -218,7 +218,7 @@ public class ProducerGenerator {
                         ".logicalDeleted($L, $S, $T.class, $L)\n",
                         slotName,
                         prop.getName(),
-                        prop.getRawElementTypeName(),
+                        prop.getMetadataElementTypeName(),
                         prop.isNullable()
                 );
             } else if (isKey && !prop.isAssociation(false)) {
@@ -226,7 +226,7 @@ public class ProducerGenerator {
                         ".key($L, $S, $T.class, $L)\n",
                         slotName,
                         prop.getName(),
-                        prop.getRawElementTypeName(),
+                        prop.getMetadataElementTypeName(),
                         prop.isNullable()
                 );
             } else if (isKey && prop.isAssociation(false)) {
@@ -235,7 +235,7 @@ public class ProducerGenerator {
                         slotName,
                         prop.getName(),
                         prop.getAnnotation(OneToOne.class) != null ? OneToOne.class : ManyToOne.class,
-                        prop.getRawElementTypeName(),
+                        prop.getMetadataElementTypeName(),
                         prop.isNullable() ? "true" : "false"
                 );
             } else if (prop.getAssociationAnnotation() != null) {
@@ -244,7 +244,7 @@ public class ProducerGenerator {
                         slotName,
                         prop.getName(),
                         prop.getAssociationAnnotation().annotationType(),
-                        prop.getRawElementTypeName(),
+                        prop.getMetadataElementTypeName(),
                         prop.isNullable()
                 );
             } else {
@@ -254,7 +254,7 @@ public class ProducerGenerator {
                         prop.getName(),
                         ImmutablePropCategory.class,
                         category.name(),
-                        prop.getRawElementTypeName(),
+                        prop.getMetadataElementTypeName(),
                         prop.isNullable()
                 );
             }
