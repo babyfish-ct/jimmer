@@ -5,7 +5,9 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.dto.ClientExhaustiveInput;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -13,8 +15,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JoinedInheritanceMutationTest extends AbstractMutationTest {
 
@@ -115,6 +118,174 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
                         it.modified("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchInsertPolymorphicInputsUsesJoinedTableStageBatches() {
+        ClientExhaustiveInput.Person person1Input = new ClientExhaustiveInput.Person();
+        person1Input.setId(311L);
+        person1Input.setName("Batch Person 1");
+        person1Input.setFirstName("Alice");
+        person1Input.setLastName("Green");
+
+        ClientExhaustiveInput.Organization organization1Input = new ClientExhaustiveInput.Organization();
+        organization1Input.setId(312L);
+        organization1Input.setName("Batch Org 1");
+        organization1Input.setTaxCode("B-ORG-1");
+
+        ClientExhaustiveInput.Person person2Input = new ClientExhaustiveInput.Person();
+        person2Input.setId(313L);
+        person2Input.setName("Batch Person 2");
+        person2Input.setFirstName("Charlie");
+        person2Input.setLastName("Blue");
+
+        ClientExhaustiveInput.Organization organization2Input = new ClientExhaustiveInput.Organization();
+        organization2Input.setId(314L);
+        organization2Input.setName("Batch Org 2");
+        organization2Input.setTaxCode("B-ORG-2");
+
+        connectAndExpect(
+                con -> getSqlClient()
+                        .getEntities()
+                        .saveInputsCommand(Arrays.<ClientExhaustiveInput>asList(
+                                person1Input,
+                                organization1Input,
+                                person2Input,
+                                organization2Input
+                        ))
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                ClientFetcher.$
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName().lastName())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_CLIENT(ID, CLIENT_TYPE, NAME) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.batches(4);
+                        it.batchVariables(0, 311L, "Person", "Batch Person 1");
+                        it.batchVariables(1, 312L, "ORG", "Batch Org 1");
+                        it.batchVariables(2, 313L, "Person", "Batch Person 2");
+                        it.batchVariables(3, 314L, "ORG", "Batch Org 2");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.batches(2);
+                        it.batchVariables(0, 311L, "Alice", "Green");
+                        it.batchVariables(1, 313L, "Charlie", "Blue");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "values(?, ?)"
+                        );
+                        it.batches(2);
+                        it.batchVariables(0, 312L, "B-ORG-1");
+                        it.batchVariables(1, 314L, "B-ORG-2");
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(4, clients.size());
+                        assertEquals(311L, clients.get(0).id());
+                        assertEquals(312L, clients.get(1).id());
+                        assertEquals(313L, clients.get(2).id());
+                        assertEquals(314L, clients.get(3).id());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchInsertPolymorphicInputsWithGeneratedIdsUsesJoinedTableStageBatches() {
+        ClientExhaustiveInput.Person person1Input = new ClientExhaustiveInput.Person();
+        person1Input.setName("Generated Person 1");
+        person1Input.setFirstName("Alice");
+        person1Input.setLastName("Green");
+
+        ClientExhaustiveInput.Organization organization1Input = new ClientExhaustiveInput.Organization();
+        organization1Input.setName("Generated Org 1");
+        organization1Input.setTaxCode("G-ORG-1");
+
+        ClientExhaustiveInput.Person person2Input = new ClientExhaustiveInput.Person();
+        person2Input.setName("Generated Person 2");
+        person2Input.setFirstName("Charlie");
+        person2Input.setLastName("Blue");
+
+        ClientExhaustiveInput.Organization organization2Input = new ClientExhaustiveInput.Organization();
+        organization2Input.setName("Generated Org 2");
+        organization2Input.setTaxCode("G-ORG-2");
+
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                        .getEntities()
+                        .saveInputsCommand(Arrays.<ClientExhaustiveInput>asList(
+                                person1Input,
+                                organization1Input,
+                                person2Input,
+                                organization2Input
+                        ))
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                ClientFetcher.$
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName().lastName())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_CLIENT(CLIENT_TYPE, NAME) " +
+                                        "values(?, ?)"
+                        );
+                        it.batches(4);
+                        it.batchVariables(0, "Person", "Generated Person 1");
+                        it.batchVariables(1, "ORG", "Generated Org 1");
+                        it.batchVariables(2, "Person", "Generated Person 2");
+                        it.batchVariables(3, "ORG", "Generated Org 2");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_PERSON(ID, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.batches(2);
+                        it.batchVariables(0, UNKNOWN_VARIABLE, "Alice", "Green");
+                        it.batchVariables(1, UNKNOWN_VARIABLE, "Charlie", "Blue");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "values(?, ?)"
+                        );
+                        it.batches(2);
+                        it.batchVariables(0, UNKNOWN_VARIABLE, "G-ORG-1");
+                        it.batchVariables(1, UNKNOWN_VARIABLE, "G-ORG-2");
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(4, clients.size());
+                        assertTrue(clients.get(0).id() > 0);
+                        assertTrue(clients.get(1).id() > 0);
+                        assertTrue(clients.get(2).id() > 0);
+                        assertTrue(clients.get(3).id() > 0);
                     });
                 }
         );

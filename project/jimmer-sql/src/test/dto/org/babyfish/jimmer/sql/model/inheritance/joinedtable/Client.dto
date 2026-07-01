@@ -32,3 +32,18 @@ ClientRuntimeView {
         }
     }
 }
+
+input ClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+            lastName
+        }
+    }
+}

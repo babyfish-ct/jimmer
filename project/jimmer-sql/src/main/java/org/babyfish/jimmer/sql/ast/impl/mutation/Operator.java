@@ -92,34 +92,58 @@ class Operator {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         DraftSpi sample = batch.entities().iterator().next();
         ImmutableType rootType = inheritanceInfo.getRootType();
-        Shape rootShape = Shape.of(
+        Shape rootShape = joinedRootShape(sqlClient, rootType, sample);
+        insertJoinedRoot(batchOf(batch, rootShape), inheritanceInfo);
+        ImmutableType previousTableType = rootType;
+        for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
+            Shape shape = joinedStageShape(sqlClient, previousTableType, tableType, sample);
+            insertJoinedStage(batchOf(batch, shape), tableType);
+            previousTableType = tableType;
+        }
+        return MutationRows.accepted(batch.entities());
+    }
+
+    void insertJoinedRoot(Batch<DraftSpi> batch, InheritanceInfo inheritanceInfo) {
+        insert(
+                batch,
+                inheritanceInfo.getRootType(),
+                discriminatorProp(inheritanceInfo),
+                true
+        );
+    }
+
+    void insertJoinedStage(Batch<DraftSpi> batch, ImmutableType tableType) {
+        insert(batch, tableType, null, true);
+    }
+
+    static Shape joinedRootShape(
+            JSqlClientImplementor sqlClient,
+            ImmutableType rootType,
+            DraftSpi sample
+    ) {
+        return Shape.of(
                 sqlClient,
                 rootType,
                 sample,
                 prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
         );
-        insert(
-                batchOf(batch, rootShape),
-                rootType,
-                discriminatorProp(inheritanceInfo),
-                true
+    }
+
+    static Shape joinedStageShape(
+            JSqlClientImplementor sqlClient,
+            ImmutableType parentTableType,
+            ImmutableType tableType,
+            DraftSpi sample
+    ) {
+        return Shape.of(
+                sqlClient,
+                tableType,
+                sample,
+                prop -> prop.isId() ||
+                        (prop.isColumnDefinition() &&
+                                prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
+                                !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
         );
-        ImmutableType previousTableType = rootType;
-        for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
-            ImmutableType parentTableType = previousTableType;
-            Shape shape = Shape.of(
-                    sqlClient,
-                    tableType,
-                    sample,
-                    prop -> prop.isId() ||
-                            (prop.isColumnDefinition() &&
-                                    prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
-                                    !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
-            );
-            insert(batchOf(batch, shape), tableType, null, true);
-            previousTableType = tableType;
-        }
-        return MutationRows.accepted(batch.entities());
     }
 
     private void insert(
@@ -340,7 +364,7 @@ class Operator {
         return Collections.emptySet();
     }
 
-    private static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
+    static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
         List<ImmutableType> tableTypes = new ArrayList<>();
         for (ImmutableType t = type; t != rootType; t = t.getPrimarySuperType()) {
             if (t.isEntity()) {

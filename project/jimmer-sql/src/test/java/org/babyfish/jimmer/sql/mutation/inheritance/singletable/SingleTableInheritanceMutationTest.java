@@ -321,6 +321,75 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testBatchInsertPolymorphicInputsBatchesSameRuntimeTypeGroup() {
+        ClientExhaustiveInput.Person person1Input = new ClientExhaustiveInput.Person();
+        person1Input.setId(311L);
+        person1Input.setName("Batch Person 1");
+        person1Input.setFirstName("Alice");
+        person1Input.setLastName("Green");
+
+        ClientExhaustiveInput.Organization organizationInput = new ClientExhaustiveInput.Organization();
+        organizationInput.setId(312L);
+        organizationInput.setName("Batch Org Between");
+        organizationInput.setTaxCode("B-ORG-2");
+
+        ClientExhaustiveInput.Person person2Input = new ClientExhaustiveInput.Person();
+        person2Input.setId(313L);
+        person2Input.setName("Batch Person 2");
+        person2Input.setFirstName("Charlie");
+        person2Input.setLastName("Blue");
+
+        connectAndExpect(
+                con -> getSqlClient()
+                        .getEntities()
+                        .saveInputsCommand(Arrays.<ClientExhaustiveInput>asList(
+                                person1Input,
+                                organizationInput,
+                                person2Input
+                        ))
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                ClientFetcher.$
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName().lastName())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.batches(2);
+                        it.batchVariables(0, 311L, "Person", "Batch Person 1", "Alice", "Green");
+                        it.batchVariables(1, 313L, "Person", "Batch Person 2", "Charlie", "Blue");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into CLIENT(ID, CLIENT_TYPE, NAME, TAX_CODE) values(?, ?, ?, ?)");
+                        it.variables(312L, "ORG", "Batch Org Between", "B-ORG-2");
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(3, clients.size());
+                        Person person1 = (Person) clients.get(0);
+                        assertEquals(311L, person1.id());
+                        assertEquals("Batch Person 1", person1.name());
+                        Organization organization = (Organization) clients.get(1);
+                        assertEquals(312L, organization.id());
+                        assertEquals("Batch Org Between", organization.name());
+                        Person person2 = (Person) clients.get(2);
+                        assertEquals(313L, person2.id());
+                        assertEquals("Batch Person 2", person2.name());
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testBatchInsertPolymorphicInputsWithShapeNotMatchedFetcher() {
         ClientExhaustiveInput.Person personInput = new ClientExhaustiveInput.Person();
         personInput.setId(306L);

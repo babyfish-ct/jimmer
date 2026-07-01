@@ -3,9 +3,11 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -332,6 +334,16 @@ public class BatchEntitySaveCommandImpl<E>
             );
             return saver.saveAll(entities);
         }
+        ImmutableType joinedInsertRootType = joinedInsertRootType(options, groupMap);
+        if (joinedInsertRootType != null) {
+            Saver saver = new Saver(
+                    options,
+                    con,
+                    joinedInsertRootType,
+                    fetcher
+            );
+            return saver.saveAllJoinedInsert(entities);
+        }
         MutationTrigger trigger = options.getTriggers() != null ? new MutationTrigger() : null;
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
         List<BatchSaveResult.Item<E>> items = new ArrayList<>(Collections.nCopies(entities.size(), null));
@@ -355,6 +367,28 @@ public class BatchEntitySaveCommandImpl<E>
             trigger.submit(options.getSqlClient(), con);
         }
         return new BatchSaveResult<>(affectedRowCountMap, items);
+    }
+
+    private ImmutableType joinedInsertRootType(
+            OptionsImpl options,
+            Map<ImmutableType, TypeGroup<E>> groupMap
+    ) {
+        if (options.getMode() != SaveMode.INSERT_ONLY) {
+            return null;
+        }
+        ImmutableType rootType = null;
+        for (ImmutableType type : groupMap.keySet()) {
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+                return null;
+            }
+            if (rootType == null) {
+                rootType = inheritanceInfo.getRootType();
+            } else if (rootType != inheritanceInfo.getRootType()) {
+                return null;
+            }
+        }
+        return rootType;
     }
 
     private Map<ImmutableType, TypeGroup<E>> typeGroupMap(Collection<E> entities, Fetcher<E> fetcher) {
