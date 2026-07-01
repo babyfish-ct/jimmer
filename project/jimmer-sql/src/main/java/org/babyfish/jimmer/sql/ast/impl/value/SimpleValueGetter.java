@@ -96,9 +96,7 @@ class SimpleValueGetter extends AbstractValueGetter {
         if (table != null && astContext != null) {
             SqlBuilder sqlBuilder = builder.assertSimple();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
-            String rootAlias = joinedTypeBranchUpdateRootAlias(builder, tableImplementor, columnProp);
-            if (rootAlias != null) {
-                builder.sql(rootAlias).sql(".").sql(columnName);
+            if (renderJoinedTypeBranchColumn(builder, tableImplementor, columnProp, columnName)) {
                 return;
             }
             if (valueProp.isId() && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {

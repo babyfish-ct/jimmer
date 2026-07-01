@@ -455,7 +455,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     private String joinedTypeBranchAlias(SqlBuilder builder) {
-        return builder.alias(this) + "_sub";
+        return TableImplementor.joinedTypeBranchAlias(builder, (TableImplementor<?>) owner);
     }
 
     private void renderBaseTableCore(SqlBuilder builder, boolean cte) {

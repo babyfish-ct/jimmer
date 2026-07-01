@@ -205,9 +205,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (inheritanceInfo.getRootType() == type) {
             return true;
         }
-        if (inheritanceInfo.getRootType().getProps().containsKey(prop.getName())) {
-            return true;
-        }
         return isPropOwnedByStage(prop.toOriginal(), inheritanceInfo.getRootType());
     }
 
@@ -231,6 +228,10 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         }
         ImmutableType superType = stageType.getPrimarySuperType();
         return superType == null || !superType.getAllTypes().contains(declaringType);
+    }
+
+    static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
+        return builder.alias(table.realTableForRender(builder)) + "_sub";
     }
 
     void setHasBaseTable();

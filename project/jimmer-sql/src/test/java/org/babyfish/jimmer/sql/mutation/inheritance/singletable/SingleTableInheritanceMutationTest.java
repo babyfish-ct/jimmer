@@ -1123,7 +1123,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
                         it.sql(
-                                "select tb_1_.ID " +
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
                                         "from CLIENT tb_1_ " +
                                         "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
                         );
@@ -1172,7 +1172,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
                         it.sql(
-                                "select tb_1_.ID " +
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
                                         "from CLIENT tb_1_ " +
                                         "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
                         );

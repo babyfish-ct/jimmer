@@ -542,7 +542,7 @@ class SingleTableInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
                 sql(
-                    "select tb_1_.ID " +
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
                         "from CLIENT tb_1_ " +
                         "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
                 )

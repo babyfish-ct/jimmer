@@ -119,16 +119,9 @@ public class Deleter {
 
     public DeleteResult execute() {
 
-        Set<Object> ids = this.ids;
-        Map<Object, ImmutableSpi> rowMap = this.rowMap;
-        if (ids == null && rowMap == null) {
+        DeleteInput input = drainInput();
+        if (input == null) {
             return new DeleteResult(Collections.emptyMap());
-        }
-        this.ids = null;
-        this.rowMap = null;
-
-        if (ids == null) {
-            ids = rowMap.keySet();
         }
         InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
         Collection<ImmutableType> deletedTypes = InheritanceMutationUtils.deletedTypes(
@@ -137,53 +130,90 @@ public class Deleter {
                 ctx.options.getTypeMatchMode()
         );
         if (isStagedJoinedExactDeleteAvailable(inheritanceInfo, deletedTypes)) {
-            int rowCount = executeStagedJoinedExactDelete(ids);
-            if (ctx.trigger != null) {
-                ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
-            }
-            AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
-            return new DeleteResult(ctx.affectedRowCountMap);
+            return finish(executeStagedJoinedExactDelete(input.ids));
         }
 
         AssociationCleanup cleanup = associationCleanup();
-        AcceptedTargets acceptedTargets = null;
-        if (inheritanceInfo != null && (
-                !cleanup.isEmpty() ||
-                        isJoinedTypeBranchCleanupRequired(inheritanceInfo, deletedTypes)
-        )) {
-            acceptedTargets = resolveAcceptedTargets(ids, rowMap, inheritanceInfo, deletedTypes);
-            Set<Object> acceptedIds = acceptedTargets.ids();
-            if (acceptedIds.isEmpty()) {
-                ids = Collections.emptySet();
-                rowMap = null;
-            } else {
-                ids = acceptedIds;
-                if (rowMap != null) {
-                    rowMap = filterRowMap(rowMap, acceptedIds);
-                }
-            }
-        }
-        if (!ids.isEmpty()) {
-            if (acceptedTargets != null) {
-                disconnectAcceptedTargets(acceptedTargets, inheritanceInfo);
-            } else {
-                cleanup.disconnect(ids);
-            }
-        }
+        DeleteScope scope = resolveDeleteScope(input, inheritanceInfo, deletedTypes, cleanup);
+        disconnectDeleteScope(scope, cleanup);
+        return finish(executeDeleteScope(scope));
+    }
 
-        int rowCount = ids.isEmpty() ?
-                0 :
-                executeImpl(
-                        ids,
-                        rowMap,
-                        acceptedTargets != null ?
-                                acceptedTargets.joinedTypeBranchTableIdMap(
-                                        inheritanceInfo.getRootType(),
-                                        ctx.options.getSqlClient().getMetadataStrategy()
-                                ) :
-                                null,
-                        ctx.getOptions().getExceptionTranslator()
-                );
+    private DeleteInput drainInput() {
+        Set<Object> ids = this.ids;
+        Map<Object, ImmutableSpi> rowMap = this.rowMap;
+        if (ids == null && rowMap == null) {
+            return null;
+        }
+        this.ids = null;
+        this.rowMap = null;
+        return new DeleteInput(
+                ids != null ? ids : rowMap.keySet(),
+                rowMap
+        );
+    }
+
+    private DeleteScope resolveDeleteScope(
+            DeleteInput input,
+            @Nullable InheritanceInfo inheritanceInfo,
+            Collection<ImmutableType> deletedTypes,
+            AssociationCleanup cleanup
+    ) {
+        if (inheritanceInfo == null ||
+                cleanup.isEmpty() &&
+                        !isJoinedTypeBranchCleanupRequired(inheritanceInfo, deletedTypes)) {
+            return new DeleteScope(input.ids, input.rowMap, null, null);
+        }
+        AcceptedTargets acceptedTargets = resolveAcceptedTargets(
+                input.ids,
+                input.rowMap,
+                inheritanceInfo,
+                deletedTypes
+        );
+        Set<Object> acceptedIds = acceptedTargets.ids();
+        if (acceptedIds.isEmpty()) {
+            return new DeleteScope(Collections.emptySet(), null, acceptedTargets, inheritanceInfo);
+        }
+        return new DeleteScope(
+                acceptedIds,
+                input.rowMap != null ? filterRowMap(input.rowMap, acceptedIds) : null,
+                acceptedTargets,
+                inheritanceInfo
+        );
+    }
+
+    private void disconnectDeleteScope(
+            DeleteScope scope,
+            AssociationCleanup cleanup
+    ) {
+        if (scope.ids.isEmpty()) {
+            return;
+        }
+        if (scope.acceptedTargets != null) {
+            disconnectAcceptedTargets(scope.acceptedTargets, scope.inheritanceInfo);
+        } else {
+            cleanup.disconnect(scope.ids);
+        }
+    }
+
+    private int executeDeleteScope(DeleteScope scope) {
+        if (scope.ids.isEmpty()) {
+            return 0;
+        }
+        return executeImpl(
+                scope.ids,
+                scope.rowMap,
+                scope.acceptedTargets != null ?
+                        scope.acceptedTargets.joinedTypeBranchTableIdMap(
+                                scope.inheritanceInfo.getRootType(),
+                                ctx.options.getSqlClient().getMetadataStrategy()
+                        ) :
+                        null,
+                ctx.getOptions().getExceptionTranslator()
+        );
+    }
+
+    private DeleteResult finish(int rowCount) {
         if (ctx.trigger != null) {
             ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
@@ -477,6 +507,13 @@ public class Deleter {
             query.where(idExpr.in(ids));
         }
         addDiscriminatorPredicate(query, table, inheritanceInfo, deletedTypes);
+        if (deletedTypes.size() == 1) {
+            ConfigurableRootQuery<?, Object> acceptedIdQuery = query.select(idExpr);
+            return AcceptedTargets.ofType(
+                    acceptedIdQuery.execute(ctx.con),
+                    deletedTypes.iterator().next()
+            );
+        }
         PropExpression<Object> discriminatorExpr = table.get(inheritanceInfo.getDiscriminatorProp().getName());
         ConfigurableRootQuery<?, Tuple2<Object, Object>> acceptedTargetQuery = query.select(idExpr, discriminatorExpr);
         Map<Object, ImmutableType> discriminatorTypeMap = inheritanceInfo.getDiscriminatorTypeMap();
@@ -530,6 +567,41 @@ public class Deleter {
         return filteredMap;
     }
 
+    private static class DeleteInput {
+
+        final Collection<Object> ids;
+
+        final Map<Object, ImmutableSpi> rowMap;
+
+        DeleteInput(Collection<Object> ids, Map<Object, ImmutableSpi> rowMap) {
+            this.ids = ids;
+            this.rowMap = rowMap;
+        }
+    }
+
+    private static class DeleteScope {
+
+        final Collection<Object> ids;
+
+        final Map<Object, ImmutableSpi> rowMap;
+
+        final AcceptedTargets acceptedTargets;
+
+        final InheritanceInfo inheritanceInfo;
+
+        DeleteScope(
+                Collection<Object> ids,
+                Map<Object, ImmutableSpi> rowMap,
+                AcceptedTargets acceptedTargets,
+                InheritanceInfo inheritanceInfo
+        ) {
+            this.ids = ids;
+            this.rowMap = rowMap;
+            this.acceptedTargets = acceptedTargets;
+            this.inheritanceInfo = inheritanceInfo;
+        }
+    }
+
     private static class AcceptedTargets {
 
         static final AcceptedTargets EMPTY = new AcceptedTargets(Collections.emptyMap());
@@ -538,6 +610,18 @@ public class Deleter {
 
         private AcceptedTargets(Map<ImmutableType, Set<Object>> typeIdMap) {
             this.typeIdMap = typeIdMap;
+        }
+
+        static AcceptedTargets ofType(
+                Collection<Object> ids,
+                ImmutableType type
+        ) {
+            if (ids.isEmpty()) {
+                return EMPTY;
+            }
+            Map<ImmutableType, Set<Object>> typeIdMap = new LinkedHashMap<>();
+            typeIdMap.put(type, new LinkedHashSet<>(ids));
+            return new AcceptedTargets(typeIdMap);
         }
 
         static AcceptedTargets ofRows(

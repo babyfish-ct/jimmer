@@ -174,15 +174,24 @@ public class MutableUpdateImpl
             Executor.validateMutationConnection(con);
         }
 
-        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
-        applyVirtualPredicates(builder.getAstContext());
-        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
+        SqlBuilder builder = createFilteredBuilder();
 
         if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             return executeWithTrigger(builder, con);
         }
 
         renderTo(builder);
+        return executeUpdateSql(builder, con);
+    }
+
+    private SqlBuilder createFilteredBuilder() {
+        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
+        applyVirtualPredicates(builder.getAstContext());
+        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
+        return builder;
+    }
+
+    private int executeUpdateSql(SqlBuilder builder, Connection con) {
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return getSqlClient()
                 .getExecutor()
@@ -203,54 +212,54 @@ public class MutableUpdateImpl
 
     private int executeWithTrigger(SqlBuilder builder, Connection con) {
 
-        renderAsSelect(builder, null);
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        List<ImmutableSpi> rows = Selectors.select(
-                getSqlClient(),
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                sqlResult.get_3(),
-                Collections.singletonList(this.getTable()),
-                null,
-                ExecutionPurpose.UPDATE
-        );
-        if (rows.isEmpty()) {
+        Map<Object, ImmutableSpi> oldRowMap = selectRowsForTrigger(builder, con);
+        if (oldRowMap.isEmpty()) {
             return 0;
         }
 
+        builder = new SqlBuilder(new AstContext(getSqlClient()));
+        renderTo(builder, oldRowMap.keySet());
+        int affectRowCount = executeUpdateSql(builder, con);
+        if (affectRowCount == 0) {
+            return 0;
+        }
+
+        submitTrigger(con, oldRowMap);
+        return affectRowCount;
+    }
+
+    private Map<Object, ImmutableSpi> selectRowsForTrigger(SqlBuilder builder, Connection con) {
+        renderAsSelect(builder, null);
+        List<ImmutableSpi> rows = selectRows(builder, con);
+        if (rows.isEmpty()) {
+            return Collections.emptyMap();
+        }
         PropId idPropId = this.<Table<?>>getTable().getImmutableType().getIdProp().getId();
         Map<Object, ImmutableSpi> rowMap = new HashMap<>((rows.size() * 4 + 2) / 3);
         for (ImmutableSpi row : rows) {
             rowMap.put(row.__get(idPropId), row);
         }
+        return rowMap;
+    }
 
-        builder = new SqlBuilder(new AstContext(getSqlClient()));
-        renderTo(builder, rowMap.keySet());
-        sqlResult = builder.build();
-        int affectRowCount = getSqlClient()
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                getSqlClient(),
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                getPurpose(),
-                                null,
-                                null,
-                                (stmt, args) -> stmt.executeUpdate()
-                        )
-                );
-        if (affectRowCount == 0) {
-            return 0;
+    private void submitTrigger(Connection con, Map<Object, ImmutableSpi> oldRowMap) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
+        renderAsSelect(builder, oldRowMap.keySet());
+        List<ImmutableSpi> changedRows = selectRows(builder, con);
+        PropId idPropId = this.<Table<?>>getTable().getImmutableType().getIdProp().getId();
+        MutationTrigger trigger = new MutationTrigger();
+        for (ImmutableSpi changedRow : changedRows) {
+            ImmutableSpi row = oldRowMap.get(changedRow.__get(idPropId));
+            if (!row.__equals(changedRow, true)) {
+                trigger.modifyEntityTable(row, changedRow);
+            }
         }
+        trigger.submit(getSqlClient(), con);
+    }
 
-        builder = new SqlBuilder(new AstContext(getSqlClient()));
-        renderAsSelect(builder, rowMap.keySet());
-        sqlResult = builder.build();
-        List<ImmutableSpi> changedRows = Selectors.select(
+    private List<ImmutableSpi> selectRows(SqlBuilder builder, Connection con) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return Selectors.select(
                 getSqlClient(),
                 con,
                 sqlResult.get_1(),
@@ -260,15 +269,6 @@ public class MutableUpdateImpl
                 null,
                 ExecutionPurpose.UPDATE
         );
-        MutationTrigger trigger = new MutationTrigger();
-        for (ImmutableSpi changedRow : changedRows) {
-            ImmutableSpi row = rowMap.get(changedRow.__get(idPropId));
-            if (!row.__equals(changedRow, true)) {
-                trigger.modifyEntityTable(row, changedRow);
-            }
-        }
-        trigger.submit(getSqlClient(), con);
-        return affectRowCount;
     }
 
     public void accept(@NotNull AstVisitor visitor) {

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -34,9 +35,7 @@ import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
@@ -181,22 +180,57 @@ public class MutableDeleteImpl
         deleteQuery.where(values.size() == 1 ? expr.eq(values.get(0)) : expr.in(values));
     }
 
-    @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
-
         JSqlClientImplementor sqlClient = getSqlClient();
         if (getSqlClient().isTargetTransferable()) {
             Executor.validateMutationConnection(con);
         }
 
         TableImplementor<?> table = getTableLikeImplementor();
+        DeleteExecution execution = prepareExecution(sqlClient, table);
+        if (execution.directRenderMode != DirectRenderMode.NONE) {
+            return executeDirectly(
+                    con,
+                    execution.astContext,
+                    execution.logicalDeleted,
+                    execution.directRenderMode,
+                    execution.joinedTypeBranchTableRequired
+            );
+        }
+        return executeByDeleter(con, sqlClient, table, execution.binLogOnly);
+    }
 
+    private DeleteExecution prepareExecution(
+            JSqlClientImplementor sqlClient,
+            TableImplementor<?> table
+    ) {
         AstContext astContext = new AstContext(sqlClient);
         deleteQuery.applyVirtualPredicates(astContext);
         deleteQuery.applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
         applyTypeMatchPredicate();
 
         deleteQuery.freeze(astContext);
+        boolean joinedTypeBranchTableRequired = analyzeTableUsage(astContext, table);
+        boolean logicalDeleted = resolveLogicalDeleted(table);
+
+        boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
+        boolean directlyEligible = binLogOnly &&
+                isDirectlyDeletableByDissociation(logicalDeleted) &&
+                isDirectlyDeletableByInheritance(logicalDeleted);
+        DirectRenderMode directRenderMode = directlyEligible ?
+                directRenderMode(astContext, logicalDeleted, joinedTypeBranchTableRequired) :
+                DirectRenderMode.NONE;
+
+        return new DeleteExecution(
+                astContext,
+                logicalDeleted,
+                binLogOnly,
+                joinedTypeBranchTableRequired,
+                directRenderMode
+        );
+    }
+
+    private boolean analyzeTableUsage(AstContext astContext, TableImplementor<?> table) {
         astContext.pushStatement(deleteQuery);
         try {
             TableUsageCollector visitor = new TableUsageCollector(astContext);
@@ -207,17 +241,19 @@ public class MutableDeleteImpl
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
+            return visitor.isJoinedTypeBranchTableRequired(table);
         } finally {
             astContext.popStatement();
         }
+    }
 
-        boolean logicalDeleted;
+    private boolean resolveLogicalDeleted(TableImplementor<?> table) {
+        LogicalDeletedInfo logicalDeletedInfo = table.getImmutableType().getLogicalDeletedInfo();
         switch (mode) {
             case PHYSICAL:
-                logicalDeleted = false;
-                break;
+                return false;
             case LOGICAL:
-                if (table.getImmutableType().getLogicalDeletedInfo() == null) {
+                if (logicalDeletedInfo == null) {
                     throw new ExecutionException(
                             "The mode of the delete statement cannot be \"" +
                                     DeleteMode.LOGICAL.name() +
@@ -226,34 +262,19 @@ public class MutableDeleteImpl
                                     "\" does not support logical deleted"
                     );
                 }
-                logicalDeleted = true;
-                break;
+                return true;
             default:
-                logicalDeleted = table.getImmutableType().getLogicalDeletedInfo() != null;
-                break;
+                return logicalDeletedInfo != null;
         }
+    }
 
-        boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
-        DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
-        boolean directlyEligible = binLogOnly && (
-                        isDissociationDisabled ||
-                                info == null ||
-                                info.isDirectlyDeletable(sqlClient.getMetadataStrategy()
-                )
-        ) && isDirectlyDeletableByInheritance(logicalDeleted);
-        DirectRenderMode directRenderMode = directlyEligible ?
-                directRenderMode(astContext, logicalDeleted) :
-                DirectRenderMode.NONE;
-
-        if (directRenderMode != DirectRenderMode.NONE) {
-            astContext.pushStatement(this);
-            try {
-                return executeDirectly(con, astContext, logicalDeleted, directRenderMode);
-            } finally {
-                astContext.popStatement();
-            }
-        }
-
+    @SuppressWarnings("unchecked")
+    private int executeByDeleter(
+            Connection con,
+            JSqlClientImplementor sqlClient,
+            TableImplementor<?> table,
+            boolean binLogOnly
+    ) {
         List<Object> ids = null;
         Collection<ImmutableSpi> rows = null;
         if (binLogOnly) {
@@ -287,6 +308,62 @@ public class MutableDeleteImpl
         return deleter.execute().getTotalAffectedRowCount();
     }
 
+    private static class DeleteExecution {
+
+        final AstContext astContext;
+
+        final boolean logicalDeleted;
+
+        final boolean binLogOnly;
+
+        final boolean joinedTypeBranchTableRequired;
+
+        final DirectRenderMode directRenderMode;
+
+        DeleteExecution(
+                AstContext astContext,
+                boolean logicalDeleted,
+                boolean binLogOnly,
+                boolean joinedTypeBranchTableRequired,
+                DirectRenderMode directRenderMode
+        ) {
+            this.astContext = astContext;
+            this.logicalDeleted = logicalDeleted;
+            this.binLogOnly = binLogOnly;
+            this.joinedTypeBranchTableRequired = joinedTypeBranchTableRequired;
+            this.directRenderMode = directRenderMode;
+        }
+    }
+
+    private boolean isDirectlyDeletableByDissociation(boolean logicalDeleted) {
+        if (isDissociationDisabled) {
+            return true;
+        }
+        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+        for (ImmutableType type : directlyDeletedDissociationTypes(logicalDeleted)) {
+            DissociationInfo info = getSqlClient().getEntityManager().getDissociationInfo(type);
+            if (info != null && !info.isDirectlyDeletable(strategy)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Collection<ImmutableType> directlyDeletedDissociationTypes(boolean logicalDeleted) {
+        ImmutableType type = getTableLikeImplementor().getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (logicalDeleted ||
+                inheritanceInfo == null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.getJoinedTableDissociateAction() == JoinedTableDissociateAction.DELETE) {
+            return Collections.singleton(type);
+        }
+        Set<ImmutableType> types = new LinkedHashSet<>();
+        types.add(inheritanceInfo.getRootType());
+        types.addAll(InheritanceMutationUtils.deletedTypes(inheritanceInfo, type, typeMatchMode));
+        return types;
+    }
+
     private boolean isDirectlyDeletableByInheritance(boolean logicalDeleted) {
         ImmutableType type = getTableLikeImplementor().getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
@@ -296,16 +373,20 @@ public class MutableDeleteImpl
         if (inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
             return true;
         }
-        if (type != inheritanceInfo.getRootType()) {
-            return false;
+        if (inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE) {
+            return true;
         }
-        return inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE ||
+        return type == inheritanceInfo.getRootType() &&
                 TypeMatchModes.resolve(type, typeMatchMode) == TypeMatchMode.EXACT;
     }
 
-    private DirectRenderMode directRenderMode(AstContext astContext, boolean logicalDeleted) {
+    private DirectRenderMode directRenderMode(
+            AstContext astContext,
+            boolean logicalDeleted,
+            boolean joinedTypeBranchTableRequired
+    ) {
         TableImplementor<?> table = getTableLikeImplementor();
-        if (!MutationJoinRenderSupport.hasUsedChild(table, astContext)) {
+        if (!joinedTypeBranchTableRequired && !MutationJoinRenderSupport.hasUsedChild(table, astContext)) {
             return DirectRenderMode.PLAIN;
         }
         if (logicalDeleted) {
@@ -336,11 +417,23 @@ public class MutableDeleteImpl
             Connection con,
             AstContext astContext,
             boolean logicalDeleted,
-            DirectRenderMode directRenderMode
+            DirectRenderMode directRenderMode,
+            boolean joinedTypeBranchTableRequired
     ) {
-        SqlBuilder builder = new SqlBuilder(astContext);
-        renderDirectly(builder, logicalDeleted, directRenderMode);
-        return executeDirectSql(con, builder);
+        astContext.pushStatement(deleteQuery);
+        if (joinedTypeBranchTableRequired) {
+            astContext.pushJoinedTypeBranchTable(getTableLikeImplementor());
+        }
+        try {
+            SqlBuilder builder = new SqlBuilder(astContext);
+            renderDirectly(builder, logicalDeleted, directRenderMode, joinedTypeBranchTableRequired);
+            return executeDirectSql(con, builder);
+        } finally {
+            if (joinedTypeBranchTableRequired) {
+                astContext.popJoinedTypeBranchTable();
+            }
+            astContext.popStatement();
+        }
     }
 
     private int executeDirectSql(Connection con, SqlBuilder builder) {
@@ -361,7 +454,12 @@ public class MutableDeleteImpl
     }
 
     @SuppressWarnings("unchecked")
-    private void renderDirectly(SqlBuilder builder, boolean logicalDeleted, DirectRenderMode directRenderMode) {
+    private void renderDirectly(
+            SqlBuilder builder,
+            boolean logicalDeleted,
+            DirectRenderMode directRenderMode,
+            boolean joinedTypeBranchTableRequired
+    ) {
         Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
         TableImplementor<?> table = getTableLikeImplementor();
         if (logicalDeleted) {
@@ -370,7 +468,7 @@ public class MutableDeleteImpl
                 return;
             }
             if (directRenderMode == DirectRenderMode.UPDATE_JOIN) {
-                renderLogicalDeleteWithUpdateJoin(builder);
+                renderLogicalDeleteWithUpdateJoin(builder, joinedTypeBranchTableRequired);
                 return;
             }
             LogicalDeletedInfo logicalDeletedInfo = table.getImmutableType().getLogicalDeletedInfo();
@@ -394,6 +492,7 @@ public class MutableDeleteImpl
                 renderPhysicalDeleteWithIdSubQuery(builder);
                 return;
             }
+            ImmutableType targetType = directDeleteTargetType(false);
             builder.sql("delete");
             DeleteJoin deleteJoin = directRenderMode == DirectRenderMode.DELETE_JOIN ?
                     getSqlClient().getDialect().getDeleteJoin() :
@@ -403,22 +502,23 @@ public class MutableDeleteImpl
                 builder.sql(" ").sql(MutationRender.alias(builder, table));
             }
             if (deleteJoin != null && deleteJoin.getFrom() == DeleteJoin.From.AS_JOIN) {
-                table.renderTo(builder);
-            } else {
-                builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
-                if (getSqlClient().getDialect().isDeleteNeedsAsKeyword()) {
-                    builder.sql(" as ");
-                } else {
-                    builder.sql(" ");
+                renderDeleteTarget(builder, table, targetType);
+                if (joinedTypeBranchTableRequired) {
+                    renderJoinedTypeBranchJoin(builder, table);
                 }
-                builder.sql(MutationRender.alias(builder, table));
+                MutationJoinRenderSupport.renderUsedJoinsNormally(builder, table);
+            } else {
+                renderDeleteTarget(builder, table, targetType);
                 if (deleteJoin != null) {
-                    renderDeleteUsing(builder, table);
+                    renderDeleteUsing(builder, table, joinedTypeBranchTableRequired);
                 }
             }
             if (predicate != null || deleteJoin != null && deleteJoin.getFrom() == DeleteJoin.From.AS_USING) {
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 if (deleteJoin != null && deleteJoin.getFrom() == DeleteJoin.From.AS_USING) {
+                    if (joinedTypeBranchTableRequired) {
+                        renderJoinedTypeBranchCondition(builder, table);
+                    }
                     MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
                 }
                 if (predicate != null) {
@@ -430,7 +530,7 @@ public class MutableDeleteImpl
         }
     }
 
-    private void renderLogicalDeleteWithUpdateJoin(SqlBuilder builder) {
+    private void renderLogicalDeleteWithUpdateJoin(SqlBuilder builder, boolean joinedTypeBranchTableRequired) {
         TableImplementor<?> table = getTableLikeImplementor();
         Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
@@ -446,11 +546,17 @@ public class MutableDeleteImpl
         }
         builder.sql(MutationRender.alias(builder, table));
         if (updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
+            if (joinedTypeBranchTableRequired) {
+                renderJoinedTypeBranchJoin(builder, table);
+            }
             MutationJoinRenderSupport.renderUsedJoinsNormally(builder, table);
         }
         renderLogicalDeletedAssignment(builder, table, updateJoin.isJoinedTableUpdatable());
         if (updateJoin.getFrom() == UpdateJoin.From.AS_JOIN) {
             builder.from().enter(SqlBuilder.ScopeType.COMMA);
+            if (joinedTypeBranchTableRequired) {
+                renderJoinedTypeBranchFrom(builder, table);
+            }
             MutationJoinRenderSupport.renderUsedJoinsAsFrom(builder, table);
             builder.leave();
             MutationJoinRenderSupport.renderDeeperJoinsAsFrom(builder, table);
@@ -458,6 +564,9 @@ public class MutableDeleteImpl
         if (predicate != null || updateJoin.getFrom() == UpdateJoin.From.AS_JOIN) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
             if (updateJoin.getFrom() == UpdateJoin.From.AS_JOIN) {
+                if (joinedTypeBranchTableRequired) {
+                    renderJoinedTypeBranchCondition(builder, table);
+                }
                 MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
             }
             if (predicate != null) {
@@ -468,8 +577,15 @@ public class MutableDeleteImpl
         }
     }
 
-    private void renderDeleteUsing(SqlBuilder builder, TableImplementor<?> table) {
+    private void renderDeleteUsing(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            boolean joinedTypeBranchTableRequired
+    ) {
         builder.sql(" using ").enter(SqlBuilder.ScopeType.COMMA);
+        if (joinedTypeBranchTableRequired) {
+            renderJoinedTypeBranchFrom(builder, table);
+        }
         MutationJoinRenderSupport.renderUsedJoinsAsFrom(builder, table);
         builder.leave();
         MutationJoinRenderSupport.renderDeeperJoinsAsFrom(builder, table);
@@ -477,11 +593,12 @@ public class MutableDeleteImpl
 
     private void renderPhysicalDeleteWithIdSubQuery(SqlBuilder builder) {
         TableImplementor<?> table = getTableLikeImplementor();
+        ImmutableType targetType = directDeleteTargetType(false);
         builder.sql("delete");
         if (getSqlClient().getDialect().isDeletedAliasRequired()) {
             builder.sql(" ").sql(MutationRender.alias(builder, table));
         }
-        builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
+        builder.from().sql(targetType.getTableName(getSqlClient().getMetadataStrategy()));
         if (getSqlClient().getDialect().isDeleteNeedsAsKeyword()) {
             builder.sql(" as ");
         } else {
@@ -489,7 +606,7 @@ public class MutableDeleteImpl
         }
         builder.sql(MutationRender.alias(builder, table));
         builder.enter(SqlBuilder.ScopeType.WHERE);
-        renderIdInSubQuery(builder, table);
+        renderIdInSubQuery(builder, table, targetType);
         builder.leave();
     }
 
@@ -508,7 +625,7 @@ public class MutableDeleteImpl
         builder.sql(MutationRender.alias(builder, table));
         renderLogicalDeletedAssignment(builder, table, false);
         builder.enter(SqlBuilder.ScopeType.WHERE);
-        renderIdInSubQuery(builder, table);
+        renderIdInSubQuery(builder, table, type);
         builder.leave();
     }
 
@@ -542,9 +659,80 @@ public class MutableDeleteImpl
         builder.leave();
     }
 
-    @SuppressWarnings("unchecked")
-    private void renderIdInSubQuery(SqlBuilder builder, TableImplementor<?> table) {
-        renderId(builder, table);
+    private void renderDeleteTarget(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            ImmutableType targetType
+    ) {
+        builder.from().sql(targetType.getTableName(getSqlClient().getMetadataStrategy()));
+        if (getSqlClient().getDialect().isDeleteNeedsAsKeyword()) {
+            builder.sql(" as ");
+        } else {
+            builder.sql(" ");
+        }
+        builder.sql(MutationRender.alias(builder, table));
+    }
+
+    private void renderJoinedTypeBranchJoin(SqlBuilder builder, TableImplementor<?> table) {
+        builder.join(JoinType.INNER);
+        renderJoinedTypeBranchFrom(builder, table);
+        builder.on();
+        renderJoinedTypeBranchCondition(builder, table);
+    }
+
+    private void renderJoinedTypeBranchFrom(SqlBuilder builder, TableImplementor<?> table) {
+        builder
+                .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
+                .sql(" ")
+                .sql(joinedTypeBranchAlias(builder, table));
+    }
+
+    private void renderJoinedTypeBranchCondition(SqlBuilder builder, TableImplementor<?> table) {
+        InheritanceInfo inheritanceInfo = table.getImmutableType().getInheritanceInfo();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+        ColumnDefinition rootDefinition = rootType.getIdProp().getStorage(strategy);
+        ColumnDefinition branchDefinition = table.getImmutableType().getIdProp().getStorage(strategy);
+        String rootAlias = MutationRender.alias(builder, table);
+        String branchAlias = joinedTypeBranchAlias(builder, table);
+        int size = rootDefinition.size();
+        builder.enter(SqlBuilder.ScopeType.AND);
+        for (int i = 0; i < size; i++) {
+            builder
+                    .separator()
+                    .sql(rootAlias)
+                    .sql(".")
+                    .sql(rootDefinition.name(i))
+                    .sql(" = ")
+                    .sql(branchAlias)
+                    .sql(".")
+                    .sql(branchDefinition.name(i));
+        }
+        builder.leave();
+    }
+
+    private String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
+        return TableImplementor.joinedTypeBranchAlias(builder, table);
+    }
+
+    private ImmutableType directDeleteTargetType(boolean logicalDeleted) {
+        ImmutableType type = getTableLikeImplementor().getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (!logicalDeleted &&
+                inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getJoinedTableDissociateAction() != JoinedTableDissociateAction.DELETE) {
+            return inheritanceInfo.getRootType();
+        }
+        return type;
+    }
+
+    private void renderIdInSubQuery(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            ImmutableType targetType
+    ) {
+        renderId(builder, table, targetType);
         builder.sql(" in ");
         ConfigurableRootQuery<TableEx<?>, Object> idQuery = deleteQuery
                 .select(table.get(table.getImmutableType().getIdProp()))
@@ -554,9 +742,8 @@ public class MutableDeleteImpl
         builder.leave();
     }
 
-    private void renderId(SqlBuilder builder, TableImplementor<?> table) {
-        ColumnDefinition definition = table
-                .getImmutableType()
+    private void renderId(SqlBuilder builder, TableImplementor<?> table, ImmutableType targetType) {
+        ColumnDefinition definition = targetType
                 .getIdProp()
                 .getStorage(getSqlClient().getMetadataStrategy());
         String alias = MutationRender.alias(builder, table);

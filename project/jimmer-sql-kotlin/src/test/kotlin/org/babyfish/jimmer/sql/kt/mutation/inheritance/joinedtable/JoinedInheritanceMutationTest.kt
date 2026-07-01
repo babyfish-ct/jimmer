@@ -670,21 +670,53 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     @Test
     fun testDeleteRootPolymorphically() {
         connectAndExpect({ con ->
-            val ex = assertFailsWith<ExecutionException> {
-                sqlClient.entities.forConnection(con).delete(KClient::class, 200L) {
-                    setMode(DeleteMode.PHYSICAL)
-                    setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
-                }
-            }
-            ex.message
+            val affectedRowCount = sqlClient.entities.deleteAll(
+                KClient::class,
+                listOf(200L, 201L),
+                con
+            ) {
+                setMode(DeleteMode.PHYSICAL)
+                setTypeMatchMode(TypeMatchMode.POLYMORPHIC)
+                setDissociateAction(KClientProject::client, DissociateAction.SET_NULL)
+                setDissociateAction(KOrganizationProject::organization, DissociateAction.SET_NULL)
+            }.totalAffectedRowCount
+            "$affectedRowCount; " +
+                    "${joinedClientRow(con, 200L)}; " +
+                    "${joinedClientRow(con, 201L)}; " +
+                    "${joinedClientProjectTargetId(con, 2000L)}; " +
+                    "${joinedClientProjectTargetId(con, 2002L)}; " +
+                    "${joinedOrgProjectTargetId(con, 2001L)}"
         }) {
-            value(
-                "Cannot physically delete joined inheritance rows polymorphically by type " +
-                        "\"org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KClient\" " +
-                        "when joinedTableDissociateAction is \"DELETE\". Delete exact concrete types, " +
-                        "use joinedTableDissociateAction = LAX, or explicitly select concrete rows " +
-                        "and delete them as exact concrete types."
-            )
+            statement {
+                queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS)
+                sql(
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE in (?, ?)"
+                )
+                variables(200L, 201L, "ORG", "KPerson")
+            }
+            statement {
+                sql("update JOINED_CLIENT_PROJECT set CLIENT_ID = null where CLIENT_ID in (?, ?)")
+                variables(200L, 201L)
+            }
+            statement {
+                sql("update JOINED_ORG_PROJECT set ORGANIZATION_ID = null where ORGANIZATION_ID = ?")
+                variables(200L)
+            }
+            statement {
+                sql("delete from JOINED_ORGANIZATION where ID = ?")
+                variables(200L)
+            }
+            statement {
+                sql("delete from JOINED_PERSON where ID = ?")
+                variables(201L)
+            }
+            statement {
+                sql("delete from JOINED_CLIENT where ID in (?, ?) and CLIENT_TYPE in (?, ?)")
+                variables(200L, 201L, "ORG", "KPerson")
+            }
+            value("5; null; null; null; null; null")
         }
     }
 

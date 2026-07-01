@@ -48,6 +48,10 @@ public class TableUsageCollector extends TableUsageVisitor {
         return new JoinedTypeBranchTableUsages(joinedTypeBranchTableRequirements);
     }
 
+    public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
+        return joinedTypeBranchTableRequirements.contains(table);
+    }
+
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
         collectJoinedTypeBranchTableRequirement(table, prop);

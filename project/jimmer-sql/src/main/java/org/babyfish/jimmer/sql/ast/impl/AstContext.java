@@ -37,6 +37,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private JoinedTypeBranchUpdateFrame joinedTypeBranchUpdateFrame;
 
+    private JoinedTypeBranchTableFrame joinedTypeBranchTableFrame;
+
     private final QueryRenderMode queryRenderMode;
 
     private int modCount;
@@ -132,6 +134,26 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             }
         }
         return null;
+    }
+
+    public void pushJoinedTypeBranchTable(TableImplementor<?> table) {
+        this.joinedTypeBranchTableFrame = new JoinedTypeBranchTableFrame(
+                joinedTypeBranchTableFrame,
+                table
+        );
+    }
+
+    public void popJoinedTypeBranchTable() {
+        this.joinedTypeBranchTableFrame = joinedTypeBranchTableFrame.parent;
+    }
+
+    public boolean isJoinedTypeBranchTableRendered(TableImplementor<?> table) {
+        for (JoinedTypeBranchTableFrame frame = joinedTypeBranchTableFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isQueryWithoutSortingAndPaging() {
@@ -555,6 +577,21 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             this.parent = parent;
             this.table = table;
             this.rootAlias = rootAlias;
+        }
+    }
+
+    private static class JoinedTypeBranchTableFrame {
+
+        final JoinedTypeBranchTableFrame parent;
+
+        final TableImplementor<?> table;
+
+        JoinedTypeBranchTableFrame(
+                JoinedTypeBranchTableFrame parent,
+                TableImplementor<?> table
+        ) {
+            this.parent = parent;
+            this.table = table;
         }
     }
 }
