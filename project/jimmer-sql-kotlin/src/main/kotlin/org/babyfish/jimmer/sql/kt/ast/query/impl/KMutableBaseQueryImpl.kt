@@ -119,11 +119,12 @@ internal open class KMutableBaseQueryImpl<E: Any>(
 
     internal class ForBaseTableImpl<B : KNonNullBaseTable<*>>(
         javaBaseQuery: MutableBaseQueryImpl,
-        override val table: B
-    ) : BaseTableImpl<B>(javaBaseQuery)
+        table: B
+    ) : BaseTableImpl<B>(javaBaseQuery, table)
 
     internal abstract class BaseTableImpl<B : KNonNullBaseTable<*>>(
-        private val javaBaseQuery: MutableBaseQueryImpl
+        private val javaBaseQuery: MutableBaseQueryImpl,
+        override val table: B
     ) : KMutableBaseTableQuery<B>, MutableStatementImplementor {
 
         override fun where(vararg predicates: KNonNullExpression<Boolean>?) {

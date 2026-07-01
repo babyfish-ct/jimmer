@@ -43,6 +43,12 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
         return new QueryAnalysisBuilder(astContext, materializeAliases).analyze(ast);
     }
 
+    static QueryAnalysis analyzeJoinRequirements(AstContext astContext, TypedQueryImplementor ast) {
+        QueryAnalysisBuilder builder = new QueryAnalysisBuilder(astContext, false);
+        builder.collectJoinRequirements(ast);
+        return builder.analysisFor(builder.joinRequirements);
+    }
+
     @Override
     public QueryAnalysisContext analysisContext() {
         return analysisContext;

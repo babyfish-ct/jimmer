@@ -5,7 +5,8 @@ import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
-import org.babyfish.jimmer.sql.ast.query.*
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery
+import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
@@ -26,19 +27,11 @@ import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
 internal class KMutableSubQueryImpl<PP: KPropsLike, E: Any>(
     private val javaSubQuery: MutableSubQueryImpl,
-    parentTable: PP? = null
+    override val parentTable: PP
 ) : KMutableSubQuery<PP, KNonNullTableEx<E>>, MutableStatementImplementor {
 
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaSubQuery.getTable())
-
-    @Suppress("UNCHECKED_CAST")
-    override val parentTable: PP by lazy {
-        parentTable ?: KNonNullTableExImpl<Any>(
-            javaSubQuery.parent.getTable(),
-            "The parent of sub query does not support join"
-        ) as PP
-    }
 
     override val where: Where by lazy {
         Where(this)
@@ -236,7 +229,7 @@ internal class KMutableSubQueryImpl<PP: KPropsLike, E: Any>(
         KSubQueriesImpl(javaSubQuery, table)
 
     override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
-        KWildSubQueriesImpl(javaSubQuery)
+        KWildSubQueriesImpl(javaSubQuery, table)
 
     override fun hasVirtualPredicate(): Boolean =
         javaSubQuery.hasVirtualPredicate()

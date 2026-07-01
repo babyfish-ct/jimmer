@@ -21,7 +21,12 @@ public class MutationTrigger {
     private final List<MutationTrigger.ChangedData> changedList = new ArrayList<>();
 
     public void modifyEntityTable(Object oldEntity, Object newEntity) {
-        changedList.add(new MutationTrigger.EntityChangedData(oldEntity, snapshot(newEntity)));
+        changedList.add(
+                new MutationTrigger.EntityChangedData(
+                        toLonelySnapshot(oldEntity),
+                        toLonelySnapshot(newEntity)
+                )
+        );
     }
 
     /**
@@ -33,33 +38,13 @@ public class MutationTrigger {
      * command finishes, holding onto the live reference here would let that
      * later reshaping retroactively corrupt the event already recorded.
      * <p>
-     * Take an immediate, independent shallow snapshot of the currently loaded
-     * props instead, so later mutation of the original draft cannot affect
-     * the data already captured for this event. No extra SQL is involved:
-     * everything copied here is already in memory.
+     * Convert entity data to a lonely immutable snapshot immediately, so later
+     * mutation of the original draft cannot affect the data already captured
+     * for this event. No extra SQL is involved: everything copied here is
+     * already in memory.
      */
-    private static Object snapshot(Object obj) {
-        if (!(obj instanceof DraftSpi)) {
-            return obj;
-        }
-        DraftSpi spi = (DraftSpi) obj;
-        if (spi.__isResolved()) {
-            return obj;
-        }
-        DraftContext draftContext = spi.__draftContext();
-        if (draftContext == null) {
-            return obj;
-        }
-        ImmutableType type = spi.__type();
-        DraftSpi snapshot = (DraftSpi) type.getDraftFactory().apply(draftContext, null);
-        for (ImmutableProp prop : type.getProps().values()) {
-            PropId propId = prop.getId();
-            if (spi.__isLoaded(propId)) {
-                snapshot.__set(propId, spi.__get(propId));
-                snapshot.__show(propId, spi.__isVisible(propId));
-            }
-        }
-        return snapshot;
+    private static ImmutableSpi toLonelySnapshot(Object obj) {
+        return obj != null ? toLonely((ImmutableSpi) obj) : null;
     }
 
     public void insertMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
@@ -73,11 +58,6 @@ public class MutationTrigger {
     public void prepareSubmit(DraftContext ctx) {
         if (!changedList.isEmpty()) {
             for (MutationTrigger.ChangedData changedData : this.changedList) {
-                if (changedData instanceof MutationTrigger.EntityChangedData) {
-                    MutationTrigger.EntityChangedData data = (MutationTrigger.EntityChangedData) changedData;
-                    data.oldEntity = ctx.resolveObject(data.oldEntity);
-                    data.newEntity = ctx.resolveObject(data.newEntity);
-                }
                 if (changedData instanceof MutationTrigger.AssociationChangedData) {
                     MutationTrigger.AssociationChangedData data = (MutationTrigger.AssociationChangedData) changedData;
                     data.sourceId = ctx.resolveObject(data.sourceId);
@@ -96,8 +76,8 @@ public class MutationTrigger {
                     MutationTrigger.EntityChangedData data = (MutationTrigger.EntityChangedData) changedData;
                     Internal.requiresNewDraftContext(ctx -> {
                         triggers.fireEntityTableChange(
-                                toLonely((ImmutableSpi) data.oldEntity),
-                                toLonely((ImmutableSpi) data.newEntity),
+                                data.oldEntity,
+                                data.newEntity,
                                 con
                         );
                         return null;
@@ -118,11 +98,11 @@ public class MutationTrigger {
 
     private static class EntityChangedData implements MutationTrigger.ChangedData {
 
-        Object oldEntity;
+        final ImmutableSpi oldEntity;
 
-        Object newEntity;
+        final ImmutableSpi newEntity;
 
-        private EntityChangedData(Object oldEntity, Object newEntity) {
+        private EntityChangedData(ImmutableSpi oldEntity, ImmutableSpi newEntity) {
             this.oldEntity = oldEntity;
             this.newEntity = newEntity;
         }
@@ -194,7 +174,10 @@ public class MutationTrigger {
             return null;
         }
         PropId idPropId = spi.__type().getIdProp().getId();
-        return ImmutableObjects.makeIdOnly(spi.__type(), spi.__get(idPropId));
+        Object id = spi.__get(idPropId);
+        if (id instanceof ImmutableSpi) {
+            id = toLonelySnapshot(id);
+        }
+        return ImmutableObjects.makeIdOnly(spi.__type(), id);
     }
 }
-

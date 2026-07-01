@@ -11,11 +11,11 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.*
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.*
-import org.babyfish.jimmer.sql.kt.model.inheritance.Role
-import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import org.babyfish.jimmer.sql.kt.model.embedded.Transform
 import org.babyfish.jimmer.sql.kt.model.embedded.fetchBy
 import org.babyfish.jimmer.sql.kt.model.embedded.id
+import org.babyfish.jimmer.sql.kt.model.inheritance.Role
+import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -54,6 +54,36 @@ class CteBaseQueryTest : AbstractQueryTest() {
             }.fetchPage(0, 10, con)
             assertTrue(page.totalRowCount > 0, "totalRowCount should be > 0")
             assertTrue(page.rows.isNotEmpty(), "rows should not be empty")
+        }
+    }
+
+    @Test
+    fun testNestedWildSubQueryCanUseParentTableInBaseQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val newerEditionCount = subQuery(Book::class) {
+                    where(table.storeId eq parentTable.id)
+                    where(
+                        exists(
+                            wildSubQuery(Book::class) {
+                                where(table.storeId eq parentTable.storeId)
+                                where(table.edition gt parentTable.edition)
+                            }
+                        )
+                    )
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(newerEditionCount)
+            }
+        }
+        jdbc { con ->
+            val rows = sqlClient.createQuery(baseTable) {
+                orderBy(table._2.desc())
+                select(table._1)
+            }.execute(con)
+            assertTrue(rows.isNotEmpty(), "rows should not be empty")
         }
     }
 

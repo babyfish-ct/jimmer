@@ -33,7 +33,8 @@ import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 import org.babyfish.jimmer.sql.runtime.TupleMapper
 
 internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
-    protected val javaQuery: MutableRootQueryImpl<TableLike<*>>
+    protected val javaQuery: MutableRootQueryImpl<TableLike<*>>,
+    override val table: P
 ) : KMutableRootQuery<P>, MutableStatementImplementor {
 
     override val where: Where by lazy {
@@ -218,10 +219,10 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
         )
 
     override val subQueries: KSubQueries<P> =
-        KSubQueriesImpl(javaQuery)
+        KSubQueriesImpl(javaQuery, table)
 
     override val wildSubQueries: KWildSubQueries<P> =
-        KWildSubQueriesImpl(javaQuery)
+        KWildSubQueriesImpl(javaQuery, table)
 
     override fun hasVirtualPredicate(): Boolean =
         javaQuery.hasVirtualPredicate()
@@ -232,15 +233,15 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
 
     internal class ForBaseTableImpl<B: KBaseTable>(
         javaTable: MutableRootQueryImpl<TableLike<*>>,
-        override val table: B
-    ): KMutableRootQueryImpl<B>(javaTable)
+        table: B
+    ): KMutableRootQueryImpl<B>(javaTable, table)
 
     internal class ForEntityImpl<E: Any>(
         javaQuery: MutableRootQueryImpl<TableLike<*>>
-    ) : KMutableRootQueryImpl<KNonNullTable<E>>(javaQuery), KMutableRootQuery.ForEntity<E> {
-
-        override val table: KNonNullTable<E> =
-            KNonNullTableExImpl(javaQuery.getTable() as TableImplementor<E>)
+    ) : KMutableRootQueryImpl<KNonNullTable<E>>(
+        javaQuery,
+        KNonNullTableExImpl(javaQuery.getTable() as TableImplementor<E>)
+    ), KMutableRootQuery.ForEntity<E> {
 
         override fun where(specification: Specification<E>?) {
             if (specification != null) {
@@ -262,12 +263,11 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     internal class ForAssociation<S, T>(
         javaQuery: MutableRootQueryImpl<TableLike<*>>
-    ) : KMutableRootQueryImpl<KNonNullTable<Association<S, T>>>(javaQuery) {
-
-        @Suppress("UNCHECKED_CAST")
-        override val table: KNonNullTable<Association<S, T>> =
-            KNonNullTableExImpl(javaQuery.tableLikeImplementor as TableImplementor<Association<S, T>>)
-    }
+    ) : KMutableRootQueryImpl<KNonNullTable<Association<S, T>>>(
+        javaQuery,
+        KNonNullTableExImpl(javaQuery.tableLikeImplementor as TableImplementor<Association<S, T>>)
+    )
 }
