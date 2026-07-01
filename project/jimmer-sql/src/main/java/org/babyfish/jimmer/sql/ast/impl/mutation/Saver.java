@@ -41,7 +41,7 @@ public class Saver {
         );
     }
 
-    private Saver(SaveContext ctx) {
+    Saver(SaveContext ctx) {
         this.ctx = ctx;
     }
 
@@ -71,6 +71,11 @@ public class Saver {
 
     @SuppressWarnings("unchecked")
     public <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
+        return saveAll(entities, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    <E> BatchSaveResult<E> saveAll(Collection<E> entities, boolean submitTrigger) {
         if (entities.isEmpty()) {
             return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
@@ -85,7 +90,7 @@ public class Saver {
                 },
                 trigger == null ? null : trigger::prepareSubmit
         );
-        if (trigger != null) {
+        if (trigger != null && submitTrigger) {
             trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
         Iterator<E> oldItr = entities.iterator();
@@ -781,33 +786,17 @@ public class Saver {
             return false;
         }
         if (fetcher != null) {
-            for (Field field : fetcher.getFieldMap().values()) {
-                ImmutableProp prop = field.getProp();
-                PropId propId = prop.getId();
-                if (!draft.__isLoaded(propId)) {
-                    return false;
-                }
-                if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                    Fetcher<?> childFetcher = field.getChildFetcher();
-                    Object associatedValue = draft.__get(propId);
-                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                        List<DraftSpi> list = (List<DraftSpi>) associatedValue;
-                        for (DraftSpi e : list) {
-                            if (!isShapeMatched(e, childFetcher, ctx)) {
-                                return false;
-                            }
-                        }
-                    } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher, ctx)) {
-                        return false;
-                    }
-                }
+            if (!isShapeMatchedByFetcher(draft, fetcher, ctx)) {
+                return false;
             }
+            Map<String, Field> matchedFieldMap = new LinkedHashMap<>();
+            collectMatchedFieldMap(draft.__type(), fetcher, matchedFieldMap);
             for (ImmutableProp prop : draft.__type().getProps().values()) {
                 PropId propId = prop.getId();
                 if (!draft.__isLoaded(propId)) {
                     continue;
                 }
-                Field field = fetcher.getFieldMap().get(prop.getName());
+                Field field = matchedFieldMap.get(prop.getName());
                 if (field == null) {
                     draft.__unload(propId);
                 } else if (field.isImplicit()) {
@@ -836,6 +825,66 @@ public class Saver {
             }
         }
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isShapeMatchedByFetcher(DraftSpi draft, Fetcher<?> fetcher, ShapeMatchContext ctx) {
+        if (!ctx.isOptimizable(draft.__type(), fetcher)) {
+            return false;
+        }
+        for (Field field : fetcher.getFieldMap().values()) {
+            ImmutableProp prop = field.getProp();
+            PropId propId = prop.getId();
+            if (!draft.__isLoaded(propId)) {
+                return false;
+            }
+            if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                Fetcher<?> childFetcher = field.getChildFetcher();
+                Object associatedValue = draft.__get(propId);
+                if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                    List<DraftSpi> list = (List<DraftSpi>) associatedValue;
+                    for (DraftSpi e : list) {
+                        if (!isShapeMatched(e, childFetcher, ctx)) {
+                            return false;
+                        }
+                    }
+                } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher, ctx)) {
+                    return false;
+                }
+            }
+        }
+        for (Map.Entry<ImmutableType, Fetcher<?>> e :
+                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
+            if (e.getKey().isAssignableFrom(draft.__type()) &&
+                    !isShapeMatchedByFetcher(draft, e.getValue(), ctx)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void collectMatchedFieldMap(
+            ImmutableType actualType,
+            Fetcher<?> fetcher,
+            Map<String, Field> matchedFieldMap
+    ) {
+        for (Field field : fetcher.getFieldMap().values()) {
+            addMatchedField(matchedFieldMap, field);
+        }
+        for (Map.Entry<ImmutableType, Fetcher<?>> e :
+                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
+            if (e.getKey().isAssignableFrom(actualType)) {
+                collectMatchedFieldMap(actualType, e.getValue(), matchedFieldMap);
+            }
+        }
+    }
+
+    private static void addMatchedField(Map<String, Field> matchedFieldMap, Field field) {
+        String name = field.getProp().getName();
+        Field oldField = matchedFieldMap.get(name);
+        if (oldField == null || oldField.isImplicit() && !field.isImplicit()) {
+            matchedFieldMap.put(name, field);
+        }
     }
 
     private class ShapeMatchContext {

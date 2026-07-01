@@ -1,11 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization;
@@ -22,6 +18,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -272,6 +270,123 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(302L, "Person", "Exhaustive Person", "Eve", "Stone");
                     });
                     ctx.value("[Person, Exhaustive Person, null, Eve, Stone]");
+                }
+        );
+    }
+
+    @Test
+    public void testBatchInsertPolymorphicInputsWithShapeMatchedFetcher() {
+        ClientExhaustiveInput.Person personInput = new ClientExhaustiveInput.Person();
+        personInput.setId(304L);
+        personInput.setName("Batch Person");
+        personInput.setFirstName("Bob");
+        personInput.setLastName("Stone");
+
+        ClientExhaustiveInput.Organization organizationInput = new ClientExhaustiveInput.Organization();
+        organizationInput.setId(305L);
+        organizationInput.setName("Batch Org");
+        organizationInput.setTaxCode("B-ORG");
+
+        connectAndExpect(
+                con -> getSqlClient()
+                        .getEntities()
+                        .saveInputsCommand(Arrays.<ClientExhaustiveInput>asList(personInput, organizationInput))
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                ClientFetcher.$
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName().lastName())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(304L, "Person", "Batch Person", "Bob", "Stone");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into CLIENT(ID, CLIENT_TYPE, NAME, TAX_CODE) values(?, ?, ?, ?)");
+                        it.variables(305L, "ORG", "Batch Org", "B-ORG");
+                    });
+                    ctx.value(this::assertBatchInputResult);
+                }
+        );
+    }
+
+    @Test
+    public void testBatchInsertPolymorphicInputsWithShapeNotMatchedFetcher() {
+        ClientExhaustiveInput.Person personInput = new ClientExhaustiveInput.Person();
+        personInput.setId(306L);
+        personInput.setName("Fetched Person");
+        personInput.setFirstName("Alice");
+        personInput.setLastName("White");
+
+        ClientExhaustiveInput.Organization organizationInput = new ClientExhaustiveInput.Organization();
+        organizationInput.setId(307L);
+        organizationInput.setName("Fetched Org");
+        organizationInput.setTaxCode("F-ORG");
+
+        connectAndExpect(
+                con -> getSqlClient()
+                        .getEntities()
+                        .saveInputsCommand(Arrays.<ClientExhaustiveInput>asList(personInput, organizationInput))
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                ClientFetcher.$
+                                        .type()
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName().lastName())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into CLIENT(ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(306L, "Person", "Fetched Person", "Alice", "White");
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                        "tb_2_.TAX_CODE, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                        "from CLIENT tb_1_ " +
+                                        "left join CLIENT tb_2_ on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
+                                        "left join CLIENT tb_3_ on tb_1_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables("ORG", "Person", 306L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into CLIENT(ID, CLIENT_TYPE, NAME, TAX_CODE) values(?, ?, ?, ?)");
+                        it.variables(307L, "ORG", "Fetched Org", "F-ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                        "tb_2_.TAX_CODE, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                        "from CLIENT tb_1_ " +
+                                        "left join CLIENT tb_2_ on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
+                                        "left join CLIENT tb_3_ on tb_1_.ID = tb_3_.ID and tb_3_.CLIENT_TYPE = ? " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables("ORG", "Person", 307L);
+                    });
+                    ctx.value(this::assertFetchedBatchInputResult);
                 }
         );
     }
@@ -1160,5 +1275,35 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private void assertBatchInputResult(List<Client> clients) {
+        assertEquals(2, clients.size());
+        Person person = (Person) clients.get(0);
+        assertEquals(304L, person.id());
+        assertEquals("Batch Person", person.name());
+        assertEquals("Bob", person.firstName());
+        assertEquals("Stone", person.lastName());
+
+        Organization organization = (Organization) clients.get(1);
+        assertEquals(305L, organization.id());
+        assertEquals("Batch Org", organization.name());
+        assertEquals("B-ORG", organization.taxCode());
+    }
+
+    private void assertFetchedBatchInputResult(List<Client> clients) {
+        assertEquals(2, clients.size());
+        Person person = (Person) clients.get(0);
+        assertEquals(306L, person.id());
+        assertEquals("Person", person.type());
+        assertEquals("Fetched Person", person.name());
+        assertEquals("Alice", person.firstName());
+        assertEquals("White", person.lastName());
+
+        Organization organization = (Organization) clients.get(1);
+        assertEquals(307L, organization.id());
+        assertEquals("ORG", organization.type());
+        assertEquals("Fetched Org", organization.name());
+        assertEquals("F-ORG", organization.taxCode());
     }
 }
