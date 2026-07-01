@@ -23,6 +23,12 @@ class GenericMappedSuperclassTest {
         assertSame(type, parent.targetType)
         assertTrue(parent.isReference(TargetLevel.ENTITY))
 
+        val parentId = type.getProp("parentId")
+        assertEquals(KGenericTreeNode::class.java, parentId.declaringType.javaClass)
+        assertEquals(Long::class.javaObjectType, parentId.returnClass)
+        assertEquals(ImmutablePropCategory.SCALAR, parentId.category)
+        assertSame(parent, parentId.idViewBaseProp)
+
         val children = type.getProp("children")
         assertEquals(KGenericTreeNode::class.java, children.declaringType.javaClass)
         assertEquals(List::class.java, children.returnClass)

@@ -27,6 +27,12 @@ public class GenericMappedSuperclassTest {
         assertSame(type, parent.getTargetType());
         assertTrue(parent.isReference(TargetLevel.ENTITY));
 
+        ImmutableProp parentId = type.getProp("parentId");
+        assertEquals(GenericTreeNode.class, parentId.getDeclaringType().getJavaClass());
+        assertEquals(Long.class, parentId.getReturnClass());
+        assertEquals(ImmutablePropCategory.SCALAR, parentId.getCategory());
+        assertSame(parent, parentId.getIdViewBaseProp());
+
         ImmutableProp children = type.getProp("children");
         assertEquals(GenericTreeNode.class, children.getDeclaringType().getJavaClass());
         assertEquals(List.class, children.getReturnClass());

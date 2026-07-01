@@ -971,7 +971,24 @@ public class ImmutableProp implements BaseProp {
                             " nullable"
             );
         }
-        if (!elementTypeName.box().equals(baseProp.getTargetType().getIdProp().getElementTypeName().box())) {
+        ImmutableProp targetIdProp = baseProp.getTargetType() != null ?
+                baseProp.getTargetType().getIdProp() :
+                declaringType.getIdProp();
+        if (targetIdProp == null) {
+            if (baseProp.isGenericElementType && declaringType.isMappedSuperClass()) {
+                idViewBasePropResolved = true;
+                return null;
+            }
+            throw new MetaException(
+                    executableElement,
+                    "it is decorated by \"@" +
+                            IdView.class.getName() +
+                            "\", the base property \"" +
+                            baseProp +
+                            "\" returns generic entity type whose id cannot be resolved"
+            );
+        }
+        if (!elementTypeName.box().equals(targetIdProp.getElementTypeName().box())) {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
@@ -979,7 +996,7 @@ public class ImmutableProp implements BaseProp {
                             "\", the base property \"" +
                             baseProp +
                             "\" returns entity type whose id is \"" +
-                            baseProp.getTargetType().getIdProp().getElementTypeName() +
+                            targetIdProp.getElementTypeName() +
                             "\", but the current property does not return that type"
             );
         }

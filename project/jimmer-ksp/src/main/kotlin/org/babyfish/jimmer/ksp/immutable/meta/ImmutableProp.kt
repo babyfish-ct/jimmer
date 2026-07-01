@@ -681,7 +681,21 @@ class ImmutableProp(
                     " nullable"
             )
         }
-        val targetIdTypeName = baseProp.targetType!!.idProp!!.targetTypeName(
+        val targetIdProp = baseProp.targetType?.idProp ?: declaringType.idProp
+        if (targetIdProp == null) {
+            if (baseProp.isGenericTarget && declaringType.isMappedSuperclass) {
+                return
+            }
+            throw MetaException(
+                propDeclaration,
+                "it is decorated by \"@" +
+                    IdView::class.java.name +
+                    "\", the base property \"" +
+                    baseProp +
+                    "\" returns generic entity type whose id cannot be resolved"
+            )
+        }
+        val targetIdTypeName = targetIdProp.targetTypeName(
             overrideNullable = baseProp.isNullable
         )
         if (targetTypeName() != targetIdTypeName) {
