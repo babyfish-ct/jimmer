@@ -21,6 +21,18 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.id 
 class PolymorphicDtoViewTest : AbstractQueryTest() {
 
     @Test
+    fun testSealedPolymorphicDtoRootSupportsExhaustiveWhen() {
+        fun label(view: KClientRuntimeView): String =
+            when (view) {
+                is KClientRuntimeView.Organization -> "organization"
+                is KClientRuntimeView.Person -> "person"
+            }
+
+        assertEquals("organization", label(KClientRuntimeView.Organization(id = 1L, name = "A", taxCode = "T")))
+        assertEquals("person", label(KClientRuntimeView.Person(id = 2L, name = "B", firstName = "B")))
+    }
+
+    @Test
     fun testInstantiableRootWithoutTypesIsOrdinaryDtoClass() {
         executeAndExpect(
             sqlClient.createQuery(KInstantiableClient::class) {

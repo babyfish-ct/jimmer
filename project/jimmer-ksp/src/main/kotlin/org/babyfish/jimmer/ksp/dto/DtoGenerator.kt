@@ -213,6 +213,11 @@ class DtoGenerator private constructor(
     private fun buildPolymorphicType(): TypeSpec {
         val builder = TypeSpec
             .interfaceBuilder(innerClassName ?: dtoType.name!!)
+            .apply {
+                if (dtoType.modifiers.contains(DtoModifier.SEALED)) {
+                    addModifiers(KModifier.SEALED)
+                }
+            }
             .addAnnotation(
                 if (parent == null) {
                     generatedAnnotation(dtoType.dtoFile, mutable)

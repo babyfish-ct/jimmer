@@ -1170,6 +1170,45 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testSealedPolymorphicDto() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "sealed ClientView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        Person {\n" +
+                        "            firstName\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        Assertions.assertTrue(dtoType.getModifiers().contains(DtoModifier.SEALED));
+        Assertions.assertNotNull(dtoType.getPolymorphism());
+        Assertions.assertEquals(
+                "sealed ClientView {id, name, #types {@implicit default {}, org.babyfish.jimmer.sql.model.Person {firstName}}}",
+                dtoType.toString()
+        );
+    }
+
+    @Test
+    public void testSealedDtoRequiresTypesBlock() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "sealed ClientView {\n" +
+                            "    id\n" +
+                            "    name\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:1 : The modifier 'sealed' can only be used for polymorphic DTOs with #types\n" +
+                        "sealed ClientView {\n" +
+                        "^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
     public void testPolymorphicDtoWithExplicitDefault() {
         DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
                 "ClientView {\n" +

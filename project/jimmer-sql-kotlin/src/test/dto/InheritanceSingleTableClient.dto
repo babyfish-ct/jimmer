@@ -11,7 +11,7 @@ KClientImplicitCatchAllView {
     }
 }
 
-KClientRuntimeView {
+sealed KClientRuntimeView {
     id
     name
     #types {

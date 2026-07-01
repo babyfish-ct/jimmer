@@ -248,6 +248,9 @@ public class DtoGenerator {
         typeBuilder = TypeSpec
                 .interfaceBuilder(simpleName)
                 .addModifiers(Modifier.PUBLIC);
+        if (dtoType.getModifiers().contains(DtoModifier.SEALED)) {
+            typeBuilder.addModifiers(sealedModifier());
+        }
         typeBuilder.addSuperinterface(
                 ParameterizedTypeName.get(
                         dtoType.getModifiers().contains(DtoModifier.INPUT) ?
@@ -347,6 +350,17 @@ public class DtoGenerator {
 
     public String getSimpleName() {
         return innerClassName != null ? innerClassName : dtoType.getName();
+    }
+
+    private Modifier sealedModifier() {
+        try {
+            return Modifier.valueOf("SEALED");
+        } catch (IllegalArgumentException ex) {
+            throw new GeneratorException(
+                    "The modifier 'sealed' requires the annotation processor to run on Java 17 or later",
+                    ex
+            );
+        }
     }
 
     private ClassName getDtoClassName() {

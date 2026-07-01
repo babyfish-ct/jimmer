@@ -40,6 +40,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         Set<DtoModifier> modifiers = EnumSet.noneOf(DtoModifier.class);
+        Token sealedModifier = null;
         for (Token modifier : type.modifiers) {
             DtoModifier dtoModifier;
             switch (modifier.getText()) {
@@ -51,6 +52,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                     break;
                 case "unsafe":
                     dtoModifier = DtoModifier.UNSAFE;
+                    break;
+                case "sealed":
+                    dtoModifier = DtoModifier.SEALED;
+                    sealedModifier = modifier;
                     break;
                 case "fixed":
                     dtoModifier = DtoModifier.FIXED;
@@ -79,6 +84,13 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                         "Duplicated modifier \"" + modifier.getText() + "\""
                 );
             }
+        }
+        if (sealedModifier != null && type.body.typesBlocks.isEmpty()) {
+            throw exception(
+                    sealedModifier.getLine(),
+                    sealedModifier.getCharPositionInLine(),
+                    "The modifier 'sealed' can only be used for polymorphic DTOs with #types"
+            );
         }
         if (modifiers.contains(DtoModifier.INPUT) &&
                 modifiers.contains(DtoModifier.SPECIFICATION)) {
