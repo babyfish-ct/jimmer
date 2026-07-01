@@ -283,13 +283,15 @@ class Operator {
                     );
         }
 
+        int rowCount = execute(builder, batch, false, false);
+        // Fire the trigger after `execute` so the draft already reflects its final,
+        // post-execution state (generated id, version, ...) before being captured.
         MutationTrigger trigger = fireTrigger ? ctx.trigger : null;
         if (trigger != null) {
             for (DraftSpi draft : batch.entities()) {
                 trigger.modifyEntityTable(null, draft);
             }
         }
-        int rowCount = execute(builder, batch, false, false);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
     }
 
@@ -1153,6 +1155,12 @@ class Operator {
         EntityCollection<DraftSpi> entities = changedProps != null ?
                 new EntityList<>(batch.entities().size()) :
                 null;
+        // Drafts keep being mutated in place after this point (id/version filled in
+        // below, and possibly reshaped later by `Saver.fetchImpl`/`replaceDraft` to
+        // match an explicitly requested `Fetcher`). Recording trigger events must be
+        // deferred until the draft reflects its final, post-execution state, so we
+        // only remember which (oldRow, draft) pairs need an event here.
+        List<Object[]> pendingTriggerData = trigger != null ? new ArrayList<>() : null;
         if (entities != null || trigger != null) {
             if (keyProps != null) {
                 Map<Object, ImmutableSpi> subMap = originalIdObjMap != null ?
@@ -1161,8 +1169,8 @@ class Operator {
                 for (DraftSpi draft : batch.entities()) {
                     ImmutableSpi oldRow = subMap.get(Keys.keyOf(draft, keyProps));
                     if (isChanged(changedProps, oldRow, draft)) {
-                        if (trigger != null) {
-                            trigger.modifyEntityTable(oldRow, draft);
+                        if (pendingTriggerData != null) {
+                            pendingTriggerData.add(new Object[]{oldRow, draft});
                         }
                         if (entities != null) {
                             entities.add(draft);
@@ -1176,8 +1184,8 @@ class Operator {
                             originalIdObjMap.get(draft.__get(idPropId)) :
                             null;
                     if (isChanged(changedProps, oldRow, draft) || hasOptimisticLock) {
-                        if (trigger != null) {
-                            trigger.modifyEntityTable(oldRow, draft);
+                        if (pendingTriggerData != null) {
+                            pendingTriggerData.add(new Object[]{oldRow, draft});
                         }
                         if (entities != null) {
                             entities.add(draft);
@@ -1205,6 +1213,11 @@ class Operator {
                 if (rowCounts[index++] == 0) {
                     ctx.throwOptimisticLockError(row);
                 }
+            }
+        }
+        if (pendingTriggerData != null) {
+            for (Object[] pair : pendingTriggerData) {
+                trigger.modifyEntityTable(pair[0], pair[1]);
             }
         }
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));

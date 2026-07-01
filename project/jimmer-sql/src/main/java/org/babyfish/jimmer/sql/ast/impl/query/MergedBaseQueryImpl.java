@@ -284,6 +284,15 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         Collections.addAll(queries, expandedQueries);
     }
 
+    @Override
+    public void applyGlobalFilters(AstContext astContext, FilterLevel level, QueryAnalysis queryAnalysis) {
+        astContext.visitRecursiveQuery(this, () -> {
+            for (ConfigurableBaseQueryImpl<?> query : getExpandedQueries()) {
+                query.applyGlobalFilters(astContext, level, queryAnalysis);
+            }
+        });
+    }
+
     public BaseTableSymbol itemBaseTable(ConfigurableBaseQueryImpl<?> itemQuery, boolean cte) {
         upgrade();
         Map<ConfigurableBaseQueryImpl<?>, BaseTableSymbol> itemBaseTables;

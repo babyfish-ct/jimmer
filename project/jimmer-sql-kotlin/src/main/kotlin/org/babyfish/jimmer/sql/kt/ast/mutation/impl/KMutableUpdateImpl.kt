@@ -70,8 +70,8 @@ internal class KMutableUpdateImpl<E: Any>(
     }
 
     override val subQueries: KSubQueries<KNonNullTableEx<E>> =
-        KSubQueriesImpl(javaUpdate)
+        KSubQueriesImpl(javaUpdate, table)
 
     override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
-        KWildSubQueriesImpl(javaUpdate)
+        KWildSubQueriesImpl(javaUpdate, table)
 }

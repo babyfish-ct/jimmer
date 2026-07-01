@@ -37,6 +37,10 @@ public final class QueryRenderContext {
         return baseQueryReadSupport;
     }
 
+    public QueryAnalysis getAnalysis() {
+        return analysis;
+    }
+
     public TableAliasScope getTableAliasScope() {
         return astContext.getTableAliasScope();
     }
