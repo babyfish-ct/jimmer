@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -78,6 +79,15 @@ public class MutableUpdateImpl
         return null;
     }
 
+    @Override
+    protected boolean shouldApplyImplicitDiscriminatorPredicate(TableImplementor<?> table) {
+        ImmutableType type = table.getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo == null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.getRootType() == type;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <X> MutableUpdate set(PropExpression<X> path, X value) {
@@ -104,6 +114,7 @@ public class MutableUpdateImpl
         if (!(target.prop.isColumnDefinition())) {
             throw new IllegalArgumentException("The assigned prop expression must be mapped by database columns");
         }
+        validateJoinedInheritanceAssignment(target);
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean joinedTableUpdatable = updateJoin != null && updateJoin.isJoinedTableUpdatable();
         if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableLikeImplementor())) {
@@ -119,6 +130,35 @@ public class MutableUpdateImpl
         }
         Literals.bind(value, path);
         return this;
+    }
+
+    private void validateJoinedInheritanceAssignment(Target target) {
+        ImmutableType updateType = getTableLikeImplementor().getImmutableType();
+        InheritanceInfo inheritanceInfo = updateType.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return;
+        }
+        ImmutableProp originalProp = target.prop.toOriginal();
+        if (originalProp == inheritanceInfo.getDiscriminatorProp(updateType).toOriginal()) {
+            throw new IllegalArgumentException(
+                    "The discriminator property \"" +
+                    target.prop +
+                    "\" cannot be updated by createUpdate for joined inheritance type \"" +
+                    updateType +
+                    "\""
+            );
+        }
+        if (!TableImplementor.isPropOwnedByStage(originalProp, updateType)) {
+            throw new IllegalArgumentException(
+                    "Cannot update property \"" +
+                    target.prop +
+                    "\" by createUpdate for joined inheritance type \"" +
+                    updateType +
+                    "\" because it belongs to the physical table of \"" +
+                    originalProp.getDeclaringType() +
+                    "\""
+            );
+        }
     }
 
     @Override
@@ -289,6 +329,7 @@ public class MutableUpdateImpl
     private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(this);
+        boolean joinedTypeBranchUpdatePushed = false;
         try {
             TableImplementor<?> table = getTableLikeImplementor();
             Dialect dialect = getSqlClient().getDialect();
@@ -297,11 +338,37 @@ public class MutableUpdateImpl
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
+            UpdateJoin updateJoin = dialect.getUpdateJoin();
+            boolean joinedTypeBranchUpdate = table.isJoinedTypeBranchRoot();
+            boolean joinedTypeBranchRootRequired = visitor.isJoinedTypeBranchRootRequired();
+            if (joinedTypeBranchRootRequired && updateJoin == null) {
+                throw new ExecutionException(
+                        "Table joins for update statement is forbidden by the current dialect, " +
+                        "but joined inheritance update for \"" +
+                        table.getImmutableType() +
+                        "\" requires joining the root table"
+                );
+            }
+            if (joinedTypeBranchRootRequired && updateJoin.getFrom() == UpdateJoin.From.AS_ROOT) {
+                throw new ExecutionException(
+                        "The current dialect renders update joins from the root table, " +
+                        "but joined inheritance update for \"" +
+                        table.getImmutableType() +
+                        "\" requires a separate root table alias"
+                );
+            }
+            String joinedTypeBranchRootAlias = joinedTypeBranchRootRequired ?
+                    astContext.getTableAliasScope().allocateTableAlias(table) :
+                    null;
             if (aliasSource != null) {
                 astContext.getTableAliasScope().bindAlias(
                         aliasSource.realTable(astContext),
                         getTableLikeImplementor().realTable(astContext)
                 );
+            }
+            if (joinedTypeBranchUpdate) {
+                astContext.pushJoinedTypeBranchUpdate(table, joinedTypeBranchRootAlias);
+                joinedTypeBranchUpdatePushed = true;
             }
             builder
                     .sql("update ")
@@ -309,8 +376,10 @@ public class MutableUpdateImpl
 
             addAlias(builder);
 
-            UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
+                if (joinedTypeBranchRootRequired) {
+                    renderJoinedTypeBranchRootJoin(builder, TableImplementor.RenderMode.NORMAL);
+                }
                 for (RealTable child : table.realTable(astContext)) {
                     child.renderTo(builder, false);
                 }
@@ -324,7 +393,11 @@ public class MutableUpdateImpl
             renderDeeperJoins(builder);
 
             renderWhereClause(builder, true, ids);
+
         } finally {
+            if (joinedTypeBranchUpdatePushed) {
+                astContext.popJoinedTypeBranchUpdate();
+            }
             astContext.popStatement();
         }
     }
@@ -380,7 +453,7 @@ public class MutableUpdateImpl
         boolean withTargetPrefix =
                 updateJoin != null &&
                 updateJoin.isJoinedTableUpdatable() &&
-                hasUsedChild(table, builder.getAstContext());
+                (hasUsedChild(table, builder.getAstContext()) || isJoinedTypeBranchRootUpdateRequired(builder));
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.separator();
             renderTarget(builder, e.getKey(), withTargetPrefix);
@@ -427,13 +500,18 @@ public class MutableUpdateImpl
 
     private void renderTables(SqlBuilder builder) {
         TableImplementor<?> table = getTableLikeImplementor();
-        if (hasUsedChild(table, builder.getAstContext())) {
+        boolean joinedTypeBranchRootRequired = isJoinedTypeBranchRootUpdateRequired(builder);
+        boolean usedChild = hasUsedChild(table, builder.getAstContext());
+        if (joinedTypeBranchRootRequired || usedChild) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
                     table.renderTo(builder);
                     break;
                 case AS_JOIN:
                     builder.from().enter(",");
+                    if (joinedTypeBranchRootRequired) {
+                        renderJoinedTypeBranchRootJoin(builder, TableImplementor.RenderMode.FROM_ONLY);
+                    }
                     for (RealTable child : table.realTable(builder.getAstContext())) {
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
                     }
@@ -460,13 +538,22 @@ public class MutableUpdateImpl
         TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
 
+        boolean hasJoinedTypeBranchRootCondition =
+                forUpdate &&
+                updateJoin != null &&
+                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+                isJoinedTypeBranchRootUpdateRequired(builder);
+
         boolean hasTableCondition =
                 forUpdate &&
                 updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                 hasUsedChild(table, builder.getAstContext());
 
-        if (!hasTableCondition && ids == null && !unfrozenPredicates().iterator().hasNext()) {
+        if (!hasJoinedTypeBranchRootCondition &&
+                !hasTableCondition &&
+                ids == null &&
+                !unfrozenPredicates().iterator().hasNext()) {
             return;
         }
 
@@ -479,6 +566,10 @@ public class MutableUpdateImpl
                     ids,
                     builder
             );
+        }
+
+        if (hasJoinedTypeBranchRootCondition) {
+            renderJoinedTypeBranchRootJoin(builder, TableImplementor.RenderMode.WHERE_ONLY);
         }
 
         if (hasTableCondition) {
@@ -495,6 +586,68 @@ public class MutableUpdateImpl
             }
         }
 
+        builder.leave();
+    }
+
+    private boolean isJoinedTypeBranchRootUpdateRequired(SqlBuilder builder) {
+        return builder.getAstContext().getJoinedTypeBranchUpdateRootAlias(getTableLikeImplementor()) != null;
+    }
+
+    private void renderJoinedTypeBranchRootJoin(
+            SqlBuilder builder,
+            TableImplementor.RenderMode mode
+    ) {
+        TableImplementor<?> table = getTableLikeImplementor();
+        InheritanceInfo inheritanceInfo = table.getImmutableType().getInheritanceInfo();
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        String rootAlias = builder.getAstContext().getJoinedTypeBranchUpdateRootAlias(table);
+        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+        switch (mode) {
+            case NORMAL:
+                builder
+                        .join(JoinType.INNER)
+                        .sql(rootType.getTableName(strategy))
+                        .sql(" ")
+                        .sql(rootAlias)
+                        .on();
+                break;
+            case FROM_ONLY:
+                builder
+                        .separator()
+                        .sql(rootType.getTableName(strategy))
+                        .sql(" ")
+                        .sql(rootAlias);
+                return;
+            case WHERE_ONLY:
+                builder.separator();
+                break;
+            default:
+                throw new AssertionError("Internal bug: Illegal render mode for joined type branch update root");
+        }
+        renderJoinedTypeBranchRootJoinCondition(builder, rootAlias);
+    }
+
+    private void renderJoinedTypeBranchRootJoinCondition(SqlBuilder builder, String rootAlias) {
+        TableImplementor<?> table = getTableLikeImplementor();
+        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+        ImmutableType type = table.getImmutableType();
+        ImmutableType rootType = type.getInheritanceInfo().getRootType();
+        ColumnDefinition rootDefinition = rootType.getIdProp().getStorage(strategy);
+        ColumnDefinition targetDefinition = type.getIdProp().getStorage(strategy);
+        String targetAlias = MutationRender.alias(builder, table);
+        int size = rootDefinition.size();
+        builder.enter(SqlBuilder.ScopeType.AND);
+        for (int i = 0; i < size; i++) {
+            builder
+                    .separator()
+                    .sql(rootAlias)
+                    .sql(".")
+                    .sql(rootDefinition.name(i))
+                    .sql(" = ")
+                    .sql(targetAlias)
+                    .sql(".")
+                    .sql(targetDefinition.name(i));
+        }
         builder.leave();
     }
 
@@ -553,9 +706,11 @@ public class MutableUpdateImpl
         }
     }
 
-    private static class VisitorImpl extends TableUsageCollector {
+    private class VisitorImpl extends TableUsageCollector {
 
         private final Dialect dialect;
+
+        private boolean joinedTypeBranchRootRequired;
 
         public VisitorImpl(AstContext astContext, Dialect dialect) {
             super(astContext);
@@ -565,12 +720,43 @@ public class MutableUpdateImpl
         @Override
         public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
             super.visitTableReference(table, prop, rawId);
+            collectJoinedTypeBranchRootRequirement(table, prop);
             if (dialect != null) {
                 validateTable(table);
             }
         }
 
+        boolean isJoinedTypeBranchRootRequired() {
+            return joinedTypeBranchRootRequired;
+        }
+
+        private void collectJoinedTypeBranchRootRequirement(RealTable table, @Nullable ImmutableProp prop) {
+            TableImplementor<?> updateTable = getTableLikeImplementor();
+            if (!updateTable.isJoinedTypeBranchRoot()) {
+                return;
+            }
+            if (table.getTableLikeImplementor() == updateTable) {
+                if (prop == null || !prop.isId() && updateTable.isRootTableProp(prop)) {
+                    joinedTypeBranchRootRequired = true;
+                    return;
+                }
+            }
+            for (RealTable current = table; current.getParent() != null; current = current.getParent()) {
+                if (current.getParent().getTableLikeImplementor() == updateTable &&
+                        current.getTableLikeImplementor() instanceof TableImplementor<?>) {
+                    ImmutableProp joinProp = ((TableImplementor<?>) current.getTableLikeImplementor()).getJoinProp();
+                    if (joinProp != null && updateTable.isRootTableProp(joinProp)) {
+                        joinedTypeBranchRootRequired = true;
+                        return;
+                    }
+                }
+            }
+        }
+
         private void validateTable(RealTable table) {
+            if (table.getTableLikeImplementor().getStatement() != MutableUpdateImpl.this) {
+                return;
+            }
             if (getTableUsedState(table) == TableUsedState.USED) {
                 if (table.getParent() != null && dialect.getUpdateJoin() == null) {
                     throw new ExecutionException(

@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -379,7 +380,7 @@ public class Deleter {
                             backProp -> handledMiddleBackProps.add(backProp) ?
                                     new MiddleTableOperator(saveCtx.backProp(backProp), cleanupCtx.isLogicalDeleted()) :
                                     null,
-                            prop -> !declaredOnly || isPropOwnedByStage(prop, cleanupCtx.path.getType()),
+                            prop -> !declaredOnly || TableImplementor.isPropOwnedByStage(prop, cleanupCtx.path.getType()),
                             backProp -> !declaredOnly || isBackPropOwnedByStage(backProp, cleanupCtx.path.getType())
                     )
             );
@@ -413,23 +414,8 @@ public class Deleter {
         return associationCleanupContexts();
     }
 
-    private static boolean isPropOwnedByStage(ImmutableProp prop, ImmutableType stageType) {
-        return isDeclaringTypeOwnedByStage(prop.getDeclaringType(), stageType);
-    }
-
     private static boolean isBackPropOwnedByStage(ImmutableProp backProp, ImmutableType stageType) {
         return backProp.getTargetType() == stageType;
-    }
-
-    private static boolean isDeclaringTypeOwnedByStage(ImmutableType declaringType, ImmutableType stageType) {
-        if (declaringType == stageType) {
-            return true;
-        }
-        if (!declaringType.isMappedSuperclass() || !stageType.getAllTypes().contains(declaringType)) {
-            return false;
-        }
-        ImmutableType superType = stageType.getPrimarySuperType();
-        return superType == null || !superType.getAllTypes().contains(declaringType);
     }
 
     private void validateInheritanceDeleteTarget() {

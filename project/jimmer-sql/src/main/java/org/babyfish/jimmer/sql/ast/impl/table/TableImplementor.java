@@ -201,7 +201,36 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (inheritanceInfo == null) {
             return true;
         }
-        return prop.toOriginal().getDeclaringType().isAssignableFrom(inheritanceInfo.getRootType());
+        ImmutableType type = getImmutableType();
+        if (inheritanceInfo.getRootType() == type) {
+            return true;
+        }
+        if (inheritanceInfo.getRootType().getProps().containsKey(prop.getName())) {
+            return true;
+        }
+        return isPropOwnedByStage(prop.toOriginal(), inheritanceInfo.getRootType());
+    }
+
+    static boolean isPropOwnedByStage(ImmutableProp prop, ImmutableType stageType) {
+        InheritanceInfo inheritanceInfo = stageType.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return true;
+        }
+        if (prop.isId() || prop.toOriginal().isId()) {
+            return true;
+        }
+        return isDeclaringTypeOwnedByStage(prop.toOriginal().getDeclaringType(), stageType);
+    }
+
+    static boolean isDeclaringTypeOwnedByStage(ImmutableType declaringType, ImmutableType stageType) {
+        if (declaringType == stageType) {
+            return true;
+        }
+        if (!declaringType.isMappedSuperclass() || !stageType.getAllTypes().contains(declaringType)) {
+            return false;
+        }
+        ImmutableType superType = stageType.getPrimarySuperType();
+        return superType == null || !superType.getAllTypes().contains(declaringType);
     }
 
     void setHasBaseTable();

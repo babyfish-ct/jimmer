@@ -530,7 +530,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 renderJoinImpl(
                         builder,
                         joinType,
-                        builder.alias(parent),
+                        parentAlias(builder, joinProp),
                         parent,
                         joinProp.getStorage(strategy),
                         immutableType.getTableName(strategy),
@@ -556,7 +556,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             renderJoinImpl(
                     builder,
                     joinType,
-                    builder.alias(parent),
+                    parentAlias(builder, joinProp),
                     parent,
                     owner.parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
@@ -589,7 +589,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             renderJoinImpl(
                     builder,
                     joinType,
-                    builder.alias(parent),
+                    parentAlias(builder, joinProp),
                     parent,
                     joinProp.getStorage(strategy),
                     immutableType.getTableName(strategy),
@@ -718,10 +718,21 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 if (owner.isInverse) {
                     builder.sql(joinTemplate.toSql(builder.alias(this), builder.alias(parent)));
                 } else {
-                    builder.sql(joinTemplate.toSql(builder.alias(parent), builder.alias(this)));
+                    builder.sql(joinTemplate.toSql(parentAlias(builder, owner.joinProp), builder.alias(this)));
                 }
             }
         }
+    }
+
+    private String parentAlias(SqlBuilder builder, @Nullable ImmutableProp joinProp) {
+        if (parent != null && parent.owner instanceof TableImplementor<?> && joinProp != null) {
+            TableImplementor<?> parentImplementor = (TableImplementor<?>) parent.owner;
+            String rootAlias = builder.getAstContext().getJoinedTypeBranchUpdateRootAlias(parentImplementor);
+            if (rootAlias != null && parentImplementor.isRootTableProp(joinProp)) {
+                return rootAlias;
+            }
+        }
+        return builder.alias(parent);
     }
 
     private void renderJoinImpl(
@@ -968,9 +979,28 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             MetadataStrategy strategy
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
-        ImmutableType rootType = owner.immutableType.getInheritanceInfo().getRootType();
-        boolean rootProp = prop.toOriginal().getDeclaringType().isAssignableFrom(rootType);
+        boolean rootProp = owner.isRootTableProp(prop);
         SqlTemplate template = prop.getSqlTemplate();
+        boolean updateTarget = builder.getAstContext().isJoinedTypeBranchUpdateTarget(owner);
+        String updateRootAlias = builder.getAstContext().getJoinedTypeBranchUpdateRootAlias(owner);
+        if (updateTarget && !owner.isTreated()) {
+            if (rootProp && updateRootAlias == null) {
+                throw new AssertionError(
+                        "Internal bug: Root alias is not prepared for joined type branch update"
+                );
+            }
+            renderJoinedTypeBranchUpdateSelection(
+                    prop,
+                    builder,
+                    optionalDefinition,
+                    withPrefix,
+                    asBlock,
+                    strategy,
+                    rootProp,
+                    updateRootAlias
+            );
+            return;
+        }
         if (owner.isTreated()) {
             RealTableImpl sourceTable = rootProp ? (RealTableImpl) parent : this;
             if (template instanceof FormulaTemplate) {
@@ -1023,6 +1053,53 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     withPrefix,
                     asBlock
             );
+        }
+    }
+
+    private void renderJoinedTypeBranchUpdateSelection(
+            ImmutableProp prop,
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition optionalDefinition,
+            boolean withPrefix,
+            Function<Integer, String> asBlock,
+            MetadataStrategy strategy,
+            boolean rootProp,
+            String rootAlias
+    ) {
+        SqlTemplate template = prop.getSqlTemplate();
+        String alias = rootProp ? rootAlias : builder.assertSimple().alias(this);
+        if (template instanceof FormulaTemplate) {
+            builder.sql(((FormulaTemplate) template).toSql(alias));
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(0));
+            }
+            return;
+        }
+        ColumnDefinition definition = optionalDefinition != null ?
+                optionalDefinition :
+                prop.getStorage(strategy);
+        renderDefinition(builder, alias, definition, withPrefix, asBlock);
+    }
+
+    private void renderDefinition(
+            AbstractSqlBuilder<?> builder,
+            String alias,
+            ColumnDefinition definition,
+            boolean withPrefix,
+            Function<Integer, String> asBlock
+    ) {
+        int size = definition.size();
+        for (int i = 0; i < size; i++) {
+            if (i != 0) {
+                builder.sql(", ");
+            }
+            if (withPrefix) {
+                builder.sql(alias).sql(".");
+            }
+            builder.sql(definition.name(i));
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(i));
+            }
         }
     }
 

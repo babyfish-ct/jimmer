@@ -29,6 +29,9 @@ import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -834,6 +837,9 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             Function<Integer, String> asBlock,
             boolean idViewAllowed
     ) {
+        if (renderJoinedTypeBranchUpdateRootSelection(prop, builder, optionalDefinition, asBlock)) {
+            return;
+        }
         realTableForRender(builder).renderSelection(
                 prop,
                 rawId,
@@ -843,6 +849,36 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                 asBlock,
                 idViewAllowed
         );
+    }
+
+    private boolean renderJoinedTypeBranchUpdateRootSelection(
+            ImmutableProp prop,
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition optionalDefinition,
+            Function<Integer, String> asBlock
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null || isTreated() || prop.isId() || prop.toOriginal().isId()) {
+            return false;
+        }
+        String rootAlias = astContext.getJoinedTypeBranchUpdateRootAlias(this);
+        if (rootAlias == null || !isRootTableProp(prop)) {
+            return false;
+        }
+        SqlTemplate template = prop.getSqlTemplate();
+        if (template instanceof FormulaTemplate) {
+            builder.sql(((FormulaTemplate) template).toSql(rootAlias));
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(0));
+            }
+            return true;
+        }
+        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
+        ColumnDefinition definition = optionalDefinition != null ?
+                optionalDefinition :
+                prop.getStorage(strategy);
+        builder.definition(rootAlias, definition, asBlock);
+        return true;
     }
 
     @Override

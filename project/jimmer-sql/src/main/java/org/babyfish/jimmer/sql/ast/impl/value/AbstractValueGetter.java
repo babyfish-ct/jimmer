@@ -5,8 +5,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ScalarProviderUtils;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -14,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -181,6 +184,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     true,
                                     rawId,
                                     embeddedProps.get(embeddedProps.size() - 1),
+                                    rootProp,
                                     columnName,
                                     rootProp.isReference(TargetLevel.ENTITY)
                             )
@@ -209,6 +213,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     rawId,
                                     false,
                                     embeddedProps.get(embeddedProps.size() - 1),
+                                    rootProp,
                                     columnName,
                                     rootProp.isReference(TargetLevel.ENTITY)
                             )
@@ -223,6 +228,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                         rootProp.isReference(TargetLevel.ENTITY) ?
                                 rootProp.getTargetType().getIdProp() :
                                 rootProp,
+                        rootProp,
                         table,
                         rawId,
                         definition.name(0),
@@ -264,6 +270,26 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             }
         }
         return true;
+    }
+
+    @Nullable
+    static String joinedTypeBranchUpdateRootAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp columnProp
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null ||
+                columnProp.isId() ||
+                columnProp.toOriginal().isId() ||
+                tableImplementor.isTreated()) {
+            return null;
+        }
+        String rootAlias = astContext.getJoinedTypeBranchUpdateRootAlias(tableImplementor);
+        if (rootAlias == null || !tableImplementor.isRootTableProp(columnProp)) {
+            return null;
+        }
+        return rootAlias;
     }
 
     private static boolean isLoaded(Object value, List<ImmutableProp> props) {

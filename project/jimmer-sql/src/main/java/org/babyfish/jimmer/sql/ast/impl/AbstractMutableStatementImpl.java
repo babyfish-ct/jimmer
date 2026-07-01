@@ -260,10 +260,12 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     protected void onFrozen(AstContext ctx) {
         TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
         if (tableLikeImplementor instanceof TableImplementor<?>) {
-            Predicate discriminatorPredicate =
-                    ((TableImplementor<?>) tableLikeImplementor).getDiscriminatorPredicate();
-            if (discriminatorPredicate != null) {
-                predicates.add(discriminatorPredicate);
+            TableImplementor<?> table = (TableImplementor<?>) tableLikeImplementor;
+            if (shouldApplyImplicitDiscriminatorPredicate(table)) {
+                Predicate discriminatorPredicate = table.getDiscriminatorPredicate();
+                if (discriminatorPredicate != null) {
+                    predicates.add(discriminatorPredicate);
+                }
             }
         }
         filterPredicates.removeAll((t, ps) -> {
@@ -278,6 +280,10 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         });
         predicates = mergePredicates(predicates);
         filterPredicates.replaceAll(AbstractMutableStatementImpl::mergePredicates);
+    }
+
+    protected boolean shouldApplyImplicitDiscriminatorPredicate(TableImplementor<?> table) {
+        return true;
     }
 
     public void applyVirtualPredicates(AstContext ctx) {

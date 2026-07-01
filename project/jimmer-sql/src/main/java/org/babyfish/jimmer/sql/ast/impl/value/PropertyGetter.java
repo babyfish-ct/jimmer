@@ -122,7 +122,7 @@ public interface PropertyGetter extends ValueGetter {
                 null,
                 prop,
                 Collections.singletonList(
-                        new SimpleValueGetter(sqlClient, prop, null, false, columnName, false)
+                        new SimpleValueGetter(sqlClient, prop, prop, null, false, columnName, false)
                 )
         );
     }
