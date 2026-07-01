@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.Client;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.ClientTableEx;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.Organization;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade.OrganizationTable;
 import org.junit.jupiter.api.Test;
@@ -138,6 +139,41 @@ public class JoinedInheritanceCascadeDeleteTest extends AbstractMutationTest {
                         it.variables(500L, "ORG", "Person");
                     });
                     ctx.value("null; [Person, Cascade Alice, null, Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testCreateDeleteRootPolymorphicallyByDatabaseCascadeWithJoinPredicate() {
+        connectAndExpect(
+                con -> {
+                    int affectedRowCount = getLambdaClient().createDelete(ClientTableEx.class, (d, client) -> {
+                        d.setMode(DeleteMode.PHYSICAL);
+                        d.setTypeMatchMode(TypeMatchMode.POLYMORPHIC);
+                        d.where(client.projects().name().eq("Cascade project"));
+                    }).execute(con);
+                    return affectedRowCount +
+                            "; " +
+                            joinedClientRow(con, 500L) +
+                            "; " +
+                            joinedClientRow(con, 501L) +
+                            "; " +
+                            joinedCascadeProjectTargetId(con, 5000L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from JOINED_CASCADE_CLIENT tb_1_ " +
+                                        "where tb_1_.ID in (" +
+                                        "select distinct tb_1_.ID " +
+                                        "from JOINED_CASCADE_CLIENT tb_1_ " +
+                                        "inner join JOINED_CASCADE_PROJECT tb_2_ on tb_1_.ID = tb_2_.CLIENT_ID " +
+                                        "where tb_2_.NAME = ? and tb_1_.CLIENT_TYPE in (?, ?)" +
+                                        ")"
+                        );
+                        it.variables("Cascade project", "ORG", "Person");
+                    });
+                    ctx.value("1; null; [Person, Cascade Alice, null, Alice, Smith]; null");
                 }
         );
     }

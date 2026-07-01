@@ -25,6 +25,11 @@ public class SqlServerDialect extends DefaultDialect {
     }
 
     @Override
+    public DeleteJoin getDeleteJoin() {
+        return new DeleteJoin(DeleteJoin.From.AS_JOIN);
+    }
+
+    @Override
     public String sqlType(Class<?> elementType) {
         if (elementType == String.class) {
             return "varchar";

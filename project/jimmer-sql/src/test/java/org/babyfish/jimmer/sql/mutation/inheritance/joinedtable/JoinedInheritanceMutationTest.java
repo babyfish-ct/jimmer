@@ -1886,4 +1886,62 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testCreateDeleteRootPolymorphicallyWithSubtypePredicateUsesAcceptedTargetFallback() {
+        executeAndExpectRowCount(
+                getLambdaClient().createDelete(ClientTable.class, (d, client) -> {
+                    d.setMode(DeleteMode.PHYSICAL);
+                    d.setTypeMatchMode(TypeMatchMode.POLYMORPHIC);
+                    d.where(client.treatAs(OrganizationTable.class).taxCode().eq("INI-001"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select distinct tb_1_.ID " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "inner join JOINED_ORGANIZATION tb_2_ on " +
+                                        "tb_1_.ID = tb_2_.ID " +
+                                        "and tb_1_.CLIENT_TYPE = ? " +
+                                        "where tb_2_.TAX_CODE = ? and tb_1_.CLIENT_TYPE in (?, ?)"
+                        );
+                        it.variables("ORG", "INI-001", "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE in (?, ?)"
+                        );
+                        it.variables(202L, "ORG", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from JOINED_CLIENT_PROJECT tb_1_ " +
+                                        "where tb_1_.CLIENT_ID = ? limit ?"
+                        );
+                        it.variables(202L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from JOINED_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID = ? limit ?"
+                        );
+                        it.variables(202L, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_ORGANIZATION where ID = ?");
+                        it.variables(202L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from JOINED_CLIENT where ID = ? and CLIENT_TYPE in (?, ?)");
+                        it.variables(202L, "ORG", "Person");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
 }

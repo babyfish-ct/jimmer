@@ -60,15 +60,6 @@ public class MutableUpdateImpl
         this.triggerIgnored = false;
     }
 
-    private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
-        for (RealTable childTable : tableImplementor.realTable(astContext)) {
-            if (astContext.getTableUsedState(childTable) == TableUsedState.USED) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public StatementContext getContext() {
         return ctx;
@@ -453,7 +444,8 @@ public class MutableUpdateImpl
         boolean withTargetPrefix =
                 updateJoin != null &&
                 updateJoin.isJoinedTableUpdatable() &&
-                (hasUsedChild(table, builder.getAstContext()) || isJoinedTypeBranchRootUpdateRequired(builder));
+                (MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext()) ||
+                        isJoinedTypeBranchRootUpdateRequired(builder));
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.separator();
             renderTarget(builder, e.getKey(), withTargetPrefix);
@@ -501,7 +493,7 @@ public class MutableUpdateImpl
     private void renderTables(SqlBuilder builder) {
         TableImplementor<?> table = getTableLikeImplementor();
         boolean joinedTypeBranchRootRequired = isJoinedTypeBranchRootUpdateRequired(builder);
-        boolean usedChild = hasUsedChild(table, builder.getAstContext());
+        boolean usedChild = MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext());
         if (joinedTypeBranchRootRequired || usedChild) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
@@ -512,9 +504,7 @@ public class MutableUpdateImpl
                     if (joinedTypeBranchRootRequired) {
                         renderJoinedTypeBranchRootJoin(builder, TableImplementor.RenderMode.FROM_ONLY);
                     }
-                    for (RealTable child : table.realTable(builder.getAstContext())) {
-                        child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
-                    }
+                    MutationJoinRenderSupport.renderUsedJoinsAsFrom(builder, table);
                     builder.leave();
             }
         }
@@ -525,11 +515,9 @@ public class MutableUpdateImpl
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
             updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-            hasUsedChild(table, builder.getAstContext())
+                MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext())
         ) {
-            for (RealTable child : table.realTable(builder.getAstContext())) {
-                child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
-            }
+            MutationJoinRenderSupport.renderDeeperJoinsAsFrom(builder, table);
         }
     }
 
@@ -548,7 +536,7 @@ public class MutableUpdateImpl
                 forUpdate &&
                 updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                hasUsedChild(table, builder.getAstContext());
+                MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext());
 
         if (!hasJoinedTypeBranchRootCondition &&
                 !hasTableCondition &&
@@ -573,9 +561,7 @@ public class MutableUpdateImpl
         }
 
         if (hasTableCondition) {
-            for (RealTable child : table.realTable(builder.getAstContext())) {
-                child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
-            }
+            MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
         }
 
         if (ids == null) {

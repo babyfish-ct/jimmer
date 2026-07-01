@@ -39,6 +39,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public DeleteJoin getDeleteJoin() {
+        return new DeleteJoin(DeleteJoin.From.AS_USING);
+    }
+
+    @Override
     public String getSelectIdFromSequenceSql(String sequenceName) {
         return "select nextval('" + sequenceName + "')";
     }

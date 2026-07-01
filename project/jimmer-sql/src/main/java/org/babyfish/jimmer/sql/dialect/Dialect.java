@@ -40,6 +40,11 @@ public interface Dialect extends SqlTypeStrategy {
         return null;
     }
 
+    @Nullable
+    default DeleteJoin getDeleteJoin() {
+        return null;
+    }
+
     default String getSelectIdFromSequenceSql(String sequenceName) {
         throw new ExecutionException("Sequence is not supported by '" + getClass().getName() + "'");
     }

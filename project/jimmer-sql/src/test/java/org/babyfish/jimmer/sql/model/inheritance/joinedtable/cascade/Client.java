@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.model.inheritance.joinedtable.cascade;
 
 import org.babyfish.jimmer.sql.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "JOINED_CASCADE_CLIENT")
 @Inheritance(
@@ -22,4 +24,7 @@ public interface Client {
 
     @Version
     int version();
+
+    @OneToMany(mappedBy = "client")
+    List<ClientProject> projects();
 }
