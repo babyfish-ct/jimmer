@@ -1,5 +1,10 @@
 import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo, JsonTypeName}
 
+specification ClientSpecification {
+    id
+    name
+}
+
 ClientDefaultView {
     id
     name

@@ -20,14 +20,12 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.Where
-import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
 import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
+import org.babyfish.jimmer.sql.kt.ast.query.specification.applyKSpecification
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
-import org.babyfish.jimmer.sql.kt.ast.table.impl.KNullableTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 import org.babyfish.jimmer.sql.runtime.TupleMapper
@@ -243,22 +241,15 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
         KNonNullTableExImpl(javaQuery.getTable() as TableImplementor<E>)
     ), KMutableRootQuery.ForEntity<E> {
 
-        override fun where(specification: Specification<E>?) {
+        override fun where(specification: Specification<out E>?) {
             if (specification != null) {
-                val ks = specification as? KSpecification<E>
+                val ks = specification as? KSpecification<out E>
                     ?: throw IllegalArgumentException(
-                        "The specification must be instance of \"${specification::class.qualifiedName}\""
-                    )
-                where(ks)
-            }
-        }
-
-        override fun where(specification: KSpecification<E>?) {
-            if (specification !== null) {
-                val args = KSpecificationArgs<E>(
-                    PredicateApplier(javaQuery)
+                        "The specification must be instance of \"${KSpecification::class.qualifiedName}\""
                 )
-                specification.applyTo(args)
+                val applier = PredicateApplier(javaQuery)
+                @Suppress("UNCHECKED_CAST")
+                applier.applyKSpecification(ks as KSpecification<E>)
             }
         }
     }

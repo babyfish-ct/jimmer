@@ -7,15 +7,13 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
-import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
+import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -268,15 +266,11 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
         return where((JSpecification<?, T>) specification);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQuery<T> where(JSpecification<?, T> specification) {
         if (specification != null) {
-            SpecificationArgs<Object, Table<Object>> args =
-                    new SpecificationArgs<>(new PredicateApplier(this));
-            JSpecification<Object, Table<Object>> implementor =
-                    (JSpecification<Object, Table<Object>>) specification;
-            implementor.applyTo(args);
+            PredicateApplier applier = new PredicateApplier(this);
+            applier.apply(specification);
         }
         return this;
     }

@@ -3,6 +3,11 @@ export org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
 
 import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo, JsonTypeName}
 
+specification KClientSpecification {
+    id
+    name
+}
+
 KClientImplicitCatchAllView {
     id
     name
