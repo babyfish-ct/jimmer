@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -41,6 +42,10 @@ public class MutableUpdateImpl
     private final Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
 
     private TableLikeImplementor<?> aliasSource;
+
+    private TypeMatchMode typeMatchMode = TypeMatchMode.AUTO;
+
+    private boolean typeMatchPredicateApplied;
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
@@ -74,9 +79,19 @@ public class MutableUpdateImpl
     protected boolean shouldApplyImplicitDiscriminatorPredicate(TableImplementor<?> table) {
         ImmutableType type = table.getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null && typeMatchPredicateApplied) {
+            return false;
+        }
         return inheritanceInfo == null ||
                 inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
                 inheritanceInfo.getRootType() == type;
+    }
+
+    @Override
+    public MutableUpdate setTypeMatchMode(TypeMatchMode mode) {
+        validateMutable();
+        this.typeMatchMode = mode != null ? mode : TypeMatchMode.AUTO;
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -155,6 +170,81 @@ public class MutableUpdateImpl
     @Override
     public MutableUpdate where(Predicate... predicates) {
         return (MutableUpdate) super.where(predicates);
+    }
+
+    @Override
+    protected void onFrozen(AstContext astContext) {
+        applyTypeMatchPredicate();
+        super.onFrozen(astContext);
+    }
+
+    private void applyTypeMatchPredicate() {
+        if (typeMatchPredicateApplied) {
+            return;
+        }
+        typeMatchPredicateApplied = true;
+        TableImplementor<?> table = getTableLikeImplementor();
+        ImmutableType type = table.getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return;
+        }
+        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, typeMatchMode);
+        if (resolvedMode == TypeMatchMode.EXACT && !type.isInstantiable()) {
+            throw new ExecutionException(
+                    "Cannot update inheritance entity type \"" +
+                            type +
+                            "\" exactly because it is abstract. Update an instantiable type or use " +
+                            TypeMatchMode.POLYMORPHIC +
+                            " type match mode."
+            );
+        }
+        if (!isTypeMatchPredicateRequired(inheritanceInfo, type, resolvedMode)) {
+            return;
+        }
+        Collection<ImmutableType> matchedTypes = matchedTypes(inheritanceInfo, type, resolvedMode);
+        List<Object> values = InheritanceMutationUtils.discriminatorValues(inheritanceInfo, matchedTypes);
+        if (values.isEmpty()) {
+            return;
+        }
+        PropExpression<Object> expr = table.get(inheritanceInfo.getDiscriminatorProp(type), false);
+        where(values.size() == 1 ? expr.eq(values.get(0)) : expr.in(values));
+    }
+
+    private boolean isTypeMatchPredicateRequired(
+            InheritanceInfo inheritanceInfo,
+            ImmutableType type,
+            TypeMatchMode resolvedMode
+    ) {
+        if (type == inheritanceInfo.getRootType()) {
+            return resolvedMode == TypeMatchMode.EXACT;
+        }
+        if (inheritanceInfo.getStrategy() == InheritanceType.SINGLE_TABLE) {
+            return true;
+        }
+        if (resolvedMode == TypeMatchMode.POLYMORPHIC) {
+            return false;
+        }
+        return inheritanceInfo.getConcreteTypes(type).size() > 1;
+    }
+
+    private Collection<ImmutableType> matchedTypes(
+            InheritanceInfo inheritanceInfo,
+            ImmutableType type,
+            TypeMatchMode resolvedMode
+    ) {
+        if (resolvedMode == TypeMatchMode.EXACT) {
+            return Collections.singleton(type);
+        }
+        Collection<ImmutableType> types = inheritanceInfo.getConcreteTypes(type);
+        if (types.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot update inheritance entity type \"" +
+                            type +
+                            "\" polymorphically because it has no instantiable type"
+            );
+        }
+        return types;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
@@ -14,6 +15,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,6 +26,7 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     public void testUpdateDerivedTypeCanSetDerivedProp() {
         executeAndExpectRowCount(
                 getLambdaClient().createUpdate(OrganizationTable.class, (u, organization) -> {
+                    u.setTypeMatchMode(TypeMatchMode.EXACT);
                     u.set(organization.taxCode(), "GLOBEX-002");
                     u.where(organization.id().eq(200L));
                 }),
@@ -80,6 +83,48 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                     });
                     ctx.rowCount(1);
                 }
+        );
+    }
+
+    @Test
+    public void testUpdateRootTypePolymorphically() {
+        executeAndExpectRowCount(
+                getLambdaClient().createUpdate(ClientTable.class, (u, client) -> {
+                    u.setTypeMatchMode(TypeMatchMode.POLYMORPHIC);
+                    u.set(client.name(), "Client+");
+                    u.where(client.id().in(Arrays.asList(200L, 201L)));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID in (?, ?)"
+                        );
+                        it.variables("Client+", 200L, 201L);
+                    });
+                    ctx.rowCount(2);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateAbstractRootCannotBeExact() {
+        executeAndExpectRowCount(
+                getLambdaClient().createUpdate(ClientTable.class, (u, client) -> {
+                    u.setTypeMatchMode(TypeMatchMode.EXACT);
+                    u.set(client.name(), "Client+");
+                }),
+                ctx -> ctx.throwable(it -> {
+                    it.type(ExecutionException.class);
+                    it.message(
+                            "Cannot update inheritance entity type \"" +
+                                    "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client" +
+                                    "\" exactly because it is abstract. Update an instantiable type or use " +
+                                    TypeMatchMode.POLYMORPHIC +
+                                    " type match mode."
+                    );
+                })
         );
     }
 

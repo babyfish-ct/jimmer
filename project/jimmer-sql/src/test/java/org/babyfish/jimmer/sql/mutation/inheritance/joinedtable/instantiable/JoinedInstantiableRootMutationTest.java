@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -161,6 +162,49 @@ public class JoinedInstantiableRootMutationTest extends AbstractMutationTest {
                         it.variables("Joined Root Polymorphic+", 601L);
                     });
                     ctx.value("[ORG, Joined Root Polymorphic+, J-ORG-001, null, null]");
+                }
+        );
+    }
+
+    @Test
+    public void testCreateUpdateRootBranchExactlyByAutoTypeMatchMode() {
+        executeAndExpectRowCount(
+                getLambdaClient().createUpdate(ClientTable.class, (u, client) -> {
+                    u.set(client.name(), "Joined Root Exact+");
+                    u.where(client.id().in(Arrays.asList(600L, 601L)));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_INST_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables("Joined Root Exact+", 600L, 601L, "CLIENT");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testCreateUpdateRootBranchPolymorphically() {
+        executeAndExpectRowCount(
+                getLambdaClient().createUpdate(ClientTable.class, (u, client) -> {
+                    u.setTypeMatchMode(TypeMatchMode.POLYMORPHIC);
+                    u.set(client.name(), "Joined Root Polymorphic+");
+                    u.where(client.id().in(Arrays.asList(600L, 601L)));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_INST_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID in (?, ?)"
+                        );
+                        it.variables("Joined Root Polymorphic+", 600L, 601L);
+                    });
+                    ctx.rowCount(2);
                 }
         );
     }
