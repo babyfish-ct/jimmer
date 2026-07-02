@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
-import org.babyfish.jimmer.sql.ast.impl.base.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderMode;
@@ -18,7 +20,10 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsedState> implements RootTableResolver {
 
@@ -29,6 +34,10 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     private JoinTypeMergeFrame joinTypeMergeFrame;
 
     private BaseTableRenderFrame baseTableRenderFrame;
+
+    private JoinedTypeBranchUpdateFrame joinedTypeBranchUpdateFrame;
+
+    private JoinedTypeBranchTableFrame joinedTypeBranchTableFrame;
 
     private final QueryRenderMode queryRenderMode;
 
@@ -94,6 +103,57 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public void popRenderedBaseTable() {
         this.baseTableRenderFrame = baseTableRenderFrame.parent;
+    }
+
+    public void pushJoinedTypeBranchUpdate(TableImplementor<?> table, @Nullable String rootAlias) {
+        this.joinedTypeBranchUpdateFrame = new JoinedTypeBranchUpdateFrame(
+                joinedTypeBranchUpdateFrame,
+                table,
+                rootAlias
+        );
+    }
+
+    public void popJoinedTypeBranchUpdate() {
+        this.joinedTypeBranchUpdateFrame = joinedTypeBranchUpdateFrame.parent;
+    }
+
+    public boolean isJoinedTypeBranchUpdateTarget(TableImplementor<?> table) {
+        for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    public String getJoinedTypeBranchUpdateRootAlias(TableImplementor<?> table) {
+        for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                return frame.rootAlias;
+            }
+        }
+        return null;
+    }
+
+    public void pushJoinedTypeBranchTable(TableImplementor<?> table) {
+        this.joinedTypeBranchTableFrame = new JoinedTypeBranchTableFrame(
+                joinedTypeBranchTableFrame,
+                table
+        );
+    }
+
+    public void popJoinedTypeBranchTable() {
+        this.joinedTypeBranchTableFrame = joinedTypeBranchTableFrame.parent;
+    }
+
+    public boolean isJoinedTypeBranchTableRendered(TableImplementor<?> table) {
+        for (JoinedTypeBranchTableFrame frame = joinedTypeBranchTableFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isQueryWithoutSortingAndPaging() {
@@ -497,6 +557,41 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                     "parent=" + parent +
                     ", realTable=" + realTable +
                     '}';
+        }
+    }
+
+    private static class JoinedTypeBranchUpdateFrame {
+
+        final JoinedTypeBranchUpdateFrame parent;
+
+        final TableImplementor<?> table;
+
+        @Nullable
+        final String rootAlias;
+
+        JoinedTypeBranchUpdateFrame(
+                JoinedTypeBranchUpdateFrame parent,
+                TableImplementor<?> table,
+                @Nullable String rootAlias
+        ) {
+            this.parent = parent;
+            this.table = table;
+            this.rootAlias = rootAlias;
+        }
+    }
+
+    private static class JoinedTypeBranchTableFrame {
+
+        final JoinedTypeBranchTableFrame parent;
+
+        final TableImplementor<?> table;
+
+        JoinedTypeBranchTableFrame(
+                JoinedTypeBranchTableFrame parent,
+                TableImplementor<?> table
+        ) {
+            this.parent = parent;
+            this.table = table;
         }
     }
 }

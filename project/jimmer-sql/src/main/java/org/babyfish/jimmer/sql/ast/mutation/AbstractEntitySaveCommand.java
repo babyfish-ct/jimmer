@@ -189,6 +189,71 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
+    AbstractEntitySaveCommand setTypeMatchMode(TypeMatchMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeMatchModeAll(TypeMatchMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeMatchMode(
+            TypedProp.Association<?, ?> prop,
+            TypeMatchMode mode
+    ) {
+        return setAssociatedTypeMatchMode(prop.unwrap(), mode);
+    }
+
+    @NewChain
+    default AbstractEntitySaveCommand setTypeChangeAllowed() {
+        return setTypeChangeAllowed(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setTypeChangeAllowed(boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowedAll() {
+        return setAssociatedTypeChangeAllowedAll(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeChangeAllowedAll(boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedTypeChangeAllowed(entityType, true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    default AbstractEntitySaveCommand setAssociatedTypeChangeAllowed(
+            TypedProp.Association<?, ?> prop,
+            boolean allowed
+    ) {
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), allowed);
+    }
+
+    @NewChain
     AbstractEntitySaveCommand setMaxCommandJoinCount(int count);
 
     @NewChain

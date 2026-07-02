@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.Set;
 
 public class SaveOptionsImpl implements SaveOptions {
 
@@ -70,6 +69,26 @@ public class SaveOptionsImpl implements SaveOptions {
     @Override
     public boolean isTargetTransferable(ImmutableProp prop) {
         return prop.getTargetTransferMode() == TargetTransferMode.ALLOWED;
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode() {
+        return TypeMatchMode.AUTO;
+    }
+
+    @Override
+    public TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType) {
+        return TypeMatchMode.AUTO;
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed() {
+        return false;
+    }
+
+    @Override
+    public boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+        return false;
     }
 
     @Override

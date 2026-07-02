@@ -98,7 +98,11 @@ class SaveContext extends MutationContext {
                     break;
             }
         }
-        this.options = parent.options.withMode(saveMode);
+        SaveOptions options = parent.options.withMode(saveMode);
+        if (prop != null) {
+            options = options.withAssociatedOptions(prop);
+        }
+        this.options = options;
         this.con = parent.con;
         this.fetcher = null;
         this.trigger = parent.trigger;

@@ -1,0 +1,17 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumClient
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.dto
+
+input KEnumClientDiscriminatorInput {
+    id
+    type
+    name
+    #types {
+        default {
+        }
+        KEnumOrganization class Organization {
+        }
+        KEnumPerson class Person {
+            firstName
+        }
+    }
+}

@@ -5,29 +5,22 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Function;
 
 public class Saver {
 
@@ -49,13 +42,14 @@ public class Saver {
         );
     }
 
-    private Saver(SaveContext ctx) {
+    Saver(SaveContext ctx) {
         this.ctx = ctx;
     }
 
     @SuppressWarnings("unchecked")
     public <E> SimpleSaveResult<E> save(E entity) {
         ImmutableType immutableType = ImmutableType.get(entity.getClass());
+        validateInstantiableSaveType(immutableType, ctx.options);
         MutationTrigger trigger = ctx.trigger;
         // single object save also call `produceList` because `fetch` may change draft
         E newEntity = (E) Internal.produceList(
@@ -78,10 +72,16 @@ public class Saver {
 
     @SuppressWarnings("unchecked")
     public <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
+        return saveAll(entities, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    <E> BatchSaveResult<E> saveAll(Collection<E> entities, boolean submitTrigger) {
         if (entities.isEmpty()) {
             return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
         ImmutableType immutableType = ImmutableType.get(entities.iterator().next().getClass());
+        validateInstantiableSaveType(immutableType, ctx.options);
         MutationTrigger trigger = ctx.trigger;
         List<E> newEntities = (List<E>) Internal.produceList(
                 immutableType,
@@ -89,6 +89,35 @@ public class Saver {
                 drafts -> {
                     saveAllImpl((List<DraftSpi>) drafts);
                 },
+                trigger == null ? null : trigger::prepareSubmit
+        );
+        if (trigger != null && submitTrigger) {
+            trigger.submit(ctx.options.getSqlClient(), ctx.con);
+        }
+        Iterator<E> oldItr = entities.iterator();
+        Iterator<E> newItr = newEntities.iterator();
+        List<BatchSaveResult.Item<E>> items = new ArrayList<>(entities.size());
+        while (oldItr.hasNext() && newItr.hasNext()) {
+            items.add(
+                    new BatchSaveResult.Item<>(
+                            oldItr.next(),
+                            newItr.next()
+                    )
+            );
+        }
+        return new BatchSaveResult<>(ctx.affectedRowCountMap, items);
+    }
+
+    @SuppressWarnings("unchecked")
+    <E> BatchSaveResult<E> saveAllJoinedInsert(Collection<E> entities) {
+        if (entities.isEmpty()) {
+            return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
+        }
+        MutationTrigger trigger = ctx.trigger;
+        List<E> newEntities = (List<E>) Internal.produceList(
+                entities,
+                base -> ((ImmutableSpi) base).__type(),
+                drafts -> saveAllJoinedInsertImpl((List<DraftSpi>) drafts),
                 trigger == null ? null : trigger::prepareSubmit
         );
         if (trigger != null) {
@@ -106,6 +135,72 @@ public class Saver {
             );
         }
         return new BatchSaveResult<>(ctx.affectedRowCountMap, items);
+    }
+
+    private void saveAllJoinedInsertImpl(List<DraftSpi> drafts) {
+        if (drafts.isEmpty()) {
+            return;
+        }
+        ImmutableType rootType = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = rootType.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            throw new AssertionError("Internal bug: mixed joined insert must target a joined inheritance root");
+        }
+        Map<ImmutableType, List<DraftSpi>> groupMap = new LinkedHashMap<>();
+        for (DraftSpi draft : drafts) {
+            validateInstantiableSaveType(draft.__type(), ctx.options);
+            groupMap.computeIfAbsent(draft.__type(), it -> new ArrayList<>()).add(draft);
+        }
+        List<SaveOperation> operations = new ArrayList<>(groupMap.size());
+        for (Map.Entry<ImmutableType, List<DraftSpi>> e : groupMap.entrySet()) {
+            SaveContext groupCtx = new SaveContext(
+                    ctx.options,
+                    ctx.con,
+                    e.getKey(),
+                    ctx.fetcher,
+                    ctx.trigger,
+                    ctx.affectedRowCountMap
+            );
+            Saver groupSaver = new Saver(groupCtx);
+            operations.add(groupSaver.prepareSave(e.getValue()));
+        }
+        List<SaveSelfResult> selfResults = saveJoinedInsertSelf(rootType, inheritanceInfo, drafts, operations);
+        for (int i = 0; i < operations.size(); i++) {
+            SaveOperation operation = operations.get(i);
+            operation.saver.finishSave(operation, selfResults.get(i));
+        }
+    }
+
+    static void validateInstantiableSaveType(ImmutableType type, SaveOptions options) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return;
+        }
+        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, options.getTypeMatchMode(type));
+        if (resolvedMode == TypeMatchMode.POLYMORPHIC && options.isTypeChangeAllowed(type)) {
+            throw new IllegalArgumentException(
+                    "Cannot save inheritance entity type \"" +
+                            type +
+                            "\" with " +
+                            TypeMatchMode.POLYMORPHIC +
+                            " type match mode because typeChangeAllowed is true"
+            );
+        }
+        if (type.isInstantiable()) {
+            return;
+        }
+        if (inheritanceInfo.getRootType() == type &&
+                options.getMode() == SaveMode.UPDATE_ONLY &&
+                !options.isTypeChangeAllowed(type) &&
+                resolvedMode == TypeMatchMode.POLYMORPHIC) {
+            return;
+        }
+        throw new IllegalArgumentException(
+                "Cannot save inheritance entity type \"" +
+                        type +
+                        "\" because it is abstract; only UPDATE_ONLY with typeChangeAllowed=false and " +
+                        "typeMatchMode=AUTO/POLYMORPHIC is allowed"
+        );
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {
@@ -127,6 +222,16 @@ public class Saver {
         // conditional breakpoint using `ctx.path` will
         // become very helpful.
 
+        SaveOperation operation = prepareSave(drafts);
+        SaveSelfResult selfResult = saveSelf(operation);
+        finishSave(operation, selfResult);
+    }
+
+    private SaveOperation prepareSave(List<DraftSpi> drafts) {
+        if (!drafts.isEmpty() && !isIdOnlyAssociationReference(drafts)) {
+            validateInstantiableSaveType(drafts.get(0).__type(), ctx.options);
+        }
+
         for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
             if (isVisitable(prop) && prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
                 savePreAssociation(prop, drafts);
@@ -138,22 +243,44 @@ public class Saver {
         for (DraftSpi draft : drafts) {
             preHandler.add(draft);
         }
+        return new SaveOperation(this, drafts, preHandler, isOwnerAcceptanceRequired(preHandler));
+    }
 
-        boolean detach = saveSelf(preHandler);
+    private void finishSave(SaveOperation operation, SaveSelfResult selfResult) {
+        PreHandler preHandler = operation.preHandler;
+        List<DraftSpi> drafts = operation.drafts;
 
-        for (Batch<DraftSpi> batch : preHandler.associationBatches()) {
+        for (Batch<DraftSpi> batch : associationBatches(preHandler, selfResult.acceptedDrafts)) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (isVisitable(prop) && prop.isAssociation(TargetLevel.ENTITY)) {
                     if (ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.VIOLENTLY_REPLACE) {
                         clearAssociations(batch.entities(), prop);
                     }
                     setBackReference(prop, batch);
-                    savePostAssociation(prop, batch, detach);
+                    savePostAssociation(prop, batch, selfResult.detach);
                 }
             }
         }
 
-        fetch(drafts, preHandler.batches());
+        fetch(fetchDrafts(drafts, selfResult.acceptedDrafts), batches(preHandler, selfResult.acceptedDrafts));
+    }
+
+    private boolean isIdOnlyAssociationReference(List<DraftSpi> drafts) {
+        ImmutableProp prop = ctx.path.getProp();
+        if (prop == null || !ctx.options.isIdOnlyAsReference(prop)) {
+            return false;
+        }
+        for (DraftSpi draft : drafts) {
+            if (!draft.__isLoaded(draft.__type().getIdProp().getId())) {
+                return false;
+            }
+            for (ImmutableProp draftProp : draft.__type().getProps().values()) {
+                if (!draftProp.isId() && draft.__isLoaded(draftProp.getId())) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -417,32 +544,278 @@ public class Saver {
         return backRef == null || backRef != prop;
     }
 
-    private boolean saveSelf(PreHandler preHandler) {
+    private SaveSelfResult saveSelf(SaveOperation operation) {
+        return saveSelf(operation.preHandler, operation.ownerAcceptanceRequired);
+    }
+
+    private List<SaveSelfResult> saveJoinedInsertSelf(
+            ImmutableType rootType,
+            InheritanceInfo inheritanceInfo,
+            List<DraftSpi> drafts,
+            List<SaveOperation> operations
+    ) {
+        Set<DraftSpi> selfDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<SaveSelfResult> results = new ArrayList<>(operations.size());
+        for (SaveOperation operation : operations) {
+            boolean detach = false;
+            if (operation.ownerAcceptanceRequired) {
+                throw new AssertionError("Internal bug: INSERT_ONLY cannot require owner acceptance");
+            }
+            for (Batch<DraftSpi> batch : operation.preHandler.batches()) {
+                if (batch.mode() != SaveMode.INSERT_ONLY) {
+                    throw new AssertionError("Internal bug: mixed joined insert can only handle INSERT_ONLY batches");
+                }
+                if (isDetachRequired(batch.mode())) {
+                    detach = true;
+                }
+                selfDrafts.addAll(batch.entities());
+            }
+            results.add(new SaveSelfResult(detach, null));
+        }
+        if (selfDrafts.isEmpty()) {
+            return results;
+        }
+        insertJoinedRootStages(rootType, inheritanceInfo, drafts, selfDrafts);
+        insertJoinedChildStages(rootType, drafts, selfDrafts);
+        return results;
+    }
+
+    private void insertJoinedRootStages(
+            ImmutableType rootType,
+            InheritanceInfo inheritanceInfo,
+            List<DraftSpi> drafts,
+            Set<DraftSpi> selfDrafts
+    ) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        Map<Shape, StageGroup> groupMap = new LinkedHashMap<>();
+        for (DraftSpi draft : drafts) {
+            if (!selfDrafts.contains(draft)) {
+                continue;
+            }
+            Shape shape = Operator.joinedRootShape(sqlClient, rootType, draft);
+            groupMap.computeIfAbsent(shape, it -> new StageGroup(rootType, shape)).entities.add(draft);
+        }
         Operator operator = new Operator(ctx);
-        boolean detach = false;
-        for (Batch<DraftSpi> batch : preHandler.batches()) {
-            switch (batch.mode()) {
-                case INSERT_ONLY:
-                    operator.insert(batch);
-                    break;
-                case INSERT_IF_ABSENT:
-                    operator.upsert(batch, true);
-                    break;
-                case UPDATE_ONLY:
-                    detach = true;
-                    operator.update(
-                            preHandler.originalIdObjMap(),
-                            preHandler.originalkeyObjMap(),
-                            batch
-                    );
-                    break;
-                default:
-                    detach = true;
-                    operator.upsert(batch, false);
-                    break;
+        for (StageGroup group : groupMap.values()) {
+            operator.insertJoinedRoot(
+                    batchOf(group.shape, group.entities, SaveMode.INSERT_ONLY, SaveMode.INSERT_ONLY),
+                    inheritanceInfo
+            );
+        }
+    }
+
+    private void insertJoinedChildStages(
+            ImmutableType rootType,
+            List<DraftSpi> drafts,
+            Set<DraftSpi> selfDrafts
+    ) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        Map<StageKey, StageGroup> groupMap = new LinkedHashMap<>();
+        for (DraftSpi draft : drafts) {
+            if (!selfDrafts.contains(draft)) {
+                continue;
+            }
+            ImmutableType previousTableType = rootType;
+            for (ImmutableType tableType : Operator.joinedTableTypes(rootType, draft.__type())) {
+                Shape shape = Operator.joinedStageShape(sqlClient, previousTableType, tableType, draft);
+                StageKey key = new StageKey(tableType, shape);
+                groupMap.computeIfAbsent(key, it -> new StageGroup(tableType, shape)).entities.add(draft);
+                previousTableType = tableType;
             }
         }
-        return detach;
+        for (StageGroup group : groupMap.values()) {
+            SaveContext stageCtx = new SaveContext(
+                    ctx.options,
+                    ctx.con,
+                    group.tableType,
+                    ctx.fetcher,
+                    ctx.trigger,
+                    ctx.affectedRowCountMap
+            );
+            new Operator(stageCtx).insertJoinedStage(
+                    batchOf(group.shape, group.entities, SaveMode.INSERT_ONLY, SaveMode.INSERT_ONLY),
+                    group.tableType
+            );
+        }
+    }
+
+    private static Batch<DraftSpi> batchOf(
+            Shape shape,
+            EntityCollection<DraftSpi> entities,
+            SaveMode mode,
+            SaveMode originalMode
+    ) {
+        return new Batch<DraftSpi>() {
+
+            @Override
+            public Shape shape() {
+                return shape;
+            }
+
+            @Override
+            public EntityCollection<DraftSpi> entities() {
+                return entities;
+            }
+
+            @Override
+            public SaveMode mode() {
+                return mode;
+            }
+
+            @Override
+            public SaveMode originalMode() {
+                return originalMode;
+            }
+        };
+    }
+
+    private SaveSelfResult saveSelf(PreHandler preHandler, boolean ownerAcceptanceRequired) {
+        Operator operator = new Operator(ctx, ownerAcceptanceRequired);
+        boolean detach = false;
+        if (!ownerAcceptanceRequired) {
+            for (Batch<DraftSpi> batch : preHandler.batches()) {
+                if (isDetachRequired(batch.mode())) {
+                    detach = true;
+                }
+                saveBatch(preHandler, operator, batch);
+            }
+            return new SaveSelfResult(detach, null);
+        }
+
+        Set<DraftSpi> acceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Batch<DraftSpi> batch : preHandler.batches()) {
+            if (isDetachRequired(batch.mode())) {
+                detach = true;
+            }
+            Operator.MutationRows mutationRows = saveBatch(preHandler, operator, batch);
+            if (mutationRows.acceptedDrafts != null) {
+                acceptedDrafts.addAll(mutationRows.acceptedDrafts);
+            } else {
+                acceptedDrafts.addAll(batch.entities());
+            }
+        }
+        return new SaveSelfResult(detach, acceptedDrafts);
+    }
+
+    private Operator.MutationRows saveBatch(PreHandler preHandler, Operator operator, Batch<DraftSpi> batch) {
+        switch (batch.mode()) {
+            case INSERT_ONLY:
+                return operator.insert(batch);
+            case INSERT_IF_ABSENT:
+                return operator.upsert(batch, true);
+            case UPDATE_ONLY:
+                return operator.update(
+                        preHandler.originalIdObjMap(),
+                        preHandler.originalkeyObjMap(),
+                        batch
+                );
+            default:
+                return operator.upsert(batch, false);
+        }
+    }
+
+    private static boolean isDetachRequired(SaveMode mode) {
+        return mode != SaveMode.INSERT_ONLY && mode != SaveMode.INSERT_IF_ABSENT;
+    }
+
+    private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
+        if (!isJoinedTypeBranchTarget()) {
+            return false;
+        }
+        if (ctx.trigger != null) {
+            return isOwnerAcceptanceMode();
+        }
+        if (!isOwnerAcceptanceMode()) {
+            return false;
+        }
+        return hasLoadedPostAssociation(preHandler);
+    }
+
+    private boolean hasLoadedPostAssociation(PreHandler preHandler) {
+        for (Batch<DraftSpi> batch : preHandler.batches()) {
+            for (DraftSpi draft : batch.entities()) {
+                for (ImmutableProp prop : draft.__type().getProps().values()) {
+                    if (isVisitable(prop) &&
+                            prop.isAssociation(TargetLevel.ENTITY) &&
+                            !prop.isColumnDefinition() &&
+                            draft.__isLoaded(prop.getId())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isOwnerAcceptanceMode() {
+        switch (ctx.options.getMode()) {
+            case INSERT_IF_ABSENT:
+                return true;
+            case UPDATE_ONLY:
+            case UPSERT:
+            case NON_IDEMPOTENT_UPSERT:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private boolean isJoinedTypeBranchTarget() {
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type;
+    }
+
+    private Iterable<Batch<DraftSpi>> associationBatches(
+            PreHandler preHandler,
+            @Nullable Set<DraftSpi> acceptedDrafts
+    ) {
+        return acceptedDrafts != null ?
+                filterBatches(preHandler.associationBatches(), acceptedDrafts) :
+                preHandler.associationBatches();
+    }
+
+    private Iterable<Batch<DraftSpi>> batches(
+            PreHandler preHandler,
+            @Nullable Set<DraftSpi> acceptedDrafts
+    ) {
+        return acceptedDrafts != null ?
+                filterBatches(preHandler.batches(), acceptedDrafts) :
+                preHandler.batches();
+    }
+
+    private List<DraftSpi> fetchDrafts(List<DraftSpi> drafts, @Nullable Set<DraftSpi> acceptedDrafts) {
+        if (acceptedDrafts == null) {
+            return drafts;
+        }
+        List<DraftSpi> filteredDrafts = new ArrayList<>(acceptedDrafts.size());
+        for (DraftSpi draft : drafts) {
+            if (acceptedDrafts.contains(draft)) {
+                filteredDrafts.add(draft);
+            }
+        }
+        return filteredDrafts;
+    }
+
+    private Iterable<Batch<DraftSpi>> filterBatches(
+            Iterable<Batch<DraftSpi>> batches,
+            Set<DraftSpi> acceptedDrafts
+    ) {
+        List<Batch<DraftSpi>> filteredBatches = new ArrayList<>();
+        for (Batch<DraftSpi> batch : batches) {
+            EntityList<DraftSpi> entities = new EntityList<>();
+            for (DraftSpi draft : batch.entities()) {
+                if (acceptedDrafts.contains(draft)) {
+                    entities.add(draft);
+                }
+            }
+            if (!entities.isEmpty()) {
+                filteredBatches.add(new FilteredBatch(batch, entities));
+            }
+        }
+        return filteredBatches;
     }
 
     private void clearAssociations(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
@@ -557,6 +930,117 @@ public class Saver {
         return false;
     }
 
+    private static class SaveOperation {
+
+        final Saver saver;
+
+        final List<DraftSpi> drafts;
+
+        final PreHandler preHandler;
+
+        final boolean ownerAcceptanceRequired;
+
+        SaveOperation(
+                Saver saver,
+                List<DraftSpi> drafts,
+                PreHandler preHandler,
+                boolean ownerAcceptanceRequired
+        ) {
+            this.saver = saver;
+            this.drafts = drafts;
+            this.preHandler = preHandler;
+            this.ownerAcceptanceRequired = ownerAcceptanceRequired;
+        }
+    }
+
+    private static class SaveSelfResult {
+
+        final boolean detach;
+
+        @Nullable
+        final Set<DraftSpi> acceptedDrafts;
+
+        SaveSelfResult(boolean detach, @Nullable Set<DraftSpi> acceptedDrafts) {
+            this.detach = detach;
+            this.acceptedDrafts = acceptedDrafts;
+        }
+    }
+
+    private static class StageKey {
+
+        final ImmutableType tableType;
+
+        final Shape shape;
+
+        StageKey(ImmutableType tableType, Shape shape) {
+            this.tableType = tableType;
+            this.shape = shape;
+        }
+
+        @Override
+        public int hashCode() {
+            return tableType.hashCode() * 31 + shape.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof StageKey)) {
+                return false;
+            }
+            StageKey other = (StageKey) obj;
+            return tableType == other.tableType && shape.equals(other.shape);
+        }
+    }
+
+    private static class StageGroup {
+
+        final ImmutableType tableType;
+
+        final Shape shape;
+
+        final EntityList<DraftSpi> entities = new EntityList<>();
+
+        StageGroup(ImmutableType tableType, Shape shape) {
+            this.tableType = tableType;
+            this.shape = shape;
+        }
+    }
+
+    private static class FilteredBatch implements Batch<DraftSpi> {
+
+        private final Batch<DraftSpi> base;
+
+        private final EntityCollection<DraftSpi> entities;
+
+        private FilteredBatch(Batch<DraftSpi> base, EntityCollection<DraftSpi> entities) {
+            this.base = base;
+            this.entities = entities;
+        }
+
+        @Override
+        public Shape shape() {
+            return base.shape();
+        }
+
+        @Override
+        public EntityCollection<DraftSpi> entities() {
+            return entities;
+        }
+
+        @Override
+        public SaveMode mode() {
+            return base.mode();
+        }
+
+        @Override
+        public SaveMode originalMode() {
+            return base.originalMode();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static boolean isShapeMatched(DraftSpi draft, @Nullable Fetcher<?> fetcher, ShapeMatchContext ctx) {
         if (draft == null) {
@@ -566,33 +1050,17 @@ public class Saver {
             return false;
         }
         if (fetcher != null) {
-            for (Field field : fetcher.getFieldMap().values()) {
-                ImmutableProp prop = field.getProp();
-                PropId propId = prop.getId();
-                if (!draft.__isLoaded(propId)) {
-                    return false;
-                }
-                if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                    Fetcher<?> childFetcher = field.getChildFetcher();
-                    Object associatedValue = draft.__get(propId);
-                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                        List<DraftSpi> list = (List<DraftSpi>) associatedValue;
-                        for (DraftSpi e : list) {
-                            if (!isShapeMatched(e, childFetcher, ctx)) {
-                                return false;
-                            }
-                        }
-                    } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher, ctx)) {
-                        return false;
-                    }
-                }
+            if (!isShapeMatchedByFetcher(draft, fetcher, ctx)) {
+                return false;
             }
+            Map<String, Field> matchedFieldMap = new LinkedHashMap<>();
+            collectMatchedFieldMap(draft.__type(), fetcher, matchedFieldMap);
             for (ImmutableProp prop : draft.__type().getProps().values()) {
                 PropId propId = prop.getId();
                 if (!draft.__isLoaded(propId)) {
                     continue;
                 }
-                Field field = fetcher.getFieldMap().get(prop.getName());
+                Field field = matchedFieldMap.get(prop.getName());
                 if (field == null) {
                     draft.__unload(propId);
                 } else if (field.isImplicit()) {
@@ -623,6 +1091,66 @@ public class Saver {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
+    private static boolean isShapeMatchedByFetcher(DraftSpi draft, Fetcher<?> fetcher, ShapeMatchContext ctx) {
+        if (!ctx.isOptimizable(draft.__type(), fetcher)) {
+            return false;
+        }
+        for (Field field : fetcher.getFieldMap().values()) {
+            ImmutableProp prop = field.getProp();
+            PropId propId = prop.getId();
+            if (!draft.__isLoaded(propId)) {
+                return false;
+            }
+            if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                Fetcher<?> childFetcher = field.getChildFetcher();
+                Object associatedValue = draft.__get(propId);
+                if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                    List<DraftSpi> list = (List<DraftSpi>) associatedValue;
+                    for (DraftSpi e : list) {
+                        if (!isShapeMatched(e, childFetcher, ctx)) {
+                            return false;
+                        }
+                    }
+                } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher, ctx)) {
+                    return false;
+                }
+            }
+        }
+        for (Map.Entry<ImmutableType, Fetcher<?>> e :
+                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
+            if (e.getKey().isAssignableFrom(draft.__type()) &&
+                    !isShapeMatchedByFetcher(draft, e.getValue(), ctx)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void collectMatchedFieldMap(
+            ImmutableType actualType,
+            Fetcher<?> fetcher,
+            Map<String, Field> matchedFieldMap
+    ) {
+        for (Field field : fetcher.getFieldMap().values()) {
+            addMatchedField(matchedFieldMap, field);
+        }
+        for (Map.Entry<ImmutableType, Fetcher<?>> e :
+                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
+            if (e.getKey().isAssignableFrom(actualType)) {
+                collectMatchedFieldMap(actualType, e.getValue(), matchedFieldMap);
+            }
+        }
+    }
+
+    private static void addMatchedField(Map<String, Field> matchedFieldMap, Field field) {
+        String name = field.getProp().getName();
+        Field oldField = matchedFieldMap.get(name);
+        if (oldField == null || oldField.isImplicit() && !field.isImplicit()) {
+            matchedFieldMap.put(name, field);
+        }
+    }
+
     private class ShapeMatchContext {
 
         private final Map<Fetcher<?>, Boolean> optimizableMap = new HashMap<>();
@@ -636,6 +1164,7 @@ public class Saver {
 
         private boolean isOptimizableImpl(Fetcher<?> fetcher) {
             if (fetcher.getFieldMap().size() == 1 &&
+                    ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty() &&
                     fetcher.getFieldMap().values().iterator().next().getProp().isId()) {
                 return true;
             }

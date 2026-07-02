@@ -4,6 +4,7 @@ import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.ast.mutation.KDeleteCommandDsl
 import kotlin.reflect.KProperty1
 
@@ -13,6 +14,10 @@ internal class KDeleteCommandDslImpl(
 
     override fun setMode(mode: DeleteMode) {
         javaCommand = javaCommand.setMode(mode)
+    }
+
+    override fun setTypeMatchMode(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setTypeMatchMode(mode)
     }
 
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {

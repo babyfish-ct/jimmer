@@ -14,15 +14,37 @@ import java.math.BigInteger
 
 class KspDtoCompiler(
     dtoFile: DtoFile,
-    private val resolver: Resolver,
+    private val ctx: Context,
     private val defaultNullableInputModifier: DtoModifier
 ) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
+
+    private val resolver: Resolver = ctx.resolver
 
     override fun getDefaultNullableInputModifier(): DtoModifier =
         defaultNullableInputModifier
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes
+
+    override fun getType(qualifiedName: String): ImmutableType? =
+        ctx.types.firstOrNull { it.qualifiedName == qualifiedName }
+            ?: resolver
+                .getClassDeclarationByName(qualifiedName)
+                ?.takeIf { ctx.typeAnnotationOf(it) !== null }
+                ?.let {
+                    ctx.typeOf(it).also { ctx.resolve() }
+                }
+
+    override fun getDirectSubTypes(baseType: ImmutableType): Collection<ImmutableType> =
+        ctx.types
+            .filter { it.primarySuperType?.qualifiedName == baseType.qualifiedName }
+            .sortedBy { it.qualifiedName }
+
+    override fun isSameType(baseType1: ImmutableType, baseType2: ImmutableType): Boolean =
+        baseType1.qualifiedName == baseType2.qualifiedName
+
+    override fun isInstantiable(baseType: ImmutableType): Boolean =
+        baseType.isInstantiable
 
     override fun getDeclaredProps(baseType: ImmutableType): Map<String, ImmutableProp> =
         baseType.declaredProperties

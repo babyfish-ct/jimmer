@@ -1,0 +1,13 @@
+ClientProjectWithClientView {
+    id
+    name
+    client {
+        id
+        name
+        #types {
+            Organization {
+                taxCode
+            }
+        }
+    }
+}

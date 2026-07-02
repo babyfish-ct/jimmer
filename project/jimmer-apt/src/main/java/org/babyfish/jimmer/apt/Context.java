@@ -25,6 +25,7 @@ import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collection;
 
 public class Context {
 
@@ -287,6 +288,10 @@ public class Context {
     public ImmutableType getImmutableType(TypeMirror type) {
         TypeElement typeElement = (TypeElement) types.asElement(type);
         return getImmutableType(typeElement);
+    }
+
+    public Collection<ImmutableType> getImmutableTypes() {
+        return immutableTypeMap.values();
     }
 
     public boolean isNumber(TypeMirror type) {

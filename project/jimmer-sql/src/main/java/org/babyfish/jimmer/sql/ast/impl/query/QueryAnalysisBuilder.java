@@ -43,6 +43,12 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
         return new QueryAnalysisBuilder(astContext, materializeAliases).analyze(ast);
     }
 
+    static QueryAnalysis analyzeJoinRequirements(AstContext astContext, TypedQueryImplementor ast) {
+        QueryAnalysisBuilder builder = new QueryAnalysisBuilder(astContext, false);
+        builder.collectJoinRequirements(ast);
+        return builder.analysisFor(builder.joinRequirements);
+    }
+
     @Override
     public QueryAnalysisContext analysisContext() {
         return analysisContext;
@@ -61,6 +67,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
         QueryAnalysis joinAwareAnalysis = analysisFor(joinRequirements);
         TableUsageAnalysis tableUsageAnalysis = collectTableUsagesAndBaseExports(ast, joinAwareAnalysis);
         TableUsages tableUsages = tableUsageAnalysis.tableUsages;
+        JoinedTypeBranchTableUsages joinedTypeBranchTableUsages = tableUsageAnalysis.joinedTypeBranchTableUsages;
         BaseQueryExports baseQueryExports = baseQueryExportsCollector.toExports();
         CteTableDependencies cteTableDependencies = CteTableDependencyAnalyzer.analyze(
                 tableUsageAnalysis.statements,
@@ -74,6 +81,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                 joinRequirements,
                 baseQueryExportUsages,
                 tableUsages,
+                joinedTypeBranchTableUsages,
                 tableAliases,
                 baseQueryExports,
                 cteTableDependencies
@@ -88,6 +96,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                         joinRequirements,
                         BaseQueryExportUsages.EMPTY,
                         TableUsages.EMPTY,
+                        JoinedTypeBranchTableUsages.EMPTY,
                         TableAliases.EMPTY,
                         BaseQueryExports.EMPTY,
                         CteTableDependencies.EMPTY
@@ -123,7 +132,7 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
                 analysisContext.popStatement();
             }
         }
-        return new TableUsageAnalysis(visitor.toTableUsages(), statements);
+        return new TableUsageAnalysis(visitor.toTableUsages(), visitor.toJoinedTypeBranchTableUsages(), statements);
     }
 
     private TableAliases prepareTableUsageAndAliasBindings(TableUsages tableUsages, CteTableDependencies cteTableDependencies) {
@@ -163,10 +172,17 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
 
         final TableUsages tableUsages;
 
+        final JoinedTypeBranchTableUsages joinedTypeBranchTableUsages;
+
         final List<AbstractMutableStatementImpl> statements;
 
-        TableUsageAnalysis(TableUsages tableUsages, List<AbstractMutableStatementImpl> statements) {
+        TableUsageAnalysis(
+                TableUsages tableUsages,
+                JoinedTypeBranchTableUsages joinedTypeBranchTableUsages,
+                List<AbstractMutableStatementImpl> statements
+        ) {
             this.tableUsages = tableUsages;
+            this.joinedTypeBranchTableUsages = joinedTypeBranchTableUsages;
             this.statements = statements;
         }
     }

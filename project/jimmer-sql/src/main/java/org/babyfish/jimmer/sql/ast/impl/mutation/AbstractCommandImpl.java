@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
@@ -188,6 +189,16 @@ abstract class AbstractCommandImpl {
                 throw new IllegalArgumentException("maxCommandJoinCount must between 0 and 8");
             }
             this.maxCommandJoinCount = maxCommandJoinCount;
+        }
+    }
+
+    static class TypeMatchModeCfg extends Cfg {
+
+        final TypeMatchMode mode;
+
+        TypeMatchModeCfg(Cfg prev, TypeMatchMode mode) {
+            super(prev);
+            this.mode = mode != null ? mode : TypeMatchMode.AUTO;
         }
     }
 

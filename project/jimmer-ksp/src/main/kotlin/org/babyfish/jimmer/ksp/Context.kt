@@ -93,6 +93,9 @@ class Context(
 
     private var newTypes = typeMap?.values?.toMutableList() ?: mutableListOf()
 
+    val types: Collection<ImmutableType>
+        get() = typeMap.values
+
     fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType =
         typeMap[classDeclaration] ?:
             ImmutableType(this, classDeclaration).also {

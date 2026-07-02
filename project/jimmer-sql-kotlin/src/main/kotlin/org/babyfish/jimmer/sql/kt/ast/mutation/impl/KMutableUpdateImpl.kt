@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
+import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.*
@@ -24,6 +25,10 @@ internal class KMutableUpdateImpl<E: Any>(
 
     override val where: Where by lazy {
         Where(this)
+    }
+
+    override fun setTypeMatchMode(mode: TypeMatchMode) {
+        javaUpdate.setTypeMatchMode(mode)
     }
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
@@ -70,8 +75,8 @@ internal class KMutableUpdateImpl<E: Any>(
     }
 
     override val subQueries: KSubQueries<KNonNullTableEx<E>> =
-        KSubQueriesImpl(javaUpdate)
+        KSubQueriesImpl(javaUpdate, table)
 
     override val wildSubQueries: KWildSubQueries<KNonNullTableEx<E>> =
-        KWildSubQueriesImpl(javaUpdate)
+        KWildSubQueriesImpl(javaUpdate, table)
 }

@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -18,7 +17,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Arrays;
-import java.util.function.Function;
 
 public class SimpleEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
@@ -172,6 +170,46 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new TypeMatchModeCfg(cfg, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, entityType, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, prop, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new TypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, entityType, allowed));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed) {
+        return new SimpleEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, prop, allowed));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
         return new SimpleEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
     }
@@ -206,7 +244,8 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @Override
     public SimpleSaveResult<E> execute(Connection con, Fetcher<E> fetcher) {
-        SaveOptions options = options();
+        OptionsImpl options = options();
+        Saver.validateInstantiableSaveType(((ImmutableSpi) options.getArument()).__type(), options);
         return options.getSqlClient()
                 .getConnectionManager()
                 .execute(
@@ -219,7 +258,8 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @Override
     public <V extends View<E>> SimpleSaveResult.View<E, V> execute(Connection con, Class<V> viewType) {
-        SaveOptions options = options();
+        OptionsImpl options = options();
+        Saver.validateInstantiableSaveType(((ImmutableSpi) options.getArument()).__type(), options);
         DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
         SimpleSaveResult<E> result = options.getSqlClient()
                 .getConnectionManager()

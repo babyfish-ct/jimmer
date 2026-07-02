@@ -5,8 +5,11 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ScalarProviderUtils;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -14,6 +17,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -181,6 +185,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     true,
                                     rawId,
                                     embeddedProps.get(embeddedProps.size() - 1),
+                                    rootProp,
                                     columnName,
                                     rootProp.isReference(TargetLevel.ENTITY)
                             )
@@ -209,6 +214,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     rawId,
                                     false,
                                     embeddedProps.get(embeddedProps.size() - 1),
+                                    rootProp,
                                     columnName,
                                     rootProp.isReference(TargetLevel.ENTITY)
                             )
@@ -223,6 +229,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                         rootProp.isReference(TargetLevel.ENTITY) ?
                                 rootProp.getTargetType().getIdProp() :
                                 rootProp,
+                        rootProp,
                         table,
                         rawId,
                         definition.name(0),
@@ -264,6 +271,77 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             }
         }
         return true;
+    }
+
+    @Nullable
+    static String joinedTypeBranchUpdateRootAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp columnProp
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null ||
+                columnProp.isId() ||
+                columnProp.toOriginal().isId() ||
+                tableImplementor.isTreated()) {
+            return null;
+        }
+        String rootAlias = astContext.getJoinedTypeBranchUpdateRootAlias(tableImplementor);
+        if (rootAlias == null || !tableImplementor.isRootTableProp(columnProp)) {
+            return null;
+        }
+        return rootAlias;
+    }
+
+    static boolean renderJoinedTypeBranchColumn(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp columnProp,
+            String columnName
+    ) {
+        String rootAlias = joinedTypeBranchUpdateRootAlias(builder, tableImplementor, columnProp);
+        if (rootAlias != null) {
+            builder.sql(rootAlias).sql(".").sql(columnName);
+            return true;
+        }
+        String branchAlias = joinedTypeBranchAlias(builder, tableImplementor, columnProp);
+        if (branchAlias != null) {
+            builder.sql(branchAlias).sql(".").sql(columnName);
+            return true;
+        }
+        return false;
+    }
+
+    @Nullable
+    static String joinedTypeBranchAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp columnProp
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null ||
+                columnProp.isId() ||
+                columnProp.toOriginal().isId() ||
+                tableImplementor.isTreated() ||
+                !tableImplementor.isJoinedTypeBranchRoot() ||
+                astContext.isJoinedTypeBranchUpdateTarget(tableImplementor) ||
+                !isJoinedTypeBranchTableRendered(builder, tableImplementor) ||
+                tableImplementor.isRootTableProp(columnProp)) {
+            return null;
+        }
+        return TableImplementor.joinedTypeBranchAlias(builder.assertSimple(), tableImplementor);
+    }
+
+    private static boolean isJoinedTypeBranchTableRendered(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> tableImplementor
+    ) {
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (queryRenderContext != null) {
+            return queryRenderContext.isJoinedTypeBranchTableRequired(tableImplementor);
+        }
+        AstContext astContext = builder.getAstContext();
+        return astContext != null && astContext.isJoinedTypeBranchTableRendered(tableImplementor);
     }
 
     private static boolean isLoaded(Object value, List<ImmutableProp> props) {

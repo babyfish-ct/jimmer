@@ -3,9 +3,11 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -36,6 +38,7 @@ public class BatchEntitySaveCommandImpl<E>
 
     private static Cfg initialCfg(JSqlClientImplementor sqlClient, Connection con, Iterable<?> entities) {
         ImmutableType type = null;
+        ImmutableType familyType = null;
         for (Object entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {
                 throw new IllegalArgumentException(
@@ -51,18 +54,26 @@ public class BatchEntitySaveCommandImpl<E>
                 throw new IllegalArgumentException("Each element of entity cannot be draft object");
             }
             ImmutableType entityType = ((ImmutableSpi) entity).__type();
-            if (type != null && entityType != type) {
+            ImmutableType entityFamilyType = familyType(entityType);
+            if (type != null && entityType != type && entityFamilyType != familyType) {
                 throw new IllegalArgumentException(
-                        "All the elements of entities must belong to same immutable type"
+                        "All the elements of entities must belong to same immutable type " +
+                                "or same inheritance hierarchy"
                 );
             }
             type = entityType;
+            familyType = entityFamilyType;
         }
         Cfg cfg = new RootCfg(sqlClient, entities);
         if (con != null) {
             cfg = new ConnectionCfg(cfg, con);
         }
         return cfg;
+    }
+
+    private static ImmutableType familyType(ImmutableType type) {
+        ImmutableType rootType = type.getInheritanceRoot();
+        return rootType != null ? rootType : type;
     }
 
     @Override
@@ -184,6 +195,46 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new TypeMatchModeCfg(cfg, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, entityType, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeMatchModeCfg(cfg, prop, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new TypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, entityType, allowed));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedTypeChangeAllowedCfg(cfg, prop, allowed));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
         return new BatchEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
     }
@@ -272,13 +323,116 @@ public class BatchEntitySaveCommandImpl<E>
             Executor.validateMutationConnection(con);
         }
         Collection<E> entities = entities(options);
-        ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
-        Saver saver = new Saver(
-                options,
-                con,
-                type,
-                fetcher
-        );
-        return saver.saveAll(entities);
+        Map<ImmutableType, TypeGroup<E>> groupMap = typeGroupMap(entities, fetcher);
+        if (groupMap.size() == 1) {
+            ImmutableType type = groupMap.values().iterator().next().type;
+            Saver saver = new Saver(
+                    options,
+                    con,
+                    type,
+                    fetcher
+            );
+            return saver.saveAll(entities);
+        }
+        ImmutableType joinedInsertRootType = joinedInsertRootType(options, groupMap);
+        if (joinedInsertRootType != null) {
+            Saver saver = new Saver(
+                    options,
+                    con,
+                    joinedInsertRootType,
+                    fetcher
+            );
+            return saver.saveAllJoinedInsert(entities);
+        }
+        MutationTrigger trigger = options.getTriggers() != null ? new MutationTrigger() : null;
+        Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
+        List<BatchSaveResult.Item<E>> items = new ArrayList<>(Collections.nCopies(entities.size(), null));
+        for (TypeGroup<E> group : groupMap.values()) {
+            Saver saver = new Saver(
+                    new SaveContext(
+                            options,
+                            con,
+                            group.type,
+                            fetcher,
+                            trigger,
+                            affectedRowCountMap
+                    )
+            );
+            BatchSaveResult<E> result = saver.saveAll(group.entities, false);
+            for (int i = 0; i < group.indexes.size(); i++) {
+                items.set(group.indexes.get(i), result.getItems().get(i));
+            }
+        }
+        if (trigger != null) {
+            trigger.submit(options.getSqlClient(), con);
+        }
+        return new BatchSaveResult<>(affectedRowCountMap, items);
+    }
+
+    private ImmutableType joinedInsertRootType(
+            OptionsImpl options,
+            Map<ImmutableType, TypeGroup<E>> groupMap
+    ) {
+        if (options.getMode() != SaveMode.INSERT_ONLY) {
+            return null;
+        }
+        ImmutableType rootType = null;
+        for (ImmutableType type : groupMap.keySet()) {
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+                return null;
+            }
+            if (rootType == null) {
+                rootType = inheritanceInfo.getRootType();
+            } else if (rootType != inheritanceInfo.getRootType()) {
+                return null;
+            }
+        }
+        return rootType;
+    }
+
+    private Map<ImmutableType, TypeGroup<E>> typeGroupMap(Collection<E> entities, Fetcher<E> fetcher) {
+        Map<ImmutableType, TypeGroup<E>> groupMap = new LinkedHashMap<>();
+        int index = 0;
+        for (E entity : entities) {
+            ImmutableType type = ((ImmutableSpi) entity).__type();
+            validateFetcherType(fetcher, type);
+            groupMap.computeIfAbsent(type, TypeGroup::new).add(index++, entity);
+        }
+        return groupMap;
+    }
+
+    private static void validateFetcherType(Fetcher<?> fetcher, ImmutableType type) {
+        if (fetcher == null) {
+            return;
+        }
+        ImmutableType fetcherType = fetcher.getImmutableType();
+        if (!fetcherType.isAssignableFrom(type)) {
+            throw new IllegalArgumentException(
+                    "The fetcher type \"" +
+                            fetcherType +
+                            "\" cannot fetch immutable type \"" +
+                            type +
+                            "\""
+            );
+        }
+    }
+
+    private static class TypeGroup<E> {
+
+        final ImmutableType type;
+
+        final List<Integer> indexes = new ArrayList<>();
+
+        final List<E> entities = new ArrayList<>();
+
+        TypeGroup(ImmutableType type) {
+            this.type = type;
+        }
+
+        void add(int index, E entity) {
+            indexes.add(index);
+            entities.add(entity);
+        }
     }
 }

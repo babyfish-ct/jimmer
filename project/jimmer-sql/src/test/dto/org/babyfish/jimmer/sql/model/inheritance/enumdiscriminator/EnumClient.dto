@@ -1,0 +1,14 @@
+input EnumClientDiscriminatorInput {
+    id
+    type
+    name
+    #types {
+        default {
+        }
+        EnumOrganization class Organization {
+        }
+        EnumPerson class Person {
+            firstName
+        }
+    }
+}

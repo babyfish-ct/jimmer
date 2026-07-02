@@ -33,21 +33,21 @@ class DtoProcessor(
         val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType>()
         for (dtoFile in dtoCtx.dtoFiles) {
             val compiler = try {
-                KspDtoCompiler(dtoFile, ctx.resolver, defaultNullableInputModifier)
+                KspDtoCompiler(dtoFile, ctx, defaultNullableInputModifier)
             } catch (ex: DtoAstException) {
                 throw DtoException(
                     "Failed to parse \"" +
-                        dtoFile.absolutePath +
-                        "\": " +
-                        ex.message,
+                            dtoFile.absolutePath +
+                            "\": " +
+                            ex.message,
                     ex
                 )
             } catch (ex: Throwable) {
                 throw DtoException(
                     "Failed to read \"" +
-                        dtoFile.absolutePath +
-                        "\": " +
-                        ex.message,
+                            dtoFile.absolutePath +
+                            "\": " +
+                            ex.message,
                     ex
                 )
             }
@@ -55,10 +55,10 @@ class DtoProcessor(
             if (classDeclaration === null) {
                 throw DtoException(
                     "Failed to parse \"" +
-                        dtoFile.absolutePath +
-                        "\": No immutable type \"" +
-                        compiler.sourceTypeName +
-                        "\""
+                            dtoFile.absolutePath +
+                            "\": No immutable type \"" +
+                            compiler.sourceTypeName +
+                            "\""
                 )
             }
             if (!ctx.include(classDeclaration)) {
@@ -66,19 +66,20 @@ class DtoProcessor(
             }
             if (classDeclaration.annotation(Entity::class) == null &&
                 classDeclaration.annotation(Embeddable::class) == null &&
-                classDeclaration.annotation(Immutable::class) == null) {
+                classDeclaration.annotation(Immutable::class) == null
+            ) {
                 throw DtoException(
                     "Failed to parse \"" +
-                        dtoFile.absolutePath +
-                        "\": the \"" +
-                        compiler.sourceTypeName +
-                        "\" is not decorated by \"@" +
-                        Entity::class.qualifiedName +
-                        "\", \"" +
-                        Embeddable::class.qualifiedName +
-                        "\" or \"" +
-                        Immutable::class.qualifiedName +
-                        "\""
+                            dtoFile.absolutePath +
+                            "\": the \"" +
+                            compiler.sourceTypeName +
+                            "\" is not decorated by \"@" +
+                            Entity::class.qualifiedName +
+                            "\", \"" +
+                            Embeddable::class.qualifiedName +
+                            "\" or \"" +
+                            Immutable::class.qualifiedName +
+                            "\""
                 )
             }
             immutableTypeMap[compiler] = ctx.typeOf(classDeclaration)

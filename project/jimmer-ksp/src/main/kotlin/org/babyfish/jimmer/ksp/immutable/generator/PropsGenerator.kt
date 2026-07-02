@@ -8,9 +8,9 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.className
-import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
@@ -24,7 +24,7 @@ class PropsGenerator(
     private val file: KSFile,
     private val modelClassDeclaration: KSClassDeclaration
 ) {
-    fun generate(allFiles: List<KSFile>) {
+    fun generate() {
         val outputFileName =
             file.fileName.let {
                 var lastDotIndex = it.lastIndexOf('.')
@@ -35,7 +35,7 @@ class PropsGenerator(
                 }
             }
         codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(false, file),
             file.packageName.asString(),
             outputFileName
         ).use {
@@ -64,7 +64,13 @@ class PropsGenerator(
                             addProp(type, prop, nonNullTable = true, outerJoin = true, isTableEx = true)
                             addProp(type, prop, nonNullTable = false, outerJoin = true, isTableEx = true)
                             addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = true, isTableEx = false)
-                            addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = false, isTableEx = false)
+                            addIdProp(
+                                type,
+                                prop,
+                                type.getIdPropName(prop.name),
+                                nonNullTable = false,
+                                isTableEx = false
+                            )
                             addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = true, isTableEx = true)
                             addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = false, isTableEx = true)
                         }
@@ -77,6 +83,7 @@ class PropsGenerator(
                         addFetchByFun(type, false)
                         addFetchByFun(type, true)
                     }
+                    addPolymorphicFunctions(type)
                     addObjectMeta(type)
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
@@ -133,24 +140,28 @@ class PropsGenerator(
                     } else {
                         K_NON_NULL_REMOTE_REF
                     }
+
                 prop.isAssociation(true) && isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_EX_CLASS_NAME
                     } else {
                         K_NON_NULL_TABLE_EX_CLASS_NAME
                     }
+
                 !prop.isList && prop.isAssociation(true) && !isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
                         K_NON_NULL_TABLE_CLASS_NAME
                     }
+
                 prop.isEmbedded ->
                     if (nonNullTable) {
                         K_NON_NULL_EMBEDDED_PROP_EXPRESSION
                     } else {
                         K_NULLABLE_EMBEDDED_PROP_EXPRESSION
                     }
+
                 else ->
                     if (nonNullTable) {
                         K_NON_NULL_PROP_EXPRESSION
@@ -434,6 +445,137 @@ class PropsGenerator(
                 )
                 .build()
         )
+    }
+
+    private fun FileSpec.Builder.addPolymorphicFunctions(type: ImmutableType) {
+        if (!isKnownNonLeaf(type)) {
+            return
+        }
+        addTreatAsFun(type, receiverNullable = false, optional = false)
+        addTreatAsFun(type, receiverNullable = true, optional = false)
+        addTreatAsFun(type, receiverNullable = false, optional = true)
+        addTreatAsFun(type, receiverNullable = true, optional = true)
+        addReifiedTreatAsFun(type, receiverNullable = false, optional = false)
+        addReifiedTreatAsFun(type, receiverNullable = true, optional = false)
+        addReifiedTreatAsFun(type, receiverNullable = false, optional = true)
+        addReifiedTreatAsFun(type, receiverNullable = true, optional = true)
+        addInstanceOfFun(type)
+        addReifiedInstanceOfFun(type)
+    }
+
+    private fun FileSpec.Builder.addTreatAsFun(
+        type: ImmutableType,
+        receiverNullable: Boolean,
+        optional: Boolean
+    ) {
+        val typeVariable = TypeVariableName("S", type.className)
+        addFunction(
+            FunSpec
+                .builder(if (optional) "tryTreatAs" else "treatAs")
+                .addAnnotation(generatedAnnotation(type))
+                .addTypeVariable(typeVariable)
+                .receiver(
+                    (if (receiverNullable) {
+                        K_NULLABLE_TABLE_EX_CLASS_NAME
+                    } else {
+                        K_NON_NULL_TABLE_EX_CLASS_NAME
+                    }).parameterizedBy(type.className)
+                )
+                .addParameter("type", K_CLASS_CLASS_NAME.parameterizedBy(typeVariable))
+                .returns(
+                    (if (optional) {
+                        K_NULLABLE_TABLE_EX_CLASS_NAME
+                    } else {
+                        K_NON_NULL_TABLE_EX_CLASS_NAME
+                    }).parameterizedBy(typeVariable)
+                )
+                .addStatement(
+                    "return %T.%L(this, type)",
+                    K_POLYMORPHIC_TABLES_CLASS_NAME,
+                    if (optional) "tryTreatAs" else "treatAs"
+                )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addReifiedTreatAsFun(
+        type: ImmutableType,
+        receiverNullable: Boolean,
+        optional: Boolean
+    ) {
+        val typeVariable = TypeVariableName("S", type.className).copy(reified = true)
+        addFunction(
+            FunSpec
+                .builder(if (optional) "tryTreatAs" else "treatAs")
+                .addAnnotation(generatedAnnotation(type))
+                .addModifiers(KModifier.INLINE)
+                .addTypeVariable(typeVariable)
+                .receiver(
+                    (if (receiverNullable) {
+                        K_NULLABLE_TABLE_EX_CLASS_NAME
+                    } else {
+                        K_NON_NULL_TABLE_EX_CLASS_NAME
+                    }).parameterizedBy(type.className)
+                )
+                .returns(
+                    (if (optional) {
+                        K_NULLABLE_TABLE_EX_CLASS_NAME
+                    } else {
+                        K_NON_NULL_TABLE_EX_CLASS_NAME
+                    }).parameterizedBy(typeVariable)
+                )
+                .addStatement("return %L(S::class)", if (optional) "tryTreatAs" else "treatAs")
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addInstanceOfFun(type: ImmutableType) {
+        addFunction(
+            FunSpec
+                .builder("instanceOf")
+                .addAnnotation(generatedAnnotation(type))
+                .receiver(K_TABLE_EX_CLASS_NAME.parameterizedBy(type.className))
+                .addParameter(
+                    "type",
+                    K_CLASS_CLASS_NAME.parameterizedBy(WildcardTypeName.producerOf(type.className))
+                )
+                .returns(K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN))
+                .addStatement("return %T.instanceOf(this, type)", K_POLYMORPHIC_TABLES_CLASS_NAME)
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addReifiedInstanceOfFun(type: ImmutableType) {
+        val typeVariable = TypeVariableName("S", type.className).copy(reified = true)
+        addFunction(
+            FunSpec
+                .builder("instanceOf")
+                .addAnnotation(generatedAnnotation(type))
+                .addModifiers(KModifier.INLINE)
+                .addTypeVariable(typeVariable)
+                .receiver(K_TABLE_EX_CLASS_NAME.parameterizedBy(type.className))
+                .returns(K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN))
+                .addStatement("return instanceOf(S::class)")
+                .build()
+        )
+    }
+
+    private fun isKnownNonLeaf(type: ImmutableType): Boolean {
+        if (!type.isEntity || type.inheritanceRoot == null) {
+            return false
+        }
+        return ctx.types.any { it !== type && type.isAssignableFrom(it) }
+    }
+
+    private fun ImmutableType.isAssignableFrom(type: ImmutableType): Boolean {
+        var current: ImmutableType? = type
+        while (current != null) {
+            if (current === this) {
+                return true
+            }
+            current = current.primarySuperType
+        }
+        return false
     }
 
     private fun FileSpec.Builder.addObjectMeta(type: ImmutableType) {

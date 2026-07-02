@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
@@ -14,7 +13,10 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -121,13 +123,17 @@ public class DatabaseValidators {
                 );
             }
         }
+        validateDiscriminatorProp(type, table);
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.getAnnotation(DatabaseValidationIgnore.class) != null) {
                 continue;
             }
+            if (!isPropStoredByTable(type, prop)) {
+                continue;
+            }
             Storage storage = prop.getStorage(strategy);
             if (storage instanceof ColumnDefinition) {
-                ColumnDefinition columnDefinition = (ColumnDefinition)storage;
+                ColumnDefinition columnDefinition = (ColumnDefinition) storage;
                 for (int i = 0; i < columnDefinition.size(); i++) {
                     Column column = table.columnMap.get(
                             DatabaseIdentifiers.comparableIdentifier(columnDefinition.name(i))
@@ -149,10 +155,10 @@ public class DatabaseValidators {
             }
             if (storage instanceof SingleColumn) {
                 Column column = table.columnMap.get(
-                        DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName())
+                        DatabaseIdentifiers.comparableIdentifier(((SingleColumn) storage).getName())
                 );
                 if (column != null && (!prop.isAssociation(TargetLevel.ENTITY) || prop.isTargetForeignKeyReal(strategy))) {
-                    boolean nullable = prop.isNullable() && !prop.isInputNotNull();
+                    boolean nullable = isNullableInDatabase(type, prop);
                     if (nullable != column.nullable) {
                         items.add(
                                 new DatabaseValidationException.Item(
@@ -174,6 +180,66 @@ public class DatabaseValidators {
         }
     }
 
+    private void validateDiscriminatorProp(ImmutableType type, Table table) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getRootType() != type) {
+            return;
+        }
+        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
+        SingleColumn discriminatorColumn = discriminatorProp.getStorage(strategy);
+        Column column = table.columnMap.get(
+                DatabaseIdentifiers.comparableIdentifier(discriminatorColumn.getName())
+        );
+        if (column == null) {
+            items.add(
+                    new DatabaseValidationException.Item(
+                            type,
+                            discriminatorProp,
+                            "There is no discriminator column \"" +
+                                    discriminatorColumn.getName() +
+                                    "\" in table \"" +
+                                    table +
+                                    "\""
+                    )
+            );
+        } else if (column.nullable != discriminatorProp.isNullable()) {
+            items.add(
+                    new DatabaseValidationException.Item(
+                            type,
+                            discriminatorProp,
+                            "The discriminator column \"" +
+                                    discriminatorColumn.getName() +
+                                    "\" in table \"" +
+                                    table +
+                                    "\" is " +
+                                    (column.nullable ? "nullable" : "nonnull") +
+                                    ", but the mapping declares it as " +
+                                    (discriminatorProp.isNullable() ? "nullable" : "nonnull")
+                    )
+            );
+        }
+    }
+
+    private boolean isPropStoredByTable(ImmutableType type, ImmutableProp prop) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.getRootType() == type) {
+            return true;
+        }
+        return TableImplementor.isPropOwnedByStage(prop.toOriginal(), type);
+    }
+
+    private boolean isNullableInDatabase(ImmutableType type, ImmutableProp prop) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.SINGLE_TABLE &&
+                prop.toOriginal().getDeclaringType() != inheritanceInfo.getRootType()) {
+            return true;
+        }
+        return prop.isNullable() && !prop.isInputNotNull();
+    }
+
     private void validateForeignKey(ImmutableType type) throws SQLException {
         Table table = tableOf(type);
         if (table == null) {
@@ -182,6 +248,7 @@ public class DatabaseValidators {
         for (ImmutableProp prop : type.getProps().values()) {
             if (!prop.isAssociation(TargetLevel.PERSISTENT) ||
                     prop.getAnnotation(DatabaseValidationIgnore.class) != null ||
+                    !isPropStoredByTable(type, prop) ||
                     predicate.test(prop.getTargetType())) {
                 continue;
             }
@@ -340,7 +407,7 @@ public class DatabaseValidators {
     private Set<Table> tablesOf(String catalogName, String schemaName, String tableName) throws SQLException {
         Set<Tuple3<String, String, String>> tuples = new LinkedHashSet<>();
         new TableNameCollector(
-                new String[] { catalogName, schemaName, tableName },
+                new String[]{catalogName, schemaName, tableName},
                 arr -> tuples.add(new Tuple3<>(arr[0], arr[1], arr[2]))
         ).emit();
         for (Tuple3<String, String, String> tuple : tuples) {
@@ -551,7 +618,7 @@ public class DatabaseValidators {
                 ForeignKeyContext ctx,
                 ColumnDefinition columnDefinition,
                 boolean defaultDissociationActionCheckable
-        ) throws SQLException{
+        ) throws SQLException {
             ForeignKey foreignKey;
             if (columnDefinition instanceof MultipleJoinColumns) {
                 MultipleJoinColumns multipleJoinColumns = (MultipleJoinColumns) columnDefinition;

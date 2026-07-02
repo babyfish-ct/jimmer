@@ -78,6 +78,8 @@ public class JimmerProperties {
 
     private final boolean targetTransferable;
 
+    private final boolean defaultTypeChangeAllowed;
+
     private final boolean explicitBatchEnabled;
 
     private final boolean dumbBatchAcceptable;
@@ -122,6 +124,7 @@ public class JimmerProperties {
             @Nullable Integer maxCommandJoinCount,
             boolean mutationTransactionRequired,
             boolean targetTransferable,
+            boolean defaultTypeChangeAllowed,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             Boolean constraintViolationTranslatable, // Default value is true, so use `Boolean`
@@ -251,6 +254,7 @@ public class JimmerProperties {
                         2;
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
+        this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable =
@@ -414,6 +418,10 @@ public class JimmerProperties {
         return targetTransferable;
     }
 
+    public boolean isDefaultTypeChangeAllowed() {
+        return defaultTypeChangeAllowed;
+    }
+
     public boolean isExplicitBatchEnabled() {
         return explicitBatchEnabled;
     }
@@ -492,6 +500,7 @@ public class JimmerProperties {
                 ", maxCommandJoinCount=" + maxCommandJoinCount +
                 ", mutationTransactionRequired=" + mutationTransactionRequired +
                 ", targetTransferable=" + targetTransferable +
+                ", defaultTypeChangeAllowed=" + defaultTypeChangeAllowed +
                 ", explicitBatchEnabled=" + explicitBatchEnabled +
                 ", dumbBatchAcceptable=" + dumbBatchAcceptable +
                 ", constraintViolationTranslatable=" + constraintViolationTranslatable +

@@ -1,0 +1,71 @@
+ClientDefaultView {
+    id
+    name
+    #types {
+        default class Other {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+ClientImplicitDefaultView {
+    id
+    name
+    #types {
+        default {
+        }
+        Person {
+            firstName
+        }
+    }
+}
+
+ClientImplicitCatchAllView {
+    id
+    name
+    #types {
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input ClientPatchInput {
+    id
+    name
+    #types {
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input ClientDiscriminatorInput {
+    id
+    type
+    name
+    #types {
+        default {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input ClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+            lastName
+        }
+    }
+}

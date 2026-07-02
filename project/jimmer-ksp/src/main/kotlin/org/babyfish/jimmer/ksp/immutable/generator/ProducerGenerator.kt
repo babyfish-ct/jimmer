@@ -156,7 +156,10 @@ class ProducerGenerator(
                     prop.targetClassName,
                     prop.isNullable
                 )
-            prop.primaryAnnotationType != null && prop.primaryAnnotationType != Formula::class.java && prop.primaryAnnotationType != Transient::class.java ->
+            prop.primaryAnnotationType != null &&
+                prop.primaryAnnotationType != Formula::class.java &&
+                prop.primaryAnnotationType != Transient::class.java &&
+                prop.primaryAnnotationType != Discriminator::class.java ->
                 add(
                     ".add(%L, %S, %T::class.java, %T::class.java, %L)\n",
                     propId,

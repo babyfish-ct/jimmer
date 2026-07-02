@@ -12,6 +12,9 @@ import java.util.function.Supplier;
 public interface MutableUpdate extends Filterable, Executable<Integer> {
 
     @OldChain
+    MutableUpdate setTypeMatchMode(TypeMatchMode mode);
+
+    @OldChain
     <X> MutableUpdate set(PropExpression<X> path, X value);
 
     @OldChain

@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.ast.table;
 
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -27,11 +25,6 @@ public interface AssociationTable<
         return getAssociatedId("source");
     }
 
-    @SuppressWarnings("unchecked")
-    default ST source(ImmutableType treatedAs) {
-        return (ST)join("source", JoinType.INNER, treatedAs);
-    }
-
     default <TID> PropExpression<TID> targetId() {
         return getAssociatedId("target");
     }
@@ -39,11 +32,6 @@ public interface AssociationTable<
     @SuppressWarnings("unchecked")
     default TT target() {
         return (TT)join("target");
-    }
-
-    @SuppressWarnings("unchecked")
-    default ST target(ImmutableType treatedAs) {
-        return (ST)join("target", JoinType.INNER, treatedAs);
     }
 
     static <
