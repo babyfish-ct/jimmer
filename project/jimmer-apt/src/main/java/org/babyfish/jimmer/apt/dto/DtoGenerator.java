@@ -205,6 +205,7 @@ public class DtoGenerator {
                 typeBuilder.addAnnotation(annotationOf(anno));
             }
         }
+        addJacksonPolymorphicTypeNameIfNecessary();
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();
@@ -290,12 +291,13 @@ public class DtoGenerator {
                 typeBuilder.addAnnotation(annotationOf(anno));
             }
         }
+        DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism = dtoType.getPolymorphism();
+        assert polymorphism != null;
+        addJacksonPolymorphicInputRootAnnotationsIfNecessary(polymorphism);
         for (AbstractProp prop : dtoType.getProps()) {
             addAccessorDeclaration(prop);
         }
 
-        DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism = dtoType.getPolymorphism();
-        assert polymorphism != null;
         addPolymorphicMetadata(polymorphism);
         ClassName superInterfaceName = getDtoClassName();
         DtoPolymorphicBranch<ImmutableType, ImmutableProp> defaultBranch = polymorphism.getDefaultBranch();
@@ -346,6 +348,158 @@ public class DtoGenerator {
                 true,
                 branch.getKind()
         ).generate();
+    }
+
+    private void addJacksonPolymorphicInputRootAnnotationsIfNecessary(
+            DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism
+    ) {
+        if (!isPolymorphicInputRoot()) {
+            return;
+        }
+        if (!hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonTypeInfo)) {
+            addJacksonTypeInfo(polymorphism);
+        }
+        if (!hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonSubTypes)) {
+            addJacksonSubTypes(polymorphism);
+        }
+    }
+
+    private void addJacksonTypeInfo(DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism) {
+        DtoProp<ImmutableType, ImmutableProp> discriminatorProp =
+                selectedPolymorphicInputDiscriminatorProp(dtoType);
+        String property = discriminatorProp != null ?
+                discriminatorProp.getName() :
+                rootDiscriminatorPropName();
+        if (property == null) {
+            return;
+        }
+        AnnotationSpec.Builder builder = AnnotationSpec
+                .builder(ctx.getJacksonTypes().jsonTypeInfo)
+                .addMember("use", "$T.Id.NAME", ctx.getJacksonTypes().jsonTypeInfo)
+                .addMember(
+                        "include",
+                        "$T.As.$L",
+                        ctx.getJacksonTypes().jsonTypeInfo,
+                        discriminatorProp != null ? "EXISTING_PROPERTY" : "PROPERTY"
+                )
+                .addMember("property", "$S", property);
+        if (discriminatorProp != null) {
+            builder.addMember("visible", "true");
+        }
+        DtoPolymorphicBranch<ImmutableType, ImmutableProp> defaultBranch = polymorphism.getDefaultBranch();
+        if (defaultBranch != null) {
+            builder.addMember("defaultImpl", "$T.class", getDtoClassName(defaultBranch.getClassName()));
+        }
+        typeBuilder.addAnnotation(builder.build());
+    }
+
+    private void addJacksonSubTypes(DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism) {
+        if (polymorphism.getTypeBranches().isEmpty()) {
+            return;
+        }
+        ClassName typeAnnotationName = ctx.getJacksonTypes().jsonSubTypes.nestedClass("Type");
+        CodeBlock.Builder blockBuilder = CodeBlock.builder().add("{\n$>");
+        boolean addSeparator = false;
+        for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getTypeBranches()) {
+            if (addSeparator) {
+                blockBuilder.add(",\n");
+            } else {
+                addSeparator = true;
+            }
+            AnnotationSpec.Builder typeBuilder = AnnotationSpec
+                    .builder(typeAnnotationName)
+                    .addMember("value", "$T.class", getDtoClassName(branch.getClassName()));
+            blockBuilder.add("$L", typeBuilder.build());
+        }
+        blockBuilder.add("$<\n}");
+        typeBuilder.addAnnotation(
+                AnnotationSpec
+                        .builder(ctx.getJacksonTypes().jsonSubTypes)
+                        .addMember("value", "$L", blockBuilder.build())
+                        .build()
+        );
+    }
+
+    private void addJacksonPolymorphicTypeNameIfNecessary() {
+        if (!polymorphicBranch ||
+                !dtoType.getModifiers().contains(DtoModifier.INPUT) ||
+                !isTypedPolymorphicInputBranch() ||
+                hasTypeAnnotation(root.dtoType, ctx.getJacksonTypes().jsonSubTypes) ||
+                hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonTypeName)) {
+            return;
+        }
+        String value = dtoType.getBaseType().getDiscriminatorValue();
+        if (value != null) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(ctx.getJacksonTypes().jsonTypeName)
+                            .addMember("value", "$S", value)
+                            .build()
+            );
+        }
+    }
+
+    private boolean isPolymorphicInputRoot() {
+        return dtoType.getModifiers().contains(DtoModifier.INPUT) &&
+                dtoType.getPolymorphism() != null &&
+                dtoType.getBaseType().isEntity();
+    }
+
+    private boolean hasTypeAnnotation(DtoType<ImmutableType, ImmutableProp> dtoType, ClassName annotationType) {
+        String annotationName = annotationType.reflectionName();
+        for (Anno anno : dtoType.getAnnotations()) {
+            if (anno.getQualifiedName().equals(annotationName)) {
+                return true;
+            }
+        }
+        for (AnnotationMirror annotationMirror : dtoType.getBaseType().getTypeElement().getAnnotationMirrors()) {
+            String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
+                    .getQualifiedName()
+                    .toString();
+            if (qualifiedName.equals(annotationName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    private DtoProp<ImmutableType, ImmutableProp> selectedPolymorphicInputDiscriminatorProp(
+            DtoType<ImmutableType, ImmutableProp> dtoType
+    ) {
+        if (!dtoType.getModifiers().contains(DtoModifier.INPUT) ||
+                !dtoType.getBaseType().isEntity() ||
+                dtoType.getBaseType().getInheritanceRoot() == null) {
+            return null;
+        }
+        DtoProp<ImmutableType, ImmutableProp> result = null;
+        for (AbstractProp abstractProp : dtoType.getProps()) {
+            if (abstractProp instanceof DtoProp<?, ?>) {
+                DtoProp<ImmutableType, ImmutableProp> prop = asDtoProp(abstractProp);
+                if (prop.getNextProp() == null && prop.getBaseProp().isDiscriminator()) {
+                    if (result != null && !result.getName().equals(prop.getName())) {
+                        throw new GeneratorException(
+                                "Discriminator property cannot be selected by polymorphic input DTO \"" +
+                                        dtoType.getName() +
+                                        "\" more than once",
+                                null
+                        );
+                    }
+                    result = prop;
+                }
+            }
+        }
+        return result;
+    }
+
+    @Nullable
+    private String rootDiscriminatorPropName() {
+        for (ImmutableProp prop : polymorphicRootType().getProps().values()) {
+            if (prop.isDiscriminator()) {
+                return prop.getName();
+            }
+        }
+        return null;
     }
 
     public String getSimpleName() {

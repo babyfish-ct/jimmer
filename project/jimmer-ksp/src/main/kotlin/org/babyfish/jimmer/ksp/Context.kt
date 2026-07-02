@@ -45,6 +45,9 @@ class Context(
             JacksonTypes(
                 jsonIgnore = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore"),
                 jsonValue = ClassName("com.fasterxml.jackson.annotation", "JsonValue"),
+                jsonTypeInfo = ClassName("com.fasterxml.jackson.annotation", "JsonTypeInfo"),
+                jsonSubTypes = ClassName("com.fasterxml.jackson.annotation", "JsonSubTypes"),
+                jsonTypeName = ClassName("com.fasterxml.jackson.annotation", "JsonTypeName"),
                 jsonFormat = ClassName("com.fasterxml.jackson.annotation", "JsonFormat"),
                 jsonProperty = ClassName("com.fasterxml.jackson.annotation", "JsonProperty"),
                 jsonPropertyOrder = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
@@ -61,6 +64,9 @@ class Context(
             JacksonTypes(
                 jsonIgnore = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore"),
                 jsonValue = ClassName("com.fasterxml.jackson.annotation", "JsonValue"),
+                jsonTypeInfo = ClassName("com.fasterxml.jackson.annotation", "JsonTypeInfo"),
+                jsonSubTypes = ClassName("com.fasterxml.jackson.annotation", "JsonSubTypes"),
+                jsonTypeName = ClassName("com.fasterxml.jackson.annotation", "JsonTypeName"),
                 jsonFormat = ClassName("com.fasterxml.jackson.annotation", "JsonFormat"),
                 jsonProperty = ClassName("com.fasterxml.jackson.annotation", "JsonProperty"),
                 jsonPropertyOrder = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
@@ -97,11 +103,10 @@ class Context(
         get() = typeMap.values
 
     fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType =
-        typeMap[classDeclaration] ?:
-            ImmutableType(this, classDeclaration).also {
-                typeMap[classDeclaration] = it
-                newTypes += it
-            }
+        typeMap[classDeclaration] ?: ImmutableType(this, classDeclaration).also {
+            typeMap[classDeclaration] = it
+            newTypes += it
+        }
 
     fun typeAnnotationOf(classDeclaration: KSClassDeclaration): KSAnnotation? {
         var sqlAnnotation: KSAnnotation? = null
@@ -112,7 +117,7 @@ class Context(
                     classDeclaration,
                     null,
                     "it cannot be decorated by both " +
-                        "@${sqlAnnotation.fullName} and ${anno.fullName}"
+                            "@${sqlAnnotation.fullName} and ${anno.fullName}"
                 )
             }
             sqlAnnotation = anno

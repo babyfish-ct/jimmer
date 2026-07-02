@@ -1,3 +1,5 @@
+import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo, JsonTypeName}
+
 ClientDefaultView {
     id
     name
@@ -49,6 +51,58 @@ input ClientDiscriminatorInput {
     #types {
         default {
         }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input ClientAliasedDiscriminatorInput {
+    id
+    type as kind
+    name
+    #types {
+        default {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "customType"
+)
+input ClientCustomJsonTypeInfoInput {
+    id
+    name
+    #types {
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input ClientCustomJsonTypeNameInput {
+    id
+    name
+    #types {
+        @JsonTypeName("company")
+        Organization {
+            taxCode
+        }
+    }
+}
+
+@JsonSubTypes(value = [
+    JsonSubTypes.Type(value = String.class)
+])
+input ClientCustomJsonSubTypesInput {
+    id
+    name
+    #types {
         Organization {
             taxCode
         }

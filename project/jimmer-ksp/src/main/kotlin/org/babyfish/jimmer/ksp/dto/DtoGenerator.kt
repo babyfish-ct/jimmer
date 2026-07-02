@@ -139,6 +139,7 @@ class DtoGenerator private constructor(
                             builder.addAnnotation(generatedAnnotation(dtoType.dtoFile, mutable))
                         }
                         builder.addTypeAnnotations()
+                        builder.addJacksonPolymorphicTypeNameIfNecessary()
                         _typeBuilder = builder
                         try {
                             addDoc()
@@ -170,6 +171,7 @@ class DtoGenerator private constructor(
                 }
                 .addAnnotation(generatedAnnotation())
             builder.addTypeAnnotations()
+            builder.addJacksonPolymorphicTypeNameIfNecessary()
             _typeBuilder = builder
             try {
                 addDoc()
@@ -226,6 +228,7 @@ class DtoGenerator private constructor(
                 }
             )
         builder.addTypeAnnotations()
+        builder.addJacksonPolymorphicInputRootAnnotationsIfNecessary()
         _typeBuilder = builder
         try {
             addDoc()
@@ -285,6 +288,140 @@ class DtoGenerator private constructor(
             }
         }
     }
+
+    private fun TypeSpec.Builder.addJacksonPolymorphicInputRootAnnotationsIfNecessary() {
+        val polymorphism = dtoType.polymorphism ?: return
+        if (!isPolymorphicInputRoot) {
+            return
+        }
+        if (!hasTypeAnnotation(dtoType, ctx.jacksonTypes.jsonTypeInfo)) {
+            addJacksonTypeInfo(polymorphism)
+        }
+        if (!hasTypeAnnotation(dtoType, ctx.jacksonTypes.jsonSubTypes)) {
+            addJacksonSubTypes(polymorphism)
+        }
+    }
+
+    private fun TypeSpec.Builder.addJacksonTypeInfo(
+        polymorphism: DtoPolymorphism<ImmutableType, ImmutableProp>
+    ) {
+        val discriminatorProp = selectedPolymorphicInputDiscriminatorProp(dtoType)
+        val property = discriminatorProp?.name ?: rootDiscriminatorPropName ?: return
+        addAnnotation(
+            AnnotationSpec
+                .builder(ctx.jacksonTypes.jsonTypeInfo)
+                .addMember("use = %T.Id.NAME", ctx.jacksonTypes.jsonTypeInfo)
+                .addMember(
+                    "include = %T.As.%L",
+                    ctx.jacksonTypes.jsonTypeInfo,
+                    if (discriminatorProp !== null) "EXISTING_PROPERTY" else "PROPERTY"
+                )
+                .addMember("property = %S", property)
+                .apply {
+                    if (discriminatorProp !== null) {
+                        addMember("visible = true")
+                    }
+                    polymorphism.defaultBranch?.let {
+                        addMember("defaultImpl = %T::class", getDtoClassName(it.className))
+                    }
+                }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addJacksonSubTypes(
+        polymorphism: DtoPolymorphism<ImmutableType, ImmutableProp>
+    ) {
+        if (polymorphism.typeBranches.isEmpty()) {
+            return
+        }
+        val typeAnnotationName = ctx.jacksonTypes.jsonSubTypes.nestedClass("Type")
+        val block = CodeBlock.builder()
+        for ((index, branch) in polymorphism.typeBranches.withIndex()) {
+            if (index != 0) {
+                block.add(",\n")
+            }
+            val typeAnnotation = AnnotationSpec
+                .builder(typeAnnotationName)
+                .addMember("value = %T::class", getDtoClassName(branch.className))
+                .build()
+            block.add("%L", typeAnnotation)
+        }
+        addAnnotation(
+            AnnotationSpec
+                .builder(ctx.jacksonTypes.jsonSubTypes)
+                .addMember("value = [%L]", block.build())
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addJacksonPolymorphicTypeNameIfNecessary() {
+        if (!polymorphicBranch ||
+            !dtoType.modifiers.contains(DtoModifier.INPUT) ||
+            !isTypedPolymorphicInputBranch ||
+            hasTypeAnnotation(root.dtoType, ctx.jacksonTypes.jsonSubTypes) ||
+            hasTypeAnnotation(dtoType, ctx.jacksonTypes.jsonTypeName)
+        ) {
+            return
+        }
+        dtoType.baseType.discriminatorValue?.let {
+            addAnnotation(
+                AnnotationSpec
+                    .builder(ctx.jacksonTypes.jsonTypeName)
+                    .addMember("%S", it)
+                    .build()
+            )
+        }
+    }
+
+    private val isPolymorphicInputRoot: Boolean
+        get() = dtoType.modifiers.contains(DtoModifier.INPUT) &&
+                dtoType.polymorphism !== null &&
+                dtoType.baseType.isEntity
+
+    private fun hasTypeAnnotation(
+        dtoType: DtoType<ImmutableType, ImmutableProp>,
+        annotationType: ClassName
+    ): Boolean {
+        val annotationName = annotationType.reflectionName()
+        if (dtoType.annotations.any { it.qualifiedName == annotationName }) {
+            return true
+        }
+        return dtoType.baseType.classDeclaration.annotations.any {
+            it.annotationType.fastResolve().declaration.qualifiedName?.asString() == annotationName
+        }
+    }
+
+    private fun selectedPolymorphicInputDiscriminatorProp(
+        dtoType: DtoType<ImmutableType, ImmutableProp>
+    ): DtoProp<ImmutableType, ImmutableProp>? {
+        if (!dtoType.modifiers.contains(DtoModifier.INPUT) ||
+            !dtoType.baseType.isEntity ||
+            dtoType.baseType.inheritanceRoot === null
+        ) {
+            return null
+        }
+        var result: DtoProp<ImmutableType, ImmutableProp>? = null
+        for (prop in dtoType.props) {
+            if (prop is DtoProp<*, *>) {
+                val dtoProp = prop.asDtoProp()
+                if (dtoProp.nextProp === null && dtoProp.baseProp.isDiscriminator) {
+                    val old = result
+                    if (old !== null && old.name != dtoProp.name) {
+                        throw DtoException(
+                            "Discriminator property cannot be selected by polymorphic input DTO " +
+                                    "\"${dtoType.name}\" more than once"
+                        )
+                    }
+                    result = dtoProp
+                }
+            }
+        }
+        return result
+    }
+
+    private val rootDiscriminatorPropName: String?
+        get() = polymorphicRootType.properties.values.firstOrNull { it.isDiscriminator }?.name
 
     private fun addDoc() {
         (document.value ?: baseDocString)?.let {
@@ -1448,7 +1585,7 @@ class DtoGenerator private constructor(
             "Discriminator value \"",
             discriminatorProp.name,
             "\" does not match polymorphic input DTO branch \"${getDtoClassName().canonicalName}\" " +
-                "whose entity type is \"${dtoType.baseType.qualifiedName}\""
+                    "whose entity type is \"${dtoType.baseType.qualifiedName}\""
         )
         endControlFlow()
     }
@@ -1720,7 +1857,7 @@ class DtoGenerator private constructor(
 
     private fun hasAccessorFields(): Boolean =
         dtoType.dtoProps.any { !isSimpleProp(it) } ||
-            dtoType.foldProps.any { it.nullGuardProp !== null }
+                dtoType.foldProps.any { it.nullGuardProp !== null }
 
     private fun TypeSpec.Builder.addAccessorField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (isSimpleProp(prop)) {
