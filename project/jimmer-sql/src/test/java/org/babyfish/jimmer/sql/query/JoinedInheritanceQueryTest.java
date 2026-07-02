@@ -320,6 +320,30 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testExactType() {
+        ClientTable table = ClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.exactType(Person.class))
+                        .orderBy(table.id())
+                        .select(table.id(), table.name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "where tb_1_.CLIENT_TYPE = ? " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("Person");
+                    ctx.row(0, row -> {
+                        assertEquals(201L, row.get_1());
+                        assertEquals("Alice", row.get_2());
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testTreatAsRootIsNoOp() {
         ClientTable table = ClientTable.$;
         ClientTable client = table.treatAs(ClientTable.class);

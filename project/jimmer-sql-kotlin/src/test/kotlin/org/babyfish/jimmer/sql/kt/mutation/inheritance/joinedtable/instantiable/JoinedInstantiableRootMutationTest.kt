@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable.instantiable
 
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto.KInstantiableClientDefaultInput

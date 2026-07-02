@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest

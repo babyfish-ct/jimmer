@@ -9,4 +9,6 @@ public interface PolymorphicTable<E> extends Table<E> {
     <T extends Table<?>> T tryTreatAs(Class<T> tableType);
 
     Predicate instanceOf(Class<? extends E> type);
+
+    Predicate exactType(Class<? extends E> type);
 }

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.ClientTable;

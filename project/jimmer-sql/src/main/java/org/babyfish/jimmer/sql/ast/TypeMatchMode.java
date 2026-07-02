@@ -1,7 +1,7 @@
-package org.babyfish.jimmer.sql.ast.mutation;
+package org.babyfish.jimmer.sql.ast;
 
 /**
- * Specifies how mutation commands match inheritance entity types.
+ * Specifies how inheritance entity types are matched by mutation commands and root queries.
  */
 public enum TypeMatchMode {
 

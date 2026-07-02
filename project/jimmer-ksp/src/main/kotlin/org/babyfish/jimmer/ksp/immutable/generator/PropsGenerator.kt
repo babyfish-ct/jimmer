@@ -461,6 +461,8 @@ class PropsGenerator(
         addReifiedTreatAsFun(type, receiverNullable = true, optional = true)
         addInstanceOfFun(type)
         addReifiedInstanceOfFun(type)
+        addExactTypeFun(type)
+        addReifiedExactTypeFun(type)
     }
 
     private fun FileSpec.Builder.addTreatAsFun(
@@ -556,6 +558,37 @@ class PropsGenerator(
                 .receiver(K_TABLE_EX_CLASS_NAME.parameterizedBy(type.className))
                 .returns(K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN))
                 .addStatement("return instanceOf(S::class)")
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addExactTypeFun(type: ImmutableType) {
+        addFunction(
+            FunSpec
+                .builder("exactType")
+                .addAnnotation(generatedAnnotation(type))
+                .receiver(K_TABLE_EX_CLASS_NAME.parameterizedBy(type.className))
+                .addParameter(
+                    "type",
+                    K_CLASS_CLASS_NAME.parameterizedBy(WildcardTypeName.producerOf(type.className))
+                )
+                .returns(K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN))
+                .addStatement("return %T.exactType(this, type)", K_POLYMORPHIC_TABLES_CLASS_NAME)
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addReifiedExactTypeFun(type: ImmutableType) {
+        val typeVariable = TypeVariableName("S", type.className).copy(reified = true)
+        addFunction(
+            FunSpec
+                .builder("exactType")
+                .addAnnotation(generatedAnnotation(type))
+                .addModifiers(KModifier.INLINE)
+                .addTypeVariable(typeVariable)
+                .receiver(K_TABLE_EX_CLASS_NAME.parameterizedBy(type.className))
+                .returns(K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN))
+                .addStatement("return exactType(S::class)")
                 .build()
         )
     }

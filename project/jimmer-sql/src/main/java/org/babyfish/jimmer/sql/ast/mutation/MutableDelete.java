@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Predicate;

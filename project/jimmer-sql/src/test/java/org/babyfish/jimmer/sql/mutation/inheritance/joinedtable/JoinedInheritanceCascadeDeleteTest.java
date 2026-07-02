@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.DeleteJoin;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;

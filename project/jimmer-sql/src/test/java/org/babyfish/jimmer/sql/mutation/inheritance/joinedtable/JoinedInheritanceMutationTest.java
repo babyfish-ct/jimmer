@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;

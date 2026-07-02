@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
@@ -45,6 +46,10 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
 
     override fun where(block: () -> KNonNullExpression<Boolean>?) {
         where(block())
+    }
+
+    override fun typeMatchMode(mode: TypeMatchMode) {
+        javaQuery.typeMatchMode(mode)
     }
 
     override fun orderBy(vararg expressions: KExpression<*>?) {

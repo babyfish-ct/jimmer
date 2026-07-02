@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable
 
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.cascade.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.cascade.KOrganization

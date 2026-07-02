@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation
 
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.ast.query.KFilterable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 

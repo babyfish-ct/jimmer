@@ -65,6 +65,10 @@ public class TableProxies {
         return new InstanceOfPredicate(table, ImmutableType.get(type));
     }
 
+    public static Predicate exactType(Table<?> table, Class<?> type) {
+        return new ExactTypePredicate(table, ImmutableType.get(type));
+    }
+
     private static Constructor<?> createWrapperConstructor(Class<?> javaClass) {
         return createConstructor(
                 ImmutableType.get(javaClass),

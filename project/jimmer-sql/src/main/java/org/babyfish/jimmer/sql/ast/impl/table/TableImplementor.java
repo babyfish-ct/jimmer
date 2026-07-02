@@ -128,6 +128,44 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         return discriminatorPredicate(targetType);
     }
 
+    default org.babyfish.jimmer.sql.ast.Predicate exactType(ImmutableType targetType) {
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || !type.isAssignableFrom(targetType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            targetType +
+                            "\" is not a derived type of \"" +
+                            type +
+                            "\""
+            );
+        }
+        if (!targetType.isInstantiable()) {
+            throw new ExecutionException(
+                    "Cannot check whether table \"" +
+                            this +
+                            "\" is exact type \"" +
+                            targetType +
+                            "\" because it is abstract"
+            );
+        }
+        String value = targetType.getDiscriminatorValue();
+        if (value == null) {
+            throw new ExecutionException(
+                    "Cannot check whether table \"" +
+                            this +
+                            "\" is exact type \"" +
+                            targetType +
+                            "\" because it has no discriminator value"
+            );
+        }
+        return new DiscriminatorPredicate(
+                this,
+                inheritanceInfo.getDiscriminatorProp(),
+                inheritanceInfo.discriminatorValue(value)
+        );
+    }
+
     default org.babyfish.jimmer.sql.ast.Predicate discriminatorPredicate(ImmutableType targetType) {
         ImmutableType type = getImmutableType();
         InheritanceInfo inheritanceInfo = type.getInheritanceInfo();

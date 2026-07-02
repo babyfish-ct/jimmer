@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.table.PolymorphicTable;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.*;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.*;
 import org.junit.jupiter.api.Test;
@@ -204,6 +206,52 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testExactTypeMatchModeForInstantiableRootQuery() {
+        EnumClientTable table = EnumClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .typeMatchMode(TypeMatchMode.EXACT)
+                        .orderBy(table.id())
+                        .select(table.id(), table.name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from ENUM_CLIENT tb_1_ " +
+                                    "where tb_1_.CLIENT_TYPE = ? " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("CLIENT");
+                    ctx.row(0, row -> {
+                        assertEquals(111L, row.get_1());
+                        assertEquals("Enum Root", row.get_2());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAbstractRootQueryCannotBeExact() {
+        ClientTable table = ClientTable.$;
+        ExecutionException ex = assertThrows(
+                ExecutionException.class,
+                () -> jdbc(con -> getSqlClient()
+                                .createQuery(table)
+                                .typeMatchMode(TypeMatchMode.EXACT)
+                                .select(table.id())
+                                .execute(con)
+                        )
+        );
+        assertEquals(
+                "Cannot query inheritance entity type \"" +
+                        Client.class.getName() +
+                        "\" exactly because it is abstract. Query an instantiable type or use " +
+                        TypeMatchMode.POLYMORPHIC +
+                        " type match mode.",
+                ex.getMessage()
+        );
+    }
+
+    @Test
     public void testEnumDiscriminatorRootFetcherMaterializesDerivedType() {
         EnumClientTable table = EnumClientTable.$;
         executeAndExpect(
@@ -299,6 +347,54 @@ public class SingleTableInheritanceQueryTest extends AbstractQueryTest {
                                     "order by tb_1_.ID asc"
                     ).variables("ORG", "Person");
                     ctx.rows("[100,101,102]");
+                }
+        );
+    }
+
+    @Test
+    public void testExactType() {
+        ClientTable table = ClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.exactType(Person.class))
+                        .orderBy(table.id())
+                        .select(table.id(), table.name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from CLIENT tb_1_ " +
+                                    "where tb_1_.CLIENT_TYPE = ? " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("Person");
+                    ctx.row(0, row -> {
+                        assertEquals(101L, row.get_1());
+                        assertEquals("Bob", row.get_2());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testExactTypeForInstantiableRoot() {
+        EnumClientTable table = EnumClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.exactType(EnumClient.class))
+                        .orderBy(table.id())
+                        .select(table.id(), table.name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from ENUM_CLIENT tb_1_ " +
+                                    "where tb_1_.CLIENT_TYPE = ? " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("CLIENT");
+                    ctx.row(0, row -> {
+                        assertEquals(111L, row.get_1());
+                        assertEquals("Enum Root", row.get_2());
+                    });
                 }
         );
     }

@@ -2,8 +2,11 @@ package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.query.specification.Specifications;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumClientTable;
+import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.dto.EnumClientSpecification;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Client;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.ClientTable;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Person;
@@ -265,6 +268,31 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
                                     "order by tb_1_.ID asc"
                     ).variables("Person", "ORG", "Bob", "Person", "Bob", "ORG", "UMB-001");
                     ctx.rows("[101]");
+                }
+        );
+    }
+
+    @Test
+    public void testRootSpecificationUsesExactQueryScope() {
+        EnumClientTable table = EnumClientTable.$;
+
+        EnumClientSpecification specification = new EnumClientSpecification();
+        specification.setName("Enum Root");
+
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .typeMatchMode(TypeMatchMode.EXACT)
+                        .where(specification)
+                        .select(table.id()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from ENUM_CLIENT tb_1_ " +
+                                    "where tb_1_.NAME = ? " +
+                                    "and tb_1_.CLIENT_TYPE = ?"
+                    ).variables("Enum Root", "CLIENT");
+                    ctx.rows("[111]");
                 }
         );
     }

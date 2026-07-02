@@ -1,10 +1,14 @@
 package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.runtime.ImmutableSpi
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.ast.query.specification.allOf
 import org.babyfish.jimmer.sql.kt.ast.query.specification.anyOf
 import org.babyfish.jimmer.sql.kt.ast.query.specification.not
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
+import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumClient
+import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.dto.KEnumClientSpecification
+import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.id
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KPerson
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientSpecification
@@ -195,6 +199,27 @@ class InheritanceSpecificationTest : AbstractQueryTest() {
             )
             variables("KPerson", "ORG", "Bob", "KPerson", "Bob", "ORG", "UMB-001")
             rows("[101]")
+        }
+    }
+
+    @Test
+    fun testRootSpecificationUsesExactQueryScope() {
+        val specification = KEnumClientSpecification(name = "Enum Root")
+        executeAndExpect(
+            sqlClient.createQuery(KEnumClient::class) {
+                typeMatchMode(TypeMatchMode.EXACT)
+                where(specification)
+                select(table.id)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID " +
+                        "from K_ENUM_CLIENT tb_1_ " +
+                        "where tb_1_.NAME = ? " +
+                        "and tb_1_.CLIENT_TYPE = ?"
+            )
+            variables("Enum Root", "CLIENT")
+            rows("[111]")
         }
     }
 }

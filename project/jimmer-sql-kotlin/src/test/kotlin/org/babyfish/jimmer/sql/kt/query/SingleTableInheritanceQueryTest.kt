@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.query
 
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.runtime.ImmutableSpi
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
@@ -201,6 +202,26 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testExactTypeMatchModeForInstantiableRootQuery() {
+        executeAndExpect(
+            sqlClient.createQuery(KEnumClient::class) {
+                typeMatchMode(TypeMatchMode.EXACT)
+                orderBy(table.id)
+                select(table.id)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID " +
+                    "from K_ENUM_CLIENT tb_1_ " +
+                    "where tb_1_.CLIENT_TYPE = ? " +
+                    "order by tb_1_.ID asc"
+            )
+            variables("CLIENT")
+            rows("[111]")
+        }
+    }
+
+    @Test
     fun testEnumDiscriminatorRootFetcherMaterializesDerivedType() {
         executeAndExpect(
             sqlClient.createQuery(KEnumClient::class) {
@@ -262,6 +283,29 @@ class SingleTableInheritanceQueryTest : AbstractQueryTest() {
             )
             variables("ORG", "KPerson")
             rows("[100,101,102]")
+        }
+    }
+
+    @Test
+    fun testExactType() {
+        executeAndExpect(
+            sqlClient.createQuery(KClient::class) {
+                where(table.asTableEx().exactType<KPerson>())
+                orderBy(table.id)
+                select(table.id, table.name)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME " +
+                    "from CLIENT tb_1_ " +
+                    "where tb_1_.CLIENT_TYPE = ? " +
+                    "order by tb_1_.ID asc"
+            )
+            variables("KPerson")
+            row(0) {
+                assertEquals(101L, it._1)
+                assertEquals("Bob", it._2)
+            }
         }
     }
 

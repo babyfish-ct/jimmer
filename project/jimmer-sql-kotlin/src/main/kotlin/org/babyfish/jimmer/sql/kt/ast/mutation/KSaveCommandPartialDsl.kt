@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
-import org.babyfish.jimmer.sql.ast.mutation.TypeMatchMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
 import org.babyfish.jimmer.sql.ast.mutation.UpsertMask
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression

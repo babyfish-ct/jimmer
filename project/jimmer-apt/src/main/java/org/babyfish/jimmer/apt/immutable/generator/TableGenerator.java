@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -292,6 +292,7 @@ public class TableGenerator {
         addTreatAs(false);
         addTreatAs(true);
         addInstanceOf();
+        addExactType();
     }
 
     private void addTreatAs(boolean optional) {
@@ -354,6 +355,26 @@ public class TableGenerator {
                 )
                 .addStatement(
                         "return $T.instanceOf(this, type)",
+                        Constants.TABLE_PROXIES_CLASS_NAME
+                );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addExactType() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("exactType")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(Constants.PREDICATE_CLASS_NAME)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(type.getClassName())
+                        ),
+                        "type"
+                )
+                .addStatement(
+                        "return $T.exactType(this, type)",
                         Constants.TABLE_PROXIES_CLASS_NAME
                 );
         typeBuilder.addMethod(builder.build());

@@ -36,4 +36,11 @@ object KPolymorphicTables {
                 ImmutableType.get(type.java)
             ) as PredicateImplementor
         )
+
+    fun exactType(table: KTableEx<*>, type: KClass<*>): KNonNullExpression<Boolean> =
+        JavaToKotlinPredicateWrapper(
+            (table as KTableImplementor<*>).javaTable.exactType(
+                ImmutableType.get(type.java)
+            ) as PredicateImplementor
+        )
 }

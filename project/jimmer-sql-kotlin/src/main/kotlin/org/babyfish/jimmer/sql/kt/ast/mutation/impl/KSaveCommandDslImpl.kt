@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
+
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
