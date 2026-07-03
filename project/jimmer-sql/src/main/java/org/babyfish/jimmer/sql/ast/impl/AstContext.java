@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
@@ -20,10 +22,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsedState> implements RootTableResolver {
 
@@ -105,11 +104,18 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         this.baseTableRenderFrame = baseTableRenderFrame.parent;
     }
 
-    public void pushJoinedTypeBranchUpdate(TableImplementor<?> table, @Nullable String rootAlias) {
+    public void pushJoinedTypeBranchUpdate(
+            TableImplementor<?> table,
+            ImmutableType stageType,
+            @Nullable String rootAlias,
+            Map<ImmutableType, String> stageAliasMap
+    ) {
         this.joinedTypeBranchUpdateFrame = new JoinedTypeBranchUpdateFrame(
                 joinedTypeBranchUpdateFrame,
                 table,
-                rootAlias
+                stageType,
+                rootAlias,
+                stageAliasMap
         );
     }
 
@@ -119,8 +125,18 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public boolean isJoinedTypeBranchUpdateTarget(TableImplementor<?> table) {
         for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
-            if (frame.table == table) {
+            if (frame.table == table && frame.stageType == table.getImmutableType()) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isJoinedTypeBranchUpdateTargetStage(TableImplementor<?> table, ImmutableProp prop) {
+        for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                ImmutableType stageType = TableImplementor.joinedStageType(prop, table.getImmutableType());
+                return stageType == frame.stageType;
             }
         }
         return false;
@@ -131,6 +147,20 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
             if (frame.table == table) {
                 return frame.rootAlias;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public String getJoinedTypeBranchUpdateAlias(TableImplementor<?> table, ImmutableProp prop) {
+        for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                ImmutableType stageType = TableImplementor.joinedStageType(prop, table.getImmutableType());
+                if (stageType == frame.stageType) {
+                    return null;
+                }
+                return frame.stageAliasMap.get(stageType);
             }
         }
         return null;
@@ -566,17 +596,25 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         final TableImplementor<?> table;
 
+        final ImmutableType stageType;
+
         @Nullable
         final String rootAlias;
+
+        final Map<ImmutableType, String> stageAliasMap;
 
         JoinedTypeBranchUpdateFrame(
                 JoinedTypeBranchUpdateFrame parent,
                 TableImplementor<?> table,
-                @Nullable String rootAlias
+                ImmutableType stageType,
+                @Nullable String rootAlias,
+                Map<ImmutableType, String> stageAliasMap
         ) {
             this.parent = parent;
             this.table = table;
+            this.stageType = stageType;
             this.rootAlias = rootAlias;
+            this.stageAliasMap = stageAliasMap;
         }
     }
 

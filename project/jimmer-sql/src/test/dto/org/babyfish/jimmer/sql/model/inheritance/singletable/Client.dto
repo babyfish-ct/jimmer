@@ -17,6 +17,18 @@ ClientDefaultView {
     }
 }
 
+ClientDefaultBranchFieldView {
+    id
+    #types {
+        default {
+            name
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
 ClientImplicitDefaultView {
     id
     name

@@ -26,7 +26,7 @@ public interface MutableRootQuery<T extends TableLike<?>> extends MutableQuery, 
     MutableRootQuery<T> where(Specification<?> specification);
 
     @OldChain
-    MutableRootQuery<T> where(JSpecification<?, T> specification);
+    MutableRootQuery<T> where(JSpecification<?, ?> specification);
 
     /**
      * This method is deprecated, using {@code Dynamic Predicates}

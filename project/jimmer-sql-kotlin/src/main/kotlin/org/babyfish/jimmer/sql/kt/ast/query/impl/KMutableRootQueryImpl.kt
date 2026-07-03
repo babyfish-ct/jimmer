@@ -4,11 +4,11 @@ import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
@@ -246,15 +246,21 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
         KNonNullTableExImpl(javaQuery.getTable() as TableImplementor<E>)
     ), KMutableRootQuery.ForEntity<E> {
 
+        override fun where(specification: KSpecification<out E>?) {
+            if (specification != null) {
+                val applier = PredicateApplier(javaQuery)
+                @Suppress("UNCHECKED_CAST")
+                applier.applyKSpecification(specification as KSpecification<E>)
+            }
+        }
+
         override fun where(specification: Specification<out E>?) {
             if (specification != null) {
                 val ks = specification as? KSpecification<out E>
                     ?: throw IllegalArgumentException(
                         "The specification must be instance of \"${KSpecification::class.qualifiedName}\""
-                )
-                val applier = PredicateApplier(javaQuery)
-                @Suppress("UNCHECKED_CAST")
-                applier.applyKSpecification(ks as KSpecification<E>)
+                    )
+                where(ks)
             }
         }
     }

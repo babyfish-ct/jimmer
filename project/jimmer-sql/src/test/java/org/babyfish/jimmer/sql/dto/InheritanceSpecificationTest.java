@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.sql.dto;
 
-import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-import org.babyfish.jimmer.sql.ast.query.specification.Specifications;
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumClientTable;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.dto.EnumClientSpecification;
@@ -62,7 +61,7 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .where(Specifications.allOf(Arrays.asList(nameSpecification, firstNameSpecification)))
+                        .where(JSpecification.and(Arrays.asList(nameSpecification, firstNameSpecification)))
                         .select(table.id()),
                 ctx -> {
                     ctx.sql(
@@ -134,7 +133,7 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .where(Specifications.not(specification))
+                        .where(JSpecification.not(specification))
                         .select(table.id()),
                 ctx -> {
                     ctx.sql(
@@ -155,7 +154,7 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .where(Specifications.not(specification))
+                        .where(JSpecification.not(specification))
                         .orderBy(table.id())
                         .select(table.id()),
                 ctx -> {
@@ -177,7 +176,7 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
         personSpecification.setName("Acme");
         OrganizationSpecification organizationSpecification = new OrganizationSpecification();
         organizationSpecification.setName("Bob");
-        Specification<Client> specification = Specifications.or(
+        JSpecification<Client, ?> specification = JSpecification.or(
                 personSpecification,
                 organizationSpecification
         );
@@ -208,7 +207,7 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
         personSpecification.setFirstName("Bob");
         OrganizationSpecification organizationSpecification = new OrganizationSpecification();
         organizationSpecification.setTaxCode("UMB-001");
-        Specification<Client> specification = Specifications.or(
+        JSpecification<Client, ?> specification = JSpecification.or(
                 personSpecification,
                 organizationSpecification
         );
@@ -246,9 +245,9 @@ public class InheritanceSpecificationTest extends AbstractQueryTest {
         OrganizationSpecification organizationSpecification = new OrganizationSpecification();
         organizationSpecification.setTaxCode("UMB-001");
 
-        Specification<Client> specification = Specifications.allOf(
+        JSpecification<Client, ?> specification = JSpecification.and(
                 clientSpecification,
-                Specifications.or(personSpecification, organizationSpecification)
+                JSpecification.or(personSpecification, organizationSpecification)
         );
         executeAndExpect(
                 getSqlClient()

@@ -837,7 +837,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             Function<Integer, String> asBlock,
             boolean idViewAllowed
     ) {
-        if (renderJoinedTypeBranchUpdateRootSelection(prop, builder, optionalDefinition, asBlock)) {
+        if (renderJoinedTypeBranchUpdateSelection(prop, builder, optionalDefinition, asBlock)) {
             return;
         }
         realTableForRender(builder).renderSelection(
@@ -851,7 +851,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         );
     }
 
-    private boolean renderJoinedTypeBranchUpdateRootSelection(
+    private boolean renderJoinedTypeBranchUpdateSelection(
             ImmutableProp prop,
             AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
@@ -861,13 +861,19 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         if (astContext == null || isTreated() || prop.isId() || prop.toOriginal().isId()) {
             return false;
         }
-        String rootAlias = astContext.getJoinedTypeBranchUpdateRootAlias(this);
-        if (rootAlias == null || !isRootTableProp(prop)) {
+        String alias = astContext.getJoinedTypeBranchUpdateAlias(this, prop);
+        if (alias == null) {
+            if (!astContext.isJoinedTypeBranchUpdateTargetStage(this, prop)) {
+                return false;
+            }
+            alias = builder.assertSimple().alias(realTableForRender(builder));
+        }
+        if (alias == null) {
             return false;
         }
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            builder.sql(((FormulaTemplate) template).toSql(rootAlias));
+            builder.sql(((FormulaTemplate) template).toSql(alias));
             if (asBlock != null) {
                 builder.sql(" ").sql(asBlock.apply(0));
             }
@@ -877,7 +883,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         ColumnDefinition definition = optionalDefinition != null ?
                 optionalDefinition :
                 prop.getStorage(strategy);
-        builder.definition(rootAlias, definition, asBlock);
+        builder.definition(alias, definition, asBlock);
         return true;
     }
 

@@ -18,6 +18,18 @@ KClientImplicitCatchAllView {
     }
 }
 
+KClientDefaultBranchFieldView {
+    id
+    #types {
+        default {
+            name
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
 sealed KClientRuntimeView {
     id
     name

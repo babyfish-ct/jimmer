@@ -45,21 +45,51 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateDerivedTypeCannotSetRootProp() {
+    public void testUpdateDerivedTypeCanSetRootProp() {
+        executeAndExpectRowCount(
+                sqlOnlyUpdateJoinClient(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                    u.set(organization.name(), "Globex+");
+                    u.where(organization.taxCode().eq("GLOBEX-001"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "from JOINED_ORGANIZATION tb_1__sub " +
+                                        "where tb_1_.ID = tb_1__sub.ID " +
+                                        "and tb_1__sub.TAX_CODE = ? " +
+                                        "and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables("Globex+", "GLOBEX-001", "ORG");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeCannotSetPropsOfTwoPhysicalTables() {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> getLambdaClient().createUpdate(OrganizationTable.class, (u, organization) -> {
                     u.set(organization.name(), "Globex+");
+                    u.set(organization.taxCode(), "GLOBEX-002");
                     u.where(organization.id().eq(200L));
                 })
         );
         assertEquals(
                 "Cannot update property \"" +
-                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization.name" +
+                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization.taxCode" +
                         "\" by createUpdate for joined inheritance type \"" +
                         "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization" +
-                        "\" because it belongs to the physical table of \"" +
+                        "\" because all assignment targets must belong to the same physical table. " +
+                        "Updating columns in multiple physical tables by one createUpdate is not supported " +
+                        "for joined inheritance; previous assignments target physical table \"" +
                         "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client" +
+                        "\" and this property targets physical table \"" +
+                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization" +
                         "\"",
                 ex.getMessage()
         );
@@ -183,7 +213,7 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION tb_1_ " +
                                         "set TAX_CODE = ? " +
                                         "from JOINED_CLIENT tb_2_ " +
-                                        "where tb_2_.ID = tb_1_.ID " +
+                                        "where tb_1_.ID = tb_2_.ID " +
                                         "and tb_2_.NAME = ? " +
                                         "and tb_1_.TAX_CODE = ?"
                         );
@@ -208,33 +238,13 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION tb_1_ " +
                                         "set TAX_CODE = ? " +
                                         "from JOINED_CLIENT tb_2_ " +
-                                        "where tb_2_.ID = tb_1_.ID " +
+                                        "where tb_1_.ID = tb_2_.ID " +
                                         "and tb_2_.NAME is not null"
                         );
                         it.variables("GLOBEX-002");
                     });
                     ctx.rowCount(1);
                 }
-        );
-    }
-
-    @Test
-    public void testUpdateDerivedTypeCannotUseRootPropInWhereForAsRootUpdateJoin() {
-        executeAndExpectRowCount(
-                sqlOnlyUpdateJoinClient(1, UpdateJoin.From.AS_ROOT)
-                        .createUpdate(OrganizationTable.class, (u, organization) -> {
-                    u.set(organization.taxCode(), "GLOBEX-002");
-                    u.where(organization.name().isNotNull());
-                }),
-                ctx -> ctx.throwable(it -> {
-                    it.type(ExecutionException.class);
-                    it.message(
-                            "The current dialect renders update joins from the root table, " +
-                                    "but joined inheritance update for \"" +
-                                    "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization" +
-                                    "\" requires a separate root table alias"
-                    );
-                })
         );
     }
 
@@ -273,7 +283,7 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION tb_1_ " +
                                         "set TAX_CODE = ? " +
                                         "from JOINED_CLIENT tb_2_ " +
-                                        "where tb_2_.ID = tb_1_.ID " +
+                                        "where tb_1_.ID = tb_2_.ID " +
                                         "and tb_2_.CLIENT_TYPE = ?"
                         );
                         it.variables("ORG-UPDATED", "ORG");
@@ -305,12 +315,8 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     private LambdaClient sqlOnlyUpdateJoinClient(int rowCount) {
-        return sqlOnlyUpdateJoinClient(rowCount, UpdateJoin.From.AS_JOIN);
-    }
-
-    private LambdaClient sqlOnlyUpdateJoinClient(int rowCount, UpdateJoin.From from) {
         return getLambdaClient(it -> {
-            it.setDialect(new H2UpdateJoinDialect(from));
+            it.setDialect(new H2UpdateJoinDialect());
             it.setExecutor(new Executor() {
                 @Override
                 @SuppressWarnings("unchecked")
@@ -336,15 +342,9 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
 
     private static class H2UpdateJoinDialect extends H2Dialect {
 
-        private final UpdateJoin.From from;
-
-        H2UpdateJoinDialect(UpdateJoin.From from) {
-            this.from = from;
-        }
-
         @Override
         public UpdateJoin getUpdateJoin() {
-            return new UpdateJoin(false, from);
+            return new UpdateJoin(false, UpdateJoin.From.AS_JOIN);
         }
     }
 }

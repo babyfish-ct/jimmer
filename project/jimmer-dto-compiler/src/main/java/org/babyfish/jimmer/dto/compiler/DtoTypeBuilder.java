@@ -697,15 +697,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private DtoPolymorphicBranch<T, P> buildDefaultBranch(DtoParser.DefaultBranchContext branch) {
-        if (!branch.dtoBody().macros.isEmpty() ||
-                !branch.dtoBody().explicitProps.isEmpty() ||
-                !branch.dtoBody().typesBlocks.isEmpty()) {
-            throw ctx.exception(
-                    branch.dtoBody().start.getLine(),
-                    branch.dtoBody().start.getCharPositionInLine(),
-                    "The body of default branch must be empty"
-            );
-        }
         DtoType<T, P> branchType = new DtoTypeBuilder<>(
                 null,
                 baseType,
@@ -717,6 +708,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 branch.superInterfaces,
                 ctx
         ).build();
+        validateNoNestedTypesBlock(branchType, branch.dtoBody());
         return new DtoPolymorphicBranch<>(
                 DtoPolymorphicBranch.Kind.DEFAULT,
                 null,
@@ -795,14 +787,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 branch.superInterfaces,
                 ctx
         ).build();
-        if (branchType.getPolymorphism() != null) {
-            DtoParser.TypesBlockContext block = branch.dtoBody().typesBlocks.get(0);
-            throw ctx.exception(
-                    block.start.getLine(),
-                    block.start.getCharPositionInLine(),
-                    "Nested #types block is not supported inside polymorphic DTO type branch"
-            );
-        }
+        validateNoNestedTypesBlock(branchType, branch.dtoBody());
         return new DtoPolymorphicBranch<>(
                 DtoPolymorphicBranch.Kind.TYPE,
                 targetType,
@@ -812,6 +797,17 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 branch.targetType.start.getLine(),
                 branch.targetType.start.getCharPositionInLine()
         );
+    }
+
+    private void validateNoNestedTypesBlock(DtoType<T, P> branchType, DtoParser.DtoBodyContext body) {
+        if (branchType.getPolymorphism() != null) {
+            DtoParser.TypesBlockContext block = body.typesBlocks.get(0);
+            throw ctx.exception(
+                    block.start.getLine(),
+                    block.start.getCharPositionInLine(),
+                    "Nested #types block is not supported inside polymorphic DTO branch"
+            );
+        }
     }
 
     private DtoPolymorphicBranch<T, P> implicitTypeBranch(

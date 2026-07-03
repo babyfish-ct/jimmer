@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto.KInstantiableClientSimpleView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientDefaultBranchFieldView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientImplicitCatchAllView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientProjectWithClientView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientRuntimeView
@@ -52,6 +53,24 @@ class PolymorphicDtoViewTest : AbstractQueryTest() {
                 assertEquals("Joined Root", view.name)
             }
         }
+    }
+
+    @Test
+    fun testDefaultBranchFields() {
+        val defaultBranch = KClientDefaultBranchFieldView.Default(
+            id = 20L,
+            name = "Default branch fields"
+        )
+        val view: KClientDefaultBranchFieldView = defaultBranch
+        assertEquals(20L, view.id)
+        assertEquals("Default branch fields", defaultBranch.name)
+
+        val organization = KClientDefaultBranchFieldView.Organization(
+            id = 21L,
+            taxCode = "T-21"
+        )
+        assertEquals(21L, organization.id)
+        assertEquals("T-21", organization.taxCode)
     }
 
     @Test

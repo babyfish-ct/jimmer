@@ -4,11 +4,7 @@ import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -333,11 +329,11 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                             "\""
             );
         }
-        return where((JSpecification<?, T>) specification);
+        return where((JSpecification<?, ?>) specification);
     }
 
     @Override
-    public MutableRootQuery<T> where(JSpecification<?, T> specification) {
+    public MutableRootQuery<T> where(JSpecification<?, ?> specification) {
         if (specification != null) {
             PredicateApplier applier = new PredicateApplier(this);
             applier.apply(specification);
