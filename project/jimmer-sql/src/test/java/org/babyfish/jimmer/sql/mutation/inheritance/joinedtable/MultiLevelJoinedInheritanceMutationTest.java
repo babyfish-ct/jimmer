@@ -175,12 +175,12 @@ public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTes
                         "\" by createUpdate for joined inheritance type \"" +
                         "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Car" +
                         "\" because all assignment targets must belong to the same physical table. " +
-                        "Updating columns in multiple physical tables by one createUpdate is not supported " +
-                        "for joined inheritance; previous assignments target physical table \"" +
-                        "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Vehicle" +
-                        "\" and this property targets physical table \"" +
-                        "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Car" +
-                        "\"",
+                        "Current assignment targets table \"" +
+                        "ML_JOINED_CAR" +
+                        "\" but previous assignments target table \"" +
+                        "ML_JOINED_VEHICLE" +
+                        "\". Updating columns in multiple database tables by one createUpdate " +
+                        "for joined inheritance requires a dialect that supports multi-table update assignment",
                 ex.getMessage()
         );
     }
