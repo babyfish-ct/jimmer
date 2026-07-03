@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
@@ -20,20 +21,19 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.Where
-import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
 import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
+import org.babyfish.jimmer.sql.kt.ast.query.specification.applyKSpecification
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
-import org.babyfish.jimmer.sql.kt.ast.table.impl.KNullableTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 import org.babyfish.jimmer.sql.runtime.TupleMapper
 
 internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
-    protected val javaQuery: MutableRootQueryImpl<TableLike<*>>
+    protected val javaQuery: MutableRootQueryImpl<TableLike<*>>,
+    override val table: P
 ) : KMutableRootQuery<P>, MutableStatementImplementor {
 
     override val where: Where by lazy {
@@ -46,6 +46,10 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
 
     override fun where(block: () -> KNonNullExpression<Boolean>?) {
         where(block())
+    }
+
+    override fun typeMatchMode(mode: TypeMatchMode) {
+        javaQuery.typeMatchMode(mode)
     }
 
     override fun orderBy(vararg expressions: KExpression<*>?) {
@@ -218,10 +222,10 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
         )
 
     override val subQueries: KSubQueries<P> =
-        KSubQueriesImpl(javaQuery)
+        KSubQueriesImpl(javaQuery, table)
 
     override val wildSubQueries: KWildSubQueries<P> =
-        KWildSubQueriesImpl(javaQuery)
+        KWildSubQueriesImpl(javaQuery, table)
 
     override fun hasVirtualPredicate(): Boolean =
         javaQuery.hasVirtualPredicate()
@@ -232,42 +236,34 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
 
     internal class ForBaseTableImpl<B: KBaseTable>(
         javaTable: MutableRootQueryImpl<TableLike<*>>,
-        override val table: B
-    ): KMutableRootQueryImpl<B>(javaTable)
+        table: B
+    ): KMutableRootQueryImpl<B>(javaTable, table)
 
     internal class ForEntityImpl<E: Any>(
         javaQuery: MutableRootQueryImpl<TableLike<*>>
-    ) : KMutableRootQueryImpl<KNonNullTable<E>>(javaQuery), KMutableRootQuery.ForEntity<E> {
+    ) : KMutableRootQueryImpl<KNonNullTable<E>>(
+        javaQuery,
+        KNonNullTableExImpl(javaQuery.getTable() as TableImplementor<E>)
+    ), KMutableRootQuery.ForEntity<E> {
 
-        override val table: KNonNullTable<E> =
-            KNonNullTableExImpl(javaQuery.getTable() as TableImplementor<E>)
-
-        override fun where(specification: Specification<E>?) {
+        override fun where(specification: Specification<out E>?) {
             if (specification != null) {
-                val ks = specification as? KSpecification<E>
+                val ks = specification as? KSpecification<out E>
                     ?: throw IllegalArgumentException(
-                        "The specification must be instance of \"${specification::class.qualifiedName}\""
-                    )
-                where(ks)
-            }
-        }
-
-        override fun where(specification: KSpecification<E>?) {
-            if (specification !== null) {
-                val args = KSpecificationArgs<E>(
-                    PredicateApplier(javaQuery)
+                        "The specification must be instance of \"${KSpecification::class.qualifiedName}\""
                 )
-                specification.applyTo(args)
+                val applier = PredicateApplier(javaQuery)
+                @Suppress("UNCHECKED_CAST")
+                applier.applyKSpecification(ks as KSpecification<E>)
             }
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     internal class ForAssociation<S, T>(
         javaQuery: MutableRootQueryImpl<TableLike<*>>
-    ) : KMutableRootQueryImpl<KNonNullTable<Association<S, T>>>(javaQuery) {
-
-        @Suppress("UNCHECKED_CAST")
-        override val table: KNonNullTable<Association<S, T>> =
-            KNonNullTableExImpl(javaQuery.tableLikeImplementor as TableImplementor<Association<S, T>>)
-    }
+    ) : KMutableRootQueryImpl<KNonNullTable<Association<S, T>>>(
+        javaQuery,
+        KNonNullTableExImpl(javaQuery.tableLikeImplementor as TableImplementor<Association<S, T>>)
+    )
 }

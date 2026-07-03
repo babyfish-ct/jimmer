@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -10,6 +12,9 @@ import org.babyfish.jimmer.sql.ast.query.Filterable;
 import java.util.function.Supplier;
 
 public interface MutableUpdate extends Filterable, Executable<Integer> {
+
+    @OldChain
+    MutableUpdate setTypeMatchMode(TypeMatchMode mode);
 
     @OldChain
     <X> MutableUpdate set(PropExpression<X> path, X value);

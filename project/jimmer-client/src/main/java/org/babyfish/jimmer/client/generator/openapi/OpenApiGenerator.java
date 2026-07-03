@@ -412,6 +412,17 @@ public class OpenApiGenerator {
 
     private void generateTypeDefinition(ObjectType type, YmlWriter writer) {
         writer.object(typeNameManager.get(type), () -> {
+            if (!type.getPolymorphicBranches().isEmpty()) {
+                writer.description(Description.of(Doc.valueOf(type.getDoc())));
+                writer.list("oneOf", () -> {
+                    for (ObjectType branch : type.getPolymorphicBranches()) {
+                        writer.listItem(() -> {
+                            generateType(branch, writer);
+                        });
+                    }
+                });
+                return;
+            }
             writer.prop("type", "object");
             writer.description(Description.of(Doc.valueOf(type.getDoc())));
             writer.object("properties", () -> {

@@ -1,0 +1,49 @@
+import java.lang.Deprecated
+import testpkg.Named
+
+@Deprecated
+ClientExhaustiveView {
+    id
+    name
+    #types {
+        #exhaustive
+        @Deprecated
+        Organization class OrganizationBranch implements Named {
+            taxCode
+            id(projects) as projectIds
+        }
+        Person {
+            firstName
+            lastName
+        }
+    }
+}
+
+ClientRuntimeView {
+    id
+    name
+    #types {
+        #exhaustive
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+        }
+    }
+}
+
+input ClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+            lastName
+        }
+    }
+}

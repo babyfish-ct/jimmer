@@ -71,9 +71,11 @@ public class PropsGenerator {
             }
         } else {
             for (ImmutableType superType : type.getSuperTypes()) {
-                typeBuilder.addSuperinterface(
-                        superType.getPropsClassName()
-                );
+                if (!superType.isEntity()) {
+                    typeBuilder.addSuperinterface(
+                            superType.getPropsClassName()
+                    );
+                }
             }
         }
         if (type.isEntity()) {
@@ -208,7 +210,7 @@ public class PropsGenerator {
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
-        Doc doc =context.getDocMetadata().getDoc(prop.toElement());
+        Doc doc = context.getDocMetadata().getDoc(prop.toElement());
         if (doc != null) {
             builder.addJavadoc("$L", doc.getValue());
         }
@@ -297,7 +299,7 @@ public class PropsGenerator {
                         .getTableClassName();
             }
         } else if (prop.isAssociation(false)) {
-            ClassName className = (ClassName)prop.getTypeName();
+            ClassName className = (ClassName) prop.getTypeName();
             returnType = ClassName.get(
                     className.packageName(),
                     className.simpleName() + ImmutableType.PROP_EXPRESSION_SUFFIX

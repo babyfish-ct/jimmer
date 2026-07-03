@@ -2,12 +2,15 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.ksp.Context
+import org.babyfish.jimmer.ksp.MetaException
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.sql.JoinTable
 
 class FetcherDslGenerator(
+    private val ctx: Context,
     private val type: ImmutableType,
     private val parent: FileSpec.Builder
 ) {
@@ -24,6 +27,7 @@ class FetcherDslGenerator(
                     addInternallyGetFetcher()
                     addDeleteFun("allScalarFields")
                     addDeleteFun("allTableFields")
+                    addForType()
                     for (prop in type.properties.values) {
                         if (!prop.isId) {
                             addSimpleProp(prop)
@@ -102,6 +106,72 @@ class FetcherDslGenerator(
                 .addCode("_fetcher = _fetcher.%L()", funName)
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addForType() {
+        if (!isKnownNonLeaf()) {
+            return
+        }
+        type.properties["forType"]?.let {
+            throw MetaException(
+                it.propDeclaration,
+                "Illegal property name \"forType\", it conflicts with the generated fetcher method for inheritance type branches"
+            )
+        }
+        val typeVariable = TypeVariableName("S", type.className)
+        addFunction(
+            FunSpec
+                .builder("forType")
+                .addTypeVariable(typeVariable)
+                .addParameter(
+                    "typeBranchFetcher",
+                    FETCHER_CLASS_NAME.parameterizedBy(typeVariable)
+                )
+                .addStatement(
+                    "_fetcher = (_fetcher as %T<%T>).__forType(typeBranchFetcher)",
+                    FETCHER_IMPLEMENTOR_CLASS_NAME,
+                    type.className
+                )
+                .build()
+        )
+        for (typeBranch in knownStrictTypeBranches()) {
+            addFunction(
+                FunSpec
+                    .builder("forType")
+                    .addAnnotation(
+                        AnnotationSpec
+                            .builder(ClassName("kotlin", "Suppress"))
+                            .addMember("%S", "UNUSED_PARAMETER")
+                            .build()
+                    )
+                    .addAnnotation(
+                        AnnotationSpec
+                            .builder(ClassName("kotlin.jvm", "JvmName"))
+                            .addMember("%S", "forType_${typeBranch.qualifiedName.replace('.', '_')}")
+                            .build()
+                    )
+                    .addParameter(
+                        "type",
+                        K_CLASS_CLASS_NAME.parameterizedBy(typeBranch.className)
+                    )
+                    .addParameter(
+                        "block",
+                        LambdaTypeName.get(
+                            typeBranch.fetcherDslClassName,
+                            emptyList(),
+                            UNIT
+                        )
+                    )
+                    .addStatement("val dsl = %T()", typeBranch.fetcherDslClassName)
+                    .addStatement("dsl.block()")
+                    .addStatement(
+                        "_fetcher = (_fetcher as %T<%T>).__forType(dsl.internallyGetFetcher())",
+                        FETCHER_IMPLEMENTOR_CLASS_NAME,
+                        type.className
+                    )
+                    .build()
+            )
+        }
     }
 
     private fun TypeSpec.Builder.addSimpleProp(prop: ImmutableProp) {
@@ -401,5 +471,29 @@ class FetcherDslGenerator(
     companion object {
 
         val BOOLEAN_VALUES = booleanArrayOf(false, true)
+    }
+
+    private fun isKnownNonLeaf(): Boolean {
+        return knownStrictTypeBranches().isNotEmpty()
+    }
+
+    private fun knownStrictTypeBranches(): List<ImmutableType> {
+        if (!type.isEntity || type.inheritanceRoot == null) {
+            return emptyList()
+        }
+        return ctx.types
+            .filter { it !== type && type.isAssignableFrom(it) }
+            .sortedBy { it.qualifiedName }
+    }
+
+    private fun ImmutableType.isAssignableFrom(type: ImmutableType): Boolean {
+        var current: ImmutableType? = type
+        while (current != null) {
+            if (current === this) {
+                return true
+            }
+            current = current.primarySuperType
+        }
+        return false
     }
 }

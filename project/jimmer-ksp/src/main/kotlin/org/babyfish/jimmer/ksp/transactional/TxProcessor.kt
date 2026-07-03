@@ -29,9 +29,8 @@ class TxProcessor(
         if (map.isEmpty()) {
             return
         }
-        val allFiles = ctx.resolver.getAllFiles().toList()
         for (declaration in map.values) {
-            TxGenerator(ctx.environment.codeGenerator, ctx, declaration).generate(allFiles)
+            TxGenerator(ctx.environment.codeGenerator, ctx, declaration).generate()
         }
     }
 

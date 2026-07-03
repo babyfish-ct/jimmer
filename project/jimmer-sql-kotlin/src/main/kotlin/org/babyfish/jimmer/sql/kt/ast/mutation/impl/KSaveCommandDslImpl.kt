@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
+
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
@@ -163,6 +165,54 @@ internal class KSaveCommandDslImpl(
 
     override fun setTargetTransferModeAll(mode: TargetTransferMode) {
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
+    }
+
+    override fun setTypeMatchMode(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setTypeMatchMode(mode)
+    }
+
+    override fun setAssociatedTypeMatchModeAll(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchModeAll(mode)
+    }
+
+    override fun <E : Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(entityType.java, mode)
+    }
+
+    override fun setAssociatedTypeMatchMode(prop: KProperty1<*, *>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop.toImmutableProp(), mode)
+    }
+
+    override fun setAssociatedTypeMatchMode(prop: ImmutableProp, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop, mode)
+    }
+
+    override fun setAssociatedTypeMatchMode(prop: TypedProp.Association<*, *>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop, mode)
+    }
+
+    override fun setTypeChangeAllowed(allowed: Boolean) {
+        javaCommand = javaCommand.setTypeChangeAllowed(allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowedAll(allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowedAll(allowed)
+    }
+
+    override fun <E : Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(entityType.java, allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop.toImmutableProp(), allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: ImmutableProp, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop, allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop, allowed)
     }
 
     override fun setDumbBatchAcceptable(acceptable: Boolean) {

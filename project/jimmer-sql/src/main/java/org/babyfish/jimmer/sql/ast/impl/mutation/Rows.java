@@ -149,7 +149,7 @@ class Rows {
                 List<String> spiMissingProps = new ArrayList<>();
 
                 for (ImmutableProp keyProp : keyProps) {
-                    if (!spi.__isLoaded(keyProp.getId())) {
+                    if (!isLoaded(spi, keyProp)) {
                         unloaded = true;
                         if (!keyProp.isNullable()) {
                             //  Add missing non-null key prop name
@@ -223,6 +223,11 @@ class Rows {
         return resultMap;
     }
 
+    private static boolean isLoaded(ImmutableSpi spi, ImmutableProp prop) {
+        return spi.__isLoaded(prop.getId()) ||
+                prop.isDiscriminator() && spi.__type().getDiscriminatorValue() != null;
+    }
+
     @SuppressWarnings("unchecked")
     static List<ImmutableSpi> findRows(
             SaveContext ctx,
@@ -272,6 +277,29 @@ class Rows {
                         return q.select(
                                 ((Table<ImmutableSpi>)table).fetch(fetcher)
                         );
+                    }
+            ).execute(con);
+            return draftContext.resolveList(list);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<ImmutableSpi> findRows(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType type,
+            QueryReason queryReason,
+            BiConsumer<MutableQuery, Table<?>> block
+    ) {
+        return Internal.requiresNewDraftContext(draftContext -> {
+            List<ImmutableSpi> list = Queries.createQuery(
+                    sqlClient,
+                    type,
+                    ExecutionPurpose.command(queryReason),
+                    FilterLevel.IGNORE_USER_FILTERS,
+                    (q, table) -> {
+                        block.accept(q, table);
+                        return q.select((Table<ImmutableSpi>) table);
                     }
             ).execute(con);
             return draftContext.resolveList(list);

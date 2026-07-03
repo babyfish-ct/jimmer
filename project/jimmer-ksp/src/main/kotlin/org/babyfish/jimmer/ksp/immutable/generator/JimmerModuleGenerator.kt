@@ -8,7 +8,6 @@ import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.ksp.util.guessResourceFile
 import java.io.FileReader
 import java.io.OutputStreamWriter
-import java.nio.file.Files
 
 class JimmerModuleGenerator(
     private val codeGenerator: CodeGenerator,
@@ -29,7 +28,7 @@ class JimmerModuleGenerator(
             }
         }
         codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(true, *allFiles.toTypedArray()),
             "META-INF.jimmer",
             "entities",
             ""
@@ -48,7 +47,7 @@ class JimmerModuleGenerator(
             return
         }
         codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(true, *allFiles.toTypedArray()),
             packageName,
             JIMMER_MODULE
         ).use {
@@ -69,7 +68,7 @@ class JimmerModuleGenerator(
                             .builder("ENTITY_MANAGER", ENTITY_MANAGER_CLASS_NAME)
                             .addKdoc(
                                 "Under normal circumstances, users do not need to use this code. \n" +
-                                    "This code is for compatibility with version 0.7.47 and earlier."
+                                        "This code is for compatibility with version 0.7.47 and earlier."
                             )
                             .initializer(
                                 CodeBlock

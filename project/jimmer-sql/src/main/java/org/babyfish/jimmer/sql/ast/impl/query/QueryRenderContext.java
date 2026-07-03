@@ -5,8 +5,8 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasScope;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -37,6 +37,10 @@ public final class QueryRenderContext {
         return baseQueryReadSupport;
     }
 
+    public QueryAnalysis getAnalysis() {
+        return analysis;
+    }
+
     public TableAliasScope getTableAliasScope() {
         return astContext.getTableAliasScope();
     }
@@ -49,6 +53,10 @@ public final class QueryRenderContext {
     @Nullable
     public JoinType getRequiredJoinType(TableImplementor<?> table) {
         return analysis.getRequiredJoinType(table);
+    }
+
+    public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
+        return analysis.isJoinedTypeBranchTableRequired(table);
     }
 
     @Nullable

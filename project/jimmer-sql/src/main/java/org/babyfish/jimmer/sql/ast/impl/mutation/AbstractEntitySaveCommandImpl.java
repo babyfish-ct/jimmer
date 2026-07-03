@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
@@ -12,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -254,6 +255,112 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
+    static class AssociatedTypeMatchModeCfg extends Cfg {
+
+        final MapNode<ImmutableProp, TypeMatchMode> propMapNode;
+
+        final MapNode<ImmutableType, TypeMatchMode> typeMapNode;
+
+        final TypeMatchMode defaultMode;
+
+        AssociatedTypeMatchModeCfg(Cfg prev, TypeMatchMode defaultMode) {
+            super(prev);
+            AssociatedTypeMatchModeCfg p = prev.as(AssociatedTypeMatchModeCfg.class);
+            this.propMapNode = p != null ? p.propMapNode : null;
+            this.typeMapNode = p != null ? p.typeMapNode : null;
+            this.defaultMode = defaultMode != null ? defaultMode : TypeMatchMode.AUTO;
+        }
+
+        AssociatedTypeMatchModeCfg(Cfg prev, Class<?> entityType, TypeMatchMode mode) {
+            super(prev);
+            ImmutableType type = ImmutableType.get(entityType);
+            if (!type.isEntity()) {
+                throw new IllegalArgumentException(
+                        "Cannot set associated type match mode for the type \"" +
+                                type +
+                                "\" because it is not entity"
+                );
+            }
+            AssociatedTypeMatchModeCfg p = prev.as(AssociatedTypeMatchModeCfg.class);
+            this.propMapNode = p != null ? p.propMapNode : null;
+            this.typeMapNode = new MapNode<>(p != null ? p.typeMapNode : null, type, mode != null ? mode : TypeMatchMode.AUTO);
+            this.defaultMode = p != null ? p.defaultMode : TypeMatchMode.AUTO;
+        }
+
+        AssociatedTypeMatchModeCfg(Cfg prev, ImmutableProp prop, TypeMatchMode mode) {
+            super(prev);
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "Cannot set associated type match mode for the property \"" +
+                                prop +
+                                "\" because it is not an ORM association"
+                );
+            }
+            AssociatedTypeMatchModeCfg p = prev.as(AssociatedTypeMatchModeCfg.class);
+            this.propMapNode = new MapNode<>(p != null ? p.propMapNode : null, prop, mode != null ? mode : TypeMatchMode.AUTO);
+            this.typeMapNode = p != null ? p.typeMapNode : null;
+            this.defaultMode = p != null ? p.defaultMode : TypeMatchMode.AUTO;
+        }
+    }
+
+    static class TypeChangeAllowedCfg extends Cfg {
+
+        final boolean allowed;
+
+        TypeChangeAllowedCfg(Cfg prev, boolean allowed) {
+            super(prev);
+            this.allowed = allowed;
+        }
+    }
+
+    static class AssociatedTypeChangeAllowedCfg extends Cfg {
+
+        final MapNode<ImmutableProp, Boolean> propMapNode;
+
+        final MapNode<ImmutableType, Boolean> typeMapNode;
+
+        final boolean defaultValue;
+
+        AssociatedTypeChangeAllowedCfg(Cfg prev, boolean defaultValue) {
+            super(prev);
+            AssociatedTypeChangeAllowedCfg p = prev.as(AssociatedTypeChangeAllowedCfg.class);
+            this.propMapNode = p != null ? p.propMapNode : null;
+            this.typeMapNode = p != null ? p.typeMapNode : null;
+            this.defaultValue = defaultValue;
+        }
+
+        AssociatedTypeChangeAllowedCfg(Cfg prev, Class<?> entityType, boolean allowed) {
+            super(prev);
+            ImmutableType type = ImmutableType.get(entityType);
+            if (!type.isEntity()) {
+                throw new IllegalArgumentException(
+                        "Cannot set associated type change behavior for the type \"" +
+                                type +
+                                "\" because it is not entity"
+                );
+            }
+            AssociatedTypeChangeAllowedCfg p = prev.as(AssociatedTypeChangeAllowedCfg.class);
+            this.propMapNode = p != null ? p.propMapNode : null;
+            this.typeMapNode = new MapNode<>(p != null ? p.typeMapNode : null, type, allowed);
+            this.defaultValue = p != null && p.defaultValue;
+        }
+
+        AssociatedTypeChangeAllowedCfg(Cfg prev, ImmutableProp prop, boolean allowed) {
+            super(prev);
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "Cannot set associated type change behavior for the property \"" +
+                                prop +
+                                "\" because it is not an ORM association"
+                );
+            }
+            AssociatedTypeChangeAllowedCfg p = prev.as(AssociatedTypeChangeAllowedCfg.class);
+            this.propMapNode = new MapNode<>(p != null ? p.propMapNode : null, prop, allowed);
+            this.typeMapNode = p != null ? p.typeMapNode : null;
+            this.defaultValue = p != null && p.defaultValue;
+        }
+    }
+
      static class PessimisticLockCfg extends Cfg {
 
          final MapNode<ImmutableType, Boolean> mapNode;
@@ -353,6 +460,22 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final TargetTransferMode targetTransferModeAll;
 
+        private final TypeMatchMode typeMatchMode;
+
+        private final Map<ImmutableProp, TypeMatchMode> associatedTypeMatchModePropMap;
+
+        private final Map<ImmutableType, TypeMatchMode> associatedTypeMatchModeTypeMap;
+
+        private final TypeMatchMode associatedTypeMatchModeAll;
+
+        private final boolean typeChangeAllowed;
+
+        private final Map<ImmutableProp, Boolean> associatedTypeChangeAllowedPropMap;
+
+        private final Map<ImmutableType, Boolean> associatedTypeChangeAllowedTypeMap;
+
+        private final boolean associatedTypeChangeAllowedAll;
+
         private final Map<ImmutableType, Boolean> pessimisticLockMap;
 
         private final boolean pessimisticLockAll;
@@ -385,6 +508,11 @@ abstract class AbstractEntitySaveCommandImpl
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
+            TypeMatchModeCfg typeMatchModeCfg = cfg.as(TypeMatchModeCfg.class);
+            AssociatedTypeMatchModeCfg associatedTypeMatchModeCfg = cfg.as(AssociatedTypeMatchModeCfg.class);
+            TypeChangeAllowedCfg typeChangeAllowedCfg = cfg.as(TypeChangeAllowedCfg.class);
+            AssociatedTypeChangeAllowedCfg associatedTypeChangeAllowedCfg =
+                    cfg.as(AssociatedTypeChangeAllowedCfg.class);
             PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
@@ -423,6 +551,25 @@ abstract class AbstractEntitySaveCommandImpl
             this.targetTransferModeAll = targetTransferModeCfg != null ?
                     targetTransferModeCfg.defaultMode :
                     TargetTransferMode.AUTO;
+            this.typeMatchMode = typeMatchModeCfg != null ? typeMatchModeCfg.mode : TypeMatchMode.AUTO;
+            this.associatedTypeMatchModePropMap =
+                    MapNode.toMap(associatedTypeMatchModeCfg, it -> it.propMapNode);
+            this.associatedTypeMatchModeTypeMap =
+                    MapNode.toMap(associatedTypeMatchModeCfg, it -> it.typeMapNode);
+            this.associatedTypeMatchModeAll =
+                    associatedTypeMatchModeCfg != null ?
+                            associatedTypeMatchModeCfg.defaultMode :
+                            TypeMatchMode.AUTO;
+            this.typeChangeAllowed = typeChangeAllowedCfg != null ?
+                    typeChangeAllowedCfg.allowed :
+                    sqlClient.isDefaultTypeChangeAllowed();
+            this.associatedTypeChangeAllowedPropMap =
+                    MapNode.toMap(associatedTypeChangeAllowedCfg, it -> it.propMapNode);
+            this.associatedTypeChangeAllowedTypeMap =
+                    MapNode.toMap(associatedTypeChangeAllowedCfg, it -> it.typeMapNode);
+            this.associatedTypeChangeAllowedAll =
+                    associatedTypeChangeAllowedCfg != null &&
+                            associatedTypeChangeAllowedCfg.defaultValue;
             this.pessimisticLockMap = MapNode.toMap(pessimisticLockCfg, it -> it.mapNode);
             this.pessimisticLockAll = pessimisticLockCfg != null ?
                     pessimisticLockCfg.defaultValue :
@@ -571,6 +718,46 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
+        public TypeMatchMode getTypeMatchMode() {
+            return typeMatchMode;
+        }
+
+        @Override
+        public TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType) {
+            TypeMatchMode mode = associatedTypeMatchModePropMap.get(prop);
+            if (mode != null) {
+                return mode;
+            }
+            for (ImmutableType type : targetType.getAllTypes()) {
+                mode = associatedTypeMatchModeTypeMap.get(type);
+                if (mode != null) {
+                    return mode;
+                }
+            }
+            return associatedTypeMatchModeAll;
+        }
+
+        @Override
+        public boolean isTypeChangeAllowed() {
+            return typeChangeAllowed;
+        }
+
+        @Override
+        public boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+            Boolean value = associatedTypeChangeAllowedPropMap.get(prop);
+            if (value != null) {
+                return value;
+            }
+            for (ImmutableType type : targetType.getAllTypes()) {
+                value = associatedTypeChangeAllowedTypeMap.get(type);
+                if (value != null) {
+                    return value;
+                }
+            }
+            return associatedTypeChangeAllowedAll;
+        }
+
+        @Override
         public boolean isPessimisticLocked(ImmutableType type) {
             Boolean value = pessimisticLockMap.get(type);
             return value != null ? value : pessimisticLockAll;
@@ -622,6 +809,14 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedModeMap,
                     targetTransferModeMap,
                     targetTransferModeAll,
+                    typeMatchMode,
+                    associatedTypeMatchModePropMap,
+                    associatedTypeMatchModeTypeMap,
+                    associatedTypeMatchModeAll,
+                    typeChangeAllowed,
+                    associatedTypeChangeAllowedPropMap,
+                    associatedTypeChangeAllowedTypeMap,
+                    associatedTypeChangeAllowedAll,
                     pessimisticLockMap,
                     pessimisticLockAll,
                     deleteMode,
@@ -640,12 +835,20 @@ abstract class AbstractEntitySaveCommandImpl
             return sqlClient == other.sqlClient &&
                     autoCheckingAll == other.autoCheckingAll &&
                     associatedMode == other.associatedMode &&
+                    typeMatchMode == other.typeMatchMode &&
+                    associatedTypeMatchModeAll == other.associatedTypeMatchModeAll &&
+                    typeChangeAllowed == other.typeChangeAllowed &&
+                    associatedTypeChangeAllowedAll == other.associatedTypeChangeAllowedAll &&
                     pessimisticLockAll == other.pessimisticLockAll &&
                     mode == other.mode &&
                     deleteMode == other.deleteMode &&
                     Objects.equals(argument, other.argument) &&
                     targetTransferModeMap.equals(other.targetTransferModeMap) &&
                     targetTransferModeAll == other.targetTransferModeAll &&
+                    associatedTypeMatchModePropMap.equals(other.associatedTypeMatchModePropMap) &&
+                    associatedTypeMatchModeTypeMap.equals(other.associatedTypeMatchModeTypeMap) &&
+                    associatedTypeChangeAllowedPropMap.equals(other.associatedTypeChangeAllowedPropMap) &&
+                    associatedTypeChangeAllowedTypeMap.equals(other.associatedTypeChangeAllowedTypeMap) &&
                     associatedModeMap.equals(other.associatedModeMap) &&
                     keyMatcherMap.equals(other.keyMatcherMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
@@ -662,6 +865,14 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedModeMap=" + associatedModeMap +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", targetTransferModeAll=" + targetTransferModeAll +
+                    ", typeMatchMode=" + typeMatchMode +
+                    ", associatedTypeMatchModePropMap=" + associatedTypeMatchModePropMap +
+                    ", associatedTypeMatchModeTypeMap=" + associatedTypeMatchModeTypeMap +
+                    ", associatedTypeMatchModeAll=" + associatedTypeMatchModeAll +
+                    ", typeChangeAllowed=" + typeChangeAllowed +
+                    ", associatedTypeChangeAllowedPropMap=" + associatedTypeChangeAllowedPropMap +
+                    ", associatedTypeChangeAllowedTypeMap=" + associatedTypeChangeAllowedTypeMap +
+                    ", associatedTypeChangeAllowedAll=" + associatedTypeChangeAllowedAll +
                     ", pessimisticLockMap" + pessimisticLockMap +
                     ", pessimisticLockAll" + pessimisticLockAll +
                     ", deleteMode=" + deleteMode +

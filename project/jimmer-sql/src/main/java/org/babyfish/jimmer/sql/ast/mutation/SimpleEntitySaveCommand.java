@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -190,6 +192,86 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     @Override
     SimpleEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setTypeMatchMode(TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeMatchModeAll(TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(Class<?> entityType, TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(ImmutableProp prop, TypeMatchMode mode);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeMatchMode(
+            TypedProp.Association<?, ?> prop,
+            TypeMatchMode mode
+    ) {
+        return setAssociatedTypeMatchMode(prop.unwrap(), mode);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setTypeChangeAllowed() {
+        return setTypeChangeAllowed(true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setTypeChangeAllowed(boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll() {
+        return setAssociatedTypeChangeAllowedAll(true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowedAll(boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType) {
+        return setAssociatedTypeChangeAllowed(entityType, true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(Class<?> entityType, boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop) {
+        return setAssociatedTypeChangeAllowed(prop, true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(ImmutableProp prop, boolean allowed);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(TypedProp.Association<?, ?> prop) {
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setAssociatedTypeChangeAllowed(
+            TypedProp.Association<?, ?> prop,
+            boolean allowed
+    ) {
+        return setAssociatedTypeChangeAllowed(prop.unwrap(), allowed);
+    }
 
     @NewChain
     SimpleEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
