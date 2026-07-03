@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.InheritanceType;
-import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -504,7 +503,7 @@ public class MutableDeleteImpl
             if (deleteJoin != null && deleteJoin.getFrom() == DeleteJoin.From.AS_JOIN) {
                 renderDeleteTarget(builder, table, targetType);
                 if (joinedTypeBranchTableRequired) {
-                    renderJoinedTypeBranchJoin(builder, table);
+                    MutationJoinRenderSupport.renderJoinedTypeBranchJoin(builder, table);
                 }
                 MutationJoinRenderSupport.renderUsedJoinsNormally(builder, table);
             } else {
@@ -517,7 +516,7 @@ public class MutableDeleteImpl
                 builder.enter(SqlBuilder.ScopeType.WHERE);
                 if (deleteJoin != null && deleteJoin.getFrom() == DeleteJoin.From.AS_USING) {
                     if (joinedTypeBranchTableRequired) {
-                        renderJoinedTypeBranchCondition(builder, table);
+                        MutationJoinRenderSupport.renderJoinedTypeBranchCondition(builder, table);
                     }
                     MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
                 }
@@ -547,7 +546,7 @@ public class MutableDeleteImpl
         builder.sql(MutationRender.alias(builder, table));
         if (updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
             if (joinedTypeBranchTableRequired) {
-                renderJoinedTypeBranchJoin(builder, table);
+                MutationJoinRenderSupport.renderJoinedTypeBranchJoin(builder, table);
             }
             MutationJoinRenderSupport.renderUsedJoinsNormally(builder, table);
         }
@@ -555,7 +554,7 @@ public class MutableDeleteImpl
         if (updateJoin.getFrom() == UpdateJoin.From.AS_JOIN) {
             builder.from().enter(SqlBuilder.ScopeType.COMMA);
             if (joinedTypeBranchTableRequired) {
-                renderJoinedTypeBranchFrom(builder, table);
+                MutationJoinRenderSupport.renderJoinedTypeBranchFrom(builder, table);
             }
             MutationJoinRenderSupport.renderUsedJoinsAsFrom(builder, table);
             builder.leave();
@@ -565,7 +564,7 @@ public class MutableDeleteImpl
             builder.enter(SqlBuilder.ScopeType.WHERE);
             if (updateJoin.getFrom() == UpdateJoin.From.AS_JOIN) {
                 if (joinedTypeBranchTableRequired) {
-                    renderJoinedTypeBranchCondition(builder, table);
+                    MutationJoinRenderSupport.renderJoinedTypeBranchCondition(builder, table);
                 }
                 MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
             }
@@ -584,7 +583,7 @@ public class MutableDeleteImpl
     ) {
         builder.sql(" using ").enter(SqlBuilder.ScopeType.COMMA);
         if (joinedTypeBranchTableRequired) {
-            renderJoinedTypeBranchFrom(builder, table);
+            MutationJoinRenderSupport.renderJoinedTypeBranchFrom(builder, table);
         }
         MutationJoinRenderSupport.renderUsedJoinsAsFrom(builder, table);
         builder.leave();
@@ -671,48 +670,6 @@ public class MutableDeleteImpl
             builder.sql(" ");
         }
         builder.sql(MutationRender.alias(builder, table));
-    }
-
-    private void renderJoinedTypeBranchJoin(SqlBuilder builder, TableImplementor<?> table) {
-        builder.join(JoinType.INNER);
-        renderJoinedTypeBranchFrom(builder, table);
-        builder.on();
-        renderJoinedTypeBranchCondition(builder, table);
-    }
-
-    private void renderJoinedTypeBranchFrom(SqlBuilder builder, TableImplementor<?> table) {
-        builder
-                .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                .sql(" ")
-                .sql(joinedTypeBranchAlias(builder, table));
-    }
-
-    private void renderJoinedTypeBranchCondition(SqlBuilder builder, TableImplementor<?> table) {
-        InheritanceInfo inheritanceInfo = table.getImmutableType().getInheritanceInfo();
-        ImmutableType rootType = inheritanceInfo.getRootType();
-        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
-        ColumnDefinition rootDefinition = rootType.getIdProp().getStorage(strategy);
-        ColumnDefinition branchDefinition = table.getImmutableType().getIdProp().getStorage(strategy);
-        String rootAlias = MutationRender.alias(builder, table);
-        String branchAlias = joinedTypeBranchAlias(builder, table);
-        int size = rootDefinition.size();
-        builder.enter(SqlBuilder.ScopeType.AND);
-        for (int i = 0; i < size; i++) {
-            builder
-                    .separator()
-                    .sql(rootAlias)
-                    .sql(".")
-                    .sql(rootDefinition.name(i))
-                    .sql(" = ")
-                    .sql(branchAlias)
-                    .sql(".")
-                    .sql(branchDefinition.name(i));
-        }
-        builder.leave();
-    }
-
-    private String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
-        return TableImplementor.joinedTypeBranchAlias(builder, table);
     }
 
     private ImmutableType directDeleteTargetType(boolean logicalDeleted) {

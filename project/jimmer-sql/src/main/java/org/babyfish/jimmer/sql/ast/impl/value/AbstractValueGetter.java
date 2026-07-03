@@ -299,6 +299,11 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             ImmutableProp columnProp,
             String columnName
     ) {
+        String updateAlias = joinedTypeBranchUpdateAlias(builder, tableImplementor, columnProp);
+        if (updateAlias != null) {
+            builder.sql(updateAlias).sql(".").sql(columnName);
+            return true;
+        }
         String rootAlias = joinedTypeBranchUpdateRootAlias(builder, tableImplementor, columnProp);
         if (rootAlias != null) {
             builder.sql(rootAlias).sql(".").sql(columnName);
@@ -310,6 +315,29 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             return true;
         }
         return false;
+    }
+
+    @Nullable
+    private static String joinedTypeBranchUpdateAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableProp columnProp
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null ||
+                columnProp.isId() ||
+                columnProp.toOriginal().isId() ||
+                tableImplementor.isTreated()) {
+            return null;
+        }
+        String alias = astContext.getJoinedTypeBranchUpdateAlias(tableImplementor, columnProp);
+        if (alias != null) {
+            return alias;
+        }
+        if (astContext.isJoinedTypeBranchUpdateTargetStage(tableImplementor, columnProp)) {
+            return builder.assertSimple().alias(tableImplementor.realTableForRender(builder));
+        }
+        return null;
     }
 
     @Nullable

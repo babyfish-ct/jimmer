@@ -40,6 +40,7 @@ public class Keywords {
 
                             // Specification
                             "applyTo", "entityType",
+                            "and", "or", "not",
 
                             // AbstractTypedTable
                             "immutableType",

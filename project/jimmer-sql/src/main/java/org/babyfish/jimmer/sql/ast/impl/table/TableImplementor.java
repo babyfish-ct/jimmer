@@ -257,6 +257,19 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         return isDeclaringTypeOwnedByStage(prop.toOriginal().getDeclaringType(), stageType);
     }
 
+    @Nullable
+    static ImmutableType joinedStageType(ImmutableProp prop, ImmutableType type) {
+        if (prop.isId() || prop.toOriginal().isId()) {
+            return type;
+        }
+        for (ImmutableType stageType = type; stageType != null; stageType = stageType.getPrimarySuperType()) {
+            if (stageType.isEntity() && isPropOwnedByStage(prop, stageType)) {
+                return stageType;
+            }
+        }
+        return null;
+    }
+
     static boolean isDeclaringTypeOwnedByStage(ImmutableType declaringType, ImmutableType stageType) {
         if (declaringType == stageType) {
             return true;

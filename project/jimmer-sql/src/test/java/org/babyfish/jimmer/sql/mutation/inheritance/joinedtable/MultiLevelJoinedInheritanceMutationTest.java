@@ -1,19 +1,25 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Asset;
-import org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Car;
-import org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.CarDraft;
-import org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Vehicle;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.UpdateJoin;
+import org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.*;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTest {
 
@@ -125,5 +131,91 @@ public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTes
                     ctx.value("null; [TRUCK, Joined Truck, Volvo, null, 12000, null]");
                 }
         );
+    }
+
+    @Test
+    public void testCreateUpdateLeafCanSetIntermediateProp() {
+        executeAndExpectRowCount(
+                sqlOnlyUpdateJoinClient(1)
+                        .createUpdate(CarTable.class, (u, car) -> {
+                            u.set(car.manufacturer(), "Honda");
+                            u.where(car.seatCount().eq(5));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ML_JOINED_VEHICLE tb_1_ " +
+                                        "set MANUFACTURER = ? " +
+                                        "from ML_JOINED_CAR tb_1__sub, ML_JOINED_ASSET tb_1__asset " +
+                                        "where tb_1_.ID = tb_1__sub.ID " +
+                                        "and tb_1_.ID = tb_1__asset.ID " +
+                                        "and tb_1__sub.SEAT_COUNT = ? " +
+                                        "and tb_1__asset.ASSET_TYPE = ?"
+                        );
+                        it.variables("Honda", 5, "CAR");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testCreateUpdateLeafCannotSetIntermediateAndLeafPropsTogether() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> getLambdaClient().createUpdate(CarTable.class, (u, car) -> {
+                    u.set(car.manufacturer(), "Honda");
+                    u.set(car.seatCount(), 4);
+                    u.where(car.id().eq(800L));
+                })
+        );
+        assertEquals(
+                "Cannot update property \"" +
+                        "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Car.seatCount" +
+                        "\" by createUpdate for joined inheritance type \"" +
+                        "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Car" +
+                        "\" because all assignment targets must belong to the same physical table. " +
+                        "Updating columns in multiple physical tables by one createUpdate is not supported " +
+                        "for joined inheritance; previous assignments target physical table \"" +
+                        "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Vehicle" +
+                        "\" and this property targets physical table \"" +
+                        "org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.Car" +
+                        "\"",
+                ex.getMessage()
+        );
+    }
+
+    private LambdaClient sqlOnlyUpdateJoinClient(int rowCount) {
+        return getLambdaClient(it -> {
+            it.setDialect(new H2UpdateJoinDialect());
+            it.setExecutor(new Executor() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public <R> R execute(Args<R> args) {
+                    getExecutions().add(Execution.simple(args.sql, args.purpose, args.variables));
+                    return (R) Integer.valueOf(rowCount);
+                }
+
+                @Override
+                public BatchContext executeBatch(
+                        Connection con,
+                        String sql,
+                        ImmutableProp generatedIdProp,
+                        ExecutionPurpose purpose,
+                        JSqlClientImplementor sqlClient,
+                        boolean constraintViolationTranslatable
+                ) {
+                    throw new AssertionError("Batch execution is not expected");
+                }
+            });
+        });
+    }
+
+    private static class H2UpdateJoinDialect extends H2Dialect {
+
+        @Override
+        public UpdateJoin getUpdateJoin() {
+            return new UpdateJoin(false, UpdateJoin.From.AS_JOIN);
+        }
     }
 }
