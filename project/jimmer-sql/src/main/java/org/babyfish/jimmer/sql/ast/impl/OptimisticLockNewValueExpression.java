@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +26,7 @@ class OptimisticLockNewValueExpression<V>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+        visitor.visitOptimisticLockNewValue(prop);
     }
 
     @Override

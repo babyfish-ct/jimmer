@@ -258,6 +258,16 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     }
 
     protected void onFrozen(AstContext ctx) {
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        if (tableLikeImplementor instanceof TableImplementor<?>) {
+            TableImplementor<?> table = (TableImplementor<?>) tableLikeImplementor;
+            if (shouldApplyImplicitDiscriminatorPredicate(table)) {
+                Predicate discriminatorPredicate = table.getDiscriminatorPredicate();
+                if (discriminatorPredicate != null) {
+                    predicates.add(discriminatorPredicate);
+                }
+            }
+        }
         filterPredicates.removeAll((t, ps) -> {
             if (ps.isEmpty()) {
                 return true;
@@ -270,6 +280,10 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         });
         predicates = mergePredicates(predicates);
         filterPredicates.replaceAll(AbstractMutableStatementImpl::mergePredicates);
+    }
+
+    protected boolean shouldApplyImplicitDiscriminatorPredicate(TableImplementor<?> table) {
+        return true;
     }
 
     public void applyVirtualPredicates(AstContext ctx) {
@@ -285,8 +299,17 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             FilterLevel level,
             @Nullable List<Selection<?>> selections
     ) {
+        applyGlobalFilters(astContext, level, selections, null);
+    }
+
+    public final void applyGlobalFilters(
+            AstContext astContext,
+            FilterLevel level,
+            @Nullable List<Selection<?>> selections,
+            @Nullable QueryAnalysis queryAnalysis
+    ) {
         if (level != FilterLevel.IGNORE_ALL) {
-            applyGlobalFiltersImpl(new ApplyFilterVisitor(astContext, level), selections, null);
+            applyGlobalFiltersImpl(new ApplyFilterVisitor(astContext, level, queryAnalysis), selections, null);
         }
     }
 
@@ -309,13 +332,22 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             TableImplementor<?> start
     ) {
         TableLikeImplementor<?> tableLikeImplementor = this.getTableLikeImplementor();
-        if (!(tableLikeImplementor instanceof TableImplementor<?>)) {
+        if (!(tableLikeImplementor instanceof TableImplementor<?>) &&
+                !(tableLikeImplementor instanceof BaseTableImplementor)) {
             return;
         }
         AstContext astContext = visitor.getAstContext();
         astContext.pushStatement(this);
         try {
-            applyGlobalFilerImpl(visitor, start != null ? start : (TableImplementor<?>) tableLikeImplementor);
+            if (start != null) {
+                applyGlobalFilerImpl(visitor, start);
+            } else if (tableLikeImplementor instanceof TableImplementor<?>) {
+                applyGlobalFilerImpl(visitor, (TableImplementor<?>) tableLikeImplementor);
+            } else {
+                ((BaseTableImplementor) tableLikeImplementor)
+                        .getQuery()
+                        .applyGlobalFilters(astContext, visitor.level, visitor.getQueryAnalysis());
+            }
             int modCount = -1;
             __APPLY_STEP__:
             while (modCount != modCount()) {
@@ -455,7 +487,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         private final IdentityPairSet<AbstractMutableStatementImpl, Object> appliedSet = new IdentityPairSet<>();
 
         public ApplyFilterVisitor(AstContext ctx, FilterLevel level) {
-            super(ctx);
+            this(ctx, level, null);
+        }
+
+        public ApplyFilterVisitor(AstContext ctx, FilterLevel level, @Nullable QueryAnalysis queryAnalysis) {
+            super(ctx, queryAnalysis);
             this.level = level;
         }
 
@@ -477,22 +513,32 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
             if (implementor instanceof TableImplementor<?>) {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
-                if (prop != null && prop.isId() && (
-                        rawId || TableUtils.isRawIdAllowed(tableImplementor, ctx.getSqlClient()))
-                ) {
-                    table = table.getParent();
-                }
-                while (table != null) {
-                    implementor = table.getTableLikeImplementor();
-                    if (implementor instanceof TableImplementor<?>) {
-                        tableImplementor = (TableImplementor<?>) implementor;
-                        tableImplementor
-                                .getStatement()
-                                .applyGlobalFilerImpl(this, tableImplementor);
-                    }
+                boolean rawIdProp = prop != null && prop.isId() &&
+                        (rawId || TableUtils.isRawIdAllowed(tableImplementor, ctx.getSqlClient()));
+                if (rawIdProp) {
                     table = table.getParent();
                 }
             }
+            while (table != null) {
+                implementor = table.getTableLikeImplementor();
+                if (implementor instanceof TableImplementor<?>) {
+                    TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                    tableImplementor
+                            .getStatement()
+                            .applyGlobalFilerImpl(this, tableImplementor);
+                } else if (implementor instanceof BaseTableImplementor) {
+                    ((BaseTableImplementor) implementor)
+                            .getQuery()
+                            .applyGlobalFilters(ctx, level, getQueryAnalysis());
+                }
+                table = table.getParent();
+            }
+        }
+
+        @Nullable
+        QueryAnalysis getQueryAnalysis() {
+            QueryRenderContext queryRenderContext = getQueryRenderContext();
+            return queryRenderContext != null ? queryRenderContext.getAnalysis() : null;
         }
 
         @Override

@@ -19,9 +19,10 @@ public class SpecificationArgs<E, T extends TableLike<E>> {
 
     private final AbstractMutableStatementImpl query;
 
+    @SuppressWarnings("unchecked")
     public SpecificationArgs(PredicateApplier applier) {
         this.applier = applier;
-        this.table = applier.getQuery().getTable();
+        this.table = (T) applier.getTable();
         this.query = getApplier().getQuery();
     }
 
@@ -30,12 +31,14 @@ public class SpecificationArgs<E, T extends TableLike<E>> {
     }
 
     public SpecificationArgs<E, T> where(Predicate ... predicates) {
-        query.where(predicates);
+        applier.where(predicates);
         return this;
     }
 
     public SpecificationArgs<E, T> where(boolean condition, Predicate predicate) {
-        query.whereIf(condition, predicate);
+        if (condition) {
+            applier.where(predicate);
+        }
         return this;
     }
 
@@ -88,12 +91,16 @@ public class SpecificationArgs<E, T extends TableLike<E>> {
      */
     @Deprecated
     public SpecificationArgs<E, T> whereIf(boolean condition, Predicate predicate) {
-        query.whereIf(condition, predicate);
+        if (condition) {
+            applier.where(predicate);
+        }
         return this;
     }
 
     public SpecificationArgs<E, T> whereIf(boolean condition, Supplier<Predicate> block) {
-        query.whereIf(condition, block);
+        if (condition) {
+            applier.where(block.get());
+        }
         return this;
     }
 

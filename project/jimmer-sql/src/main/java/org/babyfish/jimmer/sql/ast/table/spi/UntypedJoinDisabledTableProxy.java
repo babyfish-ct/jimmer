@@ -83,16 +83,6 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
-    public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
-        throw new IllegalStateException(joinDisabledReason);
-    }
-
-    @Override
-    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
-        throw new IllegalStateException(joinDisabledReason);
-    }
-
-    @Override
     public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
         ImmutableProp opposite = prop.getOpposite();
         if (opposite == null || !opposite.isColumnDefinition()) {

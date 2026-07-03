@@ -27,7 +27,7 @@ class BuilderGenerator(
         addConstructor()
         addDefaultConstructor()
         for (prop in type.properties.values) {
-            if (!prop.isKotlinFormula && prop.manyToManyViewBaseProp === null) {
+            if (!prop.isKotlinFormula && !prop.isDiscriminator && prop.manyToManyViewBaseProp === null) {
                 addSetter(prop)
             }
         }

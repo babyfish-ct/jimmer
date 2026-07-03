@@ -18,7 +18,7 @@ import kotlin.reflect.KProperty1
 
 internal class KSubQueriesImpl<P: KPropsLike>(
     private val parent: AbstractMutableStatementImpl,
-    private val parentTable: P? = null
+    private val parentTable: P
 ) : KSubQueries<P> {
 
     override fun <E : Any, R, SQ: KConfigurableSubQuery<R>> forEntity(

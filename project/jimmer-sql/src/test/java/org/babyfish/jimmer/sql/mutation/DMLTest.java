@@ -1,20 +1,28 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
-import static org.babyfish.jimmer.sql.common.Constants.*;
+import org.babyfish.jimmer.sql.dialect.DeleteJoin;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
-import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
+
+import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class DMLTest extends AbstractMutationTest {
 
@@ -216,6 +224,95 @@ public class DMLTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testDeleteWithJoinAndDisabledDissociationByIdSubQuery() {
+        executeAndExpectRowCount(
+                getLambdaClient().createDelete(BookTableEx.class, (d, book) -> {
+                    d.disableDissociation();
+                    d.where(book.store().name().eq("MANNING"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK tb_1_ " +
+                                        "where tb_1_.ID in (" +
+                                        "select distinct tb_1_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                        "where tb_2_.NAME = ?" +
+                                        ")"
+                        );
+                        it.variables("MANNING");
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteWithFkOnlyPredicateDoesNotUseJoinRenderer() {
+        executeAndExpectRowCount(
+                getLambdaClient().createDelete(BookTableEx.class, (d, book) -> {
+                    d.disableDissociation();
+                    d.where(book.store().id().eq(manningId));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK tb_1_ where tb_1_.STORE_ID = ?");
+                        it.variables(manningId);
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteWithJoinByDeleteJoinDialect() {
+        executeAndExpectRowCount(
+                sqlOnlyDeleteJoinClient(3, DeleteJoin.From.AS_JOIN)
+                        .createDelete(BookTableEx.class, (d, book) -> {
+                            d.disableDissociation();
+                            d.where(book.store().name().eq("MANNING"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete tb_1_ " +
+                                        "from BOOK tb_1_ " +
+                                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                        "where tb_2_.NAME = ?"
+                        );
+                        it.variables("MANNING");
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteWithJoinByDeleteUsingDialect() {
+        executeAndExpectRowCount(
+                sqlOnlyDeleteJoinClient(3, DeleteJoin.From.AS_USING)
+                        .createDelete(BookTableEx.class, (d, book) -> {
+                            d.disableDissociation();
+                            d.where(book.store().name().eq("MANNING"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete " +
+                                        "from BOOK tb_1_ " +
+                                        "using BOOK_STORE tb_2_ " +
+                                        "where tb_1_.STORE_ID = tb_2_.ID " +
+                                        "and tb_2_.NAME = ?"
+                        );
+                        it.variables("MANNING");
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+    }
+
+    @Test
     public void deleteMySql() {
 
         NativeDatabases.assumeNativeDatabase();
@@ -297,5 +394,45 @@ public class DMLTest extends AbstractMutationTest {
                     .where(table.id().eq(graphQLInActionId1));
         });
         Assertions.assertEquals("Cannot update same column twice", ex.getMessage());
+    }
+
+    private LambdaClient sqlOnlyDeleteJoinClient(int rowCount, DeleteJoin.From from) {
+        return getLambdaClient(it -> {
+            it.setDialect(new H2DeleteJoinDialect(from));
+            it.setExecutor(new Executor() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public <R> R execute(Args<R> args) {
+                    getExecutions().add(Execution.simple(args.sql, args.purpose, args.variables));
+                    return (R) Integer.valueOf(rowCount);
+                }
+
+                @Override
+                public BatchContext executeBatch(
+                        Connection con,
+                        String sql,
+                        ImmutableProp generatedIdProp,
+                        ExecutionPurpose purpose,
+                        JSqlClientImplementor sqlClient,
+                        boolean constraintViolationTranslatable
+                ) {
+                    throw new AssertionError("Batch execution is not expected");
+                }
+            });
+        });
+    }
+
+    private static class H2DeleteJoinDialect extends H2Dialect {
+
+        private final DeleteJoin.From from;
+
+        H2DeleteJoinDialect(DeleteJoin.From from) {
+            this.from = from;
+        }
+
+        @Override
+        public DeleteJoin getDeleteJoin() {
+            return new DeleteJoin(from);
+        }
     }
 }

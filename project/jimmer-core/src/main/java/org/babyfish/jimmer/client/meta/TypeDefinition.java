@@ -28,6 +28,8 @@ public interface TypeDefinition {
 
     List<TypeRef> getSuperTypes();
 
+    List<TypeRef> getPolymorphicBranches();
+
     Map<String, EnumConstant> getEnumConstantMap();
 
     enum Kind {

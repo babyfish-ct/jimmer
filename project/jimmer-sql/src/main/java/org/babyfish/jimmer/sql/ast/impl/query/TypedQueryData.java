@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.KTable;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 
@@ -250,7 +251,7 @@ class TypedQueryData {
             Table<?> table = null;
             if (selection instanceof FetcherSelection<?>) {
                 Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
-                if (fetcher.getFieldMap().size() > 1) {
+                if (hasNonIdFieldOrTypeBranch(fetcher)) {
                     table = ((FetcherSelectionImpl<?>) selection).getTable();
                 }
             } else if (selection instanceof Table<?>){
@@ -264,6 +265,14 @@ class TypedQueryData {
         }
         idOnlyExpressionResolved = true;
         return idOnlyExpression;
+    }
+
+    private static boolean hasNonIdFieldOrTypeBranch(Fetcher<?> fetcher) {
+        if (fetcher.getFieldMap().size() > 1) {
+            return true;
+        }
+        return fetcher instanceof FetcherImplementor<?> &&
+                !((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty();
     }
 
     private static List<Selection<?>> processSelections(List<Selection<?>> selections) {

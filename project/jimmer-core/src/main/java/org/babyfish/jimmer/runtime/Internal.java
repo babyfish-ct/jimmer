@@ -6,7 +6,10 @@ import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -88,6 +91,35 @@ public class Internal {
             for (Object base : bases) {
                 if (base != null) {
                     arr[index] = createDraft(ctx, type, base);
+                }
+                index++;
+            }
+            modifyDraft(Arrays.asList(arr), block);
+            if (isRoot) {
+                for (int i = 0; i < arr.length; i++) {
+                    arr[i] = ctx.resolveObject(arr[i]);
+                }
+            }
+            return Collections.unmodifiableList(Arrays.asList(arr));
+        });
+    }
+
+    public static List<Object> produceList(
+            Collection<?> bases,
+            Function<Object, ImmutableType> typeProvider,
+            DraftConsumer<List<? extends Draft>> block,
+            Consumer<DraftContext> disposer
+    ) {
+        if (bases.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return usingDraftContext((ctx, isRoot) -> {
+            ctx.addDisposer(disposer);
+            Object[] arr = new Object[bases.size()];
+            int index = 0;
+            for (Object base : bases) {
+                if (base != null) {
+                    arr[index] = createDraft(ctx, typeProvider.apply(base), base);
                 }
                 index++;
             }

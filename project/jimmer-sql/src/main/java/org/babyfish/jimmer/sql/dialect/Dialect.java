@@ -6,8 +6,8 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +37,11 @@ public interface Dialect extends SqlTypeStrategy {
 
     @Nullable
     default UpdateJoin getUpdateJoin() {
+        return null;
+    }
+
+    @Nullable
+    default DeleteJoin getDeleteJoin() {
         return null;
     }
 
@@ -196,6 +201,8 @@ public interface Dialect extends SqlTypeStrategy {
 
         boolean isIdInteger();
         boolean isUpdatedByKey();
+        boolean hasUpdatedColumns();
+        boolean isFakeUpdateRequired();
 
         UpdateContext sql(String sql);
         UpdateContext sql(ValueGetter getter);
@@ -212,8 +219,9 @@ public interface Dialect extends SqlTypeStrategy {
     interface UpsertContext {
 
         boolean hasUpdatedColumns();
-        boolean hasOptimisticLock();
+        boolean hasUpdateCondition();
         boolean hasGeneratedId();
+        boolean isFakeUpdateRequired();
         boolean isUpdateIgnored();
         boolean isComplete();
         boolean isIdInteger();
@@ -232,8 +240,10 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConflictPredicate(String alias);
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
-        UpsertContext appendOptimisticLockCondition(String sourceTablePrefix);
+        UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
+        UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);
         UpsertContext appendGeneratedId();
+        UpsertContext appendId();
     }
 
     default void renderLPad(

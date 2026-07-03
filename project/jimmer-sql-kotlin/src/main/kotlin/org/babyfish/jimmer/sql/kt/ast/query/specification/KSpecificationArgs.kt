@@ -23,13 +23,13 @@ class KSpecificationArgs<E: Any>(
 
     @Suppress("UNCHECKED_CAST")
     private val _table: KNonNullTableEx<E> =
-        KNonNullTableExImpl(query.tableLikeImplementor as TableImplementor<E>)
+        KNonNullTableExImpl(applier.tableImplementor as TableImplementor<E>)
 
     val table: KNonNullTable<E>
         get() = _table
 
     fun where(vararg predicates: KNonNullExpression<Boolean>?) {
-        query.where(*predicates.map { it?.toJavaPredicate() }.toTypedArray())
+        applier.where(*predicates.map { it?.toJavaPredicate() }.toTypedArray())
     }
 
     fun <X: Any, R, SQ: KConfigurableSubQuery<R>> subQuery(

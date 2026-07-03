@@ -2,7 +2,9 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -13,9 +15,11 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
@@ -45,9 +49,13 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType);
 
-    <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs, long order);
+    <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, long order);
 
-    <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs, long order);
+    <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, long order);
+
+    <X> TableImplementor<X> treatAsImplementor(ImmutableType treatedAs, JoinType joinType);
+
+    boolean isTreated();
 
     <X> TableImplementor<X> inverseJoinImplementor(ImmutableProp prop);
 
@@ -80,6 +88,189 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     TableImplementor<E> baseTableOwner(
             @Nullable BaseTableOwner baseTableOwner
     );
+
+    @Nullable
+    default org.babyfish.jimmer.sql.ast.Predicate getDiscriminatorPredicate() {
+        if (getParent() != null) {
+            return null;
+        }
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getRootType() == type) {
+            return null;
+        }
+        Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(type);
+        if (concreteTypes.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot query inheritance entity type \"" +
+                            type +
+                            "\" because it is abstract and has no instantiable type"
+            );
+        }
+        return new DiscriminatorPredicate(
+                this,
+                inheritanceInfo.getDiscriminatorProp(),
+                DiscriminatorPredicate.values(inheritanceInfo, type)
+        );
+    }
+
+    default org.babyfish.jimmer.sql.ast.Predicate instanceOf(ImmutableType targetType) {
+        ImmutableType type = getImmutableType();
+        if (!type.isAssignableFrom(targetType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            targetType +
+                            "\" is not a derived type of \"" +
+                            type +
+                            "\""
+            );
+        }
+        return discriminatorPredicate(targetType);
+    }
+
+    default org.babyfish.jimmer.sql.ast.Predicate exactType(ImmutableType targetType) {
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || !type.isAssignableFrom(targetType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            targetType +
+                            "\" is not a derived type of \"" +
+                            type +
+                            "\""
+            );
+        }
+        if (!targetType.isInstantiable()) {
+            throw new ExecutionException(
+                    "Cannot check whether table \"" +
+                            this +
+                            "\" is exact type \"" +
+                            targetType +
+                            "\" because it is abstract"
+            );
+        }
+        String value = targetType.getDiscriminatorValue();
+        if (value == null) {
+            throw new ExecutionException(
+                    "Cannot check whether table \"" +
+                            this +
+                            "\" is exact type \"" +
+                            targetType +
+                            "\" because it has no discriminator value"
+            );
+        }
+        return new DiscriminatorPredicate(
+                this,
+                inheritanceInfo.getDiscriminatorProp(),
+                inheritanceInfo.discriminatorValue(value)
+        );
+    }
+
+    default org.babyfish.jimmer.sql.ast.Predicate discriminatorPredicate(ImmutableType targetType) {
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null || !type.isAssignableFrom(targetType)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            targetType +
+                            "\" is not a derived type of \"" +
+                            type +
+                            "\""
+            );
+        }
+        Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(targetType);
+        if (concreteTypes.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot check whether table \"" +
+                            this +
+                            "\" is instance of \"" +
+                            targetType +
+                            "\" because it is abstract and has no instantiable type"
+            );
+        }
+        return new DiscriminatorPredicate(
+                this,
+                inheritanceInfo.getDiscriminatorProp(),
+                DiscriminatorPredicate.values(inheritanceInfo, targetType)
+        );
+    }
+
+    @Nullable
+    default ImmutableProp getPolymorphicDiscriminatorProp() {
+        if (getParent() != null) {
+            return null;
+        }
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return null;
+        }
+        Collection<ImmutableType> concreteTypes = inheritanceInfo.getConcreteTypes(type);
+        if (concreteTypes.isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot query inheritance entity type \"" +
+                            type +
+                            "\" because it is abstract and has no instantiable type"
+            );
+        }
+        if (concreteTypes.size() == 1 && concreteTypes.iterator().next() == type) {
+            return null;
+        }
+        return inheritanceInfo.getDiscriminatorProp();
+    }
+
+    default boolean isJoinedTypeBranchRoot() {
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
+                inheritanceInfo.getRootType() != type;
+    }
+
+    default boolean isJoinedTypeBranchTableRequiredBy(@Nullable ImmutableProp prop) {
+        if (!isJoinedTypeBranchRoot()) {
+            return false;
+        }
+        return prop != null && !isRootTableProp(prop);
+    }
+
+    default boolean isRootTableProp(ImmutableProp prop) {
+        InheritanceInfo inheritanceInfo = getImmutableType().getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return true;
+        }
+        ImmutableType type = getImmutableType();
+        if (inheritanceInfo.getRootType() == type) {
+            return true;
+        }
+        return isPropOwnedByStage(prop.toOriginal(), inheritanceInfo.getRootType());
+    }
+
+    static boolean isPropOwnedByStage(ImmutableProp prop, ImmutableType stageType) {
+        InheritanceInfo inheritanceInfo = stageType.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return true;
+        }
+        if (prop.isId() || prop.toOriginal().isId()) {
+            return true;
+        }
+        return isDeclaringTypeOwnedByStage(prop.toOriginal().getDeclaringType(), stageType);
+    }
+
+    static boolean isDeclaringTypeOwnedByStage(ImmutableType declaringType, ImmutableType stageType) {
+        if (declaringType == stageType) {
+            return true;
+        }
+        if (!declaringType.isMappedSuperclass() || !stageType.getAllTypes().contains(declaringType)) {
+            return false;
+        }
+        ImmutableType superType = stageType.getPrimarySuperType();
+        return superType == null || !superType.getAllTypes().contains(declaringType);
+    }
+
+    static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
+        return builder.alias(table.realTableForRender(builder)) + "_sub";
+    }
 
     void setHasBaseTable();
 

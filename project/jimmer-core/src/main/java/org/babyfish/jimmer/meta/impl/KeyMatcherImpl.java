@@ -135,7 +135,7 @@ public class KeyMatcherImpl implements KeyMatcher {
         for (Item item : items) {
             boolean unmatched = false;
             for (PropId propId : item.propIds) {
-                if (!propIds.contains(propId)) {
+                if (!propIds.contains(propId) && !isImplicitDiscriminatorProp(propId)) {
                     unmatched = true;
                     break;
                 }
@@ -161,7 +161,7 @@ public class KeyMatcherImpl implements KeyMatcher {
             boolean mached = false;
             boolean unmatched = false;
             for (PropId propId : item.propIds) {
-                if (propIds.contains(propId)) {
+                if (propIds.contains(propId) || isImplicitDiscriminatorProp(propId)) {
                     mached = true;
                 } else {
                     unmatched = true;
@@ -172,7 +172,7 @@ public class KeyMatcherImpl implements KeyMatcher {
             }
             if (mached && unmatched) {
                 for (PropId itemPropId : item.propIds) {
-                    if (!propIds.contains(itemPropId)) {
+                    if (!propIds.contains(itemPropId) && !isImplicitDiscriminatorProp(itemPropId)) {
                         missedProps.add(type.getProp(itemPropId));
                     }
                 }
@@ -201,6 +201,11 @@ public class KeyMatcherImpl implements KeyMatcher {
         return "KeyGroup" + groupMap.toString();
     }
 
+    private boolean isImplicitDiscriminatorProp(PropId propId) {
+        ImmutableProp prop = type.getProp(propId);
+        return prop.isDiscriminator() && type.getDiscriminatorValue() != null;
+    }
+
     private class Item {
 
         final PropId[] propIds;
@@ -216,7 +221,11 @@ public class KeyMatcherImpl implements KeyMatcher {
 
         public boolean isLoaded(ImmutableSpi spi) {
             for (PropId propId : propIds) {
-                if (!spi.__isLoaded(propId)) {
+                ImmutableProp prop = type.getProp(propId);
+                if (prop.isDiscriminator() && spi.__type().getDiscriminatorValue() != null) {
+                    continue;
+                }
+                if (!spi.__isLoaded(prop.getId())) {
                     return false;
                 }
             }

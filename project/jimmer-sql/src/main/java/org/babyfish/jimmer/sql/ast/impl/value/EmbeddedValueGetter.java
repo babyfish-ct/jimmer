@@ -20,6 +20,8 @@ class EmbeddedValueGetter extends AbstractValueGetter {
 
     private final Table<?> table;
 
+    private final ImmutableProp columnProp;
+
     private final boolean join;
 
     private final boolean rawId;
@@ -39,10 +41,12 @@ class EmbeddedValueGetter extends AbstractValueGetter {
             boolean join,
             boolean rawId,
             ImmutableProp valueProp,
+            ImmutableProp columnProp,
             String columnName,
             boolean foreignKey
     ) {
         super(sqlClient, valueProp);
+        this.columnProp = columnProp;
         this.table = table;
         this.join = join;
         this.rawId = rawId;
@@ -136,6 +140,9 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         if (table != null && astContext != null) {
             SqlBuilder sqlBuilder = builder.assertSimple();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
+            if (renderJoinedTypeBranchColumn(builder, tableImplementor, columnProp, columnName)) {
+                return;
+            }
             if (join && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
                 RealTable realTable = tableImplementor.realTableForRender(builder);
                 String middleTableAlias = sqlBuilder.middleTableAlias(realTable);

@@ -39,6 +39,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public DeleteJoin getDeleteJoin() {
+        return new DeleteJoin(DeleteJoin.From.AS_USING);
+    }
+
+    @Override
     public String getSelectIdFromSequenceSql(String sequenceName) {
         return "select nextval('" + sequenceName + "')";
     }
@@ -254,13 +259,13 @@ public class PostgresDialect extends DefaultDialect {
                     .enter(AbstractSqlBuilder.ScopeType.SET)
                     .appendUpdatingAssignments("excluded.", "")
                     .leave();
-            if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition("excluded.");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
             }
             if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
-        } else if (ctx.hasGeneratedId()) {
+        } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
             ctx.sql(" do update set ");
             List<ValueGetter> conflictGetters = ctx.getConflictGetters();
             ValueGetter cheapestGetter = conflictGetters.get(0);
@@ -277,7 +282,9 @@ public class PostgresDialect extends DefaultDialect {
                     .sql(cheapestGetter)
                     .sql(" = excluded.")
                     .sql(cheapestGetter);
-            ctx.sql(" returning ").appendGeneratedId();
+            if (ctx.hasGeneratedId()) {
+                ctx.sql(" returning ").appendGeneratedId();
+            }
         } else {
             ctx.sql(" do nothing");
         }

@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
@@ -82,9 +84,26 @@ class FetcherContext {
             this.draft = (DraftSpi) enterValue;
         }
 
+        @Override
+        protected Object enterTypeBranch(ImmutableType branchType) {
+            DraftSpi oldDraft = draft;
+            if (oldDraft != null && !branchType.isAssignableFrom(oldDraft.__type())) {
+                draft = null;
+            }
+            return oldDraft;
+        }
+
+        @Override
+        protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
+            draft = (DraftSpi) enterValue;
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         protected void visit(Field field, int depth) {
+            if (draft == null) {
+                return;
+            }
             if (!isFetchRequired(field)) {
                 return;
             }

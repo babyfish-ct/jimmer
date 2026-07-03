@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
@@ -34,7 +35,6 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.Storage;
-import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -379,7 +379,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (isUnreliableParentId() || fetcher.getFieldMap().size() > 1) {
+            if (isUnreliableParentId() || !isIdOnlyFetcher()) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
                 );
@@ -462,7 +462,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
         Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, ImmutableSpi> targetMap;
-        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
+        if (globalFiler != null || propFilter != null || !isIdOnlyFetcher()) {
             targetMap = Tuple2.toMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -551,7 +551,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
         Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<ImmutableSpi>> targetMap;
-        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
+        if (globalFiler != null || propFilter != null || !isIdOnlyFetcher()) {
             targetMap = Tuple2.toMultiMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -786,7 +786,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
-        if (fetcher.getFieldMap().size() < 2 && !remote) {
+        if (isIdOnlyFetcher() && !remote) {
             return makeIdOnlyTargets(targetIds);
         }
         if (remote) {
@@ -809,6 +809,10 @@ public abstract class AbstractDataLoader {
                 fetcher,
                 targetIds
         );
+    }
+
+    private boolean isIdOnlyFetcher() {
+        return fetcher.getFieldMap().size() < 2 && fetcher.__getTypeBranchFetcherMap().isEmpty();
     }
 
     private List<ImmutableSpi> makeIdOnlyTargets(Collection<Object> targetIds) {

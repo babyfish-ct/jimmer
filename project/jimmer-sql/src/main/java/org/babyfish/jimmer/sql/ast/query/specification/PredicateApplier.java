@@ -2,36 +2,84 @@ package org.babyfish.jimmer.sql.ast.query.specification;
 
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
+import org.babyfish.jimmer.sql.ast.table.PolymorphicTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 
-import java.util.Collection;
-import java.util.function.Supplier;
+import java.util.*;
 
 public class PredicateApplier {
 
     private Context context;
+
+    private final Deque<PredicateCaptureFrame> captureFrames = new ArrayDeque<>();
 
     public PredicateApplier(MutableQuery query) {
         AbstractMutableStatementImpl statement = (AbstractMutableStatementImpl) query;
         this.context = new Context(null, statement, null);
     }
 
+    public Predicate capture(Runnable block) {
+        Context oldContext = context;
+        AbstractMutableStatementImpl statement = context.statement();
+        PredicateCaptureFrame frame = new PredicateCaptureFrame(statement);
+        captureFrames.push(frame);
+        try {
+            block.run();
+            return Predicate.and(frame.toArray());
+        } finally {
+            captureFrames.pop();
+            context = oldContext;
+        }
+    }
+
+    public void where(Predicate... predicates) {
+        where(context.statement(), predicates);
+    }
+
+    public void apply(JSpecification<?, ?> specification) {
+        Specifications.apply(this, specification);
+    }
+
+    void applyWithTypeContext(JSpecification<?, ?> specification) {
+        applyTypePredicate(specification.entityType());
+        Context oldContext = context;
+        context = context.forType(specification.entityType());
+        try {
+            applyBody(specification);
+        } finally {
+            context = oldContext;
+        }
+    }
+
+    void applyBody(JSpecification<?, ?> specification) {
+        specification.applyTo(new SpecificationArgs<>(this));
+    }
+
+    public void applyTypePredicate(Class<?> type) {
+        Table<?> table = context.table();
+        ImmutableType tableType = table.getImmutableType();
+        if (tableType.getInheritanceInfo() != null &&
+                tableType.getJavaClass() != type &&
+                tableType.getJavaClass().isAssignableFrom(type)
+        ) {
+            where(TableProxies.instanceOf(table, type));
+        }
+    }
+
     public void push(ImmutableProp prop) {
-        Context ctx = this.context;
+        Context ctx = context;
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-            this.context = new Context(
-                    ctx,
-                    prop.isReference(TargetLevel.PERSISTENT),
-                    prop
-            );
+            this.context = new Context(ctx, prop.isReference(TargetLevel.PERSISTENT), prop);
         } else if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             this.context = new Context(ctx, prop);
         } else {
@@ -40,7 +88,7 @@ public class PredicateApplier {
     }
 
     public void pop() {
-        Context ctx = this.context;
+        Context ctx = context;
         Context parentCtx = ctx.parent;
         if (parentCtx == null) {
             throw new IllegalStateException("No context to be pop");
@@ -52,30 +100,44 @@ public class PredicateApplier {
         return this.context.statement();
     }
 
+    public Table<?> getTable() {
+        return this.context.table();
+    }
+
+    public TableImplementor<?> getTableImplementor() {
+        Table<?> table = this.context.table();
+        if (table instanceof TableImplementor<?>) {
+            return (TableImplementor<?>) table;
+        }
+        if (table instanceof TableProxy<?>) {
+            TableImplementor<?> implementor = ((TableProxy<?>) table).__unwrap();
+            if (implementor != null) {
+                return implementor;
+            }
+        }
+        throw new IllegalStateException(
+                "The current table cannot be resolved to \"" +
+                        TableImplementor.class.getName() +
+                        "\" immediately"
+        );
+    }
+
     public void eq(ImmutableProp[] props, Object value) {
-        if (value == null) {
+        if (isNullOrEmpty(value)) {
             return;
         }
-        if (value instanceof String && ((String)value).isEmpty()) {
-            return;
-        }
-        Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.get(props[i]).eq(value);
+            predicates[i] = context.get(props[i]).eq(value);
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     public void ne(ImmutableProp prop, Object value) {
-        if (value == null) {
+        if (isNullOrEmpty(value)) {
             return;
         }
-        if (value instanceof String && ((String)value).isEmpty()) {
-            return;
-        }
-        Context ctx = this.context;
-        ctx.statement().where(ctx.get(prop).ne(value));
+        where(context.statement(), context.get(prop).ne(value));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -83,9 +145,8 @@ public class PredicateApplier {
         if (value == null) {
             return;
         }
-        Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
-        ctx.statement().where(expr.gt((Comparable<Comparable<?>>) value));
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) context.get(prop);
+        where(context.statement(), expr.gt((Comparable<Comparable<?>>) value));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -93,9 +154,8 @@ public class PredicateApplier {
         if (value == null) {
             return;
         }
-        Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
-        ctx.statement().where(expr.ge((Comparable<Comparable<?>>) value));
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) context.get(prop);
+        where(context.statement(), expr.ge((Comparable<Comparable<?>>) value));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -103,9 +163,8 @@ public class PredicateApplier {
         if (value == null) {
             return;
         }
-        Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
-        ctx.statement().where(expr.lt((Comparable<Comparable<?>>) value));
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) context.get(prop);
+        where(context.statement(), expr.lt((Comparable<Comparable<?>>) value));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -113,91 +172,59 @@ public class PredicateApplier {
         if (value == null) {
             return;
         }
-        Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
-        ctx.statement().where(expr.le((Comparable<Comparable<?>>) value));
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) context.get(prop);
+        where(context.statement(), expr.le((Comparable<Comparable<?>>) value));
     }
 
     public void isNull(ImmutableProp[] props, boolean value) {
         if (!value) {
             return;
         }
-        Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            if (props[i].isAssociation(TargetLevel.ENTITY)) {
-                predicates[i] = ctx.table().getAssociatedId(props[i]).isNull();
-            } else {
-                predicates[i] = ctx.get(props[i]).isNull();
-            }
+            predicates[i] = props[i].isAssociation(TargetLevel.ENTITY) ?
+                    context.table().getAssociatedId(props[i]).isNull() :
+                    context.get(props[i]).isNull();
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     public void isNotNull(ImmutableProp[] props, boolean value) {
         if (!value) {
             return;
         }
-        Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            if (props[i].isAssociation(TargetLevel.ENTITY)) {
-                predicates[i] = ctx.table().getAssociatedId(props[i]).isNotNull();
-            } else {
-                predicates[i] = ctx.get(props[i]).isNotNull();
-            }
+            predicates[i] = props[i].isAssociation(TargetLevel.ENTITY) ?
+                    context.table().getAssociatedId(props[i]).isNotNull() :
+                    context.get(props[i]).isNotNull();
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     public void like(ImmutableProp[] props, String value, boolean insensitive, boolean matchStart, boolean matchEnd) {
-        if (value == null || value.isEmpty()) {
+        if (isNullOrEmpty(value)) {
             return;
         }
-        LikeMode mode;
-        if (matchStart && matchEnd) {
-            mode = LikeMode.EXACT;
-        } else if (matchStart) {
-            mode = LikeMode.START;
-        } else if (matchEnd) {
-            mode = LikeMode.END;
-        } else {
-            mode = LikeMode.ANYWHERE;
-        }
-        Context ctx = this.context;
+        LikeMode mode = likeMode(matchStart, matchEnd);
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            if (insensitive) {
-                predicates[i] = ((StringExpression) ctx.<String>get(props[i])).ilike(value, mode);
-            } else {
-                predicates[i] = ((StringExpression) ctx.<String>get(props[i])).like(value, mode);
-            }
+            predicates[i] = insensitive ?
+                    ((StringExpression) context.<String>get(props[i])).ilike(value, mode) :
+                    ((StringExpression) context.<String>get(props[i])).like(value, mode);
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     public void notLike(ImmutableProp prop, String value, boolean insensitive, boolean matchStart, boolean matchEnd) {
-        if (value == null || value.isEmpty()) {
+        if (isNullOrEmpty(value)) {
             return;
         }
-        LikeMode mode;
-        if (matchStart && matchEnd) {
-            mode = LikeMode.EXACT;
-        } else if (matchStart) {
-            mode = LikeMode.START;
-        } else if (matchEnd) {
-            mode = LikeMode.END;
-        } else {
-            mode = LikeMode.ANYWHERE;
-        }
-        Context ctx = this.context;
-        Predicate predicate;
-        if (insensitive) {
-            predicate = ((StringExpression) ctx.<String>get(prop)).ilike(value, mode);
-        } else {
-            predicate = ((StringExpression) ctx.<String>get(prop)).like(value, mode);
-        }
-        ctx.statement().where(Predicate.not(predicate));
+        LikeMode mode = likeMode(matchStart, matchEnd);
+        Predicate predicate = insensitive ?
+                ((StringExpression) context.<String>get(prop)).ilike(value, mode) :
+                ((StringExpression) context.<String>get(prop)).like(value, mode);
+        where(context.statement(), Predicate.not(predicate));
     }
 
     @SuppressWarnings("unchecked")
@@ -205,12 +232,11 @@ public class PredicateApplier {
         if (values == null || values.isEmpty()) {
             return;
         }
-        Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.get(props[i]).in((Collection<Object>) values);
+            predicates[i] = context.get(props[i]).in((Collection<Object>) values);
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     @SuppressWarnings("unchecked")
@@ -218,49 +244,41 @@ public class PredicateApplier {
         if (values == null || values.isEmpty()) {
             return;
         }
-        Context ctx = this.context;
-        ctx.statement().where(ctx.get(prop).notIn((Collection<Object>) values));
+        where(context.statement(), context.get(prop).notIn((Collection<Object>) values));
     }
 
     public void associatedIdEq(ImmutableProp[] props, Object associatedId) {
         if (associatedId == null) {
             return;
         }
-        Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
             ImmutableProp prop = props[i];
-            if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                predicates[i] = ctx.table().exists(
-                        prop,
-                        target -> target.getId().eq(associatedId)
-                );
-            } else {
-                predicates[i] = ctx.table().getAssociatedId(props[i]).eq(associatedId);
-            }
+            predicates[i] = prop.isReferenceList(TargetLevel.ENTITY) ?
+                    context.table().exists(prop, target -> target.getId().eq(associatedId)) :
+                    context.table().getAssociatedId(props[i]).eq(associatedId);
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     public void associatedIdNe(ImmutableProp prop, Object associatedId) {
         if (associatedId == null) {
             return;
         }
-        Context ctx = this.context;
-        Table<?> parentTable = ctx.statement().getTable();
+        Table<?> parentTable = context.statement().getTable();
         Table<?> table;
         MutableSubQueryImpl subQuery;
         if (parentTable instanceof TableImplementor<?>) {
-            subQuery = new MutableSubQueryImpl(ctx.statement(), prop.getTargetType());
+            subQuery = new MutableSubQueryImpl(context.statement(), prop.getTargetType());
             table = subQuery.getTable();
         } else {
             TableProxy<?> proxy = TableProxies.fluent(prop.getTargetType().getJavaClass());
-            subQuery = new MutableSubQueryImpl(ctx.statement(), proxy);
+            subQuery = new MutableSubQueryImpl(context.statement(), proxy);
             table = proxy;
         }
         subQuery.where(table.inverseGetAssociatedId(prop).eq(parentTable.getId()));
         subQuery.where(table.getId().eq(associatedId));
-        ctx.statement().where(subQuery.notExists());
+        where(context.statement(), subQuery.notExists());
     }
 
     @SuppressWarnings("unchecked")
@@ -268,20 +286,14 @@ public class PredicateApplier {
         if (associatedIds == null || associatedIds.isEmpty()) {
             return;
         }
-        Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
             ImmutableProp prop = props[i];
-            if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                predicates[i] = ctx.table().exists(
-                        prop,
-                        target -> target.getId().in((Collection<Object>) associatedIds)
-                );
-            } else {
-                predicates[i] = ctx.table().getAssociatedId(prop).in((Collection<Object>) associatedIds);
-            }
+            predicates[i] = prop.isReferenceList(TargetLevel.ENTITY) ?
+                    context.table().exists(prop, target -> target.getId().in((Collection<Object>) associatedIds)) :
+                    context.table().getAssociatedId(prop).in((Collection<Object>) associatedIds);
         }
-        ctx.statement().where(Predicate.or(predicates));
+        where(context.statement(), Predicate.or(predicates));
     }
 
     @SuppressWarnings("unchecked")
@@ -289,24 +301,69 @@ public class PredicateApplier {
         if (associatedIds == null || associatedIds.isEmpty()) {
             return;
         }
-        Context ctx = this.context;
-        Table<?> parentTable = ctx.statement().getTable();
+        Table<?> parentTable = context.statement().getTable();
         Table<?> table;
         MutableSubQueryImpl subQuery;
         if (parentTable instanceof TableImplementor<?>) {
-            subQuery = new MutableSubQueryImpl(ctx.statement(), prop.getTargetType());
+            subQuery = new MutableSubQueryImpl(context.statement(), prop.getTargetType());
             table = subQuery.getTable();
         } else {
             TableProxy<?> proxy = TableProxies.fluent(prop.getTargetType().getJavaClass());
-            subQuery = new MutableSubQueryImpl(ctx.statement(), proxy);
+            subQuery = new MutableSubQueryImpl(context.statement(), proxy);
             table = proxy;
         }
         subQuery.where(table.inverseGetAssociatedId(prop).eq(parentTable.getId()));
         subQuery.where(table.getId().in((Collection<Object>) associatedIds));
-        ctx.statement().where(subQuery.notExists());
+        where(context.statement(), subQuery.notExists());
     }
 
-    private static class Context {
+    private static boolean isNullOrEmpty(Object value) {
+        return value == null || value instanceof String && ((String) value).isEmpty();
+    }
+
+    private static LikeMode likeMode(boolean matchStart, boolean matchEnd) {
+        if (matchStart && matchEnd) {
+            return LikeMode.EXACT;
+        }
+        if (matchStart) {
+            return LikeMode.START;
+        }
+        return matchEnd ? LikeMode.END : LikeMode.ANYWHERE;
+    }
+
+    private void where(AbstractMutableStatementImpl statement, Predicate... predicates) {
+        PredicateCaptureFrame frame = captureFrames.peek();
+        if (frame != null && statement == frame.statement) {
+            frame.add(predicates);
+        } else {
+            statement.where(predicates);
+        }
+    }
+
+    private static class PredicateCaptureFrame {
+
+        private final AbstractMutableStatementImpl statement;
+
+        private final List<Predicate> predicates = new ArrayList<>();
+
+        PredicateCaptureFrame(AbstractMutableStatementImpl statement) {
+            this.statement = statement;
+        }
+
+        void add(Predicate... predicates) {
+            for (Predicate predicate : predicates) {
+                if (predicate != null) {
+                    this.predicates.add(predicate);
+                }
+            }
+        }
+
+        Predicate[] toArray() {
+            return predicates.toArray(new Predicate[0]);
+        }
+    }
+
+    private class Context {
 
         final Context parent;
 
@@ -319,6 +376,8 @@ public class PredicateApplier {
         private Table<?> _table;
 
         private final PropExpression.Embedded<?> _embedded;
+
+        private final Context baseContextForProps;
 
         Context(
                 Context parent,
@@ -340,6 +399,21 @@ public class PredicateApplier {
                 this._table = statement.getTable();
             }
             this._embedded = null;
+            this.baseContextForProps = null;
+        }
+
+        Context(
+                Context parent,
+                AbstractMutableStatementImpl statement,
+                Table<?> table,
+                ImmutableProp prop
+        ) {
+            this.parent = parent;
+            this._statement = statement;
+            this._table = table;
+            this.prop = prop;
+            this._embedded = null;
+            this.baseContextForProps = parent;
         }
 
         Context(
@@ -351,6 +425,7 @@ public class PredicateApplier {
             this.borrowParentStatement = borrowParentStatement;
             this.prop = prop;
             this._embedded = null;
+            this.baseContextForProps = null;
         }
 
         Context(
@@ -364,6 +439,51 @@ public class PredicateApplier {
             this._embedded = parent._embedded != null ?
                     (PropExpression.Embedded<?>) parent._embedded.get(prop) :
                     (PropExpression.Embedded<?>) _table.get(prop);
+            this.baseContextForProps = null;
+        }
+
+        Context forType(Class<?> type) {
+            Table<?> table = table();
+            Class<?> currentJavaClass = table.getImmutableType().getJavaClass();
+            if (type == currentJavaClass || type.isAssignableFrom(currentJavaClass)) {
+                return this;
+            }
+            if (!currentJavaClass.isAssignableFrom(type)) {
+                throw new IllegalArgumentException(
+                        "The type \"" +
+                                type.getName() +
+                                "\" does not belong to the inheritance hierarchy of \"" +
+                                currentJavaClass.getName() +
+                                "\""
+                );
+            }
+            return new Context(
+                    this,
+                    statement(),
+                    tryTreatAs(table, type),
+                    prop
+            );
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private Table<?> tryTreatAs(Table<?> table, Class<?> type) {
+            ImmutableType immutableType = ImmutableType.get(type);
+            if (table instanceof TableImplementor<?>) {
+                return ((TableImplementor<?>) table).treatAsImplementor(immutableType, JoinType.LEFT);
+            }
+            if (table instanceof PolymorphicTable<?>) {
+                TableProxy<?> proxy = TableProxies.fluent(type);
+                if (proxy != null) {
+                    return ((PolymorphicTable) table).tryTreatAs(proxy.getClass());
+                }
+            }
+            throw new IllegalStateException(
+                    "Cannot treat table \"" +
+                            table +
+                            "\" as \"" +
+                            immutableType +
+                            "\""
+            );
         }
 
         AbstractMutableStatementImpl statement() {
@@ -388,7 +508,7 @@ public class PredicateApplier {
                                     subQuery.<Table<?>>getTable().inverseGetAssociatedId(prop)
                             )
                     );
-                    parentStatement.where(subQuery.exists());
+                    PredicateApplier.this.where(parentStatement, subQuery.exists());
                     this._statement = statement = subQuery;
                 }
             }
@@ -409,7 +529,16 @@ public class PredicateApplier {
         }
 
         <X> Expression<X> get(ImmutableProp prop) {
-            return _embedded != null ? _embedded.get(prop) : table().get(prop);
+            if (_embedded != null) {
+                return _embedded.get(prop);
+            }
+            Context baseContext = baseContextForProps;
+            if (baseContext != null &&
+                    prop.getDeclaringType().isAssignableFrom(baseContext.table().getImmutableType())
+            ) {
+                return baseContext.get(prop);
+            }
+            return table().get(prop);
         }
     }
 }
