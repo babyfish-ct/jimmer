@@ -2,9 +2,7 @@ package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.runtime.ImmutableSpi
 import org.babyfish.jimmer.sql.ast.TypeMatchMode
-import org.babyfish.jimmer.sql.kt.ast.query.specification.allOf
-import org.babyfish.jimmer.sql.kt.ast.query.specification.anyOf
-import org.babyfish.jimmer.sql.kt.ast.query.specification.not
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.dto.KEnumClientSpecification
@@ -97,7 +95,7 @@ class InheritanceSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testNotSpecificationForLeafOnRootQuery() {
-        val specification = !KPersonSpecification(name = "Bob")
+        val specification = KSpecification.not(KPersonSpecification(name = "Bob"))
         executeAndExpect(
             sqlClient.createQuery(KClient::class) {
                 where(specification)
@@ -118,7 +116,7 @@ class InheritanceSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testOrSpecificationForInheritanceSiblings() {
-        val specification = anyOf(
+        val specification = KSpecification.or(
             listOf(
                 KPersonSpecification(name = "Acme"),
                 KOrganizationSpecification(name = "Bob")
@@ -146,7 +144,7 @@ class InheritanceSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testOrSpecificationCanUseSubtypeFieldsForInheritanceSiblings() {
-        val specification = anyOf(
+        val specification = KSpecification.or(
             KPersonSpecification(firstName = "Bob"),
             KOrganizationSpecification(taxCode = "UMB-001")
         )
@@ -173,9 +171,9 @@ class InheritanceSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testNestedAndOrSpecificationForInheritance() {
-        val specification = allOf(
+        val specification = KSpecification.and(
             KClientSpecification(name = "Bob"),
-            anyOf(
+            KSpecification.or(
                 KPersonSpecification(firstName = "Bob"),
                 KOrganizationSpecification(taxCode = "UMB-001")
             )

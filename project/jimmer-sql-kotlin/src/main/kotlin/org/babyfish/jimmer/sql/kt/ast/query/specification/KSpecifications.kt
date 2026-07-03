@@ -5,35 +5,8 @@ import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier
 import java.util.*
 
-fun <E : Any> allOf(vararg specifications: KSpecification<out E>?): KSpecification<E>? =
-    allOf(specifications.asList())
-
-fun <E : Any> allOf(specifications: Iterable<KSpecification<out E>?>): KSpecification<E>? =
-    of(Op.AND, specifications)
-
-fun <E : Any> anyOf(vararg specifications: KSpecification<out E>?): KSpecification<E>? =
-    anyOf(specifications.asList())
-
-fun <E : Any> anyOf(specifications: Iterable<KSpecification<out E>?>): KSpecification<E>? =
-    of(Op.OR, specifications)
-
-@JvmName("notSpecification")
-fun <E : Any> not(specification: KSpecification<out E>?): KSpecification<E>? =
-    specification?.let {
-        NotKSpecification(castEntityType(it.entityType()), it)
-    }
-
-infix fun <E : Any> KSpecification<E>.and(other: KSpecification<out E>): KSpecification<E> =
-    allOf(this, other)!!
-
-infix fun <E : Any> KSpecification<E>.or(other: KSpecification<out E>): KSpecification<E> =
-    anyOf(this, other)!!
-
-operator fun <E : Any> KSpecification<E>.not(): KSpecification<E> =
-    not(this)!!
-
-private fun <E : Any> of(
-    op: Op,
+internal fun <E : Any> compose(
+    operator: Operator,
     specifications: Iterable<KSpecification<out E>?>
 ): KSpecification<E>? {
     val filteredSpecifications = mutableListOf<KSpecification<out E>>()
@@ -55,18 +28,23 @@ private fun <E : Any> of(
     }
     return when (filteredSpecifications.size) {
         0 -> null
-        else -> CompositeKSpecification(castEntityType(entityType!!), op, filteredSpecifications)
+        else -> CompositeKSpecification(castEntityType(entityType!!), operator, filteredSpecifications)
     }
 }
 
-private enum class Op {
+internal fun <E : Any> negate(specification: KSpecification<out E>?): KSpecification<E>? =
+    specification?.let {
+        NotKSpecification(castEntityType(it.entityType()), it)
+    }
+
+internal enum class Operator {
     AND,
     OR
 }
 
 private class CompositeKSpecification<E : Any>(
     private val entityType: Class<E>,
-    private val op: Op,
+    private val operator: Operator,
     private val specifications: List<KSpecification<out E>>
 ) : KSpecification<E> {
 
@@ -77,7 +55,7 @@ private class CompositeKSpecification<E : Any>(
             capture(args, it)
         }.toTypedArray()
         args.applier.where(
-            if (op == Op.AND) {
+            if (operator == Operator.AND) {
                 Predicate.and(*predicates)
             } else {
                 Predicate.or(*predicates)
