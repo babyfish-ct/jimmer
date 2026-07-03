@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
+import java.util.Locale;
+
 final class MutationJoinRenderSupport {
 
     private MutationJoinRenderSupport() {}
@@ -106,6 +108,26 @@ final class MutationJoinRenderSupport {
 
     static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
         return TableImplementor.joinedTypeBranchAlias(builder, table);
+    }
+
+    static String joinedTypeStageAlias(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            ImmutableType stageType,
+            ImmutableType physicalType
+    ) {
+        ImmutableType type = table.getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (stageType == inheritanceInfo.getRootType() && physicalType == type) {
+            return builder.getAstContext().getTableAliasScope().allocateTableAlias(table);
+        }
+        if (stageType == type) {
+            return joinedTypeBranchAlias(builder, table);
+        }
+        String alias = MutationRender.alias(builder, table);
+        return alias +
+                (alias.endsWith("_") ? "_" : "__") +
+                stageType.getJavaClass().getSimpleName().toLowerCase(Locale.ROOT);
     }
 
     static void renderJoinedTypeStageJoin(

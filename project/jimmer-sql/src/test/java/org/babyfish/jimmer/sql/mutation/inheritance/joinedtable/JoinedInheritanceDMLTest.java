@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -65,6 +66,96 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                                         "and tb_1_.CLIENT_TYPE = ?"
                         );
                         it.variables("Globex+", "GLOBEX-001", "ORG");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeCanSetRootPropByPortableExists() {
+        executeAndExpectRowCount(
+                h2Client(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                            u.set(organization.name(), "Globex+");
+                            u.where(organization.name().eq("Globex"));
+                            u.where(organization.taxCode().eq("GLOBEX-001"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                        "update JOINED_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.NAME = ? " +
+                                        "and exists(" +
+                                        "--->select 1 from JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->where tb_1_.ID = tb_1__sub.ID " +
+                                        "--->and tb_1__sub.TAX_CODE = ?" +
+                                        ") " +
+                                        "and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables("Globex+", "Globex", "GLOBEX-001", "ORG");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeCanUseOrPredicateByPortableExists() {
+        executeAndExpectRowCount(
+                h2Client(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                            u.set(organization.name(), "Globex+");
+                            u.where(
+                                    Predicate.or(
+                                            organization.name().eq("Globex"),
+                                            organization.taxCode().eq("GLOBEX-001")
+                                    )
+                            );
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                        "update JOINED_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where (tb_1_.NAME = ? " +
+                                        "or exists(" +
+                                        "--->select 1 from JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->where tb_1_.ID = tb_1__sub.ID " +
+                                        "--->and tb_1__sub.TAX_CODE = ?" +
+                                        ")) " +
+                                        "and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables("Globex+", "Globex", "GLOBEX-001", "ORG");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeCanSetDerivedPropByPortableExists() {
+        executeAndExpectRowCount(
+                h2Client(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                            u.set(organization.taxCode(), "GLOBEX-002");
+                            u.where(organization.name().eq("Globex"));
+                            u.where(organization.taxCode().eq("GLOBEX-001"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                        "update JOINED_ORGANIZATION tb_1_ " +
+                                        "set TAX_CODE = ? " +
+                                        "where exists(" +
+                                        "--->select 1 from JOINED_CLIENT tb_2_ " +
+                                        "--->where tb_1_.ID = tb_2_.ID " +
+                                        "--->and tb_2_.NAME = ?" +
+                                        ") " +
+                                        "and tb_1_.TAX_CODE = ?"
+                        );
+                        it.variables("GLOBEX-002", "Globex", "GLOBEX-001");
                     });
                     ctx.rowCount(1);
                 }
@@ -344,6 +435,10 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
 
     private LambdaClient sqlOnlyUpdateJoinClient(int rowCount) {
         return updateJoinClient(rowCount, new H2UpdateJoinDialect());
+    }
+
+    private LambdaClient h2Client(int rowCount) {
+        return updateJoinClient(rowCount, new H2Dialect());
     }
 
     private LambdaClient mysqlStyleUpdateJoinClient(int rowCount) {

@@ -30,6 +30,18 @@ public abstract class CompositePredicate extends AbstractPredicate {
         return composite(predicates, Or::new);
     }
 
+    public static boolean isAnd(Predicate predicate) {
+        return predicate instanceof And;
+    }
+
+    public static boolean isOr(Predicate predicate) {
+        return predicate instanceof Or;
+    }
+
+    public static List<Predicate> predicates(Predicate predicate) {
+        return Arrays.asList(((CompositePredicate) predicate).predicates);
+    }
+
     private static Predicate composite(Predicate[] predicates, BiFunction<Boolean, Predicate[], Predicate> creator) {
         boolean hasVirtualPredicate = false;
         Predicate[] arr = predicates;

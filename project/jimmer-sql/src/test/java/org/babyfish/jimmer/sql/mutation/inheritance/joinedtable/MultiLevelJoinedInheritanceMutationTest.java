@@ -160,6 +160,45 @@ public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTes
     }
 
     @Test
+    public void testCreateUpdateLeafCanSetIntermediatePropByPortableExists() {
+        executeAndExpectRowCount(
+                h2Client(1)
+                        .createUpdate(CarTable.class, (u, car) -> {
+                            u.set(car.manufacturer(), "Honda");
+                            u.where(car.seatCount().eq(5));
+                            u.where(car.manufacturer().eq("Toyota"));
+                            u.where(car.name().eq("Joined Car"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ML_JOINED_VEHICLE tb_1_ " +
+                                        "set MANUFACTURER = ? " +
+                                        "where exists(" +
+                                        "--->select 1 from ML_JOINED_CAR tb_1__sub " +
+                                        "--->where tb_1_.ID = tb_1__sub.ID " +
+                                        "--->and tb_1__sub.SEAT_COUNT = ?" +
+                                        ") " +
+                                        "and tb_1_.MANUFACTURER = ? " +
+                                        "and exists(" +
+                                        "--->select 1 from ML_JOINED_ASSET tb_1__asset " +
+                                        "--->where tb_1_.ID = tb_1__asset.ID " +
+                                        "--->and tb_1__asset.NAME = ?" +
+                                        ") " +
+                                        "and exists(" +
+                                        "--->select 1 from ML_JOINED_ASSET tb_1__asset " +
+                                        "--->where tb_1_.ID = tb_1__asset.ID " +
+                                        "--->and tb_1__asset.ASSET_TYPE = ?" +
+                                        ")"
+                        );
+                        it.variables("Honda", 5, "Toyota", "Joined Car", "CAR");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
     public void testCreateUpdateLeafCannotSetIntermediateAndLeafPropsTogether() {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -188,6 +227,32 @@ public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTes
     private LambdaClient sqlOnlyUpdateJoinClient(int rowCount) {
         return getLambdaClient(it -> {
             it.setDialect(new H2UpdateJoinDialect());
+            it.setExecutor(new Executor() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public <R> R execute(Args<R> args) {
+                    getExecutions().add(Execution.simple(args.sql, args.purpose, args.variables));
+                    return (R) Integer.valueOf(rowCount);
+                }
+
+                @Override
+                public BatchContext executeBatch(
+                        Connection con,
+                        String sql,
+                        ImmutableProp generatedIdProp,
+                        ExecutionPurpose purpose,
+                        JSqlClientImplementor sqlClient,
+                        boolean constraintViolationTranslatable
+                ) {
+                    throw new AssertionError("Batch execution is not expected");
+                }
+            });
+        });
+    }
+
+    private LambdaClient h2Client(int rowCount) {
+        return getLambdaClient(it -> {
+            it.setDialect(new H2Dialect());
             it.setExecutor(new Executor() {
                 @Override
                 @SuppressWarnings("unchecked")
