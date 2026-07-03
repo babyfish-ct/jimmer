@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.model.inheritance.joinedtable.dto.ClientExhaustiv
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultView;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientExhaustiveView;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientSimpleView;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientDefaultBranchFieldView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientDefaultView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientImplicitCatchAllView;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.ClientImplicitDefaultView;
@@ -59,6 +60,27 @@ public class PolymorphicDtoGenerationTest {
         organization.setName("Org");
         organization.setTaxCode("T-2");
         Assertions.assertEquals("T-2", organization.getTaxCode());
+    }
+
+    @Test
+    public void testAbstractRootWithDefaultBranchFields() throws NoSuchMethodException {
+        Assertions.assertThrows(
+                NoSuchMethodException.class,
+                () -> ClientDefaultBranchFieldView.class.getMethod("getName")
+        );
+
+        ClientDefaultBranchFieldView.Default defaultBranch = new ClientDefaultBranchFieldView.Default();
+        defaultBranch.setId(20L);
+        defaultBranch.setName("Default branch fields");
+
+        ClientDefaultBranchFieldView view = defaultBranch;
+        Assertions.assertEquals(20L, view.getId());
+        Assertions.assertEquals("Default branch fields", defaultBranch.getName());
+
+        ClientDefaultBranchFieldView.Organization organization = new ClientDefaultBranchFieldView.Organization();
+        organization.setId(21L);
+        organization.setTaxCode("T-21");
+        Assertions.assertEquals("T-21", organization.getTaxCode());
     }
 
     @Test

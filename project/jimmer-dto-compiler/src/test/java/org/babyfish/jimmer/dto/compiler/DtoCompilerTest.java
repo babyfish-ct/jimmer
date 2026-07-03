@@ -1350,27 +1350,32 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testDefaultBranchBodyMustBeEmpty() {
-        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.client(
-                    "ClientView {\n" +
-                            "    name\n" +
-                            "    #types {\n" +
-                            "        default {\n" +
-                            "            id\n" +
-                            "        }\n" +
-                            "        Person {\n" +
-                            "            firstName\n" +
-                            "        }\n" +
-                            "    }\n" +
-                            "}"
-            );
-        });
-        Assertions.assertEquals(
-                "/User/test/Client.dto:4 : The body of default branch must be empty\n" +
+    public void testDefaultBranchCanDeclareFields() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    id\n" +
+                        "    #types {\n" +
                         "        default {\n" +
-                        "                ^",
-                ex.getMessage()
+                        "            name\n" +
+                        "        }\n" +
+                        "        Organization {\n" +
+                        "            taxCode\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        DtoPolymorphism<BaseType, BaseProp> polymorphism = dtoType.getPolymorphism();
+        Assertions.assertNotNull(polymorphism);
+        DtoPolymorphicBranch<BaseType, BaseProp> defaultBranch = polymorphism.getDefaultBranch();
+        Assertions.assertNotNull(defaultBranch);
+        Assertions.assertEquals(
+                Collections.singletonList("name"),
+                defaultBranch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
+        );
+        DtoPolymorphicBranch<BaseType, BaseProp> organizationBranch = polymorphism.getTypeBranches().get(0);
+        Assertions.assertEquals(
+                Collections.singletonList("taxCode"),
+                organizationBranch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
         );
     }
 
@@ -1462,7 +1467,34 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO type branch\n" +
+                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                        "            #types {\n" +
+                        "            ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testNestedTypesBlockInDefaultBranchIsRejected() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        default {\n" +
+                            "            id\n" +
+                            "            #types {\n" +
+                            "                Person {\n" +
+                            "                    firstName\n" +
+                            "                }\n" +
+                            "            }\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
                         "            #types {\n" +
                         "            ^",
                 ex.getMessage()
