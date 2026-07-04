@@ -350,12 +350,67 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         .getModifiedEntity(),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update EMPLOYEE set NAME = ? where ID = ?");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER from EMPLOYEE tb_1_ where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?");
+                        it.sql(
+                                "select ID, NAME, GENDER, DELETED_MILLIS " +
+                                        "from final table (" +
+                                        "--->merge into EMPLOYEE tb_1_ " +
+                                        "--->using( values(?, ?)) tb_2_(ID, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
                     });
                     ctx.value("{\"id\":\"1\",\"name\":\"Jhon\",\"gender\":\"MALE\"}");
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpdateByQueryReturnDraft() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(
+                                Arrays.asList(
+                                        Immutables.createBook(draft -> {
+                                            draft.setId(Constants.learningGraphQLId1);
+                                            draft.setName("Learning GraphQL protocol");
+                                        }),
+                                        Immutables.createBook(draft -> {
+                                            draft.setId(Constants.effectiveTypeScriptId1);
+                                            draft.setName("Effective TypeScript protocol");
+                                        })
+                                )
+                        ).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookFetcher.$.name().edition()
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using( values(?, ?), (?, ?)) tb_2_(ID, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "[" +
+                                    "--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "\"name\":\"Learning GraphQL protocol\",\"edition\":1}, " +
+                                    "--->{\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"," +
+                                    "\"name\":\"Effective TypeScript protocol\",\"edition\":1}" +
+                                    "]"
+                    );
                 }
         );
     }
@@ -377,15 +432,91 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         .getModifiedEntity(),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK set NAME = ? where ID = ?");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.sql(
+                                "select ID, NAME, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using( values(?, ?)) tb_2_(ID, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
                     });
                     ctx.value(
                             "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
                                     "\"name\":\"Learning GraphQL protocol\"," +
                                     "\"edition\":1}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateByQueryUsesKnownVersionWithoutReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createBookStore(draft -> {
+                            draft.setId(Constants.oreillyId);
+                            draft.setName("O'REILLY");
+                            draft.setVersion(0);
+                        })).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookStoreFetcher.$.name().version()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK_STORE set NAME = ?, VERSION = VERSION + 1 where ID = ? and VERSION = ?");
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->\"name\":\"O'REILLY\"," +
+                                    "--->\"version\":1" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateByQueryReturnDraftWithVersionAndMissingField() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createBookStore(draft -> {
+                            draft.setId(Constants.oreillyId);
+                            draft.setName("O'REILLY");
+                            draft.setVersion(0);
+                        })).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookStoreFetcher.$.name().version().website()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, VERSION, NAME, WEBSITE " +
+                                        "from final table (" +
+                                        "--->merge into BOOK_STORE tb_1_ " +
+                                        "--->using( values(?, ?, ?)) tb_2_(ID, VERSION, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID and tb_1_.VERSION = tb_2_.VERSION " +
+                                        "--->when matched then update set NAME = tb_2_.NAME, VERSION = tb_1_.VERSION + 1" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->\"name\":\"O'REILLY\"," +
+                                    "--->\"website\":null," +
+                                    "--->\"version\":1" +
+                                    "}"
                     );
                 }
         );

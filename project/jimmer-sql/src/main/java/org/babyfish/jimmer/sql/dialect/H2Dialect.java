@@ -143,6 +143,34 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateByValuesReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public void updateByValues(UpdateByValuesContext ctx) {
+        ctx
+                .sql("select ")
+                .appendReturning("")
+                .sql(" from final table (")
+                .sql("merge into ")
+                .appendTableName()
+                .sql(" tb_1_ using")
+                .appendSource()
+                .sql(" tb_2_")
+                .enter(AbstractSqlBuilder.ScopeType.TUPLE)
+                .appendSourceColumns()
+                .leave()
+                .sql(" on ")
+                .appendPredicates("tb_1_.", "tb_2_.")
+                .sql(" when matched then update")
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .appendAssignments("tb_1_.", "tb_2_.")
+                .leave()
+                .sql(")");
+    }
+
+    @Override
     public void upsert(UpsertContext ctx) {
         if (!ctx.hasConflictPredicate() && !ctx.isUpdateIgnored() && !ctx.hasUpdateCondition() && ctx.isComplete()) {
             ctx.sql("merge into ")

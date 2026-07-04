@@ -1,13 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -300,7 +299,7 @@ class Operator {
         }
         builder.leave();
         if ((identityIdGenerator != null || sequenceIdGenerator != null) &&
-            sqlClient.getDialect().isInsertedIdReturningRequired()) {
+                sqlClient.getDialect().isInsertedIdReturningRequired()) {
             builder.sql(" returning ")
                     .sql(
                             tableType.getIdProp()
@@ -1068,7 +1067,7 @@ class Operator {
         if (group != null && idGetters.size() > 1) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
-                    "when id property is embeddable"
+                            "when id property is embeddable"
             );
         }
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
@@ -1077,7 +1076,7 @@ class Operator {
         if (hasOptimisticLock && keyProps != null) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
-                    "when optimistic lock is required"
+                            "when optimistic lock is required"
             );
         }
 
@@ -1156,27 +1155,6 @@ class Operator {
                 return EMPTY_ROW_COUNTS;
             }
         }
-        BatchSqlBuilder builder = new BatchSqlBuilder(
-                sqlClient,
-                batch.entities().size() < 2 || ctx.options.isBatchForbidden() || forceOneByOne
-        );
-        Dialect.UpdateContext updateContext = new UpdateContextImpl(
-                builder,
-                tableType,
-                shape,
-                Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters().get(0),
-                keyProps,
-                updatedGetters,
-                discriminatorProp,
-                discriminatorGuardProp,
-                discriminatorGuardValue,
-                nullGetters,
-                userOptimisticLockPredicate,
-                versionGetter,
-                fakeUpdate
-        );
-        sqlClient.getDialect().update(updateContext);
-
         MutationTrigger trigger = fireTrigger ? ctx.trigger : null;
         EntityCollection<DraftSpi> entities = changedProps != null ?
                 new EntityList<>(batch.entities().size()) :
@@ -1225,14 +1203,50 @@ class Operator {
         } else if (entities == null) {
             entities = batch.entities();
         }
-        int[] rowCounts = executeAndGetRowCounts(
-                builder,
+        SaveReturning returning = SaveReturning.forUpdate(
+                ctx,
                 shape,
                 entities,
-                true,
-                false,
+                updatedGetters,
+                keyProps,
+                userOptimisticLockPredicate,
+                versionGetter,
+                fakeUpdate,
                 forceOneByOne
         );
+        int[] rowCounts;
+        if (returning != null) {
+            rowCounts = returning.executeUpdate(entities);
+        } else {
+            BatchSqlBuilder builder = new BatchSqlBuilder(
+                    sqlClient,
+                    entities.size() < 2 || ctx.options.isBatchForbidden() || forceOneByOne
+            );
+            Dialect.UpdateContext updateContext = new UpdateContextImpl(
+                    builder,
+                    tableType,
+                    shape,
+                    Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters().get(0),
+                    keyProps,
+                    updatedGetters,
+                    discriminatorProp,
+                    discriminatorGuardProp,
+                    discriminatorGuardValue,
+                    nullGetters,
+                    userOptimisticLockPredicate,
+                    versionGetter,
+                    fakeUpdate
+            );
+            sqlClient.getDialect().update(updateContext);
+            rowCounts = executeAndGetRowCounts(
+                    builder,
+                    shape,
+                    entities,
+                    true,
+                    false,
+                    forceOneByOne
+            );
+        }
         if (versionGetter != null || userOptimisticLockPredicate != null) {
             int index = 0;
             for (DraftSpi row : entities) {
@@ -1611,7 +1625,7 @@ class Operator {
         if (ctx.trigger != null) {
             throw new AssertionError(
                     "Internal bug: " +
-                    "Upsert cannot be called if the trigger is not null"
+                            "Upsert cannot be called if the trigger is not null"
             );
         }
 
@@ -1631,7 +1645,7 @@ class Operator {
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 ctx.throwIllegalIdGenerator(
                         "In order to upsert object without id, " +
-                        "the id generator must be IdentityGenerator or Sequence"
+                                "the id generator must be IdentityGenerator or Sequence"
                 );
             }
         }
@@ -2487,7 +2501,7 @@ class Operator {
             if (actualVersionGetter == null) {
                 ImmutableProp versionProp = ctx.path.getType().getVersionProp();
                 if (versionProp != null &&
-                    ctx.options.getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE
+                        ctx.options.getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE
                 ) {
                     actualVersionGetter = PropertyGetter
                             .propertyGetters(ctx.options.getSqlClient(), versionProp)

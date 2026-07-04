@@ -203,6 +203,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateByValuesReturningSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isTransactionAbortedByError() {
         return true;
     }
@@ -229,6 +234,27 @@ public class PostgresDialect extends DefaultDialect {
                 .leave()
                 .sql(" returning ")
                 .appendId();
+    }
+
+    @Override
+    public void updateByValues(UpdateByValuesContext ctx) {
+        ctx
+                .sql("update ")
+                .appendTableName()
+                .sql(" tb_1_")
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .appendAssignments("tb_1_.", "tb_2_.")
+                .leave()
+                .sql(" from ")
+                .appendSource()
+                .sql(" tb_2_")
+                .enter(AbstractSqlBuilder.ScopeType.TUPLE)
+                .appendSourceColumns()
+                .leave()
+                .sql(" where ")
+                .appendPredicates("tb_1_.", "tb_2_.")
+                .sql(" returning ")
+                .appendReturning("tb_1_.");
     }
 
     @Override
@@ -293,12 +319,12 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public String transCacheOperatorTableDDL() {
         return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
-               "\tID bigint generated always as identity,\n" +
-               "\tIMMUTABLE_TYPE text,\n" +
-               "\tIMMUTABLE_PROP text,\n" +
-               "\tCACHE_KEY text not null,\n" +
-               "\tREASON text\n" +
-               ")";
+                "\tID bigint generated always as identity,\n" +
+                "\tIMMUTABLE_TYPE text,\n" +
+                "\tIMMUTABLE_PROP text,\n" +
+                "\tCACHE_KEY text not null,\n" +
+                "\tREASON text\n" +
+                ")";
     }
 
     @Override

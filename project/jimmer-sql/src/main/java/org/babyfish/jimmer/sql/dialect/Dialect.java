@@ -185,6 +185,10 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isUpdateByValuesReturningSupported() {
+        return false;
+    }
+
     default boolean isTransactionAbortedByError() {
         return false;
     }
@@ -194,6 +198,14 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     void update(UpdateContext ctx);
+
+    default void updateByValues(UpdateByValuesContext ctx) {
+        throw new UnsupportedOperationException(
+                "The update-by-values statement is not supported by \"" +
+                        getClass().getName() +
+                        "\""
+        );
+    }
 
     void upsert(UpsertContext ctx);
 
@@ -214,6 +226,29 @@ public interface Dialect extends SqlTypeStrategy {
         UpdateContext appendAssignments();
         UpdateContext appendPredicates();
         UpdateContext appendId();
+    }
+
+    interface UpdateByValuesContext {
+
+        UpdateByValuesContext sql(String sql);
+
+        UpdateByValuesContext enter(AbstractSqlBuilder.ScopeType type);
+
+        UpdateByValuesContext separator();
+
+        UpdateByValuesContext leave();
+
+        UpdateByValuesContext appendTableName();
+
+        UpdateByValuesContext appendSource();
+
+        UpdateByValuesContext appendSourceColumns();
+
+        UpdateByValuesContext appendAssignments(String targetPrefix, String sourcePrefix);
+
+        UpdateByValuesContext appendPredicates(String targetPrefix, String sourcePrefix);
+
+        UpdateByValuesContext appendReturning(String targetPrefix);
     }
 
     interface UpsertContext {
