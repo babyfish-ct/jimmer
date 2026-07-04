@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.ClientTable;
@@ -70,6 +72,67 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateDerivedTypeCanSetRootPropByPortableIdSubQuery() {
+        executeAndExpectRowCount(
+                h2Client(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                            u.set(organization.name(), "Globex+");
+                            u.where(organization.name().eq("Globex"));
+                            u.where(organization.taxCode().eq("GLOBEX-001"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID in (" +
+                                        "--->select distinct tb_1_.ID " +
+                                        "--->from JOINED_CLIENT tb_1_ " +
+                                        "--->inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->on tb_1_.ID = tb_1__sub.ID " +
+                                        "--->where tb_1_.NAME = ? " +
+                                        "--->and tb_1__sub.TAX_CODE = ? " +
+                                        "--->and tb_1_.CLIENT_TYPE = ?" +
+                                        ")"
+                        );
+                        it.variables("Globex+", "Globex", "GLOBEX-001", "ORG");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeCanSetDerivedPropByPortableIdSubQuery() {
+        executeAndExpectRowCount(
+                h2Client(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                            u.set(organization.taxCode(), "GLOBEX-002");
+                            u.where(organization.name().eq("Globex"));
+                            u.where(organization.taxCode().eq("GLOBEX-001"));
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORGANIZATION tb_1_ " +
+                                        "set TAX_CODE = ? " +
+                                        "where tb_1_.ID in (" +
+                                        "--->select distinct tb_1_.ID " +
+                                        "--->from JOINED_CLIENT tb_1_ " +
+                                        "--->inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->on tb_1_.ID = tb_1__sub.ID " +
+                                        "--->where tb_1_.NAME = ? " +
+                                        "--->and tb_1__sub.TAX_CODE = ?" +
+                                        ")"
+                        );
+                        it.variables("GLOBEX-002", "Globex", "GLOBEX-001");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
     public void testUpdateDerivedTypeCannotSetPropsOfTwoPhysicalTables() {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -85,13 +148,39 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                         "\" by createUpdate for joined inheritance type \"" +
                         "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization" +
                         "\" because all assignment targets must belong to the same physical table. " +
-                        "Updating columns in multiple physical tables by one createUpdate is not supported " +
-                        "for joined inheritance; previous assignments target physical table \"" +
-                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client" +
-                        "\" and this property targets physical table \"" +
-                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization" +
-                        "\"",
+                        "Current assignment targets table \"" +
+                        "JOINED_ORGANIZATION" +
+                        "\" but previous assignments target table \"" +
+                        "JOINED_CLIENT" +
+                        "\". Updating columns in multiple database tables by one createUpdate " +
+                        "for joined inheritance requires a dialect that supports multi-table update assignment",
                 ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeCanSetPropsOfTwoPhysicalTablesByMySql() {
+        executeAndExpectRowCount(
+                mysqlStyleUpdateJoinClient(1)
+                        .createUpdate(OrganizationTable.class, (u, organization) -> {
+                    u.set(organization.name(), "Globex+");
+                    u.set(organization.taxCode(), "GLOBEX-002");
+                    u.where(organization.taxCode().eq("GLOBEX-001"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_CLIENT tb_1_ " +
+                                        "inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "on tb_1_.ID = tb_1__sub.ID " +
+                                        "set tb_1_.NAME = ?, tb_1__sub.TAX_CODE = ? " +
+                                        "where tb_1__sub.TAX_CODE = ? " +
+                                        "and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables("Globex+", "GLOBEX-002", "GLOBEX-001", "ORG");
+                    });
+                    ctx.rowCount(1);
+                }
         );
     }
 
@@ -315,8 +404,20 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     private LambdaClient sqlOnlyUpdateJoinClient(int rowCount) {
+        return updateJoinClient(rowCount, new H2UpdateJoinDialect());
+    }
+
+    private LambdaClient h2Client(int rowCount) {
+        return updateJoinClient(rowCount, new H2Dialect());
+    }
+
+    private LambdaClient mysqlStyleUpdateJoinClient(int rowCount) {
+        return updateJoinClient(rowCount, new MySqlDialect());
+    }
+
+    private LambdaClient updateJoinClient(int rowCount, Dialect dialect) {
         return getLambdaClient(it -> {
-            it.setDialect(new H2UpdateJoinDialect());
+            it.setDialect(dialect);
             it.setExecutor(new Executor() {
                 @Override
                 @SuppressWarnings("unchecked")

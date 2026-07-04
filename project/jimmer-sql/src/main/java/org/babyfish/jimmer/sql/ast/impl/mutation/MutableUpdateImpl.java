@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
@@ -19,7 +20,9 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -38,7 +41,7 @@ public class MutableUpdateImpl
         extends AbstractMutableStatementImpl
         implements MutableUpdate {
 
-    private final StatementContext ctx;
+    private final MutableRootQueryImpl<TableEx<?>> updateQuery;
 
     private final boolean triggerIgnored;
 
@@ -50,29 +53,48 @@ public class MutableUpdateImpl
 
     private boolean typeMatchPredicateApplied;
 
-    private ImmutableType assignmentStageType;
+    private final Set<ImmutableType> assignmentStageTypes = new LinkedHashSet<>();
+
+    private ImmutableType primaryAssignmentStageType;
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
+        this.updateQuery = MutationQuerySupport.createUpdateQuery(
+                sqlClient,
+                immutableType,
+                this::shouldApplyImplicitDiscriminatorPredicate
+        );
         this.triggerIgnored = false;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType, boolean triggerIgnored) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
+        this.updateQuery = MutationQuerySupport.createUpdateQuery(
+                sqlClient,
+                immutableType,
+                this::shouldApplyImplicitDiscriminatorPredicate
+        );
         this.triggerIgnored = triggerIgnored;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
+        this.updateQuery = MutationQuerySupport.createUpdateQuery(
+                sqlClient,
+                table,
+                this::shouldApplyImplicitDiscriminatorPredicate
+        );
         this.triggerIgnored = false;
     }
 
     @Override
+    public <T extends TableLike<?>> T getTable() {
+        return updateQuery.getTable();
+    }
+
+    @Override
     public StatementContext getContext() {
-        return ctx;
+        return updateQuery.getContext();
     }
 
     @Override
@@ -171,35 +193,53 @@ public class MutableUpdateImpl
                     "\""
             );
         }
-        ImmutableType prevStageType = assignmentStageType;
-        if (prevStageType == null) {
-            assignmentStageType = stageType;
-        } else if (prevStageType != stageType) {
+        if (!assignmentStageTypes.isEmpty() &&
+                !assignmentStageTypes.contains(stageType) &&
+                !isJoinedInheritanceMultiStageAssignmentSupported()) {
+            MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
             throw new IllegalArgumentException(
                     "Cannot update property \"" +
                     target.prop +
                     "\" by createUpdate for joined inheritance type \"" +
                     updateType +
                     "\" because all assignment targets must belong to the same physical table. " +
-                    "Updating columns in multiple physical tables by one createUpdate is not supported " +
-                    "for joined inheritance; previous assignments target physical table \"" +
-                    prevStageType +
-                    "\" and this property targets physical table \"" +
-                    stageType +
-                    "\""
+                    "Current assignment targets table \"" +
+                    stageType.getTableName(strategy) +
+                    "\" but previous assignments target table \"" +
+                    primaryAssignmentStageType.getTableName(strategy) +
+                    "\". Updating columns in multiple database tables by one createUpdate " +
+                    "for joined inheritance requires a dialect that supports multi-table update assignment"
             );
         }
+        assignmentStageTypes.add(stageType);
+        ImmutableType primaryStageType = primaryAssignmentStageType;
+        if (primaryStageType == null || stageType.isAssignableFrom(primaryStageType)) {
+            primaryAssignmentStageType = stageType;
+        }
+    }
+
+    private boolean isJoinedInheritanceMultiStageAssignmentSupported() {
+        UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
+        return updateJoin != null &&
+                updateJoin.isJoinedTableUpdatable() &&
+                updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY;
     }
 
     @Override
     public MutableUpdate where(Predicate... predicates) {
-        return (MutableUpdate) super.where(predicates);
+        updateQuery.where(predicates);
+        return this;
+    }
+
+    @Override
+    public void whereByFilter(TableImplementor<?> tableImplementor, List<Predicate> predicates) {
+        updateQuery.whereByFilter(tableImplementor, predicates);
     }
 
     @Override
     protected void onFrozen(AstContext astContext) {
         applyTypeMatchPredicate();
-        super.onFrozen(astContext);
+        updateQuery.freeze(astContext);
     }
 
     private void applyTypeMatchPredicate() {
@@ -303,8 +343,8 @@ public class MutableUpdateImpl
 
     private SqlBuilder createFilteredBuilder() {
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
-        applyVirtualPredicates(builder.getAstContext());
-        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
+        updateQuery.applyVirtualPredicates(builder.getAstContext());
+        updateQuery.applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
         return builder;
     }
 
@@ -402,11 +442,11 @@ public class MutableUpdateImpl
 
     @Override
     public TableImplementor<?> getTableLikeImplementor() {
-        return (TableImplementor<?>) super.getTableLikeImplementor();
+        return (TableImplementor<?>) updateQuery.getTableLikeImplementor();
     }
 
     private ImmutableType physicalUpdateType() {
-        ImmutableType stageType = assignmentStageType;
+        ImmutableType stageType = primaryAssignmentStageType;
         return stageType != null ? stageType : getTableLikeImplementor().getImmutableType();
     }
 
@@ -418,7 +458,7 @@ public class MutableUpdateImpl
     private void accept(@NotNull AstVisitor visitor, boolean visitAssignments) {
         AstContext astContext = visitor.getAstContext();
         freeze(astContext);
-        astContext.pushStatement(this);
+        astContext.pushStatement(updateQuery);
         visitor.visitStatement(this);
         try {
             if (visitAssignments) {
@@ -427,7 +467,7 @@ public class MutableUpdateImpl
                     ((Ast) e.getValue()).accept(visitor);
                 }
             }
-            for (Predicate predicate : unfrozenPredicates()) {
+            for (Predicate predicate : updateQuery.unfrozenPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -446,33 +486,58 @@ public class MutableUpdateImpl
 
     private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
         AstContext astContext = builder.getAstContext();
-        astContext.pushStatement(this);
+        astContext.pushStatement(updateQuery);
         boolean joinedTypeBranchUpdatePushed = false;
         try {
             TableImplementor<?> table = getTableLikeImplementor();
             ImmutableType physicalType = physicalUpdateType();
             Dialect dialect = getSqlClient().getDialect();
-            VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
+            UpdateJoin updateJoin = dialect.getUpdateJoin();
+            VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), updateJoin != null ? dialect : null);
             this.accept(visitor);
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
-            UpdateJoin updateJoin = dialect.getUpdateJoin();
+            Collection<ImmutableType> joinedTypeStageTypes = joinedTypeStageTypes(visitor);
             Map<ImmutableType, String> joinedTypeStageAliasMap =
-                    joinedTypeStageAliasMap(builder, visitor.joinedTypeStageTypes(), physicalType);
+                    joinedTypeStageAliasMap(builder, joinedTypeStageTypes, physicalType);
+            Map<ImmutableType, String> idSubQueryStageAliasMap = Collections.emptyMap();
+            boolean usedChild = MutationJoinRenderSupport.hasUsedChild(table, astContext);
             boolean joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
+            boolean idSubQueryRequired =
+                    ids == null &&
+                    updateJoin == null &&
+                    (joinedTypeStageJoinRequired || usedChild);
             ImmutableType rootType = table.getImmutableType().getInheritanceInfo() != null ?
                     table.getImmutableType().getInheritanceInfo().getRootType() :
                     null;
-            if (joinedTypeStageJoinRequired && updateJoin == null) {
-                throw new ExecutionException(
-                        "Table joins for update statement is forbidden by the current dialect, " +
-                        "but joined inheritance update for \"" +
-                        table.getImmutableType() +
-                        "\" requires joining inheritance stage tables"
-                );
+            if (idSubQueryRequired) {
+                if (!dialect.isTableOfSubQueryMutable()) {
+                    throw new ExecutionException(
+                            "Table joins for update statement is forbidden by the current dialect, " +
+                            "and the current dialect does not support using the updated table in a subquery. " +
+                            "Cannot render portable id-subquery update for \"" +
+                            table.getImmutableType() +
+                            "\""
+                    );
+                }
+                if (assignmentSourceRequiresExtraTable()) {
+                    throw new ExecutionException(
+                            "Table joins for update statement is forbidden by the current dialect, " +
+                            "but an assignment value of update statement for \"" +
+                            table.getImmutableType() +
+                            "\" requires another table. Portable id-subquery update can only move " +
+                            "predicate joins into the id subquery, not assignment value joins."
+                    );
+                }
+                ImmutableType subQueryBaseType = rootType != null ? rootType : table.getImmutableType();
+                idSubQueryStageAliasMap = joinedTypeStageAliasMap(builder, joinedTypeStageTypes, subQueryBaseType);
+                joinedTypeStageAliasMap = joinedTypeStageAliasMap(builder, assignmentStageTypes, physicalType);
+                joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
             }
-            if (joinedTypeStageJoinRequired && updateJoin.getFrom() == UpdateJoin.From.AS_ROOT) {
+            if (joinedTypeStageJoinRequired &&
+                    updateJoin != null &&
+                    updateJoin.getFrom() == UpdateJoin.From.AS_ROOT) {
                 throw new ExecutionException(
                         "The current dialect renders update joins from the root table, " +
                         "but joined inheritance update for \"" +
@@ -486,7 +551,8 @@ public class MutableUpdateImpl
                         getTableLikeImplementor().realTable(astContext)
                 );
             }
-            if (table.isJoinedTypeBranchRoot() &&
+            if (!idSubQueryRequired &&
+                    table.isJoinedTypeBranchRoot() &&
                     (physicalType != table.getImmutableType() ||
                             isJoinedTypeBranchUpdate() ||
                             joinedTypeStageJoinRequired)) {
@@ -512,13 +578,21 @@ public class MutableUpdateImpl
             }
 
             builder.enter(SqlBuilder.ScopeType.SET);
-            renderAssignments(builder, joinedTypeStageJoinRequired);
+            renderAssignments(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
             builder.leave();
 
             renderTables(builder, physicalType, joinedTypeStageAliasMap);
             renderDeeperJoins(builder);
 
-            renderWhereClause(builder, true, ids, physicalType, joinedTypeStageAliasMap);
+            renderWhereClause(
+                    builder,
+                    true,
+                    ids,
+                    physicalType,
+                    joinedTypeStageAliasMap,
+                    idSubQueryStageAliasMap,
+                    idSubQueryRequired
+            );
 
         } finally {
             if (joinedTypeBranchUpdatePushed) {
@@ -530,7 +604,7 @@ public class MutableUpdateImpl
 
     private void renderAsSelect(SqlBuilder builder, Collection<Object> ids) {
         AstContext astContext = builder.getAstContext();
-        astContext.pushStatement(this);
+        astContext.pushStatement(updateQuery);
         try {
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
@@ -566,14 +640,27 @@ public class MutableUpdateImpl
                 builder.leave();
             } else {
                 table.renderTo(builder);
-                renderWhereClause(builder, false, null, null, Collections.emptyMap());
+                renderWhereClause(
+                        builder,
+                        false,
+                        null,
+                        null,
+                        Collections.emptyMap(),
+                        Collections.emptyMap(),
+                        false
+                );
             }
         } finally {
             astContext.popStatement();
         }
     }
 
-    private void renderAssignments(SqlBuilder builder, boolean joinedTypeStageJoinRequired) {
+    private void renderAssignments(
+            SqlBuilder builder,
+            boolean joinedTypeStageJoinRequired,
+            ImmutableType physicalType,
+            Map<ImmutableType, String> joinedTypeStageAliasMap
+    ) {
         TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean withTargetPrefix =
@@ -583,7 +670,7 @@ public class MutableUpdateImpl
                         joinedTypeStageJoinRequired);
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.separator();
-            renderTarget(builder, e.getKey(), withTargetPrefix);
+            renderTarget(builder, e.getKey(), withTargetPrefix, physicalType, joinedTypeStageAliasMap);
             builder.sql(" = ");
             renderAssignmentSource(e.getValue(), e.getKey().expr.getDeepestProp(), builder);
         }
@@ -598,7 +685,13 @@ public class MutableUpdateImpl
         }
     }
 
-    private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
+    private void renderTarget(
+            SqlBuilder builder,
+            Target target,
+            boolean withPrefix,
+            ImmutableType physicalType,
+            Map<ImmutableType, String> joinedTypeStageAliasMap
+    ) {
         MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
         ColumnDefinition definition;
         if (target.prop.isEmbedded(EmbeddedLevel.REFERENCE)) {
@@ -617,9 +710,25 @@ public class MutableUpdateImpl
             definition = partial != null ? partial : target.prop.getStorage(strategy);
         }
         builder.definition(
-                withPrefix ? MutationRender.alias(builder, getTableLikeImplementor()) : null,
+                withPrefix ? assignmentTargetAlias(builder, target, physicalType, joinedTypeStageAliasMap) : null,
                 definition
         );
+    }
+
+    private String assignmentTargetAlias(
+            SqlBuilder builder,
+            Target target,
+            ImmutableType physicalType,
+            Map<ImmutableType, String> joinedTypeStageAliasMap
+    ) {
+        TableImplementor<?> table = getTableLikeImplementor();
+        if (table.isJoinedTypeBranchRoot()) {
+            ImmutableType stageType = TableImplementor.joinedStageType(target.prop, table.getImmutableType());
+            if (stageType != null && stageType != physicalType) {
+                return joinedTypeStageAliasMap.get(stageType);
+            }
+        }
+        return MutationRender.alias(builder, table);
     }
 
     private void renderTables(
@@ -631,7 +740,11 @@ public class MutableUpdateImpl
         boolean joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
         boolean usedChild = MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext());
         if (joinedTypeStageJoinRequired || usedChild) {
-            switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
+            UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
+            if (updateJoin == null) {
+                return;
+            }
+            switch (updateJoin.getFrom()) {
                 case AS_ROOT:
                     table.renderTo(builder);
                     break;
@@ -660,7 +773,9 @@ public class MutableUpdateImpl
             boolean forUpdate,
             Collection<Object> ids,
             @Nullable ImmutableType physicalType,
-            Map<ImmutableType, String> joinedTypeStageAliasMap
+            Map<ImmutableType, String> joinedTypeStageAliasMap,
+            Map<ImmutableType, String> idSubQueryStageAliasMap,
+            boolean idSubQueryRequired
     ) {
 
         TableImplementor<?> table = getTableLikeImplementor();
@@ -681,7 +796,8 @@ public class MutableUpdateImpl
         if (!hasJoinedTypeStageCondition &&
                 !hasTableCondition &&
                 ids == null &&
-                !unfrozenPredicates().iterator().hasNext()) {
+                !idSubQueryRequired &&
+                !updateQuery.unfrozenPredicates().iterator().hasNext()) {
             return;
         }
 
@@ -696,6 +812,20 @@ public class MutableUpdateImpl
             );
         }
 
+        if (idSubQueryRequired) {
+            builder.separator();
+            if (physicalType == null) {
+                throw new AssertionError("Internal bug: physical update type must be specified for id subquery");
+            }
+            MutationQuerySupport.renderIdInSubQuery(
+                    builder,
+                    updateQuery,
+                    table,
+                    physicalType,
+                    idSubQueryStageAliasMap
+            );
+        }
+
         if (hasJoinedTypeStageCondition) {
             renderJoinedTypeStageConditions(builder, physicalType, joinedTypeStageAliasMap);
         }
@@ -704,8 +834,8 @@ public class MutableUpdateImpl
             MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
         }
 
-        if (ids == null) {
-            Predicate predicate = getPredicate(builder.getAstContext());
+        if (ids == null && !idSubQueryRequired) {
+            Predicate predicate = updateQuery.getPredicate(builder.getAstContext());
             if (predicate != null) {
                 builder.separator();
                 ((Ast) predicate).renderTo(builder);
@@ -713,6 +843,22 @@ public class MutableUpdateImpl
         }
 
         builder.leave();
+    }
+
+    private boolean assignmentSourceRequiresExtraTable() {
+        AstContext astContext = new AstContext(getSqlClient());
+        TableImplementor<?> table = getTableLikeImplementor();
+        VisitorImpl visitor = new VisitorImpl(astContext, null);
+        astContext.pushStatement(updateQuery);
+        try {
+            for (Expression<?> expression : assignmentMap.values()) {
+                ((Ast) expression).accept(visitor);
+            }
+        } finally {
+            astContext.popStatement();
+        }
+        return !visitor.joinedTypeStageTypes().isEmpty() ||
+                MutationJoinRenderSupport.hasUsedChild(table, astContext);
     }
 
     private Map<ImmutableType, String> joinedTypeStageAliasMap(
@@ -733,24 +879,22 @@ public class MutableUpdateImpl
         return aliasMap;
     }
 
+    private Collection<ImmutableType> joinedTypeStageTypes(VisitorImpl visitor) {
+        if (assignmentStageTypes.isEmpty()) {
+            return visitor.joinedTypeStageTypes();
+        }
+        Set<ImmutableType> stageTypes = new LinkedHashSet<>(assignmentStageTypes);
+        stageTypes.addAll(visitor.joinedTypeStageTypes());
+        return stageTypes;
+    }
+
     private String joinedTypeStageAlias(
             SqlBuilder builder,
             TableImplementor<?> table,
             ImmutableType stageType,
             ImmutableType physicalType
     ) {
-        ImmutableType type = table.getImmutableType();
-        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        if (stageType == inheritanceInfo.getRootType() && physicalType == type) {
-            return builder.getAstContext().getTableAliasScope().allocateTableAlias(table);
-        }
-        if (stageType == type) {
-            return MutationJoinRenderSupport.joinedTypeBranchAlias(builder, table);
-        }
-        String alias = MutationRender.alias(builder, table);
-        return alias +
-                (alias.endsWith("_") ? "_" : "__") +
-                stageType.getJavaClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return MutationJoinRenderSupport.joinedTypeStageAlias(builder, table, stageType, physicalType);
     }
 
     private void renderJoinedTypeStageJoins(
@@ -917,7 +1061,7 @@ public class MutableUpdateImpl
         }
 
         private void validateTable(RealTable table) {
-            if (table.getTableLikeImplementor().getStatement() != MutableUpdateImpl.this) {
+            if (table.getTableLikeImplementor().getStatement() != updateQuery) {
                 return;
             }
             if (getTableUsedState(table) == TableUsedState.USED) {

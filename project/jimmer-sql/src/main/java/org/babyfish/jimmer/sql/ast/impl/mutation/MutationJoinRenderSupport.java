@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
+import java.util.Locale;
+
 final class MutationJoinRenderSupport {
 
     private MutationJoinRenderSupport() {}
@@ -66,6 +68,23 @@ final class MutationJoinRenderSupport {
         }
     }
 
+    static void renderId(SqlBuilder builder, TableImplementor<?> table, ImmutableType targetType) {
+        ColumnDefinition definition = targetType
+                .getIdProp()
+                .getStorage(builder.sqlClient().getMetadataStrategy());
+        String alias = MutationRender.alias(builder, table);
+        if (definition.size() == 1) {
+            builder.definition(alias, definition);
+            return;
+        }
+        builder.enter(SqlBuilder.ScopeType.TUPLE);
+        for (String columnName : definition) {
+            builder.separator();
+            builder.sql(alias).sql(".").sql(columnName);
+        }
+        builder.leave();
+    }
+
     static void renderJoinedTypeBranchJoin(SqlBuilder builder, TableImplementor<?> table) {
         builder.join(JoinType.INNER);
         renderJoinedTypeBranchFrom(builder, table);
@@ -106,6 +125,26 @@ final class MutationJoinRenderSupport {
 
     static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
         return TableImplementor.joinedTypeBranchAlias(builder, table);
+    }
+
+    static String joinedTypeStageAlias(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            ImmutableType stageType,
+            ImmutableType physicalType
+    ) {
+        ImmutableType type = table.getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (stageType == inheritanceInfo.getRootType() && physicalType == type) {
+            return builder.getAstContext().getTableAliasScope().allocateTableAlias(table);
+        }
+        if (stageType == type) {
+            return joinedTypeBranchAlias(builder, table);
+        }
+        String alias = MutationRender.alias(builder, table);
+        return alias +
+                (alias.endsWith("_") ? "_" : "__") +
+                stageType.getJavaClass().getSimpleName().toLowerCase(Locale.ROOT);
     }
 
     static void renderJoinedTypeStageJoin(

@@ -18,7 +18,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -27,7 +26,6 @@ import org.babyfish.jimmer.sql.dialect.DeleteJoin;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
@@ -689,31 +687,7 @@ public class MutableDeleteImpl
             TableImplementor<?> table,
             ImmutableType targetType
     ) {
-        renderId(builder, table, targetType);
-        builder.sql(" in ");
-        ConfigurableRootQuery<TableEx<?>, Object> idQuery = deleteQuery
-                .select(table.get(table.getImmutableType().getIdProp()))
-                .distinct();
-        builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
-        ((Ast) idQuery).renderTo(builder);
-        builder.leave();
-    }
-
-    private void renderId(SqlBuilder builder, TableImplementor<?> table, ImmutableType targetType) {
-        ColumnDefinition definition = targetType
-                .getIdProp()
-                .getStorage(getSqlClient().getMetadataStrategy());
-        String alias = MutationRender.alias(builder, table);
-        if (definition.size() == 1) {
-            builder.definition(alias, definition);
-            return;
-        }
-        builder.enter(SqlBuilder.ScopeType.TUPLE);
-        for (String columnName : definition) {
-            builder.separator();
-            builder.sql(alias).sql(".").sql(columnName);
-        }
-        builder.leave();
+        MutationQuerySupport.renderIdInSubQuery(builder, deleteQuery, table, targetType);
     }
 
     public static boolean isCompatible(
