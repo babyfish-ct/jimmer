@@ -166,6 +166,16 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return null;
     }
 
+    @Nullable
+    public Map<ImmutableType, String> getJoinedTypeBranchUpdateStageAliasMap(TableImplementor<?> table) {
+        for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
+            if (frame.table == table) {
+                return frame.stageAliasMap;
+            }
+        }
+        return null;
+    }
+
     public void pushJoinedTypeBranchTable(TableImplementor<?> table) {
         this.joinedTypeBranchTableFrame = new JoinedTypeBranchTableFrame(
                 joinedTypeBranchTableFrame,

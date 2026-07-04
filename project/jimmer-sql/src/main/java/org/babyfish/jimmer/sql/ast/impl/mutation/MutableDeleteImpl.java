@@ -18,7 +18,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -688,14 +687,7 @@ public class MutableDeleteImpl
             TableImplementor<?> table,
             ImmutableType targetType
     ) {
-        MutationJoinRenderSupport.renderId(builder, table, targetType);
-        builder.sql(" in ");
-        ConfigurableRootQuery<TableEx<?>, Object> idQuery = deleteQuery
-                .select(table.get(table.getImmutableType().getIdProp()))
-                .distinct();
-        builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
-        ((Ast) idQuery).renderTo(builder);
-        builder.leave();
+        MutationQuerySupport.renderIdInSubQuery(builder, deleteQuery, table, targetType);
     }
 
     public static boolean isCompatible(

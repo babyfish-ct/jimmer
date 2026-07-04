@@ -30,6 +30,7 @@ import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.function.Function;
 
 class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implements RealTable {
@@ -365,6 +366,39 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 type.getIdProp().getStorage(strategy),
                 TableImplementor.RenderMode.NORMAL
         );
+        renderJoinedTypeStageJoins(builder, tableImplementor, rootType, rootAlias, strategy);
+    }
+
+    private void renderJoinedTypeStageJoins(
+            SqlBuilder builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableType rootType,
+            String rootAlias,
+            MetadataStrategy strategy
+    ) {
+        Map<ImmutableType, String> stageAliasMap =
+                builder.getAstContext().getJoinedTypeBranchUpdateStageAliasMap(tableImplementor);
+        if (stageAliasMap == null || stageAliasMap.isEmpty()) {
+            return;
+        }
+        ImmutableType type = tableImplementor.getImmutableType();
+        for (Map.Entry<ImmutableType, String> e : stageAliasMap.entrySet()) {
+            ImmutableType stageType = e.getKey();
+            if (stageType == rootType || stageType == type) {
+                continue;
+            }
+            renderJoinImpl(
+                    builder,
+                    JoinType.INNER,
+                    rootAlias,
+                    this,
+                    rootType.getIdProp().getStorage(strategy),
+                    stageType.getTableName(strategy),
+                    e.getValue(),
+                    stageType.getIdProp().getStorage(strategy),
+                    TableImplementor.RenderMode.NORMAL
+            );
+        }
     }
 
     private void renderTreatedJoin(
