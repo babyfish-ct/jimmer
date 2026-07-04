@@ -68,6 +68,23 @@ final class MutationJoinRenderSupport {
         }
     }
 
+    static void renderId(SqlBuilder builder, TableImplementor<?> table, ImmutableType targetType) {
+        ColumnDefinition definition = targetType
+                .getIdProp()
+                .getStorage(builder.sqlClient().getMetadataStrategy());
+        String alias = MutationRender.alias(builder, table);
+        if (definition.size() == 1) {
+            builder.definition(alias, definition);
+            return;
+        }
+        builder.enter(SqlBuilder.ScopeType.TUPLE);
+        for (String columnName : definition) {
+            builder.separator();
+            builder.sql(alias).sql(".").sql(columnName);
+        }
+        builder.leave();
+    }
+
     static void renderJoinedTypeBranchJoin(SqlBuilder builder, TableImplementor<?> table) {
         builder.join(JoinType.INNER);
         renderJoinedTypeBranchFrom(builder, table);

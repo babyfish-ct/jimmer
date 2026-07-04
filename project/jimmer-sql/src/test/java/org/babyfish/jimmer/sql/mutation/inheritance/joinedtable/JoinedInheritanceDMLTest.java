@@ -73,7 +73,7 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateDerivedTypeCanSetRootPropByPortableExists() {
+    public void testUpdateDerivedTypeCanSetRootPropByPortableIdSubQuery() {
         executeAndExpectRowCount(
                 h2Client(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
@@ -84,15 +84,17 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                        "update JOINED_CLIENT tb_1_ " +
+                                "update JOINED_CLIENT tb_1_ " +
                                         "set NAME = ? " +
-                                        "where tb_1_.NAME = ? " +
-                                        "and exists(" +
-                                        "--->select 1 from JOINED_ORGANIZATION tb_1__sub " +
-                                        "--->where tb_1_.ID = tb_1__sub.ID " +
-                                        "--->and tb_1__sub.TAX_CODE = ?" +
-                                        ") " +
-                                        "and tb_1_.CLIENT_TYPE = ?"
+                                        "where tb_1_.ID in (" +
+                                        "--->select distinct tb_1_.ID " +
+                                        "--->from JOINED_CLIENT tb_1_ " +
+                                        "--->inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->on tb_1_.ID = tb_1__sub.ID " +
+                                        "--->where tb_1_.NAME = ? " +
+                                        "--->and tb_1__sub.TAX_CODE = ? " +
+                                        "--->and tb_1_.CLIENT_TYPE = ?" +
+                                        ")"
                         );
                         it.variables("Globex+", "Globex", "GLOBEX-001", "ORG");
                     });
@@ -102,7 +104,7 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateDerivedTypeCanUseOrPredicateByPortableExists() {
+    public void testUpdateDerivedTypeCanUseOrPredicateByPortableIdSubQuery() {
         executeAndExpectRowCount(
                 h2Client(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
@@ -117,15 +119,16 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                        "update JOINED_CLIENT tb_1_ " +
+                                "update JOINED_CLIENT tb_1_ " +
                                         "set NAME = ? " +
-                                        "where (tb_1_.NAME = ? " +
-                                        "or exists(" +
-                                        "--->select 1 from JOINED_ORGANIZATION tb_1__sub " +
-                                        "--->where tb_1_.ID = tb_1__sub.ID " +
-                                        "--->and tb_1__sub.TAX_CODE = ?" +
-                                        ")) " +
-                                        "and tb_1_.CLIENT_TYPE = ?"
+                                        "where tb_1_.ID in (" +
+                                        "--->select distinct tb_1_.ID " +
+                                        "--->from JOINED_CLIENT tb_1_ " +
+                                        "--->inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->on tb_1_.ID = tb_1__sub.ID " +
+                                        "--->where (tb_1_.NAME = ? or tb_1__sub.TAX_CODE = ?) " +
+                                        "--->and tb_1_.CLIENT_TYPE = ?" +
+                                        ")"
                         );
                         it.variables("Globex+", "Globex", "GLOBEX-001", "ORG");
                     });
@@ -135,7 +138,7 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateDerivedTypeCanSetDerivedPropByPortableExists() {
+    public void testUpdateDerivedTypeCanSetDerivedPropByPortableIdSubQuery() {
         executeAndExpectRowCount(
                 h2Client(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
@@ -146,14 +149,16 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                        "update JOINED_ORGANIZATION tb_1_ " +
+                                "update JOINED_ORGANIZATION tb_1_ " +
                                         "set TAX_CODE = ? " +
-                                        "where exists(" +
-                                        "--->select 1 from JOINED_CLIENT tb_2_ " +
-                                        "--->where tb_1_.ID = tb_2_.ID " +
-                                        "--->and tb_2_.NAME = ?" +
-                                        ") " +
-                                        "and tb_1_.TAX_CODE = ?"
+                                        "where tb_1_.ID in (" +
+                                        "--->select distinct tb_1_.ID " +
+                                        "--->from JOINED_CLIENT tb_1_ " +
+                                        "--->inner join JOINED_ORGANIZATION tb_1__sub " +
+                                        "--->on tb_1_.ID = tb_1__sub.ID " +
+                                        "--->where tb_1_.NAME = ? " +
+                                        "--->and tb_1__sub.TAX_CODE = ?" +
+                                        ")"
                         );
                         it.variables("GLOBEX-002", "Globex", "GLOBEX-001");
                     });

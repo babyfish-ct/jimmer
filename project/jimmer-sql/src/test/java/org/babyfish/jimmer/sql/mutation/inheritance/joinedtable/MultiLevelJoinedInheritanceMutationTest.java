@@ -160,7 +160,7 @@ public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTes
     }
 
     @Test
-    public void testCreateUpdateLeafCanSetIntermediatePropByPortableExists() {
+    public void testCreateUpdateLeafCanSetIntermediatePropByPortableIdSubQuery() {
         executeAndExpectRowCount(
                 h2Client(1)
                         .createUpdate(CarTable.class, (u, car) -> {
@@ -174,21 +174,17 @@ public class MultiLevelJoinedInheritanceMutationTest extends AbstractMutationTes
                         it.sql(
                                 "update ML_JOINED_VEHICLE tb_1_ " +
                                         "set MANUFACTURER = ? " +
-                                        "where exists(" +
-                                        "--->select 1 from ML_JOINED_CAR tb_1__sub " +
-                                        "--->where tb_1_.ID = tb_1__sub.ID " +
-                                        "--->and tb_1__sub.SEAT_COUNT = ?" +
-                                        ") " +
-                                        "and tb_1_.MANUFACTURER = ? " +
-                                        "and exists(" +
-                                        "--->select 1 from ML_JOINED_ASSET tb_1__asset " +
-                                        "--->where tb_1_.ID = tb_1__asset.ID " +
-                                        "--->and tb_1__asset.NAME = ?" +
-                                        ") " +
-                                        "and exists(" +
-                                        "--->select 1 from ML_JOINED_ASSET tb_1__asset " +
-                                        "--->where tb_1_.ID = tb_1__asset.ID " +
-                                        "--->and tb_1__asset.ASSET_TYPE = ?" +
+                                        "where tb_1_.ID in (" +
+                                        "--->select distinct tb_1_.ID " +
+                                        "--->from ML_JOINED_ASSET tb_1_ " +
+                                        "--->inner join ML_JOINED_CAR tb_1__sub " +
+                                        "--->on tb_1_.ID = tb_1__sub.ID " +
+                                        "--->inner join ML_JOINED_VEHICLE tb_1__vehicle " +
+                                        "--->on tb_1_.ID = tb_1__vehicle.ID " +
+                                        "--->where tb_1__sub.SEAT_COUNT = ? " +
+                                        "--->and tb_1__vehicle.MANUFACTURER = ? " +
+                                        "--->and tb_1_.NAME = ? " +
+                                        "--->and tb_1_.ASSET_TYPE = ?" +
                                         ")"
                         );
                         it.variables("Honda", 5, "Toyota", "Joined Car", "CAR");

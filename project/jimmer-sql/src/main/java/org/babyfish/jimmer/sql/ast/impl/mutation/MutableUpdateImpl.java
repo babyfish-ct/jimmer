@@ -472,38 +472,42 @@ public class MutableUpdateImpl
             TableUsages tableUsages = visitor.toTableUsages();
             tableUsages.applyUsedStatesTo(astContext);
             tableUsages.allocateAndBindAliases(astContext);
+            Collection<ImmutableType> joinedTypeStageTypes = joinedTypeStageTypes(visitor);
             Map<ImmutableType, String> joinedTypeStageAliasMap =
-                    joinedTypeStageAliasMap(builder, joinedTypeStageTypes(visitor), physicalType);
-            boolean joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
+                    joinedTypeStageAliasMap(builder, joinedTypeStageTypes, physicalType);
+            Map<ImmutableType, String> idSubQueryStageAliasMap = Collections.emptyMap();
             boolean usedChild = MutationJoinRenderSupport.hasUsedChild(table, astContext);
-            JoinedStagePredicateRenderer joinedStagePredicateRenderer = null;
+            boolean joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
+            boolean idSubQueryRequired =
+                    ids == null &&
+                    updateJoin == null &&
+                    (joinedTypeStageJoinRequired || usedChild);
             ImmutableType rootType = table.getImmutableType().getInheritanceInfo() != null ?
                     table.getImmutableType().getInheritanceInfo().getRootType() :
                     null;
-            if (joinedTypeStageJoinRequired && updateJoin == null) {
-                joinedStagePredicateRenderer = new JoinedStagePredicateRenderer(
-                        this,
-                        table,
-                        physicalType,
-                        joinedTypeStageAliasMap
-                );
-                Predicate predicate = getPredicate(astContext);
-                if (predicate != null && !joinedStagePredicateRenderer.isSupported(predicate)) {
+            if (idSubQueryRequired) {
+                if (!dialect.isTableOfSubQueryMutable()) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
-                            "but joined inheritance update for \"" +
+                            "and the current dialect does not support using the updated table in a subquery. " +
+                            "Cannot render portable id-subquery update for \"" +
                             table.getImmutableType() +
-                            "\" has a predicate that cannot be rendered as correlated exists predicates"
+                            "\""
                     );
                 }
-            }
-            if (!joinedTypeStageJoinRequired && usedChild && updateJoin == null) {
-                throw new ExecutionException(
-                        "Table joins for update statement is forbidden by the current dialect, " +
-                        "but there is a join in update statement for \"" +
-                        table.getImmutableType() +
-                        "\""
-                );
+                if (assignmentSourceRequiresExtraTable()) {
+                    throw new ExecutionException(
+                            "Table joins for update statement is forbidden by the current dialect, " +
+                            "but an assignment value of update statement for \"" +
+                            table.getImmutableType() +
+                            "\" requires another table. Portable id-subquery update can only move " +
+                            "predicate joins into the id subquery, not assignment value joins."
+                    );
+                }
+                ImmutableType subQueryBaseType = rootType != null ? rootType : table.getImmutableType();
+                idSubQueryStageAliasMap = joinedTypeStageAliasMap(builder, joinedTypeStageTypes, subQueryBaseType);
+                joinedTypeStageAliasMap = joinedTypeStageAliasMap(builder, assignmentStageTypes, physicalType);
+                joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
             }
             if (joinedTypeStageJoinRequired &&
                     updateJoin != null &&
@@ -521,7 +525,8 @@ public class MutableUpdateImpl
                         getTableLikeImplementor().realTable(astContext)
                 );
             }
-            if (table.isJoinedTypeBranchRoot() &&
+            if (!idSubQueryRequired &&
+                    table.isJoinedTypeBranchRoot() &&
                     (physicalType != table.getImmutableType() ||
                             isJoinedTypeBranchUpdate() ||
                             joinedTypeStageJoinRequired)) {
@@ -559,7 +564,8 @@ public class MutableUpdateImpl
                     ids,
                     physicalType,
                     joinedTypeStageAliasMap,
-                    joinedStagePredicateRenderer
+                    idSubQueryStageAliasMap,
+                    idSubQueryRequired
             );
 
         } finally {
@@ -608,7 +614,15 @@ public class MutableUpdateImpl
                 builder.leave();
             } else {
                 table.renderTo(builder);
-                renderWhereClause(builder, false, null, null, Collections.emptyMap(), null);
+                renderWhereClause(
+                        builder,
+                        false,
+                        null,
+                        null,
+                        Collections.emptyMap(),
+                        Collections.emptyMap(),
+                        false
+                );
             }
         } finally {
             astContext.popStatement();
@@ -734,7 +748,8 @@ public class MutableUpdateImpl
             Collection<Object> ids,
             @Nullable ImmutableType physicalType,
             Map<ImmutableType, String> joinedTypeStageAliasMap,
-            @Nullable JoinedStagePredicateRenderer joinedStagePredicateRenderer
+            Map<ImmutableType, String> idSubQueryStageAliasMap,
+            boolean idSubQueryRequired
     ) {
 
         TableImplementor<?> table = getTableLikeImplementor();
@@ -755,6 +770,7 @@ public class MutableUpdateImpl
         if (!hasJoinedTypeStageCondition &&
                 !hasTableCondition &&
                 ids == null &&
+                !idSubQueryRequired &&
                 !unfrozenPredicates().iterator().hasNext()) {
             return;
         }
@@ -770,6 +786,11 @@ public class MutableUpdateImpl
             );
         }
 
+        if (idSubQueryRequired) {
+            builder.separator();
+            renderIdInSubQuery(builder, table, physicalType, idSubQueryStageAliasMap);
+        }
+
         if (hasJoinedTypeStageCondition) {
             renderJoinedTypeStageConditions(builder, physicalType, joinedTypeStageAliasMap);
         }
@@ -778,20 +799,122 @@ public class MutableUpdateImpl
             MutationJoinRenderSupport.renderUsedJoinConditions(builder, table);
         }
 
-        if (ids == null) {
+        if (ids == null && !idSubQueryRequired) {
             Predicate predicate = getPredicate(builder.getAstContext());
-            if (predicate != null && joinedStagePredicateRenderer != null) {
+            if (predicate != null) {
                 builder.separator();
-                joinedStagePredicateRenderer.render(predicate, builder);
-            } else {
-                if (predicate != null) {
-                    builder.separator();
-                    ((Ast) predicate).renderTo(builder);
-                }
+                ((Ast) predicate).renderTo(builder);
             }
         }
 
         builder.leave();
+    }
+
+    private void renderIdInSubQuery(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            @Nullable ImmutableType physicalType,
+            Map<ImmutableType, String> idSubQueryStageAliasMap
+    ) {
+        if (physicalType == null) {
+            throw new AssertionError("Internal bug: physical update type must be specified for id subquery");
+        }
+        MutationJoinRenderSupport.renderId(builder, table, physicalType);
+        builder.sql(" in ");
+        builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
+        renderIdSubQuery(builder, table, idSubQueryStageAliasMap);
+        builder.leave();
+    }
+
+    private void renderIdSubQuery(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            Map<ImmutableType, String> idSubQueryStageAliasMap
+    ) {
+        builder.sql("select distinct ");
+        MutationJoinRenderSupport.renderId(builder, table, table.getImmutableType());
+        table.renderTo(builder);
+        renderIdSubQueryStageJoins(builder, table, idSubQueryStageAliasMap);
+        Predicate predicate = getPredicate(builder.getAstContext());
+        if (predicate != null) {
+            boolean joinedTypeContextPushed = pushIdSubQueryJoinedTypeContext(builder, table, idSubQueryStageAliasMap);
+            builder.enter(SqlBuilder.ScopeType.WHERE);
+            try {
+                ((Ast) predicate).renderTo(builder);
+            } finally {
+                builder.leave();
+                if (joinedTypeContextPushed) {
+                    popIdSubQueryJoinedTypeContext(builder);
+                }
+            }
+        }
+    }
+
+    private void renderIdSubQueryStageJoins(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            Map<ImmutableType, String> idSubQueryStageAliasMap
+    ) {
+        InheritanceInfo inheritanceInfo = table.getImmutableType().getInheritanceInfo();
+        if (inheritanceInfo == null || idSubQueryStageAliasMap.isEmpty()) {
+            return;
+        }
+        ImmutableType rootType = inheritanceInfo.getRootType();
+        ImmutableType branchType = table.getImmutableType();
+        for (Map.Entry<ImmutableType, String> e : idSubQueryStageAliasMap.entrySet()) {
+            ImmutableType stageType = e.getKey();
+            if (stageType != rootType && stageType != branchType) {
+                MutationJoinRenderSupport.renderJoinedTypeStageJoin(
+                        builder,
+                        table,
+                        rootType,
+                        stageType,
+                        e.getValue()
+                );
+            }
+        }
+    }
+
+    private boolean pushIdSubQueryJoinedTypeContext(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            Map<ImmutableType, String> idSubQueryStageAliasMap
+    ) {
+        InheritanceInfo inheritanceInfo = table.getImmutableType().getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return false;
+        }
+        AstContext astContext = builder.getAstContext();
+        astContext.pushJoinedTypeBranchUpdate(
+                table,
+                inheritanceInfo.getRootType(),
+                MutationRender.alias(builder, table),
+                idSubQueryStageAliasMap
+        );
+        astContext.pushJoinedTypeBranchTable(table);
+        return true;
+    }
+
+    private void popIdSubQueryJoinedTypeContext(SqlBuilder builder) {
+        AstContext astContext = builder.getAstContext();
+        astContext.popJoinedTypeBranchTable();
+        astContext.popJoinedTypeBranchUpdate();
+    }
+
+    private boolean assignmentSourceRequiresExtraTable() {
+        AstContext astContext = new AstContext(getSqlClient());
+        TableImplementor<?> table = getTableLikeImplementor();
+        VisitorImpl visitor = new VisitorImpl(astContext, null);
+        astContext.pushStatement(this);
+        try {
+            for (Expression<?> expression : assignmentMap.values()) {
+                ((Ast) expression).accept(visitor);
+            }
+        } finally {
+            astContext.popStatement();
+        }
+        return !visitor.joinedTypeStageTypes().isEmpty() ||
+                MutationJoinRenderSupport.hasUsedChild(table, astContext);
     }
 
     private Map<ImmutableType, String> joinedTypeStageAliasMap(
