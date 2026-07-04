@@ -1,0 +1,135 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto
+
+import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo, JsonTypeName}
+
+specification KClientSpecification {
+    id
+    name
+}
+
+KClientImplicitCatchAllView {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+KClientDefaultBranchFieldView {
+    id
+    #types {
+        default {
+            name
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+sealed KClientRuntimeView {
+    id
+    name
+    #types {
+        #exhaustive
+        KOrganization class Organization {
+            taxCode
+        }
+        KPerson class Person {
+            firstName
+        }
+    }
+}
+
+input KClientPatchInput {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KClientDiscriminatorInput {
+    id
+    type
+    name
+    #types {
+        default {
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KClientAliasedDiscriminatorInput {
+    id
+    type as kind
+    name
+    #types {
+        default {
+        }
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "customType"
+)
+input KClientCustomJsonTypeInfoInput {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KClientCustomJsonTypeNameInput {
+    id
+    name
+    #types {
+        @JsonTypeName("company")
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+@JsonSubTypes(value = [
+    JsonSubTypes.Type(value = String::class)
+])
+input KClientCustomJsonSubTypesInput {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            taxCode
+        }
+    }
+}
+
+input KClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        KOrganization class Organization {
+            taxCode
+        }
+        KPerson class Person {
+            firstName
+            lastName
+        }
+    }
+}

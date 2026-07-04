@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -19,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 import org.babyfish.jimmer.sql.meta.*;
@@ -27,6 +30,10 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
@@ -142,6 +149,14 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         }
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
         RealTable realTable = visitor.realTableForAnalysis(tableImplementor);
+        if (tableImplementor.getPolymorphicDiscriminatorProp() != null) {
+            visitor.visitTableReference(realTable, null, false);
+        }
+        acceptFields(visitor, realTable, fetcher);
+        visitor.visitTableFetcher(realTable, fetcher);
+    }
+
+    private void acceptFields(AstVisitor visitor, RealTable realTable, Fetcher<?> fetcher) {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() ||
@@ -150,7 +165,19 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 visitor.visitTableFetcherField(realTable, field);
             }
         }
-        visitor.visitTableFetcher(realTable, fetcher);
+        TableLikeImplementor<?> implementor = realTable.getTableLikeImplementor();
+        if (!(implementor instanceof TableImplementor<?>)) {
+            return;
+        }
+        TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+        for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap(fetcher).entrySet()) {
+            if (!JoinFetchFieldVisitor.hasTableFields(e.getValue(), visitor.getAstContext().getSqlClient(), true)) {
+                continue;
+            }
+            TableImplementor<?> treatedImplementor = tableImplementor.treatAsImplementor(e.getKey(), JoinType.LEFT);
+            RealTable treatedTable = visitor.realTableForAnalysis(treatedImplementor);
+            acceptFields(visitor, treatedTable, e.getValue());
+        }
     }
 
     @Override
@@ -163,9 +190,12 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         RealTable realTable = TableProxies
                 .resolve(table, builder.getAstContext())
                 .realTable(builder.getQueryRenderContext());
-        new JoinFetchFieldVisitor(builder.sqlClient()) {
+        Set<RealTable> discriminatorRenderedTables = Collections.newSetFromMap(new IdentityHashMap<>());
+        JoinFetchFieldVisitor visitor = new JoinFetchFieldVisitor(builder.sqlClient()) {
 
             private RealTable table = realTable;
+
+            private int typeBranchDepth;
 
             @Override
             protected Object enter(Field field) {
@@ -186,11 +216,44 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
 
             @Override
+            protected boolean shouldVisitTypeBranch(ImmutableType branchType, Fetcher<?> fetcher) {
+                return JoinFetchFieldVisitor.hasTableFields(fetcher, builder.sqlClient(), true);
+            }
+
+            @Override
+            protected Object enterTypeBranch(ImmutableType branchType) {
+                RealTable oldTable = table;
+                TableLikeImplementor<?> implementor = oldTable.getTableLikeImplementor();
+                if (implementor instanceof TableImplementor<?>) {
+                    this.table = ((TableImplementor<?>) implementor)
+                            .treatAsImplementor(branchType, JoinType.LEFT)
+                            .realTable(builder.getQueryRenderContext());
+                }
+                typeBranchDepth++;
+                return oldTable;
+            }
+
+            @Override
+            protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
+                typeBranchDepth--;
+                this.table = (RealTable) enterValue;
+            }
+
+            @Override
             protected void visit(Field field, int depth) {
                 if (field.getProp().isFormula() && field.getProp().getSqlTemplate() == null) {
                     return;
                 }
                 ImmutableProp prop = field.getProp();
+                if (typeBranchDepth != 0 && prop.isId()) {
+                    return;
+                }
+                if (prop.isDiscriminator() && (
+                        typeBranchDepth != 0 ||
+                                isRenderedByDiscriminatorSlot(table, prop)
+                )) {
+                    return;
+                }
                 BaseQueryReadSupport readSupport =
                         depth == 0 ?
                                 builder.getQueryRenderContext().getBaseQueryReadSupport() :
@@ -224,7 +287,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         );
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator();
-                        table.renderDefinition(builder, (ColumnDefinition) storage, false, readSupport, baseTableOwner);
+                        table.renderSelection(prop, field.isRawId(), builder, null, true, null, false);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator();
                         BaseQueryRead read = readSupport != null ?
@@ -237,6 +300,42 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         }
                     }
                 }
+                if (typeBranchDepth == 0 && prop.isId()) {
+                    renderDiscriminator(table);
+                }
+            }
+
+            private void renderDiscriminator(RealTable table) {
+                ImmutableProp discriminatorProp = discriminatorProp(table);
+                if (discriminatorProp == null || !discriminatorRenderedTables.add(table)) {
+                    return;
+                }
+                builder.separator();
+                table.renderColumn(
+                        builder,
+                        ((SingleColumn) discriminatorProp.getStorage(
+                                builder.getAstContext().getSqlClient().getMetadataStrategy()
+                        )).getName(),
+                        false,
+                        null,
+                        null
+                );
+            }
+
+            @Nullable
+            private ImmutableProp discriminatorProp(RealTable table) {
+                TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+                if (!(implementor instanceof TableImplementor<?>)) {
+                    return null;
+                }
+                return ((TableImplementor<?>) implementor).getPolymorphicDiscriminatorProp();
+            }
+
+            private boolean isRenderedByDiscriminatorSlot(RealTable table, ImmutableProp prop) {
+                ImmutableProp discriminatorProp = discriminatorProp(table);
+                return discriminatorProp != null &&
+                        prop.isDiscriminator() &&
+                        prop.toOriginal() == discriminatorProp.toOriginal();
             }
 
             private void renderEmbedded(
@@ -299,7 +398,15 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         .sql(".c")
                         .sql(Integer.toString(read.index(index)));
             }
-        }.visit(fetcher);
+        };
+        visitor.visit(fetcher);
+    }
+
+    private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
+        if (fetcher instanceof FetcherImplementor<?>) {
+            return ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
+        }
+        return Collections.emptyMap();
     }
 
     private ImmutableProp getEmbeddedRawReferenceProp(JSqlClientImplementor sqlClient) {

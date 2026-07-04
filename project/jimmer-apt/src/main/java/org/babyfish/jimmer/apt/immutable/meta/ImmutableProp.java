@@ -82,6 +82,8 @@ public class ImmutableProp implements BaseProp {
 
     private final boolean isJavaFormula;
 
+    private final boolean isDiscriminator;
+
     private final boolean isList;
 
     private final boolean isAssociation;
@@ -242,6 +244,7 @@ public class ImmutableProp implements BaseProp {
         Formula formula = executableElement.getAnnotation(Formula.class);
         isFormula = formula != null;
         isJavaFormula = formula != null && formula.sql().isEmpty();
+        isDiscriminator = executableElement.getAnnotation(Discriminator.class) != null;
 
         if (context.isCollection(returnType) && !isExplicitScalar() && !isJavaFormula()) {
             if (!context.isListStrictly(returnType)) {
@@ -357,6 +360,14 @@ public class ImmutableProp implements BaseProp {
             );
         } else {
             typeName = elementTypeName;
+        }
+        if (isDiscriminator && !typeName.equals(Constants.STRING_CLASS_NAME) && !context.isEnum(elementType)) {
+            throw new MetaException(
+                    executableElement,
+                    "the property decorated by @" +
+                            Discriminator.class.getName() +
+                            " must return java.lang.String or enum"
+            );
         }
 
         PropDescriptor.Builder builder = PropDescriptor.newBuilder(
@@ -616,6 +627,10 @@ public class ImmutableProp implements BaseProp {
 
     public boolean isJavaFormula() {
         return isJavaFormula;
+    }
+
+    public boolean isDiscriminator() {
+        return isDiscriminator;
     }
 
     @Override

@@ -128,6 +128,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isDiscriminator() {
+        return false;
+    }
+
+    @Override
     public boolean isTargetForeignKeyReal(MetadataStrategy strategy) {
         return true;
     }

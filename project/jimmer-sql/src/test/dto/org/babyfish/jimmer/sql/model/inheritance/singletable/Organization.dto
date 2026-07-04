@@ -1,0 +1,5 @@
+specification OrganizationSpecification {
+    id
+    name
+    taxCode
+}

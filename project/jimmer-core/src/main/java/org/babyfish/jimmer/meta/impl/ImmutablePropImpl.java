@@ -7,8 +7,8 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
@@ -252,6 +252,18 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                             "\" so that it cannot be association"
             );
         }
+        Discriminator discriminator = getAnnotation(Discriminator.class);
+        if (discriminator != null) {
+            if (category != ImmutablePropCategory.SCALAR || (elementClass != String.class && !elementClass.isEnum())) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by \"" +
+                                Discriminator.class.getName() +
+                                "\" so that it must be scalar string or enum property"
+                );
+            }
+        }
 
         JoinSql joinSql = getAnnotation(JoinSql.class);
         if (formula != null && !formula.sql().isEmpty()) {
@@ -314,6 +326,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 primaryAnnotationType = Version.class;
             } else if (isLogicalDeleted()) {
                 primaryAnnotationType = LogicalDeleted.class;
+            } else if (discriminator != null) {
+                primaryAnnotationType = Discriminator.class;
             } else if (isFormula) {
                 primaryAnnotationType = Formula.class;
             } else if (isTransient) {
@@ -479,6 +493,9 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     @Override
     public boolean isMutable() {
+        if (primaryAnnotationType == Discriminator.class) {
+            return false;
+        }
         return !isFormula || sqlTemplate instanceof FormulaTemplate;
     }
 
@@ -569,6 +586,11 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public boolean isFormula() {
         return isFormula;
+    }
+
+    @Override
+    public boolean isDiscriminator() {
+        return primaryAnnotationType == Discriminator.class;
     }
 
     @Override
@@ -1284,6 +1306,12 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private void acceptMappedBy(ImmutableProp prop) {
         if (acceptedMappedBy != null) {
+            if (acceptedMappedBy.toOriginal() == prop.toOriginal()) {
+                if (!acceptedMappedBy.getDeclaringType().isEntity() && prop.getDeclaringType().isEntity()) {
+                    acceptedMappedBy = prop;
+                }
+                return;
+            }
             throw new ModelException(
                     "Both `" +
                             acceptedMappedBy +

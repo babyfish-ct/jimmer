@@ -19,7 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -352,7 +355,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
                 data.forUpdate != null
         );
@@ -380,7 +383,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
                 getForUpdate() != null
         );
@@ -468,7 +471,12 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         SqlBuilder builder = new SqlBuilder(astContext);
         if (!getMutableQuery().isFrozen()) {
             getMutableQuery().applyVirtualPredicates(astContext);
-            getMutableQuery().applyGlobalFilters(astContext, getMutableQuery().getContext().getFilterLevel(), getData().selections);
+            getMutableQuery().applyGlobalFilters(
+                    astContext,
+                    getMutableQuery().getContext().getFilterLevel(),
+                    getData().selections,
+                    QueryAnalysisBuilder.analyzeJoinRequirements(astContext, this)
+            );
         }
         builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
         renderTo(builder);

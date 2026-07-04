@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt.dto;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.*;
@@ -16,20 +17,26 @@ import javax.lang.model.util.Elements;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
     private static final Map<TypeName, SimplePropType> SIMPLE_PROP_TYPE_MAP;
 
+    private final Context context;
+
     private final Elements elements;
 
     private final DtoModifier defaultNullableInputModifier;
 
-    public AptDtoCompiler(DtoFile dtoFile, Elements elements, DtoModifier defaultNullableInputModifier) throws IOException {
+    public AptDtoCompiler(
+            DtoFile dtoFile,
+            Context context,
+            Elements elements,
+            DtoModifier defaultNullableInputModifier
+    ) throws IOException {
         super(dtoFile);
+        this.context = context;
         this.elements = elements;
         this.defaultNullableInputModifier = defaultNullableInputModifier;
     }
@@ -42,6 +49,37 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
     @Override
     protected Collection<ImmutableType> getSuperTypes(ImmutableType baseType) {
         return baseType.getSuperTypes();
+    }
+
+    @Nullable
+    @Override
+    protected ImmutableType getType(String qualifiedName) {
+        TypeElement typeElement = elements.getTypeElement(qualifiedName);
+        return typeElement != null ? context.getImmutableType(typeElement) : null;
+    }
+
+    @Override
+    protected Collection<ImmutableType> getDirectSubTypes(ImmutableType baseType) {
+        List<ImmutableType> subTypes = new ArrayList<>();
+        for (ImmutableType type : context.getImmutableTypes()) {
+            if (type != null &&
+                    type.getPrimarySuperType() != null &&
+                    type.getPrimarySuperType().getQualifiedName().equals(baseType.getQualifiedName())) {
+                subTypes.add(type);
+            }
+        }
+        subTypes.sort(Comparator.comparing(ImmutableType::getQualifiedName));
+        return subTypes;
+    }
+
+    @Override
+    protected boolean isSameType(ImmutableType baseType1, ImmutableType baseType2) {
+        return baseType1.getQualifiedName().equals(baseType2.getQualifiedName());
+    }
+
+    @Override
+    protected boolean isInstantiable(ImmutableType baseType) {
+        return baseType.isInstantiable();
     }
 
     @Override
@@ -102,7 +140,7 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
         if (baseProp.isList() || !baseProp.context().isEnum(baseProp.getElementType())) {
             return null;
         }
-        Element element = ((DeclaredType)baseProp.toElement().getReturnType()).asElement();
+        Element element = ((DeclaredType) baseProp.toElement().getReturnType()).asElement();
         if (!(element instanceof TypeElement)) {
             return null;
         }

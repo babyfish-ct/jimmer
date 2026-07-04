@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
@@ -37,6 +39,22 @@ public interface SaveOptions {
 
     boolean isTargetTransferable(ImmutableProp prop);
 
+    TypeMatchMode getTypeMatchMode();
+
+    default TypeMatchMode getTypeMatchMode(ImmutableType type) {
+        return getTypeMatchMode();
+    }
+
+    TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType);
+
+    boolean isTypeChangeAllowed();
+
+    default boolean isTypeChangeAllowed(ImmutableType type) {
+        return isTypeChangeAllowed();
+    }
+
+    boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType);
+
     boolean isPessimisticLocked(ImmutableType type);
 
     UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type);
@@ -73,6 +91,10 @@ public interface SaveOptions {
         }
         return new SaveOptionsWithSqlClient(this, sqlClient);
     }
+
+    default SaveOptions withAssociatedOptions(ImmutableProp prop) {
+        return new SaveOptionsForAssociatedProp(this, prop);
+    }
 }
 
 abstract class AbstractSaveOptionsWrapper implements SaveOptions {
@@ -80,7 +102,7 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     private final SaveOptions raw;
 
     AbstractSaveOptionsWrapper(SaveOptions raw) {
-        this.raw = unwrap(raw);
+        this.raw = raw;
     }
 
     @Override
@@ -121,6 +143,36 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isTargetTransferable(ImmutableProp prop) {
         return raw.isTargetTransferable(prop);
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode() {
+        return raw.getTypeMatchMode();
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode(ImmutableType type) {
+        return raw.getTypeMatchMode(type);
+    }
+
+    @Override
+    public TypeMatchMode getAssociatedTypeMatchMode(ImmutableProp prop, ImmutableType targetType) {
+        return raw.getAssociatedTypeMatchMode(prop, targetType);
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed() {
+        return raw.isTypeChangeAllowed();
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed(ImmutableType type) {
+        return raw.isTypeChangeAllowed(type);
+    }
+
+    @Override
+    public boolean isAssociatedTypeChangeAllowed(ImmutableProp prop, ImmutableType targetType) {
+        return raw.isAssociatedTypeChangeAllowed(prop, targetType);
     }
 
     @Override
@@ -194,13 +246,6 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
         return raw.isDissociationLogicalDeleteEnabled();
     }
 
-    private static SaveOptions unwrap(SaveOptions options) {
-        if (options instanceof AbstractSaveOptionsWrapper) {
-            return unwrap(((AbstractSaveOptionsWrapper)options).raw);
-        }
-        return options;
-    }
-
     @Override
     public String toString() {
         return "SaveOptionsProxy";
@@ -234,5 +279,35 @@ class SaveOptionsWithSqlClient extends AbstractSaveOptionsWrapper {
     @Override
     public JSqlClientImplementor getSqlClient() {
         return sqlClient;
+    }
+}
+
+class SaveOptionsForAssociatedProp extends AbstractSaveOptionsWrapper {
+
+    private final ImmutableProp prop;
+
+    SaveOptionsForAssociatedProp(SaveOptions raw, ImmutableProp prop) {
+        super(raw);
+        this.prop = prop;
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode() {
+        return super.getAssociatedTypeMatchMode(prop, prop.getTargetType());
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode(ImmutableType type) {
+        return super.getAssociatedTypeMatchMode(prop, type);
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed() {
+        return super.isAssociatedTypeChangeAllowed(prop, prop.getTargetType());
+    }
+
+    @Override
+    public boolean isTypeChangeAllowed(ImmutableType type) {
+        return super.isAssociatedTypeChangeAllowed(prop, type);
     }
 }

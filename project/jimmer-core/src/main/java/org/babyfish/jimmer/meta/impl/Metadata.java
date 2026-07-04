@@ -11,7 +11,10 @@ import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.BiFunction;
@@ -64,9 +67,9 @@ public class Metadata {
         } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException(
                     "Cannot find draft type for \"" + immutableJavaClass.getName() + "\". " +
-                    "Jimmer requires to use `jimmer-apt`(Java) or `jimmer-ksp`(Kotlin) to " +
-                    "generate some code according the user-defined entity interfaces," +
-                    "please view \"https://babyfish-ct.github.io/jimmer-doc/docs/quick-view/get-started/generate-code\""
+                            "Jimmer requires to use `jimmer-apt`(Java) or `jimmer-ksp`(Kotlin) to " +
+                            "generate some code according the user-defined entity interfaces," +
+                            "please view \"https://babyfish-ct.github.io/jimmer-doc/docs/quick-view/get-started/generate-code\""
             );
         }
         Class<?> producerClass = Arrays
@@ -143,6 +146,16 @@ public class Metadata {
         return new ImmutableTypeImpl.BuilderImpl(kotlinClass, superTypes, draftFactory);
     }
 
+    static void register(ImmutableTypeImpl type) {
+        ImmutableTypeImpl superType = (ImmutableTypeImpl) type.getPrimarySuperType();
+        if (superType != null && superType.isEntity()) {
+            ImmutableType rootType = type.getInheritanceRoot();
+            if (rootType != null) {
+                ((ImmutableTypeImpl) rootType).registerDerivedType(superType, type);
+            }
+        }
+    }
+
     private static Class<?> getImmutableJavaClass(Class<?> javaClass) {
         if (isJimmerDto(javaClass)) {
             return null;
@@ -162,12 +175,12 @@ public class Metadata {
                 if (mergedClass == null) {
                     throw new IllegalArgumentException(
                             "\"" +
-                            javaClass.getName() +
-                            "\" has conflict super types: \"" +
-                            existingJavaClass.getName() +
-                            "\" and \"" +
-                            immutableJavaClass.getName() +
-                            "\"");
+                                    javaClass.getName() +
+                                    "\" has conflict super types: \"" +
+                                    existingJavaClass.getName() +
+                                    "\" and \"" +
+                                    immutableJavaClass.getName() +
+                                    "\"");
                 }
                 existingJavaClass = mergedClass;
             }
@@ -177,16 +190,16 @@ public class Metadata {
 
     private static boolean isJimmerDto(Class<?> javaClass) {
         return View.class.isAssignableFrom(javaClass) ||
-               Input.class.isAssignableFrom(javaClass) ||
-               Specification.class.isAssignableFrom(javaClass);
+                Input.class.isAssignableFrom(javaClass) ||
+                Specification.class.isAssignableFrom(javaClass);
     }
 
     private static boolean hasImmutableAnnotation(Class<?> javaClass) {
         return Arrays.stream(javaClass.getAnnotations()).anyMatch(it ->
                 it.annotationType() == Immutable.class ||
-                it.annotationType() == Entity.class ||
-                it.annotationType() == MappedSuperclass.class ||
-                it.annotationType() == Embeddable.class
+                        it.annotationType() == Entity.class ||
+                        it.annotationType() == MappedSuperclass.class ||
+                        it.annotationType() == Embeddable.class
         );
     }
 

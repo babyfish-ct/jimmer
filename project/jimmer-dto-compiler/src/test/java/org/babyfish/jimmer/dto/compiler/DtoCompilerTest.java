@@ -968,43 +968,43 @@ public class DtoCompilerTest {
     @Test
     public void testZeroOffsetConfig() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
-            "BookView {\n" +
-                "    #allScalars\n" +
-                "    -tenant\n" +
-                "    !fetchType(JOIN_ALWAYS)\n" +
-                "    store {\n" +
-                "        #allScalars\n" +
-                "    }\n" +
-                "    !limit(2, 0)\n" +
-                "    !batch(10)\n" +
-                "    !orderBy(firstName asc, lastName asc)\n" +
-                "    authors {\n" +
-                "        firstName\n" +
-                "        lastName\n" +
-                "    }\n" +
-                "}\n"
+                "BookView {\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    !fetchType(JOIN_ALWAYS)\n" +
+                        "    store {\n" +
+                        "        #allScalars\n" +
+                        "    }\n" +
+                        "    !limit(2, 0)\n" +
+                        "    !batch(10)\n" +
+                        "    !orderBy(firstName asc, lastName asc)\n" +
+                        "    authors {\n" +
+                        "        firstName\n" +
+                        "        lastName\n" +
+                        "    }\n" +
+                        "}\n"
         );
         assertContentEquals(
-            "[BookView {" +
-                "--->id, " +
-                "--->name, " +
-                "--->edition, " +
-                "--->price, " +
-                "--->!fetchType(JOIN_ALWAYS) " +
-                "--->store: {" +
-                "--->--->id, " +
-                "--->--->name, " +
-                "--->--->website" +
-                "--->}, " +
-                "--->!orderBy(firstName asc, lastName asc) " +
-                "--->!limit(2) " +
-                "--->!batch(10) " +
-                "--->authors: {" +
-                "--->--->firstName, " +
-                "--->--->lastName" +
-                "--->}" +
-                "}]",
-            dtoTypes.toString()
+                "[BookView {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->!fetchType(JOIN_ALWAYS) " +
+                        "--->store: {" +
+                        "--->--->id, " +
+                        "--->--->name, " +
+                        "--->--->website" +
+                        "--->}, " +
+                        "--->!orderBy(firstName asc, lastName asc) " +
+                        "--->!limit(2) " +
+                        "--->!batch(10) " +
+                        "--->authors: {" +
+                        "--->--->firstName, " +
+                        "--->--->lastName" +
+                        "--->}" +
+                        "}]",
+                dtoTypes.toString()
         );
     }
 
@@ -1129,9 +1129,374 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : extraneous input '<' expecting Identifier\n" +
+                "/User/test/Book.dto:2 : extraneous input '<' expecting {'allScalars', 'allReferences'}\n" +
                         "    #<allScalars>\n" +
                         "     ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testPolymorphicDtoWithImplicitDefault() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        Organization class Org implements marker.Marker {\n" +
+                        "            taxCode\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        DtoPolymorphism<BaseType, BaseProp> polymorphism = dtoType.getPolymorphism();
+        Assertions.assertNotNull(polymorphism);
+        Assertions.assertFalse(polymorphism.isExhaustive());
+        Assertions.assertNotNull(polymorphism.getDefaultBranch());
+        Assertions.assertTrue(polymorphism.getDefaultBranch().isImplicit());
+        Assertions.assertEquals("Default", polymorphism.getDefaultBranch().getClassName());
+        Assertions.assertEquals(1, polymorphism.getTypeBranches().size());
+        DtoPolymorphicBranch<BaseType, BaseProp> branch = polymorphism.getTypeBranches().get(0);
+        Assertions.assertEquals("org.babyfish.jimmer.sql.model.Organization", branch.getTargetType().getQualifiedName());
+        Assertions.assertEquals("Org", branch.getClassName());
+        Assertions.assertEquals(
+                Collections.singletonList("taxCode"),
+                branch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
+        );
+        Assertions.assertEquals(
+                Collections.singletonList("marker.Marker"),
+                branch.getDtoType().getSuperInterfaces().stream().map(TypeRef::toString).collect(Collectors.toList())
+        );
+    }
+
+    @Test
+    public void testSealedPolymorphicDto() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "sealed ClientView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        Person {\n" +
+                        "            firstName\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        Assertions.assertTrue(dtoType.getModifiers().contains(DtoModifier.SEALED));
+        Assertions.assertNotNull(dtoType.getPolymorphism());
+        Assertions.assertEquals(
+                "sealed ClientView {id, name, #types {@implicit default {}, org.babyfish.jimmer.sql.model.Person {firstName}}}",
+                dtoType.toString()
+        );
+    }
+
+    @Test
+    public void testSealedDtoRequiresTypesBlock() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "sealed ClientView {\n" +
+                            "    id\n" +
+                            "    name\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:1 : The modifier 'sealed' can only be used for polymorphic DTOs with #types\n" +
+                        "sealed ClientView {\n" +
+                        "^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testPolymorphicDtoWithExplicitDefault() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        default class Other implements marker.UnlistedClientView {\n" +
+                        "        }\n" +
+                        "        Person {\n" +
+                        "            firstName\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        DtoPolymorphicBranch<BaseType, BaseProp> defaultBranch = dtoType.getPolymorphism().getDefaultBranch();
+        Assertions.assertFalse(defaultBranch.isImplicit());
+        Assertions.assertEquals("Other", defaultBranch.getClassName());
+        Assertions.assertEquals(
+                Collections.singletonList("marker.UnlistedClientView"),
+                defaultBranch.getDtoType().getSuperInterfaces().stream().map(TypeRef::toString).collect(Collectors.toList())
+        );
+        Assertions.assertTrue(defaultBranch.getDtoType().getProps().isEmpty());
+    }
+
+    @Test
+    public void testExhaustivePolymorphicDto() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        #exhaustive\n" +
+                        "        Person {\n" +
+                        "            firstName\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        DtoPolymorphism<BaseType, BaseProp> polymorphism = dtoType.getPolymorphism();
+        Assertions.assertTrue(polymorphism.isExhaustive());
+        Assertions.assertNull(polymorphism.getDefaultBranch());
+        Assertions.assertEquals(
+                new LinkedHashSet<>(Arrays.asList(
+                        "org.babyfish.jimmer.sql.model.Organization",
+                        "org.babyfish.jimmer.sql.model.Person"
+                )),
+                polymorphism.getTypeBranches()
+                        .stream()
+                        .map(it -> it.getTargetType().getQualifiedName())
+                        .collect(Collectors.toCollection(LinkedHashSet::new))
+        );
+        DtoPolymorphicBranch<BaseType, BaseProp> personBranch = polymorphism.getTypeBranches()
+                .stream()
+                .filter(it -> it.getTargetType().getName().equals("Person"))
+                .findFirst()
+                .orElseThrow(AssertionError::new);
+        Assertions.assertFalse(personBranch.isImplicit());
+        Assertions.assertEquals(
+                Collections.singletonList("firstName"),
+                personBranch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
+        );
+        DtoPolymorphicBranch<BaseType, BaseProp> organizationBranch = polymorphism.getTypeBranches()
+                .stream()
+                .filter(it -> it.getTargetType().getName().equals("Organization"))
+                .findFirst()
+                .orElseThrow(AssertionError::new);
+        Assertions.assertTrue(organizationBranch.isImplicit());
+        Assertions.assertEquals("Organization", organizationBranch.getClassName());
+        Assertions.assertTrue(organizationBranch.getDtoType().getProps().isEmpty());
+    }
+
+    @Test
+    public void testExhaustivePolymorphicDtoWithInstantiableRoot() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.payment(
+                "PaymentView {\n" +
+                        "    amount\n" +
+                        "    #types {\n" +
+                        "        #exhaustive\n" +
+                        "        Payment class Root {\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        DtoPolymorphism<BaseType, BaseProp> polymorphism = dtoType.getPolymorphism();
+        Assertions.assertTrue(polymorphism.isExhaustive());
+        Assertions.assertNull(polymorphism.getDefaultBranch());
+        Assertions.assertEquals(
+                new LinkedHashSet<>(Arrays.asList("Root", "WirePayment")),
+                polymorphism.getTypeBranches()
+                        .stream()
+                        .map(DtoPolymorphicBranch::getClassName)
+                        .collect(Collectors.toCollection(LinkedHashSet::new))
+        );
+    }
+
+    @Test
+    public void testTypesBlockCannotBeUsedBySpecification() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "specification ClientSpec {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        Person {\n" +
+                            "            firstName\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #types\n" +
+                        "    #types {\n" +
+                        "    ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDefaultBranchCannotBeUsedWithExhaustive() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        #exhaustive\n" +
+                            "        default {\n" +
+                            "        }\n" +
+                            "        Person {\n" +
+                            "            firstName\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:5 : default branch cannot be used together with #exhaustive\n" +
+                        "        default {\n" +
+                        "        ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDefaultBranchCanDeclareFields() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    id\n" +
+                        "    #types {\n" +
+                        "        default {\n" +
+                        "            name\n" +
+                        "        }\n" +
+                        "        Organization {\n" +
+                        "            taxCode\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        DtoPolymorphism<BaseType, BaseProp> polymorphism = dtoType.getPolymorphism();
+        Assertions.assertNotNull(polymorphism);
+        DtoPolymorphicBranch<BaseType, BaseProp> defaultBranch = polymorphism.getDefaultBranch();
+        Assertions.assertNotNull(defaultBranch);
+        Assertions.assertEquals(
+                Collections.singletonList("name"),
+                defaultBranch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
+        );
+        DtoPolymorphicBranch<BaseType, BaseProp> organizationBranch = polymorphism.getTypeBranches().get(0);
+        Assertions.assertEquals(
+                Collections.singletonList("taxCode"),
+                organizationBranch.getDtoType().getProps().stream().map(AbstractProp::getAlias).collect(Collectors.toList())
+        );
+    }
+
+    @Test
+    public void testAbstractRootCannotBeTypeBranch() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        Client {\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:4 : Illegal type branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
+                        "        Client {\n" +
+                        "        ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDuplicateTypeBranchClassName() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        Organization class Person {\n" +
+                            "            taxCode\n" +
+                            "        }\n" +
+                            "        Person {\n" +
+                            "            firstName\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:7 : Duplicated polymorphic DTO branch class name \"Person\"\n" +
+                        "        Person {\n" +
+                        "        ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDuplicateAliasBetweenPolymorphicBaseAndBranch() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        Person {\n" +
+                            "            firstName as name\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:5 : Duplicated property alias \"name\" between polymorphic DTO base and branch\n" +
+                        "            firstName as name\n" +
+                        "                         ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testNestedTypesBlockInTypeBranchIsRejected() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        Person {\n" +
+                            "            firstName\n" +
+                            "            #types {\n" +
+                            "                Person {\n" +
+                            "                    lastName\n" +
+                            "                }\n" +
+                            "            }\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                        "            #types {\n" +
+                        "            ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testNestedTypesBlockInDefaultBranchIsRejected() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.client(
+                    "ClientView {\n" +
+                            "    name\n" +
+                            "    #types {\n" +
+                            "        default {\n" +
+                            "            id\n" +
+                            "            #types {\n" +
+                            "                Person {\n" +
+                            "                    firstName\n" +
+                            "                }\n" +
+                            "            }\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                        "            #types {\n" +
+                        "            ^",
                 ex.getMessage()
         );
     }
@@ -1464,8 +1829,19 @@ public class DtoCompilerTest {
 
         final Map<String, BaseProp> propMap;
 
+        final List<BaseType> superTypes = new ArrayList<>();
+
+        final List<BaseType> directSubTypes = new ArrayList<>();
+
+        final boolean instantiable;
+
         BaseTypeImpl(String qualifiedName, BaseProp... baseProps) {
+            this(qualifiedName, true, baseProps);
+        }
+
+        BaseTypeImpl(String qualifiedName, boolean instantiable, BaseProp... baseProps) {
             this.qualifiedName = qualifiedName;
+            this.instantiable = instantiable;
             this.propMap = Arrays.stream(baseProps).collect(
                     Collectors.toMap(
                             BaseProp::getName,
@@ -1683,6 +2059,38 @@ public class DtoCompilerTest {
                 new BasePropImpl("gender")
         );
 
+        private static final BaseTypeImpl CLIENT_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.Client",
+                false,
+                new BasePropImpl("id"),
+                new BasePropImpl("type"),
+                new BasePropImpl("name")
+        );
+
+        private static final BaseTypeImpl ORGANIZATION_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.Organization",
+                new BasePropImpl("taxCode")
+        );
+
+        private static final BaseTypeImpl PERSON_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.Person",
+                new BasePropImpl("firstName"),
+                new BasePropImpl("lastName")
+        );
+
+        private static final BaseTypeImpl PAYMENT_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.Payment",
+                true,
+                new BasePropImpl("id"),
+                new BasePropImpl("type"),
+                new BasePropImpl("amount")
+        );
+
+        private static final BaseTypeImpl WIRE_PAYMENT_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.WirePayment",
+                new BasePropImpl("swiftCode")
+        );
+
         private MyDtoCompiler(DtoFile dtoFile) throws IOException {
             super(dtoFile);
         }
@@ -1727,9 +2135,75 @@ public class DtoCompilerTest {
             }
         }
 
+        static List<DtoType<BaseType, BaseProp>> client(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                new MockedOsFile(
+                                        "/User/test/Client.dto",
+                                        code
+                                ),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "Client.dto"
+                        )
+                ).compile(CLIENT_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
+        }
+
+        static List<DtoType<BaseType, BaseProp>> payment(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                new MockedOsFile(
+                                        "/User/test/Payment.dto",
+                                        code
+                                ),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "Payment.dto"
+                        )
+                ).compile(PAYMENT_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
+        }
+
         @Override
         protected Collection<BaseType> getSuperTypes(BaseType baseType) {
-            return Collections.emptyList();
+            return ((BaseTypeImpl) baseType).superTypes;
+        }
+
+        @Nullable
+        @Override
+        protected BaseType getType(String qualifiedName) {
+            for (BaseType type : TYPE_MAP.values()) {
+                if (type.getQualifiedName().equals(qualifiedName)) {
+                    return type;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected Collection<BaseType> getDirectSubTypes(BaseType baseType) {
+            return ((BaseTypeImpl) baseType).directSubTypes;
+        }
+
+        @Override
+        protected boolean isSameType(BaseType baseType1, BaseType baseType2) {
+            return baseType1.getQualifiedName().equals(baseType2.getQualifiedName());
+        }
+
+        @Override
+        protected boolean isInstantiable(BaseType baseType) {
+            return ((BaseTypeImpl) baseType).instantiable;
         }
 
         @Override
@@ -1805,6 +2279,22 @@ public class DtoCompilerTest {
             TYPE_MAP.put("Chapter", CHAPTER_TYPE);
             TYPE_MAP.put("TreeNode", TREE_NODE_TYPE);
             TYPE_MAP.put("User", USER_TYPE);
+            TYPE_MAP.put("Client", CLIENT_TYPE);
+            TYPE_MAP.put("Organization", ORGANIZATION_TYPE);
+            TYPE_MAP.put("Person", PERSON_TYPE);
+            TYPE_MAP.put("Payment", PAYMENT_TYPE);
+            TYPE_MAP.put("WirePayment", WIRE_PAYMENT_TYPE);
+
+            inherit(ORGANIZATION_TYPE, CLIENT_TYPE);
+            inherit(PERSON_TYPE, CLIENT_TYPE);
+            inherit(WIRE_PAYMENT_TYPE, PAYMENT_TYPE);
+        }
+
+        private static void inherit(BaseTypeImpl subType, BaseTypeImpl superType) {
+            subType.superTypes.add(superType);
+            subType.propMap.putAll(superType.propMap);
+            superType.directSubTypes.add(subType);
+            superType.directSubTypes.sort(Comparator.comparing(BaseType::getQualifiedName));
         }
     }
 

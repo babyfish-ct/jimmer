@@ -6,7 +6,10 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.Context
+import org.babyfish.jimmer.ksp.GeneratorException
+import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.immutable.generator.DraftGenerator
 import org.babyfish.jimmer.ksp.immutable.generator.FetcherGenerator
 import org.babyfish.jimmer.ksp.immutable.generator.JimmerModuleGenerator
@@ -38,20 +41,20 @@ class ImmutableProcessor(
                         if (classDeclaration.classKind != ClassKind.INTERFACE) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "must be interface"
+                                        "must be interface"
                             )
                         }
                         if (classDeclaration.typeParameters.isNotEmpty() &&
                             classDeclaration.annotation(MappedSuperclass::class) == null) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "cannot have type parameters unless it is mapped super class"
+                                        "cannot have type parameters unless it is mapped super class"
                             )
                         }
                         if (classDeclaration.isPrivate() || classDeclaration.isProtected()) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "cannot be private or protected'"
+                                        "cannot be private or protected'"
                             )
                         }
                         modelMap.computeIfAbsent(file) { mutableListOf() } += classDeclaration
@@ -71,34 +74,33 @@ class ImmutableProcessor(
     private fun generateJimmerTypes(
         classDeclarationMultiMap: Map<KSFile, List<KSClassDeclaration>>
     ) {
-        val allFiles = ctx.resolver.getAllFiles().toList()
         for ((file, classDeclarations) in classDeclarationMultiMap) {
             DraftGenerator(ctx.environment.codeGenerator, ctx, file, classDeclarations, excludeUserAnnotationPrefixes)
-                .generate(allFiles)
+                .generate()
             if (classDeclarations.size > 1) {
                 throw GeneratorException(
                     "The $file declares several types decorated by " +
-                        "@${Immutable::class.qualifiedName}, " +
-                        "@${Entity::class.qualifiedName}, " +
-                        "@${MappedSuperclass::class.qualifiedName} " +
-                        "or ${Embeddable::class.qualifiedName}: " +
-                        classDeclarations.joinToString { it.fullName }
+                            "@${Immutable::class.qualifiedName}, " +
+                            "@${Entity::class.qualifiedName}, " +
+                            "@${MappedSuperclass::class.qualifiedName} " +
+                            "or ${Embeddable::class.qualifiedName}: " +
+                            classDeclarations.joinToString { it.fullName }
                 )
             }
             val sqlClassDeclarations = classDeclarations.filter {
                 it.annotation(Entity::class) !== null ||
-                    it.annotation(MappedSuperclass::class) !== null ||
-                    it.annotation(Embeddable::class) != null
+                        it.annotation(MappedSuperclass::class) !== null ||
+                        it.annotation(Embeddable::class) != null
             }
             if (sqlClassDeclarations.isNotEmpty()) {
                 val sqlClassDeclaration = sqlClassDeclarations[0]
                 if (sqlClassDeclaration.typeParameters.isEmpty()) {
                     PropsGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
-                        .generate(allFiles)
+                        .generate()
                 }
                 if (sqlClassDeclaration.annotation(Entity::class) !== null || sqlClassDeclaration.annotation(Embeddable::class) !== null) {
                     FetcherGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
-                        .generate(allFiles)
+                        .generate()
                 }
             }
         }
@@ -112,6 +114,7 @@ class ImmutableProcessor(
             }
         }
         if (!ctx.isBuddyIgnoreResourceGeneration) {
+            val allFiles = ctx.resolver.getAllFiles().toList()
             JimmerModuleGenerator(
                 ctx.environment.codeGenerator,
                 packageCollector.toString(),

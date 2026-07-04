@@ -1,0 +1,16 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto
+
+KClientProjectWithClientView {
+    id
+    name
+    client {
+        id
+        name
+        #types {
+            KOrganization class Organization {
+                taxCode
+            }
+        }
+    }
+}

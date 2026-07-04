@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
 
 import java.util.function.IntSupplier;
@@ -26,6 +27,7 @@ public class MySqlDialect extends MySql5Dialect {
                 .sql("update ")
                 .appendTableName()
                 .enter(AbstractSqlBuilder.ScopeType.SET);
+        boolean idAssignmentAppended = false;
         if (ctx.isIdInteger()) {
             ctx
                     .separator()
@@ -33,9 +35,12 @@ public class MySqlDialect extends MySql5Dialect {
                     .sql(" = last_insert_id(")
                     .appendId()
                     .sql(")");
+            idAssignmentAppended = true;
+        }
+        if (ctx.hasUpdatedColumns() || !idAssignmentAppended) {
+            ctx.appendAssignments();
         }
         ctx
-                .appendAssignments()
                 .leave()
                 .enter(AbstractSqlBuilder.ScopeType.WHERE)
                 .appendPredicates()
@@ -44,7 +49,8 @@ public class MySqlDialect extends MySql5Dialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (ctx.isUpdateIgnored() || (!ctx.hasUpdatedColumns() && !ctx.hasGeneratedId())) {
+        if (ctx.isUpdateIgnored() ||
+                (!ctx.hasUpdatedColumns() && !ctx.hasGeneratedId() && !ctx.isFakeUpdateRequired())) {
             ctx.sql("insert ignore into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
@@ -67,18 +73,33 @@ public class MySqlDialect extends MySql5Dialect {
                     .leave()
                     .sql(" on duplicate key update ")
                     .enter(AbstractSqlBuilder.ScopeType.COMMA);
-            if (ctx.hasGeneratedId() && ctx.isIdInteger()) {
+            boolean idAssignmentAppended = false;
+            if ((ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) && ctx.isIdInteger()) {
                 ctx.separator()
                         .sql(FAKE_UPDATE_COMMENT)
                         .sql(" ")
-                        .appendGeneratedId()
+                        .appendId()
                         .sql(" = ")
                         .sql("last_insert_id(")
-                        .appendGeneratedId()
+                        .appendId()
                         .sql(")");
+                idAssignmentAppended = true;
             }
             if (ctx.hasUpdatedColumns()) {
-                ctx.separator().appendUpdatingAssignments("values(", ")");
+                if (ctx.hasUpdateCondition()) {
+                    ctx.separator().appendConditionalUpdatingAssignments("values(", ")", "values(", ")");
+                } else {
+                    ctx.separator().appendUpdatingAssignments("values(", ")");
+                }
+            } else if (ctx.isFakeUpdateRequired() && !idAssignmentAppended) {
+                ValueGetter cheapestGetter = ctx.getConflictGetters().get(0);
+                ctx.separator()
+                        .sql(FAKE_UPDATE_COMMENT)
+                        .sql(" ")
+                        .sql(cheapestGetter)
+                        .sql(" = values(")
+                        .sql(cheapestGetter)
+                        .sql(")");
             }
             ctx.leave();
         }

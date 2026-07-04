@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -11,7 +11,11 @@ import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+
+import java.util.Collections;
+import java.util.Map;
 
 public abstract class JoinFetchFieldVisitor {
 
@@ -44,13 +48,38 @@ public abstract class JoinFetchFieldVisitor {
                 }
             }
         }
+        for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap(fetcher).entrySet()) {
+            if (!shouldVisitTypeBranch(e.getKey(), e.getValue())) {
+                continue;
+            }
+            Object enterValue = enterTypeBranch(e.getKey());
+            visit0(e.getValue(), depth);
+            leaveTypeBranch(e.getKey(), enterValue);
+        }
     }
 
     protected abstract Object enter(Field field);
 
     protected abstract void leave(Field field, Object enterValue);
 
+    protected Object enterTypeBranch(ImmutableType branchType) {
+        return null;
+    }
+
+    protected boolean shouldVisitTypeBranch(ImmutableType branchType, Fetcher<?> fetcher) {
+        return true;
+    }
+
+    protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {}
+
     protected void visit(Field field, int depth) {}
+
+    private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
+        if (fetcher instanceof FetcherImplementor<?>) {
+            return ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
+        }
+        return Collections.emptyMap();
+    }
 
     public static boolean isJoinField(Field field, JSqlClientImplementor sqlClient) {
         ReferenceFetchType fetchType = field.getFetchType();
@@ -70,7 +99,7 @@ public abstract class JoinFetchFieldVisitor {
         if (childFetcher == null) {
             return false;
         }
-        if (childFetcher.getFieldMap().size() == 1) {
+        if (isIdOnlyFetcher(childFetcher)) {
             if (filters.getTargetFilter(prop) == null) {
                 return false;
             }
@@ -89,5 +118,34 @@ public abstract class JoinFetchFieldVisitor {
             }
         }
         return propCache == null || caches.getObjectCache(prop.getTargetType()) == null;
+    }
+
+    private static boolean isIdOnlyFetcher(Fetcher<?> fetcher) {
+        return fetcher.getFieldMap().size() == 1 &&
+                typeBranchFetcherMap(fetcher).isEmpty();
+    }
+
+    public static boolean hasTableFields(
+            Fetcher<?> fetcher,
+            JSqlClientImplementor sqlClient,
+            boolean ignoreIdAndDiscriminator
+    ) {
+        for (Field field : fetcher.getFieldMap().values()) {
+            ImmutableProp prop = field.getProp();
+            if (ignoreIdAndDiscriminator && (prop.isId() || prop.isDiscriminator())) {
+                continue;
+            }
+            if (prop.isColumnDefinition() ||
+                    prop.getSqlTemplate() instanceof FormulaTemplate ||
+                    isJoinField(field, sqlClient)) {
+                return true;
+            }
+        }
+        for (Fetcher<?> typeBranchFetcher : typeBranchFetcherMap(fetcher).values()) {
+            if (hasTableFields(typeBranchFetcher, sqlClient, true)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

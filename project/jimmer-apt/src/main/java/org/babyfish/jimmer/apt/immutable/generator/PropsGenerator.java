@@ -8,10 +8,14 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
@@ -72,7 +76,7 @@ public class PropsGenerator {
             }
         } else {
             for (ImmutableType superType : type.getSuperTypes()) {
-                if (!superType.getTypeVariableNames().isEmpty()) {
+                if (superType.isEntity() || !superType.getTypeVariableNames().isEmpty()) {
                     continue;
                 }
                 typeBuilder.addSuperinterface(
@@ -97,7 +101,7 @@ public class PropsGenerator {
                 addStaticProp(prop);
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
-                for (ImmutableProp prop : type.getProps().values()) {
+                for (ImmutableProp prop : propsForMethods().values()) {
                     if (prop.isDsl(false)) {
                         addProp(prop, false);
                         addProp(prop, true);
@@ -110,6 +114,18 @@ public class PropsGenerator {
         } finally {
             typeBuilder = null;
         }
+    }
+
+    private Map<String, ImmutableProp> propsForMethods() {
+        Map<String, ImmutableProp> props = new LinkedHashMap<>(type.getDeclaredProps());
+        for (ImmutableProp prop : type.getRedefinedProps().values()) {
+            Element enclosingElement = prop.toElement().getEnclosingElement();
+            if (enclosingElement instanceof TypeElement &&
+                    !((TypeElement) enclosingElement).getTypeParameters().isEmpty()) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        return props;
     }
 
     private void addStaticProp(ImmutableProp prop) {
@@ -216,7 +232,7 @@ public class PropsGenerator {
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
-        Doc doc =context.getDocMetadata().getDoc(prop.toElement());
+        Doc doc = context.getDocMetadata().getDoc(prop.toElement());
         if (doc != null) {
             builder.addJavadoc("$L", doc.getValue());
         }
@@ -305,7 +321,7 @@ public class PropsGenerator {
                         .getTableClassName();
             }
         } else if (prop.isAssociation(false)) {
-            ClassName className = (ClassName)prop.getTypeName();
+            ClassName className = (ClassName) prop.getTypeName();
             returnType = ClassName.get(
                     className.packageName(),
                     className.simpleName() + ImmutableType.PROP_EXPRESSION_SUFFIX

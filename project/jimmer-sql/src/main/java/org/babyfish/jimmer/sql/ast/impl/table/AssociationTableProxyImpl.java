@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -40,18 +39,8 @@ public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends 
     }
 
     @Override
-    public ST source(ImmutableType treatedAs) {
-        return TableProxies.fluent(joinOperation("source", JoinType.INNER, treatedAs));
-    }
-
-    @Override
     public TT target() {
         return TableProxies.fluent(joinOperation("target"));
-    }
-
-    @Override
-    public ST target(ImmutableType treatedAs) {
-        return TableProxies.fluent(joinOperation("target", JoinType.INNER, treatedAs));
     }
 
     @Override

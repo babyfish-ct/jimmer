@@ -489,33 +489,37 @@ public class GetIdTest extends AbstractMutationTest {
                         it.sql(
                                 "update EMPLOYEE " +
                                         "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
-                                        "where NAME = ?"
+                                        "where NAME = ? " +
+                                        "and DELETED_MILLIS = ?"
                         );
-                        it.variables(1L, "Jacob");
+                        it.variables(1L, "Jacob", UNKNOWN_VARIABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update EMPLOYEE " +
                                         "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
-                                        "where NAME = ?"
+                                        "where NAME = ? " +
+                                        "and DELETED_MILLIS = ?"
                         );
-                        it.variables(1L, "Jessica");
+                        it.variables(1L, "Jessica", UNKNOWN_VARIABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update EMPLOYEE " +
                                         "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
-                                        "where NAME = ?"
+                                        "where NAME = ? " +
+                                        "and DELETED_MILLIS = ?"
                         );
-                        it.variables(1L, "Raines");
+                        it.variables(1L, "Raines", UNKNOWN_VARIABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update EMPLOYEE " +
                                         "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
-                                        "where NAME = ?"
+                                        "where NAME = ? " +
+                                        "and DELETED_MILLIS = ?"
                         );
-                        it.variables(1L, "Sam");
+                        it.variables(1L, "Sam", UNKNOWN_VARIABLE);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -581,12 +585,13 @@ public class GetIdTest extends AbstractMutationTest {
                         it.sql(
                                 "update EMPLOYEE " +
                                         "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
-                                        "where NAME = ?"
+                                        "where NAME = ? " +
+                                        "and DELETED_MILLIS = ?"
                         );
-                        it.batchVariables(0, 1L, "Jacob");
-                        it.batchVariables(1, 1L, "Jessica");
-                        it.batchVariables(2, 1L, "Raines");
-                        it.batchVariables(3, 1L, "Sam");
+                        it.batchVariables(0, 1L, "Jacob", UNKNOWN_VARIABLE);
+                        it.batchVariables(1, 1L, "Jessica", UNKNOWN_VARIABLE);
+                        it.batchVariables(2, 1L, "Raines", UNKNOWN_VARIABLE);
+                        it.batchVariables(3, 1L, "Sam", UNKNOWN_VARIABLE);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -751,12 +756,13 @@ public class GetIdTest extends AbstractMutationTest {
                                 "update EMPLOYEE " +
                                         "set DEPARTMENT_ID = ? " +
                                         "where NAME = ? " +
+                                        "and DELETED_MILLIS = ? " +
                                         "returning ID"
                         );
-                        it.batchVariables(0, 1L, "Jacob");
-                        it.batchVariables(1, 1L, "Jessica");
-                        it.batchVariables(2, 1L, "Raines");
-                        it.batchVariables(3, 1L, "Sam");
+                        it.batchVariables(0, 1L, "Jacob", UNKNOWN_VARIABLE);
+                        it.batchVariables(1, 1L, "Jessica", UNKNOWN_VARIABLE);
+                        it.batchVariables(2, 1L, "Raines", UNKNOWN_VARIABLE);
+                        it.batchVariables(3, 1L, "Sam", UNKNOWN_VARIABLE);
                     });
                     ctx.entity(it -> {
                         it.modified(

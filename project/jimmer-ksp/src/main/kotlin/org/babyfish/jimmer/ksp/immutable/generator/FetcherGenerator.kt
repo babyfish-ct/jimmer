@@ -18,7 +18,7 @@ class FetcherGenerator(
     private val file: KSFile,
     private val modelClassDeclaration: KSClassDeclaration
 ) {
-    fun generate(allFiles: List<KSFile>) {
+    fun generate() {
         val draftFileName =
             file.fileName.let {
                 var lastDotIndex = it.lastIndexOf('.')
@@ -29,7 +29,7 @@ class FetcherGenerator(
                 }
             }
         codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(false, file),
             file.packageName.asString(),
             draftFileName
         ).use {
@@ -45,13 +45,14 @@ class FetcherGenerator(
                     for (prop in type.properties.values) {
                         if (prop.isAssociation(true) &&
                             prop.targetType!!.isEntity &&
-                            prop.targetType!!.className.packageName != type.className.packageName) {
+                            prop.targetType!!.className.packageName != type.className.packageName
+                        ) {
                             addImport(prop.targetClassName.packageName, "by")
                         }
                     }
                     addCreateFun(type, false)
                     addCreateFun(type, true)
-                    FetcherDslGenerator(type, this).generate()
+                    FetcherDslGenerator(ctx, type, this).generate()
                     addEmptyFetcher(type)
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
@@ -93,7 +94,11 @@ class FetcherGenerator(
                         type.className
                     )
                 )
-                .addStatement("val dsl = %T(%Lempty${type.simpleName}$FETCHER)", type.fetcherDslClassName, if (withBase) "base ?: " else "")
+                .addStatement(
+                    "val dsl = %T(%Lempty${type.simpleName}$FETCHER)",
+                    type.fetcherDslClassName,
+                    if (withBase) "base ?: " else ""
+                )
                 .addStatement("dsl.block()")
                 .addStatement("return dsl.internallyGetFetcher()")
                 .build()

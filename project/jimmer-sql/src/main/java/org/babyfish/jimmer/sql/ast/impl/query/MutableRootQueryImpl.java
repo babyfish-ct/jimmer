@@ -3,22 +3,22 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.meta.InheritanceInfo;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
-import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
+import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TupleMapper;
@@ -34,6 +34,12 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
         implements MutableRootQuery<T> {
 
     private final StatementContext ctx;
+
+    private TypeMatchMode typeMatchMode = TypeMatchMode.POLYMORPHIC;
+
+    private boolean typeMatchPredicateApplied;
+
+    private boolean manualTypeMatchPredicateApplied;
 
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
@@ -247,6 +253,64 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
         );
     }
 
+    @Override
+    public MutableRootQuery<T> typeMatchMode(TypeMatchMode mode) {
+        validateMutable();
+        typeMatchMode = mode != null ? mode : TypeMatchMode.POLYMORPHIC;
+        return this;
+    }
+
+    @Override
+    protected void onFrozen(AstContext astContext) {
+        applyTypeMatchPredicate();
+        super.onFrozen(astContext);
+    }
+
+    @Override
+    protected boolean shouldApplyImplicitDiscriminatorPredicate(TableImplementor<?> table) {
+        return !manualTypeMatchPredicateApplied;
+    }
+
+    private void applyTypeMatchPredicate() {
+        if (typeMatchPredicateApplied) {
+            return;
+        }
+        typeMatchPredicateApplied = true;
+        if (!(getTableLikeImplementor() instanceof TableImplementor<?>)) {
+            return;
+        }
+        TableImplementor<?> table = (TableImplementor<?>) getTableLikeImplementor();
+        ImmutableType type = table.getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null) {
+            return;
+        }
+        TypeMatchMode resolvedMode = resolveTypeMatchMode(type);
+        if (resolvedMode != TypeMatchMode.EXACT) {
+            return;
+        }
+        if (!type.isInstantiable()) {
+            throw new ExecutionException(
+                    "Cannot query inheritance entity type \"" +
+                            type +
+                            "\" exactly because it is abstract. Query an instantiable type or use " +
+                            TypeMatchMode.POLYMORPHIC +
+                            " type match mode."
+            );
+        }
+        Object value = inheritanceInfo.discriminatorValue(type.getDiscriminatorValue());
+        PropExpression<Object> expr = table.get(inheritanceInfo.getDiscriminatorProp(type), false);
+        manualTypeMatchPredicateApplied = true;
+        where(expr.eq(value));
+    }
+
+    private TypeMatchMode resolveTypeMatchMode(ImmutableType type) {
+        if (typeMatchMode == TypeMatchMode.AUTO) {
+            return type.isInstantiable() ? TypeMatchMode.EXACT : TypeMatchMode.POLYMORPHIC;
+        }
+        return typeMatchMode;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> where(Predicate... predicates) {
@@ -265,18 +329,14 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                             "\""
             );
         }
-        return where((JSpecification<?, T>) specification);
+        return where((JSpecification<?, ?>) specification);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQuery<T> where(JSpecification<?, T> specification) {
+    public MutableRootQuery<T> where(JSpecification<?, ?> specification) {
         if (specification != null) {
-            SpecificationArgs<Object, Table<Object>> args =
-                    new SpecificationArgs<>(new PredicateApplier(this));
-            JSpecification<Object, Table<Object>> implementor =
-                    (JSpecification<Object, Table<Object>>) specification;
-            implementor.applyTo(args);
+            PredicateApplier applier = new PredicateApplier(this);
+            applier.apply(specification);
         }
         return this;
     }

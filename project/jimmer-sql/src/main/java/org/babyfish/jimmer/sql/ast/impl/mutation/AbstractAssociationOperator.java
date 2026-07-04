@@ -3,19 +3,21 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.Nullable;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 abstract class AbstractAssociationOperator {
 
@@ -152,15 +154,34 @@ abstract class AbstractAssociationOperator {
             DisconnectingType disconnectingType,
             Function<ImmutableProp, ChildTableOperator> backPropCreator
     ) {
+        return createSubOperators(
+                sqlClient,
+                path,
+                disconnectingType,
+                backPropCreator,
+                prop -> true
+        );
+    }
+
+    static List<ChildTableOperator> createSubOperators(
+            JSqlClientImplementor sqlClient,
+            MutationPath path,
+            DisconnectingType disconnectingType,
+            Function<ImmutableProp, ChildTableOperator> backPropCreator,
+            Predicate<ImmutableProp> backPropFilter
+    ) {
         List<ChildTableOperator> subOperators = null;
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
-                if (backProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
+                if (backProp.getTargetType().isAssignableFrom(path.getType()) &&
+                        backProp.isColumnDefinition() &&
+                        disconnectingType != DisconnectingType.NONE &&
+                        backPropFilter.test(backProp)) {
                     if (subOperators == null) {
                         subOperators = new ArrayList<>();
                     }
                     ChildTableOperator subOperator = backPropCreator.apply(backProp);
-                    if (subOperator.disconnectingType != DisconnectingType.NONE) {
+                    if (subOperator != null && subOperator.disconnectingType != DisconnectingType.NONE) {
                         subOperators.add(subOperator);
                     }
                 }
@@ -179,26 +200,50 @@ abstract class AbstractAssociationOperator {
             Function<ImmutableProp, MiddleTableOperator> propCreator,
             Function<ImmutableProp, MiddleTableOperator> backPropCreator
     ) {
+        return createMiddleTableOperators(
+                sqlClient,
+                path,
+                disconnectingType,
+                propCreator,
+                backPropCreator,
+                prop -> true,
+                prop -> true
+        );
+    }
+
+    static List<MiddleTableOperator> createMiddleTableOperators(
+            JSqlClientImplementor sqlClient,
+            MutationPath path,
+            DisconnectingType disconnectingType,
+            Function<ImmutableProp, MiddleTableOperator> propCreator,
+            Function<ImmutableProp, MiddleTableOperator> backPropCreator,
+            Predicate<ImmutableProp> propFilter,
+            Predicate<ImmutableProp> backPropFilter
+    ) {
         List<MiddleTableOperator> middleTableOperators = null;
         for (ImmutableProp prop : path.getType().getProps().values()) {
-            if (prop.isMiddleTableDefinition()) {
+            if (prop.isMiddleTableDefinition() && propFilter.test(prop)) {
                 if (middleTableOperators == null) {
                     middleTableOperators = new ArrayList<>();
                 }
                 MiddleTableOperator middleTableOperator = propCreator.apply(prop);
-                if (isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
+                if (middleTableOperator != null &&
+                        isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
                     middleTableOperators.add(middleTableOperator);
                 }
             }
         }
         if (path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(path.getType())) {
-                if (backProp.isMiddleTableDefinition()) {
+                if (backProp.getTargetType().isAssignableFrom(path.getType()) &&
+                        backProp.isMiddleTableDefinition() &&
+                        backPropFilter.test(backProp)) {
                     if (middleTableOperators == null) {
                         middleTableOperators = new ArrayList<>();
                     }
                     MiddleTableOperator middleTableOperator = backPropCreator.apply(backProp);
-                    if (isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
+                    if (middleTableOperator != null &&
+                            isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
                         middleTableOperators.add(middleTableOperator);
                     }
                 }
@@ -220,6 +265,10 @@ abstract class AbstractAssociationOperator {
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
             return middleTable.isDeletedWhenEndpointIsLogicallyDeleted() ||
                     middleTable.getLogicalDeletedInfo() != null;
+        }
+        if (disconnectingType == DisconnectingType.PHYSICAL_DELETE &&
+                middleTable.isCascadeDeletedBySource()) {
+            return false;
         }
         return true;
     }
