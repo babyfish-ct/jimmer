@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
+import java.util.function.Supplier;
 
 class Operator {
 
@@ -122,11 +124,12 @@ class Operator {
             ImmutableType rootType,
             DraftSpi sample
     ) {
+        InheritanceInfo inheritanceInfo = rootType.getInheritanceInfo();
         return Shape.of(
                 sqlClient,
                 rootType,
                 sample,
-                prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
+                prop -> inheritanceInfo == null || inheritanceInfo.isPropAvailableInTable(prop, rootType)
         );
     }
 
@@ -136,14 +139,16 @@ class Operator {
             ImmutableType tableType,
             DraftSpi sample
     ) {
+        InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
         return Shape.of(
                 sqlClient,
                 tableType,
                 sample,
                 prop -> prop.isId() ||
                         (prop.isColumnDefinition() &&
-                                prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
-                                !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
+                                (inheritanceInfo == null ||
+                                        (inheritanceInfo.isPropAvailableInTable(prop, tableType) &&
+                                                !inheritanceInfo.isPropAvailableInTable(prop, parentTableType))))
         );
     }
 
@@ -255,6 +260,7 @@ class Operator {
                         null;
         if (returning != null) {
             int rowCount = rowCount(returning.executeInsert(batch.entities()));
+            completeInsertedFetcherFields(batch);
             MutationTrigger trigger = fireTrigger ? ctx.trigger : null;
             if (trigger != null) {
                 for (DraftSpi draft : batch.entities()) {
@@ -343,6 +349,7 @@ class Operator {
         }
 
         int rowCount = execute(builder, batch, false, false);
+        completeInsertedFetcherFields(batch);
         // Fire the trigger after `execute` so the draft already reflects its final,
         // post-execution state (generated id, version, ...) before being captured.
         MutationTrigger trigger = fireTrigger ? ctx.trigger : null;
@@ -352,6 +359,45 @@ class Operator {
             }
         }
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
+    }
+
+    private void completeInsertedFetcherFields(Batch<DraftSpi> batch) {
+        Fetcher<?> fetcher = ctx.fetcher;
+        if (fetcher == null || ctx.path.getParent() != null) {
+            return;
+        }
+        SaveFetcherAnalysis analysis = SaveFetcherAnalysis.of(fetcher, batch.shape().getType());
+        if (analysis.hasTypeBranches()) {
+            return;
+        }
+        List<ImmutableProp> props = analysis.getCompletableProps();
+        if (props.isEmpty()) {
+            return;
+        }
+        for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
+            completeInsertedFetcherFields(item.getEntity(), props);
+            for (DraftSpi draft : item.getOriginalEntities()) {
+                if (draft != item.getEntity()) {
+                    completeInsertedFetcherFields(draft, props);
+                }
+            }
+        }
+    }
+
+    private static void completeInsertedFetcherFields(DraftSpi draft, List<ImmutableProp> props) {
+        for (ImmutableProp prop : props) {
+            PropId propId = prop.getId();
+            if (draft.__isLoaded(propId)) {
+                continue;
+            }
+            Ref<Object> defaultRef = prop.getDefaultValueRef();
+            if (defaultRef != null) {
+                Object value = defaultRef.getValue();
+                draft.__set(propId, value instanceof Supplier<?> ? ((Supplier<?>) value).get() : value);
+            } else {
+                draft.__set(propId, null);
+            }
+        }
     }
 
     private ImmutableProp discriminatorProp(@Nullable InheritanceInfo inheritanceInfo) {
@@ -566,12 +612,7 @@ class Operator {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         DraftSpi sample = batch.entities().iterator().next();
         ImmutableType rootType = inheritanceInfo.getRootType();
-        Shape rootShape = Shape.of(
-                sqlClient,
-                rootType,
-                sample,
-                prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
-        );
+        Shape rootShape = joinedRootShape(sqlClient, rootType, sample);
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
         boolean typeChangeAllowed = ctx.options.isTypeChangeAllowed(batch.shape().getType());
         if (typeChangeAllowed && rootShape.getIdGetters().isEmpty()) {
@@ -580,12 +621,7 @@ class Operator {
                 return MutationRows.EMPTY;
             }
             sample = rootBatch.entities().iterator().next();
-            rootShape = Shape.of(
-                    sqlClient,
-                    rootType,
-                    sample,
-                    prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
-            );
+            rootShape = joinedRootShape(sqlClient, rootType, sample);
             rootBatch = batchOf(batch, rootShape);
         } else if (!typeChangeAllowed &&
                 rootShape.getIdGetters().isEmpty() &&
@@ -595,12 +631,7 @@ class Operator {
                 return MutationRows.EMPTY;
             }
             sample = rootBatch.entities().iterator().next();
-            rootShape = Shape.of(
-                    sqlClient,
-                    rootType,
-                    sample,
-                    prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
-            );
+            rootShape = joinedRootShape(sqlClient, rootType, sample);
             rootBatch = batchOf(batch, rootShape);
         }
         Map<Object, ImmutableSpi> typeChangeOldRowMap =
@@ -679,16 +710,7 @@ class Operator {
         }
         ImmutableType previousTableType = rootType;
         for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
-            ImmutableType parentTableType = previousTableType;
-            Shape shape = Shape.of(
-                    sqlClient,
-                    tableType,
-                    sample,
-                    prop -> prop.isId() ||
-                            (prop.isColumnDefinition() &&
-                                    prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
-                                    !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
-            );
+            Shape shape = joinedStageShape(sqlClient, previousTableType, tableType, sample);
             Batch<DraftSpi> childBatch = batchOf(batch, shape);
             if (typeChangeAllowed) {
                 saveJoinedTableForTypeChange(
@@ -1242,6 +1264,11 @@ class Operator {
                 shape,
                 entities,
                 updatedGetters,
+                discriminatorProp,
+                discriminatorGuardProp,
+                discriminatorGuardValue,
+                nullGetters,
+                null,
                 keyProps,
                 userOptimisticLockPredicate,
                 versionGetter,
@@ -1386,12 +1413,7 @@ class Operator {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         DraftSpi sample = batch.entities().iterator().next();
         ImmutableType rootType = inheritanceInfo.getRootType();
-        Shape rootShape = Shape.of(
-                sqlClient,
-                rootType,
-                sample,
-                prop -> prop.isId() || prop.toOriginal().getDeclaringType().isAssignableFrom(rootType)
-        );
+        Shape rootShape = joinedRootShape(sqlClient, rootType, sample);
         Batch<DraftSpi> rootBatch = batchOf(batch, rootShape);
         boolean typeChangeAllowed = ctx.options.isTypeChangeAllowed(batch.shape().getType()) && !ignoreUpdate;
         if (typeChangeAllowed && rootShape.getIdGetters().isEmpty()) {
@@ -1502,15 +1524,7 @@ class Operator {
         }
         ImmutableType previousTableType = rootType;
         for (ImmutableType tableType : joinedTableTypes(rootType, batch.shape().getType())) {
-            ImmutableType parentTableType = previousTableType;
-            Shape shape = Shape.of(
-                    sqlClient,
-                    tableType,
-                    sample,
-                    prop -> prop.isId() ||
-                            (prop.toOriginal().getDeclaringType().isAssignableFrom(tableType) &&
-                                    !prop.toOriginal().getDeclaringType().isAssignableFrom(parentTableType))
-            );
+            Shape shape = joinedStageShape(sqlClient, previousTableType, tableType, sample);
             Batch<DraftSpi> childBatch = batchOf(batch, shape);
             if (typeChangeAllowed) {
                 saveJoinedTableForTypeChange(
@@ -1548,6 +1562,27 @@ class Operator {
             return;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        SaveReturning returning = SaveReturning.forUpdate(
+                ctx,
+                batch.shape(),
+                batch.entities(),
+                updatedGetters,
+                null,
+                null,
+                null,
+                Collections.emptyList(),
+                SaveReturningUpdateCondition.joinedChildGuard(sqlClient, rootType, tableType, inheritanceInfo),
+                null,
+                null,
+                null,
+                false,
+                false
+        );
+        if (returning != null) {
+            int[] rowCounts = returning.executeUpdate(batch.entities());
+            AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
+            return;
+        }
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, tableType.getJavaClass()).getIdGetters();
         PropertyGetter discriminatorGetter = discriminatorGetterForBatch(batch, inheritanceInfo);
@@ -1558,6 +1593,7 @@ class Operator {
                 .getDiscriminatorProp()
                 .<SingleColumn>getStorage(strategy)
                 .getName();
+        String rootAlias = "tb_root_";
 
         BatchSqlBuilder builder = new BatchSqlBuilder(
                 sqlClient,
@@ -1583,8 +1619,10 @@ class Operator {
         builder.separator()
                 .sql("exists(select 1 from ")
                 .sql(rootTableName)
+                .sql(" ")
+                .sql(rootAlias)
                 .sql(" where ")
-                .sql(rootTableName)
+                .sql(rootAlias)
                 .sql(".")
                 .sql(rootIdColumnName)
                 .sql(" = ");
@@ -1592,6 +1630,8 @@ class Operator {
             builder.variable(idGetter);
         }
         builder.sql(" and ")
+                .sql(rootAlias)
+                .sql(".")
                 .sql(discriminatorColumnName)
                 .sql(" = ")
                 .variable(discriminatorGetter)

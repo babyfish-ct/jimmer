@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
@@ -120,6 +119,304 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
                         it.modified("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testInsertDerivedTypeWithStageReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                })
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setName("Generated Org With Defaults");
+                                    organization.setTaxCode("GEN-DEFAULT-001");
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                OrganizationFetcher.$
+                                        .name()
+                                        .description()
+                                        .taxCode()
+                                        .status()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->insert into JOINED_CLIENT(NAME, CLIENT_TYPE) " +
+                                        "--->values(?, ?)" +
+                                        ")"
+                        );
+                        it.variables("Generated Org With Defaults", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, STATUS " +
+                                        "from final table (" +
+                                        "--->insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "--->values(?, ?)" +
+                                        ")"
+                        );
+                        it.variables(UNKNOWN_VARIABLE, "GEN-DEFAULT-001");
+                    });
+                    ctx.value(organization -> {
+                        assertTrue(organization.id() > 0);
+                        assertEquals("Generated Org With Defaults", organization.name());
+                        assertEquals("DEFAULT_CLIENT_DESCRIPTION", organization.description());
+                        assertEquals("GEN-DEFAULT-001", organization.taxCode());
+                        assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeWithStageReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(200L);
+                                    organization.setName("Globex Returning Update");
+                                    organization.setTaxCode("GLOBEX-RETURNING-UPDATE");
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                OrganizationFetcher.$
+                                        .name()
+                                        .description()
+                                        .taxCode()
+                                        .status()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using( values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
+                        it.variables(200L, "Globex Returning Update", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE, STATUS " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "--->using( values(?, ?, ?)) tb_2_(ID, TAX_CODE, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID and exists(" +
+                                        "--->--->select 1 from JOINED_CLIENT tb_root_ " +
+                                        "--->--->where tb_root_.ID = tb_2_.ID " +
+                                        "--->--->and tb_root_.CLIENT_TYPE = tb_2_.CLIENT_TYPE" +
+                                        "--->) " +
+                                        "--->when matched then update set TAX_CODE = tb_2_.TAX_CODE" +
+                                        ")"
+                        );
+                        it.variables(200L, "GLOBEX-RETURNING-UPDATE", "ORG");
+                    });
+                    ctx.value(organization -> {
+                        assertEquals(200L, organization.id());
+                        assertEquals("Globex Returning Update", organization.name());
+                        assertEquals("DEFAULT_CLIENT_DESCRIPTION", organization.description());
+                        assertEquals("GLOBEX-RETURNING-UPDATE", organization.taxCode());
+                        assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertDerivedTypeWithStageReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(200L);
+                                    organization.setName("Globex Returning Upsert");
+                                    organization.setTaxCode("GLOBEX-RETURNING-UPSERT");
+                                })
+                        )
+                        .setMode(SaveMode.UPSERT)
+                        .execute(
+                                con,
+                                OrganizationFetcher.$
+                                        .name()
+                                        .description()
+                                        .taxCode()
+                                        .status()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "--->then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "Globex Returning Upsert", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE, STATUS " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set TAX_CODE = tb_2_.TAX_CODE " +
+                                        "--->when not matched then insert(ID, TAX_CODE) values(tb_2_.ID, tb_2_.TAX_CODE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "GLOBEX-RETURNING-UPSERT");
+                    });
+                    ctx.value(organization -> {
+                        assertEquals(200L, organization.id());
+                        assertEquals("Globex Returning Upsert", organization.name());
+                        assertEquals("DEFAULT_CLIENT_DESCRIPTION", organization.description());
+                        assertEquals("GLOBEX-RETURNING-UPSERT", organization.taxCode());
+                        assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertDerivedTypeInsertWithStageReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(398L);
+                                    organization.setName("Inserted By Upsert Returning");
+                                    organization.setTaxCode("UPSERT-INSERT-RETURNING");
+                                })
+                        )
+                        .setMode(SaveMode.UPSERT)
+                        .execute(
+                                con,
+                                OrganizationFetcher.$
+                                        .name()
+                                        .description()
+                                        .taxCode()
+                                        .status()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "--->then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(398L, "Inserted By Upsert Returning", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE, STATUS " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set TAX_CODE = tb_2_.TAX_CODE " +
+                                        "--->when not matched then insert(ID, TAX_CODE) values(tb_2_.ID, tb_2_.TAX_CODE)" +
+                                        ")"
+                        );
+                        it.variables(398L, "UPSERT-INSERT-RETURNING");
+                    });
+                    ctx.value(organization -> {
+                        assertEquals(398L, organization.id());
+                        assertEquals("Inserted By Upsert Returning", organization.name());
+                        assertEquals("DEFAULT_CLIENT_DESCRIPTION", organization.description());
+                        assertEquals("UPSERT-INSERT-RETURNING", organization.taxCode());
+                        assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentDerivedTypeWithStageReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(399L);
+                                    organization.setName("Inserted If Absent Returning");
+                                    organization.setTaxCode("INSERT-IF-ABSENT-RETURNING");
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .execute(
+                                con,
+                                OrganizationFetcher.$
+                                        .name()
+                                        .description()
+                                        .taxCode()
+                                        .status()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(399L, "Inserted If Absent Returning", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, STATUS " +
+                                        "from final table (" +
+                                        "--->insert into JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "--->values(?, ?)" +
+                                        ")"
+                        );
+                        it.variables(399L, "INSERT-IF-ABSENT-RETURNING");
+                    });
+                    ctx.value(organization -> {
+                        assertEquals(399L, organization.id());
+                        assertEquals("Inserted If Absent Returning", organization.name());
+                        assertEquals("DEFAULT_CLIENT_DESCRIPTION", organization.description());
+                        assertEquals("INSERT-IF-ABSENT-RETURNING", organization.taxCode());
+                        assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
                     });
                 }
         );
@@ -768,8 +1065,8 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION " +
                                         "set TAX_CODE = ? " +
                                         "where ID = ? and exists(" +
-                                        "select 1 from JOINED_CLIENT " +
-                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                                        "select 1 from JOINED_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                         );
                         it.variables("GLOBEX-002", 200L, 200L, "ORG");
                     });
@@ -983,8 +1280,8 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION " +
                                         "set TAX_CODE = ? " +
                                         "where ID = ? and exists(" +
-                                        "select 1 from JOINED_CLIENT " +
-                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                                        "select 1 from JOINED_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                         );
                         it.variables("GLOBEX-003", 200L, 200L, "ORG");
                     });
@@ -1211,8 +1508,8 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION " +
                                         "set TAX_CODE = ? " +
                                         "where ID = ? and exists(" +
-                                        "select 1 from JOINED_CLIENT " +
-                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                                        "select 1 from JOINED_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                         );
                         it.variables("GLOBEX-004", 200L, 200L, "ORG");
                     });
@@ -1263,8 +1560,8 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION " +
                                         "set TAX_CODE = ? " +
                                         "where ID = ? and exists(" +
-                                        "select 1 from JOINED_CLIENT " +
-                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                                        "select 1 from JOINED_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                         );
                         it.batchVariables(0, "GLOBEX-DUMB-UPDATE", 200L, 200L, "ORG");
                         it.batchVariables(1, "SHOULD-NOT-WRITE", 201L, 201L, "ORG");
@@ -1336,8 +1633,8 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "update JOINED_ORGANIZATION " +
                                         "set TAX_CODE = ? " +
                                         "where ID = ? and exists(" +
-                                        "select 1 from JOINED_CLIENT " +
-                                        "where JOINED_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                                        "select 1 from JOINED_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                         );
                         it.variables("GLOBEX-DUMB-DOWNSTREAM", 200L, 200L, "ORG");
                     });

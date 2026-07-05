@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
 
 @Entity
 @Table(name = "JOINED_CLIENT")
@@ -12,4 +13,8 @@ public interface Client extends ClientBase {
     long id();
 
     String name();
+
+    @Nullable
+    @DatabaseDefault("'DEFAULT_CLIENT_DESCRIPTION'")
+    String description();
 }

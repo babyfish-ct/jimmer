@@ -29,6 +29,9 @@ class SaveReturning {
     final List<PropertyGetter> updatedGetters;
 
     @Nullable
+    final SaveReturningUpdateCondition updateCondition;
+
+    @Nullable
     final PropertyGetter versionGetter;
 
     @Nullable
@@ -58,6 +61,7 @@ class SaveReturning {
             SaveReturningMatchMode matchMode,
             List<SaveReturningColumnValue> sourceValues,
             List<PropertyGetter> updatedGetters,
+            @Nullable SaveReturningUpdateCondition updateCondition,
             @Nullable PropertyGetter versionGetter,
             @Nullable PropertyGetter idGetter,
             List<PropertyGetter> matchGetters,
@@ -75,6 +79,7 @@ class SaveReturning {
         this.matchMode = matchMode;
         this.sourceValues = sourceValues;
         this.updatedGetters = updatedGetters;
+        this.updateCondition = updateCondition;
         this.versionGetter = versionGetter;
         this.idGetter = idGetter;
         this.matchGetters = matchGetters;
@@ -115,6 +120,11 @@ class SaveReturning {
             Shape shape,
             EntityCollection<DraftSpi> entities,
             List<PropertyGetter> updatedGetters,
+            @Nullable ImmutableProp discriminatorProp,
+            @Nullable ImmutableProp discriminatorGuardProp,
+            @Nullable Object discriminatorGuardValue,
+            List<PropertyGetter> nullGetters,
+            @Nullable SaveReturningUpdateCondition updateCondition,
             @Nullable Set<ImmutableProp> keyProps,
             @Nullable Predicate userOptimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
@@ -126,6 +136,11 @@ class SaveReturning {
                 shape,
                 entities,
                 updatedGetters,
+                discriminatorProp,
+                discriminatorGuardProp,
+                discriminatorGuardValue,
+                nullGetters,
+                updateCondition,
                 keyProps,
                 userOptimisticLockPredicate,
                 versionGetter,

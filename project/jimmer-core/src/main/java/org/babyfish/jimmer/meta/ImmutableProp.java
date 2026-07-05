@@ -170,6 +170,8 @@ public interface ImmutableProp {
 
     Ref<Object> getDefaultValueRef();
 
+    boolean hasDatabaseDefaultValue();
+
     boolean isExcludedFromAllScalars();
 
     boolean isRemote();

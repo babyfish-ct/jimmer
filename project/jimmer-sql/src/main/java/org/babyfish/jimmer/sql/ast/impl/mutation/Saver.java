@@ -396,17 +396,57 @@ public class Saver {
         int index = 0;
         List<Object> unmatchedIds = new ArrayList<>();
         List<DraftSpi> nonIdObjects = new ArrayList<>();
+        Fetcher<?> fetcher = ctx.fetcher;
+        DraftSpi[] databaseDefaultArr = new DraftSpi[drafts.size()];
+        List<Object> databaseDefaultIds = new ArrayList<>();
+        SaveFetcherAnalysis fetcherAnalysis = fetcher != null ?
+                SaveFetcherAnalysis.of(fetcher) :
+                null;
+        List<ImmutableProp> databaseDefaultProps =
+                fetcherAnalysis != null && fetcherAnalysis.isScalarOnly() ?
+                        fetcherAnalysis.getDatabaseDefaultProps() :
+                        Collections.emptyList();
+        boolean canFetchDatabaseDefaults = fetcherAnalysis != null && !databaseDefaultProps.isEmpty();
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         SaveShapeMatcher shapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
-        Fetcher<?> fetcher = ctx.fetcher;
         for (DraftSpi draft : drafts) {
             if (!draft.__isLoaded(idPropId)) {
                 nonIdObjects.add(draft);
             } else if (fetcher != null && !shapeMatcher.isMatched(draft, fetcher, true)) {
-                arr[index] = draft;
-                unmatchedIds.add(draft.__get(idPropId));
+                Object id = draft.__get(idPropId);
+                if (canFetchDatabaseDefaults &&
+                        fetcherAnalysis.isUnmatchedOnlyByDatabaseDefaultProps(draft)) {
+                    databaseDefaultArr[index] = draft;
+                    databaseDefaultIds.add(id);
+                } else {
+                    arr[index] = draft;
+                    unmatchedIds.add(id);
+                }
             }
             ++index;
+        }
+        if (!databaseDefaultIds.isEmpty()) {
+            JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
+            Fetcher<ImmutableSpi> databaseDefaultFetcher =
+                    databaseDefaultFetcher(databaseDefaultProps);
+            Map<Object, ImmutableSpi> map = ((EntitiesImpl) sqlClient.getEntities())
+                    .forSaveCommandFetch(QueryReason.FETCHER)
+                    .forConnection(ctx.con)
+                    .findMapByIds(databaseDefaultFetcher, databaseDefaultIds);
+            index = 0;
+            for (DraftSpi draft : databaseDefaultArr) {
+                if (draft != null) {
+                    Object id = draft.__get(idPropId);
+                    ImmutableSpi fetched = map.get(id);
+                    if (fetched != null) {
+                        applyDatabaseDefaultProps(draft, fetched, databaseDefaultProps);
+                    } else {
+                        arr[index] = draft;
+                        unmatchedIds.add(id);
+                    }
+                }
+                ++index;
+            }
         }
         if (!unmatchedIds.isEmpty()) {
             JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
@@ -514,6 +554,28 @@ public class Saver {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private Fetcher<ImmutableSpi> databaseDefaultFetcher(List<ImmutableProp> props) {
+        Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass());
+        for (ImmutableProp prop : props) {
+            fetcher = fetcher.add(prop.getName());
+        }
+        return fetcher;
+    }
+
+    private static void applyDatabaseDefaultProps(
+            DraftSpi draft,
+            ImmutableSpi fetched,
+            List<ImmutableProp> props
+    ) {
+        for (ImmutableProp prop : props) {
+            PropId propId = prop.getId();
+            if (fetched.__isLoaded(propId)) {
+                draft.__set(propId, fetched.__get(propId));
+                draft.__show(propId, fetched.__isVisible(propId));
             }
         }
     }

@@ -243,42 +243,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         if (inheritanceInfo.getRootType() == type) {
             return true;
         }
-        return isPropOwnedByStage(prop.toOriginal(), inheritanceInfo.getRootType());
-    }
-
-    static boolean isPropOwnedByStage(ImmutableProp prop, ImmutableType stageType) {
-        InheritanceInfo inheritanceInfo = stageType.getInheritanceInfo();
-        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
-            return true;
-        }
-        if (prop.isId() || prop.toOriginal().isId()) {
-            return true;
-        }
-        return isDeclaringTypeOwnedByStage(prop.toOriginal().getDeclaringType(), stageType);
-    }
-
-    @Nullable
-    static ImmutableType joinedStageType(ImmutableProp prop, ImmutableType type) {
-        if (prop.isId() || prop.toOriginal().isId()) {
-            return type;
-        }
-        for (ImmutableType stageType = type; stageType != null; stageType = stageType.getPrimarySuperType()) {
-            if (stageType.isEntity() && isPropOwnedByStage(prop, stageType)) {
-                return stageType;
-            }
-        }
-        return null;
-    }
-
-    static boolean isDeclaringTypeOwnedByStage(ImmutableType declaringType, ImmutableType stageType) {
-        if (declaringType == stageType) {
-            return true;
-        }
-        if (!declaringType.isMappedSuperclass() || !stageType.getAllTypes().contains(declaringType)) {
-            return false;
-        }
-        ImmutableType superType = stageType.getPrimarySuperType();
-        return superType == null || !superType.getAllTypes().contains(declaringType);
+        return inheritanceInfo.isPropAvailableInTable(prop.toOriginal(), inheritanceInfo.getRootType());
     }
 
     static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {

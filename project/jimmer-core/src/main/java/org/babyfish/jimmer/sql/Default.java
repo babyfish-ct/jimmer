@@ -17,6 +17,8 @@ import java.lang.annotation.Target;
  *     <li>When insert an object, if unloaded property is not filled by `DraftInterceptor`,
  *     this default value will be used</li>
  * </ul>
+ *
+ * @see DatabaseDefault
  */
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)

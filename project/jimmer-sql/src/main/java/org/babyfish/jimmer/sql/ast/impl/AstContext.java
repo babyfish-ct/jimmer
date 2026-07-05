@@ -135,7 +135,9 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     public boolean isJoinedTypeBranchUpdateTargetStage(TableImplementor<?> table, ImmutableProp prop) {
         for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
             if (frame.table == table) {
-                ImmutableType stageType = TableImplementor.joinedStageType(prop, table.getImmutableType());
+                ImmutableType stageType = table.getImmutableType()
+                        .getInheritanceInfo()
+                        .getTableTypeForProp(prop, table.getImmutableType());
                 return stageType == frame.stageType;
             }
         }
@@ -156,7 +158,9 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     public String getJoinedTypeBranchUpdateAlias(TableImplementor<?> table, ImmutableProp prop) {
         for (JoinedTypeBranchUpdateFrame frame = joinedTypeBranchUpdateFrame; frame != null; frame = frame.parent) {
             if (frame.table == table) {
-                ImmutableType stageType = TableImplementor.joinedStageType(prop, table.getImmutableType());
+                ImmutableType stageType = table.getImmutableType()
+                        .getInheritanceInfo()
+                        .getTableTypeForProp(prop, table.getImmutableType());
                 if (stageType == frame.stageType) {
                     return null;
                 }

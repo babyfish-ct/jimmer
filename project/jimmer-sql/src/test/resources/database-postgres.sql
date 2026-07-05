@@ -273,7 +273,7 @@ insert into bool_key_file(id, path, name, deleted) values
     email text not null,
     area text not null,
     nick_name text not null,
-    description text
+    description text default 'DEFAULT_DESCRIPTION'
 );
 alter table sys_user
     add constraint pk_sys_user

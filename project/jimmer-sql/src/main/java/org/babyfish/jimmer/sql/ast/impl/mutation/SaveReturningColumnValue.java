@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 class SaveReturningColumnValue {
 
     final PropertyGetter getter;
@@ -23,6 +25,19 @@ class SaveReturningColumnValue {
         this.getter = getter;
         this.mode = mode;
         this.sequenceIdGenerator = sequenceIdGenerator;
+    }
+
+    static void addIfAbsent(
+            List<SaveReturningColumnValue> sourceValues,
+            PropertyGetter getter,
+            SaveReturningValueMode mode
+    ) {
+        for (SaveReturningColumnValue sourceValue : sourceValues) {
+            if (sourceValue.getter.prop().toOriginal() == getter.prop().toOriginal()) {
+                return;
+            }
+        }
+        sourceValues.add(new SaveReturningColumnValue(getter, mode, null));
     }
 
     void appendValue(SqlBuilder builder, DraftSpi draft) {

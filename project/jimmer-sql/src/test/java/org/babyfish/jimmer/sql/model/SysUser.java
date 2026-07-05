@@ -24,5 +24,6 @@ public interface SysUser {
     String nickName();
 
     @Nullable
+    @DatabaseDefault("'DEFAULT_DESCRIPTION'")
     String description();
 }

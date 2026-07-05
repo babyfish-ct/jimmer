@@ -426,7 +426,7 @@ public class Deleter {
                             backProp -> handledMiddleBackProps.add(backProp) ?
                                     new MiddleTableOperator(saveCtx.backProp(backProp), cleanupCtx.isLogicalDeleted()) :
                                     null,
-                            prop -> !declaredOnly || TableImplementor.isPropOwnedByStage(prop, cleanupCtx.path.getType()),
+                            prop -> !declaredOnly || isPropAvailableInTable(prop, cleanupCtx.path.getType()),
                             backProp -> !declaredOnly || isBackPropOwnedByStage(backProp, cleanupCtx.path.getType())
                     )
             );
@@ -462,6 +462,11 @@ public class Deleter {
 
     private static boolean isBackPropOwnedByStage(ImmutableProp backProp, ImmutableType stageType) {
         return backProp.getTargetType() == stageType;
+    }
+
+    private static boolean isPropAvailableInTable(ImmutableProp prop, ImmutableType tableType) {
+        InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
+        return inheritanceInfo == null || inheritanceInfo.isPropAvailableInTable(prop, tableType);
     }
 
     private boolean isJoinedTypeBranchCleanupRequired(

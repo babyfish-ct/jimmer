@@ -14,8 +14,8 @@ import org.babyfish.jimmer.apt.util.RecursiveAnnotations;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.impl.util.Keywords;
 import org.babyfish.jimmer.jackson.JsonConverter;
-import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -214,8 +214,19 @@ public class ImmutableProp implements BaseProp {
             deeperPropIdName = null;
         }
 
-        if (executableElement.getAnnotation(Default.class) != null &&
-                executableElement.getAnnotation(LogicalDeleted.class) != null) {
+        Default defaultAnnotation = executableElement.getAnnotation(Default.class);
+        DatabaseDefault databaseDefault = executableElement.getAnnotation(DatabaseDefault.class);
+        if (defaultAnnotation != null && databaseDefault != null) {
+            throw new MetaException(
+                    executableElement,
+                    "property cannot be decorated by both \"@" +
+                            Default.class.getName() +
+                            "\" and \"@" +
+                            DatabaseDefault.class.getName() +
+                            "\""
+            );
+        }
+        if (defaultAnnotation != null && executableElement.getAnnotation(LogicalDeleted.class) != null) {
             boolean isValid = executableElement.getReturnType().getKind() == TypeKind.INT;
             if (!isValid) {
                 if (executableElement.getReturnType().getKind() == TypeKind.DECLARED) {
@@ -395,6 +406,27 @@ public class ImmutableProp implements BaseProp {
         isNullable = descriptor.isNullable();
         isId = descriptor.getType() == PropDescriptor.Type.ID;
         isKey = getAnnotations(Key.class) != null;
+        if (databaseDefault != null) {
+            if (isId ||
+                    getAnnotations(Key.class).length != 0 ||
+                    getAnnotation(Version.class) != null ||
+                    getAnnotation(LogicalDeleted.class) != null ||
+                    isAssociation ||
+                    isEmbedded() ||
+                    isFormula ||
+                    isTransient ||
+                    getIdViewBaseProp() != null ||
+                    getManyToManyViewBaseProp() != null) {
+                throw new MetaException(
+                        executableElement,
+                        "property decorated by \"@" +
+                                DatabaseDefault.class.getName() +
+                                "\" must be a scalar column property " +
+                                "and cannot be id, key, version, logical deleted, association, embedded, " +
+                                "formula, transient or view"
+                );
+            }
+        }
 
         if (isAssociation) {
             OneToOne oneToOne = getAnnotation(OneToOne.class);

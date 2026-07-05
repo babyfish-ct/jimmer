@@ -542,7 +542,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->insert into SYS_USER(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
                                         "--->values(?, ?, ?, ?)" +
@@ -556,7 +556,48 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->\"email\":\"linda@jimmer.org\"," +
                                     "--->\"area\":\"dev\"," +
                                     "--->\"nickName\":\"Linda\"," +
-                                    "--->\"description\":null" +
+                                    "--->\"description\":\"DEFAULT_DESCRIPTION\"" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testInsertOnlyReturnDraftWithGeneratedIdWithoutDatabaseDefaultField() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createSysUser(draft -> {
+                            draft.setAccount("linda");
+                            draft.setEmail("linda@jimmer.org");
+                            draft.setArea("dev");
+                            draft.setNickName("Linda");
+                        })).setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                SysUserFetcher.$
+                                        .account()
+                                        .email()
+                                        .area()
+                                        .nickName()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into SYS_USER(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":100," +
+                                    "--->\"account\":\"linda\"," +
+                                    "--->\"email\":\"linda@jimmer.org\"," +
+                                    "--->\"area\":\"dev\"," +
+                                    "--->\"nickName\":\"Linda\"" +
                                     "}"
                     );
                 }
@@ -595,7 +636,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->insert into SYS_USER(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
                                         "--->values(?, ?, ?, ?), (?, ?, ?, ?)" +
@@ -610,7 +651,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->--->\"email\":\"linda@jimmer.org\"," +
                                     "--->--->\"area\":\"dev\"," +
                                     "--->--->\"nickName\":\"Linda\"," +
-                                    "--->--->\"description\":null" +
+                                    "--->--->\"description\":\"DEFAULT_DESCRIPTION\"" +
                                     "--->}, " +
                                     "--->{" +
                                     "--->--->\"id\":101," +
@@ -618,7 +659,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->--->\"email\":\"bob@jimmer.org\"," +
                                     "--->--->\"area\":\"dev\"," +
                                     "--->--->\"nickName\":\"Bob\"," +
-                                    "--->--->\"description\":null" +
+                                    "--->--->\"description\":\"DEFAULT_DESCRIPTION\"" +
                                     "--->}" +
                                     "]"
                     );
@@ -700,7 +741,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->\"email\":\"new-account@jimmer.org\"," +
                                     "--->\"area\":\"dev\"," +
                                     "--->\"nickName\":\"Newbie\"," +
-                                    "--->\"description\":null" +
+                                    "--->\"description\":\"DEFAULT_DESCRIPTION\"" +
                                     "}"
                     );
                 }

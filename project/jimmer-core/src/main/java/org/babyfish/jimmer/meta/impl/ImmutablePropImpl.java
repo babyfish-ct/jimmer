@@ -1397,7 +1397,14 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 if (ref == null) {
                     Version version = getAnnotation(Version.class);
                     Default dft = getAnnotation(Default.class);
+                    DatabaseDefault databaseDefault = getAnnotation(DatabaseDefault.class);
+                    if (dft != null && databaseDefault != null) {
+                        throwIllegalDefaultConflict();
+                    }
                     if (version != null) {
+                        if (databaseDefault != null) {
+                            throwIllegalDatabaseDefaultValue();
+                        }
                         Object value;
                         if (dft == null) {
                             value = 0;
@@ -1405,6 +1412,9 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                             value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
                         }
                         ref = Ref.of(value);
+                    } else if (databaseDefault != null) {
+                        validateDatabaseDefaultValue();
+                        ref = NIL_REF;
                     } else if (dft == null || dft.value().isEmpty()) {
                         if (isLogicalDeleted()) {
                             LogicalDeletedInfo info = declaringType.getLogicalDeletedInfo();
@@ -1478,6 +1488,58 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             }
         }
         return ref == NIL_REF ? null : ref;
+    }
+
+    @Override
+    public boolean hasDatabaseDefaultValue() {
+        if (getAnnotation(DatabaseDefault.class) == null) {
+            return original != null && original.hasDatabaseDefaultValue();
+        }
+        if (getAnnotation(Default.class) != null) {
+            throwIllegalDefaultConflict();
+        }
+        validateDatabaseDefaultValue();
+        return true;
+    }
+
+    private void throwIllegalDefaultConflict() {
+        throw new ModelException(
+                "Illegal property \"" +
+                        this +
+                        "\", the property cannot be decorated by both \"@" +
+                        Default.class.getName() +
+                        "\" and \"@" +
+                        DatabaseDefault.class.getName() +
+                        "\""
+        );
+    }
+
+    private void validateDatabaseDefaultValue() {
+        if (isId() ||
+                getAnnotations(Key.class).length != 0 ||
+                getAnnotation(Keys.class) != null ||
+                isVersion() ||
+                isLogicalDeleted() ||
+                isAssociation(TargetLevel.ENTITY) ||
+                isEmbedded(EmbeddedLevel.BOTH) ||
+                isFormula() ||
+                isTransient() ||
+                isView() ||
+                !isColumnDefinition()) {
+            throwIllegalDatabaseDefaultValue();
+        }
+    }
+
+    private void throwIllegalDatabaseDefaultValue() {
+        throw new ModelException(
+                "Illegal property \"" +
+                        this +
+                        "\", the property decorated by \"@" +
+                        DatabaseDefault.class.getName() +
+                        "\" must be a scalar column property " +
+                        "and cannot be id, key, version, logical deleted, " +
+                        "association, embedded, formula, transient or view"
+        );
     }
 
     @Override

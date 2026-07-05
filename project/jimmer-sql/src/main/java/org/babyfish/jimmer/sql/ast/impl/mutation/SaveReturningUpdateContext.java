@@ -105,6 +105,10 @@ class SaveReturningUpdateContext implements Dialect.UpdateByValuesContext {
                     .sql(sourcePrefix)
                     .sql(returning.versionGetter);
         }
+        if (returning.updateCondition != null) {
+            builder.sql(" and ");
+            returning.updateCondition.append(builder, targetPrefix, sourcePrefix);
+        }
         return this;
     }
 
