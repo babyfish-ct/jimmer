@@ -26,6 +26,16 @@ class SaveShapeMatcher {
 
     @SuppressWarnings("unchecked")
     boolean isMatched(DraftSpi draft, @Nullable Fetcher<?> fetcher, boolean trim) {
+        return isMatched(draft, fetcher, trim, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    boolean isMatched(
+            DraftSpi draft,
+            @Nullable Fetcher<?> fetcher,
+            boolean trim,
+            boolean rootIdWillBeLoaded
+    ) {
         if (draft == null) {
             return true;
         }
@@ -33,7 +43,7 @@ class SaveShapeMatcher {
             return false;
         }
         if (fetcher != null) {
-            if (!isMatchedByFetcher(draft, fetcher, trim)) {
+            if (!isMatchedByFetcher(draft, fetcher, trim, rootIdWillBeLoaded)) {
                 return false;
             }
             if (trim) {
@@ -77,7 +87,12 @@ class SaveShapeMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean isMatchedByFetcher(DraftSpi draft, Fetcher<?> fetcher, boolean trim) {
+    private boolean isMatchedByFetcher(
+            DraftSpi draft,
+            Fetcher<?> fetcher,
+            boolean trim,
+            boolean rootIdWillBeLoaded
+    ) {
         if (!isOptimizable(draft.__type(), fetcher)) {
             return false;
         }
@@ -85,7 +100,9 @@ class SaveShapeMatcher {
             ImmutableProp prop = field.getProp();
             PropId propId = prop.getId();
             if (!draft.__isLoaded(propId)) {
-                return false;
+                if (!rootIdWillBeLoaded || !prop.isId()) {
+                    return false;
+                }
             }
             if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 Fetcher<?> childFetcher = field.getChildFetcher();
@@ -93,11 +110,11 @@ class SaveShapeMatcher {
                 if (prop.isReferenceList(TargetLevel.ENTITY)) {
                     List<DraftSpi> list = (List<DraftSpi>) associatedValue;
                     for (DraftSpi e : list) {
-                        if (!isMatched(e, childFetcher, trim)) {
+                        if (!isMatched(e, childFetcher, trim, false)) {
                             return false;
                         }
                     }
-                } else if (!isMatched((DraftSpi) associatedValue, childFetcher, trim)) {
+                } else if (!isMatched((DraftSpi) associatedValue, childFetcher, trim, false)) {
                     return false;
                 }
             }
@@ -105,7 +122,7 @@ class SaveShapeMatcher {
         for (Map.Entry<ImmutableType, Fetcher<?>> e :
                 ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
             if (e.getKey().isAssignableFrom(draft.__type()) &&
-                    !isMatchedByFetcher(draft, e.getValue(), trim)) {
+                    !isMatchedByFetcher(draft, e.getValue(), trim, rootIdWillBeLoaded)) {
                 return false;
             }
         }

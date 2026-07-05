@@ -189,6 +189,14 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isInsertReturningSupported() {
+        return false;
+    }
+
+    default boolean isInsertBatchReturningByOrderSupported() {
+        return false;
+    }
+
     default boolean isTransactionAbortedByError() {
         return false;
     }
@@ -198,6 +206,14 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     void update(UpdateContext ctx);
+
+    default void insertReturning(InsertReturningContext ctx) {
+        throw new UnsupportedOperationException(
+                "The insert-returning statement is not supported by \"" +
+                        getClass().getName() +
+                        "\""
+        );
+    }
 
     default void updateByValues(UpdateByValuesContext ctx) {
         throw new UnsupportedOperationException(
@@ -226,6 +242,25 @@ public interface Dialect extends SqlTypeStrategy {
         UpdateContext appendAssignments();
         UpdateContext appendPredicates();
         UpdateContext appendId();
+    }
+
+    interface InsertReturningContext {
+
+        InsertReturningContext sql(String sql);
+
+        InsertReturningContext enter(AbstractSqlBuilder.ScopeType type);
+
+        InsertReturningContext separator();
+
+        InsertReturningContext leave();
+
+        InsertReturningContext appendTableName();
+
+        InsertReturningContext appendInsertedColumns();
+
+        InsertReturningContext appendInsertingValues();
+
+        InsertReturningContext appendReturning(String prefix);
     }
 
     interface UpdateByValuesContext {
@@ -261,6 +296,9 @@ public interface Dialect extends SqlTypeStrategy {
         boolean isComplete();
         boolean isIdInteger();
         boolean hasConflictPredicate();
+        default boolean isCurrentRowReturningRequired() {
+            return false;
+        }
         List<ValueGetter> getConflictGetters();
 
         UpsertContext sql(String sql);
@@ -278,6 +316,13 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
         UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);
         UpsertContext appendGeneratedId();
+        default UpsertContext appendReturning(String prefix) {
+            throw new UnsupportedOperationException(
+                    "The upsert-returning statement is not supported by \"" +
+                            getClass().getName() +
+                            "\""
+            );
+        }
         UpsertContext appendId();
     }
 

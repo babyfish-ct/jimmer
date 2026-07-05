@@ -148,6 +148,32 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isInsertReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isInsertBatchReturningByOrderSupported() {
+        return true;
+    }
+
+    @Override
+    public void insertReturning(InsertReturningContext ctx) {
+        ctx
+                .sql("select ")
+                .appendReturning("")
+                .sql(" from final table (")
+                .sql("insert into ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
+                .appendInsertedColumns()
+                .leave()
+                .sql(" values")
+                .appendInsertingValues()
+                .sql(")");
+    }
+
+    @Override
     public void updateByValues(UpdateByValuesContext ctx) {
         ctx
                 .sql("select ")
@@ -172,7 +198,17 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (!ctx.hasConflictPredicate() && !ctx.isUpdateIgnored() && !ctx.hasUpdateCondition() && ctx.isComplete()) {
+        if (ctx.isCurrentRowReturningRequired()) {
+            ctx
+                    .sql("select ")
+                    .appendReturning("")
+                    .sql(" from final table (");
+        }
+        if (!ctx.isCurrentRowReturningRequired() &&
+                !ctx.hasConflictPredicate() &&
+                !ctx.isUpdateIgnored() &&
+                !ctx.hasUpdateCondition() &&
+                ctx.isComplete()) {
             ctx.sql("merge into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
@@ -186,17 +222,16 @@ public class H2Dialect extends DefaultDialect {
                     .enter(AbstractSqlBuilder.ScopeType.LIST)
                     .appendInsertingValues()
                     .leave();
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(")");
+            }
             return;
         }
         ctx.sql("merge into ")
                 .appendTableName()
-                .sql(" tb_1_ using")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
-                .sql("values")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .sql(" tb_1_ using(values")
                 .appendInsertingValues()
-                .leave()
-                .leave()
+                .sql(")")
                 .sql(" tb_2_")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("")
@@ -246,6 +281,9 @@ public class H2Dialect extends DefaultDialect {
                 .appendInsertedColumns("tb_2_.")
                 .leave()
                 .leave();
+        if (ctx.isCurrentRowReturningRequired()) {
+            ctx.sql(")");
+        }
     }
 
     private void appendConflictValueFromSource(UpsertContext ctx, ValueGetter getter) {

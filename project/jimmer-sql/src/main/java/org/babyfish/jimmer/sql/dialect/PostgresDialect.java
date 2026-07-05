@@ -208,6 +208,30 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isInsertReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isInsertBatchReturningByOrderSupported() {
+        return true;
+    }
+
+    @Override
+    public void insertReturning(InsertReturningContext ctx) {
+        ctx
+                .sql("insert into ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
+                .appendInsertedColumns()
+                .leave()
+                .sql(" values")
+                .appendInsertingValues()
+                .sql(" returning ")
+                .appendReturning("");
+    }
+
+    @Override
     public boolean isTransactionAbortedByError() {
         return true;
     }
@@ -265,9 +289,7 @@ public class PostgresDialect extends DefaultDialect {
                 .appendInsertedColumns("")
                 .leave()
                 .sql(" values")
-                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertingValues()
-                .leave()
                 .sql(" on conflict")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendConflictColumns()
@@ -277,7 +299,9 @@ public class PostgresDialect extends DefaultDialect {
         }
         if (ctx.isUpdateIgnored()) {
             ctx.sql(" do nothing");
-            if (ctx.hasGeneratedId()) {
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(" returning ").appendReturning("");
+            } else if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else if (ctx.hasUpdatedColumns()) {
@@ -288,7 +312,9 @@ public class PostgresDialect extends DefaultDialect {
             if (ctx.hasUpdateCondition()) {
                 ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
             }
-            if (ctx.hasGeneratedId()) {
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(" returning ").appendReturning("");
+            } else if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
@@ -308,7 +334,9 @@ public class PostgresDialect extends DefaultDialect {
                     .sql(cheapestGetter)
                     .sql(" = excluded.")
                     .sql(cheapestGetter);
-            if (ctx.hasGeneratedId()) {
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(" returning ").appendReturning("");
+            } else if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else {

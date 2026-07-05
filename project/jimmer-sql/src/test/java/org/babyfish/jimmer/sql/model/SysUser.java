@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
 import org.babyfish.jimmer.sql.*;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 @KeyUniqueConstraint
@@ -22,5 +23,6 @@ public interface SysUser {
     @Key(group = "3")
     String nickName();
 
+    @Nullable
     String description();
 }

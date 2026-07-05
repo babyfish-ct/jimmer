@@ -17,7 +17,6 @@ import org.babyfish.jimmer.sql.model.hr.dto.EmployeeView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +27,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     public void initialize() {
         resetIdentity(null, "DEPARTMENT");
         resetIdentity(null, "EMPLOYEE");
+        resetIdentity(null, "SYS_USER");
     }
 
     @Test
@@ -516,6 +516,191 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->\"name\":\"O'REILLY\"," +
                                     "--->\"website\":null," +
                                     "--->\"version\":1" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testInsertOnlyReturnDraftWithGeneratedId() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createSysUser(draft -> {
+                            draft.setAccount("linda");
+                            draft.setEmail("linda@jimmer.org");
+                            draft.setArea("dev");
+                            draft.setNickName("Linda");
+                        })).setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                SysUserFetcher.$.allScalarFields()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->insert into SYS_USER(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "--->values(?, ?, ?, ?)" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":100," +
+                                    "--->\"account\":\"linda\"," +
+                                    "--->\"email\":\"linda@jimmer.org\"," +
+                                    "--->\"area\":\"dev\"," +
+                                    "--->\"nickName\":\"Linda\"," +
+                                    "--->\"description\":null" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testBatchInsertOnlyReturnDraftWithGeneratedId() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(Arrays.asList(
+                                Immutables.createSysUser(draft -> {
+                                    draft.setAccount("linda");
+                                    draft.setEmail("linda@jimmer.org");
+                                    draft.setArea("dev");
+                                    draft.setNickName("Linda");
+                                }),
+                                Immutables.createSysUser(draft -> {
+                                    draft.setAccount("bob");
+                                    draft.setEmail("bob@jimmer.org");
+                                    draft.setArea("dev");
+                                    draft.setNickName("Bob");
+                                })
+                        ))
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                SysUserFetcher.$.allScalarFields()
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->insert into SYS_USER(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "--->values(?, ?, ?, ?), (?, ?, ?, ?)" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":100," +
+                                    "--->--->\"account\":\"linda\"," +
+                                    "--->--->\"email\":\"linda@jimmer.org\"," +
+                                    "--->--->\"area\":\"dev\"," +
+                                    "--->--->\"nickName\":\"Linda\"," +
+                                    "--->--->\"description\":null" +
+                                    "--->}, " +
+                                    "--->{" +
+                                    "--->--->\"id\":101," +
+                                    "--->--->\"account\":\"bob\"," +
+                                    "--->--->\"email\":\"bob@jimmer.org\"," +
+                                    "--->--->\"area\":\"dev\"," +
+                                    "--->--->\"nickName\":\"Bob\"," +
+                                    "--->--->\"description\":null" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertReturnDraftWithMissingField() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.learningGraphQLId1);
+                            draft.setName("Learning GraphQL protocol");
+                        })).setMode(SaveMode.UPSERT)
+                        .execute(
+                                con,
+                                BookFetcher.$.name().edition()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME) values(tb_2_.ID, tb_2_.NAME)" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "\"name\":\"Learning GraphQL protocol\"," +
+                                    "\"edition\":1}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentReturnDraftForInsertedRows() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createSysUser(draft -> {
+                            draft.setAccount("new-account");
+                            draft.setEmail("new-account@jimmer.org");
+                            draft.setArea("dev");
+                            draft.setNickName("Newbie");
+                        })).setMode(SaveMode.INSERT_IF_ABSENT)
+                        .execute(
+                                con,
+                                SysUserFetcher.$.allScalarFields()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into SYS_USER tb_1_ " +
+                                        "--->using(values(?, ?, ?, ?)) tb_2_(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "--->on tb_1_.AREA = tb_2_.AREA and tb_1_.NICK_NAME = tb_2_.NICK_NAME " +
+                                        "--->when not matched then insert(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "--->values(tb_2_.ACCOUNT, tb_2_.EMAIL, tb_2_.AREA, tb_2_.NICK_NAME)" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":100," +
+                                    "--->\"account\":\"new-account\"," +
+                                    "--->\"email\":\"new-account@jimmer.org\"," +
+                                    "--->\"area\":\"dev\"," +
+                                    "--->\"nickName\":\"Newbie\"," +
+                                    "--->\"description\":null" +
                                     "}"
                     );
                 }

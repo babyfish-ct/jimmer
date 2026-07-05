@@ -231,6 +231,40 @@ class Operator {
             conflictProps = Collections.emptyList();
         }
 
+        List<PropertyGetter> insertedGetters = new ArrayList<>();
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            if (getter.prop().isColumnDefinition() &&
+                    getter.isInsertable(conflictProps, upsertMask)) {
+                insertedGetters.add(getter);
+            }
+        }
+
+        SaveReturning returning =
+                userIdGenerator == null ?
+                        SaveReturning.forInsert(
+                                ctx,
+                                batch.shape(),
+                                batch.entities(),
+                                tableType,
+                                sequenceIdGenerator,
+                                identityIdGenerator != null || sequenceIdGenerator != null,
+                                insertedGetters,
+                                discriminatorGetter,
+                                defaultGetters
+                        ) :
+                        null;
+        if (returning != null) {
+            int rowCount = rowCount(returning.executeInsert(batch.entities()));
+            MutationTrigger trigger = fireTrigger ? ctx.trigger : null;
+            if (trigger != null) {
+                for (DraftSpi draft : batch.entities()) {
+                    trigger.modifyEntityTable(null, draft);
+                }
+            }
+            AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);
+            return;
+        }
+
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         BatchSqlBuilder builder = new BatchSqlBuilder(
                 sqlClient,
@@ -242,7 +276,7 @@ class Operator {
         if (sequenceIdGenerator != null) {
             builder.separator().sql(tableType.getIdProp().<SingleColumn>getStorage(strategy).getName());
         }
-        for (PropertyGetter getter : batch.shape().getGetters()) {
+        for (PropertyGetter getter : insertedGetters) {
             if (getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
                 builder.separator().sql(getter);
             }
@@ -250,7 +284,7 @@ class Operator {
         if (discriminatorGetter != null) {
             builder.separator().sql(discriminatorGetter);
         }
-        for (PropertyGetter getter : batch.shape().getGetters()) {
+        for (PropertyGetter getter : insertedGetters) {
             if (!getter.prop().isId() &&
                     getter.prop().isColumnDefinition() &&
                     getter.isInsertable(conflictProps, upsertMask)) {
@@ -277,7 +311,7 @@ class Operator {
                 builder.separator().sql(getter);
             }
         }
-        for (PropertyGetter getter : batch.shape().getGetters()) {
+        for (PropertyGetter getter : insertedGetters) {
             if (getter.prop().isId() && getter.isInsertable(conflictProps, upsertMask)) {
                 builder.separator().variable(getter);
             }
@@ -285,7 +319,7 @@ class Operator {
         if (discriminatorGetter != null) {
             builder.separator().variable(discriminatorGetter);
         }
-        for (PropertyGetter getter : batch.shape().getGetters()) {
+        for (PropertyGetter getter : insertedGetters) {
             if (!getter.prop().isId() &&
                     getter.prop().isColumnDefinition() &&
                     getter.isInsertable(conflictProps, upsertMask)) {
@@ -1702,6 +1736,32 @@ class Operator {
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
+
+        SaveReturning returning = SaveReturning.forUpsert(
+                ctx,
+                batch,
+                tableType,
+                batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
+                sequenceIdGenerator,
+                insertedGetters,
+                discriminatorProp,
+                updateDiscriminator,
+                discriminatorGuardProp,
+                nullGetters,
+                conflictGetters,
+                conflictPredicate,
+                updatedGetters,
+                ignoreUpdate,
+                userOptimisticLockPredicate,
+                versionGetter,
+                forceMatchedUpdate,
+                forceOneByOne
+        );
+        if (returning != null) {
+            int[] rowCounts = returning.executeUpsert(batch.entities());
+            AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
+            return rowCounts;
+        }
 
         BatchSqlBuilder builder = new BatchSqlBuilder(
                 sqlClient,

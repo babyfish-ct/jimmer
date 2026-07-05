@@ -1783,7 +1783,7 @@ create table sys_user(
     email varchar(50) not null,
     area varchar(10) not null,
     nick_name varchar(20) not null,
-    description varchar(100) not null
+    description varchar(100)
 );
 alter table sys_user
     add constraint pk_sys_user
