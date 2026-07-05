@@ -57,20 +57,15 @@ public class MySqlDialect extends MySql5Dialect {
                     .appendInsertedColumns("")
                     .leave()
                     .sql(" values")
-                    .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
-                    .appendInsertingValues()
-                    .leave();
+                    .appendInsertingRows();
         } else {
             ctx.sql("insert into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                     .appendInsertedColumns("")
                     .leave()
-                    .enter(AbstractSqlBuilder.ScopeType.VALUES)
-                    .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
-                    .appendInsertingValues()
-                    .leave()
-                    .leave()
+                    .sql(" values")
+                    .appendInsertingRows()
                     .sql(" on duplicate key update ")
                     .enter(AbstractSqlBuilder.ScopeType.COMMA);
             boolean idAssignmentAppended = false;

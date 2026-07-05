@@ -22,11 +22,19 @@ class SaveReturningSql {
                 addComma = true;
             }
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
-            for (SaveReturningColumnValue sourceValue : returning.sourceValues) {
-                builder.separator();
-                sourceValue.appendValue(builder, draft);
-            }
+            appendSourceValues(returning, builder, draft);
             builder.leave();
+        }
+    }
+
+    static void appendSourceValues(
+            SaveReturning returning,
+            SqlBuilder builder,
+            DraftSpi draft
+    ) {
+        for (SaveReturningColumnValue sourceValue : returning.sourceValues) {
+            builder.separator();
+            sourceValue.appendValue(builder, draft);
         }
     }
 

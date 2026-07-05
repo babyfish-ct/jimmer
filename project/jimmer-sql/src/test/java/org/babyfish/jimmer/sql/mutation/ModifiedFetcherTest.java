@@ -51,18 +51,19 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into DEPARTMENT tb_1_ " +
-                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                "select ID, NAME, DELETED_MILLIS " +
+                                        "from final table (" +
+                                        "--->merge into DEPARTMENT tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then " +
-                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when not matched then " +
-                                        "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                                        "--->when matched then update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "--->when not matched then insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)" +
+                                        ")"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
+                                "select tb_1_.ID " +
                                         "from DEPARTMENT tb_1_ " +
                                         "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
                         );
@@ -136,13 +137,14 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into DEPARTMENT tb_1_ " +
-                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                "select ID, DELETED_MILLIS, NAME " +
+                                        "from final table (" +
+                                        "--->merge into DEPARTMENT tb_1_ " +
+                                        "--->using(values(?, ?), (?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then " +
-                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when not matched then " +
-                                        "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                                        "--->when matched then update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "--->when not matched then insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)" +
+                                        ")"
                         );
                     });
                     ctx.statement(it -> {
@@ -274,17 +276,19 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into DEPARTMENT tb_1_ " +
-                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                "select ID, NAME, DELETED_MILLIS " +
+                                        "from final table (" +
+                                        "--->merge into DEPARTMENT tb_1_ " +
+                                        "--->using(values(?, ?), (?, ?), (?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when not matched then " +
-                                        "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                                        "--->when not matched then insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)" +
+                                        ")"
                         );
                     });
                     ctx.statement(it -> {
                         it.queryReason(QueryReason.FETCHER);
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
+                                "select tb_1_.ID " +
                                         "from DEPARTMENT tb_1_ " +
                                         "where tb_1_.ID = any(?) and tb_1_.DELETED_MILLIS = ?"
                         );
@@ -411,6 +415,147 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "\"name\":\"Learning GraphQL protocol\",\"edition\":1}, " +
                                     "--->{\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"," +
                                     "\"name\":\"Effective TypeScript protocol\",\"edition\":1}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateByQueryReturnDraftWithResidualAssociationFetcher() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.learningGraphQLId1);
+                            draft.setName("Learning GraphQL protocol");
+                        })).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookFetcher.$
+                                        .name()
+                                        .edition()
+                                        .store(BookStoreFetcher.$.name())
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->\"name\":\"Learning GraphQL protocol\"," +
+                                    "--->\"edition\":1," +
+                                    "--->\"store\":{" +
+                                    "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->\"name\":\"O'REILLY\"" +
+                                    "--->}" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpdateByQueryReturnDraftWithResidualAssociationFetcher() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(
+                                Arrays.asList(
+                                        Immutables.createBook(draft -> {
+                                            draft.setId(Constants.learningGraphQLId1);
+                                            draft.setName("Learning GraphQL protocol");
+                                        }),
+                                        Immutables.createBook(draft -> {
+                                            draft.setId(Constants.effectiveTypeScriptId1);
+                                            draft.setName("Effective TypeScript protocol");
+                                        })
+                                )
+                        ).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookFetcher.$
+                                        .name()
+                                        .edition()
+                                        .store(BookStoreFetcher.$.name())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?), (?, ?)) tb_2_(ID, NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = any(?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.value(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->--->\"name\":\"Learning GraphQL protocol\"," +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"store\":{" +
+                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->--->\"name\":\"O'REILLY\"" +
+                                    "--->--->}" +
+                                    "--->}, {" +
+                                    "--->--->\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"," +
+                                    "--->--->\"name\":\"Effective TypeScript protocol\"," +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"store\":{" +
+                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->--->\"name\":\"O'REILLY\"" +
+                                    "--->--->}" +
+                                    "--->}" +
                                     "]"
                     );
                 }

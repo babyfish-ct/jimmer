@@ -141,6 +141,12 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
 
     @Override
     public Dialect.UpsertContext appendInsertingValues() {
+        SaveReturningSql.appendSourceValues(returning, builder, entities.iterator().next());
+        return this;
+    }
+
+    @Override
+    public Dialect.UpsertContext appendInsertingRows() {
         SaveReturningSql.appendSourceTuples(returning, builder, entities);
         return this;
     }

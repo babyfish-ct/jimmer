@@ -219,9 +219,7 @@ public class H2Dialect extends DefaultDialect {
                     .appendConflictColumns()
                     .leave()
                     .sql(" values")
-                    .enter(AbstractSqlBuilder.ScopeType.LIST)
-                    .appendInsertingValues()
-                    .leave();
+                    .appendInsertingRows();
             if (ctx.isCurrentRowReturningRequired()) {
                 ctx.sql(")");
             }
@@ -230,9 +228,7 @@ public class H2Dialect extends DefaultDialect {
         ctx.sql("merge into ")
                 .appendTableName()
                 .sql(" tb_1_ using(values")
-                .enter(AbstractSqlBuilder.ScopeType.TUPLE)
-                .appendInsertingValues()
-                .leave()
+                .appendInsertingRows()
                 .sql(")")
                 .sql(" tb_2_")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)

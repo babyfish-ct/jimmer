@@ -312,6 +312,11 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConflictColumns();
         UpsertContext appendConflictPredicate(String alias);
         UpsertContext appendInsertingValues();
+        default UpsertContext appendInsertingRows() {
+            return enter(AbstractSqlBuilder.ScopeType.TUPLE)
+                    .appendInsertingValues()
+                    .leave();
+        }
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
         UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);

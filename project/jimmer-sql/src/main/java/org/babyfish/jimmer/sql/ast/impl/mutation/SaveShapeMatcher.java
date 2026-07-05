@@ -47,20 +47,7 @@ class SaveShapeMatcher {
                 return false;
             }
             if (trim) {
-                Map<String, Field> matchedFieldMap = new LinkedHashMap<>();
-                collectMatchedFieldMap(draft.__type(), fetcher, matchedFieldMap);
-                for (ImmutableProp prop : draft.__type().getProps().values()) {
-                    PropId propId = prop.getId();
-                    if (!draft.__isLoaded(propId)) {
-                        continue;
-                    }
-                    Field field = matchedFieldMap.get(prop.getName());
-                    if (field == null) {
-                        draft.__unload(propId);
-                    } else if (field.isImplicit()) {
-                        draft.__show(propId, false);
-                    }
-                }
+                trim(draft, fetcher);
             }
         } else {
             for (ImmutableProp prop : draft.__type().getProps().values()) {
@@ -84,6 +71,29 @@ class SaveShapeMatcher {
             }
         }
         return true;
+    }
+
+    void trim(DraftSpi draft, Fetcher<?> fetcher) {
+        Map<String, Field> matchedFieldMap = new LinkedHashMap<>();
+        collectMatchedFieldMap(draft.__type(), fetcher, matchedFieldMap);
+        for (ImmutableProp prop : draft.__type().getProps().values()) {
+            PropId propId = prop.getId();
+            if (!draft.__isLoaded(propId)) {
+                continue;
+            }
+            Field field = matchedFieldMap.get(prop.getName());
+            if (field == null) {
+                if (!prop.isView()) {
+                    draft.__unload(propId);
+                } else {
+                    draft.__show(propId, false);
+                }
+            } else if (field.isImplicit()) {
+                draft.__show(propId, false);
+            } else {
+                draft.__show(propId, true);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

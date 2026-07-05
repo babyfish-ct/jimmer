@@ -44,7 +44,7 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, tableType);
-        if (!fetcherAnalysis.isScalarOnly() || fetcherAnalysis.getDatabaseDefaultProps().isEmpty()) {
+        if (fetcherAnalysis.hasTypeBranches() || fetcherAnalysis.getDatabaseDefaultProps().isEmpty()) {
             return null;
         }
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, tableType.getJavaClass()).getIdGetters();
@@ -135,7 +135,7 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, shape.getType());
-        if (!fetcherAnalysis.isScalarOnly() ||
+        if (fetcherAnalysis.hasTypeBranches() ||
                 (fetcherAnalysis.getReturningProps().isEmpty() && versionGetter == null) ||
                 (!isFetchRequired(fetcherAnalysis.getReturningProps(), entities, false) && versionGetter == null)) {
             return null;
@@ -240,7 +240,7 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, tableType);
-        if (!fetcherAnalysis.isScalarOnly() ||
+        if (fetcherAnalysis.hasTypeBranches() ||
                 (fetcherAnalysis.getReturningProps().isEmpty() && generatedIdProp == null) ||
                 (!isFetchRequired(fetcherAnalysis.getReturningProps(), batch.entities(), generatedIdProp != null) &&
                         generatedIdProp == null)) {
@@ -365,6 +365,9 @@ class SaveReturningFactory {
             return null;
         }
         Fetcher<?> fetcher = ctx.fetcher;
+        if (!((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
+            return null;
+        }
         LogicalDeletedInfo logicalDeletedInfo = filter != null ?
                 shape.getType().getLogicalDeletedInfo() :
                 null;

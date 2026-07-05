@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherFactory;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
@@ -397,6 +399,8 @@ public class Saver {
         List<Object> unmatchedIds = new ArrayList<>();
         List<DraftSpi> nonIdObjects = new ArrayList<>();
         Fetcher<?> fetcher = ctx.fetcher;
+        DraftSpi[] residualArr = new DraftSpi[drafts.size()];
+        List<Object> residualIds = new ArrayList<>();
         DraftSpi[] databaseDefaultArr = new DraftSpi[drafts.size()];
         List<Object> databaseDefaultIds = new ArrayList<>();
         SaveFetcherAnalysis fetcherAnalysis = fetcher != null ?
@@ -407,6 +411,12 @@ public class Saver {
                         fetcherAnalysis.getDatabaseDefaultProps() :
                         Collections.emptyList();
         boolean canFetchDatabaseDefaults = fetcherAnalysis != null && !databaseDefaultProps.isEmpty();
+        Fetcher<Object> residualFetcher = fetcher != null &&
+                fetcherAnalysis != null &&
+                !fillIdIfNecessary &&
+                !fetcherAnalysis.hasTypeBranches() ?
+                residualFetcher(fetcher) :
+                null;
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         SaveShapeMatcher shapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
         for (DraftSpi draft : drafts) {
@@ -418,6 +428,11 @@ public class Saver {
                         fetcherAnalysis.isUnmatchedOnlyByDatabaseDefaultProps(draft)) {
                     databaseDefaultArr[index] = draft;
                     databaseDefaultIds.add(id);
+                } else if (residualFetcher != null &&
+                        ctx.isSaveReturningApplied(draft) &&
+                        fetcherAnalysis.areReturningPropsLoaded(draft)) {
+                    residualArr[index] = draft;
+                    residualIds.add(id);
                 } else {
                     arr[index] = draft;
                     unmatchedIds.add(id);
@@ -440,6 +455,28 @@ public class Saver {
                     ImmutableSpi fetched = map.get(id);
                     if (fetched != null) {
                         applyDatabaseDefaultProps(draft, fetched, databaseDefaultProps);
+                    } else {
+                        arr[index] = draft;
+                        unmatchedIds.add(id);
+                    }
+                }
+                ++index;
+            }
+        }
+        if (!residualIds.isEmpty()) {
+            JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
+            Map<Object, Object> map = ((EntitiesImpl) sqlClient.getEntities())
+                    .forSaveCommandFetch(QueryReason.FETCHER)
+                    .forConnection(ctx.con)
+                    .findMapByIds(residualFetcher, residualIds);
+            index = 0;
+            for (DraftSpi draft : residualArr) {
+                if (draft != null) {
+                    Object id = draft.__get(idPropId);
+                    Object fetched = map.get(id);
+                    if (mergeDraft(draft, fetched) &&
+                            shapeMatcher.isMatched(draft, fetcher, false)) {
+                        shapeMatcher.trim(draft, fetcher);
                     } else {
                         arr[index] = draft;
                         unmatchedIds.add(id);
@@ -558,6 +595,24 @@ public class Saver {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static Fetcher<Object> residualFetcher(Fetcher<?> fetcher) {
+        Fetcher<Object> residualFetcher = (Fetcher<Object>) FetcherFactory.filter(
+                (Fetcher<Object>) fetcher,
+                null,
+                (prop, path) -> !path.isEmpty() || !SaveFetcherAnalysis.isScalarColumnProp(prop)
+        );
+        return isIdOnlyFetcher(residualFetcher) ? null : residualFetcher;
+    }
+
+    private static boolean isIdOnlyFetcher(Fetcher<?> fetcher) {
+        if (!((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
+            return false;
+        }
+        Map<String, Field> fieldMap = fetcher.getFieldMap();
+        return fieldMap.size() == 1 && fieldMap.values().iterator().next().getProp().isId();
+    }
+
     private Fetcher<ImmutableSpi> databaseDefaultFetcher(List<ImmutableProp> props) {
         Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass());
         for (ImmutableProp prop : props) {
@@ -599,6 +654,35 @@ public class Saver {
             }
         }
         return null;
+    }
+
+    private static boolean mergeDraft(DraftSpi draft, Object fetched) {
+        if (fetched instanceof ImmutableSpi) {
+            ImmutableSpi spi = (ImmutableSpi) fetched;
+            for (ImmutableProp prop : draft.__type().getProps().values()) {
+                PropId propId = prop.getId();
+                if (spi.__isLoaded(propId)) {
+                    if (!prop.isView()) {
+                        Object value = spi.__get(propId);
+                        if (value != null) {
+                            if (prop.isReferenceList(TargetLevel.OBJECT)) {
+                                value = draft.__draftContext().toDraftList(
+                                        (List<Object>) value,
+                                        (Class<Object>) prop.getElementClass(),
+                                        true
+                                );
+                            } else if (prop.isReference(TargetLevel.OBJECT)) {
+                                value = draft.__draftContext().toDraftObject(value);
+                            }
+                        }
+                        draft.__set(propId, value);
+                    }
+                    draft.__show(propId, spi.__isVisible(propId));
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private boolean isVisitable(ImmutableProp prop) {

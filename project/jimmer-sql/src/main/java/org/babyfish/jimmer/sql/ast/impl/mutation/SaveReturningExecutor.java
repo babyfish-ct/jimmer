@@ -234,6 +234,7 @@ class SaveReturningExecutor {
             draft.__set(propId, values[i]);
             draft.__show(propId, true);
         }
+        returning.ctx.markSaveReturningApplied(draft);
         shapeMatcher.isMatched(draft, returning.ctx.fetcher, true);
     }
 
