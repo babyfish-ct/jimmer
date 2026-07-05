@@ -208,13 +208,19 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                    "tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
                                     "from JOINED_CLIENT tb_1_ " +
                                     "inner join JOINED_ORGANIZATION tb_1__sub " +
                                     "on tb_1_.ID = tb_1__sub.ID " +
                                     "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
                     ).variables(200L, "ORG");
-                    ctx.rows("[{\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}]");
+                    ctx.rows(
+                            "[{\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\"," +
+                                    "\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "\"taxCode\":\"GLOBEX-001\"," +
+                                    "\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}]"
+                    );
                 }
         );
     }

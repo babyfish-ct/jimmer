@@ -53,12 +53,10 @@ class SaveReturningUpdateContext implements Dialect.UpdateByValuesContext {
     @Override
     public Dialect.UpdateByValuesContext appendSource() {
         builder
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
-                .enter(AbstractSqlBuilder.ScopeType.VALUES);
+                .sql("(values");
         SaveReturningSql.appendSourceTuples(returning, builder, entities);
         builder
-                .leave()
-                .leave();
+                .sql(")");
         return this;
     }
 

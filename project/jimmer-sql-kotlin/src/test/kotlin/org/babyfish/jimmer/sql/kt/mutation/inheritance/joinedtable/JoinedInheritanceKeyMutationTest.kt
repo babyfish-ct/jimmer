@@ -40,8 +40,8 @@ class JoinedInheritanceKeyMutationTest : AbstractMutationTest() {
                     "update JOINED_KEY_ORGANIZATION " +
                         "set TAX_CODE = ? " +
                         "where ID = ? and exists(" +
-                        "select 1 from JOINED_KEY_CLIENT " +
-                        "where JOINED_KEY_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                        "select 1 from JOINED_KEY_CLIENT tb_root_ " +
+                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                 )
                 variables("KEY-GLOBEX-002", 400L, 400L, "ORG")
             }

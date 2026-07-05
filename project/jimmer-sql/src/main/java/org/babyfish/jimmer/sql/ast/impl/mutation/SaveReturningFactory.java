@@ -72,11 +72,10 @@ class SaveReturningFactory {
                 discriminatorGetter,
                 defaultGetters
         );
-        SaveReturningColumns returning = returningForInsert(
+        SaveReturningColumns returning = returningColumns(
                 sqlClient,
-                shape.getType(),
                 idGetter,
-                fetcherAnalysis.getDatabaseDefaultProps(),
+                insertReturningProps(shape.getType(), fetcherAnalysis.getDatabaseDefaultProps()),
                 basic.logicalDeletedInfo,
                 matchGetters
         );
@@ -174,12 +173,14 @@ class SaveReturningFactory {
         if (updateCondition != null) {
             updateCondition.addSourceValues(sourceValues);
         }
-        SaveReturningColumns returning = returning(
+        SaveReturningColumns returning = returningColumns(
                 sqlClient,
-                fetcherAnalysis.getReturningProps(),
-                shape.getType(),
                 idGetter,
-                versionGetter != null ? Collections.singletonList(versionGetter) : Collections.emptyList(),
+                updateReturningProps(
+                        shape.getType(),
+                        versionGetter != null ? Collections.singletonList(versionGetter) : Collections.emptyList(),
+                        fetcherAnalysis.getReturningProps()
+                ),
                 basic.logicalDeletedInfo,
                 matchGetters
         );
@@ -289,12 +290,14 @@ class SaveReturningFactory {
                 discriminatorGetter,
                 nullGetters
         );
-        SaveReturningColumns returning = returning(
+        SaveReturningColumns returning = returningColumns(
                 sqlClient,
-                fetcherAnalysis.getReturningProps(),
-                batch.shape().getType(),
                 idGetter,
-                Collections.emptyList(),
+                updateReturningProps(
+                        batch.shape().getType(),
+                        Collections.emptyList(),
+                        fetcherAnalysis.getReturningProps()
+                ),
                 basic.logicalDeletedInfo,
                 matchGetters
         );
@@ -424,50 +427,61 @@ class SaveReturningFactory {
         return Collections.unmodifiableList(sourceValues);
     }
 
-    private static @Nullable SaveReturningColumns returning(
-            JSqlClientImplementor sqlClient,
-            List<ImmutableProp> fetcherProps,
+    private static @Nullable List<ImmutableProp> updateReturningProps(
             ImmutableType type,
-            PropertyGetter idGetter,
             List<PropertyGetter> requiredGetters,
+            List<ImmutableProp> fetcherProps
+    ) {
+        List<ImmutableProp> props = new ArrayList<>();
+        addProp(props, type.getIdProp());
+        for (PropertyGetter getter : requiredGetters) {
+            addProp(props, getter.prop());
+        }
+        for (ImmutableProp prop : fetcherProps) {
+            if (!addScalarProp(props, prop)) {
+                return null;
+            }
+        }
+        return props;
+    }
+
+    private static @Nullable List<ImmutableProp> insertReturningProps(
+            ImmutableType type,
+            List<ImmutableProp> databaseDefaultProps
+    ) {
+        List<ImmutableProp> props = new ArrayList<>();
+        addProp(props, type.getIdProp());
+        for (ImmutableProp prop : databaseDefaultProps) {
+            if (!addScalarProp(props, prop)) {
+                return null;
+            }
+        }
+        return props;
+    }
+
+    private static @Nullable SaveReturningColumns returningColumns(
+            JSqlClientImplementor sqlClient,
+            PropertyGetter idGetter,
+            @Nullable List<ImmutableProp> props,
             @Nullable LogicalDeletedInfo logicalDeletedInfo,
             List<PropertyGetter> matchGetters
     ) {
-        List<ImmutableProp> props = new ArrayList<>();
-        props.add(type.getIdProp());
-        for (PropertyGetter getter : requiredGetters) {
-            if (!containsProp(props, getter.prop())) {
-                props.add(getter.prop());
-            }
-        }
-        for (ImmutableProp prop : fetcherProps) {
-            if (containsProp(props, prop)) {
-                continue;
-            }
-            if (!SaveFetcherAnalysis.isScalarColumnProp(prop)) {
-                return null;
-            }
-            props.add(prop);
+        if (props == null) {
+            return null;
         }
         int logicalDeletedIndex = -1;
         if (logicalDeletedInfo != null) {
             ImmutableProp prop = logicalDeletedInfo.getProp();
-            if (!containsProp(props, prop)) {
-                if (!SaveFetcherAnalysis.isScalarColumnProp(prop)) {
-                    return null;
-                }
-                props.add(prop);
+            if (!addScalarProp(props, prop)) {
+                return null;
             }
             logicalDeletedIndex = indexOfProp(props, prop);
         }
         List<Integer> matchIndexes = new ArrayList<>(matchGetters.size());
         for (PropertyGetter getter : matchGetters) {
             ImmutableProp prop = getter.prop();
-            if (!containsProp(props, prop)) {
-                if (!SaveFetcherAnalysis.isScalarColumnProp(prop)) {
-                    return null;
-                }
-                props.add(prop);
+            if (!addScalarProp(props, prop)) {
+                return null;
             }
             matchIndexes.add(indexOfProp(props, prop));
         }
@@ -490,60 +504,21 @@ class SaveReturningFactory {
         );
     }
 
-    private static @Nullable SaveReturningColumns returningForInsert(
-            JSqlClientImplementor sqlClient,
-            ImmutableType type,
-            PropertyGetter idGetter,
-            List<ImmutableProp> databaseDefaultProps,
-            @Nullable LogicalDeletedInfo logicalDeletedInfo,
-            List<PropertyGetter> matchGetters
-    ) {
-        List<ImmutableProp> props = new ArrayList<>();
-        props.add(type.getIdProp());
-        for (ImmutableProp prop : databaseDefaultProps) {
-            if (!containsProp(props, prop)) {
-                props.add(prop);
-            }
+    private static void addProp(List<ImmutableProp> props, ImmutableProp prop) {
+        if (!containsProp(props, prop)) {
+            props.add(prop);
         }
-        int logicalDeletedIndex = -1;
-        if (logicalDeletedInfo != null) {
-            ImmutableProp prop = logicalDeletedInfo.getProp();
-            if (!containsProp(props, prop)) {
-                if (!SaveFetcherAnalysis.isScalarColumnProp(prop)) {
-                    return null;
-                }
-                props.add(prop);
-            }
-            logicalDeletedIndex = indexOfProp(props, prop);
+    }
+
+    private static boolean addScalarProp(List<ImmutableProp> props, ImmutableProp prop) {
+        if (containsProp(props, prop)) {
+            return true;
         }
-        List<Integer> matchIndexes = new ArrayList<>(matchGetters.size());
-        for (PropertyGetter getter : matchGetters) {
-            ImmutableProp prop = getter.prop();
-            if (!containsProp(props, prop)) {
-                if (!SaveFetcherAnalysis.isScalarColumnProp(prop)) {
-                    return null;
-                }
-                props.add(prop);
-            }
-            matchIndexes.add(indexOfProp(props, prop));
+        if (!SaveFetcherAnalysis.isScalarColumnProp(prop)) {
+            return false;
         }
-        List<PropertyGetter> getters = new ArrayList<>(props.size());
-        for (ImmutableProp prop : props) {
-            List<PropertyGetter> propGetters = PropertyGetter.propertyGetters(sqlClient, prop);
-            if (propGetters.size() != 1 || !isSingleColumn(propGetters.get(0))) {
-                return null;
-            }
-            getters.add(propGetters.get(0));
-        }
-        if (!props.get(0).isId() || !idGetter.prop().isId()) {
-            return null;
-        }
-        return new SaveReturningColumns(
-                Collections.unmodifiableList(getters),
-                Collections.unmodifiableList(props),
-                Collections.unmodifiableList(matchIndexes),
-                logicalDeletedIndex
-        );
+        props.add(prop);
+        return true;
     }
 
     private static boolean containsProp(List<ImmutableProp> props, ImmutableProp prop) {

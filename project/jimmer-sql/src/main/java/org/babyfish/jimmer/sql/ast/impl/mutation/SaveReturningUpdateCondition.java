@@ -4,8 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +35,6 @@ interface SaveReturningUpdateCondition {
             InheritanceInfo inheritanceInfo
     ) {
         return new JoinedChildGuard(
-                sqlClient,
                 rootType,
                 Shape.fullOf(sqlClient, childType.getJavaClass()).getIdGetters().get(0),
                 PropertyGetter
@@ -82,10 +79,6 @@ interface SaveReturningUpdateCondition {
 
     class JoinedChildGuard implements SaveReturningUpdateCondition {
 
-        private static final String ROOT_ALIAS = "tb_root_";
-
-        private final JSqlClientImplementor sqlClient;
-
         private final ImmutableType rootType;
 
         private final PropertyGetter idGetter;
@@ -95,13 +88,11 @@ interface SaveReturningUpdateCondition {
         private final InheritanceInfo inheritanceInfo;
 
         private JoinedChildGuard(
-                JSqlClientImplementor sqlClient,
                 ImmutableType rootType,
                 PropertyGetter idGetter,
                 PropertyGetter discriminatorGetter,
                 InheritanceInfo inheritanceInfo
         ) {
-            this.sqlClient = sqlClient;
             this.rootType = rootType;
             this.idGetter = idGetter;
             this.discriminatorGetter = discriminatorGetter;
@@ -115,33 +106,14 @@ interface SaveReturningUpdateCondition {
 
         @Override
         public void append(SqlBuilder builder, String targetPrefix, String sourcePrefix) {
-            MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-            String rootTableName = rootType.getTableName(strategy);
-            String rootIdColumnName = rootType.getIdProp().<SingleColumn>getStorage(strategy).getName();
-            String discriminatorColumnName = inheritanceInfo
-                    .getDiscriminatorProp()
-                    .<SingleColumn>getStorage(strategy)
-                    .getName();
-            builder
-                    .sql("exists(select 1 from ")
-                    .sql(rootTableName)
-                    .sql(" ")
-                    .sql(ROOT_ALIAS)
-                    .sql(" where ")
-                    .sql(ROOT_ALIAS)
-                    .sql(".")
-                    .sql(rootIdColumnName)
-                    .sql(" = ")
-                    .sql(sourcePrefix)
-                    .sql(idGetter)
-                    .sql(" and ")
-                    .sql(ROOT_ALIAS)
-                    .sql(".")
-                    .sql(discriminatorColumnName)
-                    .sql(" = ")
-                    .sql(sourcePrefix)
-                    .sql(discriminatorGetter)
-                    .sql(")");
+            InheritanceMutationUtils.renderJoinedChildRootGuard(
+                    builder,
+                    rootType,
+                    inheritanceInfo,
+                    sourcePrefix,
+                    idGetter,
+                    discriminatorGetter
+            );
         }
     }
 }

@@ -5,7 +5,9 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
@@ -354,7 +356,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "select ID, NAME, GENDER, DELETED_MILLIS " +
                                         "from final table (" +
                                         "--->merge into EMPLOYEE tb_1_ " +
-                                        "--->using( values(?, ?)) tb_2_(ID, NAME) " +
+                                        "--->using(values(?, ?)) tb_2_(ID, NAME) " +
                                         "--->on tb_1_.ID = tb_2_.ID " +
                                         "--->when matched then update set NAME = tb_2_.NAME" +
                                         ")"
@@ -397,7 +399,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "select ID, NAME, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
-                                        "--->using( values(?, ?), (?, ?)) tb_2_(ID, NAME) " +
+                                        "--->using(values(?, ?), (?, ?)) tb_2_(ID, NAME) " +
                                         "--->on tb_1_.ID = tb_2_.ID " +
                                         "--->when matched then update set NAME = tb_2_.NAME" +
                                         ")"
@@ -436,7 +438,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "select ID, NAME, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
-                                        "--->using( values(?, ?)) tb_2_(ID, NAME) " +
+                                        "--->using(values(?, ?)) tb_2_(ID, NAME) " +
                                         "--->on tb_1_.ID = tb_2_.ID " +
                                         "--->when matched then update set NAME = tb_2_.NAME" +
                                         ")"
@@ -504,7 +506,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "select ID, VERSION, NAME, WEBSITE " +
                                         "from final table (" +
                                         "--->merge into BOOK_STORE tb_1_ " +
-                                        "--->using( values(?, ?, ?)) tb_2_(ID, VERSION, NAME) " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, VERSION, NAME) " +
                                         "--->on tb_1_.ID = tb_2_.ID and tb_1_.VERSION = tb_2_.VERSION " +
                                         "--->when matched then update set NAME = tb_2_.NAME, VERSION = tb_1_.VERSION + 1" +
                                         ")"
@@ -662,6 +664,128 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->--->\"description\":\"DEFAULT_DESCRIPTION\"" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testInsertOnlyReturnDraftWithGeneratedIdByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE, "SYS_USER");
+
+        connectAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                con -> getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createSysUser(draft -> {
+                            draft.setAccount("pg-linda");
+                            draft.setEmail("pg-linda@jimmer.org");
+                            draft.setArea("pg-dev");
+                            draft.setNickName("PgLinda");
+                        })).setMode(SaveMode.INSERT_ONLY)
+                        .execute(
+                                con,
+                                SysUserFetcher.$.allScalarFields()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into SYS_USER(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "values(?, ?, ?, ?) returning ID, DESCRIPTION"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":100," +
+                                    "--->\"account\":\"pg-linda\"," +
+                                    "--->\"email\":\"pg-linda@jimmer.org\"," +
+                                    "--->\"area\":\"pg-dev\"," +
+                                    "--->\"nickName\":\"PgLinda\"," +
+                                    "--->\"description\":\"DEFAULT_DESCRIPTION\"" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateOnlyReturnDraftByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+
+        connectAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                con -> getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                        .saveCommand(Immutables.createSysUser(draft -> {
+                            draft.setId(1L);
+                            draft.setAccount("pg-tom");
+                        })).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                SysUserFetcher.$.account().description()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update SYS_USER tb_1_ " +
+                                        "set ACCOUNT = tb_2_.ACCOUNT " +
+                                        "from (values(?, ?)) tb_2_(ID, ACCOUNT) " +
+                                        "where tb_1_.ID = tb_2_.ID " +
+                                        "returning tb_1_.ID, tb_1_.ACCOUNT, tb_1_.DESCRIPTION"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":1," +
+                                    "--->\"account\":\"pg-tom\"," +
+                                    "--->\"description\":\"description_001\"" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertReturnDraftByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+
+        connectAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                con -> getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                        .saveCommand(Immutables.createSysUser(draft -> {
+                            draft.setId(1L);
+                            draft.setAccount("pg-upsert");
+                            draft.setEmail("pg-upsert@jimmer.org");
+                            draft.setArea("pg-dev");
+                            draft.setNickName("PgUpsert");
+                        })).setMode(SaveMode.UPSERT)
+                        .execute(
+                                con,
+                                SysUserFetcher.$.account().description()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into SYS_USER(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                        "values(?, ?, ?, ?, ?) " +
+                                        "on conflict(ID) do update set " +
+                                        "ACCOUNT = excluded.ACCOUNT, " +
+                                        "EMAIL = excluded.EMAIL, " +
+                                        "AREA = excluded.AREA, " +
+                                        "NICK_NAME = excluded.NICK_NAME " +
+                                        "returning ID, ACCOUNT, DESCRIPTION"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":1," +
+                                    "--->\"account\":\"pg-upsert\"," +
+                                    "--->\"description\":\"description_001\"" +
+                                    "}"
                     );
                 }
         );

@@ -1586,14 +1586,7 @@ class Operator {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, tableType.getJavaClass()).getIdGetters();
         PropertyGetter discriminatorGetter = discriminatorGetterForBatch(batch, inheritanceInfo);
-        String rootTableName = rootType.getTableName(strategy);
         String childTableName = tableType.getTableName(strategy);
-        String rootIdColumnName = rootType.getIdProp().<SingleColumn>getStorage(strategy).getName();
-        String discriminatorColumnName = inheritanceInfo
-                .getDiscriminatorProp()
-                .<SingleColumn>getStorage(strategy)
-                .getName();
-        String rootAlias = "tb_root_";
 
         BatchSqlBuilder builder = new BatchSqlBuilder(
                 sqlClient,
@@ -1616,26 +1609,15 @@ class Operator {
                     .sql(" = ")
                     .variable(idGetter);
         }
-        builder.separator()
-                .sql("exists(select 1 from ")
-                .sql(rootTableName)
-                .sql(" ")
-                .sql(rootAlias)
-                .sql(" where ")
-                .sql(rootAlias)
-                .sql(".")
-                .sql(rootIdColumnName)
-                .sql(" = ");
-        for (PropertyGetter idGetter : idGetters) {
-            builder.variable(idGetter);
-        }
-        builder.sql(" and ")
-                .sql(rootAlias)
-                .sql(".")
-                .sql(discriminatorColumnName)
-                .sql(" = ")
-                .variable(discriminatorGetter)
-                .sql(")");
+        builder.separator();
+        InheritanceMutationUtils.renderJoinedChildRootGuard(
+                builder,
+                sqlClient,
+                rootType,
+                inheritanceInfo,
+                idGetters,
+                discriminatorGetter
+        );
         builder.leave();
         int rowCount = execute(builder, batch, true, false);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount);

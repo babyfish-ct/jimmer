@@ -207,7 +207,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "select ID, NAME, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
-                                        "--->using( values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
                                         "--->on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
                                         "--->when matched then update set NAME = tb_2_.NAME" +
                                         ")"
@@ -219,7 +219,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                 "select ID, TAX_CODE, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
-                                        "--->using( values(?, ?, ?)) tb_2_(ID, TAX_CODE, CLIENT_TYPE) " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, TAX_CODE, CLIENT_TYPE) " +
                                         "--->on tb_1_.ID = tb_2_.ID and exists(" +
                                         "--->--->select 1 from JOINED_CLIENT tb_root_ " +
                                         "--->--->where tb_root_.ID = tb_2_.ID " +

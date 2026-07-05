@@ -47,8 +47,8 @@ public class JoinedInheritanceCascadeOptimisticLockTest extends AbstractMutation
                                 "update JOINED_CASCADE_ORGANIZATION " +
                                         "set TAX_CODE = ? " +
                                         "where ID = ? and exists(" +
-                                        "select 1 from JOINED_CASCADE_CLIENT " +
-                                        "where JOINED_CASCADE_CLIENT.ID = ? and CLIENT_TYPE = ?)"
+                                        "select 1 from JOINED_CASCADE_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
                         );
                         it.variables("C-GLOBEX-LOCKED", 500L, 500L, "ORG");
                     });

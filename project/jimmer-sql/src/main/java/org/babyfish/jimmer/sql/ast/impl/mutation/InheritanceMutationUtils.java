@@ -3,17 +3,22 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
-import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 final class InheritanceMutationUtils {
+
+    private static final String ROOT_GUARD_ALIAS = "tb_root_";
 
     private InheritanceMutationUtils() {}
 
@@ -115,5 +120,96 @@ final class InheritanceMutationUtils {
             }
             builder.leave();
         }
+    }
+
+    static void renderJoinedChildRootGuard(
+            SqlBuilder builder,
+            ImmutableType rootType,
+            InheritanceInfo inheritanceInfo,
+            String sourcePrefix,
+            PropertyGetter idGetter,
+            PropertyGetter discriminatorGetter
+    ) {
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
+        renderJoinedChildRootGuardPrefix(builder, rootType, strategy);
+        builder
+                .sql(sourcePrefix)
+                .sql(idGetter)
+                .sql(" and ")
+                .sql(ROOT_GUARD_ALIAS)
+                .sql(".")
+                .sql(discriminatorColumnName(inheritanceInfo, strategy))
+                .sql(" = ")
+                .sql(sourcePrefix)
+                .sql(discriminatorGetter)
+                .sql(")");
+    }
+
+    static void renderJoinedChildRootGuard(
+            BatchSqlBuilder builder,
+            JSqlClientImplementor sqlClient,
+            ImmutableType rootType,
+            InheritanceInfo inheritanceInfo,
+            List<PropertyGetter> idGetters,
+            PropertyGetter discriminatorGetter
+    ) {
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        renderJoinedChildRootGuardPrefix(builder, rootType, strategy);
+        for (PropertyGetter idGetter : idGetters) {
+            builder.variable(idGetter);
+        }
+        builder
+                .sql(" and ")
+                .sql(ROOT_GUARD_ALIAS)
+                .sql(".")
+                .sql(discriminatorColumnName(inheritanceInfo, strategy))
+                .sql(" = ")
+                .variable(discriminatorGetter)
+                .sql(")");
+    }
+
+    private static void renderJoinedChildRootGuardPrefix(
+            SqlBuilder builder,
+            ImmutableType rootType,
+            MetadataStrategy strategy
+    ) {
+        builder
+                .sql("exists(select 1 from ")
+                .sql(rootType.getTableName(strategy))
+                .sql(" ")
+                .sql(ROOT_GUARD_ALIAS)
+                .sql(" where ")
+                .sql(ROOT_GUARD_ALIAS)
+                .sql(".")
+                .sql(rootIdColumnName(rootType, strategy))
+                .sql(" = ");
+    }
+
+    private static void renderJoinedChildRootGuardPrefix(
+            BatchSqlBuilder builder,
+            ImmutableType rootType,
+            MetadataStrategy strategy
+    ) {
+        builder
+                .sql("exists(select 1 from ")
+                .sql(rootType.getTableName(strategy))
+                .sql(" ")
+                .sql(ROOT_GUARD_ALIAS)
+                .sql(" where ")
+                .sql(ROOT_GUARD_ALIAS)
+                .sql(".")
+                .sql(rootIdColumnName(rootType, strategy))
+                .sql(" = ");
+    }
+
+    private static String rootIdColumnName(ImmutableType rootType, MetadataStrategy strategy) {
+        return rootType.getIdProp().<SingleColumn>getStorage(strategy).getName();
+    }
+
+    private static String discriminatorColumnName(InheritanceInfo inheritanceInfo, MetadataStrategy strategy) {
+        return inheritanceInfo
+                .getDiscriminatorProp()
+                .<SingleColumn>getStorage(strategy)
+                .getName();
     }
 }

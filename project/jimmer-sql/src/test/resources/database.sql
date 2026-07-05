@@ -244,7 +244,7 @@ create table joined_client(
 create table joined_organization(
     id bigint not null,
     tax_code varchar(50) not null,
-    status varchar(100) default 'DEFAULT_ORGANIZATION_STATUS',
+    status varchar(100) default 'DEFAULT_ORGANIZATION_STATUS' not null,
     constraint pk_joined_organization primary key(id),
     constraint fk_joined_organization__client
         foreign key(id)
