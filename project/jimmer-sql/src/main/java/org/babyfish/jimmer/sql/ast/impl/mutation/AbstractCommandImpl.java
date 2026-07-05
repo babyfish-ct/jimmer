@@ -211,6 +211,16 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class SaveReturningEnabledCfg extends Cfg {
+
+        final boolean enabled;
+
+        SaveReturningEnabledCfg(Cfg prev, boolean enabled) {
+            super(prev);
+            this.enabled = enabled;
+        }
+    }
+
     static class ConstraintViolationTranslatableCfg extends Cfg {
 
         final boolean translatable;

@@ -69,6 +69,8 @@ public interface SaveOptions {
 
     boolean isBatchForbidden();
 
+    boolean isSaveReturningEnabled();
+
     boolean isConstraintViolationTranslatable();
 
     @Nullable
@@ -223,6 +225,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isBatchForbidden() {
         return raw.isBatchForbidden();
+    }
+
+    @Override
+    public boolean isSaveReturningEnabled() {
+        return raw.isSaveReturningEnabled();
     }
 
     @Override

@@ -320,6 +320,7 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
         UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);
+        UpsertContext appendUpdateConditionWithTableName(String sourcePrefix, String sourceSuffix);
         UpsertContext appendGeneratedId();
         default UpsertContext appendReturning(String prefix) {
             throw new UnsupportedOperationException(

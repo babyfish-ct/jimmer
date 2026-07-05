@@ -88,12 +88,20 @@ class SaveReturningUpdateContext implements Dialect.UpdateByValuesContext {
 
     @Override
     public Dialect.UpdateByValuesContext appendPredicates(String targetPrefix, String sourcePrefix) {
-        builder
-                .sql(targetPrefix)
-                .sql(returning.idGetter)
-                .sql(" = ")
-                .sql(sourcePrefix)
-                .sql(returning.idGetter);
+        boolean addAnd = false;
+        for (PropertyGetter getter : returning.matchGetters) {
+            if (addAnd) {
+                builder.sql(" and ");
+            } else {
+                addAnd = true;
+            }
+            builder
+                    .sql(targetPrefix)
+                    .sql(getter)
+                    .sql(" = ")
+                    .sql(sourcePrefix)
+                    .sql(getter);
+        }
         if (returning.versionGetter != null) {
             builder
                     .sql(" and ")
@@ -105,7 +113,7 @@ class SaveReturningUpdateContext implements Dialect.UpdateByValuesContext {
         }
         if (returning.updateCondition != null) {
             builder.sql(" and ");
-            returning.updateCondition.append(builder, targetPrefix, sourcePrefix);
+            returning.updateCondition.append(builder, targetPrefix, "", sourcePrefix, "");
         }
         return this;
     }

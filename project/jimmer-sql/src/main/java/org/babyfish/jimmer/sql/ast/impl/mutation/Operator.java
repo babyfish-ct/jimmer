@@ -225,11 +225,7 @@ class Operator {
                         ctx.options.getKeyMatcher(tableType),
                         implicitKeyProps(null)
                 );
-                conflictProps = new ArrayList<>(keyProps);
-                LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
-                if (logicalDeletedInfo != null) {
-                    conflictProps.add(logicalDeletedInfo.getProp());
-                }
+                conflictProps = MutationKeys.keyAndLogicalDeletedProps(batch.shape().getType(), keyProps);
             }
         } else {
             upsertMask = null;
@@ -1159,11 +1155,7 @@ class Operator {
             if (!batch.shape().getIdGetters().isEmpty()) {
                 conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
             } else {
-                conflictProps = new ArrayList<>(keyProps);
-                LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
-                if (logicalDeletedInfo != null) {
-                    conflictProps.add(logicalDeletedInfo.getProp());
-                }
+                conflictProps = MutationKeys.keyAndLogicalDeletedProps(batch.shape().getType(), keyProps);
             }
         } else {
             upsertMask = null;
@@ -1718,12 +1710,9 @@ class Operator {
                     ctx.options.getKeyMatcher(tableType),
                     implicitKeyProps
             );
-            conflictProps = new ArrayList<>(keyProps);
             LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
             boolean filteredLogicalDeletedKey = isFilteredLogicalDeletedKey(batch.shape().getType());
-            if (logicalDeletedInfo != null) {
-                conflictProps.add(logicalDeletedInfo.getProp());
-            }
+            conflictProps = MutationKeys.keyAndLogicalDeletedProps(batch.shape().getType(), keyProps);
             conflictGetters = new ArrayList<>();
             for (PropertyGetter getter : fullShape.getGetters()) {
                 if (keyProps.contains(getter.prop())) {
@@ -2876,9 +2865,13 @@ class Operator {
             return this;
         }
 
+        private String tableName() {
+            return tableType.getTableName(ctx.options.getSqlClient().getMetadataStrategy());
+        }
+
         @Override
         public Dialect.UpsertContext appendTableName() {
-            builder.sql(tableType.getTableName(ctx.options.getSqlClient().getMetadataStrategy()));
+            builder.sql(tableName());
             return this;
         }
 
@@ -3008,7 +3001,18 @@ class Operator {
         ) {
             boolean hasPrevious = false;
             if (userOptimisticLockPredicate != null) {
-                ((Ast) userOptimisticLockPredicate).renderTo(builder);
+                builder.pushValueGetterRender(targetPrefix, targetSuffix);
+                builder.pushOptimisticLockNewValueRender(null, "");
+                try {
+                    AbstractExpression.renderChild(
+                            (Ast) userOptimisticLockPredicate,
+                            ExpressionPrecedences.AND,
+                            builder
+                    );
+                } finally {
+                    builder.popOptimisticLockNewValueRender();
+                    builder.popValueGetterRender();
+                }
                 hasPrevious = true;
             }
             if (versionGetter != null) {
@@ -3039,6 +3043,14 @@ class Operator {
                         .sql(sourceSuffix);
             }
             return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendUpdateConditionWithTableName(
+                String sourcePrefix,
+                String sourceSuffix
+        ) {
+            return appendUpdateCondition(tableName() + ".", "", sourcePrefix, sourceSuffix);
         }
 
         private void appendConditionalUpdatingAssignment(

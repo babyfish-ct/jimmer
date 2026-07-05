@@ -247,6 +247,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled) {
+        return new BatchEntitySaveCommandImpl<>(new SaveReturningEnabledCfg(cfg, enabled));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable) {
         return new BatchEntitySaveCommandImpl<>(new ConstraintViolationTranslatableCfg(cfg, transferable));
     }

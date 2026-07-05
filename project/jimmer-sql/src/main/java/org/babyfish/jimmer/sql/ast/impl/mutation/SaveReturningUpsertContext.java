@@ -35,7 +35,8 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
 
     @Override
     public boolean hasUpdateCondition() {
-        return returning.upsert.discriminatorGuardGetter != null;
+        return returning.updateCondition != null ||
+                returning.upsert.discriminatorGuardGetter != null;
     }
 
     @Override
@@ -109,10 +110,22 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
         return this;
     }
 
+    private String tableName() {
+        return returning.tableType.getTableName(returning.ctx.options.getSqlClient().getMetadataStrategy());
+    }
+
     @Override
     public Dialect.UpsertContext appendTableName() {
-        builder.sql(returning.tableType.getTableName(returning.ctx.options.getSqlClient().getMetadataStrategy()));
+        builder.sql(tableName());
         return this;
+    }
+
+    @Override
+    public Dialect.UpsertContext appendUpdateConditionWithTableName(
+            String sourcePrefix,
+            String sourceSuffix
+    ) {
+        return appendUpdateCondition(tableName() + ".", "", sourcePrefix, sourceSuffix);
     }
 
     @Override
@@ -207,7 +220,15 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
             String sourcePrefix,
             String sourceSuffix
     ) {
+        boolean hasPrevious = false;
+        if (returning.updateCondition != null) {
+            returning.updateCondition.append(builder, targetPrefix, targetSuffix, sourcePrefix, sourceSuffix);
+            hasPrevious = true;
+        }
         if (returning.upsert.discriminatorGuardGetter != null) {
+            if (hasPrevious) {
+                builder.sql(" and ");
+            }
             builder
                     .sql(targetPrefix)
                     .sql(returning.upsert.discriminatorGuardGetter)

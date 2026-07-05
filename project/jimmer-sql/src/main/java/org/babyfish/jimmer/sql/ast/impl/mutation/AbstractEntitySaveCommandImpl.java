@@ -486,6 +486,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean dumbBatchAcceptable;
 
+        private final boolean saveReturningEnabled;
+
         private final boolean constraintViolationTranslatable;
 
         private final ExceptionTranslator<Exception> exceptionTranslator;
@@ -516,6 +518,7 @@ abstract class AbstractEntitySaveCommandImpl
             PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
+            SaveReturningEnabledCfg saveReturningEnabledCfg = cfg.as(SaveReturningEnabledCfg.class);
             ConstraintViolationTranslatableCfg constraintViolationTranslatableCfg =
                     cfg.as(ConstraintViolationTranslatableCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
@@ -577,6 +580,9 @@ abstract class AbstractEntitySaveCommandImpl
             this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
             this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
             this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
+            this.saveReturningEnabled = saveReturningEnabledCfg != null ?
+                    saveReturningEnabledCfg.enabled :
+                    sqlClient.isDefaultSaveReturningEnabled();
             this.constraintViolationTranslatable = constraintViolationTranslatableCfg != null ?
                     constraintViolationTranslatableCfg.translatable :
                     sqlClient.isConstraintViolationTranslatable();
@@ -780,6 +786,11 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
+        public boolean isSaveReturningEnabled() {
+            return saveReturningEnabled;
+        }
+
+        @Override
         public boolean isConstraintViolationTranslatable() {
             return constraintViolationTranslatable;
         }
@@ -819,6 +830,7 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedTypeChangeAllowedAll,
                     pessimisticLockMap,
                     pessimisticLockAll,
+                    saveReturningEnabled,
                     deleteMode,
                     keyMatcherMap,
                     autoCheckingAll,
@@ -840,6 +852,7 @@ abstract class AbstractEntitySaveCommandImpl
                     typeChangeAllowed == other.typeChangeAllowed &&
                     associatedTypeChangeAllowedAll == other.associatedTypeChangeAllowedAll &&
                     pessimisticLockAll == other.pessimisticLockAll &&
+                    saveReturningEnabled == other.saveReturningEnabled &&
                     mode == other.mode &&
                     deleteMode == other.deleteMode &&
                     Objects.equals(argument, other.argument) &&
@@ -875,6 +888,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedTypeChangeAllowedAll=" + associatedTypeChangeAllowedAll +
                     ", pessimisticLockMap" + pessimisticLockMap +
                     ", pessimisticLockAll" + pessimisticLockAll +
+                    ", saveReturningEnabled=" + saveReturningEnabled +
                     ", deleteMode=" + deleteMode +
                     ", keyMatcherMap=" + keyMatcherMap +
                     ", autoCheckingMap=" + autoCheckingMap +

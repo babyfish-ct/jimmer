@@ -1,13 +1,12 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode
-
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
@@ -217,6 +216,10 @@ internal class KSaveCommandDslImpl(
 
     override fun setDumbBatchAcceptable(acceptable: Boolean) {
         javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
+    }
+
+    override fun setSaveReturningEnabled(enabled: Boolean) {
+        javaCommand = javaCommand.setSaveReturningEnabled(enabled)
     }
 
     override fun setConstraintViolationTranslatable(translatable: Boolean) {

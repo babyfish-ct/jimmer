@@ -310,7 +310,7 @@ public class PostgresDialect extends DefaultDialect {
                     .appendUpdatingAssignments("excluded.", "")
                     .leave();
             if (ctx.hasUpdateCondition()) {
-                ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
+                ctx.sql(" where ").appendUpdateConditionWithTableName("excluded.", "");
             }
             if (ctx.isCurrentRowReturningRequired()) {
                 ctx.sql(" returning ").appendReturning("");

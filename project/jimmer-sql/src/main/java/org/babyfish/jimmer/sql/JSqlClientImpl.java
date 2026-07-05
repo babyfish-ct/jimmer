@@ -111,6 +111,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean defaultTypeChangeAllowed;
 
+    private final boolean defaultSaveReturningEnabled;
+
     private final boolean explicitBatchEnabled;
 
     private final boolean dumbBatchAcceptable;
@@ -184,6 +186,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean mutationTransactionRequired,
             boolean targetTransferable,
             boolean defaultTypeChangeAllowed,
+            boolean defaultSaveReturningEnabled,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             boolean constraintViolationTranslatable,
@@ -238,6 +241,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
         this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
+        this.defaultSaveReturningEnabled = defaultSaveReturningEnabled;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable = constraintViolationTranslatable;
@@ -424,6 +428,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isDefaultTypeChangeAllowed() {
         return defaultTypeChangeAllowed;
+    }
+
+    @Override
+    public boolean isDefaultSaveReturningEnabled() {
+        return defaultSaveReturningEnabled;
     }
 
     @Override
@@ -721,6 +730,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 mutationTransactionRequired,
                 targetTransferable,
                 defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -779,6 +789,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 mutationTransactionRequired,
                 targetTransferable,
                 defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -832,6 +843,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 mutationTransactionRequired,
                 targetTransferable,
                 defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -888,6 +900,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 mutationTransactionRequired,
                 targetTransferable,
                 defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -1123,6 +1136,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean targetTransferable;
 
         private boolean defaultTypeChangeAllowed;
+
+        private boolean defaultSaveReturningEnabled = true;
 
         private boolean explicitBatchEnabled;
 
@@ -1770,6 +1785,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @Override
+        public Builder setDefaultSaveReturningEnabled(boolean enabled) {
+            this.defaultSaveReturningEnabled = enabled;
+            return this;
+        }
+
         @OldChain
         @Override
         public Builder setConstraintViolationTranslatable(boolean translatable) {
@@ -1982,6 +2003,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     mutationTransactionRequired,
                     targetTransferable,
                     defaultTypeChangeAllowed,
+                    defaultSaveReturningEnabled,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,
                     constraintViolationTranslatable,

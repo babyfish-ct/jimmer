@@ -1139,6 +1139,11 @@ public class Deleter {
             }
 
             @Override
+            public boolean isSaveReturningEnabled() {
+                return false;
+            }
+
+            @Override
             public boolean isConstraintViolationTranslatable() {
                 return getSqlClient().isConstraintViolationTranslatable();
             }

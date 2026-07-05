@@ -420,7 +420,11 @@ public class Saver {
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         SaveShapeMatcher shapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
         for (DraftSpi draft : drafts) {
-            if (!draft.__isLoaded(idPropId)) {
+            if (ctx.isSaveReturningNotAccepted(draft)) {
+                // Returning row-count 0 rows must remain unmaterialized.
+                ++index;
+                continue;
+            } else if (!draft.__isLoaded(idPropId)) {
                 nonIdObjects.add(draft);
             } else if (fetcher != null && !shapeMatcher.isMatched(draft, fetcher, true)) {
                 Object id = draft.__get(idPropId);

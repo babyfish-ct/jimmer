@@ -344,6 +344,14 @@ public interface SimpleEntitySaveCommand<E>
     SimpleEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable);
 
     @Override
+    default SimpleEntitySaveCommand<E> setSaveReturningEnabled() {
+        return setSaveReturningEnabled(true);
+    }
+
+    @Override
+    SimpleEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled);
+
+    @Override
     SimpleEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable);
 
     @NewChain

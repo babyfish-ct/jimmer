@@ -914,6 +914,14 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public Dialect.UpsertContext appendUpdateConditionWithTableName(
+                String sourcePrefix,
+                String sourceSuffix
+        ) {
+            return this;
+        }
+
+        @Override
         public Dialect.UpsertContext appendGeneratedId() {
             return this;
         }

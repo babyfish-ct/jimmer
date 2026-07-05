@@ -32,12 +32,22 @@ class SaveReturningColumnValue {
             PropertyGetter getter,
             SaveReturningValueMode mode
     ) {
-        for (SaveReturningColumnValue sourceValue : sourceValues) {
-            if (sourceValue.getter.prop().toOriginal() == getter.prop().toOriginal()) {
-                return;
-            }
+        if (contains(sourceValues, getter)) {
+            return;
         }
         sourceValues.add(new SaveReturningColumnValue(getter, mode, null));
+    }
+
+    static boolean contains(
+            List<SaveReturningColumnValue> sourceValues,
+            PropertyGetter getter
+    ) {
+        for (SaveReturningColumnValue sourceValue : sourceValues) {
+            if (sourceValue.getter.prop().toOriginal() == getter.prop().toOriginal()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void appendValue(SqlBuilder builder, DraftSpi draft) {

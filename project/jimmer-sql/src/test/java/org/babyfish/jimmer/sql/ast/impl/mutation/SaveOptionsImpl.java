@@ -144,6 +144,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public boolean isSaveReturningEnabled() {
+        return true;
+    }
+
+    @Override
     public boolean isConstraintViolationTranslatable() {
         return sqlClient.isConstraintViolationTranslatable();
     }

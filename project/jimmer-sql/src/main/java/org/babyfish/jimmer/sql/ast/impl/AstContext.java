@@ -646,4 +646,5 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             this.table = table;
         }
     }
+
 }

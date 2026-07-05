@@ -343,6 +343,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setDefaultTypeChangeAllowed(allowed)
     }
 
+    fun setDefaultSaveReturningEnabled(enabled: Boolean) {
+        javaBuilder.setDefaultSaveReturningEnabled(enabled)
+    }
+
     fun addCustomizers(vararg customers: KCustomizer) {
         javaBuilder.addCustomizers(customers.map { JavaCustomizer(it) })
     }

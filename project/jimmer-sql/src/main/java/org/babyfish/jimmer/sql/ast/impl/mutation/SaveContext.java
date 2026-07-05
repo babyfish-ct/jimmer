@@ -40,6 +40,8 @@ class SaveContext extends MutationContext {
 
     private final Set<DraftSpi> saveReturningAppliedDrafts;
 
+    private final Set<DraftSpi> saveReturningNotAcceptedDrafts;
+
     SaveContext(
             SaveOptions options,
             Connection con,
@@ -73,6 +75,7 @@ class SaveContext extends MutationContext {
         this.backReferenceFrozen = false;
         this.affectedRowCountMap = affectedRowCountMap;
         this.saveReturningAppliedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.saveReturningNotAcceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
     }
 
     private SaveContext(SaveContext parent, ImmutableProp prop, ImmutableProp backProp) {
@@ -128,6 +131,7 @@ class SaveContext extends MutationContext {
         }
         this.affectedRowCountMap = parent.affectedRowCountMap;
         this.saveReturningAppliedDrafts = parent.saveReturningAppliedDrafts;
+        this.saveReturningNotAcceptedDrafts = parent.saveReturningNotAcceptedDrafts;
     }
 
     private SaveContext(SaveContext base, JSqlClientImplementor sqlClient) {
@@ -140,6 +144,7 @@ class SaveContext extends MutationContext {
         this.backReferenceProp = base.backReferenceProp;
         this.backReferenceFrozen = base.backReferenceFrozen;
         this.saveReturningAppliedDrafts = base.saveReturningAppliedDrafts;
+        this.saveReturningNotAcceptedDrafts = base.saveReturningNotAcceptedDrafts;
     }
 
     public Object allocateId() {
@@ -233,5 +238,13 @@ class SaveContext extends MutationContext {
 
     public boolean isSaveReturningApplied(DraftSpi draft) {
         return saveReturningAppliedDrafts.contains(draft);
+    }
+
+    public void markSaveReturningNotAccepted(DraftSpi draft) {
+        saveReturningNotAcceptedDrafts.add(draft);
+    }
+
+    public boolean isSaveReturningNotAccepted(DraftSpi draft) {
+        return saveReturningNotAcceptedDrafts.contains(draft);
     }
 }

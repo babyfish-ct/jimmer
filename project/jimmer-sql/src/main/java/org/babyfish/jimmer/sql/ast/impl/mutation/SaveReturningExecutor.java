@@ -95,8 +95,11 @@ class SaveReturningExecutor {
             default:
                 throw new AssertionError("Internal bug: Unexpected match mode: " + returning.matchMode);
         }
+        if (returning.kind != SaveReturningKind.INSERT) {
+            markNotAcceptedRows(returning, entities, rowCounts);
+        }
         if (returning.upsert != null && returning.upsert.ignoreUpdate) {
-            unloadAssociationsOfRejectedRows(returning, entities, rowCounts);
+            unloadAssociationsOfNotAcceptedRows(returning, entities, rowCounts);
         }
         return rowCounts;
     }
@@ -118,7 +121,7 @@ class SaveReturningExecutor {
             Object[] values = readValues(returning, rs, readerContext);
             rowCounts[index++] = 1;
             EntityCollection.Item<DraftSpi> item = itr.next();
-            if (returning.logicalDeletedIndex == -1 || !isLogicalDeleted(returning, values)) {
+            if (!isRejectedByLogicalDeleted(returning, values)) {
                 apply(returning, item, values, shapeMatcher);
             }
         }
@@ -155,7 +158,7 @@ class SaveReturningExecutor {
                 throw unexpectedReturningRow(returning, key);
             }
             rowCounts[indexMap.get(key)] = 1;
-            if (returning.logicalDeletedIndex == -1 || !isLogicalDeleted(returning, values)) {
+            if (!isRejectedByLogicalDeleted(returning, values)) {
                 apply(returning, item, values, shapeMatcher);
             }
         }
@@ -203,9 +206,19 @@ class SaveReturningExecutor {
         );
     }
 
-    private static boolean isLogicalDeleted(SaveReturning returning, Object[] values) {
-        return returning.logicalDeletedInfo != null &&
-                returning.logicalDeletedInfo.isDeleted(values[returning.logicalDeletedIndex]);
+    private static boolean isRejectedByLogicalDeleted(SaveReturning returning, Object[] values) {
+        if (returning.logicalDeletedInfo == null || returning.logicalDeletedIndex == -1) {
+            return false;
+        }
+        boolean deleted = returning.logicalDeletedInfo.isDeleted(values[returning.logicalDeletedIndex]);
+        switch (returning.logicalDeletedBehavior) {
+            case REVERSED:
+                return !deleted;
+            case DEFAULT:
+                return deleted;
+            default:
+                return false;
+        }
     }
 
     private static void apply(
@@ -238,7 +251,7 @@ class SaveReturningExecutor {
         shapeMatcher.isMatched(draft, returning.ctx.fetcher, true);
     }
 
-    private static void unloadAssociationsOfRejectedRows(
+    private static void unloadAssociationsOfNotAcceptedRows(
             SaveReturning returning,
             EntityCollection<DraftSpi> entities,
             int[] rowCounts
@@ -261,6 +274,23 @@ class SaveReturningExecutor {
                 for (DraftSpi draft : item.getOriginalEntities()) {
                     draft.__unload(propId);
                 }
+            }
+        }
+    }
+
+    private static void markNotAcceptedRows(
+            SaveReturning returning,
+            EntityCollection<DraftSpi> entities,
+            int[] rowCounts
+    ) {
+        int index = 0;
+        for (EntityCollection.Item<DraftSpi> item : entities.items()) {
+            if (index < rowCounts.length && rowCounts[index++] != 0) {
+                continue;
+            }
+            returning.ctx.markSaveReturningNotAccepted(item.getEntity());
+            for (DraftSpi draft : item.getOriginalEntities()) {
+                returning.ctx.markSaveReturningNotAccepted(draft);
             }
         }
     }

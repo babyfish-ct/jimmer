@@ -1187,6 +1187,7 @@ alter table employee
 insert into department(id, name) values(1, 'Market');
 insert into employee(id, name, gender, department_id) values(1, 'Sam', 'M', 1);
 insert into employee(id, name, gender, department_id) values(2, 'Jessica', 'F', 1);
+insert into employee(id, name, gender, deleted_millis) values(3, 'Sam', 'M', 9);
 
 
 

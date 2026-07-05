@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -50,6 +51,8 @@ class SaveReturning {
     @Nullable
     final LogicalDeletedInfo logicalDeletedInfo;
 
+    final LogicalDeletedBehavior logicalDeletedBehavior;
+
     @Nullable
     final SaveReturningUpsert upsert;
 
@@ -70,6 +73,7 @@ class SaveReturning {
             List<ImmutableProp> returningProps,
             int logicalDeletedIndex,
             @Nullable LogicalDeletedInfo logicalDeletedInfo,
+            LogicalDeletedBehavior logicalDeletedBehavior,
             @Nullable SaveReturningUpsert upsert
     ) {
         this.ctx = ctx;
@@ -88,6 +92,7 @@ class SaveReturning {
         this.returningProps = returningProps;
         this.logicalDeletedIndex = logicalDeletedIndex;
         this.logicalDeletedInfo = logicalDeletedInfo;
+        this.logicalDeletedBehavior = logicalDeletedBehavior;
         this.upsert = upsert;
     }
 

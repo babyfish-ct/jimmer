@@ -242,6 +242,59 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateDerivedTypeMismatchWithStageReturningDoesNotMaterializeExistingRow() {
+        connectAndExpect(
+                con -> {
+                    SimpleSaveResult<Organization> result = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(201L);
+                                        organization.setName("Should not update");
+                                        organization.setTaxCode("SHOULD-NOT-WRITE");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(
+                                    con,
+                                    OrganizationFetcher.$
+                                            .name()
+                                            .description()
+                                            .taxCode()
+                                            .status()
+                            );
+                    return result.getTotalAffectedRowCount() +
+                            "; " +
+                            (result.getOriginalEntity() == result.getModifiedEntity()) +
+                            "; " +
+                            result.getModifiedEntity();
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
+                        it.variables(201L, "Should not update", "ORG");
+                    });
+                    ctx.value(
+                            "0; true; " +
+                                    "{" +
+                                    "--->\"id\":201," +
+                                    "--->\"name\":\"Should not update\"," +
+                                    "--->\"taxCode\":\"SHOULD-NOT-WRITE\"" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testUpsertDerivedTypeWithStageReturning() {
         connectAndExpect(
                 con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
@@ -299,6 +352,62 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         assertEquals("GLOBEX-RETURNING-UPSERT", organization.taxCode());
                         assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertDerivedTypeMismatchWithStageReturningDoesNotMaterializeExistingRow() {
+        connectAndExpect(
+                con -> {
+                    SimpleSaveResult<Organization> result = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(201L);
+                                        organization.setName("Should not upsert");
+                                        organization.setTaxCode("SHOULD-NOT-UPSERT");
+                                    })
+                            )
+                            .setMode(SaveMode.UPSERT)
+                            .execute(
+                                    con,
+                                    OrganizationFetcher.$
+                                            .name()
+                                            .description()
+                                            .taxCode()
+                                            .status()
+                            );
+                    return result.getTotalAffectedRowCount() +
+                            "; " +
+                            (result.getOriginalEntity() == result.getModifiedEntity()) +
+                            "; " +
+                            result.getModifiedEntity();
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "--->then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(201L, "Should not upsert", "ORG");
+                    });
+                    ctx.value(
+                            "0; true; " +
+                                    "{" +
+                                    "--->\"id\":201," +
+                                    "--->\"name\":\"Should not upsert\"," +
+                                    "--->\"taxCode\":\"SHOULD-NOT-UPSERT\"" +
+                                    "}"
+                    );
                 }
         );
     }
@@ -418,6 +527,95 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         assertEquals("INSERT-IF-ABSENT-RETURNING", organization.taxCode());
                         assertEquals("DEFAULT_ORGANIZATION_STATUS", organization.status());
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpdateDerivedTypeWithStageReturningDoesNotMaterializeRejectedRows() {
+        connectAndExpect(
+                con -> {
+                    Organization accepted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(200L);
+                        organization.setName("Globex Batch Returning Update");
+                        organization.setTaxCode("GLOBEX-BATCH-RETURNING");
+                    });
+                    Organization notAccepted = OrganizationDraft.$.produce(organization -> {
+                        organization.setId(201L);
+                        organization.setName("Should not batch update");
+                        organization.setTaxCode("SHOULD-NOT-BATCH-WRITE");
+                    });
+                    BatchSaveResult<Organization> result = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.asList(accepted, notAccepted))
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .execute(
+                                    con,
+                                    OrganizationFetcher.$
+                                            .name()
+                                            .description()
+                                            .taxCode()
+                                            .status()
+                            );
+                    return result.getTotalAffectedRowCount() +
+                            "; " +
+                            (result.getItems().get(0).getOriginalEntity() ==
+                                    result.getItems().get(0).getModifiedEntity()) +
+                            "; " +
+                            result.getItems().get(0).getModifiedEntity() +
+                            "; " +
+                            (result.getItems().get(1).getOriginalEntity() ==
+                                    result.getItems().get(1).getModifiedEntity()) +
+                            "; " +
+                            result.getItems().get(1).getModifiedEntity();
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "--->when matched then update set NAME = tb_2_.NAME" +
+                                        ")"
+                        );
+                        it.variables(
+                                200L, "Globex Batch Returning Update", "ORG",
+                                201L, "Should not batch update", "ORG"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE, STATUS " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "--->using(values(?, ?, ?)) tb_2_(ID, TAX_CODE, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID and exists(" +
+                                        "--->--->select 1 from JOINED_CLIENT tb_root_ " +
+                                        "--->--->where tb_root_.ID = tb_2_.ID " +
+                                        "--->--->and tb_root_.CLIENT_TYPE = tb_2_.CLIENT_TYPE" +
+                                        "--->) " +
+                                        "--->when matched then update set TAX_CODE = tb_2_.TAX_CODE" +
+                                        ")"
+                        );
+                        it.variables(200L, "GLOBEX-BATCH-RETURNING", "ORG");
+                    });
+                    ctx.value(
+                            "2; false; " +
+                                    "{" +
+                                    "--->\"id\":200," +
+                                    "--->\"name\":\"Globex Batch Returning Update\"," +
+                                    "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->\"taxCode\":\"GLOBEX-BATCH-RETURNING\"," +
+                                    "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "}; true; " +
+                                    "{" +
+                                    "--->\"id\":201," +
+                                    "--->\"name\":\"Should not batch update\"," +
+                                    "--->\"taxCode\":\"SHOULD-NOT-BATCH-WRITE\"" +
+                                    "}"
+                    );
                 }
         );
     }

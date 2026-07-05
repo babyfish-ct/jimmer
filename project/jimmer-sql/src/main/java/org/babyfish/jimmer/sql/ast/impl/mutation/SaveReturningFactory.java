@@ -9,10 +9,9 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -99,6 +98,7 @@ class SaveReturningFactory {
                 returning.props,
                 returning.logicalDeletedIndex,
                 basic.logicalDeletedInfo,
+                basic.logicalDeletedBehavior,
                 null
         );
     }
@@ -127,8 +127,6 @@ class SaveReturningFactory {
         if (basic == null ||
                 discriminatorProp != null ||
                 !nullGetters.isEmpty() ||
-                keyProps != null ||
-                userOptimisticLockPredicate != null ||
                 fakeUpdate ||
                 forceOneByOne ||
                 (updatedGetters.isEmpty() && versionGetter == null)) {
@@ -145,12 +143,31 @@ class SaveReturningFactory {
             return null;
         }
         PropertyGetter idGetter = idGetters.get(0);
-        List<PropertyGetter> matchGetters = Collections.singletonList(idGetter);
+        List<PropertyGetter> matchGetters;
+        SaveReturningMatchMode matchMode;
+        if (keyProps != null) {
+            matchMode = SaveReturningMatchMode.KEY;
+            matchGetters = propertyGetters(sqlClient, keyProps);
+            if (matchGetters == null) {
+                return null;
+            }
+            if (basic.logicalDeletedInfo != null) {
+                updateCondition = SaveReturningUpdateCondition.and(
+                        updateCondition,
+                        SaveReturningUpdateCondition.logicalDeletedGuard(basic.logicalDeletedInfo)
+                );
+            }
+        } else {
+            matchMode = SaveReturningMatchMode.ID;
+            matchGetters = Collections.singletonList(idGetter);
+        }
         if (hasDuplicateKeys(matchGetters, entities)) {
             return null;
         }
-        List<SaveReturningColumnValue> sourceValues = new ArrayList<>(updatedGetters.size() + 2);
-        sourceValues.add(new SaveReturningColumnValue(idGetter, SaveReturningValueMode.VALUE, null));
+        List<SaveReturningColumnValue> sourceValues = new ArrayList<>(updatedGetters.size() + matchGetters.size() + 1);
+        for (PropertyGetter getter : matchGetters) {
+            sourceValues.add(new SaveReturningColumnValue(getter, SaveReturningValueMode.VALUE, null));
+        }
         if (versionGetter != null) {
             if (!isSingleColumn(versionGetter)) {
                 return null;
@@ -168,6 +185,20 @@ class SaveReturningFactory {
                     sqlClient,
                     shape.getType(),
                     discriminatorGuardValue
+            );
+        }
+        if (userOptimisticLockPredicate != null) {
+            SaveReturningUpdateCondition userOptimisticLockCondition =
+                    SaveReturningUpdateCondition.userOptimisticLock(
+                            sqlClient,
+                            userOptimisticLockPredicate
+                    );
+            if (userOptimisticLockCondition == null) {
+                return null;
+            }
+            updateCondition = SaveReturningUpdateCondition.and(
+                    updateCondition,
+                    userOptimisticLockCondition
             );
         }
         if (updateCondition != null) {
@@ -192,7 +223,7 @@ class SaveReturningFactory {
                 shape,
                 shape.getType(),
                 SaveReturningKind.UPDATE,
-                SaveReturningMatchMode.ID,
+                matchMode,
                 Collections.unmodifiableList(sourceValues),
                 Collections.unmodifiableList(new ArrayList<>(updatedGetters)),
                 updateCondition,
@@ -204,6 +235,7 @@ class SaveReturningFactory {
                 returning.props,
                 returning.logicalDeletedIndex,
                 basic.logicalDeletedInfo,
+                basic.logicalDeletedBehavior,
                 null
         );
     }
@@ -234,7 +266,6 @@ class SaveReturningFactory {
         }
         SaveReturningBasic basic = basic(ctx, batch.shape(), batch.entities(), generatedIdProp != null);
         if (basic == null ||
-                userOptimisticLockPredicate != null ||
                 versionGetter != null ||
                 forceOneByOne) {
             return null;
@@ -282,14 +313,27 @@ class SaveReturningFactory {
                 ignoreUpdate,
                 fakeUpdate
         );
-        List<SaveReturningColumnValue> sourceValues = upsertSourceValues(
+        List<SaveReturningColumnValue> sourceValues = new ArrayList<>(upsertSourceValues(
                 sqlClient,
                 tableType,
                 sequenceIdGenerator,
                 insertedGetters,
                 discriminatorGetter,
                 nullGetters
-        );
+        ));
+        SaveReturningUpdateCondition updateCondition = null;
+        if (userOptimisticLockPredicate != null) {
+            if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
+                return null;
+            }
+            updateCondition = SaveReturningUpdateCondition.userOptimisticLock(
+                    sqlClient,
+                    userOptimisticLockPredicate
+            );
+            if (updateCondition == null || !updateCondition.isSourceValueReady(sourceValues)) {
+                return null;
+            }
+        }
         SaveReturningColumns returning = returningColumns(
                 sqlClient,
                 idGetter,
@@ -310,9 +354,9 @@ class SaveReturningFactory {
                 tableType,
                 SaveReturningKind.UPSERT,
                 matchMode,
-                sourceValues,
+                Collections.unmodifiableList(sourceValues),
                 Collections.unmodifiableList(new ArrayList<>(updatedGetters)),
-                null,
+                updateCondition,
                 null,
                 idGetter,
                 Collections.unmodifiableList(new ArrayList<>(matchGetters)),
@@ -321,6 +365,7 @@ class SaveReturningFactory {
                 returning.props,
                 returning.logicalDeletedIndex,
                 basic.logicalDeletedInfo,
+                basic.logicalDeletedBehavior,
                 upsert
         );
     }
@@ -331,17 +376,15 @@ class SaveReturningFactory {
             EntityCollection<DraftSpi> entities,
             boolean idWillBeLoadedByDml
     ) {
+        if (!ctx.options.isSaveReturningEnabled()) {
+            return null;
+        }
         if (ctx.path.getParent() != null || ctx.trigger != null || ctx.fetcher == null) {
             return null;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        Filter<?> filter = sqlClient.getFilters().getFilter(shape.getType());
-        if (FilterManager.hasUserFilter(filter)) {
-            return null;
-        }
-        LogicalDeletedInfo logicalDeletedInfo = filter != null ?
-                shape.getType().getLogicalDeletedInfo() :
-                null;
+        LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
+        LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
         Fetcher<?> fetcher = ctx.fetcher;
         if (!((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
             return null;
@@ -349,29 +392,35 @@ class SaveReturningFactory {
         if (!isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml)) {
             return null;
         }
-        return new SaveReturningBasic(fetcher, logicalDeletedInfo);
+        return new SaveReturningBasic(fetcher, logicalDeletedInfo, logicalDeletedBehavior);
     }
 
     private static @Nullable SaveReturningBasic basicForInsert(
             SaveContext ctx,
             Shape shape
     ) {
+        if (!ctx.options.isSaveReturningEnabled()) {
+            return null;
+        }
         if (ctx.path.getParent() != null || ctx.trigger != null || ctx.fetcher == null) {
             return null;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        Filter<?> filter = sqlClient.getFilters().getFilter(shape.getType());
-        if (FilterManager.hasUserFilter(filter)) {
-            return null;
-        }
         Fetcher<?> fetcher = ctx.fetcher;
         if (!((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
             return null;
         }
-        LogicalDeletedInfo logicalDeletedInfo = filter != null ?
-                shape.getType().getLogicalDeletedInfo() :
-                null;
-        return new SaveReturningBasic(fetcher, logicalDeletedInfo);
+        LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
+        LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
+        return new SaveReturningBasic(fetcher, logicalDeletedInfo, logicalDeletedBehavior);
+    }
+
+    private static @Nullable LogicalDeletedInfo logicalDeletedInfo(
+            ImmutableType type,
+            LogicalDeletedBehavior behavior
+    ) {
+        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
+        return info != null && behavior != LogicalDeletedBehavior.IGNORED ? info : null;
     }
 
     private static List<SaveReturningColumnValue> insertSourceValues(
@@ -566,6 +615,21 @@ class SaveReturningFactory {
             }
         }
         return false;
+    }
+
+    private static @Nullable List<PropertyGetter> propertyGetters(
+            JSqlClientImplementor sqlClient,
+            Collection<ImmutableProp> props
+    ) {
+        List<PropertyGetter> getters = new ArrayList<>(props.size());
+        for (ImmutableProp prop : props) {
+            List<PropertyGetter> propGetters = PropertyGetter.propertyGetters(sqlClient, prop);
+            if (propGetters.size() != 1 || !isSingleColumn(propGetters.get(0))) {
+                return null;
+            }
+            getters.add(propGetters.get(0));
+        }
+        return getters;
     }
 
     private static boolean isSingleColumn(PropertyGetter getter) {

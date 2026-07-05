@@ -274,6 +274,14 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDumbBatchAcceptable(boolean acceptable);
 
     @NewChain
+    default AbstractEntitySaveCommand setSaveReturningEnabled() {
+        return setSaveReturningEnabled(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setSaveReturningEnabled(boolean enabled);
+
+    @NewChain
     AbstractEntitySaveCommand setConstraintViolationTranslatable(boolean transferable);
 
     @NewChain
