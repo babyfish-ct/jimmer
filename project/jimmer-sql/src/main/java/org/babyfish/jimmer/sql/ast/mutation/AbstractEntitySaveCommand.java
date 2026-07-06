@@ -289,6 +289,15 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setSaveResultReadsAllProperties(boolean readsAllProperties);
 
+    /**
+     * Override whether this save command should let Jimmer investigate SQL
+     * constraint violations and translate them into higher-level save
+     * exceptions, such as {@link org.babyfish.jimmer.sql.exception.SaveException.NotUnique}.
+     *
+     * <p>When disabled, no constraint-investigation queries or savepoints are
+     * used for this mechanism. The original database exception still goes
+     * through the ordinary {@link ExceptionTranslator} pipeline.</p>
+     */
     @NewChain
     AbstractEntitySaveCommand setConstraintViolationTranslatable(boolean transferable);
 

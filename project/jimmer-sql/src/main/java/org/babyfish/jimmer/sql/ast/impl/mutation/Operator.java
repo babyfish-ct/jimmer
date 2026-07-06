@@ -2441,6 +2441,9 @@ class Operator {
             DraftSpi entity,
             boolean updatable
     ) {
+        if (!ctx.options.isConstraintViolationTranslatable()) {
+            return convertFinalException(ex, args);
+        }
         String state = ex.getSQLState();
         if (state == null || !state.startsWith("23")) {
             return convertFinalException(ex, args);
@@ -2466,6 +2469,9 @@ class Operator {
             Collection<? extends DraftSpi> entities,
             boolean updatable
     ) {
+        if (!this.ctx.options.isConstraintViolationTranslatable()) {
+            return convertFinalException(ex, ctx);
+        }
         String state = ex.getSQLState();
         if (state == null || !state.startsWith("23") || !(ex instanceof BatchUpdateException)) {
             return convertFinalException(ex, ctx);
