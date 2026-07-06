@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
@@ -852,6 +851,66 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables("Person", "Acme Person", "Ann", "Smith", 100L);
                     });
                     ctx.value("[Person, Acme Person, null, Ann, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDerivedTypeWithChangingDiscriminatorUsesReturning() {
+        connectAndExpect(
+                con -> {
+                    Person modified = getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    PersonDraft.$.produce(person -> {
+                                        person.setId(100L);
+                                        person.setName("Acme Person Returning");
+                                        person.setFirstName("Ann");
+                                        person.setLastName("Smith");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .setTypeChangeAllowed(true)
+                            .execute(
+                                    con,
+                                    PersonFetcher.$
+                                            .type()
+                                            .name()
+                                            .firstName()
+                                            .lastName()
+                            )
+                            .getModifiedEntity();
+                    return Arrays.asList(modified, clientRow(con, 100L));
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME " +
+                                        "from final table (" +
+                                        "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?)) tb_2_(ID, NAME, FIRST_NAME, LAST_NAME, CLIENT_TYPE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then update set " +
+                                        "CLIENT_TYPE = tb_2_.CLIENT_TYPE, " +
+                                        "TAX_CODE = null, " +
+                                        "NAME = tb_2_.NAME, " +
+                                        "FIRST_NAME = tb_2_.FIRST_NAME, " +
+                                        "LAST_NAME = tb_2_.LAST_NAME)"
+                        );
+                        it.variables(100L, "Acme Person Returning", "Ann", "Smith", "Person");
+                    });
+                    ctx.value(values -> {
+                        Person person = (Person) values.get(0);
+                        assertEquals(100L, person.id());
+                        assertEquals("Person", person.type());
+                        assertEquals("Acme Person Returning", person.name());
+                        assertEquals("Ann", person.firstName());
+                        assertEquals("Smith", person.lastName());
+                        assertEquals(
+                                "[Person, Acme Person Returning, null, Ann, Smith]",
+                                values.get(1)
+                        );
+                    });
                 }
         );
     }

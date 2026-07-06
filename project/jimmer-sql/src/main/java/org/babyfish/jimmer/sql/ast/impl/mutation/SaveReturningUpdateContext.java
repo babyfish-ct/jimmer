@@ -68,6 +68,18 @@ class SaveReturningUpdateContext implements Dialect.UpdateByValuesContext {
 
     @Override
     public Dialect.UpdateByValuesContext appendAssignments(String targetPrefix, String sourcePrefix) {
+        if (returning.update.discriminatorGetter != null) {
+            builder.separator()
+                    .sql(returning.update.discriminatorGetter)
+                    .sql(" = ")
+                    .sql(sourcePrefix)
+                    .sql(returning.update.discriminatorGetter);
+        }
+        for (PropertyGetter getter : returning.update.nullGetters) {
+            builder.separator()
+                    .sql(getter)
+                    .sql(" = null");
+        }
         for (PropertyGetter getter : returning.updatedGetters) {
             builder.separator()
                     .sql(getter)

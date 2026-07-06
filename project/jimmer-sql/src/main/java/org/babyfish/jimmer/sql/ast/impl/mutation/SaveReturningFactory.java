@@ -98,6 +98,7 @@ class SaveReturningFactory {
                 returning.logicalDeletedIndex,
                 basic.logicalDeletedInfo,
                 basic.logicalDeletedBehavior,
+                null,
                 null
         );
     }
@@ -124,11 +125,12 @@ class SaveReturningFactory {
         }
         SaveReturningBasic basic = basic(ctx, shape, entities, false);
         if (basic == null ||
-                discriminatorProp != null ||
-                !nullGetters.isEmpty() ||
                 fakeUpdate ||
                 forceOneByOne ||
-                (updatedGetters.isEmpty() && versionGetter == null)) {
+                (updatedGetters.isEmpty() &&
+                        discriminatorProp == null &&
+                        nullGetters.isEmpty() &&
+                        versionGetter == null)) {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, shape.getType());
@@ -164,7 +166,23 @@ class SaveReturningFactory {
         if (hasDuplicateKeys(matchGetters, entities)) {
             return null;
         }
-        List<SaveReturningColumnValue> sourceValues = new ArrayList<>(updatedGetters.size() + matchGetters.size() + 1);
+        PropertyGetter discriminatorGetter = discriminatorProp != null ?
+                PropertyGetter.propertyGetters(sqlClient, discriminatorProp).get(0) :
+                null;
+        if (discriminatorGetter != null && !isSingleColumn(discriminatorGetter)) {
+            return null;
+        }
+        for (PropertyGetter getter : nullGetters) {
+            if (!isSingleColumn(getter)) {
+                return null;
+            }
+        }
+        SaveReturningUpdate update = new SaveReturningUpdate(
+                discriminatorGetter,
+                Collections.unmodifiableList(new ArrayList<>(nullGetters))
+        );
+        List<SaveReturningColumnValue> sourceValues =
+                new ArrayList<>(updatedGetters.size() + matchGetters.size() + 2);
         for (PropertyGetter getter : matchGetters) {
             sourceValues.add(new SaveReturningColumnValue(getter, SaveReturningValueMode.VALUE, null));
         }
@@ -179,6 +197,13 @@ class SaveReturningFactory {
                 return null;
             }
             sourceValues.add(new SaveReturningColumnValue(getter, SaveReturningValueMode.VALUE, null));
+        }
+        if (discriminatorGetter != null) {
+            SaveReturningColumnValue.addIfAbsent(
+                    sourceValues,
+                    discriminatorGetter,
+                    SaveReturningValueMode.VALUE
+            );
         }
         if (updateCondition == null && discriminatorGuardProp != null) {
             updateCondition = SaveReturningUpdateCondition.discriminatorGuard(
@@ -236,6 +261,7 @@ class SaveReturningFactory {
                 returning.logicalDeletedIndex,
                 basic.logicalDeletedInfo,
                 basic.logicalDeletedBehavior,
+                update,
                 null
         );
     }
@@ -366,6 +392,7 @@ class SaveReturningFactory {
                 returning.logicalDeletedIndex,
                 basic.logicalDeletedInfo,
                 basic.logicalDeletedBehavior,
+                null,
                 upsert
         );
     }

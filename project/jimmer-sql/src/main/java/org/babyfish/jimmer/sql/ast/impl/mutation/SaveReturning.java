@@ -54,6 +54,9 @@ class SaveReturning {
     final LogicalDeletedBehavior logicalDeletedBehavior;
 
     @Nullable
+    final SaveReturningUpdate update;
+
+    @Nullable
     final SaveReturningUpsert upsert;
 
     SaveReturning(
@@ -74,6 +77,7 @@ class SaveReturning {
             int logicalDeletedIndex,
             @Nullable LogicalDeletedInfo logicalDeletedInfo,
             LogicalDeletedBehavior logicalDeletedBehavior,
+            @Nullable SaveReturningUpdate update,
             @Nullable SaveReturningUpsert upsert
     ) {
         this.ctx = ctx;
@@ -93,6 +97,7 @@ class SaveReturning {
         this.logicalDeletedIndex = logicalDeletedIndex;
         this.logicalDeletedInfo = logicalDeletedInfo;
         this.logicalDeletedBehavior = logicalDeletedBehavior;
+        this.update = update;
         this.upsert = upsert;
     }
 
