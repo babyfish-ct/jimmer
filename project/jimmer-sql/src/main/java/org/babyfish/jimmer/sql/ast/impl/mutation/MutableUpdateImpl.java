@@ -442,6 +442,10 @@ public class MutableUpdateImpl
         return (TableImplementor<?>) updateQuery.getTableLikeImplementor();
     }
 
+    AbstractMutableStatementImpl wrappedQuery() {
+        return updateQuery;
+    }
+
     private ImmutableType physicalUpdateType() {
         ImmutableType stageType = primaryAssignmentStageType;
         return stageType != null ? stageType : getTableLikeImplementor().getImmutableType();

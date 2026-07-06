@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -18,9 +19,34 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.util.Collections;
 import java.util.Map;
 
-final class MutationQuerySupport {
+public final class MutationQuerySupport {
 
     private MutationQuerySupport() {}
+
+    public static boolean isCompatibleParent(
+            AbstractMutableStatementImpl a,
+            AbstractMutableStatementImpl b
+    ) {
+        if (a == b) {
+            return true;
+        }
+        AbstractMutableStatementImpl wrappedA = wrappedQuery(a);
+        if (wrappedA == b) {
+            return true;
+        }
+        AbstractMutableStatementImpl wrappedB = wrappedQuery(b);
+        return wrappedB == a;
+    }
+
+    private static AbstractMutableStatementImpl wrappedQuery(AbstractMutableStatementImpl statement) {
+        if (statement instanceof MutableDeleteImpl) {
+            return ((MutableDeleteImpl) statement).wrappedQuery();
+        }
+        if (statement instanceof MutableUpdateImpl) {
+            return ((MutableUpdateImpl) statement).wrappedQuery();
+        }
+        return null;
+    }
 
     static MutableRootQueryImpl<TableEx<?>> createUpdateQuery(
             JSqlClientImplementor sqlClient,

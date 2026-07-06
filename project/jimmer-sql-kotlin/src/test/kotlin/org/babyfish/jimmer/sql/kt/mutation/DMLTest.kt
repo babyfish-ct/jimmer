@@ -310,4 +310,33 @@ class DMLTest : AbstractMutationTest() {
             rowCount(3)
         }
     }
+
+    @Test
+    fun testUpdateByParentTableSubQuery() {
+        executeAndExpectRowCount(
+            sqlClient.createUpdate(Book::class) {
+                set(table.price, table.price + BigDecimal.ONE)
+                where(
+                    table.edition lt subQuery(Book::class) {
+                        where(table.id eq parentTable.id)
+                        select(table.edition)
+                    }
+                )
+            }
+        ) {
+            statement {
+                sql(
+                    """update BOOK tb_1_ 
+                        |set PRICE = tb_1_.PRICE + ? 
+                        |where tb_1_.EDITION < (
+                        |--->select tb_2_.EDITION 
+                        |--->from BOOK tb_2_ 
+                        |--->where tb_2_.ID = tb_1_.ID
+                        |)""".trimMargin()
+                )
+                variables(BigDecimal.ONE)
+            }
+            rowCount(0)
+        }
+    }
 }
