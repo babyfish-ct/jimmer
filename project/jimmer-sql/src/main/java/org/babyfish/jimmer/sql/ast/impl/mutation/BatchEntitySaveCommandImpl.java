@@ -353,13 +353,14 @@ public class BatchEntitySaveCommandImpl<E>
         }
         ImmutableType joinedMixedRootType = joinedMixedRootType(options, groupMap);
         if (joinedMixedRootType != null) {
-            Saver saver = new Saver(
-                    options,
-                    con,
-                    joinedMixedRootType,
-                    fetcher
-            );
-            return saver.saveAllJoinedMixed(entities);
+            return new JoinedMixedSave(
+                    new SaveContext(
+                            options,
+                            con,
+                            joinedMixedRootType,
+                            fetcher
+                    )
+            ).saveAll(entities);
         }
         MutationTrigger trigger = options.getTriggers() != null ? new MutationTrigger() : null;
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();

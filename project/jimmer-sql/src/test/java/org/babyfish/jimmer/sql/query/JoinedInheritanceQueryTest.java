@@ -85,6 +85,38 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testRootFetcherWithScalarDuplicateInTypeBranch() {
+        ClientTable table = ClientTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(200L))
+                        .select(
+                                table.fetch(
+                                        ClientFetcher.$
+                                                .name()
+                                                .forType(OrganizationFetcher.$.name().taxCode())
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.NAME, tb_2_.TAX_CODE " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "left join JOINED_ORGANIZATION tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "where tb_1_.ID = ?"
+                    ).variables("ORG", 200L);
+                    ctx.row(0, row -> {
+                        assertEquals(Organization.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertEquals("Globex", row.name());
+                        assertEquals("GLOBEX-001", ((Organization) row).taxCode());
+                        assertLoadState(row, "id", "name", "taxCode");
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testRootFetcherWithDerivedTypeAssociationBranch() {
         ClientTable table = ClientTable.$;
         executeAndExpect(
