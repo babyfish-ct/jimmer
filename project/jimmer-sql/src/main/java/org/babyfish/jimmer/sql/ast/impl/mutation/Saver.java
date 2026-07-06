@@ -512,16 +512,14 @@ public class Saver {
     }
 
     private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
-        if (!isJoinedTypeBranchTarget()) {
-            return false;
-        }
-        if (ctx.trigger != null) {
-            return isOwnerAcceptanceMode();
-        }
         if (!isOwnerAcceptanceMode()) {
             return false;
         }
-        return hasLoadedPostAssociation(preHandler);
+        if (isJoinedTypeBranchTarget()) {
+            return ctx.trigger != null || hasLoadedPostAssociation(preHandler);
+        }
+        return ctx.options.getUserOptimisticLock(ctx.path.getType()) != null &&
+                hasLoadedPostAssociation(preHandler);
     }
 
     private boolean hasLoadedPostAssociation(PreHandler preHandler) {

@@ -4,14 +4,13 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.TargetTransferMode;
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.common.Constants;
-import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
@@ -22,7 +21,6 @@ import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.model.wild.*;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -836,6 +834,88 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
                     ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 3);
+                }
+        );
+    }
+
+    @Test
+    public void testAssociationOnlyUpdateUsesUserOptimisticLockAsOwnerGate() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(learningGraphQLId3);
+                                    book.addIntoAuthors(author -> author.setId(danId));
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setAssociatedMode(BookProps.AUTHORS, AssociatedSaveMode.APPEND)
+                        .setOptimisticLock(
+                                BookTable.class,
+                                (table, it) -> table.name().eq("Wrong")
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set /* fake update to return all ids */ ID = ID where ID = ? and NAME = ?");
+                        it.variables(learningGraphQLId3, "Wrong");
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.OptimisticLockError.class);
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot update the entity " +
+                                        "whose type is \"org.babyfish.jimmer.sql.model.Book\" " +
+                                        "and id is \"64873631-5d82-4bae-8eb8-72dd955bfc56\" " +
+                                        "because of optimistic lock error"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAssociationOnlyUpdateContinuesAfterUserOptimisticLockOwnerGate() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(learningGraphQLId3);
+                                    book.addIntoAuthors(author -> author.setId(danId));
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setAssociatedMode(BookProps.AUTHORS, AssociatedSaveMode.APPEND)
+                        .setOptimisticLock(
+                                BookTable.class,
+                                (table, it) -> table.name().eq("Learning GraphQL")
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set /* fake update to return all ids */ ID = ID where ID = ? and NAME = ?");
+                        it.variables(learningGraphQLId3, "Learning GraphQL");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.variables(learningGraphQLId3, danId);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"authors\":[{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"}]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"authors\":[{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"}]" +
+                                        "}"
+                        );
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Book.class), 1);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 1);
                 }
         );
     }

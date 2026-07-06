@@ -639,7 +639,7 @@ class Operator {
                 (inheritanceInfo.getRootType() != type || typeChangeAllowed)) {
             return updateJoined(originalIdObjMap, originalKeyObjMap, batch, inheritanceInfo);
         }
-        update(
+        int[] rowCounts = update(
                 originalIdObjMap,
                 originalKeyObjMap,
                 batch,
@@ -647,9 +647,12 @@ class Operator {
                 typeChangeAllowed ? discriminatorProp(inheritanceInfo) : null,
                 typeChangeAllowed ? null : discriminatorGuardProp(inheritanceInfo, type),
                 typeChangeAllowed ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
-                false,
+                ownerAcceptanceRequired,
                 false
         );
+        if (ownerAcceptanceRequired) {
+            return MutationRows.accepted(acceptedOriginalEntities(batch, rowCounts));
+        }
         return MutationRows.UNKNOWN;
     }
 
@@ -1239,10 +1242,18 @@ class Operator {
             }
             updatedGetters.add(getter);
         }
+        boolean versionUpdateRequired = isVersionUpdateRequired(versionGetter);
         boolean fakeUpdate = false;
-        if (updatedGetters.isEmpty() && discriminatorProp == null && nullGetters.isEmpty()) {
+        if (updatedGetters.isEmpty() &&
+                discriminatorProp == null &&
+                nullGetters.isEmpty() &&
+                !versionUpdateRequired) {
             if (hasOptimisticLock) {
-                fakeUpdate = versionGetter == null;
+                if (forceAllRows || discriminatorGuardProp != null) {
+                    fakeUpdate = true;
+                } else {
+                    return EMPTY_ROW_COUNTS;
+                }
             } else {
                 if (!forceAllRows) {
                     fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
@@ -1371,6 +1382,15 @@ class Operator {
         return rowCounts;
     }
 
+    private boolean isVersionUpdateRequired(@Nullable PropertyGetter versionGetter) {
+        if (versionGetter != null) {
+            return true;
+        }
+        ImmutableProp versionProp = ctx.path.getType().getVersionProp();
+        return versionProp != null &&
+                ctx.options.getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE;
+    }
+
     private void fillIds(
             QueryReason queryReason,
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
@@ -1442,7 +1462,7 @@ class Operator {
                 (inheritanceInfo.getRootType() != type || typeChangeAllowed)) {
             return upsertJoined(batch, inheritanceInfo, ignoreUpdate);
         }
-        upsert(
+        int[] rowCounts = upsert(
                 batch,
                 ctx.path.getType(),
                 discriminatorProp(inheritanceInfo),
@@ -1452,6 +1472,9 @@ class Operator {
                 ignoreUpdate,
                 false
         );
+        if (ownerAcceptanceRequired) {
+            return MutationRows.accepted(acceptedOriginalEntities(batch, rowCounts));
+        }
         return MutationRows.UNKNOWN;
     }
 
