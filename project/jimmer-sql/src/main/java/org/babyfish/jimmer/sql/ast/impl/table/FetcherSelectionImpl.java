@@ -248,6 +248,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 if (typeBranchDepth != 0 && prop.isId()) {
                     return;
                 }
+                if (typeBranchDepth != 0 && rootFetcherContains(prop)) {
+                    return;
+                }
                 if (prop.isDiscriminator() && (
                         typeBranchDepth != 0 ||
                                 isRenderedByDiscriminatorSlot(table, prop)
@@ -336,6 +339,16 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 return discriminatorProp != null &&
                         prop.isDiscriminator() &&
                         prop.toOriginal() == discriminatorProp.toOriginal();
+            }
+
+            private boolean rootFetcherContains(ImmutableProp prop) {
+                ImmutableProp originalProp = prop.toOriginal();
+                for (Field rootField : fetcher.getFieldMap().values()) {
+                    if (rootField.getProp().toOriginal() == originalProp) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             private void renderEmbedded(

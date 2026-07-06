@@ -119,6 +119,60 @@ class Operator {
         insert(batch, tableType, null, true);
     }
 
+    int[] updateJoinedRootStage(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch,
+            InheritanceInfo inheritanceInfo,
+            boolean forceAllRows,
+            boolean forceOneByOne
+    ) {
+        return update(
+                originalIdObjMap,
+                originalKeyObjMap,
+                batch,
+                inheritanceInfo.getRootType(),
+                null,
+                discriminatorProp(inheritanceInfo),
+                Collections.emptyList(),
+                forceAllRows,
+                forceOneByOne
+        );
+    }
+
+    void updateJoinedStage(
+            Batch<DraftSpi> batch,
+            ImmutableType tableType,
+            ImmutableType rootType,
+            InheritanceInfo inheritanceInfo
+    ) {
+        updateJoinedChildWithRootGuard(batch, tableType, rootType, inheritanceInfo);
+    }
+
+    int[] upsertJoinedRootStage(
+            Batch<DraftSpi> batch,
+            InheritanceInfo inheritanceInfo,
+            boolean ignoreUpdate,
+            boolean forceMatchedUpdate,
+            boolean forceOneByOne
+    ) {
+        return upsert(
+                batch,
+                inheritanceInfo.getRootType(),
+                discriminatorProp(inheritanceInfo),
+                false,
+                discriminatorProp(inheritanceInfo),
+                Collections.emptyList(),
+                ignoreUpdate,
+                forceMatchedUpdate,
+                forceOneByOne
+        );
+    }
+
+    void upsertJoinedStage(Batch<DraftSpi> batch, ImmutableType tableType) {
+        upsert(batch, tableType, null, false, null, Collections.emptyList(), false, false);
+    }
+
     static Shape joinedRootShape(
             JSqlClientImplementor sqlClient,
             ImmutableType rootType,

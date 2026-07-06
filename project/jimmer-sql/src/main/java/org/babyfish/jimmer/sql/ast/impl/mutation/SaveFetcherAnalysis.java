@@ -45,17 +45,66 @@ class SaveFetcherAnalysis {
     static SaveFetcherAnalysis of(Fetcher<?> fetcher, @Nullable ImmutableType stageType) {
         boolean hasTypeBranches = !((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty();
         boolean scalarOnly = !hasTypeBranches;
+        if (scalarOnly) {
+            for (Field field : fetcher.getFieldMap().values()) {
+                if (!isScalarColumnProp(field.getProp())) {
+                    scalarOnly = false;
+                    break;
+                }
+            }
+        }
         List<ImmutableProp> returningProps = new ArrayList<>();
         List<ImmutableProp> databaseDefaultProps = new ArrayList<>();
         List<ImmutableProp> completableProps = new ArrayList<>();
         InheritanceInfo inheritanceInfo = stageType != null ? stageType.getInheritanceInfo() : null;
+        collectFetcherProps(
+                fetcher,
+                stageType,
+                inheritanceInfo,
+                returningProps,
+                databaseDefaultProps,
+                completableProps
+        );
+        if (stageType != null && inheritanceInfo != null) {
+            for (Fetcher<?> typeBranchFetcher :
+                    ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().values()) {
+                if (typeBranchFetcher.getImmutableType().getAllTypes().contains(stageType)) {
+                    collectFetcherProps(
+                            typeBranchFetcher,
+                            stageType,
+                            inheritanceInfo,
+                            returningProps,
+                            databaseDefaultProps,
+                            completableProps
+                    );
+                }
+            }
+        }
+        return new SaveFetcherAnalysis(
+                hasTypeBranches,
+                scalarOnly,
+                returningProps,
+                databaseDefaultProps,
+                completableProps
+        );
+    }
+
+    private static void collectFetcherProps(
+            Fetcher<?> fetcher,
+            @Nullable ImmutableType stageType,
+            @Nullable InheritanceInfo inheritanceInfo,
+            List<ImmutableProp> returningProps,
+            List<ImmutableProp> databaseDefaultProps,
+            List<ImmutableProp> completableProps
+    ) {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (!isScalarColumnProp(prop)) {
-                scalarOnly = false;
                 continue;
             }
-            if (inheritanceInfo != null && !inheritanceInfo.isPropAvailableInTable(prop, stageType)) {
+            if (stageType != null &&
+                    inheritanceInfo != null &&
+                    !inheritanceInfo.isPropAvailableInTable(prop, stageType)) {
                 continue;
             }
             if (!containsProp(returningProps, prop)) {
@@ -72,13 +121,6 @@ class SaveFetcherAnalysis {
                 }
             }
         }
-        return new SaveFetcherAnalysis(
-                hasTypeBranches,
-                scalarOnly,
-                returningProps,
-                databaseDefaultProps,
-                completableProps
-        );
     }
 
     boolean hasTypeBranches() {

@@ -621,6 +621,251 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testBatchUpsertMixedDerivedTypesWithPolymorphicFetcherUsesReturning() {
+        connectAndExpect(
+                con -> {
+                    Organization organization = OrganizationDraft.$.produce(draft -> {
+                        draft.setId(200L);
+                        draft.setName("new org name");
+                    });
+                    Person person = PersonDraft.$.produce(draft -> {
+                        draft.setId(201L);
+                        draft.setName("new person name");
+                    });
+                    return getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.<Client>asList(organization, person))
+                            .execute(
+                                    con,
+                                    ClientFetcher.$
+                                            .allScalarFields()
+                                            .forType(OrganizationFetcher.$.allScalarFields())
+                                            .forType(PersonFetcher.$.allScalarFields())
+                            )
+                            .getItems()
+                            .stream()
+                            .map(BatchSaveResult.Item::getModifiedEntity)
+                            .collect(Collectors.toList());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, CLIENT_TYPE, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "new org name", "ORG", 201L, "new person name", "Person");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "left join JOINED_ORGANIZATION tb_2_ on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                        "left join JOINED_PERSON tb_3_ on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                        "where tb_1_.ID = any(?)"
+                        );
+                        it.variables("ORG", "Person", new Object[]{200L, 201L});
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(2, clients.size());
+                        assertEquals(
+                                "{\"type\":\"ORG\",\"id\":200,\"name\":\"new org name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}",
+                                clients.get(0).toString()
+                        );
+                        assertEquals(
+                                "{\"type\":\"Person\",\"id\":201,\"name\":\"new person name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"firstName\":\"Alice\",\"lastName\":\"Smith\"}",
+                                clients.get(1).toString()
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpsertMixedDerivedTypesWithPartialJoinedStageFieldsUsesReturningAndResidualFetch() {
+        connectAndExpect(
+                con -> {
+                    Organization organization = OrganizationDraft.$.produce(draft -> {
+                        draft.setId(200L);
+                        draft.setName("partial org name");
+                        draft.setTaxCode("PARTIAL-ORG-200");
+                    });
+                    Person person = PersonDraft.$.produce(draft -> {
+                        draft.setId(201L);
+                        draft.setName("partial person name");
+                    });
+                    return getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.<Client>asList(organization, person))
+                            .execute(
+                                    con,
+                                    ClientFetcher.$
+                                            .allScalarFields()
+                                            .forType(OrganizationFetcher.$.allScalarFields())
+                                            .forType(PersonFetcher.$.allScalarFields())
+                            )
+                            .getItems()
+                            .stream()
+                            .map(BatchSaveResult.Item::getModifiedEntity)
+                            .collect(Collectors.toList());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, CLIENT_TYPE, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(
+                                200L, "partial org name", "ORG",
+                                201L, "partial person name", "Person"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE, STATUS " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set TAX_CODE = tb_2_.TAX_CODE " +
+                                        "--->when not matched then insert(ID, TAX_CODE) values(tb_2_.ID, tb_2_.TAX_CODE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "PARTIAL-ORG-200");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_2_.FIRST_NAME, tb_2_.LAST_NAME " +
+                                        "from JOINED_CLIENT tb_1_ " +
+                                        "left join JOINED_PERSON tb_2_ on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables("Person", 201L);
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(2, clients.size());
+                        assertEquals(
+                                "{\"type\":\"ORG\",\"id\":200,\"name\":\"partial org name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"PARTIAL-ORG-200\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}",
+                                clients.get(0).toString()
+                        );
+                        assertEquals(
+                                "{\"type\":\"Person\",\"id\":201,\"name\":\"partial person name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"firstName\":\"Alice\",\"lastName\":\"Smith\"}",
+                                clients.get(1).toString()
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpsertMixedDerivedTypesWithJoinedStageFieldsUsesReturning() {
+        connectAndExpect(
+                con -> {
+                    Organization globex = OrganizationDraft.$.produce(draft -> {
+                        draft.setId(200L);
+                        draft.setName("new globex name");
+                        draft.setTaxCode("GLOBEX-BRANCH-200");
+                    });
+                    Organization initech = OrganizationDraft.$.produce(draft -> {
+                        draft.setId(202L);
+                        draft.setName("new initech name");
+                        draft.setTaxCode("INI-BRANCH-202");
+                    });
+                    Person person = PersonDraft.$.produce(draft -> {
+                        draft.setId(201L);
+                        draft.setName("new person branch name");
+                        draft.setFirstName("Alicia");
+                    });
+                    return getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.<Client>asList(globex, initech, person))
+                            .execute(
+                                    con,
+                                    ClientFetcher.$
+                                            .allScalarFields()
+                                            .forType(OrganizationFetcher.$.allScalarFields())
+                                            .forType(PersonFetcher.$.allScalarFields())
+                            )
+                            .getItems()
+                            .stream()
+                            .map(BatchSaveResult.Item::getModifiedEntity)
+                            .collect(Collectors.toList());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, CLIENT_TYPE, NAME, DESCRIPTION " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?), (?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(ID, NAME, CLIENT_TYPE) values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(
+                                200L, "new globex name", "ORG",
+                                202L, "new initech name", "ORG",
+                                201L, "new person branch name", "Person"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE, STATUS " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "--->using(values(?, ?), (?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set TAX_CODE = tb_2_.TAX_CODE " +
+                                        "--->when not matched then insert(ID, TAX_CODE) values(tb_2_.ID, tb_2_.TAX_CODE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "GLOBEX-BRANCH-200", 202L, "INI-BRANCH-202");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, FIRST_NAME, LAST_NAME " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_PERSON tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, FIRST_NAME) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set FIRST_NAME = tb_2_.FIRST_NAME " +
+                                        "--->when not matched then insert(ID, FIRST_NAME) values(tb_2_.ID, tb_2_.FIRST_NAME)" +
+                                        ")"
+                        );
+                        it.variables(201L, "Alicia");
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(3, clients.size());
+                        assertEquals(
+                                "{\"type\":\"ORG\",\"id\":200,\"name\":\"new globex name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-BRANCH-200\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}",
+                                clients.get(0).toString()
+                        );
+                        assertEquals(
+                                "{\"type\":\"ORG\",\"id\":202,\"name\":\"new initech name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"INI-BRANCH-202\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}",
+                                clients.get(1).toString()
+                        );
+                        assertEquals(
+                                "{\"type\":\"Person\",\"id\":201,\"name\":\"new person branch name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"firstName\":\"Alicia\",\"lastName\":\"Smith\"}",
+                                clients.get(2).toString()
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testBatchInsertPolymorphicInputsUsesJoinedTableStageBatches() {
         ClientExhaustiveInput.Person person1Input = new ClientExhaustiveInput.Person();
         person1Input.setId(311L);

@@ -8,7 +8,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -43,7 +42,7 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, tableType);
-        if (fetcherAnalysis.hasTypeBranches() || fetcherAnalysis.getDatabaseDefaultProps().isEmpty()) {
+        if (fetcherAnalysis.getDatabaseDefaultProps().isEmpty()) {
             return null;
         }
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, tableType.getJavaClass()).getIdGetters();
@@ -133,9 +132,10 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, shape.getType());
-        if (fetcherAnalysis.hasTypeBranches() ||
-                (fetcherAnalysis.getReturningProps().isEmpty() && versionGetter == null) ||
-                (!isFetchRequired(fetcherAnalysis.getReturningProps(), entities, false) && versionGetter == null)) {
+        if ((fetcherAnalysis.getReturningProps().isEmpty() && versionGetter == null) ||
+                (!isFetchRequired(ctx, basic.fetcher, entities, false) &&
+                        !isFetchRequired(fetcherAnalysis.getReturningProps(), entities, false) &&
+                        versionGetter == null)) {
             return null;
         }
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters();
@@ -271,9 +271,9 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, tableType);
-        if (fetcherAnalysis.hasTypeBranches() ||
-                (fetcherAnalysis.getReturningProps().isEmpty() && generatedIdProp == null) ||
-                (!isFetchRequired(fetcherAnalysis.getReturningProps(), batch.entities(), generatedIdProp != null) &&
+        if ((fetcherAnalysis.getReturningProps().isEmpty() && generatedIdProp == null) ||
+                (!isFetchRequired(ctx, basic.fetcher, batch.entities(), generatedIdProp != null) &&
+                        !isFetchRequired(fetcherAnalysis.getReturningProps(), batch.entities(), generatedIdProp != null) &&
                         generatedIdProp == null)) {
             return null;
         }
@@ -386,9 +386,6 @@ class SaveReturningFactory {
         LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
         LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
         Fetcher<?> fetcher = ctx.fetcher;
-        if (!((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
-            return null;
-        }
         if (!isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml)) {
             return null;
         }
@@ -407,9 +404,6 @@ class SaveReturningFactory {
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         Fetcher<?> fetcher = ctx.fetcher;
-        if (!((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
-            return null;
-        }
         LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
         LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
         return new SaveReturningBasic(fetcher, logicalDeletedInfo, logicalDeletedBehavior);

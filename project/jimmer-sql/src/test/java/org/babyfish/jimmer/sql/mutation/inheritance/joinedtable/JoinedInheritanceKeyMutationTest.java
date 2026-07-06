@@ -1,10 +1,16 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyClient;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyClientFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyOrganizationFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyOrganizationDraft;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyPersonFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyPersonDraft;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -12,6 +18,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
 
@@ -153,6 +162,138 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
                     ctx.value("[400, ORG, same-code, Key Globex Batch+, KEY-GLOBEX-BATCH, null, null]; " +
                             "[UNKNOWN, ORG, batch-new-code, New Batch Key Org, NEW-KEY-BATCH, null, null]; " +
                             "[401, KeyPerson, same-code, Key Alice, null, Key Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpsertMixedDerivedTypesByKeyWithPolymorphicFetcherUsesReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                            it.setDialect(new H2Dialect());
+                            it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                        })
+                        .getEntities()
+                        .saveEntitiesCommand(Arrays.<KeyClient>asList(
+                                KeyOrganizationDraft.$.produce(organization -> {
+                                    organization.setCode("same-code");
+                                    organization.setName("Key Globex Returning+");
+                                }),
+                                KeyPersonDraft.$.produce(person -> {
+                                    person.setCode("same-code");
+                                    person.setName("Key Alice Returning+");
+                                })
+                        ))
+                        .execute(
+                                con,
+                                KeyClientFetcher.$
+                                        .allScalarFields()
+                                        .forType(KeyOrganizationFetcher.$.allScalarFields())
+                                        .forType(KeyPersonFetcher.$.allScalarFields())
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, CLIENT_TYPE, CODE, NAME " +
+                                        "from final table (" +
+                                        "--->merge into JOINED_KEY_CLIENT tb_1_ " +
+                                        "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(CODE, NAME, CLIENT_TYPE) " +
+                                        "--->on tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE and tb_1_.CODE = tb_2_.CODE " +
+                                        "--->when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set NAME = tb_2_.NAME " +
+                                        "--->when not matched then insert(CODE, NAME, CLIENT_TYPE) values(tb_2_.CODE, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(
+                                "same-code", "Key Globex Returning+", "ORG",
+                                "same-code", "Key Alice Returning+", "KeyPerson"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_2_.TAX_CODE, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                        "from JOINED_KEY_CLIENT tb_1_ " +
+                                        "left join JOINED_KEY_ORGANIZATION tb_2_ on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                        "left join JOINED_KEY_PERSON tb_3_ on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                        "where tb_1_.ID = any(?)"
+                        );
+                        it.variables("ORG", "KeyPerson", new Object[]{400L, 401L});
+                    });
+                    ctx.value(clients -> {
+                        assertEquals(2, clients.size());
+                        assertEquals(
+                                "{\"type\":\"ORG\",\"id\":400,\"code\":\"same-code\",\"name\":\"Key Globex Returning+\",\"taxCode\":\"KEY-GLOBEX-001\"}",
+                                clients.get(0).toString()
+                        );
+                        assertEquals(
+                                "{\"type\":\"KeyPerson\",\"id\":401,\"code\":\"same-code\",\"name\":\"Key Alice Returning+\",\"firstName\":\"Key Alice\",\"lastName\":\"Smith\"}",
+                                clients.get(1).toString()
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpsertMixedDerivedTypesByKeyRoutesIdsWithoutSaveReturning() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient(it -> {
+                                it.setDialect(new H2Dialect());
+                                it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                            })
+                            .getEntities()
+                            .saveEntitiesCommand(Arrays.<KeyClient>asList(
+                                    KeyOrganizationDraft.$.produce(organization -> {
+                                        organization.setCode("same-code");
+                                        organization.setName("Key Globex No Returning+");
+                                        organization.setTaxCode("KEY-GLOBEX-NO-RETURNING");
+                                    }),
+                                    KeyPersonDraft.$.produce(person -> {
+                                        person.setCode("same-code");
+                                        person.setName("Key Alice No Returning+");
+                                        person.setFirstName("Key Alicia");
+                                    })
+                            ))
+                            .setSaveReturningEnabled(false)
+                            .execute(con);
+                    return joinedKeyClientRow(con, "ORG", "same-code") +
+                            "; " +
+                            joinedKeyClientRow(con, "KeyPerson", "same-code");
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(CLIENT_TYPE, CODE, NAME) " +
+                                        "on tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE and tb_1_.CODE = tb_2_.CODE " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME " +
+                                        "when not matched then insert(CLIENT_TYPE, CODE, NAME) " +
+                                        "values(tb_2_.CLIENT_TYPE, tb_2_.CODE, tb_2_.NAME)"
+                        );
+                        it.batchVariables(0, "ORG", "same-code", "Key Globex No Returning+");
+                        it.batchVariables(1, "KeyPerson", "same-code", "Key Alice No Returning+");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_ORGANIZATION(ID, TAX_CODE) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.variables(400L, "KEY-GLOBEX-NO-RETURNING");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_PERSON(ID, FIRST_NAME) " +
+                                        "key(ID) values(?, ?)"
+                        );
+                        it.variables(401L, "Key Alicia");
+                    });
+                    ctx.value("[400, ORG, same-code, Key Globex No Returning+, KEY-GLOBEX-NO-RETURNING, null, null]; " +
+                            "[401, KeyPerson, same-code, Key Alice No Returning+, null, Key Alicia, Smith]");
                 }
         );
     }
