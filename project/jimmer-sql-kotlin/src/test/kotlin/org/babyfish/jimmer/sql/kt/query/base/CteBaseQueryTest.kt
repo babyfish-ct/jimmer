@@ -88,6 +88,74 @@ class CteBaseQueryTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testSubQueryInBaseQueryAndOuterQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val newerEditionCount = subQuery(Book::class) {
+                    where(table.storeId eq parentTable.id)
+                    val edition = table.edition
+                    val storeId = table.storeId
+                    where(
+                        exists(
+                            subQuery(Book::class) {
+                                where(table.storeId eq storeId)
+                                where(table.edition gt edition)
+                                select(table.id)
+                            }
+                        )
+                    )
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(newerEditionCount)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                where(
+                    exists(
+                        subQuery(Book::class) {
+                            where(table.storeId eq parentTable._1.id)
+                            where(parentTable._2 eq 2)
+                            select(table.id)
+                        }
+                    )
+                )
+                select(table._1.name, table._2)
+            }
+        ) {
+            sql(
+                """with tb_1_(c1, c2, c3) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from BOOK tb_3_ 
+                    |--->--->--->where 
+                    |--->--->--->--->tb_3_.STORE_ID = tb_2_.ID 
+                    |--->--->--->and 
+                    |--->--->--->--->exists(
+                    |--->--->--->--->--->select 1 
+                    |--->--->--->--->--->from BOOK tb_4_ 
+                    |--->--->--->--->--->where tb_4_.STORE_ID = tb_3_.STORE_ID and tb_4_.EDITION > tb_3_.EDITION
+                    |--->--->--->--->)
+                    |--->--->) 
+                    |--->from BOOK_STORE tb_2_
+                    |) 
+                    |select tb_1_.c2, tb_1_.c3 
+                    |from tb_1_ 
+                    |where exists(
+                    |--->select 1 
+                    |--->from BOOK tb_5_ 
+                    |--->where tb_5_.STORE_ID = tb_1_.c1 and tb_1_.c3 = ?
+                    |)""".trimMargin()
+            )
+            rows("""[{"_1":"MANNING","_2":2}]""")
+        }
+    }
+
+    @Test
     fun testLogicalDeletedAppliedToSubQueryInBaseQuery() {
         val baseTable = cteBaseTableSymbol {
             sqlClient.createBaseQuery(BookStore::class) {
