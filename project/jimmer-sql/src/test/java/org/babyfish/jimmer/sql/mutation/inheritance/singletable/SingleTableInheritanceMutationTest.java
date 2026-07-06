@@ -885,7 +885,7 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, CLIENT_TYPE, NAME, FIRST_NAME, LAST_NAME " +
+                                "select ID, CLIENT_TYPE " +
                                         "from final table (" +
                                         "merge into CLIENT tb_1_ " +
                                         "using(values(?, ?, ?, ?, ?)) tb_2_(ID, NAME, FIRST_NAME, LAST_NAME, CLIENT_TYPE) " +
@@ -908,6 +908,68 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         assertEquals("Smith", person.lastName());
                         assertEquals(
                                 "[Person, Acme Person Returning, null, Ann, Smith]",
+                                values.get(1)
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertMaskKeepsInsertOnlyFieldInReturning() {
+        connectAndExpect(
+                con -> {
+                    Person modified = getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    PersonDraft.$.produce(person -> {
+                                        person.setId(101L);
+                                        person.setName("Masked Bob");
+                                        person.setFirstName("WrongFirst");
+                                        person.setLastName("MaskedLast");
+                                    })
+                            )
+                            .setUpsertMask(
+                                    UpsertMask.of(Person.class)
+                                            .addInsertableProp(PersonProps.NAME)
+                                            .addInsertableProp(PersonProps.FIRST_NAME)
+                                            .addInsertableProp(PersonProps.LAST_NAME)
+                                            .addUpdatableProp(PersonProps.NAME)
+                                            .addUpdatableProp(PersonProps.LAST_NAME)
+                            )
+                            .execute(
+                                    con,
+                                    PersonFetcher.$
+                                            .firstName()
+                                            .lastName()
+                            )
+                            .getModifiedEntity();
+                    return Arrays.asList(modified, clientRow(con, 101L));
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, FIRST_NAME " +
+                                        "from final table (" +
+                                        "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?)) tb_2_(ID, NAME, FIRST_NAME, LAST_NAME, CLIENT_TYPE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set " +
+                                        "NAME = tb_2_.NAME, " +
+                                        "LAST_NAME = tb_2_.LAST_NAME " +
+                                        "when not matched then insert(ID, NAME, FIRST_NAME, LAST_NAME, CLIENT_TYPE) " +
+                                        "values(tb_2_.ID, tb_2_.NAME, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(101L, "Masked Bob", "WrongFirst", "MaskedLast", "Person");
+                    });
+                    ctx.value(values -> {
+                        Person person = (Person) values.get(0);
+                        assertEquals(101L, person.id());
+                        assertEquals("Bob", person.firstName());
+                        assertEquals("MaskedLast", person.lastName());
+                        assertEquals(
+                                "[Person, Masked Bob, null, Bob, MaskedLast]",
                                 values.get(1)
                         );
                     });

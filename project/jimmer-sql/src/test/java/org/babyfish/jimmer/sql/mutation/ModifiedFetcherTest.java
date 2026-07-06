@@ -14,12 +14,7 @@ import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.hr.Department;
-import org.babyfish.jimmer.sql.model.hr.DepartmentFetcher;
-import org.babyfish.jimmer.sql.model.hr.DepartmentProps;
-import org.babyfish.jimmer.sql.model.hr.Employee;
-import org.babyfish.jimmer.sql.model.hr.EmployeeFetcher;
-import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
+import org.babyfish.jimmer.sql.model.hr.*;
 import org.babyfish.jimmer.sql.model.hr.dto.DepartmentCompositeView;
 import org.babyfish.jimmer.sql.model.hr.dto.EmployeeView;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -141,7 +136,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, NAME) " +
@@ -250,7 +245,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, GENDER " +
+                                "select ID, GENDER " +
                                         "from final table (" +
                                         "--->merge into EMPLOYEE tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, NAME) " +
@@ -340,7 +335,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, GENDER, DELETED_MILLIS " +
+                                "select ID, NAME, DELETED_MILLIS " +
                                         "from final table (" +
                                         "--->merge into EMPLOYEE tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(NAME, GENDER) " +
@@ -418,7 +413,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, PRICE, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, PRICE) " +
@@ -459,7 +454,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, PRICE, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, PRICE) " +
@@ -649,7 +644,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DELETED_MILLIS " +
+                                "select ID, DELETED_MILLIS, NAME " +
                                         "from final table (" +
                                         "--->merge into DEPARTMENT tb_1_ " +
                                         "--->using(values(?, ?), (?, ?), (?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
@@ -710,7 +705,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, GENDER, DELETED_MILLIS " +
+                                "select ID, GENDER, DELETED_MILLIS " +
                                         "from final table (" +
                                         "--->merge into EMPLOYEE tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, NAME) " +
@@ -753,7 +748,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?), (?, ?)) tb_2_(ID, NAME) " +
@@ -795,7 +790,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, NAME) " +
@@ -866,7 +861,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?), (?, ?)) tb_2_(ID, NAME) " +
@@ -933,7 +928,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, NAME) " +
@@ -1001,7 +996,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, VERSION, NAME, WEBSITE " +
+                                "select ID, VERSION, WEBSITE " +
                                         "from final table (" +
                                         "--->merge into BOOK_STORE tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, VERSION, NAME) " +
@@ -1232,7 +1227,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "set ACCOUNT = tb_2_.ACCOUNT " +
                                         "from (values(?, ?)) tb_2_(ID, ACCOUNT) " +
                                         "where tb_1_.ID = tb_2_.ID " +
-                                        "returning tb_1_.ID, tb_1_.ACCOUNT, tb_1_.DESCRIPTION"
+                                        "returning tb_1_.ID, tb_1_.DESCRIPTION"
                         );
                     });
                     ctx.value(
@@ -1275,7 +1270,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "EMAIL = excluded.EMAIL, " +
                                         "AREA = excluded.AREA, " +
                                         "NICK_NAME = excluded.NICK_NAME " +
-                                        "returning ID, ACCOUNT, DESCRIPTION"
+                                        "returning ID, DESCRIPTION"
                         );
                     });
                     ctx.value(
@@ -1323,7 +1318,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "AREA = excluded.AREA, " +
                                         "NICK_NAME = excluded.NICK_NAME " +
                                         "where SYS_USER.ACCOUNT <> excluded.ACCOUNT " +
-                                        "returning ID, ACCOUNT, DESCRIPTION"
+                                        "returning ID, DESCRIPTION"
                         );
                     });
                     ctx.value(
@@ -1414,7 +1409,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, EDITION " +
+                                "select ID, EDITION " +
                                         "from final table (" +
                                         "--->merge into BOOK tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, NAME) " +
@@ -1453,7 +1448,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION, AREA, NICK_NAME " +
                                         "from final table (" +
                                         "--->merge into SYS_USER tb_1_ " +
                                         "--->using(values(?, ?, ?, ?)) tb_2_(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
@@ -1505,7 +1500,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION, AREA, NICK_NAME " +
                                         "from final table (" +
                                         "--->merge into SYS_USER tb_1_ " +
                                         "--->using(values(?, ?, ?, ?)) tb_2_(ACCOUNT, EMAIL, AREA, NICK_NAME) " +
@@ -1568,7 +1563,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION, AREA, NICK_NAME " +
                                         "from final table (" +
                                         "--->merge into SYS_USER tb_1_ " +
                                         "--->using(values(?, ?, ?, ?), (?, ?, ?, ?)) tb_2_(ACCOUNT, EMAIL, AREA, NICK_NAME) " +

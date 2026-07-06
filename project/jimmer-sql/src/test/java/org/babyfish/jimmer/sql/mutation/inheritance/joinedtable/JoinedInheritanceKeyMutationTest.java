@@ -198,7 +198,7 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, CLIENT_TYPE, CODE, NAME " +
+                                "select ID, CLIENT_TYPE, CODE " +
                                         "from final table (" +
                                         "--->merge into JOINED_KEY_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(CODE, NAME, CLIENT_TYPE) " +

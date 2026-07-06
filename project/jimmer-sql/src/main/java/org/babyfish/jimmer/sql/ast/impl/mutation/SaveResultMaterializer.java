@@ -78,7 +78,8 @@ class SaveResultMaterializer {
             residualGroup = new ResidualFetchGroup(residualFetcher);
         }
         PropId idPropId = ctx.path.getType().getIdProp().getId();
-        SaveShapeMatcher shapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
+        SaveShapeMatcher sourceShapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
+        SaveShapeMatcher materializedShapeMatcher = new SaveShapeMatcher(type -> null);
         for (DraftSpi draft : drafts) {
             if (ctx.isSaveReturningNotAccepted(draft)) {
                 // Returning row-count 0 rows must remain unmaterialized.
@@ -86,7 +87,13 @@ class SaveResultMaterializer {
                 continue;
             } else if (!draft.__isLoaded(idPropId)) {
                 nonIdObjects.add(draft);
-            } else if (fetcher != null && !shapeMatcher.isMatched(draft, fetcher, true)) {
+            } else if (fetcher != null && !isMatched(
+                    draft,
+                    fetcher,
+                    true,
+                    sourceShapeMatcher,
+                    materializedShapeMatcher
+            )) {
                 Object id = draft.__get(idPropId);
                 if (canFetchDatabaseDefaults &&
                         fetcherAnalysis.isUnmatchedOnlyByDatabaseDefaultProps(draft)) {
@@ -127,7 +134,7 @@ class SaveResultMaterializer {
             }
         }
         if (residualGroup != null && !residualGroup.ids.isEmpty()) {
-            fetchResidual(residualGroup, arr, unmatchedIds, shapeMatcher, fetcher, idPropId);
+            fetchResidual(residualGroup, arr, unmatchedIds, materializedShapeMatcher, fetcher, idPropId);
         }
         if (!unmatchedIds.isEmpty()) {
             JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
@@ -237,6 +244,19 @@ class SaveResultMaterializer {
                 }
             }
         }
+    }
+
+    private boolean isMatched(
+            DraftSpi draft,
+            Fetcher<?> fetcher,
+            boolean trim,
+            SaveShapeMatcher sourceShapeMatcher,
+            SaveShapeMatcher materializedShapeMatcher
+    ) {
+        SaveShapeMatcher shapeMatcher = ctx.isSaveReturningApplied(draft) ?
+                materializedShapeMatcher :
+                sourceShapeMatcher;
+        return shapeMatcher.isMatched(draft, fetcher, trim);
     }
 
     @SuppressWarnings("unchecked")

@@ -204,7 +204,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -216,7 +216,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, TAX_CODE, STATUS " +
+                                "select ID, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, TAX_CODE, CLIENT_TYPE) " +
@@ -272,7 +272,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -319,7 +319,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -334,7 +334,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, TAX_CODE, STATUS " +
+                                "select ID, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
@@ -387,7 +387,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -437,7 +437,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -452,7 +452,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, TAX_CODE, STATUS " +
+                                "select ID, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
@@ -499,7 +499,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -572,7 +572,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME, DESCRIPTION " +
+                                "select ID, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -587,7 +587,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, TAX_CODE, STATUS " +
+                                "select ID, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
                                         "--->using(values(?, ?, ?)) tb_2_(ID, TAX_CODE, CLIENT_TYPE) " +
@@ -650,7 +650,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, CLIENT_TYPE, NAME, DESCRIPTION " +
+                                "select ID, CLIENT_TYPE, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -717,7 +717,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, CLIENT_TYPE, NAME, DESCRIPTION " +
+                                "select ID, CLIENT_TYPE, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -733,7 +733,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, TAX_CODE, STATUS " +
+                                "select ID, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
@@ -805,7 +805,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, CLIENT_TYPE, NAME, DESCRIPTION " +
+                                "select ID, CLIENT_TYPE, DESCRIPTION " +
                                         "from final table (" +
                                         "--->merge into JOINED_CLIENT tb_1_ " +
                                         "--->using(values(?, ?, ?), (?, ?, ?), (?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
@@ -822,7 +822,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, TAX_CODE, STATUS " +
+                                "select ID, STATUS " +
                                         "from final table (" +
                                         "--->merge into JOINED_ORGANIZATION tb_1_ " +
                                         "--->using(values(?, ?), (?, ?)) tb_2_(ID, TAX_CODE) " +
@@ -835,7 +835,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, FIRST_NAME, LAST_NAME " +
+                                "select ID, LAST_NAME " +
                                         "from final table (" +
                                         "--->merge into JOINED_PERSON tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(ID, FIRST_NAME) " +

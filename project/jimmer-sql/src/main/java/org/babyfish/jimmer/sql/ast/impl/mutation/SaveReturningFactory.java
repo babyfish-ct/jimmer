@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
@@ -134,10 +131,12 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, shape.getType());
-        if ((fetcherAnalysis.getReturningProps().isEmpty() && versionGetter == null) ||
-                (!isFetchRequired(ctx, basic.fetcher, entities, false) &&
-                        !isFetchRequired(fetcherAnalysis.getReturningProps(), entities, false) &&
-                        versionGetter == null)) {
+        List<ImmutableProp> returningFetcherProps = unresolvedFetcherProps(
+                fetcherAnalysis.getReturningProps(),
+                entities,
+                updatedGetters
+        );
+        if (returningFetcherProps.isEmpty() && versionGetter == null) {
             return null;
         }
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters();
@@ -235,7 +234,7 @@ class SaveReturningFactory {
                 updateReturningProps(
                         shape.getType(),
                         versionGetter != null ? Collections.singletonList(versionGetter) : Collections.emptyList(),
-                        fetcherAnalysis.getReturningProps()
+                        returningFetcherProps
                 ),
                 basic.logicalDeletedInfo,
                 matchGetters
@@ -297,10 +296,12 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, tableType);
-        if ((fetcherAnalysis.getReturningProps().isEmpty() && generatedIdProp == null) ||
-                (!isFetchRequired(ctx, basic.fetcher, batch.entities(), generatedIdProp != null) &&
-                        !isFetchRequired(fetcherAnalysis.getReturningProps(), batch.entities(), generatedIdProp != null) &&
-                        generatedIdProp == null)) {
+        List<ImmutableProp> returningFetcherProps = unresolvedFetcherProps(
+                fetcherAnalysis.getReturningProps(),
+                batch.entities(),
+                upsertKnownSourceGetters(insertedGetters, updatedGetters, ignoreUpdate)
+        );
+        if (returningFetcherProps.isEmpty() && generatedIdProp == null) {
             return null;
         }
         if (generatedIdProp != null && generatedIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
@@ -366,7 +367,7 @@ class SaveReturningFactory {
                 updateReturningProps(
                         batch.shape().getType(),
                         Collections.emptyList(),
-                        fetcherAnalysis.getReturningProps()
+                        returningFetcherProps
                 ),
                 basic.logicalDeletedInfo,
                 matchGetters
@@ -532,6 +533,57 @@ class SaveReturningFactory {
         return props;
     }
 
+    private static List<ImmutableProp> unresolvedFetcherProps(
+            List<ImmutableProp> fetcherProps,
+            EntityCollection<DraftSpi> entities,
+            Collection<PropertyGetter> knownSourceGetters
+    ) {
+        if (fetcherProps.isEmpty() || knownSourceGetters.isEmpty()) {
+            return fetcherProps;
+        }
+        List<ImmutableProp> props = new ArrayList<>(fetcherProps.size());
+        for (ImmutableProp prop : fetcherProps) {
+            if (!isLoadedSourceProp(prop, entities, knownSourceGetters)) {
+                props.add(prop);
+            }
+        }
+        return props;
+    }
+
+    private static List<PropertyGetter> upsertKnownSourceGetters(
+            List<PropertyGetter> insertedGetters,
+            List<PropertyGetter> updatedGetters,
+            boolean ignoreUpdate
+    ) {
+        if (ignoreUpdate) {
+            return insertedGetters;
+        }
+        List<PropertyGetter> getters = new ArrayList<>();
+        for (PropertyGetter insertedGetter : insertedGetters) {
+            if (containsGetterProp(updatedGetters, insertedGetter.prop())) {
+                getters.add(insertedGetter);
+            }
+        }
+        return getters;
+    }
+
+    private static boolean isLoadedSourceProp(
+            ImmutableProp prop,
+            EntityCollection<DraftSpi> entities,
+            Collection<PropertyGetter> knownSourceGetters
+    ) {
+        if (!containsGetterProp(knownSourceGetters, prop)) {
+            return false;
+        }
+        PropId propId = prop.getId();
+        for (DraftSpi draft : entities) {
+            if (!draft.__isLoaded(propId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static @Nullable SaveReturningColumns returningColumns(
             JSqlClientImplementor sqlClient,
             PropertyGetter idGetter,
@@ -608,6 +660,16 @@ class SaveReturningFactory {
         return -1;
     }
 
+    private static boolean containsGetterProp(Collection<PropertyGetter> getters, ImmutableProp prop) {
+        ImmutableProp originalProp = prop.toOriginal();
+        for (PropertyGetter getter : getters) {
+            if (getter.prop().toOriginal() == originalProp) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean isFetchRequired(
             SaveContext ctx,
             Fetcher<?> fetcher,
@@ -618,21 +680,6 @@ class SaveReturningFactory {
         for (DraftSpi draft : entities) {
             if (!shapeMatcher.isMatched(draft, fetcher, false, idWillBeLoadedByDml)) {
                 return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isFetchRequired(
-            List<ImmutableProp> props,
-            EntityCollection<DraftSpi> entities,
-            boolean idWillBeLoadedByDml
-    ) {
-        for (DraftSpi draft : entities) {
-            for (ImmutableProp prop : props) {
-                if (!draft.__isLoaded(prop.getId()) && (!idWillBeLoadedByDml || !prop.isId())) {
-                    return true;
-                }
             }
         }
         return false;
