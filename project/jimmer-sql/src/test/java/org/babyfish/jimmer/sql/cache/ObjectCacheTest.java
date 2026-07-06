@@ -9,10 +9,13 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2Fetcher;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -228,18 +231,10 @@ public class ObjectCacheTest extends AbstractQueryTest {
                     );
                 }
         );
-        jdbc(con -> {
-            try (PreparedStatement stmt = con.prepareStatement(
-                    "update tree_node set name = ? where node_id = ?"
-            )) {
-                stmt.setString(1, "clothing");
-                stmt.setLong(2, 9L);
-                stmt.executeUpdate();
-            }
-        });
-        sqlClient.getCaches().getObjectCache(TreeNode2.class).delete(9L);
         connectAndExpect(
                 con -> {
+                    updateTreeNodeName(con, "clothing");
+                    sqlClient.getCaches().getObjectCache(TreeNode2.class).delete(9L);
                     return sqlClient
                             .getEntities()
                             .forConnection(con)
@@ -269,5 +264,17 @@ public class ObjectCacheTest extends AbstractQueryTest {
                     );
                 }
         );
+    }
+
+    private static void updateTreeNodeName(Connection con, String name) {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "update tree_node set name = ? where node_id = ?"
+        )) {
+            stmt.setString(1, name);
+            stmt.setLong(2, 9L);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            Assertions.fail("SQL error", ex);
+        }
     }
 }

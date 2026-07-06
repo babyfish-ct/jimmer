@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SaveTest extends AbstractMutationTest {
@@ -88,15 +89,15 @@ public class SaveTest extends AbstractMutationTest {
                                         "\"diskSize\":512" +
                                         "}"
                         );
-                        it.modified(
-                                "{" +
-                                        "\"id\":100," +
-                                        "\"location\":{\"host\":\"server\",\"port\":80}," +
-                                        "\"cpuFrequency\":3," +
-                                        "\"memorySize\":16," +
-                                        "\"diskSize\":512" +
-                                        "}"
-                        );
+                        it.modified(entity -> {
+                            Machine modified = (Machine) entity;
+                            Assertions.assertTrue(modified.id() > 0L);
+                            Assertions.assertEquals("server", modified.location().host());
+                            Assertions.assertEquals(80, modified.location().port());
+                            Assertions.assertEquals(3, modified.cpuFrequency());
+                            Assertions.assertEquals(16, modified.memorySize());
+                            Assertions.assertEquals(512, modified.diskSize());
+                        });
                     });
                     ctx.rowCount(AffectedTable.of(Machine.class), 1);
                 }
