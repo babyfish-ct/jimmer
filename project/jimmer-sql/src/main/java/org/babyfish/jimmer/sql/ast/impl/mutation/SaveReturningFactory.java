@@ -39,7 +39,10 @@ class SaveReturningFactory {
             return null;
         }
         SaveFetcherAnalysis fetcherAnalysis = SaveFetcherAnalysis.of(basic.fetcher, tableType);
-        if (fetcherAnalysis.getDatabaseDefaultProps().isEmpty()) {
+        List<ImmutableProp> returningFetcherProps = ctx.options.isSaveResultReadsAllProperties() ?
+                fetcherAnalysis.getReturningProps() :
+                Collections.emptyList();
+        if (returningFetcherProps.isEmpty() && fetcherAnalysis.getDatabaseDefaultProps().isEmpty()) {
             return null;
         }
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, tableType.getJavaClass()).getIdGetters();
@@ -70,7 +73,11 @@ class SaveReturningFactory {
         SaveReturningColumns returning = returningColumns(
                 sqlClient,
                 idGetter,
-                insertReturningProps(shape.getType(), fetcherAnalysis.getDatabaseDefaultProps()),
+                insertReturningProps(
+                        shape.getType(),
+                        fetcherAnalysis.getDatabaseDefaultProps(),
+                        returningFetcherProps
+                ),
                 basic.logicalDeletedInfo,
                 matchGetters
         );
@@ -134,7 +141,9 @@ class SaveReturningFactory {
         List<ImmutableProp> returningFetcherProps = unresolvedFetcherProps(
                 fetcherAnalysis.getReturningProps(),
                 entities,
-                updatedGetters
+                ctx.options.isSaveResultReadsAllProperties() ?
+                        Collections.emptyList() :
+                        updatedGetters
         );
         if (returningFetcherProps.isEmpty() && versionGetter == null) {
             return null;
@@ -299,7 +308,9 @@ class SaveReturningFactory {
         List<ImmutableProp> returningFetcherProps = unresolvedFetcherProps(
                 fetcherAnalysis.getReturningProps(),
                 batch.entities(),
-                upsertKnownSourceGetters(insertedGetters, updatedGetters, ignoreUpdate)
+                ctx.options.isSaveResultReadsAllProperties() ?
+                        Collections.emptyList() :
+                        upsertKnownSourceGetters(insertedGetters, updatedGetters, ignoreUpdate)
         );
         if (returningFetcherProps.isEmpty() && generatedIdProp == null) {
             return null;
@@ -521,10 +532,16 @@ class SaveReturningFactory {
 
     private static @Nullable List<ImmutableProp> insertReturningProps(
             ImmutableType type,
-            List<ImmutableProp> databaseDefaultProps
+            List<ImmutableProp> databaseDefaultProps,
+            List<ImmutableProp> returningFetcherProps
     ) {
         List<ImmutableProp> props = new ArrayList<>();
         addProp(props, type.getIdProp());
+        for (ImmutableProp prop : returningFetcherProps) {
+            if (!addScalarProp(props, prop)) {
+                return null;
+            }
+        }
         for (ImmutableProp prop : databaseDefaultProps) {
             if (!addScalarProp(props, prop)) {
                 return null;

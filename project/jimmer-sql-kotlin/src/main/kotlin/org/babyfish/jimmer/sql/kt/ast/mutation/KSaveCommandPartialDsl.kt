@@ -205,6 +205,8 @@ interface KSaveCommandPartialDsl {
 
     fun setSaveReturningEnabled(enabled: Boolean = true)
 
+    fun setSaveResultReadsAllProperties(readsAllProperties: Boolean = true)
+
     fun setConstraintViolationTranslatable(translatable: Boolean = true)
 
     fun addExceptionTranslator(translator: ExceptionTranslator<*>?)

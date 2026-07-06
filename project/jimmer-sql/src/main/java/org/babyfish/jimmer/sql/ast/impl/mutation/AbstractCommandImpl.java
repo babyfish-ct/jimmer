@@ -221,6 +221,16 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class SaveResultReadsAllPropertiesCfg extends Cfg {
+
+        final boolean readsAllProperties;
+
+        SaveResultReadsAllPropertiesCfg(Cfg prev, boolean readsAllProperties) {
+            super(prev);
+            this.readsAllProperties = readsAllProperties;
+        }
+    }
+
     static class ConstraintViolationTranslatableCfg extends Cfg {
 
         final boolean translatable;

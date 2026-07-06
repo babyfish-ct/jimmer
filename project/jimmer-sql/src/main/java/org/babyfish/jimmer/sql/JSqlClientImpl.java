@@ -113,6 +113,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean defaultSaveReturningEnabled;
 
+    private final boolean defaultSaveResultReadsAllProperties;
+
     private final boolean explicitBatchEnabled;
 
     private final boolean dumbBatchAcceptable;
@@ -187,6 +189,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean targetTransferable,
             boolean defaultTypeChangeAllowed,
             boolean defaultSaveReturningEnabled,
+            boolean defaultSaveResultReadsAllProperties,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             boolean constraintViolationTranslatable,
@@ -242,6 +245,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.targetTransferable = targetTransferable;
         this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
         this.defaultSaveReturningEnabled = defaultSaveReturningEnabled;
+        this.defaultSaveResultReadsAllProperties = defaultSaveResultReadsAllProperties;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable = constraintViolationTranslatable;
@@ -433,6 +437,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isDefaultSaveReturningEnabled() {
         return defaultSaveReturningEnabled;
+    }
+
+    @Override
+    public boolean isDefaultSaveResultReadsAllProperties() {
+        return defaultSaveResultReadsAllProperties;
     }
 
     @Override
@@ -731,6 +740,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 defaultTypeChangeAllowed,
                 defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -790,6 +800,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 defaultTypeChangeAllowed,
                 defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -844,6 +855,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 defaultTypeChangeAllowed,
                 defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -901,6 +913,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 defaultTypeChangeAllowed,
                 defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -1138,6 +1151,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean defaultTypeChangeAllowed;
 
         private boolean defaultSaveReturningEnabled = true;
+
+        private boolean defaultSaveResultReadsAllProperties;
 
         private boolean explicitBatchEnabled;
 
@@ -1791,6 +1806,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @Override
+        public Builder setDefaultSaveResultReadsAllProperties(boolean readsAllProperties) {
+            this.defaultSaveResultReadsAllProperties = readsAllProperties;
+            return this;
+        }
+
         @OldChain
         @Override
         public Builder setConstraintViolationTranslatable(boolean translatable) {
@@ -2004,6 +2025,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     targetTransferable,
                     defaultTypeChangeAllowed,
                     defaultSaveReturningEnabled,
+                    defaultSaveResultReadsAllProperties,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,
                     constraintViolationTranslatable,

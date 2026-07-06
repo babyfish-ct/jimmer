@@ -252,6 +252,13 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setSaveResultReadsAllProperties(boolean readsAllProperties) {
+        return new BatchEntitySaveCommandImpl<>(
+                new SaveResultReadsAllPropertiesCfg(cfg, readsAllProperties)
+        );
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable) {
         return new BatchEntitySaveCommandImpl<>(new ConstraintViolationTranslatableCfg(cfg, transferable));
     }

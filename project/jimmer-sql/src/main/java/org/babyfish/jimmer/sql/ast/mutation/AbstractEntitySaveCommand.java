@@ -282,6 +282,14 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setSaveReturningEnabled(boolean enabled);
 
     @NewChain
+    default AbstractEntitySaveCommand setSaveResultReadsAllProperties() {
+        return setSaveResultReadsAllProperties(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setSaveResultReadsAllProperties(boolean readsAllProperties);
+
+    @NewChain
     AbstractEntitySaveCommand setConstraintViolationTranslatable(boolean transferable);
 
     @NewChain

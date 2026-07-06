@@ -352,6 +352,14 @@ public interface SimpleEntitySaveCommand<E>
     SimpleEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled);
 
     @Override
+    default SimpleEntitySaveCommand<E> setSaveResultReadsAllProperties() {
+        return setSaveResultReadsAllProperties(true);
+    }
+
+    @Override
+    SimpleEntitySaveCommand<E> setSaveResultReadsAllProperties(boolean readsAllProperties);
+
+    @Override
     SimpleEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable);
 
     @NewChain

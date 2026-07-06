@@ -544,6 +544,9 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         Builder setDefaultSaveReturningEnabled(boolean enabled);
 
         @OldChain
+        Builder setDefaultSaveResultReadsAllProperties(boolean readsAllProperties);
+
+        @OldChain
         Builder setConstraintViolationTranslatable(boolean translatable);
 
         @OldChain

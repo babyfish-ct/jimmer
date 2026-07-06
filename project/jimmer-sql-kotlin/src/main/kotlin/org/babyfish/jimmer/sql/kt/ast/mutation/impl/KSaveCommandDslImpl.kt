@@ -222,6 +222,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setSaveReturningEnabled(enabled)
     }
 
+    override fun setSaveResultReadsAllProperties(readsAllProperties: Boolean) {
+        javaCommand = javaCommand.setSaveResultReadsAllProperties(readsAllProperties)
+    }
+
     override fun setConstraintViolationTranslatable(translatable: Boolean) {
         javaCommand = javaCommand.setConstraintViolationTranslatable(translatable)
     }

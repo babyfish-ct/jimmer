@@ -393,6 +393,84 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testSaveResultReadsAllPropertiesCanBeEnabledByCommand() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setPrice(new BigDecimal("79.00"));
+                        }))
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setSaveResultReadsAllProperties()
+                        .execute(
+                                con,
+                                BookFetcher.$.price().edition()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, PRICE, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, PRICE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set PRICE = tb_2_.PRICE" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"price\":79.00," +
+                                    "--->\"edition\":3" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testSaveResultReadsAllPropertiesCanBeEnabledGlobally() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                            it.setDialect(new H2Dialect());
+                            it.setDefaultSaveResultReadsAllProperties(true);
+                        })
+                        .saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setPrice(new BigDecimal("79.00"));
+                        }))
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookFetcher.$.price().edition()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, PRICE, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, PRICE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set PRICE = tb_2_.PRICE" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"price\":79.00," +
+                                    "--->\"edition\":3" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testSaveReturningByUserOptimisticLock() {
         connectAndExpect(
                 con -> getSqlClient(it -> it.setDialect(new H2Dialect()))

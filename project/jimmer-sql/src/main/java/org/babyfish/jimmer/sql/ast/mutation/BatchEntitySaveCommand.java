@@ -355,6 +355,14 @@ public interface BatchEntitySaveCommand<E>
     BatchEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled);
 
     @Override
+    default BatchEntitySaveCommand<E> setSaveResultReadsAllProperties() {
+        return setSaveResultReadsAllProperties(true);
+    }
+
+    @Override
+    BatchEntitySaveCommand<E> setSaveResultReadsAllProperties(boolean readsAllProperties);
+
+    @Override
     BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable);
 
     @NewChain

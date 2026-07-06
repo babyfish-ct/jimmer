@@ -71,6 +71,8 @@ public interface SaveOptions {
 
     boolean isSaveReturningEnabled();
 
+    boolean isSaveResultReadsAllProperties();
+
     boolean isConstraintViolationTranslatable();
 
     @Nullable
@@ -230,6 +232,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isSaveReturningEnabled() {
         return raw.isSaveReturningEnabled();
+    }
+
+    @Override
+    public boolean isSaveResultReadsAllProperties() {
+        return raw.isSaveResultReadsAllProperties();
     }
 
     @Override
