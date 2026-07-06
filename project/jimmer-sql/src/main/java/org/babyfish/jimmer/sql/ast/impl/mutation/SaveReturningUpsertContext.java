@@ -189,6 +189,37 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
     }
 
     @Override
+    public Dialect.UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix) {
+        return appendFakeUpdateAssignment(targetPrefix, targetSuffix, false);
+    }
+
+    @Override
+    public Dialect.UpsertContext appendFakeUpdateAssignmentWithTargetTableName() {
+        return appendFakeUpdateAssignment(null, null, true);
+    }
+
+    private Dialect.UpsertContext appendFakeUpdateAssignment(
+            String targetPrefix,
+            String targetSuffix,
+            boolean withTargetTableName
+    ) {
+        PropertyGetter getter = Operator.fakeUpdateGetter(returning.ctx.options.getSqlClient(), returning.tableType);
+        builder.sql(Dialect.FAKE_UPDATE_COMMENT)
+                .sql(" ")
+                .sql(getter)
+                .sql(" = ")
+                .sql(withTargetTableName ? tableName() : targetPrefix);
+        if (withTargetTableName) {
+            builder.sql(".");
+        }
+        builder.sql(getter);
+        if (!withTargetTableName) {
+            builder.sql(targetSuffix);
+        }
+        return this;
+    }
+
+    @Override
     public Dialect.UpsertContext appendConditionalUpdatingAssignments(
             String sourcePrefix,
             String sourceSuffix,

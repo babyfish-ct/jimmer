@@ -318,7 +318,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                            "set /* fake update to return all ids */ ID = ID " +
+                            "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                             "where ID = ? and CLIENT_TYPE = ?"
                 )
                 variables(200L, "ORG")
@@ -364,7 +364,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                            "set /* fake update to return all ids */ ID = ID " +
+                            "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                             "where ID = ? and CLIENT_TYPE = ?"
                 )
                 variables(201L, "ORG")
@@ -524,7 +524,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     "update JOINED_CLIENT " +
-                            "set /* fake update to return all ids */ ID = ID " +
+                            "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                             "where ID = ? and CLIENT_TYPE = ?"
                 )
                 batchVariables(0, 200L, "ORG")

@@ -857,7 +857,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK set /* fake update to return all ids */ ID = ID where ID = ? and NAME = ?");
+                        it.sql("update BOOK set /* fake update to return all ids */ PRICE = PRICE where ID = ? and NAME = ?");
                         it.variables(learningGraphQLId3, "Wrong");
                     });
                     ctx.throwable(it -> {
@@ -892,7 +892,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK set /* fake update to return all ids */ ID = ID where ID = ? and NAME = ?");
+                        it.sql("update BOOK set /* fake update to return all ids */ PRICE = PRICE where ID = ? and NAME = ?");
                         it.variables(learningGraphQLId3, "Learning GraphQL");
                     });
                     ctx.statement(it -> {

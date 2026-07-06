@@ -87,14 +87,7 @@ public class MySqlDialect extends MySql5Dialect {
                     ctx.separator().appendUpdatingAssignments("values(", ")");
                 }
             } else if (ctx.isFakeUpdateRequired() && !idAssignmentAppended) {
-                ValueGetter cheapestGetter = ctx.getConflictGetters().get(0);
-                ctx.separator()
-                        .sql(FAKE_UPDATE_COMMENT)
-                        .sql(" ")
-                        .sql(cheapestGetter)
-                        .sql(" = values(")
-                        .sql(cheapestGetter)
-                        .sql(")");
+                ctx.separator().appendFakeUpdateAssignment("", "");
             }
             ctx.leave();
         }

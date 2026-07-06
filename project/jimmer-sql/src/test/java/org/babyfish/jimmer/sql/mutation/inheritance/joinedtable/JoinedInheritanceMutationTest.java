@@ -1713,7 +1713,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(200L, "ORG");
@@ -1764,7 +1764,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(201L, "ORG");
@@ -1940,7 +1940,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and CLIENT_TYPE = ?"
                         );
                         it.batchVariables(0, 200L, "ORG");
@@ -2058,7 +2058,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(200L, "ORG");
@@ -2066,7 +2066,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(201L, "ORG");

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.spi.ImmutableTypeImplementor;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
+class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTypeImplementor {
 
     @SuppressWarnings("unchecked")
     private static final Class<? extends Annotation>[] SQL_ANNOTATION_TYPES = new Class[]{
@@ -100,6 +101,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private KeyMatcher keyMatcher = KeyMatcher.EMPTY;
     private List<MappedId> mappedIds;
     private Set<ImmutableProp> mappedIdProps;
+    private ImmutableProp fakeUpdateProp;
 
     ImmutableTypeImpl(
             Class<?> javaClass,
@@ -532,6 +534,94 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             this.mappedIds = mappedIds = MappedId.resolve(this);
         }
         return mappedIds;
+    }
+
+    @Override
+    @Nullable
+    public ImmutableProp getFakeUpdateProp() {
+        return fakeUpdateProp;
+    }
+
+    private void resolveFakeUpdateProp() {
+        Set<ImmutableProp> keyProps = new HashSet<>(keyMatcher.getAllProps());
+        ImmutableProp bestProp = null;
+        int bestPriority = Integer.MAX_VALUE;
+        for (ImmutableProp prop : props.values()) {
+            if (!isFakeUpdateCandidate(prop)) {
+                continue;
+            }
+            int priority = fakeUpdatePriority(prop, keyProps);
+            if (priority < bestPriority) {
+                bestProp = prop;
+                bestPriority = priority;
+            }
+        }
+        fakeUpdateProp = bestProp != null ? bestProp : idProp;
+    }
+
+    private boolean isFakeUpdateCandidate(ImmutableProp prop) {
+        ImmutablePropCategory category = prop.getCategory();
+        if (category.isList()) {
+            return false;
+        }
+        if (category == ImmutablePropCategory.REFERENCE) {
+            if (prop.isTransient() || prop.isFormula() || prop.isView()) {
+                return false;
+            }
+            Annotation associationAnnotation = prop.getAssociationAnnotation();
+            if (associationAnnotation instanceof OneToOne &&
+                    !((OneToOne) associationAnnotation).mappedBy().isEmpty()) {
+                return false;
+            }
+            if (!(associationAnnotation instanceof ManyToOne) &&
+                    !(associationAnnotation instanceof OneToOne)) {
+                return false;
+            }
+            if (prop.getAnnotation(JoinTable.class) != null) {
+                return false;
+            }
+        } else if (!prop.isColumnDefinition()) {
+            return false;
+        }
+        InheritanceInfo inheritanceInfo = getInheritanceInfo();
+        return inheritanceInfo == null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.isPropAvailableInTable(prop, this);
+    }
+
+    private static int fakeUpdatePriority(ImmutableProp prop, Set<ImmutableProp> keyProps) {
+        if (prop.isVersion()) {
+            return 10;
+        }
+        if (prop.isDiscriminator()) {
+            return 20;
+        }
+        if (prop.isId()) {
+            return 80;
+        }
+        if (prop.getCategory() == ImmutablePropCategory.REFERENCE) {
+            return 40;
+        }
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+            return 50;
+        }
+        if (prop.isLogicalDeleted()) {
+            return 60;
+        }
+        if (isKeyProp(prop, keyProps)) {
+            return 70;
+        }
+        return 30;
+    }
+
+    private static boolean isKeyProp(ImmutableProp prop, Set<ImmutableProp> keyProps) {
+        ImmutableProp original = prop.toOriginal();
+        for (ImmutableProp keyProp : keyProps) {
+            if (keyProp.toOriginal() == original) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -1537,6 +1627,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 }
             }
             type.setKeyGroups(keyGroupMap);
+            type.resolveFakeUpdateProp();
             Metadata.register(type);
             return type;
         }

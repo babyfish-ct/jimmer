@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.*;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.IntSupplier;
 
@@ -255,18 +254,7 @@ public class H2Dialect extends DefaultDialect {
             if (ctx.hasUpdatedColumns()) {
                 ctx.appendUpdatingAssignments("tb_2_.", "");
             } else {
-                ctx.sql(FAKE_UPDATE_COMMENT).sql(" ");
-                List<ValueGetter> conflictGetters = ctx.getConflictGetters();
-                ValueGetter cheapestGetter = conflictGetters.get(0);
-                for (ValueGetter getter : conflictGetters) {
-                    Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                    type = Classes.boxTypeOf(type);
-                    if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                        cheapestGetter = getter;
-                        break;
-                    }
-                }
-                ctx.sql(cheapestGetter).sql(" = tb_2_.").sql(cheapestGetter);
+                ctx.appendFakeUpdateAssignment("tb_1_.", "");
             }
             ctx.leave();
         }

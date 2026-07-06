@@ -41,7 +41,7 @@ public class JoinedInheritanceOptimisticLockTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and NAME = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(200L, "Globex", "ORG");
@@ -81,7 +81,7 @@ public class JoinedInheritanceOptimisticLockTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update JOINED_CLIENT " +
-                                        "set /* fake update to return all ids */ ID = ID " +
+                                        "set /* fake update to return all ids */ CLIENT_TYPE = CLIENT_TYPE " +
                                         "where ID = ? and NAME = ? and CLIENT_TYPE = ?"
                         );
                         it.variables(200L, "Wrong", "ORG");

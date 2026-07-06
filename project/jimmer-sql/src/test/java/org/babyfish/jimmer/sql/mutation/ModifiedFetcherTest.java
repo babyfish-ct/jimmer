@@ -63,7 +63,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->merge into DEPARTMENT tb_1_ " +
                                         "--->using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "--->when matched then update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "--->when matched then update set /* fake update to return all ids */ DELETED_MILLIS = tb_1_.DELETED_MILLIS " +
                                         "--->when not matched then insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)" +
                                         ")"
                         );
@@ -588,7 +588,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->merge into DEPARTMENT tb_1_ " +
                                         "--->using(values(?, ?), (?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "--->when matched then update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "--->when matched then update set /* fake update to return all ids */ DELETED_MILLIS = tb_1_.DELETED_MILLIS " +
                                         "--->when not matched then insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)" +
                                         ")"
                         );

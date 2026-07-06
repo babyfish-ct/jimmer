@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.dialect;
 
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
@@ -15,7 +13,6 @@ import org.postgresql.util.PGobject;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.*;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.IntSupplier;
 
@@ -318,22 +315,7 @@ public class PostgresDialect extends DefaultDialect {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
-            ctx.sql(" do update set ");
-            List<ValueGetter> conflictGetters = ctx.getConflictGetters();
-            ValueGetter cheapestGetter = conflictGetters.get(0);
-            for (ValueGetter getter : conflictGetters) {
-                Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                type = Classes.boxTypeOf(type);
-                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                    cheapestGetter = getter;
-                    break;
-                }
-            }
-            ctx.sql(FAKE_UPDATE_COMMENT)
-                    .sql(" ")
-                    .sql(cheapestGetter)
-                    .sql(" = excluded.")
-                    .sql(cheapestGetter);
+            ctx.sql(" do update set ").appendFakeUpdateAssignmentWithTargetTableName();
             if (ctx.isCurrentRowReturningRequired()) {
                 ctx.sql(" returning ").appendReturning("");
             } else if (ctx.hasGeneratedId()) {

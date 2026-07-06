@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.spi.ImmutableTypeImplementor;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.InheritanceType;
@@ -493,6 +494,12 @@ class Operator {
             return Collections.singleton(discriminatorGuardProp);
         }
         return Collections.emptySet();
+    }
+
+    static PropertyGetter fakeUpdateGetter(JSqlClientImplementor sqlClient, ImmutableType tableType) {
+        return PropertyGetter
+                .propertyGetters(sqlClient, ((ImmutableTypeImplementor) tableType).getFakeUpdateProp())
+                .get(0);
     }
 
     static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
@@ -2497,6 +2504,8 @@ class Operator {
 
         private final PropertyGetter idGetter;
 
+        private final PropertyGetter fakeUpdateGetter;
+
         private final Set<ImmutableProp> keyProps;
 
         private final List<PropertyGetter> updatedGetters;
@@ -2537,6 +2546,7 @@ class Operator {
             this.tableType = tableType;
             this.shape = shape;
             this.idGetter = idGetter;
+            this.fakeUpdateGetter = fakeUpdateGetter(ctx.options.getSqlClient(), tableType);
             this.keyProps = keyProps;
             this.updatedGetters = updatedGetters;
             this.discriminatorGetter = discriminatorProp != null ?
@@ -2668,9 +2678,9 @@ class Operator {
                 builder.separator()
                         .sql(Dialect.FAKE_UPDATE_COMMENT)
                         .sql(" ")
-                        .sql(idGetter)
+                        .sql(fakeUpdateGetter)
                         .sql(" = ")
-                        .sql(idGetter);
+                        .sql(fakeUpdateGetter);
             }
             return this;
         }
@@ -2753,6 +2763,8 @@ class Operator {
 
         private final PropertyGetter generatedIdGetter;
 
+        private final PropertyGetter fakeUpdateGetter;
+
         private final List<PropertyGetter> insertedGetters;
 
         @Nullable
@@ -2817,6 +2829,7 @@ class Operator {
                             .getIdGetters()
                             .get(0) :
                     null;
+            this.fakeUpdateGetter = fakeUpdateGetter(ctx.options.getSqlClient(), tableType);
             this.insertedGetters = insertedGetters;
             this.discriminatorGetter = discriminatorProp != null ?
                     PropertyGetter.propertyGetters(ctx.options.getSqlClient(), discriminatorProp).get(0) :
@@ -3040,6 +3053,36 @@ class Operator {
                         .sql(getter)
                         .sql(" = ");
                 appendUpdatingValue(getter, prefix, suffix);
+            }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix) {
+            return appendFakeUpdateAssignment(targetPrefix, targetSuffix, false);
+        }
+
+        @Override
+        public Dialect.UpsertContext appendFakeUpdateAssignmentWithTargetTableName() {
+            return appendFakeUpdateAssignment(null, null, true);
+        }
+
+        private Dialect.UpsertContext appendFakeUpdateAssignment(
+                String targetPrefix,
+                String targetSuffix,
+                boolean withTargetTableName
+        ) {
+            builder.sql(Dialect.FAKE_UPDATE_COMMENT)
+                    .sql(" ")
+                    .sql(fakeUpdateGetter)
+                    .sql(" = ")
+                    .sql(withTargetTableName ? tableName() : targetPrefix);
+            if (withTargetTableName) {
+                builder.sql(".");
+            }
+            builder.sql(fakeUpdateGetter);
+            if (!withTargetTableName) {
+                builder.sql(targetSuffix);
             }
             return this;
         }
