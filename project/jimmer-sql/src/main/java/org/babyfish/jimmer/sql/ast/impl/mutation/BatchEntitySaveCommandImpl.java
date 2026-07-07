@@ -247,6 +247,18 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled) {
+        return new BatchEntitySaveCommandImpl<>(new SaveReturningEnabledCfg(cfg, enabled));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setSaveResultReadsAllProperties(boolean readsAllProperties) {
+        return new BatchEntitySaveCommandImpl<>(
+                new SaveResultReadsAllPropertiesCfg(cfg, readsAllProperties)
+        );
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable) {
         return new BatchEntitySaveCommandImpl<>(new ConstraintViolationTranslatableCfg(cfg, transferable));
     }
@@ -346,6 +358,17 @@ public class BatchEntitySaveCommandImpl<E>
             );
             return saver.saveAllJoinedInsert(entities);
         }
+        ImmutableType joinedMixedRootType = joinedMixedRootType(options, groupMap);
+        if (joinedMixedRootType != null) {
+            return new JoinedMixedSave(
+                    new SaveContext(
+                            options,
+                            con,
+                            joinedMixedRootType,
+                            fetcher
+                    )
+            ).saveAll(entities);
+        }
         MutationTrigger trigger = options.getTriggers() != null ? new MutationTrigger() : null;
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
         List<BatchSaveResult.Item<E>> items = new ArrayList<>(Collections.nCopies(entities.size(), null));
@@ -382,6 +405,35 @@ public class BatchEntitySaveCommandImpl<E>
         for (ImmutableType type : groupMap.keySet()) {
             InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
             if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+                return null;
+            }
+            if (rootType == null) {
+                rootType = inheritanceInfo.getRootType();
+            } else if (rootType != inheritanceInfo.getRootType()) {
+                return null;
+            }
+        }
+        return rootType;
+    }
+
+    private ImmutableType joinedMixedRootType(
+            OptionsImpl options,
+            Map<ImmutableType, TypeGroup<E>> groupMap
+    ) {
+        if (options.getMode() == SaveMode.INSERT_ONLY ||
+                options.getMode() == SaveMode.NON_IDEMPOTENT_UPSERT ||
+                options.isBatchForbidden() ||
+                options.getTriggers() != null ||
+                options.getSqlClient().getDialect().isBatchDumb()) {
+            return null;
+        }
+        ImmutableType rootType = null;
+        for (ImmutableType type : groupMap.keySet()) {
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+                return null;
+            }
+            if (options.isTypeChangeAllowed(type)) {
                 return null;
             }
             if (rootType == null) {

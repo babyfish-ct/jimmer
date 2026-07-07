@@ -178,7 +178,7 @@ public class MutableUpdateImpl
                     "\""
             );
         }
-        ImmutableType stageType = TableImplementor.joinedStageType(originalProp, updateType);
+        ImmutableType stageType = inheritanceInfo.getTableTypeForProp(originalProp, updateType);
         if (stageType == null) {
             throw new IllegalArgumentException(
                     "Cannot update property \"" +
@@ -440,6 +440,10 @@ public class MutableUpdateImpl
     @Override
     public TableImplementor<?> getTableLikeImplementor() {
         return (TableImplementor<?>) updateQuery.getTableLikeImplementor();
+    }
+
+    AbstractMutableStatementImpl wrappedQuery() {
+        return updateQuery;
     }
 
     private ImmutableType physicalUpdateType() {
@@ -720,7 +724,9 @@ public class MutableUpdateImpl
     ) {
         TableImplementor<?> table = getTableLikeImplementor();
         if (table.isJoinedTypeBranchRoot()) {
-            ImmutableType stageType = TableImplementor.joinedStageType(target.prop, table.getImmutableType());
+            ImmutableType stageType = table.getImmutableType()
+                    .getInheritanceInfo()
+                    .getTableTypeForProp(target.prop, table.getImmutableType());
             if (stageType != null && stageType != physicalType) {
                 return joinedTypeStageAliasMap.get(stageType);
             }
@@ -1051,7 +1057,7 @@ public class MutableUpdateImpl
             if (prop == null || prop.isId() || prop.toOriginal().isId()) {
                 return;
             }
-            ImmutableType stageType = TableImplementor.joinedStageType(prop, updateType);
+            ImmutableType stageType = updateType.getInheritanceInfo().getTableTypeForProp(prop, updateType);
             if (stageType != null && stageType != physicalType) {
                 joinedTypeStageTypes.add(stageType);
             }

@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.*;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.IntSupplier;
 
@@ -143,8 +142,72 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateByValuesReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isInsertReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isInsertBatchReturningByOrderSupported() {
+        return true;
+    }
+
+    @Override
+    public void insertReturning(InsertReturningContext ctx) {
+        ctx
+                .sql("select ")
+                .appendReturning("")
+                .sql(" from final table (")
+                .sql("insert into ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
+                .appendInsertedColumns()
+                .leave()
+                .sql(" values")
+                .appendInsertingValues()
+                .sql(")");
+    }
+
+    @Override
+    public void updateByValues(UpdateByValuesContext ctx) {
+        ctx
+                .sql("select ")
+                .appendReturning("")
+                .sql(" from final table (")
+                .sql("merge into ")
+                .appendTableName()
+                .sql(" tb_1_ using")
+                .appendSource()
+                .sql(" tb_2_")
+                .enter(AbstractSqlBuilder.ScopeType.TUPLE)
+                .appendSourceColumns()
+                .leave()
+                .sql(" on ")
+                .appendPredicates("tb_1_.", "tb_2_.")
+                .sql(" when matched then update")
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .appendAssignments("tb_1_.", "tb_2_.")
+                .leave()
+                .sql(")");
+    }
+
+    @Override
     public void upsert(UpsertContext ctx) {
-        if (!ctx.hasConflictPredicate() && !ctx.isUpdateIgnored() && !ctx.hasUpdateCondition() && ctx.isComplete()) {
+        if (ctx.isCurrentRowReturningRequired()) {
+            ctx
+                    .sql("select ")
+                    .appendReturning("")
+                    .sql(" from final table (");
+        }
+        if (!ctx.isCurrentRowReturningRequired() &&
+                !ctx.hasConflictPredicate() &&
+                !ctx.isUpdateIgnored() &&
+                !ctx.hasUpdateCondition() &&
+                ctx.isComplete()) {
             ctx.sql("merge into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
@@ -155,20 +218,17 @@ public class H2Dialect extends DefaultDialect {
                     .appendConflictColumns()
                     .leave()
                     .sql(" values")
-                    .enter(AbstractSqlBuilder.ScopeType.LIST)
-                    .appendInsertingValues()
-                    .leave();
+                    .appendInsertingRows();
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(")");
+            }
             return;
         }
         ctx.sql("merge into ")
                 .appendTableName()
-                .sql(" tb_1_ using")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
-                .sql("values")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
-                .appendInsertingValues()
-                .leave()
-                .leave()
+                .sql(" tb_1_ using(values")
+                .appendInsertingRows()
+                .sql(")")
                 .sql(" tb_2_")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("")
@@ -194,18 +254,7 @@ public class H2Dialect extends DefaultDialect {
             if (ctx.hasUpdatedColumns()) {
                 ctx.appendUpdatingAssignments("tb_2_.", "");
             } else {
-                ctx.sql(FAKE_UPDATE_COMMENT).sql(" ");
-                List<ValueGetter> conflictGetters = ctx.getConflictGetters();
-                ValueGetter cheapestGetter = conflictGetters.get(0);
-                for (ValueGetter getter : conflictGetters) {
-                    Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                    type = Classes.boxTypeOf(type);
-                    if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                        cheapestGetter = getter;
-                        break;
-                    }
-                }
-                ctx.sql(cheapestGetter).sql(" = tb_2_.").sql(cheapestGetter);
+                ctx.appendFakeUpdateAssignment("tb_1_.", "");
             }
             ctx.leave();
         }
@@ -218,6 +267,9 @@ public class H2Dialect extends DefaultDialect {
                 .appendInsertedColumns("tb_2_.")
                 .leave()
                 .leave();
+        if (ctx.isCurrentRowReturningRequired()) {
+            ctx.sql(")");
+        }
     }
 
     private void appendConflictValueFromSource(UpsertContext ctx, ValueGetter getter) {

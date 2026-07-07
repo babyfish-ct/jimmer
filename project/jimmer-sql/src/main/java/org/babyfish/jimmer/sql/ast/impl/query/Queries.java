@@ -52,11 +52,23 @@ public class Queries {
             FilterLevel filterLevel,
             BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
+        return createQuery(sqlClient, immutableType, purpose, filterLevel, false, block);
+    }
+
+    public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
+            JSqlClientImplementor sqlClient,
+            ImmutableType immutableType,
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel,
+            boolean rootUserFiltersIgnored,
+            BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
+    ) {
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
                 immutableType,
                 purpose,
-                filterLevel
+                filterLevel,
+                rootUserFiltersIgnored
         );
         return block.apply(query, query.getTable());
     }

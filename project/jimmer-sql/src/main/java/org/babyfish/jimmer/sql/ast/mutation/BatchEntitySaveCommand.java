@@ -347,6 +347,22 @@ public interface BatchEntitySaveCommand<E>
     BatchEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable);
 
     @Override
+    default BatchEntitySaveCommand<E> setSaveReturningEnabled() {
+        return setSaveReturningEnabled(true);
+    }
+
+    @Override
+    BatchEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled);
+
+    @Override
+    default BatchEntitySaveCommand<E> setSaveResultReadsAllProperties() {
+        return setSaveResultReadsAllProperties(true);
+    }
+
+    @Override
+    BatchEntitySaveCommand<E> setSaveResultReadsAllProperties(boolean readsAllProperties);
+
+    @Override
     BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable);
 
     @NewChain

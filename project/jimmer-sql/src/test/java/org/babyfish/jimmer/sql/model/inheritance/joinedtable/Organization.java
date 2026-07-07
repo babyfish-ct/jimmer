@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.model.inheritance.joinedtable;
 
-import org.babyfish.jimmer.sql.DiscriminatorValue;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.OneToMany;
-import org.babyfish.jimmer.sql.Table;
+import org.babyfish.jimmer.sql.*;
 
 import java.util.List;
 
@@ -13,6 +10,9 @@ import java.util.List;
 public interface Organization extends Client {
 
     String taxCode();
+
+    @DatabaseDefault("'DEFAULT_ORGANIZATION_STATUS'")
+    String status();
 
     @OneToMany(mappedBy = "organization")
     List<OrganizationProject> projects();

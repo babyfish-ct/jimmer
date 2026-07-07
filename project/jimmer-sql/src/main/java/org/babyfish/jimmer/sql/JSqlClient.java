@@ -541,6 +541,24 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         Builder setDefaultTypeChangeAllowed(boolean allowed);
 
         @OldChain
+        Builder setDefaultSaveReturningEnabled(boolean enabled);
+
+        @OldChain
+        Builder setDefaultSaveResultReadsAllProperties(boolean readsAllProperties);
+
+        /**
+         * Specify whether SQL constraint violations should be investigated and
+         * translated by Jimmer into higher-level save exceptions, such as
+         * {@link org.babyfish.jimmer.sql.exception.SaveException.NotUnique}.
+         *
+         * <p>When this is {@code true}, Jimmer can execute additional diagnostic
+         * queries and use savepoints where needed to classify constraint failures.</p>
+         *
+         * <p>When this is {@code false}, Jimmer does not run that investigation and
+         * does not create savepoints for it. The original database exception still
+         * goes through the ordinary {@link ExceptionTranslator} pipeline.</p>
+         */
+        @OldChain
         Builder setConstraintViolationTranslatable(boolean translatable);
 
         @OldChain

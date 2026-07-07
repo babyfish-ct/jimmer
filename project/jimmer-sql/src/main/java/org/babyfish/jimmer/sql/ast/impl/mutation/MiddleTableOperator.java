@@ -894,6 +894,37 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public Dialect.UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix) {
+            return appendFakeUpdateAssignment(targetPrefix, targetSuffix, false);
+        }
+
+        @Override
+        public Dialect.UpsertContext appendFakeUpdateAssignmentWithTargetTableName() {
+            return appendFakeUpdateAssignment(null, null, true);
+        }
+
+        private Dialect.UpsertContext appendFakeUpdateAssignment(
+                String targetPrefix,
+                String targetSuffix,
+                boolean withTargetTableName
+        ) {
+            ValueGetter getter = getters.get(0);
+            builder.sql(Dialect.FAKE_UPDATE_COMMENT)
+                    .sql(" ")
+                    .sql(getter)
+                    .sql(" = ")
+                    .sql(withTargetTableName ? middleTable.getTableName() : targetPrefix);
+            if (withTargetTableName) {
+                builder.sql(".");
+            }
+            builder.sql(getter);
+            if (!withTargetTableName) {
+                builder.sql(targetSuffix);
+            }
+            return this;
+        }
+
+        @Override
         public Dialect.UpsertContext appendConditionalUpdatingAssignments(
                 String sourcePrefix,
                 String sourceSuffix,
@@ -907,6 +938,14 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         public Dialect.UpsertContext appendUpdateCondition(
                 String targetPrefix,
                 String targetSuffix,
+                String sourcePrefix,
+                String sourceSuffix
+        ) {
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendUpdateConditionWithTableName(
                 String sourcePrefix,
                 String sourceSuffix
         ) {

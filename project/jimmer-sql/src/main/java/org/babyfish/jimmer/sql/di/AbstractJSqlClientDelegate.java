@@ -423,6 +423,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isDefaultSaveReturningEnabled() {
+        return sqlClient().isDefaultSaveReturningEnabled();
+    }
+
+    @Override
+    public boolean isDefaultSaveResultReadsAllProperties() {
+        return sqlClient().isDefaultSaveResultReadsAllProperties();
+    }
+
+    @Override
     public boolean isBatchForbidden(boolean dumbBatchAcceptable) {
         return sqlClient().isBatchForbidden(dumbBatchAcceptable);
     }

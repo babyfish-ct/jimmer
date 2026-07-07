@@ -690,19 +690,7 @@ public class MutableDeleteImpl
         MutationQuerySupport.renderIdInSubQuery(builder, deleteQuery, table, targetType);
     }
 
-    public static boolean isCompatible(
-            AbstractMutableStatementImpl a,
-            AbstractMutableStatementImpl b
-    ) {
-        if (a == b) {
-            return true;
-        }
-        if (a instanceof MutableDeleteImpl) {
-            return ((MutableDeleteImpl)a).deleteQuery == b;
-        }
-        if (b instanceof MutableDeleteImpl) {
-            return ((MutableDeleteImpl)b).deleteQuery == a;
-        }
-        return false;
+    AbstractMutableStatementImpl wrappedQuery() {
+        return deleteQuery;
     }
 }

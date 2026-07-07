@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
@@ -227,7 +226,7 @@ public class DatabaseValidators {
                 inheritanceInfo.getRootType() == type) {
             return true;
         }
-        return TableImplementor.isPropOwnedByStage(prop.toOriginal(), type);
+        return inheritanceInfo.isPropAvailableInTable(prop.toOriginal(), type);
     }
 
     private boolean isNullableInDatabase(ImmutableType type, ImmutableProp prop) {

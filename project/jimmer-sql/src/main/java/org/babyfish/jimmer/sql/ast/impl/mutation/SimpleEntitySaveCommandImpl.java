@@ -222,6 +222,18 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setSaveReturningEnabled(boolean enabled) {
+        return new SimpleEntitySaveCommandImpl<>(new SaveReturningEnabledCfg(cfg, enabled));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setSaveResultReadsAllProperties(boolean readsAllProperties) {
+        return new SimpleEntitySaveCommandImpl<>(
+                new SaveResultReadsAllPropertiesCfg(cfg, readsAllProperties)
+        );
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable) {
         return new SimpleEntitySaveCommandImpl<>(new ConstraintViolationTranslatableCfg(cfg, transferable));
     }

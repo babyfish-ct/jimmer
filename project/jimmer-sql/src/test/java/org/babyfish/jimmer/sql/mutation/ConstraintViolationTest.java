@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
@@ -21,12 +22,11 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -68,6 +68,74 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                         );
                         SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
                         Assertions.assertTrue(ex.isMatched(TreeNodeProps.ID));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictIdWithoutConstraintViolationTranslation() {
+        TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setName("Root3");
+            draft.setParent(null);
+        });
+        executeAndExpectResult(
+                getSqlClient().getEntities()
+                        .saveCommand(treeNode)
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setConstraintViolationTranslatable(false),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(1L, "Root3", new DbLiteral.DbNull(long.class));
+                    });
+                    ctx.throwable(it -> {
+                        it.type(ExecutionException.class);
+                        it.detail(ex -> {
+                            Throwable cause = ex.getCause();
+                            Assertions.assertInstanceOf(SQLException.class, cause);
+                        });
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictIdWithoutConstraintViolationTranslationCanUseUserTranslator() {
+        TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setName("Root3");
+            draft.setParent(null);
+        });
+        executeAndExpectResult(
+                getSqlClient().getEntities()
+                        .saveCommand(treeNode)
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setConstraintViolationTranslatable(false)
+                        .addExceptionTranslator(new ExceptionTranslator<SQLException>() {
+                            @Override
+                            public @Nullable Exception translate(
+                                    @NotNull SQLException exception,
+                                    @Nullable Args args
+                            ) {
+                                return new IllegalStateException("Raw constraint violation");
+                            }
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(1L, "Root3", new DbLiteral.DbNull(long.class));
+                    });
+                    ctx.throwable(it -> {
+                        it.type(IllegalStateException.class);
+                        it.message("Raw constraint violation");
                     });
                 }
         );

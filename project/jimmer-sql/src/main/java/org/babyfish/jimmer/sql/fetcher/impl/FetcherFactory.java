@@ -21,13 +21,29 @@ public class FetcherFactory {
         if (typePredicate == null && propPredicate == null) {
             return self;
         }
+        return filterImpl(
+                (FetcherImpl<E>) self,
+                typePredicate,
+                propPredicate != null ? (type, prop, path) -> propPredicate.test(prop, path) : null,
+                new LinkedList<>()
+        );
+    }
+
+    public static <E> Fetcher<E> filterByTypedProp(
+            Fetcher<E> self,
+            BiPredicate<ImmutableType, List<ImmutableProp>> typePredicate,
+            PropFilter propPredicate
+    ) {
+        if (typePredicate == null && propPredicate == null) {
+            return self;
+        }
         return filterImpl((FetcherImpl<E>) self, typePredicate, propPredicate, new LinkedList<>());
     }
 
     private static <E> FetcherImpl<E> filterImpl(
             FetcherImpl<E> self,
             BiPredicate<ImmutableType, List<ImmutableProp>> typePredicate,
-            BiPredicate<ImmutableProp, List<ImmutableProp>> propPredicate,
+            PropFilter propPredicate,
             LinkedList<ImmutableProp> path
     ) {
         if (self == null) {
@@ -49,7 +65,11 @@ public class FetcherFactory {
                     filteredPrevFetcher;
         }
         if (!self.negative && self.prop != null && !self.prop.isId()) {
-            if (propPredicate != null && !propPredicate.test(self.prop, Collections.unmodifiableList(path))) {
+            if (propPredicate != null && !propPredicate.test(
+                    self.getImmutableType(),
+                    self.prop,
+                    Collections.unmodifiableList(path)
+            )) {
                 return filteredPrevFetcher;
             }
             FetcherImpl<?> childFetcher = self.childFetcher;
@@ -73,7 +93,13 @@ public class FetcherFactory {
         return filter(
                 fetcher,
                 (type, path) -> path.isEmpty() || !type.getMicroServiceName().equals(microServiceName),
-                null
+                (BiPredicate<ImmutableProp, List<ImmutableProp>>) null
         );
+    }
+
+    @FunctionalInterface
+    public interface PropFilter {
+
+        boolean test(ImmutableType type, ImmutableProp prop, List<ImmutableProp> path);
     }
 }

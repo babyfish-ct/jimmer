@@ -47,8 +47,18 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
             ExecutionPurpose purpose,
             FilterLevel filterLevel
     ) {
+        this(sqlClient, immutableType, purpose, filterLevel, false);
+    }
+
+    public MutableRootQueryImpl(
+            JSqlClientImplementor sqlClient,
+            ImmutableType immutableType,
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel,
+            boolean rootUserFiltersIgnored
+    ) {
         super(sqlClient, immutableType);
-        ctx = new StatementContext(purpose, filterLevel);
+        ctx = new StatementContext(purpose, filterLevel, rootUserFiltersIgnored);
         getTableLikeImplementor();
     }
 
@@ -58,8 +68,18 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
             ExecutionPurpose purpose,
             FilterLevel filterLevel
     ) {
+        this(sqlClient, table, purpose, filterLevel, false);
+    }
+
+    public MutableRootQueryImpl(
+            JSqlClientImplementor sqlClient,
+            TableProxy<?> table,
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel,
+            boolean rootUserFiltersIgnored
+    ) {
         super(sqlClient, table);
-        ctx = new StatementContext(purpose, filterLevel);
+        ctx = new StatementContext(purpose, filterLevel, rootUserFiltersIgnored);
     }
 
     public MutableRootQueryImpl(
@@ -68,8 +88,18 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
             ExecutionPurpose purpose,
             FilterLevel filterLevel
     ) {
+        this(sqlClient, table, purpose, filterLevel, false);
+    }
+
+    public MutableRootQueryImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable table,
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel,
+            boolean rootUserFiltersIgnored
+    ) {
         super(sqlClient, table);
-        ctx = new StatementContext(purpose, filterLevel);
+        ctx = new StatementContext(purpose, filterLevel, rootUserFiltersIgnored);
     }
 
     public MutableRootQueryImpl(

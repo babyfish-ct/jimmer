@@ -185,6 +185,18 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isUpdateByValuesReturningSupported() {
+        return false;
+    }
+
+    default boolean isInsertReturningSupported() {
+        return false;
+    }
+
+    default boolean isInsertBatchReturningByOrderSupported() {
+        return false;
+    }
+
     default boolean isTransactionAbortedByError() {
         return false;
     }
@@ -194,6 +206,22 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     void update(UpdateContext ctx);
+
+    default void insertReturning(InsertReturningContext ctx) {
+        throw new UnsupportedOperationException(
+                "The insert-returning statement is not supported by \"" +
+                        getClass().getName() +
+                        "\""
+        );
+    }
+
+    default void updateByValues(UpdateByValuesContext ctx) {
+        throw new UnsupportedOperationException(
+                "The update-by-values statement is not supported by \"" +
+                        getClass().getName() +
+                        "\""
+        );
+    }
 
     void upsert(UpsertContext ctx);
 
@@ -216,6 +244,48 @@ public interface Dialect extends SqlTypeStrategy {
         UpdateContext appendId();
     }
 
+    interface InsertReturningContext {
+
+        InsertReturningContext sql(String sql);
+
+        InsertReturningContext enter(AbstractSqlBuilder.ScopeType type);
+
+        InsertReturningContext separator();
+
+        InsertReturningContext leave();
+
+        InsertReturningContext appendTableName();
+
+        InsertReturningContext appendInsertedColumns();
+
+        InsertReturningContext appendInsertingValues();
+
+        InsertReturningContext appendReturning(String prefix);
+    }
+
+    interface UpdateByValuesContext {
+
+        UpdateByValuesContext sql(String sql);
+
+        UpdateByValuesContext enter(AbstractSqlBuilder.ScopeType type);
+
+        UpdateByValuesContext separator();
+
+        UpdateByValuesContext leave();
+
+        UpdateByValuesContext appendTableName();
+
+        UpdateByValuesContext appendSource();
+
+        UpdateByValuesContext appendSourceColumns();
+
+        UpdateByValuesContext appendAssignments(String targetPrefix, String sourcePrefix);
+
+        UpdateByValuesContext appendPredicates(String targetPrefix, String sourcePrefix);
+
+        UpdateByValuesContext appendReturning(String targetPrefix);
+    }
+
     interface UpsertContext {
 
         boolean hasUpdatedColumns();
@@ -226,6 +296,9 @@ public interface Dialect extends SqlTypeStrategy {
         boolean isComplete();
         boolean isIdInteger();
         boolean hasConflictPredicate();
+        default boolean isCurrentRowReturningRequired() {
+            return false;
+        }
         List<ValueGetter> getConflictGetters();
 
         UpsertContext sql(String sql);
@@ -239,10 +312,25 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConflictColumns();
         UpsertContext appendConflictPredicate(String alias);
         UpsertContext appendInsertingValues();
+        default UpsertContext appendInsertingRows() {
+            return enter(AbstractSqlBuilder.ScopeType.TUPLE)
+                    .appendInsertingValues()
+                    .leave();
+        }
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
+        UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix);
+        UpsertContext appendFakeUpdateAssignmentWithTargetTableName();
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
         UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);
+        UpsertContext appendUpdateConditionWithTableName(String sourcePrefix, String sourceSuffix);
         UpsertContext appendGeneratedId();
+        default UpsertContext appendReturning(String prefix) {
+            throw new UnsupportedOperationException(
+                    "The upsert-returning statement is not supported by \"" +
+                            getClass().getName() +
+                            "\""
+            );
+        }
         UpsertContext appendId();
     }
 

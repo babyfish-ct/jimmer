@@ -31,6 +31,9 @@ class OptimisticLockNewValueExpression<V>
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        if (builder.renderOptimisticLockNewValue(prop)) {
+            return;
+        }
         if (!(builder instanceof BatchSqlBuilder)) {
             throw new IllegalStateException(
                     "The \"" +

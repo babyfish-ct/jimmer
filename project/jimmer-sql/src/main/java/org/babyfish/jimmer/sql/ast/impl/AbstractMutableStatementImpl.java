@@ -411,7 +411,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             return;
         }
         Filter<Props> globalFilter;
-        if (level == FilterLevel.IGNORE_USER_FILTERS) {
+        if (level == FilterLevel.IGNORE_USER_FILTERS || isRootUserFilterIgnored(table)) {
             globalFilter = getSqlClient().getFilters().getLogicalDeletedFilter(table.getImmutableType());
         } else {
             globalFilter = getSqlClient().getFilters().getFilter(table.getImmutableType());
@@ -426,6 +426,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             whereByFilter(table, args.toPredicates());
             modify();
         }
+    }
+
+    private boolean isRootUserFilterIgnored(TableImplementor<?> table) {
+        StatementContext ctx = getContext();
+        return ctx != null && ctx.isRootUserFiltersIgnored() && table == getTableLikeImplementor();
     }
 
     public void validateMutable() {

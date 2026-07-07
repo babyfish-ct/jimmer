@@ -243,6 +243,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean hasDatabaseDefaultValue() {
+        return false;
+    }
+
+    @Override
     public boolean isExcludedFromAllScalars() {
         return false;
     }

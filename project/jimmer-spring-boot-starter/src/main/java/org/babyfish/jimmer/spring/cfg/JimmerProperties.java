@@ -80,6 +80,10 @@ public class JimmerProperties {
 
     private final boolean defaultTypeChangeAllowed;
 
+    private final boolean defaultSaveReturningEnabled;
+
+    private final boolean defaultSaveResultReadsAllProperties;
+
     private final boolean explicitBatchEnabled;
 
     private final boolean dumbBatchAcceptable;
@@ -125,6 +129,8 @@ public class JimmerProperties {
             boolean mutationTransactionRequired,
             boolean targetTransferable,
             boolean defaultTypeChangeAllowed,
+            @Nullable Boolean defaultSaveReturningEnabled, // Default value is true, so use `Boolean`
+            boolean defaultSaveResultReadsAllProperties,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             Boolean constraintViolationTranslatable, // Default value is true, so use `Boolean`
@@ -255,6 +261,11 @@ public class JimmerProperties {
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
         this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
+        this.defaultSaveReturningEnabled =
+                defaultSaveReturningEnabled != null ?
+                        defaultSaveReturningEnabled :
+                        true;
+        this.defaultSaveResultReadsAllProperties = defaultSaveResultReadsAllProperties;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable =
@@ -422,6 +433,14 @@ public class JimmerProperties {
         return defaultTypeChangeAllowed;
     }
 
+    public boolean isDefaultSaveReturningEnabled() {
+        return defaultSaveReturningEnabled;
+    }
+
+    public boolean isDefaultSaveResultReadsAllProperties() {
+        return defaultSaveResultReadsAllProperties;
+    }
+
     public boolean isExplicitBatchEnabled() {
         return explicitBatchEnabled;
     }
@@ -501,6 +520,8 @@ public class JimmerProperties {
                 ", mutationTransactionRequired=" + mutationTransactionRequired +
                 ", targetTransferable=" + targetTransferable +
                 ", defaultTypeChangeAllowed=" + defaultTypeChangeAllowed +
+                ", defaultSaveReturningEnabled=" + defaultSaveReturningEnabled +
+                ", defaultSaveResultReadsAllProperties=" + defaultSaveResultReadsAllProperties +
                 ", explicitBatchEnabled=" + explicitBatchEnabled +
                 ", dumbBatchAcceptable=" + dumbBatchAcceptable +
                 ", constraintViolationTranslatable=" + constraintViolationTranslatable +

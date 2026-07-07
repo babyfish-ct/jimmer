@@ -1,25 +1,17 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.InheritanceType;
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -229,7 +221,7 @@ public class Saver {
         finishSave(operation, selfResult);
     }
 
-    private SaveOperation prepareSave(List<DraftSpi> drafts) {
+    SaveOperation prepareSave(List<DraftSpi> drafts) {
         if (!drafts.isEmpty() && !isIdOnlyAssociationReference(drafts)) {
             validateInstantiableSaveType(drafts.get(0).__type(), ctx.options);
         }
@@ -249,10 +241,17 @@ public class Saver {
     }
 
     private void finishSave(SaveOperation operation, SaveSelfResult selfResult) {
-        PreHandler preHandler = operation.preHandler;
-        List<DraftSpi> drafts = operation.drafts;
+        finishAssociations(operation, selfResult);
+        new SaveResultMaterializer(ctx).materialize(
+                SaveBatches.drafts(operation.drafts, selfResult.acceptedDrafts),
+                SaveBatches.selfBatches(operation.preHandler, selfResult.acceptedDrafts)
+        );
+    }
 
-        for (Batch<DraftSpi> batch : associationBatches(preHandler, selfResult.acceptedDrafts)) {
+    void finishAssociations(SaveOperation operation, SaveSelfResult selfResult) {
+        PreHandler preHandler = operation.preHandler;
+
+        for (Batch<DraftSpi> batch : SaveBatches.associationBatches(preHandler, selfResult.acceptedDrafts)) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (isVisitable(prop) && prop.isAssociation(TargetLevel.ENTITY)) {
                     if (ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.VIOLENTLY_REPLACE) {
@@ -263,8 +262,6 @@ public class Saver {
                 }
             }
         }
-
-        fetch(fetchDrafts(drafts, selfResult.acceptedDrafts), batches(preHandler, selfResult.acceptedDrafts));
     }
 
     private boolean isIdOnlyAssociationReference(List<DraftSpi> drafts) {
@@ -365,182 +362,6 @@ public class Saver {
         updateAssociations(batch, prop, detachOtherSiblings);
     }
 
-    private void fetch(List<DraftSpi> drafts, Iterable<Batch<DraftSpi>> batches) {
-        if (ctx.path.getParent() != null) {
-            fetchIdIfNecessary(drafts, batches);
-            return;
-        }
-        Fetcher<?> fetcher = ctx.fetcher;
-        if (fetcher == null) {
-            fetchIdIfNecessary(drafts, batches);
-            return;
-        }
-        fetchImpl(drafts, batches, false);
-    }
-
-    private void fetchIdIfNecessary(List<DraftSpi> drafts, Iterable<Batch<DraftSpi>> batches) {
-        if (ctx.options.getMode() != SaveMode.INSERT_IF_ABSENT) {
-            return;
-        }
-        if (!ctx.isIdRetrievingRequired()) {
-            return;
-        }
-        fetchImpl(drafts, batches, true);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void fetchImpl(
-            List<DraftSpi> drafts,
-            Iterable<Batch<DraftSpi>> batches,
-            boolean fillIdIfNecessary
-    ) {
-        DraftSpi[] arr = new DraftSpi[drafts.size()];
-        int index = 0;
-        List<Object> unmatchedIds = new ArrayList<>();
-        List<DraftSpi> nonIdObjects = new ArrayList<>();
-        PropId idPropId = ctx.path.getType().getIdProp().getId();
-        ShapeMatchContext shapeMatchContext = new ShapeMatchContext();
-        Fetcher<?> fetcher = ctx.fetcher;
-        for (DraftSpi draft : drafts) {
-            if (!draft.__isLoaded(idPropId)) {
-                nonIdObjects.add(draft);
-            } else if (fetcher != null && !isShapeMatched(draft, fetcher, shapeMatchContext)) {
-                arr[index] = draft;
-                unmatchedIds.add(draft.__get(idPropId));
-            }
-            ++index;
-        }
-        if (!unmatchedIds.isEmpty()) {
-            JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
-            Map<Object, Object> map = ((EntitiesImpl) sqlClient.getEntities())
-                    .forSaveCommandFetch(fillIdIfNecessary ? QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES : QueryReason.FETCHER)
-                    .forConnection(ctx.con)
-                    .findMapByIds(
-                            fillIdIfNecessary ?
-                                    new FetcherImpl<>((Class<Object>) ctx.path.getType().getJavaClass()) :
-                                    (Fetcher<Object>) fetcher,
-                            unmatchedIds
-                    );
-            index = 0;
-            ListIterator<DraftSpi> itr = drafts.listIterator();
-            while (itr.hasNext()) {
-                DraftSpi draft = itr.next();
-                if (arr[index] != null) {
-                    Object fetched = map.get(draft.__get(idPropId));
-                    DraftSpi replacedDraft = replaceDraft(draft, fetched);
-                    if (replacedDraft != null) {
-                        itr.set(replacedDraft);
-                    }
-                }
-                ++index;
-            }
-        }
-        if (!nonIdObjects.isEmpty()) {
-            if (drafts.size() == 1) {
-                Map<KeyMatcher.Group, List<ImmutableSpi>> rowMap = Rows.findByKeys(
-                        ctx,
-                        fillIdIfNecessary ? QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES : QueryReason.FETCHER,
-                        fillIdIfNecessary ?
-                                new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass()) :
-                                (Fetcher<ImmutableSpi>) fetcher,
-                        nonIdObjects,
-                        null
-                );
-                if (!rowMap.isEmpty()) {
-                    ImmutableSpi row = rowMap.values().iterator().next().iterator().next();
-                    if (fillIdIfNecessary) {
-                        drafts.get(0).__set(idPropId, row.__get(idPropId));
-                    } else {
-                        ListIterator<DraftSpi> itr = drafts.listIterator();
-                        DraftSpi draft = itr.next();
-                        DraftSpi replaceDraft = replaceDraft(draft, row);
-                        if (replaceDraft != null) {
-                            itr.set(replaceDraft);
-                        }
-                    }
-                }
-            } else {
-                KeyMatcher keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
-                for (Batch<DraftSpi> batch : batches) {
-                    Set<ImmutableProp> keyProps = batch.shape().keyProps(keyMatcher);
-                    List<PropId> unloadPropIds = null;
-                    if (!fillIdIfNecessary) {
-                        assert fetcher != null;
-                        unloadPropIds = new ArrayList<>();
-                        for (ImmutableProp keyProp : keyProps) {
-                            if (!((FetcherImplementor<?>) fetcher).__contains(keyProp.getName())) {
-                                fetcher = fetcher.add(keyProp.getName());
-                                unloadPropIds.add(keyProp.getId());
-                            }
-                        }
-                    }
-                    Fetcher<ImmutableSpi> actualFetcher;
-                    if (fillIdIfNecessary) {
-                        actualFetcher = new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass());
-                        for (ImmutableProp keyProp : keyProps) {
-                            actualFetcher = actualFetcher.add(keyProp.getName());
-                        }
-                    } else {
-                        actualFetcher = (Fetcher<ImmutableSpi>) fetcher;
-                    }
-                    Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> map = Rows.findMapByKeys(
-                            ctx,
-                            fillIdIfNecessary ? QueryReason.GET_ID_FOR_PRE_SAVED_ENTITIES : QueryReason.FETCHER,
-                            actualFetcher,
-                            nonIdObjects
-                    );
-                    if (map.isEmpty()) {
-                        continue;
-                    }
-                    ListIterator<DraftSpi> itr = drafts.listIterator();
-                    while (itr.hasNext()) {
-                        DraftSpi draft = itr.next();
-                        if (draft.__isLoaded(idPropId)) {
-                            continue;
-                        }
-                        Map<Object, ImmutableSpi> subMap = map.values().iterator().next();
-                        Object key = Keys.keyOf(draft, keyProps);
-                        ImmutableSpi fetched = subMap.get(key);
-                        if (unloadPropIds == null) {
-                            draft.__set(idPropId, fetched.__get(idPropId));
-                        } else {
-                            DraftSpi newDraft = replaceDraft(draft, fetched);
-                            if (newDraft != null) {
-                                itr.set(newDraft);
-                            } else {
-                                newDraft = draft;
-                            }
-                            for (PropId unloadedPropId : unloadPropIds) {
-                                newDraft.__unload(unloadedPropId);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static DraftSpi replaceDraft(DraftSpi draft, Object fetched) {
-        if (fetched instanceof DraftSpi) {
-            return (DraftSpi) fetched;
-        }
-        if (fetched instanceof ImmutableSpi) {
-            ImmutableSpi spi = (ImmutableSpi) fetched;
-            for (ImmutableProp prop : draft.__type().getProps().values()) {
-                PropId propId = prop.getId();
-                if (spi.__isLoaded(propId)) {
-                    if (!prop.isView()) {
-                        draft.__set(propId, spi.__get(propId));
-                    }
-                    draft.__show(propId, spi.__isVisible(propId));
-                } else {
-                    draft.__unload(propId);
-                }
-            }
-        }
-        return null;
-    }
-
     private boolean isVisitable(ImmutableProp prop) {
         ImmutableProp backRef = ctx.backReferenceProp;
         return backRef == null || backRef != prop;
@@ -600,7 +421,7 @@ public class Saver {
         Operator operator = new Operator(ctx);
         for (StageGroup group : groupMap.values()) {
             operator.insertJoinedRoot(
-                    batchOf(group.shape, group.entities, SaveMode.INSERT_ONLY, SaveMode.INSERT_ONLY),
+                    SaveBatches.of(group.shape, group.entities, SaveMode.INSERT_ONLY, SaveMode.INSERT_ONLY),
                     inheritanceInfo
             );
         }
@@ -635,40 +456,10 @@ public class Saver {
                     ctx.affectedRowCountMap
             );
             new Operator(stageCtx).insertJoinedStage(
-                    batchOf(group.shape, group.entities, SaveMode.INSERT_ONLY, SaveMode.INSERT_ONLY),
+                    SaveBatches.of(group.shape, group.entities, SaveMode.INSERT_ONLY, SaveMode.INSERT_ONLY),
                     group.tableType
             );
         }
-    }
-
-    private static Batch<DraftSpi> batchOf(
-            Shape shape,
-            EntityCollection<DraftSpi> entities,
-            SaveMode mode,
-            SaveMode originalMode
-    ) {
-        return new Batch<DraftSpi>() {
-
-            @Override
-            public Shape shape() {
-                return shape;
-            }
-
-            @Override
-            public EntityCollection<DraftSpi> entities() {
-                return entities;
-            }
-
-            @Override
-            public SaveMode mode() {
-                return mode;
-            }
-
-            @Override
-            public SaveMode originalMode() {
-                return originalMode;
-            }
-        };
     }
 
     private SaveSelfResult saveSelf(PreHandler preHandler, boolean ownerAcceptanceRequired) {
@@ -716,21 +507,19 @@ public class Saver {
         }
     }
 
-    private static boolean isDetachRequired(SaveMode mode) {
+    static boolean isDetachRequired(SaveMode mode) {
         return mode != SaveMode.INSERT_ONLY && mode != SaveMode.INSERT_IF_ABSENT;
     }
 
     private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
-        if (!isJoinedTypeBranchTarget()) {
-            return false;
-        }
-        if (ctx.trigger != null) {
-            return isOwnerAcceptanceMode();
-        }
         if (!isOwnerAcceptanceMode()) {
             return false;
         }
-        return hasLoadedPostAssociation(preHandler);
+        if (isJoinedTypeBranchTarget()) {
+            return ctx.trigger != null || hasLoadedPostAssociation(preHandler);
+        }
+        return ctx.options.getUserOptimisticLock(ctx.path.getType()) != null &&
+                hasLoadedPostAssociation(preHandler);
     }
 
     private boolean hasLoadedPostAssociation(PreHandler preHandler) {
@@ -768,56 +557,6 @@ public class Saver {
         return inheritanceInfo != null &&
                 inheritanceInfo.getStrategy() == InheritanceType.JOINED &&
                 inheritanceInfo.getRootType() != type;
-    }
-
-    private Iterable<Batch<DraftSpi>> associationBatches(
-            PreHandler preHandler,
-            @Nullable Set<DraftSpi> acceptedDrafts
-    ) {
-        return acceptedDrafts != null ?
-                filterBatches(preHandler.associationBatches(), acceptedDrafts) :
-                preHandler.associationBatches();
-    }
-
-    private Iterable<Batch<DraftSpi>> batches(
-            PreHandler preHandler,
-            @Nullable Set<DraftSpi> acceptedDrafts
-    ) {
-        return acceptedDrafts != null ?
-                filterBatches(preHandler.batches(), acceptedDrafts) :
-                preHandler.batches();
-    }
-
-    private List<DraftSpi> fetchDrafts(List<DraftSpi> drafts, @Nullable Set<DraftSpi> acceptedDrafts) {
-        if (acceptedDrafts == null) {
-            return drafts;
-        }
-        List<DraftSpi> filteredDrafts = new ArrayList<>(acceptedDrafts.size());
-        for (DraftSpi draft : drafts) {
-            if (acceptedDrafts.contains(draft)) {
-                filteredDrafts.add(draft);
-            }
-        }
-        return filteredDrafts;
-    }
-
-    private Iterable<Batch<DraftSpi>> filterBatches(
-            Iterable<Batch<DraftSpi>> batches,
-            Set<DraftSpi> acceptedDrafts
-    ) {
-        List<Batch<DraftSpi>> filteredBatches = new ArrayList<>();
-        for (Batch<DraftSpi> batch : batches) {
-            EntityList<DraftSpi> entities = new EntityList<>();
-            for (DraftSpi draft : batch.entities()) {
-                if (acceptedDrafts.contains(draft)) {
-                    entities.add(draft);
-                }
-            }
-            if (!entities.isEmpty()) {
-                filteredBatches.add(new FilteredBatch(batch, entities));
-            }
-        }
-        return filteredBatches;
     }
 
     private void clearAssociations(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
@@ -932,42 +671,6 @@ public class Saver {
         return false;
     }
 
-    private static class SaveOperation {
-
-        final Saver saver;
-
-        final List<DraftSpi> drafts;
-
-        final PreHandler preHandler;
-
-        final boolean ownerAcceptanceRequired;
-
-        SaveOperation(
-                Saver saver,
-                List<DraftSpi> drafts,
-                PreHandler preHandler,
-                boolean ownerAcceptanceRequired
-        ) {
-            this.saver = saver;
-            this.drafts = drafts;
-            this.preHandler = preHandler;
-            this.ownerAcceptanceRequired = ownerAcceptanceRequired;
-        }
-    }
-
-    private static class SaveSelfResult {
-
-        final boolean detach;
-
-        @Nullable
-        final Set<DraftSpi> acceptedDrafts;
-
-        SaveSelfResult(boolean detach, @Nullable Set<DraftSpi> acceptedDrafts) {
-            this.detach = detach;
-            this.acceptedDrafts = acceptedDrafts;
-        }
-    }
-
     private static class StageKey {
 
         final ImmutableType tableType;
@@ -1011,200 +714,4 @@ public class Saver {
         }
     }
 
-    private static class FilteredBatch implements Batch<DraftSpi> {
-
-        private final Batch<DraftSpi> base;
-
-        private final EntityCollection<DraftSpi> entities;
-
-        private FilteredBatch(Batch<DraftSpi> base, EntityCollection<DraftSpi> entities) {
-            this.base = base;
-            this.entities = entities;
-        }
-
-        @Override
-        public Shape shape() {
-            return base.shape();
-        }
-
-        @Override
-        public EntityCollection<DraftSpi> entities() {
-            return entities;
-        }
-
-        @Override
-        public SaveMode mode() {
-            return base.mode();
-        }
-
-        @Override
-        public SaveMode originalMode() {
-            return base.originalMode();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static boolean isShapeMatched(DraftSpi draft, @Nullable Fetcher<?> fetcher, ShapeMatchContext ctx) {
-        if (draft == null) {
-            return true;
-        }
-        if (!ctx.isOptimizable(draft.__type(), fetcher)) {
-            return false;
-        }
-        if (fetcher != null) {
-            if (!isShapeMatchedByFetcher(draft, fetcher, ctx)) {
-                return false;
-            }
-            Map<String, Field> matchedFieldMap = new LinkedHashMap<>();
-            collectMatchedFieldMap(draft.__type(), fetcher, matchedFieldMap);
-            for (ImmutableProp prop : draft.__type().getProps().values()) {
-                PropId propId = prop.getId();
-                if (!draft.__isLoaded(propId)) {
-                    continue;
-                }
-                Field field = matchedFieldMap.get(prop.getName());
-                if (field == null) {
-                    draft.__unload(propId);
-                } else if (field.isImplicit()) {
-                    draft.__show(propId, false);
-                }
-            }
-        } else {
-            for (ImmutableProp prop : draft.__type().getProps().values()) {
-                PropId propId = prop.getId();
-                if (!draft.__isLoaded(propId)) {
-                    return false;
-                }
-                if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                    Object associatedValue = draft.__get(propId);
-                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                        List<DraftSpi> list = (List<DraftSpi>) associatedValue;
-                        for (DraftSpi e : list) {
-                            if (!isShapeMatched(e, null, ctx)) {
-                                return false;
-                            }
-                        }
-                    } else if (!isShapeMatched((DraftSpi) associatedValue, null, ctx)) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static boolean isShapeMatchedByFetcher(DraftSpi draft, Fetcher<?> fetcher, ShapeMatchContext ctx) {
-        if (!ctx.isOptimizable(draft.__type(), fetcher)) {
-            return false;
-        }
-        for (Field field : fetcher.getFieldMap().values()) {
-            ImmutableProp prop = field.getProp();
-            PropId propId = prop.getId();
-            if (!draft.__isLoaded(propId)) {
-                return false;
-            }
-            if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                Fetcher<?> childFetcher = field.getChildFetcher();
-                Object associatedValue = draft.__get(propId);
-                if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                    List<DraftSpi> list = (List<DraftSpi>) associatedValue;
-                    for (DraftSpi e : list) {
-                        if (!isShapeMatched(e, childFetcher, ctx)) {
-                            return false;
-                        }
-                    }
-                } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher, ctx)) {
-                    return false;
-                }
-            }
-        }
-        for (Map.Entry<ImmutableType, Fetcher<?>> e :
-                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
-            if (e.getKey().isAssignableFrom(draft.__type()) &&
-                    !isShapeMatchedByFetcher(draft, e.getValue(), ctx)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static void collectMatchedFieldMap(
-            ImmutableType actualType,
-            Fetcher<?> fetcher,
-            Map<String, Field> matchedFieldMap
-    ) {
-        for (Field field : fetcher.getFieldMap().values()) {
-            addMatchedField(matchedFieldMap, field);
-        }
-        for (Map.Entry<ImmutableType, Fetcher<?>> e :
-                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
-            if (e.getKey().isAssignableFrom(actualType)) {
-                collectMatchedFieldMap(actualType, e.getValue(), matchedFieldMap);
-            }
-        }
-    }
-
-    private static void addMatchedField(Map<String, Field> matchedFieldMap, Field field) {
-        String name = field.getProp().getName();
-        Field oldField = matchedFieldMap.get(name);
-        if (oldField == null || oldField.isImplicit() && !field.isImplicit()) {
-            matchedFieldMap.put(name, field);
-        }
-    }
-
-    private class ShapeMatchContext {
-
-        private final Map<Fetcher<?>, Boolean> optimizableMap = new HashMap<>();
-
-        public boolean isOptimizable(ImmutableType type, @Nullable Fetcher<?> fetcher) {
-            if (fetcher != null) {
-                return optimizableMap.computeIfAbsent(fetcher, this::isOptimizableImpl);
-            }
-            return ctx.options.getUpsertMask(type) != null;
-        }
-
-        private boolean isOptimizableImpl(Fetcher<?> fetcher) {
-            if (fetcher.getFieldMap().size() == 1 &&
-                    ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty() &&
-                    fetcher.getFieldMap().values().iterator().next().getProp().isId()) {
-                return true;
-            }
-            UpsertMask<?> mask = ctx.options.getUpsertMask(fetcher.getImmutableType());
-            if (mask == null) {
-                return true;
-            }
-            if (mask.getInsertablePaths() != null) {
-                for (Field field : fetcher.getFieldMap().values()) {
-                    ImmutableProp prop = field.getProp();
-                    boolean matched = false;
-                    for (List<ImmutableProp> path : mask.getInsertablePaths()) {
-                        if (path.get(0) == prop) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (!matched) {
-                        return false;
-                    }
-                }
-            }
-            if (mask.getUpdatablePaths() != null) {
-                for (Field field : fetcher.getFieldMap().values()) {
-                    ImmutableProp prop = field.getProp();
-                    boolean matched = false;
-                    for (List<ImmutableProp> path : mask.getUpdatablePaths()) {
-                        if (path.get(0) == prop) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (!matched) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-    }
 }

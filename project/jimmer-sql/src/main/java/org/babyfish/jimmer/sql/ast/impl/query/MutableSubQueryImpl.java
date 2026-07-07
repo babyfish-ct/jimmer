@@ -6,9 +6,11 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
-import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutationQuerySupport;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -470,7 +472,7 @@ public class MutableSubQueryImpl
         if (this.parent == null) {
             this.parent = parent;
             ctx = parent.getContext();
-        } else if (!MutableDeleteImpl.isCompatible(this.parent, parent)) {
+        } else if (!MutationQuerySupport.isCompatibleParent(this.parent, parent)) {
             throw new IllegalStateException(
                     "The sub query cannot be added to parent query \"" +
                             parent +

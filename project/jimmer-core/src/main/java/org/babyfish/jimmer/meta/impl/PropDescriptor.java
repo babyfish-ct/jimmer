@@ -587,12 +587,12 @@ public class PropDescriptor {
             typeMap.put(ManyToManyView.class, Type.MANY_TO_MANY_VIEW);
 
             families.put(Type.TRANSIENT, setOf());
-            families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class));
-            families.put(Type.VERSION, setOf(Column.class, Default.class, ExcludeFromAllScalars.class));
-            families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class, Default.class, ExcludeFromAllScalars.class));
+            families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class, DatabaseDefault.class));
+            families.put(Type.VERSION, setOf(Column.class, Default.class, DatabaseDefault.class, ExcludeFromAllScalars.class));
+            families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class, Default.class, DatabaseDefault.class, ExcludeFromAllScalars.class));
             families.put(Type.DISCRIMINATOR, setOf(Discriminator.class));
             families.put(Type.FORMULA, setOf(Formula.class));
-            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class, Scalar.class, Serialized.class, Default.class, ExcludeFromAllScalars.class));
+            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class, Scalar.class, Serialized.class, Default.class, DatabaseDefault.class, ExcludeFromAllScalars.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class, MapsId.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class, MapsId.class));
             families.put(Type.ONE_TO_MANY, setOf());

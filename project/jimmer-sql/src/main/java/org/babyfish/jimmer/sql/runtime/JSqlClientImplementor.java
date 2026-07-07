@@ -79,6 +79,10 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isDefaultTypeChangeAllowed();
 
+    boolean isDefaultSaveReturningEnabled();
+
+    boolean isDefaultSaveResultReadsAllProperties();
+
     boolean isBatchForbidden(boolean dumbBatchAcceptable);
 
     boolean isUpsertWithUniqueConstraintSupported(ImmutableType type);

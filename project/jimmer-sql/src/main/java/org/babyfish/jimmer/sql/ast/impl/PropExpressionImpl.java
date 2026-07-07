@@ -215,6 +215,9 @@ public class PropExpressionImpl<T>
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder, boolean ignoreBrackets) {
+        if (abstractBuilder.renderValueGetter(this)) {
+            return;
+        }
         SqlBuilder builder = abstractBuilder.assertSimple();
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
         EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.meta;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -92,6 +93,32 @@ public final class InheritanceInfo {
         return Collections.unmodifiableList(types);
     }
 
+    public boolean isPropAvailableInTable(@NotNull ImmutableProp prop, @NotNull ImmutableType tableType) {
+        if (strategy != InheritanceType.JOINED) {
+            return true;
+        }
+        if (prop.isId() || prop.toOriginal().isId()) {
+            return true;
+        }
+        return isDeclaringTypeAvailableInTable(prop.toOriginal().getDeclaringType(), tableType);
+    }
+
+    @Nullable
+    public ImmutableType getTableTypeForProp(@NotNull ImmutableProp prop, @NotNull ImmutableType type) {
+        if (strategy != InheritanceType.JOINED) {
+            return type;
+        }
+        if (prop.isId() || prop.toOriginal().isId()) {
+            return type;
+        }
+        for (ImmutableType tableType = type; tableType != null; tableType = tableType.getPrimarySuperType()) {
+            if (tableType.isEntity() && isPropAvailableInTable(prop, tableType)) {
+                return tableType;
+            }
+        }
+        return null;
+    }
+
     public Map<Object, ImmutableType> getDiscriminatorTypeMap() {
         Map<Object, ImmutableType> map = new LinkedHashMap<>();
         for (ImmutableType type : getConcreteTypes()) {
@@ -110,6 +137,17 @@ public final class InheritanceInfo {
             return Enum.valueOf((Class<Enum>) propType, value);
         }
         return value;
+    }
+
+    private static boolean isDeclaringTypeAvailableInTable(ImmutableType declaringType, ImmutableType tableType) {
+        if (declaringType == tableType) {
+            return true;
+        }
+        if (!declaringType.isMappedSuperclass() || !tableType.getAllTypes().contains(declaringType)) {
+            return false;
+        }
+        ImmutableType superType = tableType.getPrimarySuperType();
+        return superType == null || !superType.getAllTypes().contains(declaringType);
     }
 
     @Override

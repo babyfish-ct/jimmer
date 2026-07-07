@@ -9,14 +9,24 @@ public class StatementContext {
 
     private final FilterLevel filterLevel;
 
+    private final boolean rootUserFiltersIgnored;
+
     public StatementContext(ExecutionPurpose purpose) {
-        this.purpose = purpose;
-        this.filterLevel = FilterLevel.DEFAULT;
+        this(purpose, FilterLevel.DEFAULT);
     }
 
     public StatementContext(ExecutionPurpose purpose, FilterLevel filterLevel) {
+        this(purpose, filterLevel, false);
+    }
+
+    public StatementContext(
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel,
+            boolean rootUserFiltersIgnored
+    ) {
         this.purpose = purpose;
         this.filterLevel = filterLevel;
+        this.rootUserFiltersIgnored = rootUserFiltersIgnored;
     }
 
     public ExecutionPurpose getPurpose() {
@@ -27,11 +37,16 @@ public class StatementContext {
         return filterLevel;
     }
 
+    public boolean isRootUserFiltersIgnored() {
+        return rootUserFiltersIgnored;
+    }
+
     @Override
     public String toString() {
         return "StatementContext{" +
                 "purpose=" + purpose +
                 ", filterLevel=" + filterLevel +
+                ", rootUserFiltersIgnored=" + rootUserFiltersIgnored +
                 '}';
     }
 }

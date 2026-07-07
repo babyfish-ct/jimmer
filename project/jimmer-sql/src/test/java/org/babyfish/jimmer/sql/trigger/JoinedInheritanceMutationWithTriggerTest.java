@@ -25,7 +25,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
 
     private static final String POLYMORPHIC_OLD_ROW_SQL =
             "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
-                    "tb_1__sub_1_.TAX_CODE, tb_1__sub_2_.FIRST_NAME, tb_1__sub_2_.LAST_NAME " +
+                    "tb_1_.DESCRIPTION, tb_1__sub_1_.TAX_CODE, tb_1__sub_1_.STATUS, " +
+                    "tb_1__sub_2_.FIRST_NAME, tb_1__sub_2_.LAST_NAME " +
                     "from JOINED_CLIENT tb_1_ " +
                     "left join JOINED_ORGANIZATION tb_1__sub_1_ " +
                     "on tb_1__sub_1_.ID = tb_1_.ID and tb_1_.CLIENT_TYPE = ? " +
@@ -57,7 +58,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                        "tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
                                         "from JOINED_CLIENT tb_1_ " +
                                         "inner join JOINED_ORGANIZATION tb_1__sub " +
                                         "on tb_1_.ID = tb_1__sub.ID " +
@@ -97,7 +99,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                        "tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
                                         "from JOINED_CLIENT tb_1_ " +
                                         "inner join JOINED_ORGANIZATION tb_1__sub " +
                                         "on tb_1_.ID = tb_1__sub.ID " +
@@ -154,7 +157,8 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1__sub.TAX_CODE " +
+                                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, " +
+                                        "tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
                                         "from JOINED_CLIENT tb_1_ " +
                                         "inner join JOINED_ORGANIZATION tb_1__sub " +
                                         "on tb_1_.ID = tb_1__sub.ID " +
@@ -222,12 +226,12 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
         );
         assertEvents(
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Explicit\",\"taxCode\":\"GLOBEX-EXPLICIT\"}, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Explicit\",\"taxCode\":\"GLOBEX-EXPLICIT\"}, " +
                         "--->reason=null" +
                         "}"
@@ -284,17 +288,17 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
         );
         assertEvents(
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Person\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Person\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Person\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
                         "--->reason=null" +
                         "}"
@@ -363,17 +367,17 @@ public class JoinedInheritanceMutationWithTriggerTest extends AbstractTriggerTes
         );
         assertEvents(
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Person Upsert\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Person Upsert\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
-                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}, " +
+                        "--->oldEntity={\"type\":\"ORG\",\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-001\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}, " +
                         "--->newEntity={\"id\":200,\"name\":\"Globex Person Upsert\",\"firstName\":\"Gary\",\"lastName\":\"Stone\"}, " +
                         "--->reason=null" +
                         "}",

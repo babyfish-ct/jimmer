@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -58,6 +59,38 @@ public class DMLTest extends AbstractMutationTest {
                         it.sql("update BOOK_STORE tb_1_ set WEBSITE = null");
                     });
                     ctx.rowCount(2);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateByParentTableSubQuery() {
+        executeAndExpectRowCount(
+                getLambdaClient().createUpdate(BookTable.class, (u, book) -> {
+                    u.set(book.price(), book.price().plus(BigDecimal.ONE));
+                    u.where(
+                            book.edition().lt(
+                                    getLambdaClient().createSubQuery(u, BookTable.class, (sq, book2) -> {
+                                        sq.where(book2.id().eq(book.id()));
+                                        return sq.select(book2.edition());
+                                    })
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK tb_1_ " +
+                                        "set PRICE = tb_1_.PRICE + ? " +
+                                        "where tb_1_.EDITION < (" +
+                                        "--->select tb_2_.EDITION " +
+                                        "--->from BOOK tb_2_ " +
+                                        "--->where tb_2_.ID = tb_1_.ID" +
+                                        ")"
+                        );
+                        it.variables(BigDecimal.ONE);
+                    });
+                    ctx.rowCount(0);
                 }
         );
     }
