@@ -560,14 +560,17 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
     }
 
     private boolean isFakeUpdateCandidate(ImmutableProp prop) {
+        // This runs before Metadata.register(type), so do not resolve storage,
+        // dependencies, embedded type or association target type here.
         ImmutablePropCategory category = prop.getCategory();
-        if (category.isList()) {
+        if (category.isList() ||
+                prop.isTransient() ||
+                prop.isFormula() ||
+                prop.getSqlTemplate() != null ||
+                isViewProp(prop)) {
             return false;
         }
         if (category == ImmutablePropCategory.REFERENCE) {
-            if (prop.isTransient() || prop.isFormula() || prop.isView()) {
-                return false;
-            }
             Annotation associationAnnotation = prop.getAssociationAnnotation();
             if (associationAnnotation instanceof OneToOne &&
                     !((OneToOne) associationAnnotation).mappedBy().isEmpty()) {
@@ -580,13 +583,19 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
             if (prop.getAnnotation(JoinTable.class) != null) {
                 return false;
             }
-        } else if (!prop.isColumnDefinition()) {
+        } else if (category != ImmutablePropCategory.SCALAR) {
             return false;
         }
         InheritanceInfo inheritanceInfo = getInheritanceInfo();
         return inheritanceInfo == null ||
                 inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
                 inheritanceInfo.isPropAvailableInTable(prop, this);
+    }
+
+    private static boolean isViewProp(ImmutableProp prop) {
+        Class<? extends Annotation> primaryAnnotationType = prop.getPrimaryAnnotationType();
+        return primaryAnnotationType == IdView.class ||
+                primaryAnnotationType == ManyToManyView.class;
     }
 
     private static int fakeUpdatePriority(ImmutableProp prop, Set<ImmutableProp> keyProps) {
@@ -602,7 +611,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
         if (prop.getCategory() == ImmutablePropCategory.REFERENCE) {
             return 40;
         }
-        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+        if (prop.getElementClass().getAnnotation(Embeddable.class) != null) {
             return 50;
         }
         if (prop.isLogicalDeleted()) {
