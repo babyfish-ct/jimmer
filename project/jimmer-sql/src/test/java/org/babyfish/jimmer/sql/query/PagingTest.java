@@ -583,6 +583,76 @@ public class PagingTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testGroupByFetchPage() {
+        PageFactory<Tuple2<String, Long>, Page<Tuple2<String, Long>>> pageFactory =
+                (entities, totalCount, source) -> new Page<>(entities, totalCount);
+        BookTable table = BookTable.$;
+
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .groupBy(table.store().name())
+                        .orderBy(table.store().name())
+                        .select(table.store().name(), Expression.rowCount())
+                        .fetchPage(0, 1, con, pageFactory),
+                ctx -> {
+                    ctx.sql(
+                            "select count(1) " +
+                                    "from (" +
+                                    "select tb_2_.NAME, count(1) " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "group by tb_2_.NAME" +
+                                    ") tb_simple_count__"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_2_.NAME, count(1) " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "group by tb_2_.NAME " +
+                                    "order by tb_2_.NAME asc " +
+                                    "limit ?"
+                    ).variables(1);
+                    ctx.rows(it -> {
+                        Page<Tuple2<String, Long>> page = it.get(0);
+                        Assertions.assertEquals(2, page.totalRowCount);
+                        Assertions.assertEquals(1, page.entities.size());
+                        Assertions.assertEquals("MANNING", page.entities.get(0).get_1());
+                        Assertions.assertEquals(3L, page.entities.get(0).get_2());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testGroupByFetchUnlimitedCount() {
+        BookTable table = BookTable.$;
+
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .groupBy(table.store().name())
+                        .having(Expression.rowCount().gt(3L))
+                        .select(table.store().name())
+                        .fetchUnlimitedCount(con),
+                ctx -> {
+                    ctx.sql(
+                            "select count(1) " +
+                                    "from (" +
+                                    "select tb_2_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "group by tb_2_.NAME " +
+                                    "having count(1) > ?" +
+                                    ") tb_simple_count__"
+                    );
+                    ctx.variables(3L);
+                    ctx.rows(Arrays.asList(1L));
+                }
+        );
+    }
+
+    @Test
     public void testIssue1192() {
         BookTable table = BookTable.$;
         connectAndExpect(con ->
