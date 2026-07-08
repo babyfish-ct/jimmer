@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.model.classic.store
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.kt.model.calc.BookStoreAvgPriceResolver
 import org.babyfish.jimmer.sql.kt.model.calc.BookStoreNameWithVersionResolver
+import org.babyfish.jimmer.sql.kt.model.calc.BookStoreResolverPropNameResolver
 import org.babyfish.jimmer.sql.kt.model.calc.BookStoreNewestBooksResolver
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import java.math.BigDecimal
@@ -42,6 +43,9 @@ interface BookStore {
 
     @Transient(BookStoreNameWithVersionResolver::class)
     val nameWithVersion: String
+
+    @Transient(BookStoreResolverPropNameResolver::class)
+    val resolverPropName: String
 
     /**
      * The website property

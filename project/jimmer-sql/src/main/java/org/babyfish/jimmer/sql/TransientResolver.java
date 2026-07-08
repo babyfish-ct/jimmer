@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.cache.PropCacheInvalidator;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.babyfish.jimmer.sql.loader.TransientResolverContext;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -35,6 +36,22 @@ public interface TransientResolver<ID, V> extends PropCacheInvalidator {
      * @return A map contains resolved values
      */
     Map<ID, V> resolve(Collection<ID> ids);
+
+    /**
+     * Resolve transient values with the current calculation context.
+     *
+     * <p>This method is binary compatible for existing resolvers because it has a default
+     * implementation that delegates to {@link #resolve(Collection)}.</p>
+     *
+     * @param ids A batch of ids of the current objects that are resolving calculated property,
+     *            it is not null and not empty
+     * @param ctx The current transient resolver context, including connection and property metadata.
+     * @return A map contains resolved values
+     */
+    @ApiStatus.Experimental
+    default Map<ID, V> resolve(Collection<ID> ids, TransientResolverContext ctx) {
+        return resolve(ids);
+    }
 
     /**
      * Please ignore this method if the current calculated property
