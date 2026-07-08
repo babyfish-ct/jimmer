@@ -49,7 +49,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                             "select tb_1_.ID, coalesce(avg(tb_2_.PRICE), ?) " +
                                     "from BOOK_STORE tb_1_ " +
                                     "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
-                                    "where tb_1_.ID in (?) group by tb_1_.ID"
+                                    "where tb_1_.ID = ? group by tb_1_.ID"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
@@ -153,7 +153,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                                     "--->) core__ " +
                                     "--->where rownum <= ?" +
                                     ") limited__ where rn__ > ?"
-                    ).variables(7, 2);
+                    ).variables(7L, 2L);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -161,45 +161,35 @@ public class OracleQueryTest extends AbstractQueryTest {
                                     "--->--->\"name\":\"Effective TypeScript\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":73," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":80," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
                                     "--->--->\"price\":81," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":80," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
                                     "--->--->\"name\":\"Learning GraphQL\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":51," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}" +
                                     "]"
                     );
@@ -245,7 +235,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                                     "inner join BOOK optimize_ " +
                                     "--->on optimize_.ID = optimize_core_.optimize_core_id_ " +
                                     "order by optimize_core_.optimize_rn__"
-                    ).variables(7, 2);
+                    ).variables(7L, 2L);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -253,45 +243,35 @@ public class OracleQueryTest extends AbstractQueryTest {
                                     "--->--->\"name\":\"Effective TypeScript\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":73," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":80," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
                                     "--->--->\"price\":81," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":80," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
                                     "--->--->\"name\":\"Learning GraphQL\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":51," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}" +
                                     "]"
                     );
@@ -344,36 +324,28 @@ public class OracleQueryTest extends AbstractQueryTest {
                                     "--->--->\"name\":\"Effective TypeScript\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":88," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":80," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
                                     "--->--->\"name\":\"Learning GraphQL\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":51," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
                                     "--->--->\"name\":\"Programming TypeScript\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":48," +
-                                    "--->--->\"store\":{" +
-                                    "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
-                                    "--->--->}" +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->}" +
                                     "]"
                     );
