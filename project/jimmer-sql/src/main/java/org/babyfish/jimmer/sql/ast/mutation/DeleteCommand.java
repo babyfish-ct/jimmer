@@ -1,18 +1,20 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Executable;
 
-import java.util.function.Consumer;
-
 public interface DeleteCommand extends Executable<DeleteResult> {
 
     @NewChain
     DeleteCommand setMode(DeleteMode mode);
+
+    @NewChain
+    DeleteCommand setTypeMatchMode(TypeMatchMode mode);
 
     @NewChain
     DeleteCommand setMaxCommandJoinCount(int count);

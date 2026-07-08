@@ -7,7 +7,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
@@ -92,6 +95,32 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     }
 
     protected abstract Collection<T> getSuperTypes(T baseType);
+
+    @Nullable
+    protected T getType(String qualifiedName) {
+        T baseType = getBaseType();
+        if (baseType.getQualifiedName().equals(qualifiedName)) {
+            return baseType;
+        }
+        for (T superType : getSuperTypes(baseType)) {
+            if (superType.getQualifiedName().equals(qualifiedName)) {
+                return superType;
+            }
+        }
+        return null;
+    }
+
+    protected Collection<T> getDirectSubTypes(T baseType) {
+        return Collections.emptyList();
+    }
+
+    protected boolean isSameType(T baseType1, T baseType2) {
+        return baseType1.getQualifiedName().equals(baseType2.getQualifiedName());
+    }
+
+    protected boolean isInstantiable(T baseType) {
+        return true;
+    }
 
     protected abstract Map<String, P> getDeclaredProps(T baseType);
 

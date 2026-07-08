@@ -9,13 +9,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class EntityEvent<E> implements DatabaseEvent {
 
     private final Object id;
 
     private final ImmutableType immutableType;
+
+    private final Set<ImmutableType> affectedTypes;
 
     private final E oldEntity;
 
@@ -34,6 +39,7 @@ public class EntityEvent<E> implements DatabaseEvent {
     private EntityEvent(ImmutableType immutableType, Object id, Connection con, Object reason) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.immutableType = Objects.requireNonNull(immutableType, "immutable type cannot be null");
+        this.affectedTypes = Collections.singleton(immutableType);
         this.oldEntity = null;
         this.newEntity = null;
         this.oldLogicalDeleted = false;
@@ -87,19 +93,22 @@ public class EntityEvent<E> implements DatabaseEvent {
         }
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
         ImmutableSpi ne = (ImmutableSpi) newEntity;
+        ImmutableType oldType = oe != null ? oe.__type() : null;
+        ImmutableType newType = ne != null ? ne.__type() : null;
         if (oe != null && ne != null) {
-            if (oe.__type() != ne.__type()) {
-                throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
+            immutableType = commonType(oldType, newType);
+            if (immutableType == null) {
+                throw new IllegalArgumentException("oldEntity and newEntity must belong to same inheritance hierarchy");
             }
+        } else if (oe != null) {
+            immutableType = oldType;
+        } else {
+            immutableType = newType;
         }
+        affectedTypes = affectedTypes(oldType, newType);
         oldLogicalDeleted = ImmutableObjects.isLogicalDeleted(oldEntity);
         newLogicalDeleted = ImmutableObjects.isLogicalDeleted(newEntity);
-        if (oe != null) {
-            immutableType = oe.__type();
-        } else {
-            immutableType = ne.__type();
-        }
-        PropId idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
+        PropId idPropId = immutableType.getIdProp().getId();
         Object oldId = null;
         if (oe != null && oe.__isLoaded(idPropId)) {
             oldId = oe.__get(idPropId);
@@ -158,7 +167,7 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @Override
     public boolean isChanged(ImmutableProp prop) {
-        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+        if (!isPropAvailable(prop)) {
             return false;
         }
         return getChangedRef(prop) != null;
@@ -184,6 +193,11 @@ public class EntityEvent<E> implements DatabaseEvent {
     @NotNull
     public ImmutableType getImmutableType() {
         return immutableType;
+    }
+
+    @NotNull
+    public Set<ImmutableType> getAffectedTypes() {
+        return affectedTypes;
     }
 
     @NotNull
@@ -276,8 +290,8 @@ public class EntityEvent<E> implements DatabaseEvent {
         if (ImmutableObjects.isLogicalDeleted(ne)) {
             ne = null;
         }
-        boolean oldLoaded = oe != null && oe.__isLoaded(propId);
-        boolean newLoaded = ne != null && ne.__isLoaded(propId);
+        boolean oldLoaded = isLoaded(oe, prop);
+        boolean newLoaded = isLoaded(ne, prop);
         if (!oldLoaded && !newLoaded) {
             throw new IllegalStateException(
                     "Cannot get the unchanged the value of \"" +
@@ -365,7 +379,7 @@ public class EntityEvent<E> implements DatabaseEvent {
             return null;
         }
         if (oe == null) {
-            if (!ne.__isLoaded(propId)) {
+            if (!isLoaded(ne, prop)) {
                 return null;
             }
             T newValue = (T)ne.__get(propId);
@@ -374,7 +388,7 @@ public class EntityEvent<E> implements DatabaseEvent {
             }
             return new ChangedRef<>(null, newValue);
         } else if (ne == null) {
-            if (!oe.__isLoaded(propId)) {
+            if (!isLoaded(oe, prop)) {
                 return null;
             }
             T oldValue = (T)oe.__get(propId);
@@ -383,11 +397,18 @@ public class EntityEvent<E> implements DatabaseEvent {
             }
             return new ChangedRef<>(oldValue, null);
         } else {
-            if (!oe.__isLoaded(propId) || !ne.__isLoaded(propId)) {
+            boolean oldCompatible = isCompatible(oe, prop);
+            boolean newCompatible = isCompatible(ne, prop);
+            boolean oldLoaded = oldCompatible && oe.__isLoaded(propId);
+            boolean newLoaded = newCompatible && ne.__isLoaded(propId);
+            if (oldCompatible && newCompatible && (!oldLoaded || !newLoaded)) {
                 return null;
             }
-            T oldValue = (T)oe.__get(propId);
-            T newValue = (T)ne.__get(propId);
+            if (!oldLoaded && !newLoaded) {
+                return null;
+            }
+            T oldValue = oldLoaded ? (T)oe.__get(propId) : null;
+            T newValue = newLoaded ? (T)ne.__get(propId) : null;
             if (valueEqual(prop, oldValue, newValue)) {
                 return null;
             }
@@ -474,17 +495,56 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     private void validateProp(ImmutableProp prop) {
         validateState();
-        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+        if (!isPropAvailable(prop)) {
             throw new IllegalArgumentException(
                     "The argument `prop` cannot be \"" +
                             prop +
                             "\", it declaring type \"" +
                             prop.getDeclaringType() +
-                            "\" is not assignable from the current type \"" +
-                            getImmutableType() +
+                            "\" is not assignable from any current type \"" +
+                            affectedTypes +
                             "\""
             );
         }
+    }
+
+    private boolean isPropAvailable(ImmutableProp prop) {
+        for (ImmutableType type : affectedTypes) {
+            if (prop.getDeclaringType().isAssignableFrom(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isLoaded(ImmutableSpi spi, ImmutableProp prop) {
+        return isCompatible(spi, prop) &&
+                spi.__isLoaded(prop.getId());
+    }
+
+    private boolean isCompatible(ImmutableSpi spi, ImmutableProp prop) {
+        return spi != null &&
+                prop.getDeclaringType().isAssignableFrom(spi.__type());
+    }
+
+    private static ImmutableType commonType(ImmutableType oldType, ImmutableType newType) {
+        for (ImmutableType type : oldType.getAllTypes()) {
+            if (type.isAssignableFrom(newType)) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+    private static Set<ImmutableType> affectedTypes(ImmutableType oldType, ImmutableType newType) {
+        Set<ImmutableType> types = new LinkedHashSet<>();
+        if (oldType != null) {
+            types.addAll(oldType.getAllTypes());
+        }
+        if (newType != null) {
+            types.addAll(newType.getAllTypes());
+        }
+        return Collections.unmodifiableSet(types);
     }
 
     @Override

@@ -73,6 +73,18 @@ class ImmutableProp(
                 "the property whose type is kotlin value class is not supported now"
             )
         }
+        val defaultAnnotation = propDeclaration.annotation(Default::class)
+        val databaseDefault = propDeclaration.annotation(DatabaseDefault::class)
+        if (defaultAnnotation !== null && databaseDefault !== null) {
+            throw MetaException(
+                propDeclaration,
+                "the property cannot be decorated by both \"@" +
+                    Default::class.java.name +
+                    "\" and \"@" +
+                    DatabaseDefault::class.java.name +
+                    "\""
+            )
+        }
         if (propDeclaration.annotation(LogicalDeleted::class) !== null) {
             val declaration = realDeclaration
             val typeName = if (declaration is KSClassDeclaration && declaration.classKind == ClassKind.ENUM_CLASS) {
@@ -96,7 +108,7 @@ class ImmutableProp(
                         "boolean, int, enum, UUID, LocalDateTime or Instant"
                 )
             }
-            if (propDeclaration.annotation(Default::class) !== null) {
+            if (defaultAnnotation !== null) {
                 val isValid = when (typeName) {
                     "kotlin.Int", "<enum>" -> true
                     else -> false
@@ -155,6 +167,9 @@ class ImmutableProp(
 
     val isKotlinFormula: Boolean =
         annotation(Formula::class) !== null && !propDeclaration.isAbstract()
+
+    val isDiscriminator: Boolean =
+        annotation(Discriminator::class) !== null
 
     override val isList: Boolean
         get() = if (isKotlinFormula || annotations { true }.any { isExplicitScalar(it, mutableSetOf()) }) {
@@ -225,6 +240,9 @@ class ImmutableProp(
     override val isNullable: Boolean
         get() = _isNullable
 
+    val targetClassName: ClassName =
+        targetDeclaration.nestedClassName()
+
     init {
         val descriptor = PropDescriptor
             .newBuilder(
@@ -255,6 +273,13 @@ class ImmutableProp(
             .build()
         primaryAnnotationType = descriptor.type.annotationType
         _isNullable = descriptor.isNullable
+        if (isDiscriminator && typeName(overrideNullable = false) != STRING &&
+            (realDeclaration as? KSClassDeclaration)?.classKind != ClassKind.ENUM_CLASS) {
+            throw MetaException(
+                propDeclaration,
+                "the property decorated by @${Discriminator::class.qualifiedName} must return kotlin.String or enum"
+            )
+        }
     }
 
     private val isAssociation: Boolean =
@@ -281,9 +306,6 @@ class ImmutableProp(
 
     override fun isAssociation(entityLevel: Boolean): Boolean =
         isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
-
-    val targetClassName: ClassName =
-        targetDeclaration.nestedClassName()
 
     fun targetTypeName(
         draft: Boolean = false,
@@ -363,6 +385,31 @@ class ImmutableProp(
         propDeclaration.annotations {
             it.fullName == KEY_FULL_NAME
         }.isNotEmpty()
+
+    init {
+        if (annotation(DatabaseDefault::class) !== null) {
+            if (isId ||
+                isKey ||
+                isVersion ||
+                isLogicalDeleted ||
+                isAssociation ||
+                isEmbedded ||
+                isFormula ||
+                isTransient ||
+                idViewBaseProp !== null ||
+                manyToManyViewBaseProp !== null
+            ) {
+                throw MetaException(
+                    propDeclaration,
+                    "the property decorated by \"@" +
+                        DatabaseDefault::class.java.name +
+                        "\" must be a scalar column property " +
+                        "and cannot be id, key, version, logical deleted, association, embedded, " +
+                        "formula, transient or view"
+                )
+            }
+        }
+    }
 
     val isPrimitive: Boolean =
         if (!isList && !isNullable) {

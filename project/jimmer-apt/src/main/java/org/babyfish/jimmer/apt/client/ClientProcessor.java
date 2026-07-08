@@ -17,6 +17,7 @@ import org.babyfish.jimmer.client.meta.impl.*;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.impl.util.StringUtil;
+import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
@@ -811,7 +812,45 @@ public class ClientProcessor {
                     }
                 }
             }
+            if (typeElement.getKind() == ElementKind.INTERFACE) {
+                for (Element enclosedElement : typeElement.getEnclosedElements()) {
+                    if (!(enclosedElement instanceof TypeElement) ||
+                            enclosedElement.getKind() != ElementKind.CLASS ||
+                            !isPolymorphicBranch(typeElement, (TypeElement) enclosedElement)) {
+                        continue;
+                    }
+                    TypeElement branchElement = (TypeElement) enclosedElement;
+                    builder.typeRef(type -> {
+                        type.setTypeName(typeName(branchElement));
+                        typeDefinition.addPolymorphicBranch(type);
+                    });
+                }
+            }
         }
+    }
+
+    private boolean isPolymorphicBranch(TypeElement ownerElement, TypeElement branchElement) {
+        TypeMirror ownerType = context.getTypes().erasure(ownerElement.asType());
+        String markerName = GeneratedPolymorphicDtoBranch.class.getName();
+        for (AnnotationMirror annotationMirror : branchElement.getAnnotationMirrors()) {
+            Element annotationElement = annotationMirror.getAnnotationType().asElement();
+            if (!(annotationElement instanceof TypeElement) ||
+                    !((TypeElement) annotationElement).getQualifiedName().contentEquals(markerName)) {
+                continue;
+            }
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e :
+                    annotationMirror.getElementValues().entrySet()) {
+                if (e.getKey().getSimpleName().contentEquals("value") &&
+                        e.getValue().getValue() instanceof TypeMirror) {
+                    return context.getTypes().isSameType(
+                            context.getTypes().erasure((TypeMirror) e.getValue().getValue()),
+                            ownerType
+                    );
+                }
+            }
+            return false;
+        }
+        return false;
     }
 
     private void fillEnumDefinition(TypeElement typeElement) {

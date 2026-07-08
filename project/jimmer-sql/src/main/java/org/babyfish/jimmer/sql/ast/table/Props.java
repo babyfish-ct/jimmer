@@ -37,10 +37,6 @@ public interface Props {
 
     <XT extends Table<?>> XT join(String prop, JoinType joinType);
 
-    <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs);
-
-    <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs);
-
     <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop);
 
     <XT extends Table<?>> XT inverseJoin(ImmutableProp prop);

@@ -69,6 +69,9 @@ public abstract class Context {
                     for (Property property : objectType.getProperties().values()) {
                         initSource(property.getType(), handledTypes);
                     }
+                    for (ObjectType branch : objectType.getPolymorphicBranches()) {
+                        initSource(branch, handledTypes);
+                    }
             }
         } else if (type instanceof NullableType) {
             initSource(((NullableType)type).getTargetType(), handledTypes);

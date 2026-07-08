@@ -1,0 +1,17 @@
+export org.babyfish.jimmer.client.kotlin.model.inheritance.KClient
+    -> package org.babyfish.jimmer.client.kotlin.model.dto
+
+KClientView {
+    id
+    type
+    name
+
+    #types {
+        KPerson {
+            firstName
+        }
+        KOrganization {
+            taxCode
+        }
+    }
+}

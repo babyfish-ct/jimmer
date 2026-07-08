@@ -50,7 +50,7 @@ public class DtoProcessor {
 
         for (DtoFile dtoFile : dtoContext.getDtoFiles()) {
             try {
-                compiler = new AptDtoCompiler(dtoFile, elements, defaultNullableInputModifier);
+                compiler = new AptDtoCompiler(dtoFile, context, elements, defaultNullableInputModifier);
             } catch (DtoAstException ex) {
                 throw new DtoException(
                         "Failed to parse \"" +
@@ -82,8 +82,8 @@ public class DtoProcessor {
                 continue;
             }
             if (typeElement.getAnnotation(Entity.class) == null &&
-            typeElement.getAnnotation(Embeddable.class) == null &&
-            typeElement.getAnnotation(Immutable.class) == null) {
+                    typeElement.getAnnotation(Embeddable.class) == null &&
+                    typeElement.getAnnotation(Immutable.class) == null) {
                 throw new DtoException(
                         "Failed to parse \"" +
                                 dtoFile.getAbsolutePath() +

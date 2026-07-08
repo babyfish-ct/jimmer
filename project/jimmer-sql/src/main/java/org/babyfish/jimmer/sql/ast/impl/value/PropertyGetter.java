@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -109,6 +110,20 @@ public interface PropertyGetter extends ValueGetter {
                 null,
                 prop,
                 AbstractValueGetter.createValueGetters(sqlClient, prop, null)
+        );
+    }
+
+    static List<PropertyGetter> discriminatorGetters(
+            JSqlClientImplementor sqlClient,
+            ImmutableProp prop,
+            String columnName
+    ) {
+        return ScalarPropertyGetter.getters(
+                null,
+                prop,
+                Collections.singletonList(
+                        new SimpleValueGetter(sqlClient, prop, prop, null, false, columnName, false)
+                )
         );
     }
 }

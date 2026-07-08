@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutationQuerySupport;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
@@ -177,7 +177,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
                         "The recursive base query cannot be added to statement context"
                 );
             }
-        } else if (!MutableDeleteImpl.isCompatible(this.parent, parent)) {
+        } else if (!MutationQuerySupport.isCompatibleParent(this.parent, parent)) {
             throw new IllegalStateException(
                     "The base query cannot be added to parent query because it is belong to another parent query"
             );

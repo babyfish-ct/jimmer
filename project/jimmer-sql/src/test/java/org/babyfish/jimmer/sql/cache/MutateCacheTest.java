@@ -6,15 +6,18 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationDraft;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.PersonDraft;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+
+import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class MutateCacheTest extends AbstractQueryTest {
 
@@ -544,6 +547,28 @@ public class MutateCacheTest extends AbstractQueryTest {
                                     "where tb_1_.NODE_ID = ?"
                     ).variables(9L);
                 }
+        );
+    }
+
+    @Test
+    public void testChangeInheritanceDerivedType() {
+        lambdaClient.getTriggers().fireEntityTableChange(
+                OrganizationDraft.$.produce(organization -> {
+                    organization.setId(100L);
+                    organization.setName("Acme");
+                    organization.setTaxCode("ACME-TAX");
+                }),
+                PersonDraft.$.produce(person -> {
+                    person.setId(100L);
+                    person.setName("Acme Person");
+                    person.setFirstName("Ann");
+                    person.setLastName("Smith");
+                }),
+                null
+        );
+        Assertions.assertEquals(
+                "[Organization-100, Client-100, Person-100]",
+                cacheOpRecords.toString()
         );
     }
 

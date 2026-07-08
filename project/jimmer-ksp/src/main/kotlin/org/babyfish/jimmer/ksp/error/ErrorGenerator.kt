@@ -5,7 +5,6 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -64,14 +63,14 @@ class ErrorGenerator(
         exceptionSimpleName
     )
 
-    fun generate(allFiles: List<KSFile>) {
+    fun generate() {
         val superType: KClass<*> = if (checkedException) {
             CodeBasedException::class
         } else {
             CodeBasedRuntimeException::class
         }
         codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(false, declaration.containingFile!!),
             declaration.packageName.asString(),
             exceptionSimpleName
         ).use { out ->

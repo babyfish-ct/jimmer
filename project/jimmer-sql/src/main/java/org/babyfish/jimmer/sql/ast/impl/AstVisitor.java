@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -52,6 +51,8 @@ public abstract class AstVisitor {
     public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {}
 
     public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {}
+
+    public void visitOptimisticLockNewValue(ImmutableProp prop) {}
 
     public void visitStatement(AbstractMutableStatementImpl statement) {}
 

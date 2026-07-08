@@ -21,7 +21,6 @@ import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.function.Consumer;
@@ -66,6 +65,12 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     int getDefaultListBatchSize();
 
+    @Nullable
+    Integer getDefaultJdbcFetchSize();
+
+    @Nullable
+    Integer getDefaultJdbcQueryTimeout();
+
     boolean isInListPaddingEnabled();
 
     boolean isExpandedInListPaddingEnabled();
@@ -77,6 +82,12 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     int getMaxCommandJoinCount();
 
     boolean isTargetTransferable();
+
+    boolean isDefaultTypeChangeAllowed();
+
+    boolean isDefaultSaveReturningEnabled();
+
+    boolean isDefaultSaveResultReadsAllProperties();
 
     boolean isBatchForbidden(boolean dumbBatchAcceptable);
 

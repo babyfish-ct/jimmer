@@ -14,11 +14,173 @@ import org.babyfish.jimmer.sql.kt.model.classic.store.*
 import org.babyfish.jimmer.sql.kt.model.embedded.Transform
 import org.babyfish.jimmer.sql.kt.model.embedded.fetchBy
 import org.babyfish.jimmer.sql.kt.model.embedded.id
+import org.babyfish.jimmer.sql.kt.model.inheritance.Role
+import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class CteBaseQueryTest : AbstractQueryTest() {
+
+    @Test
+    fun testNestedSubQueryAndFetchPageInBaseQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val newerEditionCount = subQuery(Book::class) {
+                    where(table.storeId eq parentTable.id)
+                    val edition = table.edition
+                    val storeId = table.storeId
+                    where(
+                        exists(
+                            subQuery(Book::class) {
+                                where(table.storeId eq storeId)
+                                where(table.edition gt edition)
+                                select(table.id)
+                            }
+                        )
+                    )
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(newerEditionCount)
+            }
+        }
+        jdbc { con ->
+            val page = sqlClient.createQuery(baseTable) {
+                orderBy(table._2.desc())
+                select(table._1)
+            }.fetchPage(0, 10, con)
+            assertTrue(page.totalRowCount > 0, "totalRowCount should be > 0")
+            assertTrue(page.rows.isNotEmpty(), "rows should not be empty")
+        }
+    }
+
+    @Test
+    fun testNestedWildSubQueryCanUseParentTableInBaseQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val newerEditionCount = subQuery(Book::class) {
+                    where(table.storeId eq parentTable.id)
+                    where(
+                        exists(
+                            wildSubQuery(Book::class) {
+                                where(table.storeId eq parentTable.storeId)
+                                where(table.edition gt parentTable.edition)
+                            }
+                        )
+                    )
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(newerEditionCount)
+            }
+        }
+        jdbc { con ->
+            val rows = sqlClient.createQuery(baseTable) {
+                orderBy(table._2.desc())
+                select(table._1)
+            }.execute(con)
+            assertTrue(rows.isNotEmpty(), "rows should not be empty")
+        }
+    }
+
+    @Test
+    fun testSubQueryInBaseQueryAndOuterQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val newerEditionCount = subQuery(Book::class) {
+                    where(table.storeId eq parentTable.id)
+                    val edition = table.edition
+                    val storeId = table.storeId
+                    where(
+                        exists(
+                            subQuery(Book::class) {
+                                where(table.storeId eq storeId)
+                                where(table.edition gt edition)
+                                select(table.id)
+                            }
+                        )
+                    )
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(newerEditionCount)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(baseTable) {
+                where(
+                    exists(
+                        subQuery(Book::class) {
+                            where(table.storeId eq parentTable._1.id)
+                            where(parentTable._2 eq 2)
+                            select(table.id)
+                        }
+                    )
+                )
+                select(table._1.name, table._2)
+            }
+        ) {
+            sql(
+                """with tb_1_(c1, c2, c3) as (
+                    |--->select 
+                    |--->--->tb_2_.ID, tb_2_.NAME, 
+                    |--->--->(
+                    |--->--->--->select count(1) 
+                    |--->--->--->from BOOK tb_3_ 
+                    |--->--->--->where 
+                    |--->--->--->--->tb_3_.STORE_ID = tb_2_.ID 
+                    |--->--->--->and 
+                    |--->--->--->--->exists(
+                    |--->--->--->--->--->select 1 
+                    |--->--->--->--->--->from BOOK tb_4_ 
+                    |--->--->--->--->--->where tb_4_.STORE_ID = tb_3_.STORE_ID and tb_4_.EDITION > tb_3_.EDITION
+                    |--->--->--->--->)
+                    |--->--->) 
+                    |--->from BOOK_STORE tb_2_
+                    |) 
+                    |select tb_1_.c2, tb_1_.c3 
+                    |from tb_1_ 
+                    |where exists(
+                    |--->select 1 
+                    |--->from BOOK tb_5_ 
+                    |--->where tb_5_.STORE_ID = tb_1_.c1 and tb_1_.c3 = ?
+                    |)""".trimMargin()
+            )
+            rows("""[{"_1":"MANNING","_2":2}]""")
+        }
+    }
+
+    @Test
+    fun testLogicalDeletedAppliedToSubQueryInBaseQuery() {
+        val baseTable = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                val roleCount = subQuery(Role::class) {
+                    where(table.name like "ADMIN")
+                    select(rowCount())
+                }
+                selections
+                    .add(table)
+                    .add(roleCount)
+            }
+        }
+        clearExecutions()
+        jdbc { con ->
+            sqlClient.createQuery(baseTable) {
+                orderBy(table._2.desc())
+                select(table._1)
+            }.execute(con)
+        }
+        val sql = executions.last().sql
+        assertTrue(
+            sql.contains("DELETED", ignoreCase = true),
+            "logical-deleted filter must be applied to the Role sub-query under createBaseQuery, but SQL was:\n$sql"
+        )
+    }
 
     @Test
     fun testBaseQueryWithFetch() {

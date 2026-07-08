@@ -8,6 +8,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -119,6 +120,8 @@ abstract class AbstractPreHandler implements PreHandler {
     final List<DraftSpi> draftsWithKey = new ArrayList<>();
 
     private Map<Object, ImmutableSpi> idObjMap;
+
+    private Map<Object, ImmutableSpi> rootIdObjMap;
 
     private Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyObjMap;
 
@@ -260,6 +263,58 @@ abstract class AbstractPreHandler implements PreHandler {
         return keyObjMap;
     }
 
+    final boolean isExistingDifferentTypeById(QueryReason queryReason, DraftSpi draft) {
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null ||
+                inheritanceInfo.getRootType() == type) {
+            return false;
+        }
+        ImmutableSpi rootRow = findRootMapByIds(queryReason).get(
+                draft.__get(type.getIdProp().getId())
+        );
+        return rootRow != null && rootRow.__type() != draft.__type();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<Object, ImmutableSpi> findRootMapByIds(QueryReason queryReason) {
+        Map<Object, ImmutableSpi> rootIdObjMap = this.rootIdObjMap;
+        if (rootIdObjMap == null) {
+            ImmutableType type = ctx.path.getType();
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            ImmutableType rootType = inheritanceInfo.getRootType();
+            FetcherImplementor<ImmutableSpi> fetcher =
+                    new FetcherImpl<>((Class<ImmutableSpi>) rootType.getJavaClass())
+                            .add(inheritanceInfo.getDiscriminatorProp().getName());
+            PropId draftIdPropId = type.getIdProp().getId();
+            PropId rootIdPropId = rootType.getIdProp().getId();
+            Set<Object> ids = new LinkedHashSet<>((draftsWithId.size() * 4 + 2) / 3);
+            for (DraftSpi draft : draftsWithId) {
+                if (draft.__isLoaded(draftIdPropId)) {
+                    ids.add(draft.__get(draftIdPropId));
+                }
+            }
+            if (ids.isEmpty()) {
+                rootIdObjMap = Collections.emptyMap();
+            } else {
+                List<ImmutableSpi> rows = Rows.findRows(
+                        ctx.options.getSqlClient(),
+                        ctx.con,
+                        rootType,
+                        queryReason,
+                        fetcher,
+                        (q, t) -> q.where(t.getId().in(ids))
+                );
+                rootIdObjMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
+                for (ImmutableSpi row : rows) {
+                    rootIdObjMap.put(row.__get(rootIdPropId), row);
+                }
+            }
+            this.rootIdObjMap = rootIdObjMap;
+        }
+        return rootIdObjMap;
+    }
+
     boolean isWildObjectAcceptable() {
         return false;
     }
@@ -292,7 +347,7 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     final QueryReason queryReason(boolean hasId, Collection<DraftSpi> drafts) {
-        if (ctx.trigger != null) {
+        if (ctx.trigger != null && !isExplicitJoinedTypeChange(drafts)) {
             return QueryReason.TRIGGER;
         }
         if (ctx.backReferenceFrozen && !ctx.backReferenceProp.isMappedId()) {
@@ -368,18 +423,22 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
             }
             if (!hasId) {
+                ImmutableType keyConstraintType = keyConstraintType();
                 KeyUniqueConstraint constraint = ctx
                         .path
                         .getType()
                         .getJavaClass()
                         .getAnnotation(KeyUniqueConstraint.class);
+                if (constraint == null && keyConstraintType != ctx.path.getType()) {
+                    constraint = keyConstraintType.getJavaClass().getAnnotation(KeyUniqueConstraint.class);
+                }
                 if (constraint == null) {
                     return QueryReason.KEY_UNIQUE_CONSTRAINT_REQUIRED;
                 }
-                if (!sqlClient.isUpsertWithUniqueConstraintSupported(ctx.path.getType())) {
+                if (!sqlClient.isUpsertWithUniqueConstraintSupported(keyConstraintType)) {
                     return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
                 }
-                LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+                LogicalDeletedInfo logicalDeletedInfo = keyConstraintType.getLogicalDeletedInfo();
                 if (logicalDeletedInfo != null &&
                         logicalDeletedInfo.getType() == boolean.class &&
                         !sqlClient.getDialect().isUpsertWithConflictPredicateSupported()) {
@@ -408,6 +467,31 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return QueryReason.NONE;
+    }
+
+    private boolean isExplicitJoinedTypeChange(Collection<DraftSpi> drafts) {
+        if (ctx.options.getMode() == SaveMode.INSERT_IF_ABSENT || drafts.isEmpty()) {
+            return false;
+        }
+        for (DraftSpi draft : drafts) {
+            ImmutableType type = draft.__type();
+            if (!ctx.options.isTypeChangeAllowed(type)) {
+                return false;
+            }
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            if (inheritanceInfo == null ||
+                    inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                    inheritanceInfo.getRootType() == type) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private ImmutableType keyConstraintType() {
+        ImmutableType type = ctx.path.getType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null ? inheritanceInfo.getRootType() : type;
     }
 
     private void callPreProcessor(DraftSpi draft, KeyMatcher.Group group) {
@@ -866,6 +950,9 @@ class UpdatePreHandler extends AbstractPreHandler {
                     ImmutableSpi original = idMap.get(id);
                     if (original != null) {
                         items.add(newItem(draft, original));
+                    } else if (ctx.options.isTypeChangeAllowed(draft.__type()) &&
+                            isExistingDifferentTypeById(queryReason, draft)) {
+                        items.add(newItem(draft, null));
                     } else {
                         itr.remove();
                     }
@@ -970,9 +1057,15 @@ class UpsertPreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     ImmutableSpi original = idMap.get(draft.__get(idPropId));
                     if (original == null) {
-                        insertedList.add(draft);
+                        boolean existingDifferentType = isExistingDifferentTypeById(queryReason, draft);
                         itr.remove();
-                        items.add(newItem(draft, null));
+                        if (ctx.options.isTypeChangeAllowed(draft.__type()) && existingDifferentType && !ignoreUpdate) {
+                            updatedList.add(draft);
+                            items.add(newItem(draft, null));
+                        } else if (!existingDifferentType) {
+                            insertedList.add(draft);
+                            items.add(newItem(draft, null));
+                        }
                     } else if (!ignoreUpdate) {
                         updatedList.add(draft);
                         items.add(newItem(draft, original));

@@ -365,6 +365,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public Integer getDefaultJdbcFetchSize() {
+        return sqlClient().getDefaultJdbcFetchSize();
+    }
+
+    @Override
+    public Integer getDefaultJdbcQueryTimeout() {
+        return sqlClient().getDefaultJdbcQueryTimeout();
+    }
+
+    @Override
     public int getMaxJoinFetchDepth() {
         return sqlClient().getMaxJoinFetchDepth();
     }
@@ -415,6 +425,21 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public boolean isTargetTransferable() {
         return sqlClient().isTargetTransferable();
+    }
+
+    @Override
+    public boolean isDefaultTypeChangeAllowed() {
+        return sqlClient().isDefaultTypeChangeAllowed();
+    }
+
+    @Override
+    public boolean isDefaultSaveReturningEnabled() {
+        return sqlClient().isDefaultSaveReturningEnabled();
+    }
+
+    @Override
+    public boolean isDefaultSaveResultReadsAllProperties() {
+        return sqlClient().isDefaultSaveResultReadsAllProperties();
     }
 
     @Override

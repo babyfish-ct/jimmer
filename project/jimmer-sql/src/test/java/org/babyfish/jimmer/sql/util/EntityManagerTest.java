@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.util;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
+import org.babyfish.jimmer.sql.model.inheritance.Permission;
+import org.babyfish.jimmer.sql.model.inheritance.Role;
 import org.babyfish.jimmer.sql.model.schema.SchemaATable;
 import org.babyfish.jimmer.sql.model.schema.SchemaBTable;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
@@ -63,18 +66,70 @@ public class EntityManagerTest {
     }
 
     @Test
+    public void testBackPropsForInheritance() {
+        EntityManager entityManager = EntityManager.fromResources(null, null);
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject.client",
+                        "org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationProject.organization"
+                ),
+                entityManager
+                        .getAllBackProps(ImmutableType.get(org.babyfish.jimmer.sql.model.inheritance.singletable.Client.class))
+                        .stream()
+                        .map(Object::toString)
+                        .filter(it -> it.startsWith("org.babyfish.jimmer.sql.model.inheritance.singletable."))
+                        .sorted()
+                        .collect(Collectors.toList())
+        );
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject.client",
+                        "org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationProject.organization"
+                ),
+                entityManager
+                        .getAllBackProps(ImmutableType.get(org.babyfish.jimmer.sql.model.inheritance.singletable.Organization.class))
+                        .stream()
+                        .map(Object::toString)
+                        .filter(it -> it.startsWith("org.babyfish.jimmer.sql.model.inheritance.singletable."))
+                        .sorted()
+                        .collect(Collectors.toList())
+        );
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.ClientProject.client",
+                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProject.organization"
+                ),
+                entityManager
+                        .getAllBackProps(ImmutableType.get(org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client.class))
+                        .stream()
+                        .map(Object::toString)
+                        .filter(it -> it.startsWith("org.babyfish.jimmer.sql.model.inheritance.joinedtable."))
+                        .sorted()
+                        .collect(Collectors.toList())
+        );
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.ClientProject.client",
+                        "org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProject.organization"
+                ),
+                entityManager
+                        .getAllBackProps(ImmutableType.get(org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization.class))
+                        .stream()
+                        .map(Object::toString)
+                        .filter(it -> it.startsWith("org.babyfish.jimmer.sql.model.inheritance.joinedtable."))
+                        .sorted()
+                        .collect(Collectors.toList())
+        );
+    }
+
+    @Test
     public void testTableName() {
         MetadataStrategy strategy = new MetadataStrategy(
                 DatabaseSchemaStrategy.IMPLICIT,
                 DefaultDatabaseNamingStrategy.UPPER_CASE,
                 ForeignKeyStrategy.REAL,
                 new H2Dialect(),
-                new ScalarTypeStrategy() {
-                    @Override
-                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
-                        return null;
-                    }
-                },
+                prop -> null,
                 MetaStringResolver.NO_OP
         );
         Assertions.assertEquals(
@@ -102,12 +157,7 @@ public class EntityManagerTest {
                 DefaultDatabaseNamingStrategy.UPPER_CASE,
                 ForeignKeyStrategy.REAL,
                 new H2Dialect(),
-                new ScalarTypeStrategy() {
-                    @Override
-                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
-                        return null;
-                    }
-                },
+                prop -> null,
                 MetaStringResolver.NO_OP
         );
         EntityManager entityManager = new EntityManager(SchemaATable.class, SchemaBTable.class);
@@ -134,12 +184,7 @@ public class EntityManagerTest {
                 DefaultDatabaseNamingStrategy.UPPER_CASE,
                 ForeignKeyStrategy.REAL,
                 new H2Dialect(),
-                new ScalarTypeStrategy() {
-                    @Override
-                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
-                        return null;
-                    }
-                },
+                prop -> null,
                 it -> {
                     if ("SCHEMA_A".equals(it)) {
                         return "";

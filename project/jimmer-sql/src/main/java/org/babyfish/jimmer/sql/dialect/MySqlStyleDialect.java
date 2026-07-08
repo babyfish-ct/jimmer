@@ -23,6 +23,11 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
         return new UpdateJoin(true, UpdateJoin.From.UNNECESSARY);
     }
 
+    @Override
+    public DeleteJoin getDeleteJoin() {
+        return new DeleteJoin(DeleteJoin.From.AS_JOIN);
+    }
+
     public boolean isDeletedAliasRequired() {
         return true;
     }

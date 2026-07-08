@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.KeyMatcher;
+import org.babyfish.jimmer.meta.MappedId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -32,9 +35,18 @@ class Shape {
     }
 
     public static Shape of(JSqlClientImplementor sqlClient, ImmutableSpi spi, Predicate<ImmutableProp> propFilter) {
+        return of(sqlClient, spi.__type(), spi, propFilter);
+    }
+
+    public static Shape of(
+            JSqlClientImplementor sqlClient,
+            ImmutableType type,
+            ImmutableSpi spi,
+            Predicate<ImmutableProp> propFilter
+    ) {
         return new Shape(
-                spi.__type(), 
-                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, withoutMappedIdProps(spi.__type(), propFilter))
+                type,
+                PropertyGetter.entityGetters(sqlClient, type, spi, withoutMappedIdProps(type, propFilter))
         );
     }
 
@@ -146,15 +158,24 @@ class Shape {
     }
 
     public KeyMatcher.Group group(KeyMatcher keyMatcher) {
+        return group(keyMatcher, Collections.emptySet());
+    }
+
+    public KeyMatcher.Group group(KeyMatcher keyMatcher, Collection<ImmutableProp> implicitProps) {
         List<ImmutableProp> props = new ArrayList<>(getters.size());
         for (PropertyGetter getter : getters) {
             props.add(getter.prop());
         }
+        props.addAll(implicitProps);
         return keyMatcher.match(props);
     }
 
     public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher) {
-        KeyMatcher.Group group = group(keyMatcher);
+        return keyProps(keyMatcher, Collections.emptySet());
+    }
+
+    public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher, Collection<ImmutableProp> implicitProps) {
+        KeyMatcher.Group group = group(keyMatcher, implicitProps);
         if (group == null) {
             return Collections.emptySet();
         }

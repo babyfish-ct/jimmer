@@ -32,9 +32,8 @@ class TypedTupleGenerator(
     }
 
     fun generate() {
-        val allFiles = ctx.resolver.getAllFiles().toList()
         ctx.environment.codeGenerator.createNewFile(
-            Dependencies(false, *allFiles.toTypedArray()),
+            Dependencies(false, declaration.containingFile!!),
             declaration.packageName.asString(),
             "${declaration.simpleName.asString()}Mapper"
         ).use {

@@ -166,6 +166,8 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setDefaultEnumStrategy(properties.getDefaultEnumStrategy());
         builder.setDefaultBatchSize(properties.getDefaultBatchSize());
         builder.setDefaultListBatchSize(properties.getDefaultListBatchSize());
+        builder.setDefaultJdbcFetchSize(properties.getDefaultJdbcFetchSize());
+        builder.setDefaultJdbcQueryTimeout(properties.getDefaultJdbcQueryTimeout());
         builder.setInListPaddingEnabled(properties.isInListPaddingEnabled());
         builder.setExpandedInListPaddingEnabled(properties.isExpandedInListPaddingEnabled());
         builder.setDissociationLogicalDeleteEnabled(properties.isDissociationLogicalDeleteEnabled());
@@ -175,6 +177,9 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setMaxCommandJoinCount(properties.getMaxCommandJoinCount());
         builder.setMutationTransactionRequired(properties.isMutationTransactionRequired());
         builder.setTargetTransferable(properties.isTargetTransferable());
+        builder.setDefaultTypeChangeAllowed(properties.isDefaultTypeChangeAllowed());
+        builder.setDefaultSaveReturningEnabled(properties.isDefaultSaveReturningEnabled());
+        builder.setDefaultSaveResultReadsAllProperties(properties.isDefaultSaveResultReadsAllProperties());
         builder.setExplicitBatchEnabled(properties.isExplicitBatchEnabled());
         builder.setDumbBatchAcceptable(properties.isDumbBatchAcceptable());
         builder.setConstraintViolationTranslatable(properties.isConstraintViolationTranslatable());

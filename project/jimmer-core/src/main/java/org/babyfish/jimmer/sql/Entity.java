@@ -8,4 +8,6 @@ import java.lang.annotation.*;
 public @interface Entity {
 
     String microServiceName() default "";
+
+    EntityInstantiability instantiability() default EntityInstantiability.AUTO;
 }

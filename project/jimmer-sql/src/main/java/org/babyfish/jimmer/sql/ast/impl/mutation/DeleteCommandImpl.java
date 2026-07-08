@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -116,6 +117,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         private final DeleteMode mode;
 
+        private final TypeMatchMode typeMatchMode;
+
         private final int maxCommandJoinCount;
 
         private final ExceptionTranslator<?> exceptionTranslator;
@@ -132,6 +135,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
+            TypeMatchModeCfg typeMatchModeCfg = cfg.as(TypeMatchModeCfg.class);
             MaxCommandJoinCountCfg maxCommandJoinCountCfg = cfg.as(MaxCommandJoinCountCfg.class);
             AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg exceptionTranslatorCfg =
                     cfg.as(AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg.class);
@@ -143,6 +147,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.sqlClient = rootCfg.sqlClient;
             this.con = connectionCfg != null ? connectionCfg.con : null;
             this.mode = deleteModeCfg != null ? deleteModeCfg.mode : DeleteMode.AUTO;
+            this.typeMatchMode = typeMatchModeCfg != null ? typeMatchModeCfg.mode : TypeMatchMode.AUTO;
             this.maxCommandJoinCount = maxCommandJoinCountCfg != null ?
                     maxCommandJoinCountCfg.maxCommandJoinCount :
                     sqlClient.getMaxCommandJoinCount();
@@ -171,9 +176,19 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
                 Connection con,
                 DeleteMode mode
         ) {
+            this(sqlClient, con, mode, TypeMatchMode.AUTO);
+        }
+
+        public OptionsImpl(
+                JSqlClientImplementor sqlClient,
+                Connection con,
+                DeleteMode mode,
+                TypeMatchMode typeMatchMode
+        ) {
             this.sqlClient = sqlClient;
             this.con = con;
             this.mode = mode;
+            this.typeMatchMode = typeMatchMode != null ? typeMatchMode : TypeMatchMode.AUTO;
             this.maxCommandJoinCount = sqlClient.getMaxCommandJoinCount();
             this.exceptionTranslator = sqlClient.getExceptionTranslator();
             this.dissociateActionMap = Collections.emptyMap();
@@ -199,6 +214,11 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
         @Override
         public DeleteMode getMode() {
             return mode;
+        }
+
+        @Override
+        public TypeMatchMode getTypeMatchMode() {
+            return typeMatchMode;
         }
 
         @Override
@@ -259,6 +279,11 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
     @Override
     public DeleteCommand setMode(DeleteMode mode) {
         return new DeleteCommandImpl(new DeleteModeCfg(cfg, mode));
+    }
+
+    @Override
+    public DeleteCommand setTypeMatchMode(TypeMatchMode mode) {
+        return new DeleteCommandImpl(new TypeMatchModeCfg(cfg, mode));
     }
 
     @Override

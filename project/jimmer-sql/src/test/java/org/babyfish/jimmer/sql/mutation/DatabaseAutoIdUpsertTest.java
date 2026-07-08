@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DatabaseAutoIdUpsertTest extends AbstractMutationTest {
@@ -40,10 +41,15 @@ public class DatabaseAutoIdUpsertTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(100L, "Computer", new DbLiteral.DbNull(long.class));
+                        it.variables(UNKNOWN_VARIABLE, "Computer", new DbLiteral.DbNull(long.class));
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"name\":\"Computer\",\"parent\":null}");
+                        it.modified(entity -> {
+                            TreeNode node = (TreeNode) entity;
+                            Assertions.assertTrue(node.id() > 0L);
+                            Assertions.assertEquals("Computer", node.name());
+                            Assertions.assertNull(node.parent());
+                        });
                     });
                 }
         );

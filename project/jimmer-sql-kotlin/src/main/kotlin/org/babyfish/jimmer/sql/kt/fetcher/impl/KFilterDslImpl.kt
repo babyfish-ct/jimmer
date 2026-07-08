@@ -51,10 +51,10 @@ internal class KFilterDslImpl<E: Any>(
     }
 
     override val subQueries: KSubQueries<KNonNullTable<E>> by lazy {
-        KSubQueriesImpl(javaQuery)
+        KSubQueriesImpl(javaQuery, table)
     }
 
     override val wildSubQueries: KWildSubQueries<KNonNullTable<E>> by lazy {
-        KWildSubQueriesImpl(javaQuery)
+        KWildSubQueriesImpl(javaQuery, table)
     }
 }

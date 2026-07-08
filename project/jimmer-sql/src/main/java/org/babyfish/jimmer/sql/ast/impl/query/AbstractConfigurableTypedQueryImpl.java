@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.JdbcOptions;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
@@ -59,6 +60,11 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     @Override
+    public JdbcOptions getJdbcOptions() {
+        return data.jdbcOptions;
+    }
+
+    @Override
     public JSqlClientImplementor getSqlClient() {
         return mutableQuery.getSqlClient();
     }
@@ -82,12 +88,44 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             } else {
                 mutableQuery.accept(visitor, data.oldSelections, data.withoutSortingAndPaging);
                 for (Selection<?> selection : data.selections) {
-                    Ast.from(selection, visitor.getAstContext()).accept(visitor);
+                    acceptSelection(selection, visitor);
                 }
                 visitBaseTable(mutableQuery.getTableLikeImplementor(), visitor);
             }
         } finally {
             astContext.popStatement();
+        }
+    }
+
+    private void acceptSelection(Selection<?> selection, AstVisitor visitor) {
+        AstContext astContext = visitor.getAstContext();
+        Ast.from(selection, astContext).accept(visitor);
+        TableSelection tableSelection = null;
+        if (selection instanceof TableSelection) {
+            tableSelection = (TableSelection) selection;
+        } else if (selection instanceof Table<?>) {
+            tableSelection = TableProxies.resolve((Table<?>) selection, astContext);
+        }
+        if (tableSelection instanceof TableImplementor<?>) {
+            acceptAllProps((TableImplementor<?>) tableSelection, visitor);
+        }
+    }
+
+    private static void acceptAllProps(TableImplementor<?> table, AstVisitor visitor) {
+        RealTable realTable = visitor.realTableForAnalysis(table);
+        Map<String, ImmutableProp> selectableProps = table
+                .getImmutableType()
+                .getSelectableProps();
+        boolean hasDiscriminator = false;
+        for (ImmutableProp prop : selectableProps.values()) {
+            visitor.visitTableReference(realTable, prop, !prop.isId());
+            if (prop.isDiscriminator()) {
+                hasDiscriminator = true;
+            }
+        }
+        ImmutableProp discriminatorProp = table.getPolymorphicDiscriminatorProp();
+        if (discriminatorProp != null && !hasDiscriminator) {
+            visitor.visitTableReference(realTable, discriminatorProp, false);
         }
     }
 
@@ -371,9 +409,32 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         Map<String, ImmutableProp> selectableProps = table
                 .getImmutableType()
                 .getSelectableProps();
+        ImmutableProp discriminatorProp = null;
+        if (table instanceof TableImplementor<?>) {
+            discriminatorProp = ((TableImplementor<?>) table).getPolymorphicDiscriminatorProp();
+        }
         for (ImmutableProp prop : selectableProps.values()) {
+            if (discriminatorProp != null &&
+                    prop.isDiscriminator() &&
+                    prop.toOriginal() == discriminatorProp.toOriginal()) {
+                continue;
+            }
             builder.separator();
             table.renderSelection(prop, !prop.isId(), builder, null, true, null, false);
+            if (discriminatorProp != null && prop.isId()) {
+                builder.separator();
+                ((TableImplementor<?>) table)
+                        .realTableForRender(builder)
+                        .renderColumn(
+                                builder,
+                                ((org.babyfish.jimmer.sql.meta.SingleColumn) discriminatorProp.getStorage(
+                                        builder.getAstContext().getSqlClient().getMetadataStrategy()
+                                )).getName(),
+                                false,
+                                null,
+                                null
+                        );
+            }
         }
     }
 

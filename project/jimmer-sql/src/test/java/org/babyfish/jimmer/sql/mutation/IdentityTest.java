@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -454,7 +455,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when matched then " +
-                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_1_.DELETED_MILLIS " +
                                         "when not matched then " +
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
@@ -967,7 +968,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when matched then " +
-                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_1_.DELETED_MILLIS " +
                                         "when not matched then " +
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
@@ -1114,14 +1115,13 @@ public class IdentityTest extends AbstractMutationTest {
                         it.variables("a_5", Timestamp.valueOf(time), Timestamp.valueOf(time), false);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"name\":\"a_5\"," +
-                                        "--->\"createdTime\":\"2024-06-06 22:13:00\"," +
-                                        "--->\"modifiedTime\":\"2024-06-06 22:13:00\"," +
-                                        "--->\"id\":100" +
-                                        "}"
-                        );
+                        it.modified(entity -> {
+                            Administrator modified = (Administrator) entity;
+                            Assertions.assertTrue(modified.getId() > 0L);
+                            Assertions.assertEquals("a_5", modified.getName());
+                            Assertions.assertEquals(time, modified.getCreatedTime());
+                            Assertions.assertEquals(time, modified.getModifiedTime());
+                        });
                     });
                 }
         );

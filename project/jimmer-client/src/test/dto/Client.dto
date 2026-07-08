@@ -1,0 +1,17 @@
+export org.babyfish.jimmer.client.java.model.inheritance.Client
+    -> package org.babyfish.jimmer.client.java.model.dto
+
+ClientView {
+    id
+    type
+    name
+
+    #types {
+        Person {
+            firstName
+        }
+        Organization {
+            taxCode
+        }
+    }
+}

@@ -60,6 +60,32 @@ public class SpringConnectionManager implements DataSourceAwareConnectionManager
     }
 
     @Override
+    public final ConnectionScope open(@Nullable Connection con) {
+        if (con != null) {
+            return ConnectionScope.userConnection(con);
+        }
+        Connection newConnection = DataSourceUtils.getConnection(dataSource);
+        return new ConnectionScope() {
+
+            private boolean closed;
+
+            @Override
+            public Connection connection() {
+                return newConnection;
+            }
+
+            @Override
+            public void close() {
+                if (closed) {
+                    return;
+                }
+                closed = true;
+                DataSourceUtils.releaseConnection(newConnection, dataSource);
+            }
+        };
+    }
+
+    @Override
     public final <R> R executeTransaction(Propagation propagation, Function<Connection, R> block) {
         DataSourceTransactionManager tm = transactionManager();
         TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition(behavior(propagation)));

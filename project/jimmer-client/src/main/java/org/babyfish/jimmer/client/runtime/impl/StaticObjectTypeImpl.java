@@ -24,6 +24,8 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
 
     private Map<String, Property> properties;
 
+    private List<ObjectType> polymorphicBranches = Collections.emptyList();
+
     public StaticObjectTypeImpl(Class<?> javaType) {
         this.javaType = javaType;
         List<String> simpleNames = new ArrayList<>();
@@ -47,11 +49,37 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
             this.doc = definition.getDoc();
             this.error = definition.getError();
             this.properties = Collections.unmodifiableMap(properties);
+            this.polymorphicBranches = collectPolymorphicBranches(definition, ctx);
         } catch (TypeResolvingException ex) {
             throw ex;
         } catch (Throwable ex) {
             throw new TypeResolvingException(typeName, ex);
         }
+    }
+
+    private List<ObjectType> collectPolymorphicBranches(TypeDefinition definition, TypeContext ctx) {
+        if (definition.getPolymorphicBranches().isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ObjectType> branches = new ArrayList<>(definition.getPolymorphicBranches().size());
+        for (TypeRef branchRef : definition.getPolymorphicBranches()) {
+            try {
+                Type branchType = ctx.parseType(branchRef);
+                if (!(branchType instanceof ObjectType)) {
+                    throw new IllegalApiException(
+                            "Illegal polymorphic branch \"" +
+                                    branchRef.getTypeName() +
+                                    "\" of \"" +
+                                    definition.getTypeName() +
+                                    "\""
+                    );
+                }
+                branches.add((ObjectType) branchType);
+            } catch (TypeResolvingException ex) {
+                throw new TypeResolvingException(definition.getTypeName(), ":branch", ex);
+            }
+        }
+        return Collections.unmodifiableList(branches);
     }
 
     private void collectProperties(TypeDefinition definition, TypeContext ctx, Map<String, Property> properties) {
@@ -155,6 +183,11 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
     @Override
     public Map<String, Property> getProperties() {
         return properties;
+    }
+
+    @Override
+    public List<ObjectType> getPolymorphicBranches() {
+        return polymorphicBranches;
     }
 
     @Override

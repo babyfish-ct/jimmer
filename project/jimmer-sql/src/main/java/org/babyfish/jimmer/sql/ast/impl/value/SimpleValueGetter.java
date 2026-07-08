@@ -18,6 +18,8 @@ class SimpleValueGetter extends AbstractValueGetter {
 
     private final Table<?> table;
 
+    private final ImmutableProp columnProp;
+
     private final boolean rawId;
 
     private final String columnName;
@@ -27,12 +29,14 @@ class SimpleValueGetter extends AbstractValueGetter {
     SimpleValueGetter(
             JSqlClientImplementor sqlClientImplementor,
             ImmutableProp valueProp,
+            ImmutableProp columnProp,
             Table<?> table,
             boolean rawId,
             String columnName,
             boolean foreignKey
     ) {
         super(sqlClientImplementor, valueProp);
+        this.columnProp = columnProp;
         this.table = table;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
@@ -92,6 +96,9 @@ class SimpleValueGetter extends AbstractValueGetter {
         if (table != null && astContext != null) {
             SqlBuilder sqlBuilder = builder.assertSimple();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
+            if (renderJoinedTypeBranchColumn(builder, tableImplementor, columnProp, columnName)) {
+                return;
+            }
             if (valueProp.isId() && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
                 RealTable realTable = tableImplementor.realTableForRender(builder);
                 String middleTableAlias = sqlBuilder.middleTableAlias(realTable);

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.dto.compiler;
 public enum DtoModifier {
     INPUT(false, 2),
     SPECIFICATION(false, 2),
+    SEALED(false, -1),
     UNSAFE(false, 0),
     FIXED(true, 1),
     STATIC(true, 1),

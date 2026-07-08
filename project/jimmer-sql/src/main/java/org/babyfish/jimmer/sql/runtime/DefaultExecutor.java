@@ -20,7 +20,7 @@ public class DefaultExecutor implements Executor {
     DefaultExecutor() {
     }
 
-    private static void setParameters(
+    static void setParameters(
             PreparedStatement stmt,
             List<Object> variables,
             JSqlClientImplementor sqlClient
@@ -46,7 +46,6 @@ public class DefaultExecutor implements Executor {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <R> R execute(@NotNull Args<R> args) {
         String sql = args.sql;
@@ -59,25 +58,30 @@ public class DefaultExecutor implements Executor {
             setParameters(stmt, variables, sqlClient);
             return args.block.apply(stmt, args);
         } catch (Exception ex) {
-            ExceptionTranslator<Exception> exceptionTranslator =
-                    (ExceptionTranslator<Exception>) args.getExceptionTranslator();
-            Exception translatedException;
-            if (exceptionTranslator == null) {
-                translatedException = ex;
-            } else {
-                translatedException = exceptionTranslator.translate(ex, args);
-            }
-            if (translatedException instanceof RuntimeException) {
-                throw (RuntimeException) translatedException;
-            }
-            throw new ExecutionException(
-                    "Cannot execute SQL statement: " +
-                    sql +
-                    ", variables: " +
-                    variables,
-                    translatedException
-            );
+            throw translate(args, ex);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    static RuntimeException translate(Args<?> args, Exception ex) {
+        ExceptionTranslator<Exception> exceptionTranslator =
+                (ExceptionTranslator<Exception>) args.getExceptionTranslator();
+        Exception translatedException;
+        if (exceptionTranslator == null) {
+            translatedException = ex;
+        } else {
+            translatedException = exceptionTranslator.translate(ex, args);
+        }
+        if (translatedException instanceof RuntimeException) {
+            return (RuntimeException) translatedException;
+        }
+        return new ExecutionException(
+                "Cannot execute SQL statement: " +
+                        args.sql +
+                        ", variables: " +
+                        args.variables,
+                translatedException
+        );
     }
 
     @Override

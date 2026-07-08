@@ -60,6 +60,9 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
+    @NotNull
+    private final Jdbc jdbc;
+
     private final boolean inListPaddingEnabled;
 
     private final boolean expandedInListPaddingEnabled;
@@ -77,6 +80,12 @@ public class JimmerProperties {
     private final boolean mutationTransactionRequired;
 
     private final boolean targetTransferable;
+
+    private final boolean defaultTypeChangeAllowed;
+
+    private final boolean defaultSaveReturningEnabled;
+
+    private final boolean defaultSaveResultReadsAllProperties;
 
     private final boolean explicitBatchEnabled;
 
@@ -113,6 +122,7 @@ public class JimmerProperties {
             @Nullable String defaultSchema,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
+            @Nullable Jdbc jdbc,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             boolean dissociationLogicalDeleteEnabled,
@@ -122,6 +132,9 @@ public class JimmerProperties {
             @Nullable Integer maxCommandJoinCount,
             boolean mutationTransactionRequired,
             boolean targetTransferable,
+            boolean defaultTypeChangeAllowed,
+            @Nullable Boolean defaultSaveReturningEnabled, // Default value is true, so use `Boolean`
+            boolean defaultSaveResultReadsAllProperties,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             Boolean constraintViolationTranslatable, // Default value is true, so use `Boolean`
@@ -233,6 +246,7 @@ public class JimmerProperties {
                 defaultListBatchSize != null ?
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
+        this.jdbc = jdbc != null ? jdbc : new Jdbc(null, null);
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabled;
@@ -251,6 +265,12 @@ public class JimmerProperties {
                         2;
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
+        this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
+        this.defaultSaveReturningEnabled =
+                defaultSaveReturningEnabled != null ?
+                        defaultSaveReturningEnabled :
+                        true;
+        this.defaultSaveResultReadsAllProperties = defaultSaveResultReadsAllProperties;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable =
@@ -414,6 +434,33 @@ public class JimmerProperties {
         return targetTransferable;
     }
 
+    public boolean isDefaultTypeChangeAllowed() {
+        return defaultTypeChangeAllowed;
+    }
+
+    @Nullable
+    public Integer getDefaultJdbcFetchSize() {
+        return jdbc.getDefaultFetchSize();
+    }
+
+    @Nullable
+    public Integer getDefaultJdbcQueryTimeout() {
+        return jdbc.getDefaultQueryTimeout();
+    }
+
+    @NotNull
+    public Jdbc getJdbc() {
+        return jdbc;
+    }
+
+    public boolean isDefaultSaveReturningEnabled() {
+        return defaultSaveReturningEnabled;
+    }
+
+    public boolean isDefaultSaveResultReadsAllProperties() {
+        return defaultSaveResultReadsAllProperties;
+    }
+
     public boolean isExplicitBatchEnabled() {
         return explicitBatchEnabled;
     }
@@ -483,6 +530,7 @@ public class JimmerProperties {
                 ", defaultSchema='" + defaultSchema + '\'' +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
+                ", jdbc=" + jdbc +
                 ", inListPaddingEnabled=" + inListPaddingEnabled +
                 ", expandedInListPaddingEnabled=" + expandedInListPaddingEnabled +
                 ", dissociationLogicalDeleteEnabled=" + dissociationLogicalDeleteEnabled +
@@ -492,6 +540,9 @@ public class JimmerProperties {
                 ", maxCommandJoinCount=" + maxCommandJoinCount +
                 ", mutationTransactionRequired=" + mutationTransactionRequired +
                 ", targetTransferable=" + targetTransferable +
+                ", defaultTypeChangeAllowed=" + defaultTypeChangeAllowed +
+                ", defaultSaveReturningEnabled=" + defaultSaveReturningEnabled +
+                ", defaultSaveResultReadsAllProperties=" + defaultSaveResultReadsAllProperties +
                 ", explicitBatchEnabled=" + explicitBatchEnabled +
                 ", dumbBatchAcceptable=" + dumbBatchAcceptable +
                 ", constraintViolationTranslatable=" + constraintViolationTranslatable +
@@ -500,6 +551,39 @@ public class JimmerProperties {
                 ", errorTranslator=" + errorTranslator +
                 ", client=" + client +
                 '}';
+    }
+
+    @ConstructorBinding
+    public static class Jdbc {
+
+        @Nullable
+        private final Integer defaultFetchSize;
+
+        @Nullable
+        private final Integer defaultQueryTimeout;
+
+        public Jdbc(@Nullable Integer defaultFetchSize, @Nullable Integer defaultQueryTimeout) {
+            this.defaultFetchSize = defaultFetchSize;
+            this.defaultQueryTimeout = defaultQueryTimeout;
+        }
+
+        @Nullable
+        public Integer getDefaultFetchSize() {
+            return defaultFetchSize;
+        }
+
+        @Nullable
+        public Integer getDefaultQueryTimeout() {
+            return defaultQueryTimeout;
+        }
+
+        @Override
+        public String toString() {
+            return "Jdbc{" +
+                    "defaultFetchSize=" + defaultFetchSize +
+                    ", defaultQueryTimeout=" + defaultQueryTimeout +
+                    '}';
+        }
     }
 
     @Deprecated

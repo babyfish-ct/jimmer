@@ -40,55 +40,40 @@ public class ImmutableType implements BaseType {
 
     private final Set<ImmutableType> superTypes;
 
+    private final ImmutableType inheritanceRoot;
+
+    private final Inheritance inheritance;
+
+    private final boolean instantiable;
+
+    private final String discriminatorValue;
+
     private final Map<String, ImmutableProp> declaredProps;
 
     private final Map<String, ImmutableProp> redefinedProps;
-
-    private Map<String, ImmutableProp> props;
-
-    private Map<String, String> idPropNameMap;
-
-    private List<ImmutableProp> propsOrderById;
-
-    private ImmutableProp idProp;
-
-    private ImmutableProp versionProp;
-
-    private ImmutableProp logicalDeletedProp;
-
     private final ClassName className;
-
     private final ClassName draftClassName;
-
     private final ClassName producerClassName;
-
     private final ClassName implementorClassName;
-
     private final ClassName implClassName;
-
     private final ClassName draftImplClassName;
-
     private final ClassName builderClassName;
-
     private final ClassName tableClassName;
-
     private final ClassName tableExClassName;
-
     private final ClassName remoteTableClassName;
-
     private final ClassName fetcherClassName;
-
     private final ClassName propsClassName;
-
     private final ClassName propExpressionClassName;
-
     private final ClassName dynamicClassName;
-
     private final Map<ClassName, String> validationMessageMap;
-
     private final boolean acrossMicroServices;
-
     private final String microServiceName;
+    private Map<String, ImmutableProp> props;
+    private Map<String, String> idPropNameMap;
+    private List<ImmutableProp> propsOrderById;
+    private ImmutableProp idProp;
+    private ImmutableProp versionProp;
+    private ImmutableProp logicalDeletedProp;
 
     public ImmutableType(
             Context context,
@@ -102,8 +87,8 @@ public class ImmutableType implements BaseType {
         microServiceName = isEntity ?
                 typeElement.getAnnotation(Entity.class).microServiceName() :
                 annotationType == MappedSuperclass.class ?
-                    typeElement.getAnnotation(MappedSuperclass.class).microServiceName() :
-                    "";
+                        typeElement.getAnnotation(MappedSuperclass.class).microServiceName() :
+                        "";
         if (acrossMicroServices && !microServiceName.isEmpty()) {
             throw new MetaException(
                     typeElement,
@@ -115,7 +100,7 @@ public class ImmutableType implements BaseType {
         isMappedSuperClass = annotationType == MappedSuperclass.class;
         isEmbeddable = annotationType == Embeddable.class;
 
-        packageName = ((PackageElement)typeElement.getEnclosingElement()).getQualifiedName().toString();
+        packageName = ((PackageElement) typeElement.getEnclosingElement()).getQualifiedName().toString();
         name = typeElement.getSimpleName().toString();
         qualifiedName = typeElement.getQualifiedName().toString();
         modifiers = typeElement.getModifiers();
@@ -207,6 +192,96 @@ public class ImmutableType implements BaseType {
             }
         }
 
+        Inheritance inheritance = typeElement.getAnnotation(Inheritance.class);
+        DiscriminatorValue discriminatorValue = typeElement.getAnnotation(DiscriminatorValue.class);
+        if (!isEntity) {
+            if (inheritance != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + Inheritance.class.getName() + " can only be declared by entity type"
+                );
+            }
+            if (discriminatorValue != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + DiscriminatorValue.class.getName() + " can only be declared by entity type"
+                );
+            }
+            this.inheritanceRoot = null;
+            this.inheritance = null;
+            this.instantiable = false;
+            this.discriminatorValue = null;
+        } else if (this.primarySuperType != null && this.primarySuperType.isEntity) {
+            if (inheritance != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + Inheritance.class.getName() + " can only be declared by inheritance root type"
+                );
+            }
+            ImmutableType root = this.primarySuperType.getInheritanceRoot();
+            if (root == null) {
+                throw new MetaException(
+                        typeElement,
+                        "it cannot inherit entity type \"" +
+                                this.primarySuperType +
+                                "\" because the super type is not an inheritance root"
+                );
+            }
+            this.inheritanceRoot = root;
+            this.inheritance = null;
+            this.instantiable = determineInstantiable();
+            if (!instantiable && discriminatorValue != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + DiscriminatorValue.class.getName() + " can only be declared by instantiable inheritance entity types"
+                );
+            }
+            this.discriminatorValue = instantiable ?
+                    discriminatorValue != null ?
+                            discriminatorValue.value() :
+                            typeElement.getSimpleName().toString() :
+                    null;
+        } else if (inheritance != null) {
+            if (inheritance.strategy() != InheritanceType.JOINED &&
+                    inheritance.joinedTableDissociateAction() != JoinedTableDissociateAction.DELETE) {
+                throw new MetaException(
+                        typeElement,
+                        "the `joinedTableDissociateAction` of @" +
+                                Inheritance.class.getName() +
+                                " can only be \"" +
+                                JoinedTableDissociateAction.LAX +
+                                "\" when the inheritance strategy is \"" +
+                                InheritanceType.JOINED +
+                                "\""
+                );
+            }
+            this.inheritanceRoot = this;
+            this.inheritance = inheritance;
+            this.instantiable = determineInstantiable();
+            if (!instantiable && discriminatorValue != null) {
+                throw new MetaException(
+                        typeElement,
+                        "@" + DiscriminatorValue.class.getName() + " can only be declared by instantiable inheritance entity types"
+                );
+            }
+            this.discriminatorValue = instantiable ?
+                    discriminatorValue != null ?
+                            discriminatorValue.value() :
+                            typeElement.getSimpleName().toString() :
+                    null;
+        } else {
+            if (discriminatorValue != null) {
+                throw new MetaException(
+                        typeElement,
+                        "discriminator annotations can only be used by inheritance types"
+                );
+            }
+            this.inheritanceRoot = null;
+            this.inheritance = null;
+            this.instantiable = determineInstantiable();
+            this.discriminatorValue = null;
+        }
+
         Map<String, ImmutableProp> superPropMap = new LinkedHashMap<>();
         for (ImmutableType superType : superTypes) {
             for (ImmutableProp prop : superType.getProps().values()) {
@@ -296,7 +371,7 @@ public class ImmutableType implements BaseType {
         for (ExecutableElement executableElement : executableElements) {
             if (executableElement.isDefault()) {
                 for (AnnotationMirror am : executableElement.getAnnotationMirrors()) {
-                    String qualifiedName = ((TypeElement)am.getAnnotationType().asElement()).getQualifiedName().toString();
+                    String qualifiedName = ((TypeElement) am.getAnnotationType().asElement()).getQualifiedName().toString();
                     if (qualifiedName.startsWith("org.babyfish.jimmer.") && !qualifiedName.equals(FORMULA_CLASS_NAME)) {
                         throw new MetaException(
                                 executableElement,
@@ -364,20 +439,65 @@ public class ImmutableType implements BaseType {
 
         this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
         this.redefinedProps = Collections.unmodifiableMap(redefinedPropMap);
+        if (inheritanceRoot == null && isEntity) {
+            for (ImmutableProp prop : this.declaredProps.values()) {
+                if (prop.isDiscriminator()) {
+                    throw new MetaException(
+                            prop.toElement(),
+                            "property decorated by @" +
+                                    Discriminator.class.getName() +
+                                    " can only be used by inheritance root type or its derived types"
+                    );
+                }
+            }
+        } else if (inheritanceRoot != this && isEntity) {
+            for (ImmutableProp prop : this.declaredProps.values()) {
+                if (prop.isDiscriminator() && prop.getDeclaringType() == this) {
+                    throw new MetaException(
+                            prop.toElement(),
+                            "property decorated by @" +
+                                    Discriminator.class.getName() +
+                                    " cannot be declared by inheritance derived type"
+                    );
+                }
+            }
+        } else if (inheritanceRoot == this) {
+            List<ImmutableProp> discriminatorProps = allProps()
+                    .values()
+                    .stream()
+                    .filter(ImmutableProp::isDiscriminator)
+                    .collect(Collectors.toList());
+            if (discriminatorProps.isEmpty()) {
+                throw new MetaException(
+                        typeElement,
+                        "inheritance root type must declare or inherit a scalar property decorated by @" +
+                                Discriminator.class.getName()
+                );
+            }
+            if (discriminatorProps.size() > 1) {
+                throw new MetaException(
+                        discriminatorProps.get(1).toElement(),
+                        "multiple discriminator properties are declared"
+                );
+            }
+        }
 
         List<ImmutableProp> idProps = declaredProps
                 .values()
                 .stream()
+                .filter(it -> it.getDeclaringType() == this)
                 .filter(it -> it.getAnnotation(Id.class) != null)
                 .collect(Collectors.toList());
         List<ImmutableProp> versionProps = declaredProps
                 .values()
                 .stream()
+                .filter(it -> it.getDeclaringType() == this)
                 .filter(it -> it.getAnnotation(Version.class) != null)
                 .collect(Collectors.toList());
         List<ImmutableProp> logicalDeletedProps = declaredProps
                 .values()
                 .stream()
+                .filter(it -> it.getDeclaringType() == this)
                 .filter(it -> it.getAnnotation(LogicalDeleted.class) != null)
                 .collect(Collectors.toList());
         for (ImmutableType superType : superTypes) {
@@ -431,7 +551,7 @@ public class ImmutableType implements BaseType {
             if (!versionProps.isEmpty()) {
                 throw new MetaException(
                         typeElement,
-                                versionProps.get(0) +
+                        versionProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 Version.class.getName() +
                                 "` because current type is not entity"
@@ -440,7 +560,7 @@ public class ImmutableType implements BaseType {
             if (!logicalDeletedProps.isEmpty()) {
                 throw new MetaException(
                         typeElement,
-                                logicalDeletedProps.get(0) +
+                        logicalDeletedProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 LogicalDeleted.class.getName() +
                                 "` because current type is not entity"
@@ -550,6 +670,10 @@ public class ImmutableType implements BaseType {
         return isEntity;
     }
 
+    public boolean isInstantiable() {
+        return instantiable;
+    }
+
     public boolean isMappedSuperClass() {
         return isMappedSuperClass;
     }
@@ -589,6 +713,42 @@ public class ImmutableType implements BaseType {
         return primarySuperType;
     }
 
+    public ImmutableType getInheritanceRoot() {
+        return inheritanceRoot;
+    }
+
+    public Inheritance getInheritance() {
+        return inheritance;
+    }
+
+    public String getDiscriminatorValue() {
+        return discriminatorValue;
+    }
+
+    private boolean determineInstantiable() {
+        EntityInstantiability instantiability = typeElement.getAnnotation(Entity.class).instantiability();
+        switch (instantiability) {
+            case AUTO:
+                return inheritanceRoot == null || inheritanceRoot != this;
+            case ABSTRACT:
+                if (inheritanceRoot == null) {
+                    throw new MetaException(
+                            typeElement,
+                            "@" +
+                                    Entity.class.getName() +
+                                    "(instantiability = " +
+                                    EntityInstantiability.ABSTRACT +
+                                    ") can only be used by inheritance entity types"
+                    );
+                }
+                return false;
+            case INSTANTIABLE:
+                return true;
+            default:
+                throw new AssertionError("Internal bug: unexpected instantiability \"" + instantiability + "\"");
+        }
+    }
+
     public Map<String, ImmutableProp> getDeclaredProps() {
         return declaredProps;
     }
@@ -597,48 +757,52 @@ public class ImmutableType implements BaseType {
         return redefinedProps;
     }
 
+    private Map<String, ImmutableProp> allProps() {
+        if (superTypes.isEmpty()) {
+            return declaredProps;
+        }
+        Map<String, ImmutableProp> props = new LinkedHashMap<>();
+        for (ImmutableType superType : superTypes) {
+            for (ImmutableProp prop : superType.getProps().values()) {
+                if (prop.getAnnotation(Id.class) != null) {
+                    props.put(prop.getName(), prop);
+                }
+            }
+        }
+        for (ImmutableProp prop : redefinedProps.values()) {
+            if (prop.getAnnotation(Id.class) != null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        for (ImmutableProp prop : declaredProps.values()) {
+            if (prop.getAnnotation(Id.class) != null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        for (ImmutableType superType : superTypes) {
+            for (ImmutableProp prop : superType.getProps().values()) {
+                if (prop.getAnnotation(Id.class) == null) {
+                    props.put(prop.getName(), prop);
+                }
+            }
+        }
+        for (ImmutableProp prop : redefinedProps.values()) {
+            if (prop.getAnnotation(Id.class) == null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        for (ImmutableProp prop : declaredProps.values()) {
+            if (prop.getAnnotation(Id.class) == null) {
+                props.put(prop.getName(), prop);
+            }
+        }
+        return props;
+    }
+
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
         if (props == null) {
-            if (superTypes.isEmpty()) {
-                props = declaredProps;
-            } else {
-                props = new LinkedHashMap<>();
-                for (ImmutableType superType : superTypes) {
-                    for (ImmutableProp prop : superType.getProps().values()) {
-                        if (prop.getAnnotation(Id.class) != null) {
-                            props.put(prop.getName(), prop);
-                        }
-                    }
-                }
-                for (ImmutableProp prop : redefinedProps.values()) {
-                    if (prop.getAnnotation(Id.class) != null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-                for (ImmutableProp prop : declaredProps.values()) {
-                    if (prop.getAnnotation(Id.class) != null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-                for (ImmutableType superType : superTypes) {
-                    for (ImmutableProp prop : superType.getProps().values()) {
-                        if (prop.getAnnotation(Id.class) == null) {
-                            props.put(prop.getName(), prop);
-                        }
-                    }
-                }
-                for (ImmutableProp prop : redefinedProps.values()) {
-                    if (prop.getAnnotation(Id.class) == null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-                for (ImmutableProp prop : declaredProps.values()) {
-                    if (prop.getAnnotation(Id.class) == null) {
-                        props.put(prop.getName(), prop);
-                    }
-                }
-            }
+            props = allProps();
             this.props = Collections.unmodifiableMap(props);
         }
         return props;
@@ -782,7 +946,7 @@ public class ImmutableType implements BaseType {
 
     private ClassName toClassName(
             Function<String, String> transform,
-            String ... moreSimpleNames
+            String... moreSimpleNames
     ) {
         return ClassName.get(
                 packageName,

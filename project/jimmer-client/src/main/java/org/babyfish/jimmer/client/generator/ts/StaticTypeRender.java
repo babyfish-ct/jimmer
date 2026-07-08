@@ -36,6 +36,20 @@ public class StaticTypeRender implements Render {
     @Override
     public void render(SourceWriter writer) {
         Doc doc = type.getDoc();
+        if (!type.getPolymorphicBranches().isEmpty()) {
+            writer.doc(doc).code("export type ").code(name).code(" = ");
+            boolean addSeparator = false;
+            for (ObjectType branch : type.getPolymorphicBranches()) {
+                if (addSeparator) {
+                    writer.code(" | ");
+                } else {
+                    addSeparator = true;
+                }
+                writer.typeRef(branch);
+            }
+            writer.code(";\n");
+            return;
+        }
         writer.doc(doc).code("export interface ").code(name);
         if (!type.getArguments().isEmpty()) {
             writer.scope(SourceWriter.ScopeType.GENERIC, ", ", false, () -> {

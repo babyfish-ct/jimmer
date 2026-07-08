@@ -27,6 +27,8 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     private final List<TypeRefImpl<S>> superTypes = new ArrayList<>();
 
+    private final List<TypeRefImpl<S>> polymorphicBranches = new ArrayList<>();
+
     private Doc doc;
 
     private final Map<String, EnumConstantImpl<S>> enumConstantMap = new LinkedHashMap<>();
@@ -121,6 +123,16 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     @SuppressWarnings("unchecked")
     @Override
+    public List<TypeRef> getPolymorphicBranches() {
+        return (List<TypeRef>) (List<?>) polymorphicBranches;
+    }
+
+    public void addPolymorphicBranch(TypeRefImpl<S> branch) {
+        polymorphicBranches.add(branch);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public Map<String, EnumConstant> getEnumConstantMap() {
         return (Map<String, EnumConstant>) (Map<?, ?>) enumConstantMap;
     }
@@ -141,6 +153,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             for (TypeRefImpl<S> superType : superTypes) {
                 superType.accept(visitor);
             }
+            for (TypeRefImpl<S> branch : polymorphicBranches) {
+                branch.accept(visitor);
+            }
         } finally {
             visitor.visitedAstNode(this);
         }
@@ -152,6 +167,7 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
                 "typeName='" + typeName + '\'' +
                 ", propMap=" + propMap +
                 ", superTypes=" + superTypes +
+                ", polymorphicBranches=" + polymorphicBranches +
                 '}';
     }
 
@@ -212,6 +228,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             }
             if (!definition.getSuperTypes().isEmpty()) {
                 provider.defaultSerializeField("superTypes", definition.getSuperTypes(), gen);
+            }
+            if (!definition.getPolymorphicBranches().isEmpty()) {
+                provider.defaultSerializeField("branches", definition.getPolymorphicBranches(), gen);
             }
             if (!definition.getEnumConstantMap().isEmpty()) {
                 provider.defaultSerializeField("constants", definition.getEnumConstantMap().values(), gen);
@@ -274,6 +293,11 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
                     definition.addSuperType(ctx.readTreeAsValue(superNode, TypeRefImpl.class));
                 }
             }
+            if (jsonNode.has("branches")) {
+                for (com.fasterxml.jackson.databind.JsonNode branchNode : jsonNode.get("branches")) {
+                    definition.addPolymorphicBranch(ctx.readTreeAsValue(branchNode, TypeRefImpl.class));
+                }
+            }
             if (jsonNode.has("constants")) {
                 for (com.fasterxml.jackson.databind.JsonNode propNode : jsonNode.get("constants")) {
                     definition.addEnumConstant(ctx.readTreeAsValue(propNode, EnumConstantImpl.class));
@@ -313,6 +337,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             }
             if (!definition.getSuperTypes().isEmpty()) {
                 ctx.defaultSerializeProperty("superTypes", definition.getSuperTypes(), gen);
+            }
+            if (!definition.getPolymorphicBranches().isEmpty()) {
+                ctx.defaultSerializeProperty("branches", definition.getPolymorphicBranches(), gen);
             }
             if (!definition.getEnumConstantMap().isEmpty()) {
                 ctx.defaultSerializeProperty("constants", definition.getEnumConstantMap().values(), gen);
@@ -365,6 +392,11 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             if (jsonNode.has("superTypes")) {
                 for (tools.jackson.databind.JsonNode superNode : jsonNode.get("superTypes")) {
                     definition.addSuperType(ctx.readTreeAsValue(superNode, TypeRefImpl.class));
+                }
+            }
+            if (jsonNode.has("branches")) {
+                for (tools.jackson.databind.JsonNode branchNode : jsonNode.get("branches")) {
+                    definition.addPolymorphicBranch(ctx.readTreeAsValue(branchNode, TypeRefImpl.class));
                 }
             }
             if (jsonNode.has("constants")) {

@@ -8,7 +8,10 @@ import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
@@ -18,15 +21,18 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
-import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,6 +61,8 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     private final JoinType joinType;
 
     private final boolean fetch;
+
+    private final boolean treated;
 
     @Nullable
     private final BaseTableOwner baseTableOwner;
@@ -101,7 +109,31 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         this.weakJoinHandle = weakJoinHandle;
         this.joinType = joinType;
         this.fetch = fetch;
+        this.treated = false;
         this.baseTableOwner = parent != null ? parent.baseTableOwner : null;
+    }
+
+    private TableImpl(
+            AbstractMutableStatementImpl statement,
+            ImmutableType immutableType,
+            TableImpl<?> parent,
+            long order,
+            JoinType joinType
+    ) {
+        if (statement == null || immutableType == null || parent == null) {
+            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
+        }
+        this.statement = statement;
+        this.immutableType = immutableType;
+        this.parent = parent;
+        this.order = order != -1 ? order : parent.size();
+        this.isInverse = false;
+        this.joinProp = null;
+        this.weakJoinHandle = null;
+        this.joinType = joinType;
+        this.fetch = false;
+        this.treated = true;
+        this.baseTableOwner = parent.baseTableOwner;
     }
 
     private TableImpl(
@@ -118,6 +150,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         this.weakJoinHandle = base.weakJoinHandle;
         this.joinType = base.joinType;
         this.fetch = base.fetch;
+        this.treated = base.treated;
         this.neighborMap = base.neighborMap;
         this.baseTableOwner = baseTableOwner;
     }
@@ -186,6 +219,11 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     @Override
     public final JoinType getJoinType() {
         return joinType;
+    }
+
+    @Override
+    public final boolean isTreated() {
+        return treated;
     }
 
     @Override
@@ -375,16 +413,6 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
     }
 
     @Override
-    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
-        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs, -1));
-    }
-
-    @Override
-    public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
-        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs, -1));
-    }
-
-    @Override
     public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
         ImmutableProp oppositeProp = prop.getOpposite();
         TableImplementor<?> joinedTable = inverseJoinImplementor(
@@ -434,32 +462,33 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop) {
-        return joinImplementor(immutableType.getProp(prop), JoinType.INNER, null, -1);
+        return joinImplementor(immutableType.getProp(prop), JoinType.INNER);
     }
 
     @Override
     public <X> TableImplementor<X> joinImplementor(ImmutableProp prop) {
-        return joinImplementor(prop, JoinType.INNER, null, -1);
+        return joinImplementor(prop, JoinType.INNER);
     }
 
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType) {
-        return joinImplementor(immutableType.getProp(prop), joinType, null, -1);
-    }
-
-    @Override
-    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType) {
-        return joinImplementor(prop, joinType, null, -1);
-    }
-
-    @Override
-    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs, long order) {
-        return joinImplementor(immutableType.getProp(prop), joinType, treatedAs, order);
+        return joinImplementor(immutableType.getProp(prop), joinType);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs, long order) {
+    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType) {
+        return joinImplementor(prop, joinType, -1);
+    }
+
+    @Override
+    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, long order) {
+        return joinImplementor(immutableType.getProp(prop), joinType, order);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, long order) {
         if (prop.getDeclaringType() != immutableType) {
             if (!prop.getDeclaringType().isAssignableFrom(immutableType)) {
                 throw new IllegalArgumentException(
@@ -503,6 +532,47 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             );
         }
         return (TableImplementor<X>) join0(false, prop, joinType, order);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> TableImplementor<X> treatAsImplementor(ImmutableType treatedAs, JoinType joinType) {
+        InheritanceInfo inheritanceInfo = immutableType.getInheritanceInfo();
+        if (inheritanceInfo == null || !immutableType.isAssignableFrom(treatedAs)) {
+            throw new IllegalArgumentException(
+                    "The type \"" +
+                            treatedAs +
+                            "\" is not a derived type of \"" +
+                            immutableType +
+                            "\""
+            );
+        }
+        if (inheritanceInfo.getConcreteTypes(treatedAs).isEmpty()) {
+            throw new ExecutionException(
+                    "Cannot treat table \"" +
+                            this +
+                            "\" as \"" +
+                            treatedAs +
+                            "\" because it is abstract and has no instantiable type"
+            );
+        }
+        if (treatedAs == immutableType) {
+            return (TableImplementor<X>) this;
+        }
+        Key key = new Key("treatAs(" + treatedAs + ")", joinType, null, false);
+        TableImpl<?> table = (TableImpl<?>) getValue(key);
+        if (table != null) {
+            return (TableImplementor<X>) table;
+        }
+        table = new TableImpl<>(
+                statement,
+                treatedAs,
+                this,
+                -1,
+                joinType
+        );
+        putValue(key, table);
+        return (TableImplementor<X>) table;
     }
 
     @Override
@@ -767,6 +837,9 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
             Function<Integer, String> asBlock,
             boolean idViewAllowed
     ) {
+        if (renderJoinedTypeBranchUpdateSelection(prop, builder, optionalDefinition, asBlock)) {
+            return;
+        }
         realTableForRender(builder).renderSelection(
                 prop,
                 rawId,
@@ -778,11 +851,53 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
         );
     }
 
+    private boolean renderJoinedTypeBranchUpdateSelection(
+            ImmutableProp prop,
+            AbstractSqlBuilder<?> builder,
+            ColumnDefinition optionalDefinition,
+            Function<Integer, String> asBlock
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null || isTreated() || prop.isId() || prop.toOriginal().isId()) {
+            return false;
+        }
+        String alias = astContext.getJoinedTypeBranchUpdateAlias(this, prop);
+        if (alias == null) {
+            if (!astContext.isJoinedTypeBranchUpdateTargetStage(this, prop)) {
+                return false;
+            }
+            alias = builder.assertSimple().alias(realTableForRender(builder));
+        }
+        if (alias == null) {
+            return false;
+        }
+        SqlTemplate template = prop.getSqlTemplate();
+        if (template instanceof FormulaTemplate) {
+            builder.sql(((FormulaTemplate) template).toSql(alias));
+            if (asBlock != null) {
+                builder.sql(" ").sql(asBlock.apply(0));
+            }
+            return true;
+        }
+        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
+        ColumnDefinition definition = optionalDefinition != null ?
+                optionalDefinition :
+                prop.getStorage(strategy);
+        builder.definition(alias, definition, asBlock);
+        return true;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         if (parent == null) {
             builder.append(immutableType.getJavaClass().getSimpleName());
+        } else if (treated) {
+            builder
+                    .append(parent)
+                    .append("[treatAs ")
+                    .append(immutableType.getJavaClass().getSimpleName())
+                    .append(']');
         } else {
             builder.append(parent);
             if (isInverse) {
@@ -813,6 +928,11 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public TableRowCountDestructive getDestructive() {
+        if (treated) {
+            return joinType == JoinType.LEFT ?
+                    TableRowCountDestructive.NONE :
+                    TableRowCountDestructive.BREAK_ROW_COUNT;
+        }
         if (joinProp == null) {
             return TableRowCountDestructive.NONE;
         }

@@ -60,6 +60,14 @@ class KSqlClientDsl constructor(
         javaBuilder.setDefaultListBatchSize(size)
     }
 
+    fun setDefaultJdbcFetchSize(fetchSize: Int?) {
+        javaBuilder.setDefaultJdbcFetchSize(fetchSize)
+    }
+
+    fun setDefaultJdbcQueryTimeout(queryTimeout: Int?) {
+        javaBuilder.setDefaultJdbcQueryTimeout(queryTimeout)
+    }
+
     fun setInListPaddingEnabled(enabled: Boolean) {
         javaBuilder.setInListPaddingEnabled(enabled)
     }
@@ -337,6 +345,18 @@ class KSqlClientDsl constructor(
      */
     fun setForeignKeyEnabledByDefault(enabled: Boolean) {
         javaBuilder.setForeignKeyEnabledByDefault(enabled)
+    }
+
+    fun setDefaultTypeChangeAllowed(allowed: Boolean) {
+        javaBuilder.setDefaultTypeChangeAllowed(allowed)
+    }
+
+    fun setDefaultSaveReturningEnabled(enabled: Boolean) {
+        javaBuilder.setDefaultSaveReturningEnabled(enabled)
+    }
+
+    fun setDefaultSaveResultReadsAllProperties(readsAllProperties: Boolean) {
+        javaBuilder.setDefaultSaveResultReadsAllProperties(readsAllProperties)
     }
 
     fun addCustomizers(vararg customers: KCustomizer) {

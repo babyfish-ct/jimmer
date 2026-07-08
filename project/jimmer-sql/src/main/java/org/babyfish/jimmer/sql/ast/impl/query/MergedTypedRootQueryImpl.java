@@ -16,9 +16,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
 
@@ -28,6 +30,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     private final List<Selection<?>> selections;
     private final TupleCreator<?> tupleCreator;
     private final ForUpdate forUpdate;
+    private final JdbcOptions jdbcOptions;
     protected final TypedRootQueryImplementor<?>[] queries;
 
     @SafeVarargs
@@ -41,7 +44,8 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
                 return new MergedTypedRootQueryImpl<>(
                         ((TypedQueryImplementor)queries[0]).getSqlClient(),
                         operator,
-                        queries
+                        queries,
+                        ((TypedQueryImplementor) queries[0]).getJdbcOptions()
                 );
         }
     }
@@ -49,7 +53,9 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     private MergedTypedRootQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
-            TypedRootQuery<R>[] queries) {
+            TypedRootQuery<R>[] queries,
+            JdbcOptions jdbcOptions
+    ) {
         this.sqlClient = sqlClient;
         this.operator = operator;
         if (queries.length < 2) {
@@ -71,6 +77,25 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
         selections = selectionArr;
         tupleCreator = queryArr[0].getTupleCreator();
         this.forUpdate = forUpdate;
+        this.jdbcOptions = jdbcOptions;
+    }
+
+    private MergedTypedRootQueryImpl(
+            JSqlClientImplementor sqlClient,
+            String operator,
+            List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
+            ForUpdate forUpdate,
+            TypedRootQueryImplementor<?>[] queries,
+            JdbcOptions jdbcOptions
+    ) {
+        this.sqlClient = sqlClient;
+        this.operator = operator;
+        this.selections = selections;
+        this.tupleCreator = tupleCreator;
+        this.forUpdate = forUpdate;
+        this.queries = Arrays.copyOf(queries, queries.length);
+        this.jdbcOptions = jdbcOptions;
     }
 
     private static List<Selection<?>> mergedSelections(
@@ -125,6 +150,24 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
                 selections,
                 tupleCreator,
                 ExecutionPurpose.QUERY,
+                jdbcOptions,
+                forUpdate != null
+        );
+    }
+
+    @Override
+    public Stream<R> stream(Connection con) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        return Selectors.stream(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                tupleCreator,
+                ExecutionPurpose.QUERY,
+                jdbcOptions,
                 forUpdate != null
         );
     }
@@ -222,6 +265,11 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public JSqlClientImplementor getSqlClient() {
         return sqlClient;
+    }
+
+    @Override
+    public JdbcOptions getJdbcOptions() {
+        return jdbcOptions;
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.impl.util.DtoPropAccessor
 import org.babyfish.jimmer.impl.validation.Validator
 import org.babyfish.jimmer.internal.FixedInputField
 import org.babyfish.jimmer.internal.GeneratedBy
+import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
@@ -24,8 +25,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Collections
+import java.util.*
 import java.util.regex.Pattern
+import kotlin.reflect.KClass
 
 internal const val DRAFT = "Draft"
 internal const val PRODUCER = "$"
@@ -38,12 +40,15 @@ internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
 internal val CLASS_CLASS_NAME = Class::class.asClassName()
+internal val K_CLASS_CLASS_NAME = KClass::class.asClassName()
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val DESCRIPTION_CLASS_NAME = Description::class.asClassName()
+internal val JVM_FIELD_CLASS_NAME = JvmField::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val COLLECTIONS_CLASS_NAME = Collections::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
+internal val GENERATED_POLYMORPHIC_DTO_BRANCH_CLASS_NAME = GeneratedPolymorphicDtoBranch::class.asClassName()
 internal val FIXED_INPUT_FIELD_CLASS_NAME = FixedInputField::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
@@ -148,6 +153,10 @@ internal val K_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KTableEx"
 )
+internal val K_POLYMORPHIC_TABLES_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table.impl",
+    "KPolymorphicTables"
+)
 internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNonNullPropExpression"
@@ -175,6 +184,10 @@ internal val FETCHER_CLASS_NAME = ClassName(
 internal val FETCHER_IMPL_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher.impl",
     "FetcherImpl"
+)
+internal val FETCHER_IMPLEMENTOR_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.fetcher.impl",
+    "FetcherImplementor"
 )
 internal val JAVA_FIELD_CONFIG_UTILS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher.impl",

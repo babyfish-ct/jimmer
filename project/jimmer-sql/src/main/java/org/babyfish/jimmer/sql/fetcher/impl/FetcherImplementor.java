@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldConfig;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 public interface FetcherImplementor<E> extends Fetcher<E> {
@@ -49,6 +51,11 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
     @Override
     @NewChain
     FetcherImplementor<E> remove(String prop);
+
+    @NewChain
+    FetcherImplementor<E> __forType(Fetcher<?> typeBranchFetcher);
+
+    Map<ImmutableType, Fetcher<?>> __getTypeBranchFetcherMap();
 
     /**
      * Are all fetched properties simple fields?

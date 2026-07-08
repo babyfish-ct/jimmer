@@ -4,14 +4,13 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.TargetTransferMode;
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.common.Constants;
-import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
@@ -841,6 +840,88 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testAssociationOnlyUpdateUsesUserOptimisticLockAsOwnerGate() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(learningGraphQLId3);
+                                    book.addIntoAuthors(author -> author.setId(danId));
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setAssociatedMode(BookProps.AUTHORS, AssociatedSaveMode.APPEND)
+                        .setOptimisticLock(
+                                BookTable.class,
+                                (table, it) -> table.name().eq("Wrong")
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set /* fake update to return all ids */ PRICE = PRICE where ID = ? and NAME = ?");
+                        it.variables(learningGraphQLId3, "Wrong");
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.OptimisticLockError.class);
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot update the entity " +
+                                        "whose type is \"org.babyfish.jimmer.sql.model.Book\" " +
+                                        "and id is \"64873631-5d82-4bae-8eb8-72dd955bfc56\" " +
+                                        "because of optimistic lock error"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAssociationOnlyUpdateContinuesAfterUserOptimisticLockOwnerGate() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(learningGraphQLId3);
+                                    book.addIntoAuthors(author -> author.setId(danId));
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setAssociatedMode(BookProps.AUTHORS, AssociatedSaveMode.APPEND)
+                        .setOptimisticLock(
+                                BookTable.class,
+                                (table, it) -> table.name().eq("Learning GraphQL")
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set /* fake update to return all ids */ PRICE = PRICE where ID = ? and NAME = ?");
+                        it.variables(learningGraphQLId3, "Learning GraphQL");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.variables(learningGraphQLId3, danId);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"authors\":[{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"}]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"authors\":[{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"}]" +
+                                        "}"
+                        );
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Book.class), 1);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 1);
+                }
+        );
+    }
+
+    @Test
     public void testCascadeInsertWithOneToOne() {
         setAutoIds(Administrator.class, 5L);
         setAutoIds(AdministratorMetadata.class, 50L);
@@ -1476,27 +1557,23 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.batchVariables(4, "Task-5", 2L);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                "--->\"id\":1," +
-                                "--->\"tasks\":[" +
-                                "--->--->{\"id\":100,\"taskName\":\"Task-1\",\"owner\":{\"id\":1}}," +
-                                "--->--->{\"id\":101,\"taskName\":\"Task-2\",\"owner\":{\"id\":1}}," +
-                                "--->--->{\"id\":102,\"taskName\":\"Task-3\",\"owner\":{\"id\":1}}" +
-                                "--->]" +
-                                "}"
-                        );
+                        it.modified(entity -> {
+                            Worker worker = (Worker) entity;
+                            Assertions.assertEquals(1L, worker.id());
+                            Assertions.assertEquals(3, worker.tasks().size());
+                            assertTask(worker.tasks().get(0), "Task-1", 1L);
+                            assertTask(worker.tasks().get(1), "Task-2", 1L);
+                            assertTask(worker.tasks().get(2), "Task-3", 1L);
+                        });
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                "--->\"id\":2," +
-                                "--->\"tasks\":[" +
-                                "--->--->{\"id\":103,\"taskName\":\"Task-4\",\"owner\":{\"id\":2}}," +
-                                "--->--->{\"id\":104,\"taskName\":\"Task-5\",\"owner\":{\"id\":2}}" +
-                                "--->]" +
-                                "}"
-                        );
+                        it.modified(entity -> {
+                            Worker worker = (Worker) entity;
+                            Assertions.assertEquals(2L, worker.id());
+                            Assertions.assertEquals(2, worker.tasks().size());
+                            assertTask(worker.tasks().get(0), "Task-4", 2L);
+                            assertTask(worker.tasks().get(1), "Task-5", 2L);
+                        });
                     });
                 }
         );
@@ -1588,7 +1665,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 UNKNOWN_VARIABLE,
                                 "daisy@gmail.com",
                                 "https://www.facebook.com/17346127y497123",
-                                100L,
+                                UNKNOWN_VARIABLE,
                                 false
                         );
                     });
@@ -1705,18 +1782,27 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TASK(NAME, OWNER_ID) values(?, ?)");
-                        it.variables("Install K8S", 100L);
+                        it.variables("Install K8S", UNKNOWN_VARIABLE);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                "\"id\":108,\"taskName\":\"Install K8S\"," +
-                                "\"owner\":{\"id\":100,\"name\":\"Tim\"}" +
-                                "}"
-                        );
+                        it.modified(entity -> {
+                            Task modified = (Task) entity;
+                            Assertions.assertTrue(modified.id() > 0L);
+                            Assertions.assertEquals("Install K8S", modified.taskName());
+                            Assertions.assertNotNull(modified.owner());
+                            Assertions.assertTrue(modified.owner().id() > 0L);
+                            Assertions.assertEquals("Tim", modified.owner().name());
+                        });
                     });
                 }
         );
+    }
+
+    private static void assertTask(Task task, String name, long ownerId) {
+        Assertions.assertTrue(task.id() > 0L);
+        Assertions.assertEquals(name, task.taskName());
+        Assertions.assertNotNull(task.owner());
+        Assertions.assertEquals(ownerId, task.owner().id());
     }
 
     @Test

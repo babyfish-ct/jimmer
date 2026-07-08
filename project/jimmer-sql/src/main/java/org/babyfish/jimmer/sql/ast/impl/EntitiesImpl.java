@@ -49,15 +49,28 @@ public class EntitiesImpl implements Entities {
 
     private final ExecutionPurpose purpose;
 
+    private final boolean rootUserFiltersIgnored;
+
     public EntitiesImpl(JSqlClientImplementor sqlClient) {
-        this(sqlClient, false, null, ExecutionPurpose.QUERY);
+        this(sqlClient, false, null, ExecutionPurpose.QUERY, false);
     }
 
     public EntitiesImpl(JSqlClientImplementor sqlClient, boolean forUpdate, Connection con, ExecutionPurpose purpose) {
+        this(sqlClient, forUpdate, con, purpose, false);
+    }
+
+    public EntitiesImpl(
+            JSqlClientImplementor sqlClient,
+            boolean forUpdate,
+            Connection con,
+            ExecutionPurpose purpose,
+            boolean rootUserFiltersIgnored
+    ) {
         this.sqlClient = sqlClient;
         this.forUpdate = forUpdate;
         this.con = con;
         this.purpose = purpose;
+        this.rootUserFiltersIgnored = rootUserFiltersIgnored;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -80,7 +93,7 @@ public class EntitiesImpl implements Entities {
         if (this.sqlClient == sqlClient) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con, purpose);
+        return new EntitiesImpl(sqlClient, forUpdate, con, purpose, rootUserFiltersIgnored);
     }
 
     @Override
@@ -88,7 +101,7 @@ public class EntitiesImpl implements Entities {
         if (forUpdate) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, true, con, purpose);
+        return new EntitiesImpl(sqlClient, true, con, purpose, rootUserFiltersIgnored);
     }
 
     @Override
@@ -96,29 +109,31 @@ public class EntitiesImpl implements Entities {
         if (this.con == con) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con, purpose);
+        return new EntitiesImpl(sqlClient, forUpdate, con, purpose, rootUserFiltersIgnored);
     }
 
     public Entities forLoader() {
         if (purpose == ExecutionPurpose.LOAD) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.LOAD);
+        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.LOAD, rootUserFiltersIgnored);
     }
 
     public Entities forExporter() {
         if (purpose == ExecutionPurpose.EXPORT) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.EXPORT);
+        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.EXPORT, rootUserFiltersIgnored);
     }
 
     public Entities forSaveCommandFetch(QueryReason reason) {
+        ExecutionPurpose newPurpose = ExecutionPurpose.command(reason);
         if (purpose instanceof ExecutionPurpose.Command &&
-                ((ExecutionPurpose.Command)purpose).getQueryReason() == reason) {
+                ((ExecutionPurpose.Command)purpose).getQueryReason() == reason &&
+                rootUserFiltersIgnored) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.command(reason));
+        return new EntitiesImpl(sqlClient, forUpdate, con, newPurpose, true);
     }
 
     @Override
@@ -282,7 +297,12 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, purpose, FilterLevel.DEFAULT, (q, table) -> {
+                sqlClient,
+                immutableType,
+                purpose,
+                FilterLevel.DEFAULT,
+                rootUserFiltersIgnored,
+                (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -349,7 +369,12 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, purpose, FilterLevel.DEFAULT, (q, table) -> {
+                sqlClient,
+                immutableType,
+                purpose,
+                FilterLevel.DEFAULT,
+                rootUserFiltersIgnored,
+                (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -595,4 +620,3 @@ public class EntitiesImpl implements Entities {
         return set;
     }
 }
-

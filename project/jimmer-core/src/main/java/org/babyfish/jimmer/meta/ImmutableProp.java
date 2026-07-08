@@ -71,6 +71,8 @@ public interface ImmutableProp {
 
     boolean isFormula();
 
+    boolean isDiscriminator();
+
     boolean isTargetForeignKeyReal(MetadataStrategy strategy);
 
     TargetTransferMode getTargetTransferMode();
@@ -167,6 +169,8 @@ public interface ImmutableProp {
     List<ImmutableProp> getPropsDependOnSelf();
 
     Ref<Object> getDefaultValueRef();
+
+    boolean hasDatabaseDefaultValue();
 
     boolean isExcludedFromAllScalars();
 

@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.JdbcConfigurable;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
@@ -12,7 +14,11 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface MutableRootQuery<T extends TableLike<?>> extends MutableQuery, RootSelectable<T> {
+public interface MutableRootQuery<T extends TableLike<?>>
+        extends MutableQuery, RootSelectable<T>, JdbcConfigurable<MutableRootQuery<T>> {
+
+    @OldChain
+    MutableRootQuery<T> typeMatchMode(TypeMatchMode mode);
 
     @OldChain
     @Override
@@ -22,7 +28,7 @@ public interface MutableRootQuery<T extends TableLike<?>> extends MutableQuery, 
     MutableRootQuery<T> where(Specification<?> specification);
 
     @OldChain
-    MutableRootQuery<T> where(JSpecification<?, T> specification);
+    MutableRootQuery<T> where(JSpecification<?, ?> specification);
 
     /**
      * This method is deprecated, using {@code Dynamic Predicates}

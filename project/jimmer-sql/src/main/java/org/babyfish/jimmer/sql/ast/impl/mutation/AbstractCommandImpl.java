@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
@@ -191,6 +191,16 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class TypeMatchModeCfg extends Cfg {
+
+        final TypeMatchMode mode;
+
+        TypeMatchModeCfg(Cfg prev, TypeMatchMode mode) {
+            super(prev);
+            this.mode = mode != null ? mode : TypeMatchMode.AUTO;
+        }
+    }
+
     static class DumbBatchAcceptableCfg extends Cfg {
 
         final boolean acceptable;
@@ -198,6 +208,26 @@ abstract class AbstractCommandImpl {
         DumbBatchAcceptableCfg(Cfg prev, boolean acceptable) {
             super(prev);
             this.acceptable = acceptable;
+        }
+    }
+
+    static class SaveReturningEnabledCfg extends Cfg {
+
+        final boolean enabled;
+
+        SaveReturningEnabledCfg(Cfg prev, boolean enabled) {
+            super(prev);
+            this.enabled = enabled;
+        }
+    }
+
+    static class SaveResultReadsAllPropertiesCfg extends Cfg {
+
+        final boolean readsAllProperties;
+
+        SaveResultReadsAllPropertiesCfg(Cfg prev, boolean readsAllProperties) {
+            super(prev);
+            this.readsAllProperties = readsAllProperties;
         }
     }
 

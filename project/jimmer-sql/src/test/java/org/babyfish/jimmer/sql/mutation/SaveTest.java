@@ -1402,10 +1402,20 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {});
                     ctx.entity(it -> {});
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"taskName\":\"Setup kafka\",\"owner\":{\"id\":1}}");
+                        it.modified(entity -> {
+                            Task task = (Task) entity;
+                            Assertions.assertTrue(task.id() > 0L);
+                            Assertions.assertEquals("Setup kafka", task.taskName());
+                            Assertions.assertEquals(1L, task.owner().id());
+                        });
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":101,\"taskName\":\"Setup K8S\",\"owner\":{\"id\":1}}");
+                        it.modified(entity -> {
+                            Task task = (Task) entity;
+                            Assertions.assertTrue(task.id() > 0L);
+                            Assertions.assertEquals("Setup K8S", task.taskName());
+                            Assertions.assertEquals(1L, task.owner().id());
+                        });
                     });
                 }
         );

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -133,6 +130,47 @@ class FetcherTask {
                 if (!isLoaded(childValue, childField)) {
                     return false;
                 }
+            }
+            if (!isLoadedByTypeBranchFetchers(childValue, childFetcher)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isLoadedByTypeBranchFetchers(Object obj, Fetcher<?> fetcher) {
+        if (!(fetcher instanceof FetcherImplementor<?>)) {
+            return true;
+        }
+        Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap =
+                ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap();
+        if (typeBranchFetcherMap.isEmpty()) {
+            return true;
+        }
+        if (obj instanceof List<?>) {
+            for (Object element : (List<?>) obj) {
+                if (!isLoadedByTypeBranchFetchers(element, fetcher)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        ImmutableType actualType = ((ImmutableSpi) obj).__type();
+        for (Map.Entry<ImmutableType, Fetcher<?>> e : typeBranchFetcherMap.entrySet()) {
+            if (!e.getKey().isAssignableFrom(actualType)) {
+                continue;
+            }
+            for (Field field : e.getValue().getFieldMap().values()) {
+                if (field.getProp().isId()) {
+                    continue;
+                }
+                if (!isLoaded(obj, field)) {
+                    return false;
+                }
+            }
+            if (!isLoadedByTypeBranchFetchers(obj, e.getValue())) {
+                return false;
             }
         }
         return true;

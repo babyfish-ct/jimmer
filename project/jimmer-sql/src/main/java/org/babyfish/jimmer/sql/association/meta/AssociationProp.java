@@ -128,6 +128,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isDiscriminator() {
+        return false;
+    }
+
+    @Override
     public boolean isTargetForeignKeyReal(MetadataStrategy strategy) {
         return true;
     }
@@ -235,6 +240,11 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public Ref<Object> getDefaultValueRef() {
         return null;
+    }
+
+    @Override
+    public boolean hasDatabaseDefaultValue() {
+        return false;
     }
 
     @Override

@@ -1,14 +1,15 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.GeneratorException;
+import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.JoinTable;
 
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
@@ -72,6 +73,7 @@ public class FetcherGenerator {
             add$();
             add$from();
             addConstructor();
+            addForType();
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isId()) {
                     continue;
@@ -99,8 +101,10 @@ public class FetcherGenerator {
             }
             addConstructorByNegativeAndReferenceType();
             addConstructorByFieldConfig();
+            addConstructorByTypeBranchFetcher();
             addCreatorByBoolean();
             addCreatorByFieldConfig();
+            addCreatorByTypeBranchFetcher();
         } finally {
             typeBuilder = oldBuilder;
         }
@@ -382,6 +386,22 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addConstructorByTypeBranchFetcher() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PRIVATE)
+                .addParameter(type.getFetcherClassName(), "prev")
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_IMPL_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(Object.class)
+                        ),
+                        "typeBranchFetcher"
+                )
+                .addStatement("super(prev, typeBranchFetcher)");
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addCreatorByBoolean() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("createFetcher")
@@ -423,5 +443,72 @@ public class FetcherGenerator {
                 .addAnnotation(Override.class)
                 .addStatement("return new $T(this, prop, fieldConfig)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void addCreatorByTypeBranchFetcher() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("createFetcher")
+                .addModifiers(Modifier.PROTECTED)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_IMPL_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(Object.class)
+                        ),
+                        "typeBranchFetcher"
+                )
+                .returns(type.getFetcherClassName())
+                .addAnnotation(Override.class)
+                .addStatement("return new $T(this, typeBranchFetcher)", type.getFetcherClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addForType() {
+        if (!isKnownNonLeaf()) {
+            return;
+        }
+        ImmutableProp conflictProp = type.getProps().get("forType");
+        if (conflictProp != null) {
+            throw new MetaException(
+                    conflictProp.toElement(),
+                    "Illegal property name \"forType\", it conflicts with the generated fetcher method for inheritance type branches"
+            );
+        }
+        TypeVariableName typeBranchTypeVariable = TypeVariableName.get("ST", type.getClassName());
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("forType")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
+                .addTypeVariable(typeBranchTypeVariable)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_CLASS_NAME,
+                                typeBranchTypeVariable
+                        ),
+                        "typeBranchFetcher"
+                )
+                .returns(type.getFetcherClassName())
+                .addStatement("return ($T)__forType(typeBranchFetcher)", type.getFetcherClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private boolean isKnownNonLeaf() {
+        if (!type.isEntity() || type.getInheritanceRoot() == null) {
+            return false;
+        }
+        for (ImmutableType other : context.getImmutableTypes()) {
+            if (other != type && isAssignableFrom(type, other)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isAssignableFrom(ImmutableType base, ImmutableType type) {
+        for (ImmutableType current = type; current != null; current = current.getPrimarySuperType()) {
+            if (current == base) {
+                return true;
+            }
+        }
+        return false;
     }
 }

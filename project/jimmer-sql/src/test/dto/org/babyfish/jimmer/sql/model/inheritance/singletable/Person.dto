@@ -1,0 +1,5 @@
+specification PersonSpecification {
+    id
+    name
+    firstName
+}

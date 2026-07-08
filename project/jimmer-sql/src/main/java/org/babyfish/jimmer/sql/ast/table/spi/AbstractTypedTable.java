@@ -261,8 +261,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
-                        JoinType.INNER,
-                        null
+                        JoinType.INNER
                 )
         );
     }
@@ -277,8 +276,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 new DelayJoin<>(
                         this,
                         prop,
-                        JoinType.INNER,
-                        null
+                        JoinType.INNER
                 )
         );
     }
@@ -293,8 +291,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
-                        joinType,
-                        null
+                        joinType
                 )
         );
     }
@@ -309,40 +306,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 new DelayJoin<>(
                         this,
                         prop,
-                        joinType,
-                        null
-                )
-        );
-    }
-
-    @Override
-    public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
-        if (raw != null) {
-            __beforeJoin();
-            return raw.join(prop, joinType, treatedAs);
-        }
-        return TableProxies.fluent(
-                new DelayJoin<>(
-                        this,
-                        immutableType.getProp(prop),
-                        joinType,
-                        treatedAs
-                )
-        );
-    }
-
-    @Override
-    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
-        if (raw != null) {
-            __beforeJoin();
-            return raw.join(prop, joinType, treatedAs);
-        }
-        return TableProxies.fluent(
-                new DelayJoin<>(
-                        this,
-                        prop,
-                        joinType,
-                        treatedAs
+                        joinType
                 )
         );
     }
@@ -535,6 +499,9 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (delayedOperation instanceof DelayJoin<?>) {
             return ((DelayJoin<?>)delayedOperation).joinType;
         }
+        if (delayedOperation instanceof DelayTreatAs<?>) {
+            return ((DelayTreatAs<?>)delayedOperation).joinType;
+        }
         if (delayedOperation instanceof DelayInverseJoin<?>) {
             return ((DelayInverseJoin<?>)delayedOperation).joinType;
         }
@@ -564,27 +531,19 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     protected <X> DelayedOperation<X> joinOperation(String prop) {
-        return new DelayJoin<>(this, immutableType.getProp(prop), JoinType.INNER, null);
+        return new DelayJoin<>(this, immutableType.getProp(prop), JoinType.INNER);
     }
 
     protected <X> DelayedOperation<X> joinOperation(ImmutableProp prop) {
-        return new DelayJoin<>(this, prop, JoinType.INNER, null);
+        return new DelayJoin<>(this, prop, JoinType.INNER);
     }
 
     protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType) {
-        return new DelayJoin<>(this, immutableType.getProp(prop), joinType, null);
+        return new DelayJoin<>(this, immutableType.getProp(prop), joinType);
     }
 
     protected <X> DelayedOperation<X> joinOperation(ImmutableProp prop, JoinType joinType) {
-        return new DelayJoin<>(this, prop, joinType, null);
-    }
-
-    protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType, ImmutableType treatedAs) {
-        return new DelayJoin<>(this, immutableType.getProp(prop), joinType, treatedAs);
-    }
-
-    protected <X> DelayedOperation<X> joinOperation(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
-        return new DelayJoin<>(this, prop, joinType, treatedAs);
+        return new DelayJoin<>(this, prop, joinType);
     }
 
     protected <X> DelayedOperation<X> joinOperation(
@@ -600,6 +559,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             WeakJoin<?, ?> weakJoinLambda
     ) {
         return new DelayJoin<>(this, targetTableType, joinType, weakJoinLambda);
+    }
+
+    protected <X> DelayedOperation<X> treatAsOperation(ImmutableType treatedAs, JoinType joinType) {
+        return new DelayTreatAs<>(this, treatedAs, joinType);
     }
 
     public static boolean __refEquals(TableLike<?> a, TableLike<?> b) {
@@ -662,18 +625,14 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         private final ImmutableProp prop;
         private final WeakJoinHandle weakJoinHandle;
         private final JoinType joinType;
-        private final ImmutableType treatedAs;
-
         DelayJoin(
                 AbstractTypedTable<?> parent,
                 ImmutableProp prop,
-                JoinType joinType,
-                ImmutableType treatedAs
+                JoinType joinType
         ) {
             this.parent = parent;
             this.order = allocateThreadOrder();
             this.joinType = joinType;
-            this.treatedAs = treatedAs;
             this.prop = prop;
             this.weakJoinHandle = null;
         }
@@ -685,7 +644,6 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.parent = (AbstractTypedTable<?>) base.parent.__baseTableOwner(baseTableOwner);
             this.order = allocateThreadOrder();
             this.joinType = base.joinType;
-            this.treatedAs = base.treatedAs;
             this.prop = base.prop;
             this.weakJoinHandle = null;
         }
@@ -698,7 +656,6 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.parent = parent;
             this.order = allocateThreadOrder();
             this.joinType = joinType;
-            this.treatedAs = null;
             this.prop = null;
             this.weakJoinHandle = WeakJoinHandle.of(weakJoinType);
         }
@@ -713,7 +670,6 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.parent = parent;
             this.order = allocateThreadOrder();
             this.joinType = joinType;
-            this.treatedAs = null;
             this.prop = null;
             this.weakJoinHandle = WeakJoinHandle.of(
                     JWeakJoinLambdaFactory.get(weakJoinLambda),
@@ -740,9 +696,6 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         @Override
         public ImmutableType targetType() {
-            if (treatedAs != null) {
-                return treatedAs;
-            }
             if (prop != null) {
                 return prop.getTargetType();
             }
@@ -753,7 +706,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         public TableImplementor<E> resolve(RootTableResolver ctx) {
             TableImplementor<E> tableImplementor;
             if (prop != null) {
-                tableImplementor = parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs, order);
+                tableImplementor = parent.__resolve(ctx).joinImplementor(prop, joinType, order);
             } else {
                 tableImplementor = parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType, order);
             }
@@ -867,6 +820,71 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 return opposite.toString();
             }
             return parent + "[← " + prop + ']';
+        }
+    }
+
+    private static class DelayTreatAs<E> implements DelayedOperation<E> {
+
+        private final AbstractTypedTable<?> parent;
+
+        private final ImmutableType treatedAs;
+
+        private final JoinType joinType;
+
+        DelayTreatAs(AbstractTypedTable<?> parent, ImmutableType treatedAs, JoinType joinType) {
+            this.parent = parent;
+            this.treatedAs = treatedAs;
+            this.joinType = joinType;
+        }
+
+        private DelayTreatAs(DelayTreatAs<?> base, BaseTableOwner baseTableOwner) {
+            this.parent = (AbstractTypedTable<?>) base.parent.__baseTableOwner(baseTableOwner);
+            this.treatedAs = base.treatedAs;
+            this.joinType = base.joinType;
+        }
+
+        @Override
+        public Table<?> parent() {
+            return parent;
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            return null;
+        }
+
+        @Override
+        public WeakJoinHandle weakJoinHandle() {
+            return null;
+        }
+
+        @Override
+        public ImmutableType targetType() {
+            return treatedAs;
+        }
+
+        @Override
+        public TableImplementor<E> resolve(RootTableResolver ctx) {
+            TableImplementor<E> tableImplementor =
+                    parent.__resolve(ctx).treatAsImplementor(treatedAs, joinType);
+            return tableImplementor.baseTableOwner(parent.__baseTableOwner());
+        }
+
+        @Override
+        public DelayedOperation<E> baseTableOwner(BaseTableOwner baseTableOwner) {
+            return new DelayTreatAs<>(
+                    this,
+                    baseTableOwner
+            );
+        }
+
+        @Override
+        public String toString() {
+            return "DelayTreatAs{" +
+                    "parent=" + parent +
+                    ", treatedAs=" + treatedAs +
+                    ", joinType=" + joinType +
+                    '}';
         }
     }
 

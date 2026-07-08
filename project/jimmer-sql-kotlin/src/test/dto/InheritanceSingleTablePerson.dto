@@ -1,0 +1,8 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KPerson
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto
+
+specification KPersonSpecification {
+    id
+    name
+    firstName
+}

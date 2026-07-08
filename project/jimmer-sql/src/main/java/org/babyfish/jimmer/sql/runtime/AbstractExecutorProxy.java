@@ -43,6 +43,24 @@ public abstract class AbstractExecutorProxy implements Executor {
         );
     }
 
+    @Override
+    public void openCursor(
+            long cursorId,
+            String sql,
+            List<Object> variables,
+            List<Integer> variablePositions,
+            ExecutionPurpose purpose,
+            @Nullable ExecutorContext ctx,
+            JSqlClientImplementor sqlClient
+    ) {
+        raw.openCursor(cursorId, sql, variables, variablePositions, purpose, ctx, sqlClient);
+    }
+
+    @Override
+    public void closeCursor(long cursorId) {
+        raw.closeCursor(cursorId);
+    }
+
     protected abstract AbstractExecutorProxy recreate(Executor raw);
 
     protected abstract Batch createBatch(BatchContext raw);

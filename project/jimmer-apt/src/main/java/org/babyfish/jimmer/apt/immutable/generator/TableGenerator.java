@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -69,6 +69,14 @@ public class TableGenerator {
         ;
         if (!isTableEx) {
             typeBuilder.addSuperinterface(type.getPropsClassName());
+            if (isKnownNonLeaf()) {
+                typeBuilder.addSuperinterface(
+                        ParameterizedTypeName.get(
+                                Constants.POLYMORPHIC_TABLE_CLASS_NAME,
+                                type.getClassName()
+                        )
+                );
+            }
         }
         if (isTableEx) {
             typeBuilder.superclass(type.getTableClassName());
@@ -111,6 +119,7 @@ public class TableGenerator {
             addLambdaWeakJoin(true);
             addBaseTableLambdaWeakJoin(false);
             addBaseTableLambdaWeakJoin(true);
+            addPolymorphicMethods();
             addRemote();
             return typeBuilder.build();
         } finally {
@@ -274,6 +283,122 @@ public class TableGenerator {
                 )
                 .addStatement("return new $T(this, baseTableOwner)", selfClassName);
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void addPolymorphicMethods() {
+        if (isTableEx || !isKnownNonLeaf()) {
+            return;
+        }
+        addTreatAs(false);
+        addTreatAs(true);
+        addInstanceOf();
+        addExactType();
+    }
+
+    private void addTreatAs(boolean optional) {
+        TypeVariableName tableTypeVariable = TypeVariableName.get(
+                "TT",
+                ParameterizedTypeName.get(
+                        Constants.TABLE_CLASS_NAME,
+                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                )
+        );
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(optional ? "tryTreatAs" : "treatAs")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addAnnotation(suppressAllAnnotation())
+                .addTypeVariable(tableTypeVariable)
+                .returns(tableTypeVariable)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                tableTypeVariable
+                        ),
+                        "tableType"
+                )
+                .addStatement(
+                        "$T treatedAs = $T.tableType(tableType)",
+                        Constants.RUNTIME_TYPE_CLASS_NAME,
+                        Constants.TABLE_PROXIES_CLASS_NAME
+                )
+                .addStatement("__beforeJoin()")
+                .beginControlFlow("if (raw != null)")
+                .addStatement(
+                        "return (TT)$T.wrap(raw.treatAsImplementor(treatedAs, $T.$L))",
+                        Constants.TABLE_PROXIES_CLASS_NAME,
+                        Constants.JOIN_TYPE_CLASS_NAME,
+                        optional ? "LEFT" : "INNER"
+                )
+                .endControlFlow()
+                .addStatement(
+                        "return (TT)$T.fluent(treatAsOperation(treatedAs, $T.$L))",
+                        Constants.TABLE_PROXIES_CLASS_NAME,
+                        Constants.JOIN_TYPE_CLASS_NAME,
+                        optional ? "LEFT" : "INNER"
+                );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addInstanceOf() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("instanceOf")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(Constants.PREDICATE_CLASS_NAME)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(type.getClassName())
+                        ),
+                        "type"
+                )
+                .addStatement(
+                        "return $T.instanceOf(this, type)",
+                        Constants.TABLE_PROXIES_CLASS_NAME
+                );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addExactType() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("exactType")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(Constants.PREDICATE_CLASS_NAME)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(type.getClassName())
+                        ),
+                        "type"
+                )
+                .addStatement(
+                        "return $T.exactType(this, type)",
+                        Constants.TABLE_PROXIES_CLASS_NAME
+                );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private boolean isKnownNonLeaf() {
+        if (!type.isEntity() || type.getInheritanceRoot() == null) {
+            return false;
+        }
+        for (ImmutableType other : context.getImmutableTypes()) {
+            if (other != type && isAssignableFrom(type, other)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isAssignableFrom(ImmutableType base, ImmutableType type) {
+        for (ImmutableType current = type; current != null; current = current.getPrimarySuperType()) {
+            if (current == base) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void addWeakJoin(boolean withJoinType) {

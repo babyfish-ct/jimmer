@@ -2,13 +2,9 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.Slice
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.impl.query.PageSource
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
-import org.babyfish.jimmer.sql.ast.query.LockMode
-import org.babyfish.jimmer.sql.ast.query.LockWait
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
-import org.babyfish.jimmer.sql.ast.query.PageFactory
+import org.babyfish.jimmer.sql.ast.impl.query.PageSource
+import org.babyfish.jimmer.sql.ast.query.*
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery

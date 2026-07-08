@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
+import org.babyfish.jimmer.sql.ast.impl.util.JdbcOptionValidator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
@@ -95,6 +96,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int defaultListBatchSize;
 
+    @Nullable
+    private final Integer defaultJdbcFetchSize;
+
+    @Nullable
+    private final Integer defaultJdbcQueryTimeout;
+
     private final boolean inListPaddingEnabled;
 
     private final boolean expandedInListPaddingEnabled;
@@ -108,6 +115,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final boolean mutationTransactionRequired;
 
     private final boolean targetTransferable;
+
+    private final boolean defaultTypeChangeAllowed;
+
+    private final boolean defaultSaveReturningEnabled;
+
+    private final boolean defaultSaveResultReadsAllProperties;
 
     private final boolean explicitBatchEnabled;
 
@@ -174,6 +187,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
             int defaultListBatchSize,
+            @Nullable Integer defaultJdbcFetchSize,
+            @Nullable Integer defaultJdbcQueryTimeout,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
@@ -181,6 +196,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int maxCommandJoinCount,
             boolean mutationTransactionRequired,
             boolean targetTransferable,
+            boolean defaultTypeChangeAllowed,
+            boolean defaultSaveReturningEnabled,
+            boolean defaultSaveResultReadsAllProperties,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
             boolean constraintViolationTranslatable,
@@ -227,6 +245,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
+        this.defaultJdbcFetchSize = defaultJdbcFetchSize;
+        this.defaultJdbcQueryTimeout = defaultJdbcQueryTimeout;
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
@@ -234,6 +254,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
+        this.defaultTypeChangeAllowed = defaultTypeChangeAllowed;
+        this.defaultSaveReturningEnabled = defaultSaveReturningEnabled;
+        this.defaultSaveResultReadsAllProperties = defaultSaveResultReadsAllProperties;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.constraintViolationTranslatable = constraintViolationTranslatable;
@@ -388,6 +411,18 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    @Nullable
+    public Integer getDefaultJdbcFetchSize() {
+        return defaultJdbcFetchSize;
+    }
+
+    @Override
+    @Nullable
+    public Integer getDefaultJdbcQueryTimeout() {
+        return defaultJdbcQueryTimeout;
+    }
+
+    @Override
     public boolean isInListPaddingEnabled() {
         return inListPaddingEnabled;
     }
@@ -415,6 +450,21 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isTargetTransferable() {
         return targetTransferable;
+    }
+
+    @Override
+    public boolean isDefaultTypeChangeAllowed() {
+        return defaultTypeChangeAllowed;
+    }
+
+    @Override
+    public boolean isDefaultSaveReturningEnabled() {
+        return defaultSaveReturningEnabled;
+    }
+
+    @Override
+    public boolean isDefaultSaveResultReadsAllProperties() {
+        return defaultSaveResultReadsAllProperties;
     }
 
     @Override
@@ -704,6 +754,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -711,6 +763,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -761,6 +816,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -768,6 +825,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -813,6 +873,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -820,6 +882,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -868,6 +933,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -875,6 +942,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
+                defaultTypeChangeAllowed,
+                defaultSaveReturningEnabled,
+                defaultSaveResultReadsAllProperties,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
                 constraintViolationTranslatable,
@@ -1058,6 +1128,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
 
+        @Nullable
+        private Integer defaultJdbcFetchSize;
+
+        @Nullable
+        private Integer defaultJdbcQueryTimeout;
+
         private boolean inListPaddingEnabled;
 
         private boolean expandedInListPaddingEnabled;
@@ -1108,6 +1184,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean isForeignKeyEnabledByDefault = true;
 
         private boolean targetTransferable;
+
+        private boolean defaultTypeChangeAllowed;
+
+        private boolean defaultSaveReturningEnabled = true;
+
+        private boolean defaultSaveResultReadsAllProperties;
 
         private boolean explicitBatchEnabled;
 
@@ -1497,6 +1579,22 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        @OldChain
+        public JSqlClient.Builder setDefaultJdbcFetchSize(@Nullable Integer fetchSize) {
+            JdbcOptionValidator.validateDefaultFetchSize(fetchSize);
+            defaultJdbcFetchSize = fetchSize;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public JSqlClient.Builder setDefaultJdbcQueryTimeout(@Nullable Integer queryTimeout) {
+            JdbcOptionValidator.validateDefaultQueryTimeout(queryTimeout);
+            defaultJdbcQueryTimeout = queryTimeout;
+            return this;
+        }
+
+        @Override
         public JSqlClient.Builder setInListPaddingEnabled(boolean enabled) {
             this.inListPaddingEnabled = enabled;
             return this;
@@ -1749,6 +1847,24 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @Override
+        public Builder setDefaultTypeChangeAllowed(boolean allowed) {
+            this.defaultTypeChangeAllowed = allowed;
+            return this;
+        }
+
+        @Override
+        public Builder setDefaultSaveReturningEnabled(boolean enabled) {
+            this.defaultSaveReturningEnabled = enabled;
+            return this;
+        }
+
+        @Override
+        public Builder setDefaultSaveResultReadsAllProperties(boolean readsAllProperties) {
+            this.defaultSaveResultReadsAllProperties = readsAllProperties;
+            return this;
+        }
+
         @OldChain
         @Override
         public Builder setConstraintViolationTranslatable(boolean translatable) {
@@ -1953,6 +2069,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     scalarProviderManager,
                     defaultBatchSize,
                     defaultListBatchSize,
+                    defaultJdbcFetchSize,
+                    defaultJdbcQueryTimeout,
                     inListPaddingEnabled,
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,
@@ -1960,6 +2078,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     maxCommandJoinCount,
                     mutationTransactionRequired,
                     targetTransferable,
+                    defaultTypeChangeAllowed,
+                    defaultSaveReturningEnabled,
+                    defaultSaveResultReadsAllProperties,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,
                     constraintViolationTranslatable,
@@ -2054,8 +2175,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                                 "please specify the `inputNotNull` of " +
                                                 (
                                                         prop.getAssociationAnnotation().annotationType() == OneToOne.class ?
-                                                        OneToOne.class :
-                                                        ManyToOne.class
+                                                                OneToOne.class :
+                                                                ManyToOne.class
                                                 ).getName() +
                                                 "; If you want to make a promise at the business level that " +
                                                 "the association is not null to declare non-null reference, " +

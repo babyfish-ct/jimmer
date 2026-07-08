@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
@@ -12,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.mutation.UpsertMask
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KProps
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -177,7 +177,35 @@ interface KSaveCommandPartialDsl {
 
     fun setTargetTransferModeAll(mode: TargetTransferMode)
 
+    fun setTypeMatchMode(mode: TypeMatchMode)
+
+    fun setAssociatedTypeMatchModeAll(mode: TypeMatchMode)
+
+    fun <E: Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode)
+
+    fun setAssociatedTypeMatchMode(prop: KProperty1<*, *>, mode: TypeMatchMode)
+
+    fun setAssociatedTypeMatchMode(prop: ImmutableProp, mode: TypeMatchMode)
+
+    fun setAssociatedTypeMatchMode(prop: TypedProp.Association<*, *>, mode: TypeMatchMode)
+
+    fun setTypeChangeAllowed(allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowedAll(allowed: Boolean = true)
+
+    fun <E: Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowed(prop: ImmutableProp, allowed: Boolean = true)
+
+    fun setAssociatedTypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean = true)
+
     fun setDumbBatchAcceptable(acceptable: Boolean = true)
+
+    fun setSaveReturningEnabled(enabled: Boolean = true)
+
+    fun setSaveResultReadsAllProperties(readsAllProperties: Boolean = true)
 
     fun setConstraintViolationTranslatable(translatable: Boolean = true)
 

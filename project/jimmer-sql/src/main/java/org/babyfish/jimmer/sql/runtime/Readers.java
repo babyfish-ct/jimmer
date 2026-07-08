@@ -221,6 +221,20 @@ class Readers {
         }
 
         @Override
+        protected Object enterTypeBranch(ImmutableType branchType) {
+            Args parentArgs = this.args;
+            this.args = new Args(branchType);
+            return parentArgs;
+        }
+
+        @Override
+        protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
+            Args parentArgs = (Args) enterValue;
+            parentArgs.addTypeBranchReader(args.createTypeBranchReader());
+            this.args = parentArgs;
+        }
+
+        @Override
         protected void visit(Field field, int depth) {
             ImmutableProp prop = field.getProp();
             if (!prop.isId() && (prop.hasStorage() || prop.getSqlTemplate() != null)) {
@@ -254,6 +268,8 @@ class Readers {
 
             private List<PropId> hiddenPropIds;
 
+            private List<ObjectReader.TypeBranchReader> typeBranchReaders;
+
             private Args(ImmutableType type) {
                 this.type = type;
             }
@@ -282,10 +298,29 @@ class Readers {
                 list.add(prop.getId());
             }
 
+            void addTypeBranchReader(ObjectReader.TypeBranchReader typeBranchReader) {
+                List<ObjectReader.TypeBranchReader> list = typeBranchReaders;
+                if (list == null) {
+                    typeBranchReaders = list = new ArrayList<>();
+                }
+                list.add(typeBranchReader);
+            }
+
             ObjectReader create(JSqlClientImplementor sqlClient) {
                 return new ObjectReader(
                         type,
                         sqlClient.getReader(type.getIdProp()),
+                        nonIdReaderMap,
+                        ObjectReader.discriminatorReader(sqlClient, type),
+                        typeBranchReaders,
+                        shownPropIds,
+                        hiddenPropIds
+                );
+            }
+
+            ObjectReader.TypeBranchReader createTypeBranchReader() {
+                return new ObjectReader.TypeBranchReader(
+                        type,
                         nonIdReaderMap,
                         shownPropIds,
                         hiddenPropIds

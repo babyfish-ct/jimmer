@@ -1,0 +1,60 @@
+InstantiableClientSimpleView {
+    id
+    name
+}
+
+InstantiableClientDefaultView {
+    id
+    name
+    #types {
+        default class Base {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+InstantiableClientExhaustiveView {
+    id
+    name
+    #types {
+        #exhaustive
+        Client class Root {
+        }
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+        }
+    }
+}
+
+input InstantiableClientDefaultInput {
+    id
+    name
+    #types {
+        default class Base {
+        }
+        Organization {
+            taxCode
+        }
+    }
+}
+
+input InstantiableClientExhaustiveInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Client class Root {
+        }
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+        }
+    }
+}

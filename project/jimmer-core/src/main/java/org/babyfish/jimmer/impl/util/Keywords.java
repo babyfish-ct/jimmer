@@ -40,6 +40,7 @@ public class Keywords {
 
                             // Specification
                             "applyTo", "entityType",
+                            "and", "or", "not",
 
                             // AbstractTypedTable
                             "immutableType",
@@ -66,6 +67,7 @@ public class Keywords {
                             "__beforeJoin",
                             "__disableJoin",
                             "joinOperation",
+                            "treatAsOperation",
                             "__joinType",
                             "__refEquals",
                             "__baseTableOwner",
@@ -83,6 +85,8 @@ public class Keywords {
                             "fieldMap",
                             "__isSimpleFetcher",
                             "__contains",
+                            "__forType",
+                            "__getTypeBranchFetcherMap",
 
                             // KNonNullTableEx
                             "get",

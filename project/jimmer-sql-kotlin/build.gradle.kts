@@ -11,6 +11,7 @@ dependencies {
     api(projects.jimmerSql)
 
     testImplementation(libs.kotlin.test)
+    testImplementation(testFixtures(projects.jimmerSql))
     kspTest(projects.jimmerKsp)
 
     testImplementation(libs.bundles.jackson)

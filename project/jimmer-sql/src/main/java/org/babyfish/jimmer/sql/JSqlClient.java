@@ -129,6 +129,12 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     Caches getCaches();
 
+    @Nullable
+    Integer getDefaultJdbcFetchSize();
+
+    @Nullable
+    Integer getDefaultJdbcQueryTimeout();
+
     JsonCodec<?> getJsonCodec();
 
     Filters getFilters();
@@ -412,6 +418,12 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         Builder setDefaultListBatchSize(int size);
 
         @OldChain
+        Builder setDefaultJdbcFetchSize(@Nullable Integer fetchSize);
+
+        @OldChain
+        Builder setDefaultJdbcQueryTimeout(@Nullable Integer queryTimeout);
+
+        @OldChain
         Builder setInListPaddingEnabled(boolean enabled);
 
         @OldChain
@@ -537,6 +549,27 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         @OldChain
         Builder setTargetTransferable(boolean targetTransferable);
 
+        @OldChain
+        Builder setDefaultTypeChangeAllowed(boolean allowed);
+
+        @OldChain
+        Builder setDefaultSaveReturningEnabled(boolean enabled);
+
+        @OldChain
+        Builder setDefaultSaveResultReadsAllProperties(boolean readsAllProperties);
+
+        /**
+         * Specify whether SQL constraint violations should be investigated and
+         * translated by Jimmer into higher-level save exceptions, such as
+         * {@link org.babyfish.jimmer.sql.exception.SaveException.NotUnique}.
+         *
+         * <p>When this is {@code true}, Jimmer can execute additional diagnostic
+         * queries and use savepoints where needed to classify constraint failures.</p>
+         *
+         * <p>When this is {@code false}, Jimmer does not run that investigation and
+         * does not create savepoints for it. The original database exception still
+         * goes through the ordinary {@link ExceptionTranslator} pipeline.</p>
+         */
         @OldChain
         Builder setConstraintViolationTranslatable(boolean translatable);
 

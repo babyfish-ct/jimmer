@@ -60,6 +60,9 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
                 for (TypeRef superType : definition.getSuperTypes()) {
                     ((TypeRefImpl<S>) superType).accept(this);
                 }
+                for (TypeRef branch : definition.getPolymorphicBranches()) {
+                    ((TypeRefImpl<S>) branch).accept(this);
+                }
             });
         }
         return true;

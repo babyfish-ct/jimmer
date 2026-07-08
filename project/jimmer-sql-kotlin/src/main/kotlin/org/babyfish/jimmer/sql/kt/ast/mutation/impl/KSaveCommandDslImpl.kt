@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
@@ -165,8 +166,64 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
     }
 
+    override fun setTypeMatchMode(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setTypeMatchMode(mode)
+    }
+
+    override fun setAssociatedTypeMatchModeAll(mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchModeAll(mode)
+    }
+
+    override fun <E : Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(entityType.java, mode)
+    }
+
+    override fun setAssociatedTypeMatchMode(prop: KProperty1<*, *>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop.toImmutableProp(), mode)
+    }
+
+    override fun setAssociatedTypeMatchMode(prop: ImmutableProp, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop, mode)
+    }
+
+    override fun setAssociatedTypeMatchMode(prop: TypedProp.Association<*, *>, mode: TypeMatchMode) {
+        javaCommand = javaCommand.setAssociatedTypeMatchMode(prop, mode)
+    }
+
+    override fun setTypeChangeAllowed(allowed: Boolean) {
+        javaCommand = javaCommand.setTypeChangeAllowed(allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowedAll(allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowedAll(allowed)
+    }
+
+    override fun <E : Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(entityType.java, allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop.toImmutableProp(), allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: ImmutableProp, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop, allowed)
+    }
+
+    override fun setAssociatedTypeChangeAllowed(prop: TypedProp.Association<*, *>, allowed: Boolean) {
+        javaCommand = javaCommand.setAssociatedTypeChangeAllowed(prop, allowed)
+    }
+
     override fun setDumbBatchAcceptable(acceptable: Boolean) {
         javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
+    }
+
+    override fun setSaveReturningEnabled(enabled: Boolean) {
+        javaCommand = javaCommand.setSaveReturningEnabled(enabled)
+    }
+
+    override fun setSaveResultReadsAllProperties(readsAllProperties: Boolean) {
+        javaCommand = javaCommand.setSaveResultReadsAllProperties(readsAllProperties)
     }
 
     override fun setConstraintViolationTranslatable(translatable: Boolean) {

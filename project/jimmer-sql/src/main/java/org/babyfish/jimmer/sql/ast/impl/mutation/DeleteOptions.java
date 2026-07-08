@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -16,6 +17,8 @@ public interface DeleteOptions {
     Connection getConnection();
 
     DeleteMode getMode();
+
+    TypeMatchMode getTypeMatchMode();
 
     int getMaxCommandJoinCount();
 
@@ -65,6 +68,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return mode;
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode() {
+        return raw.getTypeMatchMode();
     }
 
     @Override
@@ -126,6 +134,11 @@ class DetachOptions implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return saveOptions.getDeleteMode();
+    }
+
+    @Override
+    public TypeMatchMode getTypeMatchMode() {
+        return TypeMatchMode.AUTO;
     }
 
     @Override

@@ -3,7 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.sql.OneToMany;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.exception.SaveException;
@@ -12,13 +13,14 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
-import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.MutationPath;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 class SaveContext extends MutationContext {
 
@@ -35,6 +37,10 @@ class SaveContext extends MutationContext {
     final ImmutableProp backReferenceProp;
 
     final boolean backReferenceFrozen;
+
+    private final Set<DraftSpi> saveReturningAppliedDrafts;
+
+    private final Set<DraftSpi> saveReturningNotAcceptedDrafts;
 
     SaveContext(
             SaveOptions options,
@@ -68,6 +74,8 @@ class SaveContext extends MutationContext {
         this.backReferenceProp = null;
         this.backReferenceFrozen = false;
         this.affectedRowCountMap = affectedRowCountMap;
+        this.saveReturningAppliedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.saveReturningNotAcceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
     }
 
     private SaveContext(SaveContext parent, ImmutableProp prop, ImmutableProp backProp) {
@@ -98,7 +106,11 @@ class SaveContext extends MutationContext {
                     break;
             }
         }
-        this.options = parent.options.withMode(saveMode);
+        SaveOptions options = parent.options.withMode(saveMode);
+        if (prop != null) {
+            options = options.withAssociatedOptions(prop);
+        }
+        this.options = options;
         this.con = parent.con;
         this.fetcher = null;
         this.trigger = parent.trigger;
@@ -118,6 +130,8 @@ class SaveContext extends MutationContext {
             this.backReferenceFrozen = false;
         }
         this.affectedRowCountMap = parent.affectedRowCountMap;
+        this.saveReturningAppliedDrafts = parent.saveReturningAppliedDrafts;
+        this.saveReturningNotAcceptedDrafts = parent.saveReturningNotAcceptedDrafts;
     }
 
     private SaveContext(SaveContext base, JSqlClientImplementor sqlClient) {
@@ -129,6 +143,8 @@ class SaveContext extends MutationContext {
         this.affectedRowCountMap = base.affectedRowCountMap;
         this.backReferenceProp = base.backReferenceProp;
         this.backReferenceFrozen = base.backReferenceFrozen;
+        this.saveReturningAppliedDrafts = base.saveReturningAppliedDrafts;
+        this.saveReturningNotAcceptedDrafts = base.saveReturningNotAcceptedDrafts;
     }
 
     public Object allocateId() {
@@ -214,5 +230,21 @@ class SaveContext extends MutationContext {
         }
         ImmutableProp backProp = path.getBackProp();
         return backProp == null || !backProp.isColumnDefinition();
+    }
+
+    public void markSaveReturningApplied(DraftSpi draft) {
+        saveReturningAppliedDrafts.add(draft);
+    }
+
+    public boolean isSaveReturningApplied(DraftSpi draft) {
+        return saveReturningAppliedDrafts.contains(draft);
+    }
+
+    public void markSaveReturningNotAccepted(DraftSpi draft) {
+        saveReturningNotAcceptedDrafts.add(draft);
+    }
+
+    public boolean isSaveReturningNotAccepted(DraftSpi draft) {
+        return saveReturningNotAcceptedDrafts.contains(draft);
     }
 }

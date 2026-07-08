@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
@@ -14,7 +12,6 @@ import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 public class SQLiteDialect extends DefaultDialect {
     @Override
@@ -55,9 +52,7 @@ public class SQLiteDialect extends DefaultDialect {
                 .appendInsertedColumns("")
                 .leave()
                 .sql(" values")
-                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
-                .appendInsertingValues()
-                .leave()
+                .appendInsertingRows()
                 .sql(" on conflict")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendConflictColumns()
@@ -69,22 +64,11 @@ public class SQLiteDialect extends DefaultDialect {
                     .enter(AbstractSqlBuilder.ScopeType.SET)
                     .appendUpdatingAssignments("excluded.", "")
                     .leave();
-            if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition("excluded.");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
             }
-        } else if (ctx.hasGeneratedId()) {
-            ctx.sql(" do update set ");
-            List<ValueGetter> conflictGetters = ctx.getConflictGetters();
-            ValueGetter cheapestGetter = conflictGetters.get(0);
-            for (ValueGetter getter : conflictGetters) {
-                Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                type = Classes.boxTypeOf(type);
-                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                    cheapestGetter = getter;
-                    break;
-                }
-            }
-            ctx.sql(cheapestGetter).sql(" = excluded.").sql(cheapestGetter);
+        } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
+            ctx.sql(" do update set ").appendFakeUpdateAssignment("", "");
         } else {
             ctx.sql(" do nothing");
         }

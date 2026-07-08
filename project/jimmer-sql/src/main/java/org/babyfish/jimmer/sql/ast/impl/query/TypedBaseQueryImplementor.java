@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -18,6 +19,8 @@ public interface TypedBaseQueryImplementor<T extends BaseTable>
     void collectConfigurableQueries(List<ConfigurableBaseQueryImpl<?>> queries);
 
     void collectCteDependencyQueries(List<ConfigurableBaseQueryImpl<?>> queries);
+
+    void applyGlobalFilters(AstContext astContext, FilterLevel level, QueryAnalysis queryAnalysis);
 
     default void acceptBaseTableReference(AstVisitor visitor) {
         MergedBaseQueryImpl<?> mergedBy = getMergedBy();

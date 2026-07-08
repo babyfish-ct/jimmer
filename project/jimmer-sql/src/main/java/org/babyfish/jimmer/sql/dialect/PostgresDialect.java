@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.dialect;
 
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
@@ -15,7 +13,6 @@ import org.postgresql.util.PGobject;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.*;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.IntSupplier;
 
@@ -36,6 +33,11 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public UpdateJoin getUpdateJoin() {
         return new UpdateJoin(false, UpdateJoin.From.AS_JOIN);
+    }
+
+    @Override
+    public DeleteJoin getDeleteJoin() {
+        return new DeleteJoin(DeleteJoin.From.AS_USING);
     }
 
     @Override
@@ -198,6 +200,40 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateByValuesReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isUpdateReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isInsertReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isInsertBatchReturningByOrderSupported() {
+        return true;
+    }
+
+    @Override
+    public void insertReturning(InsertReturningContext ctx) {
+        ctx
+                .sql("insert into ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
+                .appendInsertedColumns()
+                .leave()
+                .sql(" values")
+                .appendInsertingValues()
+                .sql(" returning ")
+                .appendReturning("");
+    }
+
+    @Override
     public boolean isTransactionAbortedByError() {
         return true;
     }
@@ -227,6 +263,32 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public void updateByValues(UpdateByValuesContext ctx) {
+        ctx
+                .sql("update ")
+                .appendTableName()
+                .sql(" tb_1_")
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .appendAssignments("tb_1_.", "tb_2_.")
+                .leave()
+                .sql(" from ")
+                .appendSource()
+                .sql(" tb_2_")
+                .enter(AbstractSqlBuilder.ScopeType.TUPLE)
+                .appendSourceColumns()
+                .leave()
+                .sql(" where ")
+                .appendPredicates("tb_1_.", "tb_2_.")
+                .sql(" returning ")
+                .appendReturning("tb_1_.");
+    }
+
+    @Override
+    public void updateReturning(UpdateReturningContext ctx) {
+        ctx.appendUpdateStatementWithReturning();
+    }
+
+    @Override
     public void upsert(UpsertContext ctx) {
         ctx.sql("insert into ")
                 .appendTableName()
@@ -234,9 +296,7 @@ public class PostgresDialect extends DefaultDialect {
                 .appendInsertedColumns("")
                 .leave()
                 .sql(" values")
-                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
-                .appendInsertingValues()
-                .leave()
+                .appendInsertingRows()
                 .sql(" on conflict")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendConflictColumns()
@@ -246,7 +306,9 @@ public class PostgresDialect extends DefaultDialect {
         }
         if (ctx.isUpdateIgnored()) {
             ctx.sql(" do nothing");
-            if (ctx.hasGeneratedId()) {
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(" returning ").appendReturning("");
+            } else if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else if (ctx.hasUpdatedColumns()) {
@@ -254,30 +316,21 @@ public class PostgresDialect extends DefaultDialect {
                     .enter(AbstractSqlBuilder.ScopeType.SET)
                     .appendUpdatingAssignments("excluded.", "")
                     .leave();
-            if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition("excluded.");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" where ").appendUpdateConditionWithTableName("excluded.", "");
             }
-            if (ctx.hasGeneratedId()) {
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(" returning ").appendReturning("");
+            } else if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
             }
-        } else if (ctx.hasGeneratedId()) {
-            ctx.sql(" do update set ");
-            List<ValueGetter> conflictGetters = ctx.getConflictGetters();
-            ValueGetter cheapestGetter = conflictGetters.get(0);
-            for (ValueGetter getter : conflictGetters) {
-                Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                type = Classes.boxTypeOf(type);
-                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                    cheapestGetter = getter;
-                    break;
-                }
+        } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
+            ctx.sql(" do update set ").appendFakeUpdateAssignmentWithTargetTableName();
+            if (ctx.isCurrentRowReturningRequired()) {
+                ctx.sql(" returning ").appendReturning("");
+            } else if (ctx.hasGeneratedId()) {
+                ctx.sql(" returning ").appendGeneratedId();
             }
-            ctx.sql(FAKE_UPDATE_COMMENT)
-                    .sql(" ")
-                    .sql(cheapestGetter)
-                    .sql(" = excluded.")
-                    .sql(cheapestGetter);
-            ctx.sql(" returning ").appendGeneratedId();
         } else {
             ctx.sql(" do nothing");
         }
@@ -286,12 +339,12 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public String transCacheOperatorTableDDL() {
         return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
-               "\tID bigint generated always as identity,\n" +
-               "\tIMMUTABLE_TYPE text,\n" +
-               "\tIMMUTABLE_PROP text,\n" +
-               "\tCACHE_KEY text not null,\n" +
-               "\tREASON text\n" +
-               ")";
+                "\tID bigint generated always as identity,\n" +
+                "\tIMMUTABLE_TYPE text,\n" +
+                "\tIMMUTABLE_PROP text,\n" +
+                "\tCACHE_KEY text not null,\n" +
+                "\tREASON text\n" +
+                ")";
     }
 
     @Override

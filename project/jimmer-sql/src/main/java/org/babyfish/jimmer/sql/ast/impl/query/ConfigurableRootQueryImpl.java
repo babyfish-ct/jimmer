@@ -19,10 +19,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         extends AbstractConfigurableTypedQueryImpl
@@ -352,8 +356,9 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
+                data.jdbcOptions,
                 data.forUpdate != null
         );
         return (Long)rows.get(0);
@@ -380,8 +385,9 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 sqlResult.get_2(),
                 sqlResult.get_3(),
                 Collections.singletonList(Expression.rowCount()),
-                data.tupleCreator,
+                null,
                 getMutableQuery().getPurpose(),
+                data.jdbcOptions,
                 getForUpdate() != null
         );
         return !rows.isEmpty();
@@ -403,6 +409,29 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 data.selections,
                 data.tupleCreator,
                 getMutableQuery().getPurpose(),
+                data.jdbcOptions,
+                data.forUpdate != null
+        );
+    }
+
+    @Override
+    public Stream<R> stream(Connection con) {
+        TypedQueryData data = getData();
+        if (data.limit == 0) {
+            return Stream.empty();
+        }
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(sqlClient);
+        return Selectors.stream(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                data.selections,
+                data.tupleCreator,
+                getMutableQuery().getPurpose(),
+                data.jdbcOptions,
                 data.forUpdate != null
         );
     }
@@ -468,7 +497,12 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         SqlBuilder builder = new SqlBuilder(astContext);
         if (!getMutableQuery().isFrozen()) {
             getMutableQuery().applyVirtualPredicates(astContext);
-            getMutableQuery().applyGlobalFilters(astContext, getMutableQuery().getContext().getFilterLevel(), getData().selections);
+            getMutableQuery().applyGlobalFilters(
+                    astContext,
+                    getMutableQuery().getContext().getFilterLevel(),
+                    getData().selections,
+                    QueryAnalysisBuilder.analyzeJoinRequirements(astContext, this)
+            );
         }
         builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
         renderTo(builder);

@@ -488,7 +488,7 @@ public class DraftImplGenerator {
     }
 
     private void addSetter(ImmutableProp prop) {
-        if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
+        if (prop.isJavaFormula() || prop.isDiscriminator() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec
@@ -582,7 +582,7 @@ public class DraftImplGenerator {
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
-        if (!prop.isAssociation(false) || prop.getManyToManyViewBaseProp() != null || prop.isJavaFormula()) {
+        if (!prop.isAssociation(false) || prop.getManyToManyViewBaseProp() != null || prop.isJavaFormula() || prop.isDiscriminator()) {
             return;
         }
         String methodName = prop.isList() ? prop.getAdderByName() : prop.getApplierName();
@@ -651,7 +651,14 @@ public class DraftImplGenerator {
                 castTo = prop.getTypeName();
             }
             appender.addCase(prop);
-            if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
+            if (prop.isDiscriminator()) {
+                builder.addStatement("$T __tmpModified = $L()", type.getImplClassName(), Constants.DRAFT_FIELD_MODIFIED);
+                builder.addStatement("__tmpModified.$L = ($T)value", prop.getValueName(), castTo);
+                if (prop.isLoadedStateRequired()) {
+                    builder.addStatement("__tmpModified.$L = true", prop.getLoadedStateName());
+                }
+                builder.addStatement("break");
+            } else if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
                 builder.addStatement("break");
             } else if (prop.getTypeName().isPrimitive()) {
                 builder.addStatement(

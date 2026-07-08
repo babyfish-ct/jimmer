@@ -40,6 +40,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         Set<DtoModifier> modifiers = EnumSet.noneOf(DtoModifier.class);
+        Token sealedModifier = null;
         for (Token modifier : type.modifiers) {
             DtoModifier dtoModifier;
             switch (modifier.getText()) {
@@ -51,6 +52,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                     break;
                 case "unsafe":
                     dtoModifier = DtoModifier.UNSAFE;
+                    break;
+                case "sealed":
+                    dtoModifier = DtoModifier.SEALED;
+                    sealedModifier = modifier;
                     break;
                 case "fixed":
                     dtoModifier = DtoModifier.FIXED;
@@ -79,6 +84,13 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                         "Duplicated modifier \"" + modifier.getText() + "\""
                 );
             }
+        }
+        if (sealedModifier != null && type.body.typesBlocks.isEmpty()) {
+            throw exception(
+                    sealedModifier.getLine(),
+                    sealedModifier.getCharPositionInLine(),
+                    "The modifier 'sealed' can only be used for polymorphic DTOs with #types"
+            );
         }
         if (modifiers.contains(DtoModifier.INPUT) &&
                 modifiers.contains(DtoModifier.SPECIFICATION)) {
@@ -218,6 +230,23 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getSuperTypes(baseType);
     }
 
+    @Nullable
+    public T getType(String qualifiedName) {
+        return compiler.getType(qualifiedName);
+    }
+
+    public Collection<T> getDirectSubTypes(T baseType) {
+        return compiler.getDirectSubTypes(baseType);
+    }
+
+    public boolean isSameType(T baseType1, T baseType2) {
+        return compiler.isSameType(baseType1, baseType2);
+    }
+
+    public boolean isInstantiable(T baseType) {
+        return compiler.isInstantiable(baseType);
+    }
+
     public List<String> getEnumConstants(P baseProp) {
         return compiler.getEnumConstants(baseProp);
     }
@@ -226,12 +255,14 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return importing.resolve(ctx, compiler);
     }
 
-    public String resolve(DtoParser.QualifiedNameContext ctx) { return importing.resolve(ctx); }
+    public String resolve(DtoParser.QualifiedNameContext ctx) {
+        return importing.resolve(ctx);
+    }
 
     public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
         return importing.resolve(qualifiedName, qualifiedNameLine, qualifiedNameCol);
     }
-    
+
     public DtoAstException exception(int line, int col, String message) {
         return compiler.exception(line, col, message);
     }

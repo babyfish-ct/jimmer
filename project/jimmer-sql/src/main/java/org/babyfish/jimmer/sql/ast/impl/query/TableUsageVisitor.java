@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
@@ -13,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 import org.jetbrains.annotations.Nullable;
 
@@ -153,6 +156,26 @@ public abstract class TableUsageVisitor extends AstVisitor {
             this.tableImplementor = (TableImplementor<?>) enterValue;
         }
 
+        @Override
+        protected boolean shouldVisitTypeBranch(ImmutableType branchType, Fetcher<?> fetcher) {
+            return JoinFetchFieldVisitor.hasTableFields(fetcher, ctx.getSqlClient(), true);
+        }
+
+        @Override
+        protected Object enterTypeBranch(ImmutableType branchType) {
+            TableImplementor<?> oldTableImplementor = this.tableImplementor;
+            TableImplementor<?> newTableImplementor =
+                    oldTableImplementor.treatAsImplementor(branchType, JoinType.LEFT);
+            useTable(newTableImplementor.realTable(ctx));
+            this.tableImplementor = newTableImplementor;
+            return oldTableImplementor;
+        }
+
+        @Override
+        protected void leaveTypeBranch(ImmutableType branchType, Object enterValue) {
+            this.tableImplementor = (TableImplementor<?>) enterValue;
+        }
+
         private boolean isIdOnlyJoinFetch(Field field) {
             if (field.getFilter() != null || field.getRecursionStrategy() != null) {
                 return false;
@@ -165,6 +188,10 @@ public abstract class TableUsageVisitor extends AstVisitor {
         }
 
         private boolean isIdOnlyFetcher(Fetcher<?> fetcher) {
+            if (fetcher instanceof FetcherImplementor<?> &&
+                    !((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty()) {
+                return false;
+            }
             for (Field field : fetcher.getFieldMap().values()) {
                 ImmutableProp prop = field.getProp();
                 if (prop.isId()) {

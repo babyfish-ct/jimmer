@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
@@ -9,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -21,6 +24,7 @@ import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -29,6 +33,10 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     protected static final Map<Class<?>, Converter<?, ?>> ARRAY_CONVERTER_MAP;
 
     protected final StringBuilder builder = new StringBuilder();
+
+    private ValueGetterRenderFrame valueGetterRenderFrame;
+
+    private OptimisticLockNewValueRenderFrame optimisticLockNewValueRenderFrame;
 
     private boolean indentRequired;
 
@@ -57,8 +65,94 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
     @SuppressWarnings("unchecked")
     public T sql(ValueGetter getter) {
+        ValueGetterRenderFrame frame = valueGetterRenderFrame;
+        if (frame != null) {
+            renderSingleColumnValueGetter(getter, frame.prefix, frame.suffix);
+            return (T) this;
+        }
         getter.metadata().renderTo(this);
         return (T) this;
+    }
+
+    public void pushValueGetterRender(String prefix, String suffix) {
+        this.valueGetterRenderFrame = new ValueGetterRenderFrame(
+                valueGetterRenderFrame,
+                prefix,
+                suffix
+        );
+    }
+
+    public void popValueGetterRender() {
+        this.valueGetterRenderFrame = valueGetterRenderFrame.parent;
+    }
+
+    public boolean renderValueGetter(Expression<?> expression) {
+        ValueGetterRenderFrame frame = valueGetterRenderFrame;
+        if (frame == null) {
+            return false;
+        }
+        List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient(), expression, null);
+        if (getters.size() != 1) {
+            throw new IllegalStateException(
+                    "Internal bug: The expression \"" +
+                            expression +
+                            "\" cannot be rendered as one physical column"
+            );
+        }
+        renderSingleColumnValueGetter(getters.get(0), frame.prefix, frame.suffix);
+        return true;
+    }
+
+    public void pushOptimisticLockNewValueRender(@Nullable String prefix, String suffix) {
+        this.optimisticLockNewValueRenderFrame = new OptimisticLockNewValueRenderFrame(
+                optimisticLockNewValueRenderFrame,
+                prefix,
+                suffix
+        );
+    }
+
+    public void popOptimisticLockNewValueRender() {
+        this.optimisticLockNewValueRenderFrame = optimisticLockNewValueRenderFrame.parent;
+    }
+
+    public boolean renderOptimisticLockNewValue(ImmutableProp prop) {
+        OptimisticLockNewValueRenderFrame frame = optimisticLockNewValueRenderFrame;
+        if (frame == null) {
+            return false;
+        }
+        if (frame.prefix == null) {
+            if (!(this instanceof BatchSqlBuilder)) {
+                throw new IllegalStateException(
+                        "Internal bug: The optimistic lock new-value property \"" +
+                                prop +
+                                "\" requires batch value rendering"
+                );
+            }
+            ((BatchSqlBuilder) this).value(prop);
+            return true;
+        }
+        List<PropertyGetter> getters = PropertyGetter.propertyGetters(sqlClient(), prop);
+        if (getters.size() != 1) {
+            throw new IllegalStateException(
+                    "Internal bug: The optimistic lock new-value property \"" +
+                            prop +
+                            "\" cannot be rendered as one physical column"
+            );
+        }
+        renderSingleColumnValueGetter(getters.get(0), frame.prefix, frame.suffix);
+        return true;
+    }
+
+    private void renderSingleColumnValueGetter(ValueGetter getter, String prefix, String suffix) {
+        String columnName = getter.metadata().getColumnName();
+        if (columnName == null) {
+            throw new IllegalStateException(
+                    "Internal bug: The value getter \"" +
+                            getter +
+                            "\" cannot be rendered as one physical column"
+            );
+        }
+        sql(prefix).sql(columnName).sql(suffix);
     }
 
     @SuppressWarnings("unchecked")
@@ -593,6 +687,41 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
     protected interface Converter<S, T> {
         T convert(S value);
+    }
+
+    private static class ValueGetterRenderFrame {
+
+        final ValueGetterRenderFrame parent;
+
+        final String prefix;
+
+        final String suffix;
+
+        ValueGetterRenderFrame(ValueGetterRenderFrame parent, String prefix, String suffix) {
+            this.parent = parent;
+            this.prefix = prefix;
+            this.suffix = suffix;
+        }
+    }
+
+    private static class OptimisticLockNewValueRenderFrame {
+
+        final OptimisticLockNewValueRenderFrame parent;
+
+        @Nullable
+        final String prefix;
+
+        final String suffix;
+
+        OptimisticLockNewValueRenderFrame(
+                OptimisticLockNewValueRenderFrame parent,
+                @Nullable String prefix,
+                String suffix
+        ) {
+            this.parent = parent;
+            this.prefix = prefix;
+            this.suffix = suffix;
+        }
     }
 
     static {

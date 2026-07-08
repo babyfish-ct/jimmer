@@ -113,7 +113,7 @@ public enum QueryReason {
      *     ...
      *     (Vm1, Vm2, ... Vmn)
      * }</pre>
-     *
+     * <p>
      * However, the current database does not support multi-column in,
      * for example: org.babyfish.jimmer.sql.dialect.SqlServerDialect
      */
@@ -285,9 +285,9 @@ public enum QueryReason {
      * <p>Fortunately, some databases can configure the behavior of
      * null values in unique constraints, such as
      * <a href="https://www.postgresql.org/about/featurematrix/detail/392/">
-     *     "Nulls not distinct" of Postgres
+     * "Nulls not distinct" of Postgres
      * </a></p>
-     *
+     * <p>
      * If you have already set the uniqueness constraint based on
      * {@link org.babyfish.jimmer.sql.Key} properties and
      * {@link org.babyfish.jimmer.sql.LogicalDeleted} property in
@@ -365,6 +365,34 @@ public enum QueryReason {
      * or this capability has not yet been integrated into Jimmer.
      */
     GET_ID_FOR_KEY_BASE_UPDATE,
+
+    /**
+     * When saving joined-inheritance derived type objects by
+     * {@link org.babyfish.jimmer.sql.Key} properties without ids, the root
+     * upsert may not return all ids required for writing joined type-branch rows.
+     * Jimmer resolves those ids by key after the root upsert.
+     */
+    GET_ID_FOR_KEY_BASE_UPSERT,
+
+    /**
+     * When {@code typeChangeAllowed} is enabled for a joined inheritance
+     * update/upsert, Jimmer reads root rows and their old discriminator values
+     * before the guarded root mutation decides which rows are accepted.
+     */
+    RESOLVE_OLD_TYPE_FOR_CHANGE,
+
+    /**
+     * When deleting an inheritance entity exactly, Jimmer may need to clean up
+     * associations or joined type branch tables before the root row delete.
+     *
+     * <p>In this case, Jimmer first resolves the root ids accepted by the
+     * requested discriminator predicate. If the requested id belongs to a
+     * different type, downstream cleanup is skipped and the delete result is
+     * simply not modified. This is a resolve query, not a hidden lock. If
+     * serialized delete semantics are required, applications should explicitly
+     * lock the target rows or use database cascade.</p>
+     */
+    RESOLVE_ACCEPTED_INHERITANCE_DELETE_TARGETS,
 
     /**
      * <p>Saving some objects without Ids using the
