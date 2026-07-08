@@ -82,6 +82,23 @@ class DMLTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testUpdateReturningStream() {
+        lateinit var rows: List<Tuple2<Long, String>>
+        connectAndExpect({ con ->
+            sqlClient { setDialect(H2Dialect()) }.createUpdateReturning(Book::class) {
+                set(table.name, "Learning GraphQL+")
+                where(table.id eq 1L)
+                returning(table.id, table.name)
+            }.stream(con).use {
+                rows = it.toList()
+            }
+        }) {}
+        assertEquals(1, rows.size)
+        assertEquals(1L, rows[0]._1)
+        assertEquals("Learning GraphQL+", rows[0]._2)
+    }
+
+    @Test
     fun testUpdateWithFilter() {
         executeAndExpectRowCount(
             sqlClient.createUpdate(Administrator::class) {

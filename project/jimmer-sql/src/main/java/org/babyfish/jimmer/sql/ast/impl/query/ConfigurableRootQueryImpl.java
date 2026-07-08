@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         extends AbstractConfigurableTypedQueryImpl
@@ -357,6 +358,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 Collections.singletonList(Expression.rowCount()),
                 null,
                 getMutableQuery().getPurpose(),
+                data.jdbcOptions,
                 data.forUpdate != null
         );
         return (Long)rows.get(0);
@@ -385,6 +387,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 Collections.singletonList(Expression.rowCount()),
                 null,
                 getMutableQuery().getPurpose(),
+                data.jdbcOptions,
                 getForUpdate() != null
         );
         return !rows.isEmpty();
@@ -406,6 +409,29 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
                 data.selections,
                 data.tupleCreator,
                 getMutableQuery().getPurpose(),
+                data.jdbcOptions,
+                data.forUpdate != null
+        );
+    }
+
+    @Override
+    public Stream<R> stream(Connection con) {
+        TypedQueryData data = getData();
+        if (data.limit == 0) {
+            return Stream.empty();
+        }
+        JSqlClientImplementor sqlClient = getMutableQuery().getSqlClient();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(sqlClient);
+        return Selectors.stream(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                data.selections,
+                data.tupleCreator,
+                getMutableQuery().getPurpose(),
+                data.jdbcOptions,
                 data.forUpdate != null
         );
     }

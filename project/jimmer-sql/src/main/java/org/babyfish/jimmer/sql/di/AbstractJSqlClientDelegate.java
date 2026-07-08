@@ -365,6 +365,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public Integer getDefaultJdbcFetchSize() {
+        return sqlClient().getDefaultJdbcFetchSize();
+    }
+
+    @Override
+    public Integer getDefaultJdbcQueryTimeout() {
+        return sqlClient().getDefaultJdbcQueryTimeout();
+    }
+
+    @Override
     public int getMaxJoinFetchDepth() {
         return sqlClient().getMaxJoinFetchDepth();
     }

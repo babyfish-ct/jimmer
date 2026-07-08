@@ -65,6 +65,12 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     int getDefaultListBatchSize();
 
+    @Nullable
+    Integer getDefaultJdbcFetchSize();
+
+    @Nullable
+    Integer getDefaultJdbcQueryTimeout();
+
     boolean isInListPaddingEnabled();
 
     boolean isExpandedInListPaddingEnabled();

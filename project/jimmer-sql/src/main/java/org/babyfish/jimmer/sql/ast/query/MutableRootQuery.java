@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.JdbcConfigurable;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
@@ -13,7 +14,8 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface MutableRootQuery<T extends TableLike<?>> extends MutableQuery, RootSelectable<T> {
+public interface MutableRootQuery<T extends TableLike<?>>
+        extends MutableQuery, RootSelectable<T>, JdbcConfigurable<MutableRootQuery<T>> {
 
     @OldChain
     MutableRootQuery<T> typeMatchMode(TypeMatchMode mode);

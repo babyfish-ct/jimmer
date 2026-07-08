@@ -60,6 +60,14 @@ class KSqlClientDsl constructor(
         javaBuilder.setDefaultListBatchSize(size)
     }
 
+    fun setDefaultJdbcFetchSize(fetchSize: Int?) {
+        javaBuilder.setDefaultJdbcFetchSize(fetchSize)
+    }
+
+    fun setDefaultJdbcQueryTimeout(queryTimeout: Int?) {
+        javaBuilder.setDefaultJdbcQueryTimeout(queryTimeout)
+    }
+
     fun setInListPaddingEnabled(enabled: Boolean) {
         javaBuilder.setInListPaddingEnabled(enabled)
     }

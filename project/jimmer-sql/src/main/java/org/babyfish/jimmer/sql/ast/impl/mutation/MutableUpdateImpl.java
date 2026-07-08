@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.impl.util.JdbcOptionValidator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class MutableUpdateImpl
         extends AbstractMutableStatementImpl
@@ -43,6 +45,7 @@ public class MutableUpdateImpl
     private final Set<ImmutableType> assignmentStageTypes = new LinkedHashSet<>();
     private TableLikeImplementor<?> aliasSource;
     private TypeMatchMode typeMatchMode = TypeMatchMode.AUTO;
+    private JdbcOptions jdbcOptions = JdbcOptions.EMPTY;
     private boolean typeMatchPredicateApplied;
     private ImmutableType primaryAssignmentStageType;
 
@@ -107,6 +110,22 @@ public class MutableUpdateImpl
     public MutableUpdateImpl setTypeMatchMode(TypeMatchMode mode) {
         validateMutable();
         this.typeMatchMode = mode != null ? mode : TypeMatchMode.AUTO;
+        return this;
+    }
+
+    @Override
+    public MutableUpdateImpl jdbcFetchSize(@Nullable Integer fetchSize) {
+        validateMutable();
+        JdbcOptionValidator.validateLocalFetchSize(fetchSize);
+        jdbcOptions = jdbcOptions.fetchSize(fetchSize);
+        return this;
+    }
+
+    @Override
+    public MutableUpdateImpl jdbcQueryTimeout(@Nullable Integer queryTimeout) {
+        validateMutable();
+        JdbcOptionValidator.validateLocalQueryTimeout(queryTimeout);
+        jdbcOptions = jdbcOptions.queryTimeout(queryTimeout);
         return this;
     }
 
@@ -311,12 +330,12 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <R> Executable<List<R>> returning(Selection<R> selection) {
+    public <R> SelectionExecutable<R> returning(Selection<R> selection) {
         return returning(Collections.singletonList(selection), null);
     }
 
     @Override
-    public <T1, T2> Executable<List<Tuple2<T1, T2>>> returning(
+    public <T1, T2> SelectionExecutable<Tuple2<T1, T2>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2
     ) {
@@ -324,7 +343,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3> Executable<List<Tuple3<T1, T2, T3>>> returning(
+    public <T1, T2, T3> SelectionExecutable<Tuple3<T1, T2, T3>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3
@@ -333,7 +352,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3, T4> Executable<List<Tuple4<T1, T2, T3, T4>>> returning(
+    public <T1, T2, T3, T4> SelectionExecutable<Tuple4<T1, T2, T3, T4>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3,
@@ -343,7 +362,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5> Executable<List<Tuple5<T1, T2, T3, T4, T5>>> returning(
+    public <T1, T2, T3, T4, T5> SelectionExecutable<Tuple5<T1, T2, T3, T4, T5>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3,
@@ -354,7 +373,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6> Executable<List<Tuple6<T1, T2, T3, T4, T5, T6>>> returning(
+    public <T1, T2, T3, T4, T5, T6> SelectionExecutable<Tuple6<T1, T2, T3, T4, T5, T6>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3,
@@ -366,7 +385,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7> Executable<List<Tuple7<T1, T2, T3, T4, T5, T6, T7>>> returning(
+    public <T1, T2, T3, T4, T5, T6, T7> SelectionExecutable<Tuple7<T1, T2, T3, T4, T5, T6, T7>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3,
@@ -379,7 +398,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8> Executable<List<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>>> returning(
+    public <T1, T2, T3, T4, T5, T6, T7, T8> SelectionExecutable<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3,
@@ -393,7 +412,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> Executable<List<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>> returning(
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> SelectionExecutable<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> returning(
             Selection<T1> selection1,
             Selection<T2> selection2,
             Selection<T3> selection3,
@@ -408,11 +427,11 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <R> Executable<List<R>> returning(TupleMapper<R> mapper) {
+    public <R> SelectionExecutable<R> returning(TupleMapper<R> mapper) {
         return returning(mapper.getSelections(), mapper);
     }
 
-    private <R> Executable<List<R>> returning(
+    private <R> SelectionExecutable<R> returning(
             List<Selection<?>> selections,
             TupleCreator<R> tupleCreator
     ) {
@@ -420,7 +439,7 @@ public class MutableUpdateImpl
         if (selections.isEmpty()) {
             throw new IllegalArgumentException("The update-returning selection list cannot be empty");
         }
-        return new UpdateReturningExecutable<>(selections, tupleCreator);
+        return new UpdateSelectionExecutable<>(selections, tupleCreator, jdbcOptions);
     }
 
     private int executeImpl(Connection con) {
@@ -446,7 +465,8 @@ public class MutableUpdateImpl
     private <R> List<R> executeReturningImpl(
             Connection con,
             List<Selection<?>> selections,
-            TupleCreator<R> tupleCreator
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
     ) {
 
         if (assignmentMap.isEmpty()) {
@@ -469,18 +489,49 @@ public class MutableUpdateImpl
         SqlBuilder builder = createFilteredBuilder();
 
         if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
-            return executeReturningWithTrigger(builder, con, selections, tupleCreator);
+            return executeReturningWithTrigger(builder, con, selections, tupleCreator, jdbcOptions);
         }
 
         renderReturningTo(builder, null, selections);
-        return executeReturningSql(builder, con, selections, tupleCreator);
+        return executeReturningSql(builder, con, selections, tupleCreator, jdbcOptions);
+    }
+
+    private <R> Stream<R> streamReturningImpl(
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+
+        if (assignmentMap.isEmpty()) {
+            return Stream.empty();
+        }
+
+        Dialect dialect = getSqlClient().getDialect();
+        if (!dialect.isUpdateReturningSupported()) {
+            throw new ExecutionException(
+                    "The update-returning statement is not supported by \"" +
+                            dialect.getClass().getName() +
+                            "\""
+            );
+        }
+
+        SqlBuilder builder = createFilteredBuilder();
+
+        if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+            return streamReturningWithTrigger(builder, con, selections, tupleCreator, jdbcOptions);
+        }
+
+        renderReturningTo(builder, null, selections);
+        return streamReturningSql(builder, con, selections, tupleCreator, jdbcOptions, null);
     }
 
     private <R> List<R> executeReturningWithTrigger(
             SqlBuilder builder,
             Connection con,
             List<Selection<?>> selections,
-            TupleCreator<R> tupleCreator
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
     ) {
         Map<Object, ImmutableSpi> oldRowMap = selectRowsForTrigger(builder, con);
         if (oldRowMap.isEmpty()) {
@@ -489,18 +540,56 @@ public class MutableUpdateImpl
 
         builder = new SqlBuilder(new AstContext(getSqlClient()));
         renderReturningTo(builder, oldRowMap.keySet(), selections);
-        List<R> rows = executeReturningSql(builder, con, selections, tupleCreator);
+        List<R> rows = executeReturningSql(builder, con, selections, tupleCreator, jdbcOptions);
         if (!rows.isEmpty()) {
             submitTrigger(con, oldRowMap);
         }
         return rows;
     }
 
+    private <R> Stream<R> streamReturningWithTrigger(
+            SqlBuilder builder,
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+        ConnectionManager.ConnectionScope scope = getSqlClient().getConnectionManager().open(con);
+        Connection actualCon = scope.connection();
+        try {
+            if (getSqlClient().isTargetTransferable()) {
+                Executor.validateMutationConnection(actualCon);
+            }
+            Map<Object, ImmutableSpi> oldRowMap = selectRowsForTrigger(builder, actualCon);
+            if (oldRowMap.isEmpty()) {
+                scope.close();
+                return Stream.empty();
+            }
+
+            builder = new SqlBuilder(new AstContext(getSqlClient()));
+            renderReturningTo(builder, oldRowMap.keySet(), selections);
+            return streamReturningSql(
+                    builder,
+                    actualCon,
+                    existingScopeConnectionManager(scope),
+                    selections,
+                    tupleCreator,
+                    jdbcOptions,
+                    () -> submitTrigger(actualCon, oldRowMap),
+                    null
+            );
+        } catch (RuntimeException | Error ex) {
+            scope.close();
+            throw ex;
+        }
+    }
+
     private <R> List<R> executeReturningSql(
             SqlBuilder builder,
             Connection con,
             List<Selection<?>> selections,
-            TupleCreator<R> tupleCreator
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
     ) {
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return Selectors.select(
@@ -511,8 +600,75 @@ public class MutableUpdateImpl
                 sqlResult.get_3(),
                 selections,
                 tupleCreator,
-                getPurpose()
+                getPurpose(),
+                jdbcOptions
         );
+    }
+
+    private <R> Stream<R> streamReturningSql(
+            SqlBuilder builder,
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions,
+            @Nullable Runnable beforeClose
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return Selectors.stream(
+                getSqlClient(),
+                getSqlClient().getConnectionManager(),
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                tupleCreator,
+                getPurpose(),
+                jdbcOptions,
+                beforeClose,
+                getSqlClient().isTargetTransferable() ? Executor::validateMutationConnection : null
+        );
+    }
+
+    private <R> Stream<R> streamReturningSql(
+            SqlBuilder builder,
+            Connection con,
+            ConnectionManager connectionManager,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions,
+            @Nullable Runnable beforeClose,
+            @Nullable java.util.function.Consumer<Connection> connectionValidator
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return Selectors.stream(
+                getSqlClient(),
+                connectionManager,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                tupleCreator,
+                getPurpose(),
+                jdbcOptions,
+                beforeClose,
+                connectionValidator
+        );
+    }
+
+    private ConnectionManager existingScopeConnectionManager(ConnectionManager.ConnectionScope scope) {
+        return new ConnectionManager() {
+            @Override
+            public <R> R execute(@Nullable Connection con, java.util.function.Function<Connection, R> block) {
+                return block.apply(scope.connection());
+            }
+
+            @Override
+            public ConnectionManager.ConnectionScope open(@Nullable Connection con) {
+                return scope;
+            }
+        };
     }
 
     private SqlBuilder createFilteredBuilder() {
@@ -1317,22 +1473,34 @@ public class MutableUpdateImpl
         }
     }
 
-    private class UpdateReturningExecutable<R> implements Executable<List<R>> {
+    private class UpdateSelectionExecutable<R> implements SelectionExecutable<R> {
 
         private final List<Selection<?>> selections;
 
         private final TupleCreator<R> tupleCreator;
 
-        private UpdateReturningExecutable(List<Selection<?>> selections, TupleCreator<R> tupleCreator) {
+        private final JdbcOptions jdbcOptions;
+
+        private UpdateSelectionExecutable(
+                List<Selection<?>> selections,
+                TupleCreator<R> tupleCreator,
+                JdbcOptions jdbcOptions
+        ) {
             this.selections = selections;
             this.tupleCreator = tupleCreator;
+            this.jdbcOptions = jdbcOptions;
         }
 
         @Override
         public List<R> execute(Connection con) {
             return getSqlClient()
                     .getConnectionManager()
-                    .execute(con, it -> executeReturningImpl(it, selections, tupleCreator));
+                    .execute(con, it -> executeReturningImpl(it, selections, tupleCreator, jdbcOptions));
+        }
+
+        @Override
+        public Stream<R> stream(Connection con) {
+            return streamReturningImpl(con, selections, tupleCreator, jdbcOptions);
         }
     }
 

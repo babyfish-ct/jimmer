@@ -4,12 +4,15 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -29,6 +32,33 @@ public class FluentJoinTest extends AbstractQueryTest {
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                     "from BOOK tb_1_"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testStream() {
+        BookTable book = BookTable.$;
+        connectAndExpect(
+                con -> {
+                    try (Stream<Tuple2<Integer, String>> stream = getSqlClient()
+                            .createQuery(book)
+                            .where(book.name().eq("Learning GraphQL"))
+                            .orderBy(book.edition())
+                            .select(book.edition(), book.name())
+                            .stream(con)
+                    ) {
+                        return stream.collect(Collectors.toList());
+                    }
+                },
+                ctx -> {
+                    ctx.rows(
+                            "[" +
+                                    "{\"_1\":1,\"_2\":\"Learning GraphQL\"}," +
+                                    "{\"_1\":2,\"_2\":\"Learning GraphQL\"}," +
+                                    "{\"_1\":3,\"_2\":\"Learning GraphQL\"}" +
+                                    "]"
                     );
                 }
         );

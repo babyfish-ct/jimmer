@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -49,6 +50,44 @@ public class FetcherUtil {
             return true;
         });
         return hasRef[0];
+    }
+
+    public static boolean hasPostFetchColumns(JSqlClientImplementor sqlClient, List<Selection<?>> selections) {
+        for (Selection<?> selection : selections) {
+            if (selection instanceof FetcherSelection<?>) {
+                Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
+                if (requiresPostFetch(sqlClient, fetcher)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Object convert(
+            List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
+            Object row
+    ) {
+        Map<Integer, Object> indexValueMap = null;
+        for (int i = 0; i < selections.size(); i++) {
+            Selection<?> selection = selections.get(i);
+            if (selection instanceof FetcherSelection<?>) {
+                Function<Object, Object> converter =
+                        (Function<Object, Object>) ((FetcherSelection<?>) selection).getConverter();
+                if (converter != null) {
+                    if (indexValueMap == null) {
+                        indexValueMap = new HashMap<>();
+                    }
+                    Object value = ColumnAccessors.get(row, i, tupleCreator);
+                    indexValueMap.put(i, value != null ? converter.apply(value) : null);
+                }
+            }
+        }
+        return indexValueMap != null ?
+                ColumnAccessors.set(row, indexValueMap, tupleCreator) :
+                row;
     }
 
     @SuppressWarnings("unchecked")
@@ -172,18 +211,34 @@ public class FetcherUtil {
         return Arrays.asList(arr);
     }
 
-    private static boolean requiresPostFetch(JSqlClientImplementor sqlClient, Fetcher<?> fetcher) {
+    public static boolean requiresPostFetch(JSqlClientImplementor sqlClient, Fetcher<?> fetcher) {
+        return requiresPostFetch(sqlClient, fetcher, 0);
+    }
+
+    private static boolean requiresPostFetch(
+            JSqlClientImplementor sqlClient,
+            Fetcher<?> fetcher,
+            int joinFetchDepth
+    ) {
         if (hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
             return true;
         }
         for (Field field : fetcher.getFieldMap().values()) {
-            if (!field.isSimpleField()) {
+            if (field.isSimpleField()) {
+                continue;
+            }
+            if (joinFetchDepth < sqlClient.getMaxJoinFetchDepth() &&
+                    JoinFetchFieldVisitor.isJoinField(field, sqlClient) &&
+                    !requiresPostFetch(sqlClient, field.getChildFetcher(), joinFetchDepth + 1)) {
+                continue;
+            }
+            if (!field.getProp().isEmbedded(EmbeddedLevel.SCALAR)) {
                 return true;
             }
         }
         if (fetcher instanceof FetcherImplementor<?>) {
             for (Fetcher<?> typeBranchFetcher : ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().values()) {
-                if (requiresPostFetch(sqlClient, typeBranchFetcher)) {
+                if (requiresPostFetch(sqlClient, typeBranchFetcher, joinFetchDepth)) {
                     return true;
                 }
             }

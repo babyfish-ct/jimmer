@@ -24,6 +24,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -104,6 +106,31 @@ public class FluentDMLTest extends AbstractMutationTest {
                         );
                         it.variables("Learning GraphQL+", learningGraphQLId1);
                     });
+                    ctx.value((List<Tuple2<UUID, String>> rows) -> {
+                        Assertions.assertEquals(1, rows.size());
+                        Assertions.assertEquals(learningGraphQLId1, rows.get(0).get_1());
+                        Assertions.assertEquals("Learning GraphQL+", rows.get(0).get_2());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateReturningStream() {
+        BookTable book = BookTable.$;
+        connectAndExpect(
+                con -> {
+                    try (Stream<Tuple2<UUID, String>> stream = getSqlClient()
+                            .createUpdate(book)
+                            .set(book.name(), "Learning GraphQL+")
+                            .where(book.id().eq(learningGraphQLId1))
+                            .returning(book.id(), book.name())
+                            .stream(con)
+                    ) {
+                        return stream.collect(Collectors.toList());
+                    }
+                },
+                ctx -> {
                     ctx.value((List<Tuple2<UUID, String>> rows) -> {
                         Assertions.assertEquals(1, rows.size());
                         Assertions.assertEquals(learningGraphQLId1, rows.get(0).get_1());

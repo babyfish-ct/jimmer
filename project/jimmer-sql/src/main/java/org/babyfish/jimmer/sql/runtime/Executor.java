@@ -44,10 +44,11 @@ public interface Executor {
     );
 
     /**
-     * This method will never be invoked unless the current operation is `Query.forEach`
+     * This method will never be invoked unless the current operation is cursor-style
+     * execution such as `Query.forEach` or selection streaming.
      *
-     * <p>For `Query.forEach`, SQL execution result log have to be printed after children fetching,
-     * this method can give SQL logger a chance to print SQL before children fetching</p>
+     * <p>For cursor-style execution, this method gives SQL loggers a chance to print SQL
+     * before row consumption or children fetching.</p>
      */
     default void openCursor(
             long cursorId,
@@ -58,6 +59,9 @@ public interface Executor {
             @Nullable ExecutorContext ctx,
             JSqlClientImplementor sqlClient
     ) {
+    }
+
+    default void closeCursor(long cursorId) {
     }
 
     static Executor log() {

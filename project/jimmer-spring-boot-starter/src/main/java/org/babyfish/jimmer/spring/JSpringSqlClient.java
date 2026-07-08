@@ -166,6 +166,8 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setDefaultEnumStrategy(properties.getDefaultEnumStrategy());
         builder.setDefaultBatchSize(properties.getDefaultBatchSize());
         builder.setDefaultListBatchSize(properties.getDefaultListBatchSize());
+        builder.setDefaultJdbcFetchSize(properties.getDefaultJdbcFetchSize());
+        builder.setDefaultJdbcQueryTimeout(properties.getDefaultJdbcQueryTimeout());
         builder.setInListPaddingEnabled(properties.isInListPaddingEnabled());
         builder.setExpandedInListPaddingEnabled(properties.isExpandedInListPaddingEnabled());
         builder.setDissociationLogicalDeleteEnabled(properties.isDissociationLogicalDeleteEnabled());

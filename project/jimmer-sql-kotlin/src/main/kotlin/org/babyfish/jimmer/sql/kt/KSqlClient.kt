@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.exception.TooManyResultsException
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.table.*
@@ -72,8 +73,8 @@ interface KSqlClient : KSaveOperations {
 
     fun <E : Any, R> createUpdateReturning(
         entityType: KClass<E>,
-        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
-    ): KExecutable<List<R>>
+        block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R>
 
     fun <E : Any> createDelete(
         entityType: KClass<E>,
@@ -101,7 +102,7 @@ interface KSqlClient : KSaveOperations {
     fun <E : Any, R> executeUpdateReturning(
         entityType: KClass<E>,
         con: Connection? = null,
-        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
+        block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
     ): List<R> = createUpdateReturning(entityType, block).execute(con)
 
     fun <E : Any> executeDelete(

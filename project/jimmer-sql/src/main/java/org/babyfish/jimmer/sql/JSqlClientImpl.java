@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
+import org.babyfish.jimmer.sql.ast.impl.util.JdbcOptionValidator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
@@ -94,6 +95,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final int defaultBatchSize;
 
     private final int defaultListBatchSize;
+
+    @Nullable
+    private final Integer defaultJdbcFetchSize;
+
+    @Nullable
+    private final Integer defaultJdbcQueryTimeout;
 
     private final boolean inListPaddingEnabled;
 
@@ -180,6 +187,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
             int defaultListBatchSize,
+            @Nullable Integer defaultJdbcFetchSize,
+            @Nullable Integer defaultJdbcQueryTimeout,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
@@ -236,6 +245,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
+        this.defaultJdbcFetchSize = defaultJdbcFetchSize;
+        this.defaultJdbcQueryTimeout = defaultJdbcQueryTimeout;
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
@@ -397,6 +408,18 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public int getDefaultListBatchSize() {
         return defaultListBatchSize;
+    }
+
+    @Override
+    @Nullable
+    public Integer getDefaultJdbcFetchSize() {
+        return defaultJdbcFetchSize;
+    }
+
+    @Override
+    @Nullable
+    public Integer getDefaultJdbcQueryTimeout() {
+        return defaultJdbcQueryTimeout;
     }
 
     @Override
@@ -731,6 +754,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -791,6 +816,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -846,6 +873,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -904,6 +933,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                defaultJdbcFetchSize,
+                defaultJdbcQueryTimeout,
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
@@ -1096,6 +1127,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
+
+        @Nullable
+        private Integer defaultJdbcFetchSize;
+
+        @Nullable
+        private Integer defaultJdbcQueryTimeout;
 
         private boolean inListPaddingEnabled;
 
@@ -1538,6 +1575,22 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 throw new IllegalStateException("size cannot be less than 1");
             }
             defaultListBatchSize = size;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public JSqlClient.Builder setDefaultJdbcFetchSize(@Nullable Integer fetchSize) {
+            JdbcOptionValidator.validateDefaultFetchSize(fetchSize);
+            defaultJdbcFetchSize = fetchSize;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public JSqlClient.Builder setDefaultJdbcQueryTimeout(@Nullable Integer queryTimeout) {
+            JdbcOptionValidator.validateDefaultQueryTimeout(queryTimeout);
+            defaultJdbcQueryTimeout = queryTimeout;
             return this;
         }
 
@@ -2016,6 +2069,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     scalarProviderManager,
                     defaultBatchSize,
                     defaultListBatchSize,
+                    defaultJdbcFetchSize,
+                    defaultJdbcQueryTimeout,
                     inListPaddingEnabled,
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,

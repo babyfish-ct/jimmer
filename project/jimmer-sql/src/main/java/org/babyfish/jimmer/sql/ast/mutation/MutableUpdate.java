@@ -7,7 +7,8 @@ import org.babyfish.jimmer.sql.ast.query.selectable.ReturningSelectable;
 
 import java.util.function.Supplier;
 
-public interface MutableUpdate extends Filterable, Executable<Integer>, ReturningSelectable {
+public interface MutableUpdate
+        extends Filterable, Executable<Integer>, ReturningSelectable, JdbcConfigurable<MutableUpdate> {
 
     @OldChain
     MutableUpdate setTypeMatchMode(TypeMatchMode mode);

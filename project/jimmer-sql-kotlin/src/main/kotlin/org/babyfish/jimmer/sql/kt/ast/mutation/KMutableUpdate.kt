@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation
 
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.ast.TypeMatchMode
+import org.babyfish.jimmer.sql.kt.ast.KJdbcOptionsDsl
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.query.KFilterable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
@@ -10,6 +11,8 @@ import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 interface KMutableUpdate<E : Any> : KFilterable<KNonNullTableEx<E>> {
 
     fun setTypeMatchMode(mode: TypeMatchMode)
+
+    fun jdbc(block: KJdbcOptionsDsl.() -> Unit)
 
     fun <X : Any> set(
         path: KNonNullPropExpression<X>,

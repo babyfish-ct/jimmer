@@ -33,6 +33,48 @@ public abstract class AbstractTxConnectionManager implements TxConnectionManager
     }
 
     @Override
+    public final ConnectionScope open(@Nullable Connection con) {
+        if (con != null) {
+            return ConnectionScope.userConnection(con);
+        }
+        try {
+            Scope parent = scopeLocal.get();
+            Scope scope = createScope(parent, Propagation.SUPPORTS);
+            scopeLocal.set(scope);
+            return new ConnectionScope() {
+
+                private boolean closed;
+
+                @Override
+                public Connection connection() {
+                    return scope.con;
+                }
+
+                @Override
+                public void close() {
+                    if (closed) {
+                        return;
+                    }
+                    closed = true;
+                    try {
+                        scope.terminate(false);
+                    } catch (SQLException ex) {
+                        throw new ExecutionException("JDBC error raised: " + ex.getMessage(), ex);
+                    } finally {
+                        if (parent != null) {
+                            scopeLocal.set(parent);
+                        } else {
+                            scopeLocal.remove();
+                        }
+                    }
+                }
+            };
+        } catch (SQLException ex) {
+            throw new ExecutionException("JDBC error raised: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
     public final <R> R executeTransaction(Function<Connection, R> block) {
         return executeTransaction(Propagation.REQUIRED, block);
     }

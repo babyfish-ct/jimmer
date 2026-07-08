@@ -18,6 +18,15 @@ public interface ConnectionManager {
         return execute(null, block);
     }
 
+    default ConnectionScope open(@Nullable Connection con) {
+        if (con != null) {
+            return ConnectionScope.userConnection(con);
+        }
+        throw new UnsupportedOperationException(
+                "The current connection manager does not support streaming without explicit JDBC connection"
+        );
+    }
+
     ConnectionManager EXTERNAL_ONLY = new ConnectionManager() {
         @Override
         public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
@@ -56,5 +65,26 @@ public interface ConnectionManager {
                 return dataSource.getConnection();
             }
         };
+    }
+
+    interface ConnectionScope extends AutoCloseable {
+
+        Connection connection();
+
+        @Override
+        void close();
+
+        static ConnectionScope userConnection(Connection con) {
+            return new ConnectionScope() {
+                @Override
+                public Connection connection() {
+                    return con;
+                }
+
+                @Override
+                public void close() {
+                }
+            };
+        }
     }
 }

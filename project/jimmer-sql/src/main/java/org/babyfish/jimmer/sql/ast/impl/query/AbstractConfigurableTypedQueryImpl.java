@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.JdbcOptions;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +57,11 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     @Override
     public TupleCreator<?> getTupleCreator() {
         return data.tupleCreator;
+    }
+
+    @Override
+    public JdbcOptions getJdbcOptions() {
+        return data.jdbcOptions;
     }
 
     @Override

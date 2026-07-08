@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdateReturning
@@ -69,8 +70,8 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
 
     override fun <E : Any, R> createUpdateReturning(
         entityType: KClass<E>,
-        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
-    ): KExecutable<List<R>> =
+        block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> =
         sqlClient().createUpdateReturning(entityType, block)
 
     override fun <E : Any> createDelete(

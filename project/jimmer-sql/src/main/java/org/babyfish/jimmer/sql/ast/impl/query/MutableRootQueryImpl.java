@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.util.JdbcOptionValidator;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -20,8 +21,11 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JdbcOptions;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.babyfish.jimmer.sql.runtime.TupleMapper;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.Arrays;
@@ -36,6 +40,8 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     private final StatementContext ctx;
 
     private TypeMatchMode typeMatchMode = TypeMatchMode.POLYMORPHIC;
+
+    private JdbcOptions jdbcOptions = JdbcOptions.EMPTY;
 
     private boolean typeMatchPredicateApplied;
 
@@ -133,7 +139,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(Collections.singletonList(selection), null),
+                typedData(Collections.singletonList(selection), null),
                 this
         );
     }
@@ -141,7 +147,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2> ConfigurableRootQuery<T, Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(Arrays.asList(selection1, selection2), null),
+                typedData(Arrays.asList(selection1, selection2), null),
                 this
         );
     }
@@ -149,7 +155,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3> ConfigurableRootQuery<T, Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -164,7 +170,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3, T4> ConfigurableRootQuery<T, Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -180,7 +186,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3, T4, T5> ConfigurableRootQuery<T, Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -197,7 +203,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3, T4, T5, T6> ConfigurableRootQuery<T, Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -215,7 +221,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3, T4, T5, T6, T7> ConfigurableRootQuery<T, Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -234,7 +240,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableRootQuery<T, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -254,7 +260,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableRootQuery<T, Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         Arrays.asList(
                                 selection1,
                                 selection2,
@@ -275,7 +281,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     @Override
     public <R> ConfigurableRootQuery<T, R> select(TupleMapper<R> mapper) {
         return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
+                typedData(
                         mapper.getSelections(),
                         mapper
                 ),
@@ -283,10 +289,30 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
         );
     }
 
+    private TypedQueryData typedData(List<Selection<?>> selections, TupleCreator<?> tupleCreator) {
+        return new TypedQueryData(selections, tupleCreator, jdbcOptions);
+    }
+
     @Override
     public MutableRootQuery<T> typeMatchMode(TypeMatchMode mode) {
         validateMutable();
         typeMatchMode = mode != null ? mode : TypeMatchMode.POLYMORPHIC;
+        return this;
+    }
+
+    @Override
+    public MutableRootQuery<T> jdbcFetchSize(@Nullable Integer fetchSize) {
+        validateMutable();
+        JdbcOptionValidator.validateLocalFetchSize(fetchSize);
+        jdbcOptions = jdbcOptions.fetchSize(fetchSize);
+        return this;
+    }
+
+    @Override
+    public MutableRootQuery<T> jdbcQueryTimeout(@Nullable Integer queryTimeout) {
+        validateMutable();
+        JdbcOptionValidator.validateLocalQueryTimeout(queryTimeout);
+        jdbcOptions = jdbcOptions.queryTimeout(queryTimeout);
         return this;
     }
 

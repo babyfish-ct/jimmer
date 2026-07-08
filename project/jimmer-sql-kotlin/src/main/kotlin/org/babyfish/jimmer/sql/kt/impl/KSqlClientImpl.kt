@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdateReturning
@@ -157,8 +158,8 @@ internal class KSqlClientImpl(
 
     override fun <E : Any, R> createUpdateReturning(
         entityType: KClass<E>,
-        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
-    ): KExecutable<List<R>> {
+        block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> {
         val update = MutableUpdateImpl(javaClient, ImmutableType.get(entityType.java))
         return block(KMutableUpdateImpl(update))
     }
