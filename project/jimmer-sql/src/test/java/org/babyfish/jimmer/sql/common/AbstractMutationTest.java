@@ -491,5 +491,9 @@ public abstract class AbstractMutationTest extends AbstractTest {
                     "modifiedEntities[" + index + "]"
             );
         }
+
+        public void modified(Consumer<Object> block) {
+            block.accept(item.getModifiedEntity());
+        }
     }
 }

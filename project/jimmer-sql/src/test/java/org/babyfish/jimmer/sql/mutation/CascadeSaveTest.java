@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.model.wild.*;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -1556,27 +1557,23 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.batchVariables(4, "Task-5", 2L);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                "--->\"id\":1," +
-                                "--->\"tasks\":[" +
-                                "--->--->{\"id\":100,\"taskName\":\"Task-1\",\"owner\":{\"id\":1}}," +
-                                "--->--->{\"id\":101,\"taskName\":\"Task-2\",\"owner\":{\"id\":1}}," +
-                                "--->--->{\"id\":102,\"taskName\":\"Task-3\",\"owner\":{\"id\":1}}" +
-                                "--->]" +
-                                "}"
-                        );
+                        it.modified(entity -> {
+                            Worker worker = (Worker) entity;
+                            Assertions.assertEquals(1L, worker.id());
+                            Assertions.assertEquals(3, worker.tasks().size());
+                            assertTask(worker.tasks().get(0), "Task-1", 1L);
+                            assertTask(worker.tasks().get(1), "Task-2", 1L);
+                            assertTask(worker.tasks().get(2), "Task-3", 1L);
+                        });
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                "--->\"id\":2," +
-                                "--->\"tasks\":[" +
-                                "--->--->{\"id\":103,\"taskName\":\"Task-4\",\"owner\":{\"id\":2}}," +
-                                "--->--->{\"id\":104,\"taskName\":\"Task-5\",\"owner\":{\"id\":2}}" +
-                                "--->]" +
-                                "}"
-                        );
+                        it.modified(entity -> {
+                            Worker worker = (Worker) entity;
+                            Assertions.assertEquals(2L, worker.id());
+                            Assertions.assertEquals(2, worker.tasks().size());
+                            assertTask(worker.tasks().get(0), "Task-4", 2L);
+                            assertTask(worker.tasks().get(1), "Task-5", 2L);
+                        });
                     });
                 }
         );
@@ -1668,7 +1665,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 UNKNOWN_VARIABLE,
                                 "daisy@gmail.com",
                                 "https://www.facebook.com/17346127y497123",
-                                100L,
+                                UNKNOWN_VARIABLE,
                                 false
                         );
                     });
@@ -1785,18 +1782,27 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TASK(NAME, OWNER_ID) values(?, ?)");
-                        it.variables("Install K8S", 100L);
+                        it.variables("Install K8S", UNKNOWN_VARIABLE);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                "\"id\":108,\"taskName\":\"Install K8S\"," +
-                                "\"owner\":{\"id\":100,\"name\":\"Tim\"}" +
-                                "}"
-                        );
+                        it.modified(entity -> {
+                            Task modified = (Task) entity;
+                            Assertions.assertTrue(modified.id() > 0L);
+                            Assertions.assertEquals("Install K8S", modified.taskName());
+                            Assertions.assertNotNull(modified.owner());
+                            Assertions.assertTrue(modified.owner().id() > 0L);
+                            Assertions.assertEquals("Tim", modified.owner().name());
+                        });
                     });
                 }
         );
+    }
+
+    private static void assertTask(Task task, String name, long ownerId) {
+        Assertions.assertTrue(task.id() > 0L);
+        Assertions.assertEquals(name, task.taskName());
+        Assertions.assertNotNull(task.owner());
+        Assertions.assertEquals(ownerId, task.owner().id());
     }
 
     @Test

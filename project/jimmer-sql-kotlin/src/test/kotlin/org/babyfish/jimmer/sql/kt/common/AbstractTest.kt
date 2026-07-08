@@ -104,15 +104,22 @@ abstract class AbstractTest {
 
     companion object {
 
-        private val JDBC_URL = "jdbc:h2:./build/h2/jimmer_kt_test_db;database_to_upper=true"
+        private const val JDBC_URL = "jdbc:h2:mem:jimmer_kt_test_db;database_to_upper=true;DB_CLOSE_DELAY=-1"
+
+        private val databaseInitializer: Lazy<Unit> = lazy {
+            h2Connection().use(::initDatabase)
+        }
 
         @JvmStatic
-        fun jdbc(dataSource: DataSource? = null, rollback: Boolean = false, block: (Connection) -> Unit) {
+        fun jdbc(dataSource: DataSource? = null, rollback: Boolean = dataSource == null, block: (Connection) -> Unit) {
             try {
+                if (dataSource == null) {
+                    initializeDatabaseIfNecessary()
+                }
                 val con = if (dataSource != null) {
                     dataSource.connection
                 } else {
-                    org.h2.Driver().connect(JDBC_URL, null)
+                    h2Connection()
                 }
                 try {
                     if (rollback) {
@@ -132,6 +139,13 @@ abstract class AbstractTest {
                 fail("SQL error", ex)
             }
         }
+
+        private fun initializeDatabaseIfNecessary() {
+            databaseInitializer.value
+        }
+
+        private fun h2Connection(): Connection =
+            org.h2.Driver().connect(JDBC_URL, null)
 
         protected fun initDatabase(con: Connection) {
             val stream = AbstractTest::class.java.classLoader.getResourceAsStream("database.sql")
@@ -156,9 +170,7 @@ abstract class AbstractTest {
         @BeforeClass
         @JvmStatic
         fun beforeAll() {
-            jdbc { con ->
-                initDatabase(con)
-            }
+            initializeDatabaseIfNecessary()
         }
 
         @JvmStatic

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.hr.Department;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -17,6 +18,7 @@ public class DuplicatedKeyTest extends AbstractMutationTest {
                 Immutables.createDepartment(draft -> draft.setName("Develop")),
                 Immutables.createDepartment(draft -> draft.setName("Develop"))
         );
+        long[] idBox = new long[1];
         executeAndExpectResult(
                 getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
                         .saveEntitiesCommand(departments),
@@ -34,10 +36,19 @@ public class DuplicatedKeyTest extends AbstractMutationTest {
                         it.variables("Develop", 0L);
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":\"100\",\"name\":\"Develop\"}");
+                        it.modified(entity -> {
+                            Department department = (Department) entity;
+                            Assertions.assertTrue(department.id() > 0L);
+                            Assertions.assertEquals("Develop", department.name());
+                            idBox[0] = department.id();
+                        });
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":\"100\",\"name\":\"Develop\"}");
+                        it.modified(entity -> {
+                            Department department = (Department) entity;
+                            Assertions.assertEquals(idBox[0], department.id());
+                            Assertions.assertEquals("Develop", department.name());
+                        });
                     });
                 }
         );
