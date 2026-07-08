@@ -311,6 +311,46 @@ public class JoinFetchTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testNullJoinFetchWithDeeperFetcher() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table.fetch(
+                                        TreeNodeFetcher.$
+                                                .allScalarFields()
+                                                .parent(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        TreeNodeFetcher.$
+                                                                .allScalarFields()
+                                                                .childNodes(
+                                                                        TreeNodeFetcher.$.allScalarFields()
+                                                                )
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, " +
+                                    "tb_2_.NODE_ID, tb_2_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "left join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(1L);
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":1," +
+                                    "--->\"name\":\"Home\"," +
+                                    "--->\"parent\":null" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testPage() {
         // Data query uses fetch
         // Count query ignore fetch
