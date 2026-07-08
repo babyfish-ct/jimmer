@@ -15,7 +15,10 @@ import org.babyfish.jimmer.sql.kt.model.classic.author.fullName2
 import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.*
+import org.babyfish.jimmer.support.JdbcRecorder
 import java.math.BigDecimal
+import java.util.stream.Collectors
+import kotlin.test.assertEquals
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -64,6 +67,66 @@ class QueryTest : AbstractQueryTest() {
                     it.toString()
                 }
             }
+        }
+    }
+
+    @Test
+    fun testStream() {
+        connectAndExpect({ con ->
+            sqlClient.createQuery(Book::class) {
+                where(table.name eq "Learning GraphQL")
+                orderBy(table.edition)
+                select(table.edition, table.name)
+            }.stream(con).use {
+                it.collect(Collectors.toList())
+            }
+        }) {
+            rows {
+                expect(
+                    "[Tuple2(_1=1, _2=Learning GraphQL), " +
+                        "Tuple2(_1=2, _2=Learning GraphQL), " +
+                        "Tuple2(_1=3, _2=Learning GraphQL)]"
+                ) {
+                    it.toString()
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testJdbcOptionsDsl() {
+        jdbc { con ->
+            val recorder = JdbcRecorder(con)
+            sqlClient.createQuery(Book::class) {
+                jdbc {
+                    fetchSize = 128
+                    queryTimeout = 16
+                }
+                where(table.id eq 1L)
+                select(table.id, table.name)
+            }.execute(recorder.connection())
+            assertEquals("[128]", recorder.fetchSizes().toString())
+            assertEquals("[16]", recorder.queryTimeouts().toString())
+        }
+    }
+
+    @Test
+    fun testJdbcOptionsDslNullMeansUnspecified() {
+        jdbc { con ->
+            val recorder = JdbcRecorder(con)
+            sqlClient {
+                setDefaultJdbcFetchSize(256)
+                setDefaultJdbcQueryTimeout(32)
+            }.createQuery(Book::class) {
+                jdbc {
+                    fetchSize = null
+                    queryTimeout = null
+                }
+                where(table.id eq 1L)
+                select(table.id, table.name)
+            }.execute(recorder.connection())
+            assertEquals("[256]", recorder.fetchSizes().toString())
+            assertEquals("[32]", recorder.queryTimeouts().toString())
         }
     }
 

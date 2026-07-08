@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
+import org.babyfish.jimmer.sql.kt.ast.KJdbcOptionsDsl
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
@@ -50,6 +51,12 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
 
     override fun typeMatchMode(mode: TypeMatchMode) {
         javaQuery.typeMatchMode(mode)
+    }
+
+    override fun jdbc(block: KJdbcOptionsDsl.() -> Unit) {
+        val dsl = KJdbcOptionsDsl(javaQuery)
+        dsl.block()
+        dsl.apply()
     }
 
     override fun orderBy(vararg expressions: KExpression<*>?) {

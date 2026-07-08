@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.sql.common.ProxyRecorder;
+import org.babyfish.jimmer.support.ProxyRecorder;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

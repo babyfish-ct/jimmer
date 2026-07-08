@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedRootQuery
 import java.sql.Connection
+import java.util.stream.Stream
 
 internal open class KTypedRootQueryImpl<R>(
     private val _javaQuery: TypedRootQuery<R>
@@ -33,6 +34,9 @@ internal open class KTypedRootQueryImpl<R>(
 
     override fun execute(con: Connection?): List<R> =
         _javaQuery.execute(con)
+
+    override fun stream(con: Connection?): Stream<R> =
+        _javaQuery.stream(con)
 
     override fun <X> map(con: Connection?, mapper: (R) -> X): List<X> =
         _javaQuery.map(con, mapper)

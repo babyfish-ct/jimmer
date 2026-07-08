@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.runtime.JdbcOptions;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 
 import java.util.Collections;
@@ -45,6 +46,8 @@ class TypedQueryData {
 
     final String hint;
 
+    final JdbcOptions jdbcOptions;
+
     private PropExpressionImplementor<?> idOnlyExpression;
 
     private boolean idOnlyExpressionResolved;
@@ -62,6 +65,27 @@ class TypedQueryData {
         reverseSortOptimizationEnabled = null;
         forUpdate = null;
         hint = null;
+        jdbcOptions = JdbcOptions.EMPTY;
+    }
+
+    public TypedQueryData(
+            List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+        this.selections = processSelections(selections);
+        this.tupleCreator = tupleCreator;
+        oldSelections = null;
+        oldTupleCreator = null;
+        distinct = false;
+        limit = Integer.MAX_VALUE;
+        offset = 0;
+        withoutSortingAndPaging = false;
+        reverseSorting = false;
+        reverseSortOptimizationEnabled = null;
+        forUpdate = null;
+        hint = null;
+        this.jdbcOptions = jdbcOptions;
     }
 
     private TypedQueryData(
@@ -76,7 +100,8 @@ class TypedQueryData {
             boolean reverseSorting,
             Boolean reverseSortOptimizationEnabled,
             ForUpdate forUpdate,
-            String hint
+            String hint,
+            JdbcOptions jdbcOptions
     ) {
         this.selections = selections;
         this.tupleCreator = tupleCreator;
@@ -90,6 +115,7 @@ class TypedQueryData {
         this.reverseSortOptimizationEnabled = reverseSortOptimizationEnabled;
         this.forUpdate = forUpdate;
         this.hint = hint;
+        this.jdbcOptions = jdbcOptions;
     }
 
     public TypedQueryData reselect(List<Selection<?>> selections, TupleCreator<?> tupleCreator) {
@@ -105,7 +131,8 @@ class TypedQueryData {
                 reverseSorting,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -122,7 +149,8 @@ class TypedQueryData {
                 reverseSorting,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -139,7 +167,8 @@ class TypedQueryData {
                 reverseSorting,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -156,7 +185,8 @@ class TypedQueryData {
                 reverseSorting,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -173,7 +203,8 @@ class TypedQueryData {
                 true,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -190,7 +221,8 @@ class TypedQueryData {
                 reverseSorting,
                 enabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -207,7 +239,8 @@ class TypedQueryData {
                 reverseSorting,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
         );
     }
 
@@ -237,7 +270,26 @@ class TypedQueryData {
                 reverseSorting,
                 reverseSortOptimizationEnabled,
                 forUpdate,
-                hint
+                hint,
+                jdbcOptions
+        );
+    }
+
+    public TypedQueryData jdbcOptions(JdbcOptions jdbcOptions) {
+        return new TypedQueryData(
+                selections,
+                tupleCreator,
+                oldSelections,
+                oldTupleCreator,
+                distinct,
+                limit,
+                offset,
+                withoutSortingAndPaging,
+                reverseSorting,
+                reverseSortOptimizationEnabled,
+                forUpdate,
+                hint,
+                jdbcOptions
         );
     }
 

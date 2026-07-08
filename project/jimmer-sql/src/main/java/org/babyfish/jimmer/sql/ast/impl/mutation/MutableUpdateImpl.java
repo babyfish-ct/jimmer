@@ -5,23 +5,21 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageCollector;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsages;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.impl.util.JdbcOptionValidator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -33,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class MutableUpdateImpl
         extends AbstractMutableStatementImpl
@@ -43,15 +42,11 @@ public class MutableUpdateImpl
     private final boolean triggerIgnored;
 
     private final Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
-
-    private TableLikeImplementor<?> aliasSource;
-
-    private TypeMatchMode typeMatchMode = TypeMatchMode.AUTO;
-
-    private boolean typeMatchPredicateApplied;
-
     private final Set<ImmutableType> assignmentStageTypes = new LinkedHashSet<>();
-
+    private TableLikeImplementor<?> aliasSource;
+    private TypeMatchMode typeMatchMode = TypeMatchMode.AUTO;
+    private JdbcOptions jdbcOptions = JdbcOptions.EMPTY;
+    private boolean typeMatchPredicateApplied;
     private ImmutableType primaryAssignmentStageType;
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
@@ -112,15 +107,31 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public MutableUpdate setTypeMatchMode(TypeMatchMode mode) {
+    public MutableUpdateImpl setTypeMatchMode(TypeMatchMode mode) {
         validateMutable();
         this.typeMatchMode = mode != null ? mode : TypeMatchMode.AUTO;
         return this;
     }
 
+    @Override
+    public MutableUpdateImpl jdbcFetchSize(@Nullable Integer fetchSize) {
+        validateMutable();
+        JdbcOptionValidator.validateLocalFetchSize(fetchSize);
+        jdbcOptions = jdbcOptions.fetchSize(fetchSize);
+        return this;
+    }
+
+    @Override
+    public MutableUpdateImpl jdbcQueryTimeout(@Nullable Integer queryTimeout) {
+        validateMutable();
+        JdbcOptionValidator.validateLocalQueryTimeout(queryTimeout);
+        jdbcOptions = jdbcOptions.queryTimeout(queryTimeout);
+        return this;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    public <X> MutableUpdate set(PropExpression<X> path, X value) {
+    public <X> MutableUpdateImpl set(PropExpression<X> path, X value) {
         if (value != null) {
             return set(path, Expression.any().value(value));
         }
@@ -131,12 +142,12 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public <X> MutableUpdate set(PropExpression<X> path, Expression<X> value) {
+    public <X> MutableUpdateImpl set(PropExpression<X> path, Expression<X> value) {
         validateMutable();
         Target target = Target.of(path, getSqlClient().getMetadataStrategy());
         if (target.table != this.getTable() &&
-            target.table != this.getTableLikeImplementor() &&
-            getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+                target.table != this.getTableLikeImplementor() &&
+                getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
             );
@@ -150,9 +161,9 @@ public class MutableUpdateImpl
         if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableLikeImplementor())) {
             throw new IllegalArgumentException(
                     "The current dialect '" +
-                    getSqlClient().getDialect().getClass().getName() +
-                    "' indicates that " +
-                    "only the columns of current table can be updated"
+                            getSqlClient().getDialect().getClass().getName() +
+                            "' indicates that " +
+                            "only the columns of current table can be updated"
             );
         }
         if (assignmentMap.put(target, value) != null) {
@@ -172,22 +183,22 @@ public class MutableUpdateImpl
         if (originalProp == inheritanceInfo.getDiscriminatorProp(updateType).toOriginal()) {
             throw new IllegalArgumentException(
                     "The discriminator property \"" +
-                    target.prop +
-                    "\" cannot be updated by createUpdate for joined inheritance type \"" +
-                    updateType +
-                    "\""
+                            target.prop +
+                            "\" cannot be updated by createUpdate for joined inheritance type \"" +
+                            updateType +
+                            "\""
             );
         }
         ImmutableType stageType = inheritanceInfo.getTableTypeForProp(originalProp, updateType);
         if (stageType == null) {
             throw new IllegalArgumentException(
                     "Cannot update property \"" +
-                    target.prop +
-                    "\" by createUpdate for joined inheritance type \"" +
-                    updateType +
-                    "\" because it does not belong to the inheritance path of \"" +
-                    originalProp.getDeclaringType() +
-                    "\""
+                            target.prop +
+                            "\" by createUpdate for joined inheritance type \"" +
+                            updateType +
+                            "\" because it does not belong to the inheritance path of \"" +
+                            originalProp.getDeclaringType() +
+                            "\""
             );
         }
         if (!assignmentStageTypes.isEmpty() &&
@@ -196,16 +207,16 @@ public class MutableUpdateImpl
             MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
             throw new IllegalArgumentException(
                     "Cannot update property \"" +
-                    target.prop +
-                    "\" by createUpdate for joined inheritance type \"" +
-                    updateType +
-                    "\" because all assignment targets must belong to the same physical table. " +
-                    "Current assignment targets table \"" +
-                    stageType.getTableName(strategy) +
-                    "\" but previous assignments target table \"" +
-                    primaryAssignmentStageType.getTableName(strategy) +
-                    "\". Updating columns in multiple database tables by one createUpdate " +
-                    "for joined inheritance requires a dialect that supports multi-table update assignment"
+                            target.prop +
+                            "\" by createUpdate for joined inheritance type \"" +
+                            updateType +
+                            "\" because all assignment targets must belong to the same physical table. " +
+                            "Current assignment targets table \"" +
+                            stageType.getTableName(strategy) +
+                            "\" but previous assignments target table \"" +
+                            primaryAssignmentStageType.getTableName(strategy) +
+                            "\". Updating columns in multiple database tables by one createUpdate " +
+                            "for joined inheritance requires a dialect that supports multi-table update assignment"
             );
         }
         assignmentStageTypes.add(stageType);
@@ -223,7 +234,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public MutableUpdate where(Predicate... predicates) {
+    public MutableUpdateImpl where(Predicate... predicates) {
         updateQuery.where(predicates);
         return this;
     }
@@ -318,6 +329,119 @@ public class MutableUpdateImpl
                 .execute(con, this::executeImpl);
     }
 
+    @Override
+    public <R> SelectionExecutable<R> returning(Selection<R> selection) {
+        return returning(Collections.singletonList(selection), null);
+    }
+
+    @Override
+    public <T1, T2> SelectionExecutable<Tuple2<T1, T2>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2
+    ) {
+        return returning(Arrays.asList(selection1, selection2), null);
+    }
+
+    @Override
+    public <T1, T2, T3> SelectionExecutable<Tuple3<T1, T2, T3>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3), null);
+    }
+
+    @Override
+    public <T1, T2, T3, T4> SelectionExecutable<Tuple4<T1, T2, T3, T4>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3,
+            Selection<T4> selection4
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3, selection4), null);
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5> SelectionExecutable<Tuple5<T1, T2, T3, T4, T5>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3,
+            Selection<T4> selection4,
+            Selection<T5> selection5
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3, selection4, selection5), null);
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6> SelectionExecutable<Tuple6<T1, T2, T3, T4, T5, T6>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3,
+            Selection<T4> selection4,
+            Selection<T5> selection5,
+            Selection<T6> selection6
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3, selection4, selection5, selection6), null);
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7> SelectionExecutable<Tuple7<T1, T2, T3, T4, T5, T6, T7>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3,
+            Selection<T4> selection4,
+            Selection<T5> selection5,
+            Selection<T6> selection6,
+            Selection<T7> selection7
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3, selection4, selection5, selection6, selection7), null);
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8> SelectionExecutable<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3,
+            Selection<T4> selection4,
+            Selection<T5> selection5,
+            Selection<T6> selection6,
+            Selection<T7> selection7,
+            Selection<T8> selection8
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3, selection4, selection5, selection6, selection7, selection8), null);
+    }
+
+    @Override
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> SelectionExecutable<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> returning(
+            Selection<T1> selection1,
+            Selection<T2> selection2,
+            Selection<T3> selection3,
+            Selection<T4> selection4,
+            Selection<T5> selection5,
+            Selection<T6> selection6,
+            Selection<T7> selection7,
+            Selection<T8> selection8,
+            Selection<T9> selection9
+    ) {
+        return returning(Arrays.asList(selection1, selection2, selection3, selection4, selection5, selection6, selection7, selection8, selection9), null);
+    }
+
+    @Override
+    public <R> SelectionExecutable<R> returning(TupleMapper<R> mapper) {
+        return returning(mapper.getSelections(), mapper);
+    }
+
+    private <R> SelectionExecutable<R> returning(
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator
+    ) {
+        validateMutable();
+        if (selections.isEmpty()) {
+            throw new IllegalArgumentException("The update-returning selection list cannot be empty");
+        }
+        return new UpdateSelectionExecutable<>(selections, tupleCreator, jdbcOptions);
+    }
+
     private int executeImpl(Connection con) {
 
         if (assignmentMap.isEmpty()) {
@@ -336,6 +460,215 @@ public class MutableUpdateImpl
 
         renderTo(builder);
         return executeUpdateSql(builder, con);
+    }
+
+    private <R> List<R> executeReturningImpl(
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+
+        if (assignmentMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Dialect dialect = getSqlClient().getDialect();
+        if (!dialect.isUpdateReturningSupported()) {
+            throw new ExecutionException(
+                    "The update-returning statement is not supported by \"" +
+                            dialect.getClass().getName() +
+                            "\""
+            );
+        }
+
+        if (getSqlClient().isTargetTransferable()) {
+            Executor.validateMutationConnection(con);
+        }
+
+        SqlBuilder builder = createFilteredBuilder();
+
+        if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+            return executeReturningWithTrigger(builder, con, selections, tupleCreator, jdbcOptions);
+        }
+
+        renderReturningTo(builder, null, selections);
+        return executeReturningSql(builder, con, selections, tupleCreator, jdbcOptions);
+    }
+
+    private <R> Stream<R> streamReturningImpl(
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+
+        if (assignmentMap.isEmpty()) {
+            return Stream.empty();
+        }
+
+        Dialect dialect = getSqlClient().getDialect();
+        if (!dialect.isUpdateReturningSupported()) {
+            throw new ExecutionException(
+                    "The update-returning statement is not supported by \"" +
+                            dialect.getClass().getName() +
+                            "\""
+            );
+        }
+
+        SqlBuilder builder = createFilteredBuilder();
+
+        if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+            return streamReturningWithTrigger(builder, con, selections, tupleCreator, jdbcOptions);
+        }
+
+        renderReturningTo(builder, null, selections);
+        return streamReturningSql(builder, con, selections, tupleCreator, jdbcOptions, null);
+    }
+
+    private <R> List<R> executeReturningWithTrigger(
+            SqlBuilder builder,
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+        Map<Object, ImmutableSpi> oldRowMap = selectRowsForTrigger(builder, con);
+        if (oldRowMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        builder = new SqlBuilder(new AstContext(getSqlClient()));
+        renderReturningTo(builder, oldRowMap.keySet(), selections);
+        List<R> rows = executeReturningSql(builder, con, selections, tupleCreator, jdbcOptions);
+        if (!rows.isEmpty()) {
+            submitTrigger(con, oldRowMap);
+        }
+        return rows;
+    }
+
+    private <R> Stream<R> streamReturningWithTrigger(
+            SqlBuilder builder,
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+        ConnectionManager.ConnectionScope scope = getSqlClient().getConnectionManager().open(con);
+        Connection actualCon = scope.connection();
+        try {
+            if (getSqlClient().isTargetTransferable()) {
+                Executor.validateMutationConnection(actualCon);
+            }
+            Map<Object, ImmutableSpi> oldRowMap = selectRowsForTrigger(builder, actualCon);
+            if (oldRowMap.isEmpty()) {
+                scope.close();
+                return Stream.empty();
+            }
+
+            builder = new SqlBuilder(new AstContext(getSqlClient()));
+            renderReturningTo(builder, oldRowMap.keySet(), selections);
+            return streamReturningSql(
+                    builder,
+                    actualCon,
+                    existingScopeConnectionManager(scope),
+                    selections,
+                    tupleCreator,
+                    jdbcOptions,
+                    () -> submitTrigger(actualCon, oldRowMap),
+                    null
+            );
+        } catch (RuntimeException | Error ex) {
+            scope.close();
+            throw ex;
+        }
+    }
+
+    private <R> List<R> executeReturningSql(
+            SqlBuilder builder,
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return Selectors.select(
+                getSqlClient(),
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                tupleCreator,
+                getPurpose(),
+                jdbcOptions
+        );
+    }
+
+    private <R> Stream<R> streamReturningSql(
+            SqlBuilder builder,
+            Connection con,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions,
+            @Nullable Runnable beforeClose
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return Selectors.stream(
+                getSqlClient(),
+                getSqlClient().getConnectionManager(),
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                tupleCreator,
+                getPurpose(),
+                jdbcOptions,
+                beforeClose,
+                getSqlClient().isTargetTransferable() ? Executor::validateMutationConnection : null
+        );
+    }
+
+    private <R> Stream<R> streamReturningSql(
+            SqlBuilder builder,
+            Connection con,
+            ConnectionManager connectionManager,
+            List<Selection<?>> selections,
+            TupleCreator<R> tupleCreator,
+            JdbcOptions jdbcOptions,
+            @Nullable Runnable beforeClose,
+            @Nullable java.util.function.Consumer<Connection> connectionValidator
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return Selectors.stream(
+                getSqlClient(),
+                connectionManager,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                tupleCreator,
+                getPurpose(),
+                jdbcOptions,
+                beforeClose,
+                connectionValidator
+        );
+    }
+
+    private ConnectionManager existingScopeConnectionManager(ConnectionManager.ConnectionScope scope) {
+        return new ConnectionManager() {
+            @Override
+            public <R> R execute(@Nullable Connection con, java.util.function.Function<Connection, R> block) {
+                return block.apply(scope.connection());
+            }
+
+            @Override
+            public ConnectionManager.ConnectionScope open(@Nullable Connection con) {
+                return scope;
+            }
+        };
     }
 
     private SqlBuilder createFilteredBuilder() {
@@ -433,6 +766,16 @@ public class MutableUpdateImpl
         renderTo(builder, null);
     }
 
+    private void renderReturningTo(
+            SqlBuilder builder,
+            Collection<Object> ids,
+            List<Selection<?>> selections
+    ) {
+        getSqlClient().getDialect().updateReturning(
+                new UpdateReturningContextImpl(builder, ids, selections)
+        );
+    }
+
     void shareRootAliasWith(TableLikeImplementor<?> source) {
         this.aliasSource = source;
     }
@@ -486,6 +829,14 @@ public class MutableUpdateImpl
     }
 
     private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
+        renderTo(builder, ids, null);
+    }
+
+    private void renderTo(
+            @NotNull SqlBuilder builder,
+            Collection<Object> ids,
+            @Nullable List<Selection<?>> returningSelections
+    ) {
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(updateQuery);
         boolean joinedTypeBranchUpdatePushed = false;
@@ -507,8 +858,8 @@ public class MutableUpdateImpl
             boolean joinedTypeStageJoinRequired = !joinedTypeStageAliasMap.isEmpty();
             boolean idSubQueryRequired =
                     ids == null &&
-                    updateJoin == null &&
-                    (joinedTypeStageJoinRequired || usedChild);
+                            updateJoin == null &&
+                            (joinedTypeStageJoinRequired || usedChild);
             ImmutableType rootType = table.getImmutableType().getInheritanceInfo() != null ?
                     table.getImmutableType().getInheritanceInfo().getRootType() :
                     null;
@@ -516,19 +867,19 @@ public class MutableUpdateImpl
                 if (!dialect.isTableOfSubQueryMutable()) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
-                            "and the current dialect does not support using the updated table in a subquery. " +
-                            "Cannot render portable id-subquery update for \"" +
-                            table.getImmutableType() +
-                            "\""
+                                    "and the current dialect does not support using the updated table in a subquery. " +
+                                    "Cannot render portable id-subquery update for \"" +
+                                    table.getImmutableType() +
+                                    "\""
                     );
                 }
                 if (assignmentSourceRequiresExtraTable()) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
-                            "but an assignment value of update statement for \"" +
-                            table.getImmutableType() +
-                            "\" requires another table. Portable id-subquery update can only move " +
-                            "predicate joins into the id subquery, not assignment value joins."
+                                    "but an assignment value of update statement for \"" +
+                                    table.getImmutableType() +
+                                    "\" requires another table. Portable id-subquery update can only move " +
+                                    "predicate joins into the id subquery, not assignment value joins."
                     );
                 }
                 ImmutableType subQueryBaseType = rootType != null ? rootType : table.getImmutableType();
@@ -541,9 +892,9 @@ public class MutableUpdateImpl
                     updateJoin.getFrom() == UpdateJoin.From.AS_ROOT) {
                 throw new ExecutionException(
                         "The current dialect renders update joins from the root table, " +
-                        "but joined inheritance update for \"" +
-                        table.getImmutableType() +
-                        "\" requires separate inheritance stage aliases"
+                                "but joined inheritance update for \"" +
+                                table.getImmutableType() +
+                                "\" requires separate inheritance stage aliases"
                 );
             }
             if (aliasSource != null) {
@@ -594,6 +945,11 @@ public class MutableUpdateImpl
                     idSubQueryStageAliasMap,
                     idSubQueryRequired
             );
+
+            if (returningSelections != null) {
+                builder.sql(" returning ");
+                renderReturningSelections(builder, returningSelections, physicalType, true);
+            }
 
         } finally {
             if (joinedTypeBranchUpdatePushed) {
@@ -666,9 +1022,9 @@ public class MutableUpdateImpl
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean withTargetPrefix =
                 updateJoin != null &&
-                updateJoin.isJoinedTableUpdatable() &&
-                (MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext()) ||
-                        joinedTypeStageJoinRequired);
+                        updateJoin.isJoinedTableUpdatable() &&
+                        (MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext()) ||
+                                joinedTypeStageJoinRequired);
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.separator();
             renderTarget(builder, e.getKey(), withTargetPrefix, physicalType, joinedTypeStageAliasMap);
@@ -764,7 +1120,7 @@ public class MutableUpdateImpl
         TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
-            updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                 MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext())
         ) {
             MutationJoinRenderSupport.renderDeeperJoinsAsFrom(builder, table);
@@ -786,15 +1142,15 @@ public class MutableUpdateImpl
 
         boolean hasJoinedTypeStageCondition =
                 forUpdate &&
-                updateJoin != null &&
-                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                !joinedTypeStageAliasMap.isEmpty();
+                        updateJoin != null &&
+                        updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+                        !joinedTypeStageAliasMap.isEmpty();
 
         boolean hasTableCondition =
                 forUpdate &&
-                updateJoin != null &&
-                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext());
+                        updateJoin != null &&
+                        updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+                        MutationJoinRenderSupport.hasUsedChild(table, builder.getAstContext());
 
         if (!hasJoinedTypeStageCondition &&
                 !hasTableCondition &&
@@ -811,7 +1167,7 @@ public class MutableUpdateImpl
                     MutationRender.alias(builder, table),
                     table.getImmutableType().getIdProp().getStorage(getSqlClient().getMetadataStrategy()),
                     ids,
-                builder
+                    builder
             );
         }
 
@@ -949,6 +1305,119 @@ public class MutableUpdateImpl
         }
     }
 
+    private void renderReturningSelections(
+            SqlBuilder builder,
+            List<Selection<?>> selections,
+            ImmutableType physicalType,
+            boolean withPrefix
+    ) {
+        builder.enter(SqlBuilder.ScopeType.COMMA);
+        try {
+            for (Selection<?> selection : selections) {
+                builder.separator();
+                PropExpressionImplementor<?> propExpression =
+                        returningPropExpression(builder.getAstContext(), selection, physicalType);
+                if (withPrefix) {
+                    propExpression.renderTo(builder, true);
+                } else {
+                    renderReturningColumnWithoutPrefix(builder, propExpression);
+                }
+            }
+        } finally {
+            builder.leave();
+        }
+    }
+
+    private PropExpressionImplementor<?> returningPropExpression(
+            AstContext astContext,
+            Selection<?> selection,
+            ImmutableType physicalType
+    ) {
+        Ast ast = Ast.from(selection, astContext);
+        if (!(ast instanceof PropExpressionImplementor<?>)) {
+            throw new IllegalArgumentException(
+                    "The update-returning selection \"" +
+                            selection +
+                            "\" is not supported. Only column property selections of the updated table are supported."
+            );
+        }
+        PropExpressionImplementor<?> propExpression = (PropExpressionImplementor<?>) ast;
+        Table<?> selectionTable = propExpression.getTable();
+        if (selectionTable != getTable() && selectionTable != getTableLikeImplementor()) {
+            throw new IllegalArgumentException(
+                    "The update-returning selection \"" +
+                            selection +
+                            "\" is not supported because it does not belong to the updated table \"" +
+                            getTableLikeImplementor().getImmutableType() +
+                            "\""
+            );
+        }
+        ImmutableProp prop = propExpression.getProp();
+        if (!prop.isColumnDefinition()) {
+            throw new IllegalArgumentException(
+                    "The update-returning selection \"" +
+                            selection +
+                            "\" is not supported because property \"" +
+                            prop +
+                            "\" is not mapped by physical columns"
+            );
+        }
+        validateReturningStage(prop, physicalType);
+        return propExpression;
+    }
+
+    private void validateReturningStage(ImmutableProp prop, ImmutableType physicalType) {
+        TableImplementor<?> table = getTableLikeImplementor();
+        ImmutableType updateType = table.getImmutableType();
+        InheritanceInfo inheritanceInfo = updateType.getInheritanceInfo();
+        if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
+            return;
+        }
+        if (assignmentStageTypes.size() > 1) {
+            throw new IllegalArgumentException(
+                    "The update-returning statement for joined inheritance type \"" +
+                            updateType +
+                            "\" cannot be used when assignments target multiple physical tables"
+            );
+        }
+        ImmutableProp originalProp = prop.toOriginal();
+        ImmutableType stageType = originalProp.isId() ?
+                physicalType :
+                inheritanceInfo.getTableTypeForProp(originalProp, updateType);
+        if (stageType != physicalType) {
+            MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+            throw new IllegalArgumentException(
+                    "The update-returning property \"" +
+                            prop +
+                            "\" must belong to the same physical table as the update target. " +
+                            "The property belongs to table \"" +
+                            (stageType != null ? stageType.getTableName(strategy) : originalProp.getDeclaringType().getTableName(strategy)) +
+                            "\" but the update target table is \"" +
+                            physicalType.getTableName(strategy) +
+                            "\""
+            );
+        }
+    }
+
+    private void renderReturningColumnWithoutPrefix(
+            SqlBuilder builder,
+            PropExpressionImplementor<?> propExpression
+    ) {
+        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+        EmbeddedColumns.Partial partial = propExpression.getPartial(strategy);
+        TableSelection tableSelection = TableProxies.resolve(
+                propExpression.getTable(),
+                builder.getAstContext()
+        );
+        tableSelection.renderSelection(
+                propExpression.getProp(),
+                propExpression.isRawId(),
+                builder,
+                propExpression.getPath() != null ? partial : null,
+                false
+        );
+    }
+
     private static class Target {
 
         final Table<?> table;
@@ -969,8 +1438,8 @@ public class MutableUpdateImpl
             if (partial != null && partial.isEmbedded()) {
                 throw new IllegalArgumentException(
                         "The property \"" +
-                        implementor +
-                        "\" is embedded, it cannot be used as the assignment target of update statement"
+                                implementor +
+                                "\" is embedded, it cannot be used as the assignment target of update statement"
                 );
             }
             Table<?> targetTable = implementor.getTable();
@@ -1001,6 +1470,86 @@ public class MutableUpdateImpl
         @Override
         public int hashCode() {
             return expr.hashCode();
+        }
+    }
+
+    private class UpdateSelectionExecutable<R> implements SelectionExecutable<R> {
+
+        private final List<Selection<?>> selections;
+
+        private final TupleCreator<R> tupleCreator;
+
+        private final JdbcOptions jdbcOptions;
+
+        private UpdateSelectionExecutable(
+                List<Selection<?>> selections,
+                TupleCreator<R> tupleCreator,
+                JdbcOptions jdbcOptions
+        ) {
+            this.selections = selections;
+            this.tupleCreator = tupleCreator;
+            this.jdbcOptions = jdbcOptions;
+        }
+
+        @Override
+        public List<R> execute(Connection con) {
+            return getSqlClient()
+                    .getConnectionManager()
+                    .execute(con, it -> executeReturningImpl(it, selections, tupleCreator, jdbcOptions));
+        }
+
+        @Override
+        public Stream<R> stream(Connection con) {
+            return streamReturningImpl(con, selections, tupleCreator, jdbcOptions);
+        }
+    }
+
+    private class UpdateReturningContextImpl implements Dialect.UpdateReturningContext {
+
+        private final SqlBuilder builder;
+
+        private final Collection<Object> ids;
+
+        private final List<Selection<?>> selections;
+
+        private UpdateReturningContextImpl(
+                SqlBuilder builder,
+                Collection<Object> ids,
+                List<Selection<?>> selections
+        ) {
+            this.builder = builder;
+            this.ids = ids;
+            this.selections = selections;
+        }
+
+        @Override
+        public Dialect.UpdateReturningContext sql(String sql) {
+            builder.sql(sql);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateReturningContext appendUpdateStatement() {
+            renderTo(builder, ids);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateReturningContext appendUpdateStatementWithReturning() {
+            renderTo(builder, ids, selections);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateReturningContext appendReturningColumns() {
+            AstContext astContext = builder.getAstContext();
+            astContext.pushStatement(updateQuery);
+            try {
+                renderReturningSelections(builder, selections, physicalUpdateType(), false);
+            } finally {
+                astContext.popStatement();
+            }
+            return this;
         }
     }
 
@@ -1071,24 +1620,24 @@ public class MutableUpdateImpl
                 if (table.getParent() != null && dialect.getUpdateJoin() == null) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
-                            "but there is a join '" +
-                            table.getTableLikeImplementor() +
-                            "'."
+                                    "but there is a join '" +
+                                    table.getTableLikeImplementor() +
+                                    "'."
                     );
                 }
                 if (table.getParent() != null &&
-                    table.getParent().getParent() == null &&
-                    dialect.getUpdateJoin() != null &&
-                    dialect.getUpdateJoin().getFrom() == UpdateJoin.From.AS_JOIN) {
+                        table.getParent().getParent() == null &&
+                        dialect.getUpdateJoin() != null &&
+                        dialect.getUpdateJoin().getFrom() == UpdateJoin.From.AS_JOIN) {
                     Lazy<String> reason = new Lazy<>(() ->
                             "because current dialect '" +
-                            dialect.getClass().getName() +
-                            "' " +
-                            "indicates that the first level table joins in update statement " +
-                            "must be rendered as 'from' clause, " +
-                            "but there is a first level table join whose join type is outer: '" +
-                            table.getTableLikeImplementor() +
-                            "'."
+                                    dialect.getClass().getName() +
+                                    "' " +
+                                    "indicates that the first level table joins in update statement " +
+                                    "must be rendered as 'from' clause, " +
+                                    "but there is a first level table join whose join type is outer: '" +
+                                    table.getTableLikeImplementor() +
+                                    "'."
                     );
                     TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
                     if (implementor instanceof TableImplementor<?>) {

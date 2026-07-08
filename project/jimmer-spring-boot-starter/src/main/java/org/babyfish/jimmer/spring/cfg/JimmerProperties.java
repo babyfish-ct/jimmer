@@ -60,6 +60,9 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
+    @NotNull
+    private final Jdbc jdbc;
+
     private final boolean inListPaddingEnabled;
 
     private final boolean expandedInListPaddingEnabled;
@@ -119,6 +122,7 @@ public class JimmerProperties {
             @Nullable String defaultSchema,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
+            @Nullable Jdbc jdbc,
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             boolean dissociationLogicalDeleteEnabled,
@@ -242,6 +246,7 @@ public class JimmerProperties {
                 defaultListBatchSize != null ?
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
+        this.jdbc = jdbc != null ? jdbc : new Jdbc(null, null);
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabled;
@@ -433,6 +438,21 @@ public class JimmerProperties {
         return defaultTypeChangeAllowed;
     }
 
+    @Nullable
+    public Integer getDefaultJdbcFetchSize() {
+        return jdbc.getDefaultFetchSize();
+    }
+
+    @Nullable
+    public Integer getDefaultJdbcQueryTimeout() {
+        return jdbc.getDefaultQueryTimeout();
+    }
+
+    @NotNull
+    public Jdbc getJdbc() {
+        return jdbc;
+    }
+
     public boolean isDefaultSaveReturningEnabled() {
         return defaultSaveReturningEnabled;
     }
@@ -510,6 +530,7 @@ public class JimmerProperties {
                 ", defaultSchema='" + defaultSchema + '\'' +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
+                ", jdbc=" + jdbc +
                 ", inListPaddingEnabled=" + inListPaddingEnabled +
                 ", expandedInListPaddingEnabled=" + expandedInListPaddingEnabled +
                 ", dissociationLogicalDeleteEnabled=" + dissociationLogicalDeleteEnabled +
@@ -530,6 +551,39 @@ public class JimmerProperties {
                 ", errorTranslator=" + errorTranslator +
                 ", client=" + client +
                 '}';
+    }
+
+    @ConstructorBinding
+    public static class Jdbc {
+
+        @Nullable
+        private final Integer defaultFetchSize;
+
+        @Nullable
+        private final Integer defaultQueryTimeout;
+
+        public Jdbc(@Nullable Integer defaultFetchSize, @Nullable Integer defaultQueryTimeout) {
+            this.defaultFetchSize = defaultFetchSize;
+            this.defaultQueryTimeout = defaultQueryTimeout;
+        }
+
+        @Nullable
+        public Integer getDefaultFetchSize() {
+            return defaultFetchSize;
+        }
+
+        @Nullable
+        public Integer getDefaultQueryTimeout() {
+            return defaultQueryTimeout;
+        }
+
+        @Override
+        public String toString() {
+            return "Jdbc{" +
+                    "defaultFetchSize=" + defaultFetchSize +
+                    ", defaultQueryTimeout=" + defaultQueryTimeout +
+                    '}';
+        }
     }
 
     @Deprecated

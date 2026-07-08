@@ -83,6 +83,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             @Nullable ExecutorContext ctx,
             JSqlClientImplementor sqlClient
     ) {
+        super.openCursor(cursorId, sql, variables, variablePositions, purpose, ctx, sqlClient);
         if (!logger.isEnabledForLevel(level)) {
             return;
         }
@@ -98,6 +99,15 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                 sqlClient
         );
         log(builder.toString());
+    }
+
+    @Override
+    public void closeCursor(long cursorId) {
+        super.closeCursor(cursorId);
+        if (!logger.isEnabledForLevel(level)) {
+            return;
+        }
+        log(RESPONSE + "Close cursor(" + cursorId + ")");
     }
 
     @Override

@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.ast.query;
 
-import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.SelectionExecutable;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.TypedQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedRootQueryImplementor;
 import org.babyfish.jimmer.sql.exception.EmptyResultException;
 import org.babyfish.jimmer.sql.exception.TooManyResultsException;
@@ -15,7 +14,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface TypedRootQuery<R> extends Executable<List<R>> {
+public interface TypedRootQuery<R> extends SelectionExecutable<R> {
 
     @SafeVarargs
     static <R> TypedRootQuery<R> union(TypedRootQuery<R> ... queries) {

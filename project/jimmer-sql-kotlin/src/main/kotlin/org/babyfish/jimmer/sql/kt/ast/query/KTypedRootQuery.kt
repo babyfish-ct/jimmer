@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
-import org.babyfish.jimmer.sql.exception.EmptyResultException
-import org.babyfish.jimmer.sql.exception.TooManyResultsException
-import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
 import java.sql.Connection
 
-interface KTypedRootQuery<R> : KExecutable<List<R>> {
+interface KTypedRootQuery<R> : KSelectionExecutable<R> {
 
     infix fun union(other: KTypedRootQuery<R>): KTypedRootQuery<R>
 

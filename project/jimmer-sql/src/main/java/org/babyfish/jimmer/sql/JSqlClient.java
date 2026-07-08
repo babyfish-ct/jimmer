@@ -129,6 +129,12 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     Caches getCaches();
 
+    @Nullable
+    Integer getDefaultJdbcFetchSize();
+
+    @Nullable
+    Integer getDefaultJdbcQueryTimeout();
+
     JsonCodec<?> getJsonCodec();
 
     Filters getFilters();
@@ -410,6 +416,12 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
         @OldChain
         Builder setDefaultListBatchSize(int size);
+
+        @OldChain
+        Builder setDefaultJdbcFetchSize(@Nullable Integer fetchSize);
+
+        @OldChain
+        Builder setDefaultJdbcQueryTimeout(@Nullable Integer queryTimeout);
 
         @OldChain
         Builder setInListPaddingEnabled(boolean enabled);

@@ -76,6 +76,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
         "jimmer.database-validation-mode=ERROR",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
         "jimmer.in-list-to-any-equality-enabled=true",
+        "jimmer.jdbc.default-fetch-size=128",
+        "jimmer.jdbc.default-query-timeout=64",
         "spring.application.name=java-client"
 })
 @SpringBootConfiguration
@@ -252,6 +254,10 @@ public class SpringJavaTest extends AbstractTest {
                 "/my-ts.zip",
                 jimmerProperties.getClient().getTs().getPath()
         );
+        Assertions.assertEquals(128, jimmerProperties.getDefaultJdbcFetchSize());
+        Assertions.assertEquals(128, sqlClient.getDefaultJdbcFetchSize());
+        Assertions.assertEquals(64, jimmerProperties.getDefaultJdbcQueryTimeout());
+        Assertions.assertEquals(64, sqlClient.getDefaultJdbcQueryTimeout());
     }
 
     @Test

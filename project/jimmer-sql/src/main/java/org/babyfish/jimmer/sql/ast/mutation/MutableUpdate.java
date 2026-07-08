@@ -1,17 +1,14 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.lang.OldChain;
-import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
+import org.babyfish.jimmer.sql.ast.query.selectable.ReturningSelectable;
 
 import java.util.function.Supplier;
 
-public interface MutableUpdate extends Filterable, Executable<Integer> {
+public interface MutableUpdate
+        extends Filterable, Executable<Integer>, ReturningSelectable, JdbcConfigurable<MutableUpdate> {
 
     @OldChain
     MutableUpdate setTypeMatchMode(TypeMatchMode mode);
@@ -24,7 +21,7 @@ public interface MutableUpdate extends Filterable, Executable<Integer> {
 
     @OldChain
     @Override
-    MutableUpdate where(Predicate ... predicates);
+    MutableUpdate where(Predicate... predicates);
 
     /**
      * This method is deprecated, using {@code Dynamic Predicates}
@@ -66,7 +63,7 @@ public interface MutableUpdate extends Filterable, Executable<Integer> {
      *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
      *     </li>
      * </ul>
-     *
+     * <p>
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
      * <pre>{@code
@@ -123,7 +120,7 @@ public interface MutableUpdate extends Filterable, Executable<Integer> {
      *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
      *     </li>
      * </ul>
-     *
+     * <p>
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
      * <pre>{@code
@@ -131,7 +128,7 @@ public interface MutableUpdate extends Filterable, Executable<Integer> {
      * }</pre>
      *
      * @param condition The condition
-     * @param block A lambda to create predicate when condition is true
+     * @param block     A lambda to create predicate when condition is true
      * @return Return the current object to support chain programming style
      */
     @OldChain

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.JdbcOptions;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +17,10 @@ public interface TypedQueryImplementor extends Ast {
 
     default TupleCreator<?> getTupleCreator() {
         return null;
+    }
+
+    default JdbcOptions getJdbcOptions() {
+        return JdbcOptions.EMPTY;
     }
 
     JSqlClientImplementor getSqlClient();

@@ -4,11 +4,9 @@ import org.babyfish.jimmer.View
 import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
 import org.babyfish.jimmer.sql.kt.ast.expression.constant
-import org.babyfish.jimmer.sql.kt.ast.mutation.KDeleteCommandDsl
-import org.babyfish.jimmer.sql.kt.ast.mutation.KDeleteResult
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -53,6 +51,11 @@ inline fun <reified E : Any> KSqlClient.createUpdate(
 ): KExecutable<Int> =
     this.createUpdate(E::class, block)
 
+inline fun <reified E : Any, R> KSqlClient.createUpdateReturning(
+    noinline block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
+): KSelectionExecutable<R> =
+    this.createUpdateReturning(E::class, block)
+
 inline fun <reified E : Any> KSqlClient.createDelete(
     noinline block: KMutableDelete<E>.() -> Unit
 ): KExecutable<Int> =
@@ -82,6 +85,12 @@ inline fun <reified E : Any> KSqlClient.executeUpdate(
     noinline block: KMutableUpdate<E>.() -> Unit
 ): Int =
     this.executeUpdate(E::class, con, block)
+
+inline fun <reified E : Any, R> KSqlClient.executeUpdateReturning(
+    con: Connection? = null,
+    noinline block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
+): List<R> =
+    this.executeUpdateReturning(E::class, con, block)
 
 inline fun <reified E : Any> KSqlClient.executeDelete(
     con: Connection? = null,
