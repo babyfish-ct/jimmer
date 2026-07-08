@@ -828,12 +828,6 @@ public class MutableUpdateImpl
         builder.sql(MutationRender.alias(builder, getTableLikeImplementor()));
     }
 
-    private void updateSetters(SqlBuilder builder){
-        builder.enter(SqlBuilder.ScopeType.SET);
-        renderAssignments(builder);
-        builder.leave();
-    }
-
     private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
         renderTo(builder, ids, null);
     }
@@ -926,18 +920,7 @@ public class MutableUpdateImpl
                     .sql("update ")
                     .sql(physicalType.getTableName(getSqlClient().getMetadataStrategy()));
 
-            builder.sql("update");
-            if (dialect.isUpdateAliasRequired()) {
-                // SQL Server: update alias SET ... from TABLE alias WHERE ...
-                // Alias comes right after UPDATE keyword, before SET clause
-                addAlias(builder);
-                updateSetters(builder);
-                builder.sql(" from");
-            }
-            builder.sql(" ");
-            builder.sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
             addAlias(builder);
-            UpdateJoin updateJoin = dialect.getUpdateJoin();
 
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
                 renderJoinedTypeStageJoins(builder, physicalType, joinedTypeStageAliasMap);
@@ -945,10 +928,6 @@ public class MutableUpdateImpl
                     child.renderTo(builder, false);
                 }
             }
-            if(!dialect.isUpdateAliasRequired()) {
-                updateSetters(builder);
-            }
-            renderTables(builder);
 
             builder.enter(SqlBuilder.ScopeType.SET);
             renderAssignments(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);

@@ -25,11 +25,6 @@ public class SqlServerDialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isUpdateAliasRequired() {
-        return true;
-    }
-
-    @Override
     public DeleteJoin getDeleteJoin() {
         return new DeleteJoin(DeleteJoin.From.AS_JOIN);
     }
