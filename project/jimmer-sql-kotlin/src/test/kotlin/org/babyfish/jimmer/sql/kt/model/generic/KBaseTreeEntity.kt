@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.generic
 
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.sql.IdView
 import org.babyfish.jimmer.sql.ManyToOne
 import org.babyfish.jimmer.sql.MappedSuperclass
@@ -16,4 +17,8 @@ interface KBaseTreeEntity<T : KBaseTreeEntity<T>> {
 
     @OneToMany(mappedBy = "parent")
     val children: List<T>
+
+    @Formula(dependencies = ["children"])
+    val leaf: Boolean
+        get() = children.isEmpty()
 }

@@ -452,7 +452,11 @@ class ImmutableType(
         redefinedProps = superPropMap.filterKeys {
             primarySuperType == null || !primarySuperType.properties.containsKey(it)
         }.mapValues {
-            ImmutableProp(ctx, this, propIdSequence++, it.value.propDeclaration, true)
+            if (isMappedSuperclass && it.value.declaringType.isMappedSuperclass) {
+                it.value
+            } else {
+                ImmutableProp(ctx, this, propIdSequence++, it.value.propDeclaration, true)
+            }
         }
 
         declaredProperties =
