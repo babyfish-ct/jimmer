@@ -47,13 +47,36 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateReturningCannotReturnPropFromDifferentPhysicalTable() {
+        OrganizationTable organization = OrganizationTable.$;
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createUpdate(organization)
+                        .set(organization.taxCode(), "GLOBEX-002")
+                        .where(organization.id().eq(200L))
+                        .returning(organization.name())
+                        .execute(con),
+                ctx -> ctx.throwable(it -> {
+                    it.type(IllegalArgumentException.class);
+                    it.message(
+                            "The update-returning property \"" +
+                                    "org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client.name\" " +
+                                    "must belong to the same physical table as the update target. " +
+                                    "The property belongs to table \"JOINED_CLIENT\" " +
+                                    "but the update target table is \"JOINED_ORGANIZATION\""
+                    );
+                })
+        );
+    }
+
+    @Test
     public void testUpdateDerivedTypeCanSetRootProp() {
         executeAndExpectRowCount(
                 sqlOnlyUpdateJoinClient(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
-                    u.set(organization.name(), "Globex+");
-                    u.where(organization.taxCode().eq("GLOBEX-001"));
-                }),
+                            u.set(organization.name(), "Globex+");
+                            u.where(organization.taxCode().eq("GLOBEX-001"));
+                        }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -163,10 +186,10 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 mysqlStyleUpdateJoinClient(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
-                    u.set(organization.name(), "Globex+");
-                    u.set(organization.taxCode(), "GLOBEX-002");
-                    u.where(organization.taxCode().eq("GLOBEX-001"));
-                }),
+                            u.set(organization.name(), "Globex+");
+                            u.set(organization.taxCode(), "GLOBEX-002");
+                            u.where(organization.taxCode().eq("GLOBEX-001"));
+                        }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -290,12 +313,12 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 sqlOnlyUpdateJoinClient(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
-                    u.set(organization.taxCode(), "GLOBEX-002");
-                    u.where(
-                            organization.name().eq("Globex"),
-                            organization.taxCode().eq("GLOBEX-001")
-                    );
-                }),
+                            u.set(organization.taxCode(), "GLOBEX-002");
+                            u.where(
+                                    organization.name().eq("Globex"),
+                                    organization.taxCode().eq("GLOBEX-001")
+                            );
+                        }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -318,9 +341,9 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 sqlOnlyUpdateJoinClient(1)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
-                    u.set(organization.taxCode(), "GLOBEX-002");
-                    u.where(organization.name().isNotNull());
-                }),
+                            u.set(organization.taxCode(), "GLOBEX-002");
+                            u.where(organization.name().isNotNull());
+                        }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -363,9 +386,9 @@ public class JoinedInheritanceDMLTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 sqlOnlyUpdateJoinClient(2)
                         .createUpdate(OrganizationTable.class, (u, organization) -> {
-                    u.set(organization.taxCode(), "ORG-UPDATED");
-                    u.where(organization.type().eq("ORG"));
-                }),
+                            u.set(organization.taxCode(), "ORG-UPDATED");
+                            u.where(organization.type().eq("ORG"));
+                        }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

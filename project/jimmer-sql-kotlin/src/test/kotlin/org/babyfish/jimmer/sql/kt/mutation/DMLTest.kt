@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -18,6 +19,7 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
 import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import org.junit.Test
 import java.math.BigDecimal
+import kotlin.test.assertEquals
 
 class DMLTest : AbstractMutationTest() {
 
@@ -48,6 +50,35 @@ class DMLTest : AbstractMutationTest() {
                 rowCount(2)
             }
         }
+    }
+
+    @Test
+    fun testUpdateReturning() {
+        lateinit var rows: List<Tuple2<Long, String>>
+        connectAndExpect({ con ->
+            sqlClient { setDialect(H2Dialect()) }.executeUpdateReturning(Book::class, con) {
+                set(table.name, "Learning GraphQL+")
+                where(table.id eq 1L)
+                returning(table.id, table.name)
+            }.also {
+                rows = it
+            }
+        }) {
+            statement {
+                sql(
+                    """select ID, NAME 
+                        |from final table (
+                        |--->update BOOK tb_1_ 
+                        |--->set NAME = ? 
+                        |--->where tb_1_.ID = ?
+                        |)""".trimMargin()
+                )
+                variables("Learning GraphQL+", 1L)
+            }
+        }
+        assertEquals(1, rows.size)
+        assertEquals(1L, rows[0]._1)
+        assertEquals("Learning GraphQL+", rows[0]._2)
     }
 
     @Test

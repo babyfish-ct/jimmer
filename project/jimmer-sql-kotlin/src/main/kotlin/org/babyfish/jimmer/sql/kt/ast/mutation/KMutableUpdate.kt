@@ -7,26 +7,26 @@ import org.babyfish.jimmer.sql.kt.ast.query.KFilterable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 
 @DslScope
-interface KMutableUpdate<E: Any> : KFilterable<KNonNullTableEx<E>> {
+interface KMutableUpdate<E : Any> : KFilterable<KNonNullTableEx<E>> {
 
     fun setTypeMatchMode(mode: TypeMatchMode)
 
-    fun <X: Any> set(
+    fun <X : Any> set(
         path: KNonNullPropExpression<X>,
         value: KNonNullExpression<X>
     )
 
-    fun <X: Any> set(
+    fun <X : Any> set(
         path: KNonNullPropExpression<X>,
         value: X
     )
 
-    fun <X: Any> set(
+    fun <X : Any> set(
         path: KNullablePropExpression<X>,
         value: KExpression<X>
     )
 
-    fun <X: Any> set(
+    fun <X : Any> set(
         path: KNullableExpression<X>,
         value: X?
     )

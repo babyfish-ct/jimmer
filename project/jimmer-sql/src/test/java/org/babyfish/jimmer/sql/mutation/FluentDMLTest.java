@@ -3,22 +3,29 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
-import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.model.AuthorTable;
+import org.babyfish.jimmer.sql.model.AuthorTableEx;
+import org.babyfish.jimmer.sql.model.BookStoreTable;
+import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
-import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.tuple.BookUpdateReturningTuple;
+import org.babyfish.jimmer.sql.tuple.BookUpdateReturningTupleMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
-import static org.babyfish.jimmer.sql.common.Constants.graphQLInActionId3;
 
 public class FluentDMLTest extends AbstractMutationTest {
 
@@ -71,6 +78,72 @@ public class FluentDMLTest extends AbstractMutationTest {
                         it.sql("update BOOK_STORE tb_1_ set WEBSITE = null");
                     });
                     ctx.rowCount(2);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateReturning() {
+        BookTable book = BookTable.$;
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createUpdate(book)
+                        .set(book.name(), "Learning GraphQL+")
+                        .where(book.id().eq(learningGraphQLId1))
+                        .returning(book.id(), book.name())
+                        .execute(con),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME " +
+                                        "from final table (" +
+                                        "update BOOK tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID = ?" +
+                                        ")"
+                        );
+                        it.variables("Learning GraphQL+", learningGraphQLId1);
+                    });
+                    ctx.value((List<Tuple2<UUID, String>> rows) -> {
+                        Assertions.assertEquals(1, rows.size());
+                        Assertions.assertEquals(learningGraphQLId1, rows.get(0).get_1());
+                        Assertions.assertEquals("Learning GraphQL+", rows.get(0).get_2());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateReturningTypedTuple() {
+        BookTable book = BookTable.$;
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createUpdate(book)
+                        .set(book.name(), "Effective TypeScript+")
+                        .where(book.id().eq(effectiveTypeScriptId1))
+                        .returning(
+                                BookUpdateReturningTupleMapper
+                                        .id(book.id())
+                                        .name(book.name())
+                        )
+                        .execute(con),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, NAME " +
+                                        "from final table (" +
+                                        "update BOOK tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID = ?" +
+                                        ")"
+                        );
+                        it.variables("Effective TypeScript+", effectiveTypeScriptId1);
+                    });
+                    ctx.value((List<BookUpdateReturningTuple> rows) -> {
+                        Assertions.assertEquals(1, rows.size());
+                        Assertions.assertEquals(effectiveTypeScriptId1, rows.get(0).getId());
+                        Assertions.assertEquals("Effective TypeScript+", rows.get(0).getName());
+                    });
                 }
         );
     }

@@ -189,6 +189,10 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isUpdateReturningSupported() {
+        return false;
+    }
+
     default boolean isInsertReturningSupported() {
         return false;
     }
@@ -218,6 +222,14 @@ public interface Dialect extends SqlTypeStrategy {
     default void updateByValues(UpdateByValuesContext ctx) {
         throw new UnsupportedOperationException(
                 "The update-by-values statement is not supported by \"" +
+                        getClass().getName() +
+                        "\""
+        );
+    }
+
+    default void updateReturning(UpdateReturningContext ctx) {
+        throw new UnsupportedOperationException(
+                "The update-returning statement is not supported by \"" +
                         getClass().getName() +
                         "\""
         );
@@ -284,6 +296,17 @@ public interface Dialect extends SqlTypeStrategy {
         UpdateByValuesContext appendPredicates(String targetPrefix, String sourcePrefix);
 
         UpdateByValuesContext appendReturning(String targetPrefix);
+    }
+
+    interface UpdateReturningContext {
+
+        UpdateReturningContext sql(String sql);
+
+        UpdateReturningContext appendUpdateStatement();
+
+        UpdateReturningContext appendUpdateStatementWithReturning();
+
+        UpdateReturningContext appendReturningColumns();
     }
 
     interface UpsertContext {

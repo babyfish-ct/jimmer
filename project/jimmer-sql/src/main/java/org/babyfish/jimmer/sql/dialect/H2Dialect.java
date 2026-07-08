@@ -147,6 +147,11 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateReturningSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isInsertReturningSupported() {
         return true;
     }
@@ -192,6 +197,16 @@ public class H2Dialect extends DefaultDialect {
                 .enter(AbstractSqlBuilder.ScopeType.SET)
                 .appendAssignments("tb_1_.", "tb_2_.")
                 .leave()
+                .sql(")");
+    }
+
+    @Override
+    public void updateReturning(UpdateReturningContext ctx) {
+        ctx
+                .sql("select ")
+                .appendReturningColumns()
+                .sql(" from final table (")
+                .appendUpdateStatement()
                 .sql(")");
     }
 

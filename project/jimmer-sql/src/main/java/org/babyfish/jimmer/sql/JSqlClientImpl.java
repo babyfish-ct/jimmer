@@ -2120,8 +2120,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                                 "please specify the `inputNotNull` of " +
                                                 (
                                                         prop.getAssociationAnnotation().annotationType() == OneToOne.class ?
-                                                        OneToOne.class :
-                                                        ManyToOne.class
+                                                                OneToOne.class :
+                                                                ManyToOne.class
                                                 ).getName() +
                                                 "; If you want to make a promise at the business level that " +
                                                 "the association is not null to declare non-null reference, " +

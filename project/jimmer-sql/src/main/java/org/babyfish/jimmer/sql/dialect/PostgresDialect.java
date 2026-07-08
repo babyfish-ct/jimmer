@@ -205,6 +205,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateReturningSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isInsertReturningSupported() {
         return true;
     }
@@ -276,6 +281,11 @@ public class PostgresDialect extends DefaultDialect {
                 .appendPredicates("tb_1_.", "tb_2_.")
                 .sql(" returning ")
                 .appendReturning("tb_1_.");
+    }
+
+    @Override
+    public void updateReturning(UpdateReturningContext ctx) {
+        ctx.appendUpdateStatementWithReturning();
     }
 
     @Override

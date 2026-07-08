@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdateReturning
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
 import org.babyfish.jimmer.sql.kt.ast.query.*
@@ -152,6 +153,14 @@ internal class KSqlClientImpl(
         val update = MutableUpdateImpl(javaClient, ImmutableType.get(entityType.java))
         block(KMutableUpdateImpl(update))
         return KExecutableImpl(update)
+    }
+
+    override fun <E : Any, R> createUpdateReturning(
+        entityType: KClass<E>,
+        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
+    ): KExecutable<List<R>> {
+        val update = MutableUpdateImpl(javaClient, ImmutableType.get(entityType.java))
+        return block(KMutableUpdateImpl(update))
     }
 
     override fun <E : Any> createDelete(

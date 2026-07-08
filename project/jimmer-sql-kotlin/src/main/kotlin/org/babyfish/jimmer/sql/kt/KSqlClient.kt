@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.JSqlClient
-import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
@@ -37,29 +36,29 @@ interface KSqlClient : KSaveOperations {
     ): KConfigurableRootQuery<KNonNullTable<E>, R> =
         queries.forEntity(entityType, block)
 
-    fun <B: KNonNullBaseTable<*>, R> createQuery(
+    fun <B : KNonNullBaseTable<*>, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R>
 
-    fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
+    fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <B: KNonNullBaseTable<*>, R: KNonNullBaseTable<*>> createBaseQuery(
+    fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
     ): KConfigurableBaseQuery<R>
 
-    fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
+    fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <E: Any, B: KNonNullBaseTable<*>> createBaseQuery(
+    fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
@@ -70,6 +69,11 @@ interface KSqlClient : KSaveOperations {
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit
     ): KExecutable<Int>
+
+    fun <E : Any, R> createUpdateReturning(
+        entityType: KClass<E>,
+        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
+    ): KExecutable<List<R>>
 
     fun <E : Any> createDelete(
         entityType: KClass<E>,
@@ -93,6 +97,12 @@ interface KSqlClient : KSaveOperations {
         con: Connection? = null,
         block: KMutableUpdate<E>.() -> Unit
     ): Int = createUpdate(entityType, block).execute(con)
+
+    fun <E : Any, R> executeUpdateReturning(
+        entityType: KClass<E>,
+        con: Connection? = null,
+        block: KMutableUpdateReturning<E>.() -> KExecutable<List<R>>
+    ): List<R> = createUpdateReturning(entityType, block).execute(con)
 
     fun <E : Any> executeDelete(
         entityType: KClass<E>,
