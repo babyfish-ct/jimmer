@@ -27,24 +27,6 @@ services:
       - ./database-postgres.sql:/docker-entrypoint-initdb.d/database-postgres.sql
       - db-jimmer-test-postgres:/var/lib/postgresql/data
 
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: jimmer-test-sqlserver
-    restart: always
-    ports:
-      - "1433:1433"
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Jimmer@123456"
-      MSSQL_COLLATION: "Chinese_PRC_CI_AS"
-    volumes:
-      - ./database-sqlserver.sql:/init/database-sqlserver.sql
-      - ./init-sqlserver.sh:/init/init-sqlserver.sh
-      - db-jimmer-test-sqlserver:/var/opt/mssql
-    entrypoint: ["/bin/bash", "/init/init-sqlserver.sh"]
-
-
 volumes:
   db-jimmer-test-mysql:
   db-jimmer-test-postgres:
-  db-jimmer-test-sqlserver:

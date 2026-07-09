@@ -28,14 +28,6 @@ public class NativeDatabases {
         );
     }
 
-    public static void assumeSqlserverDatabase() {
-
-        Assumptions.assumeTrue(
-                "sqlserver".equals(System.getenv("jimmer-sql-test-native-database")) &&
-                        SQLSERVER_DATA_SOURCE != null
-        );
-    }
-
     public static final DataSource MYSQL_DATA_SOURCE;
 
     public static final DataSource MYSQL_BATCH_DATA_SOURCE;
@@ -46,14 +38,6 @@ public class NativeDatabases {
                     "jdbc:postgresql://localhost:5432/jimmer_test",
                     "root",
                     "123456"
-            );
-
-    public static final DataSource SQLSERVER_DATA_SOURCE =
-            new SimpleDriverDataSource(
-                    new com.microsoft.sqlserver.jdbc.SQLServerDriver(),
-                    "jdbc:sqlserver://localhost:1433;databaseName=jimmer_test;trustServerCertificate=true",
-                    "sa",
-                    "Jimmer@123456"
             );
 
     public static final DataSource SQLITE_DATA_SOURCE =
