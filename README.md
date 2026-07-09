@@ -128,7 +128,65 @@ freeing you from dealing with tedious details and allowing you to focus on quick
 ## 4. Ultimate performance
 ![performance](./performance.jpg)
 
-## 5. Notes 
+
+## 5. Minimal usage: generic `@MappedSuperclass`
+
+Use a generic mapped superclass when multiple entities share the same association shape, such as tree nodes. The mapped superclass owns the generic association, and each entity binds the type parameter to itself.
+
+Kotlin:
+
+```kotlin
+@MappedSuperclass
+interface BaseTreeNode<T : BaseTreeNode<T>> {
+
+    @ManyToOne
+    @JoinColumn(name = "PARENT_ID")
+    val parent: T?
+
+    @OneToMany(mappedBy = "parent")
+    val children: List<T>
+}
+
+@Entity
+@Table(name = "DEPARTMENT")
+interface Department : BaseTreeNode<Department> {
+
+    @Id
+    val id: Long
+
+    val name: String
+}
+```
+
+Java:
+
+```java
+@MappedSuperclass
+public interface BaseTreeNode<T extends BaseTreeNode<T>> {
+
+    @ManyToOne
+    @Nullable
+    @JoinColumn(name = "PARENT_ID")
+    T getParent();
+
+    @OneToMany(mappedBy = "parent")
+    List<T> getChildren();
+}
+
+@Entity
+@Table(name = "DEPARTMENT")
+public interface Department extends BaseTreeNode<Department> {
+
+    @Id
+    long getId();
+
+    String getName();
+}
+```
+
+After compilation, `Department` sees `parent` and `children` as `Department` associations. Generated drafts, fetchers and props can be used normally for create, query, update and delete operations. Generic type parameters are supported for `@MappedSuperclass`; bind them to concrete types on `@Entity` interfaces.
+
+## 6. Notes
 
 Since Jimmer is a compile-time framework, and considering that not all users are familiar with `apt` and `ksp`, it's necessary to mention an important detail. 
 
@@ -142,7 +200,7 @@ Since Jimmer is a compile-time framework, and considering that not all users are
     -   Perform a full compilation using maven or gradle commands, or the IDE's `Rebuild` button, which can achieve this purpose
     -   Delete the affected project's compilation output directory, then click the IDE's `Run` or `Debug` button
 
-## 6. Links
+## 7. Links
 
 -   Examples: https://github.com/babyfish-ct/jimmer-examples
 -   Documentation: https://babyfish-ct.github.io/jimmer-doc/

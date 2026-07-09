@@ -121,7 +121,65 @@ Jimmer自动生成的DTO支持任意复杂的层级关系，**Jimmer是目前唯
 ## 4. 极致的性能
 ![performance](./performance.jpg)
 
-## 5. 注意事项
+
+## 5. 最小用法：泛型 `@MappedSuperclass`
+
+多个实体需要复用同一类关联结构时，可以使用泛型映射父类，例如树节点。泛型关联定义在 `@MappedSuperclass` 上，具体实体继承时把泛型参数绑定为自身类型。
+
+Kotlin：
+
+```kotlin
+@MappedSuperclass
+interface BaseTreeNode<T : BaseTreeNode<T>> {
+
+    @ManyToOne
+    @JoinColumn(name = "PARENT_ID")
+    val parent: T?
+
+    @OneToMany(mappedBy = "parent")
+    val children: List<T>
+}
+
+@Entity
+@Table(name = "DEPARTMENT")
+interface Department : BaseTreeNode<Department> {
+
+    @Id
+    val id: Long
+
+    val name: String
+}
+```
+
+Java：
+
+```java
+@MappedSuperclass
+public interface BaseTreeNode<T extends BaseTreeNode<T>> {
+
+    @ManyToOne
+    @Nullable
+    @JoinColumn(name = "PARENT_ID")
+    T getParent();
+
+    @OneToMany(mappedBy = "parent")
+    List<T> getChildren();
+}
+
+@Entity
+@Table(name = "DEPARTMENT")
+public interface Department extends BaseTreeNode<Department> {
+
+    @Id
+    long getId();
+
+    String getName();
+}
+```
+
+编译后，`Department` 上的 `parent` 和 `children` 会被识别为 `Department` 关联。生成的 draft、fetcher 和 props 可正常用于新增、查询、更新和删除。泛型参数用于 `@MappedSuperclass`，在具体 `@Entity` 接口继承时绑定为明确实体类型。
+
+## 6. 注意事项
 
 由于Jimmer是一个编译时框架，考虑到并非所有用户都熟悉Apt和Ksp，有必要提及一个重要细节。
 
@@ -135,7 +193,7 @@ Apt/Ksp是行业内的标准技术，Java IDE会给予支持。
     -   全量编译，maven或gradle命令，或IDE的Rebuild按钮，都可以达到这个目的
     -   删除受影响工程的编译输出目录后，再点击IDE的Run或Debug按钮
 
-## 6. 链接
+## 7. 链接
 
 -   例子：https://github.com/babyfish-ct/jimmer-examples
 

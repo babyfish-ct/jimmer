@@ -86,6 +86,16 @@ public class Generics {
         return argumentTypes;
     }
 
+    @NotNull
+    public static Type resolve(
+            @NotNull Type type,
+            @NotNull Type fromType,
+            @NotNull Class<?> declaringClass
+    ) {
+        ResolveContext ctx = findCtx(new ResolveContext(fromType, declaringClass, null));
+        return ctx != null ? ctx.resolve(type) : type;
+    }
+
     private static ResolveContext findCtx(ResolveContext ctx) {
         Class<?> cls;
         if (ctx.type instanceof Class<?>) {
