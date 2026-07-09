@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.sql.TransientResolver;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.sql.Connection;
 import java.util.*;
 
+@ApiStatus.Experimental
 public class TransientResolverContext {
 
     private static final ThreadLocal<TransientResolverContext> CONTEXT_LOCAL = new ThreadLocal<>();
@@ -13,6 +16,8 @@ public class TransientResolverContext {
 
     private final Connection con;
 
+    private final ImmutableProp prop;
+
     private final TransientResolver<?, ?> resolver;
 
     private final Set<Object> sourceIds;
@@ -20,11 +25,13 @@ public class TransientResolverContext {
     private TransientResolverContext(
             TransientResolverContext parent,
             Connection con,
+            ImmutableProp prop,
             TransientResolver<?, ?> resolver,
             Set<Object> sourceIds
     ) {
         this.parent = parent;
         this.con = con;
+        this.prop = prop;
         this.resolver = resolver;
         this.sourceIds = sourceIds;
     }
@@ -33,8 +40,21 @@ public class TransientResolverContext {
         return con;
     }
 
+    public ImmutableProp getProp() {
+        return prop;
+    }
+
+    public TransientResolver<?, ?> getResolver() {
+        return resolver;
+    }
+
+    public Set<Object> getSourceIds() {
+        return sourceIds;
+    }
+
     public static TransientResolverContext push(
             Connection con,
+            ImmutableProp prop,
             TransientResolver<?, ?> resolver,
             Collection<Object> sourceIds
     ) {
@@ -61,6 +81,7 @@ public class TransientResolverContext {
         TransientResolverContext ctx = new TransientResolverContext(
                 parent,
                 con,
+                prop,
                 resolver,
                 sourceIdSet
         );

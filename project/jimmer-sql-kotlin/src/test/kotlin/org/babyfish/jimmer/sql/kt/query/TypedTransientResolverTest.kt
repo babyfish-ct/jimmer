@@ -37,6 +37,31 @@ class TypedTransientResolverTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testKTransientResolverContext() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                select(
+                    table.fetchBy {
+                        allScalarFields()
+                        resolverPropName()
+                    }
+                )
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE " +
+                    "from BOOK_STORE tb_1_"
+            )
+            rows(
+                "[" +
+                    "--->{\"id\":1,\"name\":\"O'REILLY\",\"version\":0,\"website\":null,\"resolverPropName\":\"resolverPropName\"}," +
+                    "--->{\"id\":2,\"name\":\"MANNING\",\"version\":0,\"website\":null,\"resolverPropName\":\"resolverPropName\"}" +
+                    "]"
+            )
+        }
+    }
+
+    @Test
     fun testTypedNameWithVersionCacheFallback() {
         val cachedSqlClient = sqlClient {
             setCacheFactory(

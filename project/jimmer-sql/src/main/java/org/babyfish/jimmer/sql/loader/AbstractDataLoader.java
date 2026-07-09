@@ -249,9 +249,9 @@ public abstract class AbstractDataLoader {
 
         if (!useCache) {
             Map<Object, Object> fetchedMap;
-            TransientResolverContext ctx = TransientResolverContext.push(con, resolver, sourceIds);
+            TransientResolverContext ctx = TransientResolverContext.push(con, prop, resolver, sourceIds);
             try {
-                fetchedMap = fetchResolvedMap(resolveWithDefaultValue(resolver, sourceIds, sources));
+                fetchedMap = fetchResolvedMap(resolveWithDefaultValue(resolver, sourceIds, sources, ctx));
             } finally {
                 TransientResolverContext.pop(ctx);
             }
@@ -266,9 +266,9 @@ public abstract class AbstractDataLoader {
                 sqlClient,
                 con,
                 (ids) -> {
-                    TransientResolverContext ctx = TransientResolverContext.push(con, resolver, ids);
+                    TransientResolverContext ctx = TransientResolverContext.push(con, prop, resolver, ids);
                     try {
-                        return resolveWithDefaultValue(resolver, ids, null);
+                        return resolveWithDefaultValue(resolver, ids, null, ctx);
                     } finally {
                         TransientResolverContext.pop(ctx);
                     }
@@ -901,14 +901,15 @@ public abstract class AbstractDataLoader {
     private Map<Object, Object> resolveWithDefaultValue(
             TransientResolver<Object, Object> resolver,
             Collection<Object> ids,
-            Collection<ImmutableSpi> sources
+            Collection<ImmutableSpi> sources,
+            TransientResolverContext ctx
     ) {
         Map<Object, Object> valueMap;
         if (resolver instanceof TypedTransientResolver<?, ?, ?> && sources != null) {
             TypedTransientResolver.Context<Object> context = new TypedTransientResolverContextImpl<>(sources);
             valueMap = ((TypedTransientResolver<Object, Object, Object>) resolver).resolve(ids, context);
         } else {
-            valueMap = resolver.resolve(ids);
+            valueMap = resolver.resolve(ids, ctx);
         }
 
         if (valueMap.keySet().containsAll(ids)) {
