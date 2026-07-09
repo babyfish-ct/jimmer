@@ -832,6 +832,15 @@ public class MutableUpdateImpl
         renderTo(builder, ids, null);
     }
 
+    private void updateSetters(SqlBuilder builder,
+                               boolean joinedTypeStageJoinRequired,
+                               ImmutableType physicalType,
+                               Map<ImmutableType, String> joinedTypeStageAliasMap){
+        builder.enter(SqlBuilder.ScopeType.SET);
+        renderAssignments(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
+        builder.leave();
+    }
+
     private void renderTo(
             @NotNull SqlBuilder builder,
             Collection<Object> ids,
@@ -916,9 +925,16 @@ public class MutableUpdateImpl
                 );
                 joinedTypeBranchUpdatePushed = true;
             }
-            builder
-                    .sql("update ")
-                    .sql(physicalType.getTableName(getSqlClient().getMetadataStrategy()));
+            builder.sql("update");
+            if (dialect.isUpdateAliasRequired()) {
+                // SQL Server: update alias SET ... from TABLE alias WHERE ...
+                // Alias comes right after UPDATE keyword, before SET clause
+                addAlias(builder);
+                updateSetters(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
+                builder.sql(" from");
+            }
+            builder.sql(" ");
+            builder.sql(physicalType.getTableName(getSqlClient().getMetadataStrategy()));
 
             addAlias(builder);
 
@@ -929,9 +945,9 @@ public class MutableUpdateImpl
                 }
             }
 
-            builder.enter(SqlBuilder.ScopeType.SET);
-            renderAssignments(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
-            builder.leave();
+            if(!dialect.isUpdateAliasRequired()) {
+                updateSetters(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
+            }
 
             renderTables(builder, physicalType, joinedTypeStageAliasMap);
             renderDeeperJoins(builder);
