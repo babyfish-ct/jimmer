@@ -76,10 +76,12 @@ public class ImmutableProcessor {
                     context,
                     immutableType
             ).generate();
-            new PropsGenerator(
-                    context,
-                    immutableType
-            ).generate();
+            if (immutableType.getTypeElement().getTypeParameters().isEmpty()) {
+                new PropsGenerator(
+                        context,
+                        immutableType
+                ).generate();
+            }
             messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
             if (immutableType.isEntity()) {
                 messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());

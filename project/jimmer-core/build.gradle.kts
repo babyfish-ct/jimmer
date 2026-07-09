@@ -19,7 +19,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 buildConfig {
     val versionParts = (project.version as String).split('.')
-    packageName(project.group as String)
+    packageName("org.babyfish.jimmer")
     className("JimmerVersion")
     buildConfigField("int", "major", versionParts[0])
     buildConfigField("int", "minor", versionParts[1])

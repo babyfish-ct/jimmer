@@ -15,6 +15,7 @@ internal class AssociatedIdGenerator(
         val name = StringUtil.identifier(prop.name, "Id")
         if (!prop.isAssociation(true) ||
             prop.isList ||
+            prop.targetType == null ||
             prop.idViewProp != null ||
             prop.declaringType.properties.containsKey(name)
         ) {
