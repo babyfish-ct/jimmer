@@ -642,35 +642,19 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         builder.sql(alias);
     }
 
-    private void logicSetters(AbstractSqlBuilder<?> builder) {
-        builder.enter(AbstractSqlBuilder.ScopeType.SET);
-        builder.logicalDeleteAssignment(
-                middleTable.getLogicalDeletedInfo(),
-                null,
-                null
-        );
-        builder.leave();
-    }
-
     private void addOperation(AbstractSqlBuilder<?> builder, boolean ignoreAlias) {
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-            builder.sql("update ");
-            if (!ignoreAlias && alias != null && sqlClient.getDialect().isUpdateAliasRequired()) {
-                builder.sql(alias);
-                logicSetters(builder);
-                builder.sql(" from ");
-            }
-
-            builder.sql(middleTable.getTableName());
-
+            builder.sql("update ").sql(middleTable.getTableName());
             if (!ignoreAlias && alias != null) {
                 builder.sql(" ").sql(alias);
             }
-
-            if (!sqlClient.getDialect().isUpdateAliasRequired()) {
-                logicSetters(builder);
-            }
-
+            builder.enter(AbstractSqlBuilder.ScopeType.SET);
+            builder.logicalDeleteAssignment(
+                    middleTable.getLogicalDeletedInfo(),
+                    null,
+                    null
+            );
+            builder.leave();
         } else {
             builder.sql("delete");
             if (!ignoreAlias && alias != null && sqlClient.getDialect().isDeletedAliasRequired()) {

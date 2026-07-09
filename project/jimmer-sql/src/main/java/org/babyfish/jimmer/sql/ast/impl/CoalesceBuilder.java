@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -21,10 +20,8 @@ public class CoalesceBuilder<T> {
     }
 
     public CoalesceBuilder<T> or(Expression<T> expr) {
-        if (!Classes.matches(
-                ((ExpressionImplementor<?>) expressions.get(0)).getType(),
-                ((ExpressionImplementor<?>)expr).getType()
-        )) {
+        if (((ExpressionImplementor<?>) expressions.get(0)).getType() !=
+                ((ExpressionImplementor<?>)expr).getType()) {
             throw new IllegalArgumentException("The branches of coalesce must belong to same type");
         }
         expressions.add(expr);
@@ -252,3 +249,4 @@ public class CoalesceBuilder<T> {
         }
     }
 }
+

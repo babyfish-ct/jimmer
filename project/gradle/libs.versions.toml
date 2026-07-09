@@ -22,7 +22,6 @@ mapstruct = "1.5.3.Final"
 mysql = "8.0.29"
 postgresql = "42.3.6"
 sqlite = "3.47.0.0"
-sqlserver = "12.4.2.jre11"
 slf4j = "1.7.36"
 spring = "5.3.20"
 springBoot = "2.7.0"
@@ -85,8 +84,6 @@ mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 
 sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqlite" }
-
-sqlserver = { group = "com.microsoft.sqlserver", name = "mssql-jdbc", version.ref = "sqlserver" }
 
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 
