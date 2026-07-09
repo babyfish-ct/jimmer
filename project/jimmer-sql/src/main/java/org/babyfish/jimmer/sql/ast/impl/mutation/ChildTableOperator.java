@@ -262,41 +262,65 @@ class ChildTableOperator extends AbstractAssociationOperator {
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
+    private void logicSetters(AbstractSqlBuilder<?> builder, LogicalDeletedInfo logicalDeletedInfo, DisconnectionArgs args){
+        builder
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .logicalDeleteAssignment(logicalDeletedInfo, args.logicalDeletedValueRef, null)
+                .leave();
+    }
+
     private void addOperationHead(
             AbstractSqlBuilder<?> builder,
             DisconnectionArgs args,
             int depth
     ) {
+        String alias = alias(depth);
+
         if (disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
-            builder.sql("delete from ").sql(tableName);
-            if (depth != 0) {
+            builder.sql("delete");
+            // SQL Server: delete alias from TABLE alias WHERE ...
+            // Alias comes right after DELETE keyword
+            if (sqlClient.getDialect().isDeletedAliasRequired() && alias != null) {
+                builder.sql(" ").sql(alias);
+            }
+            builder.sql(" from ").sql(tableName);
+            if (alias != null) {
                 addOperationHeadAlias(builder, depth);
             }
-        } else if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-            LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
-            assert logicalDeletedInfo != null;
-            builder.sql("update ").sql(tableName);
-            if (depth != 0) {
-                addOperationHeadAlias(builder, depth);
-            }
-            builder
-                    .enter(AbstractSqlBuilder.ScopeType.SET)
-                    .logicalDeleteAssignment(logicalDeletedInfo, args.logicalDeletedValueRef, null)
-                    .leave();
-        } else {
-            builder.sql("update ")
-                    .sql(tableName);
-            if (depth != 0) {
-                addOperationHeadAlias(builder, depth);
-            }
-            builder.enter(AbstractSqlBuilder.ScopeType.SET);
-            for (ValueGetter sourceGetter : sourceGetters) {
-                builder.separator()
-                        .sql(sourceGetter)
-                        .sql(" = null");
-            }
-            builder.leave();
+            return;
         }
+
+        builder.sql("update ");
+        if (alias != null && sqlClient.getDialect().isUpdateAliasRequired()) {
+            builder.sql(alias);
+        }
+        if(disconnectingType == DisconnectingType.LOGICAL_DELETE && sqlClient.getDialect().isUpdateAliasRequired()) {
+            LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+            logicSetters(builder, logicalDeletedInfo, args);
+        }
+
+        if(alias != null && sqlClient.getDialect().isUpdateAliasRequired()) {
+            builder.sql(" from ");
+        }
+        builder.sql(tableName);
+
+        if(alias != null) {
+            addOperationHeadAlias(builder, depth);
+        }
+
+        if(disconnectingType == DisconnectingType.LOGICAL_DELETE && !sqlClient.getDialect().isUpdateAliasRequired()) {
+            LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+            logicSetters(builder, logicalDeletedInfo, args);
+            return;
+        }
+
+        builder.enter(AbstractSqlBuilder.ScopeType.SET);
+        for (ValueGetter sourceGetter : sourceGetters) {
+            builder.separator()
+                    .sql(sourceGetter)
+                    .sql(" = null");
+        }
+        builder.leave();
     }
 
     private void addOperationHeadAlias(
