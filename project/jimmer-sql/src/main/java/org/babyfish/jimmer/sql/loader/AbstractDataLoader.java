@@ -884,14 +884,21 @@ public abstract class AbstractDataLoader {
 
     private static final class TypedTransientResolverContextImpl<E> implements TypedTransientResolver.Context<E> {
         private final Collection<? extends E> content;
+        private final ImmutableProp prop;
 
-        public TypedTransientResolverContextImpl(Collection<? extends E> content) {
+        public TypedTransientResolverContextImpl(Collection<? extends E> content, ImmutableProp prop) {
             this.content = content;
+            this.prop = prop;
         }
 
         @Override
         public Collection<? extends E> getContent() {
             return content;
+        }
+
+        @Override
+        public ImmutableProp getProp() {
+            return prop;
         }
     }
 
@@ -909,7 +916,7 @@ public abstract class AbstractDataLoader {
         // not appended to the outer context that is still resolving this transient property.
         Map<Object, Object> valueMap = FetcherUtil.withoutFetcherContext(() -> {
             if (resolver instanceof TypedTransientResolver<?, ?, ?> && sources != null) {
-                TypedTransientResolver.Context<Object> context = new TypedTransientResolverContextImpl<>(sources);
+                TypedTransientResolver.Context<Object> context = new TypedTransientResolverContextImpl<>(sources, prop);
                 return ((TypedTransientResolver<Object, Object, Object>) resolver).resolve(ids, context);
             }
             return resolver.resolve(ids, ctx);

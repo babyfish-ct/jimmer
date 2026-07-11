@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collection;
@@ -59,5 +60,7 @@ public interface TypedTransientResolver<E, ID, V> extends TransientResolver<ID, 
     @ApiStatus.Experimental
     interface Context<E> {
         Collection<? extends E> getContent();
+
+        ImmutableProp getProp();
     }
 }
