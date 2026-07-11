@@ -36,8 +36,11 @@ class ImmutableProp(
     private val inherited: Boolean = false
 ): BaseProp {
 
+    private val isDeclaringTypeGeneric: Boolean =
+        (propDeclaration.parentDeclaration as? KSClassDeclaration)?.typeParameters?.isNotEmpty() == true
+
     val resolvedType: KSType =
-        if (inherited) {
+        if (inherited && isDeclaringTypeGeneric) {
             propDeclaration.asMemberOf(declaringType.classDeclaration.asStarProjectedType())
         } else {
             propDeclaration.type.fastResolve()
