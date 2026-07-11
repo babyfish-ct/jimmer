@@ -1,4 +1,5 @@
 [versions]
+addzero = "2026.06.24"
 antlr = "4.13.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
@@ -34,6 +35,22 @@ swaggerUi = "5.31.0"
 scalar = "0.5.47"
 
 [libraries]
+
+addzero-lsi-core = { group = "site.addzero", name = "lsi-core", version.ref = "addzero" }
+addzero-lsi-ksp = { group = "site.addzero", name = "lsi-ksp", version.ref = "addzero" }
+addzero-lsi-apt = { group = "site.addzero", name = "lsi-apt", version.ref = "addzero" }
+addzero-ddlgenerator-core = { group = "site.addzero", name = "ddlgenerator-core", version.ref = "addzero" }
+addzero-ddlgenerator-lsi-adaptor = { group = "site.addzero", name = "ddlgenerator-lsi-adaptor", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-mysql = { group = "site.addzero", name = "ddlgenerator-dialect-mysql", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-postgresql = { group = "site.addzero", name = "ddlgenerator-dialect-postgresql", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-h2 = { group = "site.addzero", name = "ddlgenerator-dialect-h2", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-sqlite = { group = "site.addzero", name = "ddlgenerator-dialect-sqlite", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-sqlserver = { group = "site.addzero", name = "ddlgenerator-dialect-sqlserver", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-oracle = { group = "site.addzero", name = "ddlgenerator-dialect-oracle", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-dm = { group = "site.addzero", name = "ddlgenerator-dialect-dm", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-kingbase = { group = "site.addzero", name = "ddlgenerator-dialect-kingbase", version.ref = "addzero" }
+addzero-ddlgenerator-dialect-taos = { group = "site.addzero", name = "ddlgenerator-dialect-taos", version.ref = "addzero" }
+addzero-tool-database-model = { group = "site.addzero", name = "tool-database-model", version.ref = "addzero" }
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
