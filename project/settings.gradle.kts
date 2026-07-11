@@ -13,6 +13,8 @@ include(
     "jimmer-dto-compiler",
     "jimmer-client-swagger",
     "jimmer-client-scalar",
+    "jimmer-low-query-annotations",
+    "jimmer-low-query-processor",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
