@@ -1175,6 +1175,42 @@ class CteBaseQueryTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testExpressionOnlyWeakJoinTarget() {
+        val baseAuthor = cteBaseTableSymbol {
+            sqlClient.createBaseQuery(Author::class) {
+                where(table.gender eq Gender.MALE)
+                groupBy(table.firstName)
+                selections
+                    .add(table.firstName)
+                    .add(count(table.id))
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    table.asTableEx().weakJoin(baseAuthor) {
+                        source.name eq target._1
+                    }._2 gt 0
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                "with tb_2_(c1, c2) as (" +
+                    "--->select tb_3_.FIRST_NAME, count(tb_3_.ID) " +
+                    "--->from AUTHOR tb_3_ " +
+                    "--->where tb_3_.GENDER = ? " +
+                    "--->group by tb_3_.FIRST_NAME" +
+                    ") " +
+                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                    "from BOOK tb_1_ " +
+                    "inner join (tb_2_) on tb_1_.NAME = tb_2_.c1 " +
+                    "where tb_2_.c2 > ?"
+            )
+        }
+    }
+
+    @Test
     fun testIllegalTableWeakJoinBaseTable() {
         val baseAuthor = cteBaseTableSymbol {
             sqlClient.createBaseQuery(Author::class) {
