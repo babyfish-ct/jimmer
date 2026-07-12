@@ -1,14 +1,16 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.UpsertMask;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.model.BookProps;
-import org.babyfish.jimmer.sql.model.Immutables;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.OrderIdProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderItem;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
@@ -19,6 +21,140 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class UpsertMaskTest extends AbstractMutationTest {
+
+    @Test
+    public void testEmptyUpdateMaskWithLoadedId() {
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setId(Constants.graphQLInActionId3);
+                                    draft.setName("GraphQL in Action");
+                                    draft.setEdition(3);
+                                })
+                        )
+                        .setUpsertMask(UpsertMask.of(Book.class).forbidUpdate()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, NAME, EDITION) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, NAME, EDITION) " +
+                                        "values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION)"
+                        );
+                    });
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testEmptyUpdateMaskRecoversIdByKey() {
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                })
+                        .saveCommand(
+                                Immutables.createSysUser(draft -> {
+                                    draft.setAccount("sysusr_001");
+                                    draft.setDescription("Ignored description");
+                                })
+                        )
+                        .setUpsertMask(UpsertMask.of(SysUser.class).forbidUpdate()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into SYS_USER tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(ACCOUNT, DESCRIPTION) " +
+                                        "on tb_1_.ACCOUNT = tb_2_.ACCOUNT " +
+                                        "when matched then update set " +
+                                        "/* fake update to return all ids */ DESCRIPTION = tb_1_.DESCRIPTION " +
+                                        "when not matched then insert(ACCOUNT, DESCRIPTION) " +
+                                        "values(tb_2_.ACCOUNT, tb_2_.DESCRIPTION)"
+                        );
+                        it.variables("sysusr_001", "Ignored description");
+                    });
+                    ctx.entity(it -> it.modified("{\"id\":1,\"account\":\"sysusr_001\",\"description\":\"Ignored description\"}"));
+                }
+        );
+    }
+
+    @Test
+    public void testEmptyUpdateMaskWithReturning() {
+        connectAndExpect(
+                con -> {
+                    SimpleSaveResult<Book> result = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveCommand(
+                                    Immutables.createBook(draft -> {
+                                        draft.setId(Constants.graphQLInActionId3);
+                                        draft.setName("GraphQL in Action");
+                                        draft.setEdition(3);
+                                    })
+                            )
+                            .setUpsertMask(UpsertMask.of(Book.class).forbidUpdate())
+                            .execute(con, BookFetcher.$.price());
+                    return result.getTotalAffectedRowCount() +
+                            "; " + (result.getOriginalEntity() == result.getModifiedEntity()) +
+                            "; " + ImmutableObjects.isLoaded(result.getModifiedEntity(), BookProps.PRICE);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, PRICE from final table (" +
+                                        "merge into BOOK tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, NAME, EDITION) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, NAME, EDITION) " +
+                                        "values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION)" +
+                                        ")"
+                        );
+                        it.variables(Constants.graphQLInActionId3, "GraphQL in Action", 3);
+                    });
+                    ctx.value("0; true; false");
+                }
+        );
+    }
+
+    @Test
+    public void testEmptyUpdateMaskRecoversIdByKeyWithReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                })
+                        .getEntities()
+                        .saveCommand(
+                                Immutables.createSysUser(draft -> draft.setAccount("sysusr_001"))
+                        )
+                        .setUpsertMask(UpsertMask.of(SysUser.class).forbidUpdate())
+                        .execute(con, SysUserFetcher.$.description())
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, DESCRIPTION, ACCOUNT from final table (" +
+                                        "merge into SYS_USER tb_1_ " +
+                                        "using(values(?)) tb_2_(ACCOUNT) " +
+                                        "on tb_1_.ACCOUNT = tb_2_.ACCOUNT " +
+                                        "when matched then update set " +
+                                        "/* fake update to return all ids */ DESCRIPTION = tb_1_.DESCRIPTION " +
+                                        "when not matched then insert(ACCOUNT) values(tb_2_.ACCOUNT)" +
+                                        ")"
+                        );
+                        it.variables("sysusr_001");
+                    });
+                    ctx.value(user -> {
+                        SysUser modified = (SysUser) user;
+                        org.junit.jupiter.api.Assertions.assertEquals(1L, modified.id());
+                        org.junit.jupiter.api.Assertions.assertEquals("description_001", modified.description());
+                    });
+                }
+        );
+    }
 
     @Test
     public void testOnlyOrder() {

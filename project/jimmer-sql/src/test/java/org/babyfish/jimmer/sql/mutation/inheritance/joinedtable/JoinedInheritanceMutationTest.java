@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -1104,6 +1105,113 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
                         it.modified("{\"id\":300,\"name\":\"New Org\",\"taxCode\":\"NEW-001\"}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertDerivedTypeWithEmptyUpdateMasks() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(200L);
+                                    organization.setName("Ignored root value");
+                                    organization.setTaxCode("IGNORED-DERIVED-VALUE");
+                                })
+                        )
+                        .setUpsertMask(UpsertMask.of(Client.class).forbidUpdate())
+                        .setUpsertMask(UpsertMask.of(Organization.class).forbidUpdate()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set " +
+                                        "/* fake update to return all ids */ CLIENT_TYPE = tb_1_.CLIENT_TYPE " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME)"
+                        );
+                        it.variables(200L, "ORG", "Ignored root value");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.TAX_CODE)"
+                        );
+                        it.variables(200L, "IGNORED-DERIVED-VALUE");
+                    });
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertDerivedTypeWithEmptyUpdateMasksAndStageReturning() {
+        connectAndExpect(
+                con -> {
+                    Organization modified = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(200L);
+                                        organization.setName("Ignored root value");
+                                        organization.setTaxCode("IGNORED-DERIVED-VALUE");
+                                    })
+                            )
+                            .setUpsertMask(UpsertMask.of(Client.class).forbidUpdate())
+                            .setUpsertMask(UpsertMask.of(Organization.class).forbidUpdate())
+                            .execute(
+                                    con,
+                                    OrganizationFetcher.$
+                                            .description()
+                                            .status()
+                            )
+                            .getModifiedEntity();
+                    return Arrays.asList(modified, joinedClientRow(con, 200L));
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, DESCRIPTION from final table (" +
+                                        "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, NAME, CLIENT_TYPE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set " +
+                                        "/* fake update to return all ids */ CLIENT_TYPE = tb_1_.CLIENT_TYPE " +
+                                        "when not matched then insert(ID, NAME, CLIENT_TYPE) " +
+                                        "values(tb_2_.ID, tb_2_.NAME, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "Ignored root value", "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, STATUS from final table (" +
+                                        "merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.TAX_CODE)" +
+                                        ")"
+                        );
+                        it.variables(200L, "IGNORED-DERIVED-VALUE");
+                    });
+                    ctx.value(values -> {
+                        Organization modified = (Organization) values.get(0);
+                        assertEquals(200L, modified.id());
+                        assertEquals("Ignored root value", modified.name());
+                        assertEquals("DEFAULT_CLIENT_DESCRIPTION", modified.description());
+                        assertEquals("IGNORED-DERIVED-VALUE", modified.taxCode());
+                        assertFalse(ImmutableObjects.isLoaded(modified, OrganizationProps.STATUS));
+                        assertEquals("[ORG, Globex, GLOBEX-001, null, null]", values.get(1));
                     });
                 }
         );
