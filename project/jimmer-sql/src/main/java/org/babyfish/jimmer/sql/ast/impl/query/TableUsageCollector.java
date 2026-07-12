@@ -99,6 +99,7 @@ public class TableUsageCollector extends TableUsageVisitor {
     @Override
     public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
         baseQueryExportUsagesBuilder.requireExpressionExport(canonicalTableOwner(baseTableOwner));
+        useResolvedBaseTable(baseTableOwner);
     }
 
     protected final TableUsedState getTableUsedState(RealTable table) {
