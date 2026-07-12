@@ -1828,6 +1828,7 @@ class Operator {
                 }
             }
         }
+        List<MergeAssignment> mergeAssignments = MergeAssignment.defaults(updatedGetters);
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
@@ -1845,7 +1846,7 @@ class Operator {
                 nullGetters,
                 conflictGetters,
                 conflictPredicate,
-                updatedGetters,
+                mergeAssignments,
                 ignoreUpdate,
                 userOptimisticLockPredicate,
                 versionGetter,
@@ -1874,7 +1875,7 @@ class Operator {
                 nullGetters,
                 conflictGetters,
                 conflictPredicate,
-                updatedGetters,
+                mergeAssignments,
                 ignoreUpdate,
                 userOptimisticLockPredicate,
                 versionGetter,
@@ -2787,7 +2788,7 @@ class Operator {
 
         private final LogicalDeletedInfo conflictPredicate;
 
-        private final List<PropertyGetter> updatedGetters;
+        private final List<MergeAssignment> mergeAssignments;
 
         private final boolean updateIgnored;
 
@@ -2811,7 +2812,7 @@ class Operator {
                 List<PropertyGetter> nullGetters,
                 List<PropertyGetter> conflictGetters,
                 LogicalDeletedInfo conflictPredicate,
-                List<PropertyGetter> updatedGetters,
+                List<MergeAssignment> mergeAssignments,
                 boolean updateIgnored,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter,
@@ -2847,7 +2848,7 @@ class Operator {
             this.nullGetters = nullGetters;
             this.conflictGetters = conflictGetters;
             this.conflictPredicate = conflictPredicate;
-            this.updatedGetters = updatedGetters;
+            this.mergeAssignments = mergeAssignments;
             this.updateIgnored = updateIgnored;
             this.fakeUpdate = fakeUpdate;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
@@ -2857,7 +2858,7 @@ class Operator {
         @Override
         public boolean hasUpdatedColumns() {
             return !updateIgnored &&
-                    (!updatedGetters.isEmpty() ||
+                    (!mergeAssignments.isEmpty() ||
                             (updateDiscriminator && discriminatorGetter != null) ||
                             !nullGetters.isEmpty());
         }
@@ -2898,19 +2899,28 @@ class Operator {
                 return false;
             }
             for (PropertyGetter getter : insertedGetters) {
-                if (!conflictGetters.contains(getter) && !updatedGetters.contains(getter)) {
+                if (!conflictGetters.contains(getter) && !containsMergeTarget(getter)) {
                     return false;
                 }
             }
-            if (updatedGetters.isEmpty()) {
+            if (mergeAssignments.isEmpty()) {
                 return false;
             }
-            for (PropertyGetter getter : updatedGetters) {
-                if (!insertedGetters.contains(getter)) {
+            for (MergeAssignment assignment : mergeAssignments) {
+                if (!insertedGetters.contains(assignment.target)) {
                     return false;
                 }
             }
             return true;
+        }
+
+        private boolean containsMergeTarget(PropertyGetter getter) {
+            for (MergeAssignment assignment : mergeAssignments) {
+                if (assignment.target.equals(getter)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -3054,7 +3064,8 @@ class Operator {
                         .sql(getter)
                         .sql(" = null");
             }
-            for (PropertyGetter getter : updatedGetters) {
+            for (MergeAssignment assignment : mergeAssignments) {
+                PropertyGetter getter = assignment.target;
                 builder.separator()
                         .sql(getter)
                         .sql(" = ");
@@ -3110,7 +3121,8 @@ class Operator {
                     builder.sql("null");
                 });
             }
-            for (PropertyGetter getter : updatedGetters) {
+            for (MergeAssignment assignment : mergeAssignments) {
+                PropertyGetter getter = assignment.target;
                 appendConditionalUpdatingAssignment(getter, true, sourcePrefix, sourceSuffix, () -> {
                     appendUpdatingValue(getter, valuePrefix, valueSuffix);
                 });

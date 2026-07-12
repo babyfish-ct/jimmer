@@ -287,7 +287,7 @@ class SaveReturningFactory {
             List<PropertyGetter> nullGetters,
             List<PropertyGetter> conflictGetters,
             @Nullable LogicalDeletedInfo conflictPredicate,
-            List<PropertyGetter> updatedGetters,
+            List<MergeAssignment> mergeAssignments,
             boolean ignoreUpdate,
             @Nullable Predicate userOptimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
@@ -310,7 +310,7 @@ class SaveReturningFactory {
                 batch.entities(),
                 ctx.options.isSaveResultReadsAllProperties() ?
                         Collections.emptyList() :
-                        upsertKnownSourceGetters(insertedGetters, updatedGetters, ignoreUpdate)
+                        upsertKnownSourceGetters(insertedGetters, mergeAssignments, ignoreUpdate)
         );
         if (returningFetcherProps.isEmpty() && generatedIdProp == null) {
             return null;
@@ -348,6 +348,7 @@ class SaveReturningFactory {
                 Collections.unmodifiableList(new ArrayList<>(nullGetters)),
                 Collections.unmodifiableList(new ArrayList<>(conflictGetters)),
                 conflictPredicate,
+                mergeAssignments,
                 ignoreUpdate,
                 fakeUpdate
         );
@@ -393,7 +394,7 @@ class SaveReturningFactory {
                 SaveReturningKind.UPSERT,
                 matchMode,
                 Collections.unmodifiableList(sourceValues),
-                Collections.unmodifiableList(new ArrayList<>(updatedGetters)),
+                Collections.emptyList(),
                 updateCondition,
                 null,
                 idGetter,
@@ -569,7 +570,7 @@ class SaveReturningFactory {
 
     private static List<PropertyGetter> upsertKnownSourceGetters(
             List<PropertyGetter> insertedGetters,
-            List<PropertyGetter> updatedGetters,
+            List<MergeAssignment> mergeAssignments,
             boolean ignoreUpdate
     ) {
         if (ignoreUpdate) {
@@ -577,11 +578,23 @@ class SaveReturningFactory {
         }
         List<PropertyGetter> getters = new ArrayList<>();
         for (PropertyGetter insertedGetter : insertedGetters) {
-            if (containsGetterProp(updatedGetters, insertedGetter.prop())) {
+            if (containsMergeTargetProp(mergeAssignments, insertedGetter.prop())) {
                 getters.add(insertedGetter);
             }
         }
         return getters;
+    }
+
+    private static boolean containsMergeTargetProp(
+            List<MergeAssignment> assignments,
+            ImmutableProp prop
+    ) {
+        for (MergeAssignment assignment : assignments) {
+            if (assignment.target.prop() == prop) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isLoadedSourceProp(

@@ -28,7 +28,7 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
     @Override
     public boolean hasUpdatedColumns() {
         return !returning.upsert.ignoreUpdate &&
-                (!returning.updatedGetters.isEmpty() ||
+                (!returning.upsert.mergeAssignments.isEmpty() ||
                         (returning.upsert.updateDiscriminator && returning.upsert.discriminatorGetter != null) ||
                         !returning.upsert.nullGetters.isEmpty());
     }
@@ -179,7 +179,8 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
                     .sql(getter)
                     .sql(" = null");
         }
-        for (PropertyGetter getter : returning.updatedGetters) {
+        for (MergeAssignment assignment : returning.upsert.mergeAssignments) {
+            PropertyGetter getter = assignment.target;
             builder.separator()
                     .sql(getter)
                     .sql(" = ");
@@ -236,7 +237,8 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
                 builder.sql("null");
             });
         }
-        for (PropertyGetter getter : returning.updatedGetters) {
+        for (MergeAssignment assignment : returning.upsert.mergeAssignments) {
+            PropertyGetter getter = assignment.target;
             appendConditionalUpdatingAssignment(getter, sourcePrefix, sourceSuffix, () -> {
                 appendUpdatingValue(getter, valuePrefix, valueSuffix);
             });
