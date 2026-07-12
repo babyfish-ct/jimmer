@@ -1,10 +1,17 @@
 package org.babyfish.jimmer.ddl.compiler
 
+import java.io.File
+import java.nio.charset.StandardCharsets
+import javax.tools.DiagnosticCollector
+import javax.tools.JavaFileObject
+import javax.tools.StandardLocation
+import javax.tools.ToolProvider
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.babyfish.jimmer.ddl.compiler.apt.JimmerDdlCompilerAptProcessor
 import site.addzero.ddlgenerator.core.model.AutoDdlColumn
 import site.addzero.ddlgenerator.core.model.AutoDdlLogicalType
 import site.addzero.ddlgenerator.core.model.AutoDdlSchema
@@ -18,6 +25,153 @@ import site.addzero.util.db.DatabaseType
 import kotlin.io.path.createTempDirectory
 
 class JimmerDdlCompilerTest {
+
+    @Test
+    fun `apt processor generates ddl file from java jimmer entity`() {
+        val projectDir = createTempDirectory(prefix = "jimmer-ddl-apt-test")
+            .toFile()
+        val sourceDir = projectDir.resolve("src/main/java")
+        val classesDir = projectDir.resolve("build/classes")
+        val outputDir = projectDir.resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        writeJavaSource(
+            sourceDir = sourceDir,
+            path = "org/babyfish/jimmer/sql/Entity.java",
+            content = """
+                package org.babyfish.jimmer.sql;
+
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+
+                @Target(ElementType.TYPE)
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface Entity {}
+            """.trimIndent(),
+        )
+        writeJavaSource(
+            sourceDir = sourceDir,
+            path = "org/babyfish/jimmer/sql/Table.java",
+            content = """
+                package org.babyfish.jimmer.sql;
+
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+
+                @Target(ElementType.TYPE)
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface Table {
+                    String name() default "";
+                }
+            """.trimIndent(),
+        )
+        writeJavaSource(
+            sourceDir = sourceDir,
+            path = "org/babyfish/jimmer/sql/Id.java",
+            content = """
+                package org.babyfish.jimmer.sql;
+
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+
+                @Target(ElementType.METHOD)
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface Id {}
+            """.trimIndent(),
+        )
+        writeJavaSource(
+            sourceDir = sourceDir,
+            path = "org/babyfish/jimmer/sql/Column.java",
+            content = """
+                package org.babyfish.jimmer.sql;
+
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+
+                @Target(ElementType.METHOD)
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface Column {
+                    String name() default "";
+                }
+            """.trimIndent(),
+        )
+        writeJavaSource(
+            sourceDir = sourceDir,
+            path = "demo/AptBook.java",
+            content = """
+                package demo;
+
+                import org.babyfish.jimmer.sql.Column;
+                import org.babyfish.jimmer.sql.Entity;
+                import org.babyfish.jimmer.sql.Id;
+                import org.babyfish.jimmer.sql.Table;
+
+                @Entity
+                @Table(name = "apt_book")
+                public interface AptBook {
+                    @Id
+                    long id();
+
+                    @Column(name = "title")
+                    String title();
+
+                    @Column(name = "subtitle")
+                    String subtitle();
+                }
+            """.trimIndent(),
+        )
+
+        val diagnostics = DiagnosticCollector<JavaFileObject>()
+        val compiler = ToolProvider.getSystemJavaCompiler()
+            ?: error("JDK compiler is required to run APT integration tests")
+        val sourceFiles = sourceDir.walkTopDown()
+            .filter { file -> file.isFile && file.extension == "java" }
+            .toList()
+        classesDir.mkdirs()
+        compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8).use { fileManager ->
+            fileManager.setLocation(StandardLocation.CLASS_OUTPUT, listOf(classesDir))
+            val task = compiler.getTask(
+                null,
+                fileManager,
+                diagnostics,
+                listOf(
+                    "-classpath",
+                    System.getProperty("java.class.path"),
+                    "-AjimmerDdl.enabled=true",
+                    "-AjimmerDdl.databaseType=postgresql",
+                    "-AjimmerDdl.outputFormat=plain",
+                    "-AjimmerDdl.outputDir=${outputDir.absolutePath}",
+                    "-AjimmerDdl.description=apt_generated",
+                    "-AjimmerDdl.compareDatabase=false",
+                ),
+                null,
+                fileManager.getJavaFileObjectsFromFiles(sourceFiles),
+            )
+            task.setProcessors(listOf(JimmerDdlCompilerAptProcessor()))
+            val compiled = task.call()
+            assertTrue(compiled, diagnostics.toErrorMessage())
+        }
+
+        val sqlFile = outputDir.resolve("apt_generated.sql")
+        assertTrue(sqlFile.isFile, "APT should generate ddl file: ${sqlFile.absolutePath}")
+        val sql = sqlFile.readText()
+        assertContains(sql, """CREATE TABLE "apt_book"""")
+        assertContains(sql, """"id" BIGINT NOT NULL""")
+        assertContains(sql, """"title" VARCHAR(255)""")
+        assertContains(sql, """"subtitle" VARCHAR(255)""")
+        assertContains(sql, """ALTER TABLE "apt_book" ALTER COLUMN "title" DROP NOT NULL;""")
+        assertContains(sql, """ALTER TABLE "apt_book" ALTER COLUMN "subtitle" DROP NOT NULL;""")
+
+        val snapshotFile = projectDir.resolve("build/generated/jimmer-ddl/main/resources/.jimmer-ddl/entity-table-snapshot.properties")
+        assertTrue(snapshotFile.isFile, "APT should generate snapshot file: ${snapshotFile.absolutePath}")
+        assertContains(snapshotFile.readText(), "demo.AptBook=apt_book")
+    }
 
     @Test
     fun `table annotation rename emits rename table operation from entity snapshot`() {
@@ -394,6 +548,28 @@ class JimmerDdlCompilerTest {
 
     private fun manyToMany(): TestAnnotation {
         return TestAnnotation("org.babyfish.jimmer.sql.ManyToMany", "ManyToMany")
+    }
+
+    private fun writeJavaSource(
+        sourceDir: File,
+        path: String,
+        content: String,
+    ) {
+        val file = sourceDir.resolve(path)
+        file.parentFile.mkdirs()
+        file.writeText(content)
+    }
+
+    private fun DiagnosticCollector<JavaFileObject>.toErrorMessage(): String {
+        return diagnostics.joinToString(separator = "\n") { diagnostic ->
+            val source = diagnostic.source?.name.orEmpty()
+            val position = if (diagnostic.lineNumber > 0) {
+                "${diagnostic.lineNumber}:${diagnostic.columnNumber}"
+            } else {
+                "?:?"
+            }
+            "${diagnostic.kind} $source:$position ${diagnostic.getMessage(null)}"
+        }
     }
 
     private data class TestAnnotation(
