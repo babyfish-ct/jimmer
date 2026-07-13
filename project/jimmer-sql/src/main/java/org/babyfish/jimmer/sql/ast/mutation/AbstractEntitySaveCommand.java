@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 
 public interface AbstractEntitySaveCommand {
@@ -116,6 +116,17 @@ public interface AbstractEntitySaveCommand {
      */
     @NewChain
     AbstractEntitySaveCommand setUpsertMask(UpsertMask<?> mask);
+
+    /**
+     * Replaces the value expression of an update assignment already selected
+     * by the loaded save shape. It does not add an unloaded update target.
+     */
+    @NewChain
+    <E, T extends Table<E>, V> AbstractEntitySaveCommand set(
+            Class<T> tableType,
+            TypedProp.Scalar<E, V> prop,
+            SaveAssignmentExpression<E, T, V> expression
+    );
 
     @NewChain
     AbstractEntitySaveCommand setAutoIdOnlyTargetCheckingAll();

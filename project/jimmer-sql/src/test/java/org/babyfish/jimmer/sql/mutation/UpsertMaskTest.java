@@ -7,7 +7,9 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.UpsertMask;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
@@ -21,6 +23,184 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class UpsertMaskTest extends AbstractMutationTest {
+
+    @Test
+    public void testAssignmentExpression() {
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setId(Constants.graphQLInActionId3);
+                                    draft.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(ID, PRICE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then update set PRICE = tb_1_.PRICE + ? " +
+                                        "when not matched then insert(ID, PRICE) " +
+                                        "values(tb_2_.ID, tb_2_.PRICE)"
+                        );
+                    });
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAssignmentExpressionByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setId(Constants.graphQLInActionId3);
+                                    draft.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, PRICE) values(?, ?) " +
+                                        "on conflict(ID) do update set PRICE = PRICE + ?"
+                        );
+                    });
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAssignmentTargetMustBeLoaded() {
+        IllegalArgumentException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> jdbc(null, true, con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(
+                                Immutables.createBook(draft ->
+                                        draft.setId(Constants.graphQLInActionId3)
+                                )
+                        )
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(BigDecimal.ONE)
+                        )
+                        .execute(con))
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(
+                ex.getMessage().contains("is not selected for update"),
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testAssignmentInputMustBeLoaded() {
+        IllegalArgumentException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> jdbc(null, true, con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(
+                                Immutables.createBookStore(draft -> {
+                                    draft.setId(Constants.oreillyId);
+                                    draft.setName("O'REILLY");
+                                })
+                        )
+                        .set(
+                                BookStoreTable.class,
+                                BookStoreProps.NAME,
+                                (target, values) -> target.name().concat(values.newString(BookStoreProps.WEBSITE))
+                        )
+                        .execute(con))
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("is unloaded"), ex.getMessage());
+    }
+
+    @Test
+    public void testAssignmentTargetMustBeAllowedByUpsertMask() {
+        IllegalArgumentException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> jdbc(null, true, con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setId(Constants.graphQLInActionId3);
+                                    draft.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .setUpsertMask(UpsertMask.of(Book.class).forbidUpdate())
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .execute(con))
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(
+                ex.getMessage().contains("is not selected for update"),
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testAssignmentTargetCannotBeConfiguredTwice() {
+        IllegalArgumentException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setId(Constants.graphQLInActionId3);
+                                    draft.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().minus(values.newNumber(BookProps.PRICE))
+                        )
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("configured more than once"));
+    }
+
+    @Test
+    public void testAssignmentIsNotAllowedForInsertOnly() {
+        IllegalArgumentException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> getSqlClient()
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setId(Constants.graphQLInActionId3);
+                                    draft.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .execute()
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("INSERT_ONLY"));
+    }
 
     @Test
     public void testEmptyUpdateMaskWithLoadedId() {
@@ -200,8 +380,10 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                         "--->)"
                         );
                     });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -253,8 +435,10 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                         "--->)"
                         );
                     });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -280,7 +464,12 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                         })
                                 )
                         )
-                        .setUpsertMask(BookProps.PRICE),
+                        .setUpsertMask(BookProps.PRICE)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.queryReason(QueryReason.TRIGGER);
@@ -289,7 +478,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                         "from BOOK tb_1_ " +
                                         "where tb_1_.ID = any(?)"
                         );
-                        it.variables((Object) new Object[] {Constants.graphQLInActionId3, graphQLInActionId4});
+                        it.variables((Object) new Object[]{Constants.graphQLInActionId3, graphQLInActionId4});
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -299,11 +488,21 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         it.variables(graphQLInActionId4, "GraphQL in Action", 4, new BigDecimal("58.9"));
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ? where ID = ?");
+                        it.sql("update BOOK set PRICE = PRICE + ? where ID = ?");
                         it.variables(new BigDecimal("57.9"), Constants.graphQLInActionId3);
                     });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.TRIGGER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.PRICE " +
+                                        "from BOOK tb_1_ where tb_1_.ID = ?"
+                        );
+                        it.variables(Constants.graphQLInActionId3);
+                    });
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -326,7 +525,8 @@ public class UpsertMaskTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("update BOOK set NAME = ?, EDITION = ?, PRICE = ? where ID = ?");
                     });
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }

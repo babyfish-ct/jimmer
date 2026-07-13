@@ -31,7 +31,7 @@ class SaveReturningUpsert {
     @Nullable
     final LogicalDeletedInfo conflictPredicate;
 
-    final List<MergeAssignment> mergeAssignments;
+    final List<SaveAssignment> assignments;
 
     final boolean ignoreUpdate;
 
@@ -46,7 +46,7 @@ class SaveReturningUpsert {
             List<PropertyGetter> nullGetters,
             List<PropertyGetter> conflictGetters,
             @Nullable LogicalDeletedInfo conflictPredicate,
-            List<MergeAssignment> mergeAssignments,
+            List<SaveAssignment> assignments,
             boolean ignoreUpdate,
             boolean fakeUpdate
     ) {
@@ -58,7 +58,7 @@ class SaveReturningUpsert {
         this.nullGetters = nullGetters;
         this.conflictGetters = conflictGetters;
         this.conflictPredicate = conflictPredicate;
-        this.mergeAssignments = mergeAssignments;
+        this.assignments = assignments;
         this.ignoreUpdate = ignoreUpdate;
         this.fakeUpdate = fakeUpdate;
     }

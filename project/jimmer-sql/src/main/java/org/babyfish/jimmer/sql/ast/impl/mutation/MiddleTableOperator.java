@@ -905,7 +905,12 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
-        public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
+        public Dialect.UpsertContext appendUpdatingAssignments(
+                String targetPrefix,
+                String targetSuffix,
+                String sourcePrefix,
+                String sourceSuffix
+        ) {
             return this;
         }
 

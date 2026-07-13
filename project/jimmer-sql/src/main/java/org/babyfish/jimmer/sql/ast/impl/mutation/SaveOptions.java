@@ -1,11 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
@@ -13,6 +12,8 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.Collections;
+import java.util.Map;
 
 public interface SaveOptions {
 
@@ -30,6 +31,23 @@ public interface SaveOptions {
 
     @Nullable
     UpsertMask<?> getUpsertMask(ImmutableType type);
+
+    default SaveAssignmentLambda getAssignment(ImmutableProp prop) {
+        return null;
+    }
+
+    default Map<ImmutableProp, SaveAssignmentLambda> getAssignments() {
+        return Collections.emptyMap();
+    }
+
+    default boolean hasAssignment(ImmutableType type) {
+        for (SaveAssignmentLambda assignment : getAssignments().values()) {
+            if (assignment.type.isAssignableFrom(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     DeleteMode getDeleteMode();
 
@@ -142,6 +160,16 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public @Nullable UpsertMask<?> getUpsertMask(ImmutableType type) {
         return raw.getUpsertMask(type);
+    }
+
+    @Override
+    public @Nullable SaveAssignmentLambda getAssignment(ImmutableProp prop) {
+        return raw.getAssignment(prop);
+    }
+
+    @Override
+    public Map<ImmutableProp, SaveAssignmentLambda> getAssignments() {
+        return raw.getAssignments();
     }
 
     @Override

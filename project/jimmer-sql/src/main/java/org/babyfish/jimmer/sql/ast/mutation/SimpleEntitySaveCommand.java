@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -9,6 +7,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
@@ -91,6 +90,14 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     @Override
     SimpleEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask);
+
+    @NewChain
+    @Override
+    <X, T extends Table<X>, V> SimpleEntitySaveCommand<E> set(
+            Class<T> tableType,
+            TypedProp.Scalar<X, V> prop,
+            SaveAssignmentExpression<X, T, V> expression
+    );
 
     @NewChain
     @Override

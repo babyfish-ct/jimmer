@@ -243,6 +243,43 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateDerivedStageWithAssignmentExpression() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    OrganizationDraft.$.produce(organization -> {
+                                        organization.setId(200L);
+                                        organization.setTaxCode("-X");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .set(
+                                    OrganizationTable.class,
+                                    OrganizationProps.TAX_CODE,
+                                    (target, values) -> target.taxCode().concat(values.newString(OrganizationProps.TAX_CODE))
+                            )
+                            .execute(con);
+                    return joinedClientRow(con, 200L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update JOINED_ORGANIZATION " +
+                                        "set TAX_CODE = concat(TAX_CODE, ?) " +
+                                        "where ID = ? and exists(" +
+                                        "select 1 from JOINED_CLIENT tb_root_ " +
+                                        "where tb_root_.ID = ? and tb_root_.CLIENT_TYPE = ?)"
+                        );
+                        it.variables("-X", 200L, 200L, "ORG");
+                    });
+                    ctx.value("[ORG, Globex, GLOBEX-001-X, null, null]");
+                }
+        );
+    }
+
+    @Test
     public void testUpdateDerivedTypeMismatchWithStageReturningDoesNotMaterializeExistingRow() {
         connectAndExpect(
                 con -> {

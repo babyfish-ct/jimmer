@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
 import org.babyfish.jimmer.sql.ast.mutation.UpsertMask
+import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -26,38 +27,13 @@ interface KSaveCommandPartialDsl {
 
     fun setAssociatedMode(prop: TypedProp.Association<*, *>, mode: AssociatedSaveMode)
 
-    fun <E: Any> setKeyProps(vararg keyProps: KProperty1<E, *>)
+    fun <E : Any> setKeyProps(vararg keyProps: KProperty1<E, *>)
 
-    fun <E: Any> setKeyProps(vararg keyProps: TypedProp.Single<E, *>)
+    fun <E : Any> setKeyProps(vararg keyProps: TypedProp.Single<E, *>)
 
-    fun <E: Any> setKeyProps(group: String, vararg keyProps: KProperty1<E, *>)
+    fun <E : Any> setKeyProps(group: String, vararg keyProps: KProperty1<E, *>)
 
-    fun <E: Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>)
-
-    /**
-     * Set UpsertMask with updatable properties
-     *
-     * When upsert is executed, existing rows will be updated.
-     * By default, the properties is determined by object shape
-     *
-     * ```
-     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
-     * ```
-     *
-     * If the UpsertMask is specified,
-     *
-     * ```
-     * updatedProperties = (
-     *      propertiesOf(dynamicEntity) - conflictIdOrKey
-     * ) & upsertMask.updatableProps
-     * ```
-     *
-     * @param props Properties that can be updated
-     *
-     *          - its length cannot be 0
-     *          - all properties must belong to one entity type
-     */
-    fun <E: Any> setUpsertMask(vararg props: ImmutableProp)
+    fun <E : Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>)
 
     /**
      * Set UpsertMask with updatable properties
@@ -82,7 +58,7 @@ interface KSaveCommandPartialDsl {
      *          - its length cannot be 0
      *          - all properties must belong to one entity type
      */
-    fun <E: Any> setUpsertMask(vararg props: KProperty1<E, *>)
+    fun <E : Any> setUpsertMask(vararg props: ImmutableProp)
 
     /**
      * Set UpsertMask with updatable properties
@@ -107,7 +83,32 @@ interface KSaveCommandPartialDsl {
      *          - its length cannot be 0
      *          - all properties must belong to one entity type
      */
-    fun <E: Any> setUpsertMask(vararg props: TypedProp.Single<E, *>)
+    fun <E : Any> setUpsertMask(vararg props: KProperty1<E, *>)
+
+    /**
+     * Set UpsertMask with updatable properties
+     *
+     * When upsert is executed, existing rows will be updated.
+     * By default, the properties is determined by object shape
+     *
+     * ```
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ```
+     *
+     * If the UpsertMask is specified,
+     *
+     * ```
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * ```
+     *
+     * @param props Properties that can be updated
+     *
+     *          - its length cannot be 0
+     *          - all properties must belong to one entity type
+     */
+    fun <E : Any> setUpsertMask(vararg props: TypedProp.Single<E, *>)
 
     /**
      * Set UpsertMask object
@@ -136,6 +137,16 @@ interface KSaveCommandPartialDsl {
      */
     fun setUpsertMask(mask: UpsertMask<*>)
 
+    fun <E : Any, V : Any> set(
+        prop: KProperty1<E, V>,
+        block: AssignmentContext<E>.() -> KNonNullExpression<V>
+    )
+
+    fun <E : Any, V : Any> setNullable(
+        prop: KProperty1<E, V?>,
+        block: AssignmentContext<E>.() -> KExpression<V>
+    )
+
     /**
      * Example:
      * ```
@@ -149,13 +160,13 @@ interface KSaveCommandPartialDsl {
      * }
      * ```
      */
-    fun <E: Any> setOptimisticLock(
+    fun <E : Any> setOptimisticLock(
         type: KClass<E>,
         behavior: UnloadedVersionBehavior = UnloadedVersionBehavior.IGNORE,
         block: (OptimisticLockContext<E>).() -> KNonNullExpression<Boolean>?
     )
 
-    fun <E: Any> setPessimisticLock(entityType: KClass<E>, lock: Boolean = true)
+    fun <E : Any> setPessimisticLock(entityType: KClass<E>, lock: Boolean = true)
 
     fun setPessimisticLockAll()
 
@@ -181,7 +192,7 @@ interface KSaveCommandPartialDsl {
 
     fun setAssociatedTypeMatchModeAll(mode: TypeMatchMode)
 
-    fun <E: Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode)
+    fun <E : Any> setAssociatedTypeMatchMode(entityType: KClass<E>, mode: TypeMatchMode)
 
     fun setAssociatedTypeMatchMode(prop: KProperty1<*, *>, mode: TypeMatchMode)
 
@@ -193,7 +204,7 @@ interface KSaveCommandPartialDsl {
 
     fun setAssociatedTypeChangeAllowedAll(allowed: Boolean = true)
 
-    fun <E: Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean = true)
+    fun <E : Any> setAssociatedTypeChangeAllowed(entityType: KClass<E>, allowed: Boolean = true)
 
     fun setAssociatedTypeChangeAllowed(prop: KProperty1<*, *>, allowed: Boolean = true)
 
@@ -219,9 +230,16 @@ interface KSaveCommandPartialDsl {
 
     fun setEnabled(enabled: Boolean)
 
-    interface OptimisticLockContext<E: Any> {
+    interface ValueExpressionContext<E : Any> {
+        fun <V : Any> newNonNull(prop: KProperty1<E, V>): KNonNullExpression<V>
+        fun <V : Any> newNullable(prop: KProperty1<E, V?>): KNullableExpression<V>
+    }
+
+    interface AssignmentContext<E : Any> : ValueExpressionContext<E> {
+        val target: KNonNullTable<E>
+    }
+
+    interface OptimisticLockContext<E : Any> : ValueExpressionContext<E> {
         val table: KNonNullTable<E>
-        fun <V: Any> newNonNull(prop: KProperty1<E, V>): KNonNullExpression<V>
-        fun <V: Any> newNullable(prop: KProperty1<E, V?>): KNullableExpression<V>
     }
 }

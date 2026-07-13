@@ -42,7 +42,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     @Test
     public void testFetchMore() {
         Department department = Immutables.createDepartment(draft -> {
-           draft.setName("Sales");
+            draft.setName("Sales");
         });
         connectAndExpect(
                 con -> getSqlClient(it -> {
@@ -128,9 +128,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         }
                     });
                 }).saveCommand(Immutables.createBook(draft -> {
-                    draft.setId(Constants.learningGraphQLId1);
-                    draft.setName("Learning GraphQL protocol");
-                })).setMode(SaveMode.UPDATE_ONLY)
+                            draft.setId(Constants.learningGraphQLId1);
+                            draft.setName("Learning GraphQL protocol");
+                        })).setMode(SaveMode.UPDATE_ONLY)
                         .execute(con, BookFetcher.$.name().edition())
                         .getModifiedEntity(),
                 ctx -> {
@@ -171,9 +171,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         }
                     });
                 }).saveCommand(Immutables.createDepartment(draft -> {
-                    draft.setId(1L);
-                    draft.setName("Market");
-                })).setMode(SaveMode.UPDATE_ONLY)
+                            draft.setId(1L);
+                            draft.setName("Market");
+                        })).setMode(SaveMode.UPDATE_ONLY)
                         .setSaveReturningEnabled(false)
                         .execute(
                                 con,
@@ -232,11 +232,11 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         }
                     });
                 }).filters(it -> {
-                    it.setBehavior(Employee.class, LogicalDeletedBehavior.IGNORED);
-                }).saveCommand(Immutables.createEmployee(draft -> {
-                    draft.setId(3L);
-                    draft.setName("Samuel");
-                })).setMode(SaveMode.UPDATE_ONLY)
+                            it.setBehavior(Employee.class, LogicalDeletedBehavior.IGNORED);
+                        }).saveCommand(Immutables.createEmployee(draft -> {
+                            draft.setId(3L);
+                            draft.setName("Samuel");
+                        })).setMode(SaveMode.UPDATE_ONLY)
                         .execute(
                                 con,
                                 EmployeeFetcher.$.allScalarFields()
@@ -277,11 +277,11 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         }
                     });
                 }).filters(it -> {
-                    it.setBehavior(Employee.class, LogicalDeletedBehavior.IGNORED);
-                }).saveCommand(Immutables.createEmployee(draft -> {
-                    draft.setId(3L);
-                    draft.setName("Samuel");
-                })).setMode(SaveMode.UPDATE_ONLY)
+                            it.setBehavior(Employee.class, LogicalDeletedBehavior.IGNORED);
+                        }).saveCommand(Immutables.createEmployee(draft -> {
+                            draft.setId(3L);
+                            draft.setName("Samuel");
+                        })).setMode(SaveMode.UPDATE_ONLY)
                         .setSaveReturningEnabled(false)
                         .execute(
                                 con,
@@ -322,9 +322,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     Employee modifiedEntity = getSqlClient(it -> {
                         it.setDialect(new H2Dialect());
                     }).saveCommand(Immutables.createEmployee(draft -> {
-                        draft.setName("Sam");
-                        draft.setGender(Gender.FEMALE);
-                    })).setMode(SaveMode.UPDATE_ONLY)
+                                draft.setName("Sam");
+                                draft.setGender(Gender.FEMALE);
+                            })).setMode(SaveMode.UPDATE_ONLY)
                             .execute(
                                     con,
                                     EmployeeFetcher.$.allScalarFields()
@@ -362,9 +362,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     it.setDialect(new H2Dialect());
                     it.setDefaultSaveReturningEnabled(false);
                 }).saveCommand(Immutables.createBook(draft -> {
-                    draft.setId(Constants.learningGraphQLId1);
-                    draft.setName("Learning GraphQL protocol");
-                })).setMode(SaveMode.UPDATE_ONLY)
+                            draft.setId(Constants.learningGraphQLId1);
+                            draft.setName("Learning GraphQL protocol");
+                        })).setMode(SaveMode.UPDATE_ONLY)
                         .execute(con, BookFetcher.$.name().edition())
                         .getModifiedEntity(),
                 ctx -> {
@@ -387,6 +387,47 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                             "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
                                     "\"name\":\"Learning GraphQL protocol\"," +
                                     "\"edition\":1}"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testAssignmentExpressionUsesResidualFetchWithoutReturning() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setDefaultSaveReturningEnabled(false);
+                }).saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setPrice(BigDecimal.ONE);
+                        }))
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .execute(con, BookFetcher.$.price().edition())
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = PRICE + ? where ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.PRICE, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"price\":81.00," +
+                                    "--->\"edition\":3" +
+                                    "}"
                     );
                 }
         );
@@ -434,9 +475,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     public void testSaveResultReadsAllPropertiesCanBeEnabledGlobally() {
         connectAndExpect(
                 con -> getSqlClient(it -> {
-                            it.setDialect(new H2Dialect());
-                            it.setDefaultSaveResultReadsAllProperties(true);
-                        })
+                    it.setDialect(new H2Dialect());
+                    it.setDefaultSaveResultReadsAllProperties(true);
+                })
                         .saveCommand(Immutables.createBook(draft -> {
                             draft.setId(Constants.graphQLInActionId3);
                             draft.setPrice(new BigDecimal("79.00"));
@@ -512,6 +553,48 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testSaveReturningByAssignmentExpression() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setPrice(BigDecimal.ONE);
+                        }))
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .execute(
+                                con,
+                                BookFetcher.$.price().edition()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, PRICE, EDITION " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, PRICE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set PRICE = tb_1_.PRICE + tb_2_.PRICE" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"price\":81.00," +
+                                    "--->\"edition\":3" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testSaveReturningByUserOptimisticLockFailed() {
         connectAndExpect(
                 con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
@@ -574,9 +657,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     it.setDialect(new H2Dialect());
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveEntitiesCommand(departments).execute(
-                        con,
-                        DepartmentCompositeView.class
-                ).getViewItems()
+                                con,
+                                DepartmentCompositeView.class
+                        ).getViewItems()
                         .stream()
                         .map(BatchSaveResult.View.ViewItem::getModifiedView)
                         .collect(Collectors.toList()),
@@ -709,13 +792,13 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     it.setDialect(new H2Dialect());
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveEntitiesCommand(departments).setMode(SaveMode.INSERT_IF_ABSENT).execute(
-                        con,
-                        DepartmentFetcher.$
-                                .allScalarFields()
-                                .employees(
-                                        EmployeeFetcher.$.allScalarFields()
-                                )
-                ).getItems()
+                                con,
+                                DepartmentFetcher.$
+                                        .allScalarFields()
+                                        .employees(
+                                                EmployeeFetcher.$.allScalarFields()
+                                        )
+                        ).getItems()
                         .stream()
                         .map(BatchSaveResult.Item::getModifiedEntity)
                         .collect(Collectors.toList()),
@@ -772,9 +855,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     it.setDialect(new H2Dialect());
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveCommand(Immutables.createEmployee(draft -> {
-                    draft.setId(1L);
-                    draft.setName("Jhon");
-                })).setMode(SaveMode.UPDATE_ONLY)
+                            draft.setId(1L);
+                            draft.setName("Jhon");
+                        })).setMode(SaveMode.UPDATE_ONLY)
                         .execute(
                                 con,
                                 EmployeeFetcher.$.name().gender()
@@ -1609,19 +1692,19 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         it.setDialect(new H2Dialect());
                         it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     }).saveEntitiesCommand(Arrays.asList(
-                            Immutables.createSysUser(draft -> {
-                                draft.setAccount("batch-new-account");
-                                draft.setEmail("batch-new-account@jimmer.org");
-                                draft.setArea("dev");
-                                draft.setNickName("BatchNewbie");
-                            }),
-                            Immutables.createSysUser(draft -> {
-                                draft.setAccount("batch-conflict-account");
-                                draft.setEmail("batch-conflict-email@jimmer.org");
-                                draft.setArea("north");
-                                draft.setNickName("Tom");
-                            })
-                    )).setMode(SaveMode.INSERT_IF_ABSENT)
+                                    Immutables.createSysUser(draft -> {
+                                        draft.setAccount("batch-new-account");
+                                        draft.setEmail("batch-new-account@jimmer.org");
+                                        draft.setArea("dev");
+                                        draft.setNickName("BatchNewbie");
+                                    }),
+                                    Immutables.createSysUser(draft -> {
+                                        draft.setAccount("batch-conflict-account");
+                                        draft.setEmail("batch-conflict-email@jimmer.org");
+                                        draft.setArea("north");
+                                        draft.setNickName("Tom");
+                                    })
+                            )).setMode(SaveMode.INSERT_IF_ABSENT)
                             .execute(
                                     con,
                                     SysUserFetcher.$.allScalarFields()
@@ -1679,10 +1762,10 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     it.setDialect(new H2Dialect());
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveCommand(
-                        Immutables.createDepartment(draft -> {
-                            draft.setName("Market");
-                        })
-                )
+                                Immutables.createDepartment(draft -> {
+                                    draft.setName("Market");
+                                })
+                        )
                         .setMode(SaveMode.INSERT_IF_ABSENT)
                         .execute(
                                 con,
@@ -1722,15 +1805,15 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     it.setDialect(new H2Dialect());
                     it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                 }).saveEntitiesCommand(
-                        Arrays.asList(
-                                Immutables.createDepartment(draft -> {
-                                    draft.setName("Market");
-                                }),
-                                Immutables.createDepartment(draft -> {
-                                    draft.setName("Sales");
-                                })
+                                Arrays.asList(
+                                        Immutables.createDepartment(draft -> {
+                                            draft.setName("Market");
+                                        }),
+                                        Immutables.createDepartment(draft -> {
+                                            draft.setName("Sales");
+                                        })
+                                )
                         )
-                )
                         .setMode(SaveMode.INSERT_IF_ABSENT)
                         .execute(
                                 con,

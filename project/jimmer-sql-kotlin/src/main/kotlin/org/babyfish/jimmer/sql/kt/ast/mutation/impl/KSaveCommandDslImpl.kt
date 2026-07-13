@@ -6,17 +6,21 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.mutation.*
+import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
+import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
+import org.babyfish.jimmer.sql.kt.ast.expression.toAst
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -27,7 +31,7 @@ import kotlin.reflect.KProperty1
 
 internal class KSaveCommandDslImpl(
     internal var javaCommand: AbstractEntitySaveCommand
-): KSaveCommandDsl {
+) : KSaveCommandDsl {
 
     override fun setMode(mode: SaveMode) {
         javaCommand = javaCommand.setMode(mode)
@@ -86,6 +90,60 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setUpsertMask(mask)
     }
 
+    override fun <E : Any, V : Any> set(
+        prop: KProperty1<E, V>,
+        block: KSaveCommandPartialDsl.AssignmentContext<E>.() -> KNonNullExpression<V>
+    ) {
+        setImpl(prop, block)
+    }
+
+    override fun <E : Any, V : Any> setNullable(
+        prop: KProperty1<E, V?>,
+        block: KSaveCommandPartialDsl.AssignmentContext<E>.() -> KExpression<V>
+    ) {
+        setImpl(prop, block)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <E : Any> setImpl(
+        prop: KProperty1<E, *>,
+        block: KSaveCommandPartialDsl.AssignmentContext<E>.() -> KExpression<*>
+    ) {
+        val immutableProp = prop.toImmutableProp()
+        javaCommand = (javaCommand as SaveCommandImplementor).setEntityAssignment(
+            immutableProp,
+            SaveAssignmentExpression<Any, Table<Any>, Any> { table, factory ->
+                block(
+                    object : KSaveCommandPartialDsl.AssignmentContext<E> {
+                        override val target: KNonNullTable<E> =
+                            KNonNullTableExImpl(
+                                if (table is TableProxy<*>) {
+                                    (table as TableProxy<E>).__unwrap()
+                                } else {
+                                    table as TableImplementor<E>
+                                },
+                                "The target table provided by save assignment does not support join"
+                            )
+
+                        override fun <X : Any> newNonNull(
+                            prop: KProperty1<E, X>
+                        ): KNonNullExpression<X> =
+                            JavaToKotlinNonNullExpression(
+                                factory.newValue<X>(prop.toImmutableProp()) as ExpressionImplementor<X>
+                            )
+
+                        override fun <X : Any> newNullable(
+                            prop: KProperty1<E, X?>
+                        ): KNullableExpression<X> =
+                            JavaToKotlinNullableExpression(
+                                factory.newValue<X>(prop.toImmutableProp()) as ExpressionImplementor<X>
+                            )
+                    }
+                ).toAst() as Expression<Any>
+            }
+        )
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> setOptimisticLock(
         type: KClass<E>,
@@ -97,7 +155,7 @@ internal class KSaveCommandDslImpl(
             behavior
         ) { table, factory ->
             block(
-                object: KSaveCommandPartialDsl.OptimisticLockContext<E> {
+                object : KSaveCommandPartialDsl.OptimisticLockContext<E> {
                     override val table: KNonNullTable<E> =
                         KNonNullTableExImpl(
                             if (table is TableProxy<*>) {

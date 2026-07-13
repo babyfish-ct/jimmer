@@ -1,16 +1,16 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -101,6 +101,27 @@ public class BatchEntitySaveCommandImpl<E>
     @Override
     public BatchEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask) {
         return new BatchEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, mask));
+    }
+
+    @Override
+    public <X, T extends Table<X>, V> BatchEntitySaveCommand<E> set(
+            Class<T> tableType,
+            TypedProp.Scalar<X, V> prop,
+            SaveAssignmentExpression<X, T, V> expression
+    ) {
+        return new BatchEntitySaveCommandImpl<>(
+                new AssignmentCfg(cfg, prop.unwrap(), ImmutableType.get(tableType), expression)
+        );
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setEntityAssignment(
+            ImmutableProp prop,
+            SaveAssignmentExpression<?, ?, ?> expression
+    ) {
+        return new BatchEntitySaveCommandImpl<>(
+                new AssignmentCfg(cfg, prop, prop.getDeclaringType(), expression)
+        );
     }
 
     @Override

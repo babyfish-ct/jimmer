@@ -12,11 +12,15 @@ class SaveReturningUpdate {
 
     final List<PropertyGetter> nullGetters;
 
+    final List<SaveAssignment> assignments;
+
     SaveReturningUpdate(
             @Nullable PropertyGetter discriminatorGetter,
-            List<PropertyGetter> nullGetters
+            List<PropertyGetter> nullGetters,
+            List<SaveAssignment> assignments
     ) {
         this.discriminatorGetter = discriminatorGetter;
         this.nullGetters = nullGetters;
+        this.assignments = assignments;
     }
 }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.spi.ImmutableTypeImplementor;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.InheritanceType;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.impl.*;
@@ -24,6 +25,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -70,6 +72,32 @@ class Operator {
             }
         }
         return sumRowCount;
+    }
+
+    static void renderAssignmentValue(
+            AbstractSqlBuilder<?> builder,
+            SaveAssignment assignment,
+            String targetPrefix,
+            String targetSuffix,
+            @Nullable String inputPrefix,
+            String inputSuffix
+    ) {
+        if (assignment.value == null) {
+            if (inputPrefix == null) {
+                ((BatchSqlBuilder) builder).variable(assignment.target);
+            } else {
+                builder.sql(inputPrefix).sql(assignment.target).sql(inputSuffix);
+            }
+            return;
+        }
+        builder.pushValueGetterRender(targetPrefix, targetSuffix);
+        builder.pushSaveInputValueRender(inputPrefix, inputSuffix);
+        try {
+            builder.ast((Ast) assignment.value, Integer.MAX_VALUE);
+        } finally {
+            builder.popSaveInputValueRender();
+            builder.popValueGetterRender();
+        }
     }
 
     public MutationRows insert(Batch<DraftSpi> batch) {
@@ -1249,6 +1277,15 @@ class Operator {
             }
             updatedGetters.add(getter);
         }
+        List<SaveAssignment> assignments = SaveAssignments.of(ctx, shape, tableType, updatedGetters);
+        boolean hasCustomAssignments = false;
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value != null) {
+                hasCustomAssignments = true;
+                forceAllRows = true;
+                break;
+            }
+        }
         boolean versionUpdateRequired = isVersionUpdateRequired(versionGetter);
         boolean fakeUpdate = false;
         if (updatedGetters.isEmpty() &&
@@ -1292,7 +1329,7 @@ class Operator {
                         Collections.emptyMap();
                 for (DraftSpi draft : batch.entities()) {
                     ImmutableSpi oldRow = subMap.get(Keys.keyOf(draft, keyProps));
-                    if (isChanged(changedProps, oldRow, draft)) {
+                    if (hasCustomAssignments || isChanged(changedProps, oldRow, draft)) {
                         if (pendingTriggerData != null) {
                             pendingTriggerData.add(new Object[]{oldRow, draft});
                         }
@@ -1307,7 +1344,7 @@ class Operator {
                     ImmutableSpi oldRow = originalIdObjMap != null ?
                             originalIdObjMap.get(draft.__get(idPropId)) :
                             null;
-                    if (isChanged(changedProps, oldRow, draft) || hasOptimisticLock) {
+                    if (hasCustomAssignments || isChanged(changedProps, oldRow, draft) || hasOptimisticLock) {
                         if (pendingTriggerData != null) {
                             pendingTriggerData.add(new Object[]{oldRow, draft});
                         }
@@ -1327,7 +1364,7 @@ class Operator {
                 ctx,
                 shape,
                 entities,
-                updatedGetters,
+                assignments,
                 discriminatorProp,
                 discriminatorGuardProp,
                 discriminatorGuardValue,
@@ -1353,7 +1390,7 @@ class Operator {
                     shape,
                     Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters().get(0),
                     keyProps,
-                    updatedGetters,
+                    assignments,
                     discriminatorProp,
                     discriminatorGuardProp,
                     discriminatorGuardValue,
@@ -1371,6 +1408,7 @@ class Operator {
                     false,
                     forceOneByOne
             );
+            unloadCustomAssignmentTargets(entities, rowCounts, assignments);
         }
         if (versionGetter != null || userOptimisticLockPredicate != null) {
             int index = 0;
@@ -1381,6 +1419,7 @@ class Operator {
             }
         }
         if (pendingTriggerData != null) {
+            materializeCustomAssignmentTargets(shape.getType(), entities, rowCounts, assignments);
             for (Object[] pair : pendingTriggerData) {
                 trigger.modifyEntityTable(pair[0], pair[1]);
             }
@@ -1642,7 +1681,7 @@ class Operator {
                 ctx,
                 batch.shape(),
                 batch.entities(),
-                updatedGetters,
+                SaveAssignments.of(ctx, batch.shape(), tableType, updatedGetters),
                 null,
                 null,
                 null,
@@ -1671,11 +1710,12 @@ class Operator {
         builder.sql("update ")
                 .sql(childTableName)
                 .enter(BatchSqlBuilder.ScopeType.SET);
-        for (PropertyGetter getter : updatedGetters) {
+        for (SaveAssignment assignment : SaveAssignments.of(ctx, batch.shape(), tableType, updatedGetters)) {
+            PropertyGetter getter = assignment.target;
             builder.separator()
                     .sql(getter)
-                    .sql(" = ")
-                    .variable(getter);
+                    .sql(" = ");
+            renderAssignmentValue(builder, assignment, "", "", null, "");
         }
         builder.leave()
                 .enter(BatchSqlBuilder.ScopeType.WHERE);
@@ -1748,12 +1788,6 @@ class Operator {
         if (batch.entities().isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
-        if (!forceMatchedUpdate &&
-                ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
-                batch.shape().isIdOnly()) {
-            return EMPTY_ROW_COUNTS;
-        }
-
         if (ctx.trigger != null) {
             throw new AssertionError(
                     "Internal bug: " +
@@ -1828,7 +1862,13 @@ class Operator {
                 }
             }
         }
-        List<MergeAssignment> mergeAssignments = MergeAssignment.defaults(updatedGetters);
+        List<SaveAssignment> assignments = SaveAssignments.of(ctx, batch.shape(), tableType, updatedGetters);
+        if (!forceMatchedUpdate &&
+                ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
+                batch.shape().isIdOnly() &&
+                assignments.isEmpty()) {
+            return EMPTY_ROW_COUNTS;
+        }
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
@@ -1846,7 +1886,7 @@ class Operator {
                 nullGetters,
                 conflictGetters,
                 conflictPredicate,
-                mergeAssignments,
+                assignments,
                 ignoreUpdate,
                 userOptimisticLockPredicate,
                 versionGetter,
@@ -1875,7 +1915,7 @@ class Operator {
                 nullGetters,
                 conflictGetters,
                 conflictPredicate,
-                mergeAssignments,
+                assignments,
                 ignoreUpdate,
                 userOptimisticLockPredicate,
                 versionGetter,
@@ -1890,8 +1930,87 @@ class Operator {
                 ignoreUpdate,
                 forceOneByOne
         );
+        unloadCustomAssignmentTargets(batch.entities(), rowCounts, assignments);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
         return rowCounts;
+    }
+
+    private static void unloadCustomAssignmentTargets(
+            EntityCollection<DraftSpi> entities,
+            int[] rowCounts,
+            List<SaveAssignment> assignments
+    ) {
+        List<PropId> propIds = new ArrayList<>();
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value != null) {
+                PropId propId = assignment.target.prop().getId();
+                if (!propIds.contains(propId)) {
+                    propIds.add(propId);
+                }
+            }
+        }
+        if (propIds.isEmpty()) {
+            return;
+        }
+        int index = 0;
+        for (DraftSpi draft : entities) {
+            if (rowCounts[index++] != 0) {
+                for (PropId propId : propIds) {
+                    draft.__unload(propId);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void materializeCustomAssignmentTargets(
+            ImmutableType entityType,
+            EntityCollection<DraftSpi> entities,
+            int[] rowCounts,
+            List<SaveAssignment> assignments
+    ) {
+        List<ImmutableProp> props = new ArrayList<>();
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value != null && !props.contains(assignment.target.prop())) {
+                props.add(assignment.target.prop());
+            }
+        }
+        if (props.isEmpty()) {
+            return;
+        }
+        Fetcher<Object> fetcher = new FetcherImpl(entityType.getJavaClass());
+        for (ImmutableProp prop : props) {
+            fetcher = fetcher.add(prop.getName());
+        }
+        PropId idPropId = entityType.getIdProp().getId();
+        List<Object> ids = new ArrayList<>();
+        List<DraftSpi> acceptedDrafts = new ArrayList<>();
+        int index = 0;
+        for (DraftSpi draft : entities) {
+            if (rowCounts[index++] != 0) {
+                ids.add(draft.__get(idPropId));
+                acceptedDrafts.add(draft);
+            }
+        }
+        if (ids.isEmpty()) {
+            return;
+        }
+        JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
+        Map<Object, Object> fetchedMap = ((EntitiesImpl) sqlClient.getEntities())
+                .forSaveCommandFetch(QueryReason.TRIGGER)
+                .forConnection(ctx.con)
+                .findMapByIds(fetcher, ids);
+        for (DraftSpi draft : acceptedDrafts) {
+            ImmutableSpi fetched = (ImmutableSpi) fetchedMap.get(draft.__get(idPropId));
+            if (fetched != null) {
+                for (ImmutableProp prop : props) {
+                    PropId propId = prop.getId();
+                    if (fetched.__isLoaded(propId)) {
+                        draft.__set(propId, fetched.__get(propId));
+                    }
+                }
+            }
+        }
     }
 
     private List<PropertyGetter> redundantSingleTableGetters(
@@ -2039,7 +2158,7 @@ class Operator {
         }
         Predicate predicate = userOptimisticLock.predicate(
                 (Table<Object>) table,
-                OptimisticLockValueFactoryFactories.<Object>of()
+                ValueExpressionFactories.<Object>of()
         );
         validateUserOptimisticLockPredicate(predicate);
         return predicate;
@@ -2059,7 +2178,7 @@ class Operator {
             }
 
             @Override
-            public void visitOptimisticLockNewValue(ImmutableProp prop) {
+            public void visitSaveInputValue(ImmutableProp prop) {
                 validateRootOptimisticLockProp(rootType, prop);
             }
         });
@@ -2515,7 +2634,7 @@ class Operator {
 
         private final Set<ImmutableProp> keyProps;
 
-        private final List<PropertyGetter> updatedGetters;
+        private final List<SaveAssignment> assignments;
 
         @Nullable
         private final PropertyGetter discriminatorGetter;
@@ -2540,7 +2659,7 @@ class Operator {
                 Shape shape,
                 PropertyGetter idGetter,
                 Set<ImmutableProp> keyProps,
-                List<PropertyGetter> updatedGetters,
+                List<SaveAssignment> assignments,
                 @Nullable ImmutableProp discriminatorProp,
                 @Nullable ImmutableProp discriminatorGuardProp,
                 @Nullable Object discriminatorGuardValue,
@@ -2555,7 +2674,7 @@ class Operator {
             this.idGetter = idGetter;
             this.fakeUpdateGetter = fakeUpdateGetter(ctx.options.getSqlClient(), tableType);
             this.keyProps = keyProps;
-            this.updatedGetters = updatedGetters;
+            this.assignments = assignments;
             this.discriminatorGetter = discriminatorProp != null ?
                     PropertyGetter.propertyGetters(ctx.options.getSqlClient(), discriminatorProp).get(0) :
                     null;
@@ -2591,7 +2710,7 @@ class Operator {
 
         @Override
         public boolean hasUpdatedColumns() {
-            return discriminatorGetter != null || !nullGetters.isEmpty() || !updatedGetters.isEmpty();
+            return discriminatorGetter != null || !nullGetters.isEmpty() || !assignments.isEmpty();
         }
 
         @Override
@@ -2652,12 +2771,13 @@ class Operator {
                         .sql(" = null");
                 hasAssignment = true;
             }
-            for (PropertyGetter getter : updatedGetters) {
+            for (SaveAssignment assignment : assignments) {
+                PropertyGetter getter = assignment.target;
                 if (getter != versionGetter) {
                     builder.separator()
                             .sql(getter)
-                            .sql(" = ")
-                            .variable(getter);
+                            .sql(" = ");
+                    renderAssignmentValue(builder, assignment, "", "", null, "");
                     hasAssignment = true;
                 }
             }
@@ -2788,7 +2908,7 @@ class Operator {
 
         private final LogicalDeletedInfo conflictPredicate;
 
-        private final List<MergeAssignment> mergeAssignments;
+        private final List<SaveAssignment> assignments;
 
         private final boolean updateIgnored;
 
@@ -2812,7 +2932,7 @@ class Operator {
                 List<PropertyGetter> nullGetters,
                 List<PropertyGetter> conflictGetters,
                 LogicalDeletedInfo conflictPredicate,
-                List<MergeAssignment> mergeAssignments,
+                List<SaveAssignment> assignments,
                 boolean updateIgnored,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter,
@@ -2848,7 +2968,7 @@ class Operator {
             this.nullGetters = nullGetters;
             this.conflictGetters = conflictGetters;
             this.conflictPredicate = conflictPredicate;
-            this.mergeAssignments = mergeAssignments;
+            this.assignments = assignments;
             this.updateIgnored = updateIgnored;
             this.fakeUpdate = fakeUpdate;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
@@ -2858,7 +2978,7 @@ class Operator {
         @Override
         public boolean hasUpdatedColumns() {
             return !updateIgnored &&
-                    (!mergeAssignments.isEmpty() ||
+                    (!assignments.isEmpty() ||
                             (updateDiscriminator && discriminatorGetter != null) ||
                             !nullGetters.isEmpty());
         }
@@ -2895,18 +3015,23 @@ class Operator {
         }
 
         private boolean isComplete0() {
+            for (SaveAssignment assignment : assignments) {
+                if (assignment.value != null) {
+                    return false;
+                }
+            }
             if (discriminatorGetter != null && !updateDiscriminator) {
                 return false;
             }
             for (PropertyGetter getter : insertedGetters) {
-                if (!conflictGetters.contains(getter) && !containsMergeTarget(getter)) {
+                if (!conflictGetters.contains(getter) && !containsAssignmentTarget(getter)) {
                     return false;
                 }
             }
-            if (mergeAssignments.isEmpty()) {
+            if (assignments.isEmpty()) {
                 return false;
             }
-            for (MergeAssignment assignment : mergeAssignments) {
+            for (SaveAssignment assignment : assignments) {
                 if (!insertedGetters.contains(assignment.target)) {
                     return false;
                 }
@@ -2914,8 +3039,8 @@ class Operator {
             return true;
         }
 
-        private boolean containsMergeTarget(PropertyGetter getter) {
-            for (MergeAssignment assignment : mergeAssignments) {
+        private boolean containsAssignmentTarget(PropertyGetter getter) {
+            for (SaveAssignment assignment : assignments) {
                 if (assignment.target.equals(getter)) {
                     return true;
                 }
@@ -3052,7 +3177,12 @@ class Operator {
         }
 
         @Override
-        public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
+        public Dialect.UpsertContext appendUpdatingAssignments(
+                String targetPrefix,
+                String targetSuffix,
+                String sourcePrefix,
+                String sourceSuffix
+        ) {
             if (updateDiscriminator && discriminatorGetter != null) {
                 builder.separator()
                         .sql(discriminatorGetter)
@@ -3064,12 +3194,12 @@ class Operator {
                         .sql(getter)
                         .sql(" = null");
             }
-            for (MergeAssignment assignment : mergeAssignments) {
+            for (SaveAssignment assignment : assignments) {
                 PropertyGetter getter = assignment.target;
                 builder.separator()
                         .sql(getter)
                         .sql(" = ");
-                appendUpdatingValue(getter, prefix, suffix);
+                appendUpdatingValue(assignment, targetPrefix, targetSuffix, sourcePrefix, sourceSuffix);
             }
             return this;
         }
@@ -3121,10 +3251,10 @@ class Operator {
                     builder.sql("null");
                 });
             }
-            for (MergeAssignment assignment : mergeAssignments) {
+            for (SaveAssignment assignment : assignments) {
                 PropertyGetter getter = assignment.target;
                 appendConditionalUpdatingAssignment(getter, true, sourcePrefix, sourceSuffix, () -> {
-                    appendUpdatingValue(getter, valuePrefix, valueSuffix);
+                    appendUpdatingValue(assignment, "", "", valuePrefix, valueSuffix);
                 });
             }
             return this;
@@ -3140,7 +3270,7 @@ class Operator {
             boolean hasPrevious = false;
             if (userOptimisticLockPredicate != null) {
                 builder.pushValueGetterRender(targetPrefix, targetSuffix);
-                builder.pushOptimisticLockNewValueRender(null, "");
+                builder.pushSaveInputValueRender(null, "");
                 try {
                     AbstractExpression.renderChild(
                             (Ast) userOptimisticLockPredicate,
@@ -3148,7 +3278,7 @@ class Operator {
                             builder
                     );
                 } finally {
-                    builder.popOptimisticLockNewValueRender();
+                    builder.popSaveInputValueRender();
                     builder.popValueGetterRender();
                 }
                 hasPrevious = true;
@@ -3212,16 +3342,30 @@ class Operator {
             }
         }
 
-        private void appendUpdatingValue(PropertyGetter getter, String prefix, String suffix) {
-            if (getter.metadata().getValueProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
-                builder.sql(prefix)
+        private void appendUpdatingValue(
+                SaveAssignment assignment,
+                String targetPrefix,
+                String targetSuffix,
+                String inputPrefix,
+                String inputSuffix
+        ) {
+            PropertyGetter getter = assignment.target;
+            if (assignment.value == null &&
+                    getter.metadata().getValueProp().isVersion() &&
+                    ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
+                builder.sql(inputPrefix)
                         .sql(getter)
-                        .sql(suffix)
+                        .sql(inputSuffix)
                         .sql(" + 1");
             } else {
-                builder.sql(prefix)
-                        .sql(getter)
-                        .sql(suffix);
+                renderAssignmentValue(
+                        builder,
+                        assignment,
+                        targetPrefix,
+                        targetSuffix,
+                        assignment.value != null ? null : inputPrefix,
+                        inputSuffix
+                );
             }
         }
 

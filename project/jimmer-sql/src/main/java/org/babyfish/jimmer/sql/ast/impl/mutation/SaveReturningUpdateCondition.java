@@ -5,11 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.AbstractExpression;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -96,7 +92,7 @@ interface SaveReturningUpdateCondition {
             }
 
             @Override
-            public void visitOptimisticLockNewValue(ImmutableProp prop) {
+            public void visitSaveInputValue(ImmutableProp prop) {
                 PropertyGetter getter = singleColumnGetter(sqlClient, prop);
                 if (getter == null) {
                     valid[0] = false;
@@ -326,7 +322,7 @@ interface SaveReturningUpdateCondition {
         ) {
             SqlBuilder tempBuilder = builder.createTempBuilder();
             tempBuilder.pushValueGetterRender(targetPrefix, targetSuffix);
-            tempBuilder.pushOptimisticLockNewValueRender(sourcePrefix, sourceSuffix);
+            tempBuilder.pushSaveInputValueRender(sourcePrefix, sourceSuffix);
             try {
                 AbstractExpression.renderChild(
                         (Ast) predicate,
@@ -334,7 +330,7 @@ interface SaveReturningUpdateCondition {
                         tempBuilder
                 );
             } finally {
-                tempBuilder.popOptimisticLockNewValueRender();
+                tempBuilder.popSaveInputValueRender();
                 tempBuilder.popValueGetterRender();
             }
             builder.appendTempBuilder(tempBuilder);
