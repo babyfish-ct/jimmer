@@ -784,6 +784,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             if (rootAlias != null && parentImplementor.isRootTableProp(joinProp)) {
                 return rootAlias;
             }
+            String branchAlias = TableImplementor.joinedTypeBranchForeignKeyAlias(builder, parentImplementor, joinProp);
+            if (branchAlias != null) {
+                return branchAlias;
+            }
         }
         return builder.alias(parent);
     }
@@ -962,17 +966,29 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 return;
             }
             if (!isInverse) {
+                String branchSourceAlias = parent != null && parent.owner instanceof TableImplementor<?> ?
+                        TableImplementor.joinedTypeBranchForeignKeyAlias(
+                                builder, (TableImplementor<?>) parent.owner, joinProp) :
+                        null;
                 if (optionalDefinition == null) {
-                    renderDefinition(
-                            builder,
-                            (RealTableImpl) parent,
-                            joinProp.getStorage(strategy),
-                            true,
-                            withPrefix,
-                            asBlock,
-                            readSupport,
-                            baseTableOwner
-                    );
+                    if (branchSourceAlias != null) {
+                        builder.definition(
+                                withPrefix ? branchSourceAlias : null,
+                                joinProp.getStorage(strategy),
+                                asBlock
+                        );
+                    } else {
+                        renderDefinition(
+                                builder,
+                                parent,
+                                joinProp.getStorage(strategy),
+                                true,
+                                withPrefix,
+                                asBlock,
+                                readSupport,
+                                baseTableOwner
+                        );
+                    }
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
                     ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
@@ -983,15 +999,22 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         }
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
-                        renderColumn(
-                                builder,
-                                (RealTableImpl) parent,
-                                parentColumnName,
-                                true,
-                                withPrefix,
-                                readSupport,
-                                baseTableOwner
-                        );
+                        if (branchSourceAlias != null) {
+                            if (withPrefix) {
+                                builder.sql(branchSourceAlias).sql(".");
+                            }
+                            builder.sql(parentColumnName);
+                        } else {
+                            renderColumn(
+                                    builder,
+                                    parent,
+                                    parentColumnName,
+                                    true,
+                                    withPrefix,
+                                    readSupport,
+                                    baseTableOwner
+                            );
+                        }
                         if (asBlock != null) {
                             builder.sql(" ").sql(asBlock.apply(i));
                         }

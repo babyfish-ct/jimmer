@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ScalarProviderUtils;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
@@ -364,12 +363,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             AbstractSqlBuilder<?> builder,
             TableImplementor<?> tableImplementor
     ) {
-        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
-        if (queryRenderContext != null) {
-            return queryRenderContext.isJoinedTypeBranchTableRequired(tableImplementor);
-        }
-        AstContext astContext = builder.getAstContext();
-        return astContext != null && astContext.isJoinedTypeBranchTableRendered(tableImplementor);
+        return TableImplementor.isJoinedTypeBranchTableRendered(builder, tableImplementor);
     }
 
     private static boolean isLoaded(Object value, List<ImmutableProp> props) {

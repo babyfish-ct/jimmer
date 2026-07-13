@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,7 @@ public class TableUsageCollector extends TableUsageVisitor {
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
         collectJoinedTypeBranchTableRequirement(table, prop);
+        collectJoinedTypeBranchJoinSourceRequirement(table);
         super.visitTableReference(table, prop, rawId);
     }
 
@@ -128,6 +130,32 @@ public class TableUsageCollector extends TableUsageVisitor {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
             if (tableImplementor.isJoinedTypeBranchTableRequiredBy(prop)) {
                 joinedTypeBranchTableRequirements.add(tableImplementor);
+            }
+        }
+    }
+
+    // A foreign key declared in a JOINED-inheritance subtype lives in the branch
+    // table, so any join that reads it as its raw parent id must force the parent's
+    // branch table to be rendered. Mirror the plain-column join conditions of
+    // RealTableImpl.renderJoin: skip inverse, middle-table and SQL-template joins,
+    // which never read a raw parent foreign key column.
+    private void collectJoinedTypeBranchJoinSourceRequirement(RealTable table) {
+        for (RealTable current = table; current != null; current = current.getParent()) {
+            TableLikeImplementor<?> implementor = current.getTableLikeImplementor();
+            if (!(implementor instanceof TableImplementor<?>)) {
+                return;
+            }
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+            ImmutableProp joinProp = tableImplementor.getJoinProp();
+            if (joinProp == null ||
+                    tableImplementor.isInverse() ||
+                    joinProp.isMiddleTableDefinition() ||
+                    joinProp.getSqlTemplate() instanceof JoinTemplate) {
+                continue;
+            }
+            RealTable parent = current.getParent();
+            if (parent != null) {
+                collectJoinedTypeBranchTableRequirement(parent, joinProp);
             }
         }
     }
