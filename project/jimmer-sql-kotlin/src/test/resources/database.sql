@@ -1,6 +1,10 @@
 drop table eyepiece if exists;
 drop table objective if exists;
 drop table camera if exists;
+drop table issue_1434_message if exists;
+drop table issue_1434_user_department_mapping if exists;
+drop table issue_1434_department if exists;
+drop table issue_1434_user if exists;
 drop table topic if exists;
 drop table contact if exists;
 drop table customer if exists;
@@ -1185,6 +1189,42 @@ alter table objective
 insert into camera(id, name) values(1, 'camera-1');
 insert into eyepiece(id, name, eye_relief, camera_id) values(1, 'eyepiece-1', 10, 1);
 insert into objective(id, name, working_distance, camera_id) values(1, 'objective-1', 2500, 1);
+
+create table issue_1434_user(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table issue_1434_user
+    add constraint pk_issue_1434_user
+        primary key(id);
+
+create table issue_1434_department(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table issue_1434_department
+    add constraint pk_issue_1434_department
+        primary key(id);
+
+create table issue_1434_user_department_mapping(
+    user_id bigint not null,
+    department_id bigint not null
+);
+alter table issue_1434_user_department_mapping
+    add constraint pk_issue_1434_user_department_mapping
+        primary key(user_id, department_id);
+
+create table issue_1434_message(
+    id bigint not null,
+    user_id bigint
+);
+alter table issue_1434_message
+    add constraint pk_issue_1434_message
+        primary key(id);
+
+insert into issue_1434_user(id, name) values(1, 'user-1');
+insert into issue_1434_department(id, name) values(1, 'department-1');
+insert into issue_1434_message(id, user_id) values(1, 1);
 
 create table monster(
      id int not null PRIMARY KEY,

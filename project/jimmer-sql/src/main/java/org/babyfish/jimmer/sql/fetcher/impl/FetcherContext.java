@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 class FetcherContext {
 
@@ -42,6 +43,19 @@ class FetcherContext {
             } finally {
                 FETCHER_CONTEXT_LOCAL.remove();
             }
+        }
+    }
+
+    static <T> T withoutContext(Supplier<T> supplier) {
+        FetcherContext ctx = FETCHER_CONTEXT_LOCAL.get();
+        if (ctx == null) {
+            return supplier.get();
+        }
+        FETCHER_CONTEXT_LOCAL.remove();
+        try {
+            return supplier.get();
+        } finally {
+            FETCHER_CONTEXT_LOCAL.set(ctx);
         }
     }
 

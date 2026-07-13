@@ -63,6 +63,10 @@ drop table "group" if exists;
 drop table unit if exists;
 drop table medicine if exists;
 drop alias contains_id if exists;
+drop table issue_1434_message if exists;
+drop table issue_1434_user_department_mapping if exists;
+drop table issue_1434_department if exists;
+drop table issue_1434_user if exists;
 drop table customer_card_mapping if exists;
 drop table shop_customer_mapping if exists;
 drop table shop_vendor_mapping if exists;
@@ -1744,6 +1748,44 @@ insert into medicine(id, tags) values(
     1,
     '[{"name": "tag-1", "description": "tag-description-1"},{"name": "tag-2", "description": "tag-description-2"}]' format json
 );
+
+
+
+create table issue_1434_user(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table issue_1434_user
+    add constraint pk_issue_1434_user
+        primary key(id);
+
+create table issue_1434_department(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table issue_1434_department
+    add constraint pk_issue_1434_department
+        primary key(id);
+
+create table issue_1434_user_department_mapping(
+    user_id bigint not null,
+    department_id bigint not null
+);
+alter table issue_1434_user_department_mapping
+    add constraint pk_issue_1434_user_department_mapping
+        primary key(user_id, department_id);
+
+create table issue_1434_message(
+    id bigint not null,
+    user_id bigint
+);
+alter table issue_1434_message
+    add constraint pk_issue_1434_message
+        primary key(id);
+
+insert into issue_1434_user(id, name) values(1, 'user-1');
+insert into issue_1434_department(id, name) values(1, 'department-1');
+insert into issue_1434_message(id, user_id) values(1, 1);
 
 
 
