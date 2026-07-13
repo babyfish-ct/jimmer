@@ -10,7 +10,10 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -248,6 +251,63 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
         return builder.alias(table.realTableForRender(builder)) + "_sub";
+    }
+
+    static boolean isJoinedTypeBranchTableRendered(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> table
+    ) {
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (queryRenderContext != null) {
+            return queryRenderContext.isJoinedTypeBranchTableRequired(table);
+        }
+        AstContext astContext = builder.getAstContext();
+        return astContext != null && astContext.isJoinedTypeBranchTableRendered(table);
+    }
+
+    /**
+     * When a table joins to a target through a foreign key whose column lives in
+     * the branch table of a JOINED-inheritance subtype (as opposed to the root
+     * table), the raw-id join optimization must read that foreign key from the
+     * branch table alias instead of the root alias.
+     *
+     * @return the branch table alias to read the foreign key column from, or
+     * {@code null} when the table is inverse-joined or its parent is not such a
+     * subtype-branch table or its branch table is not rendered.
+     */
+    @Nullable
+    static String joinedTypeBranchForeignKeyAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> table
+    ) {
+        if (table.isInverse()) {
+            return null;
+        }
+        return joinedTypeBranchForeignKeyAlias(builder, table.getParent(), table.getJoinProp());
+    }
+
+    /**
+     * The variant of {@link #joinedTypeBranchForeignKeyAlias(AbstractSqlBuilder, TableImplementor)}
+     * for call sites where the join source and the join property are already known
+     * and the inverse case is excluded by the caller.
+     */
+    @Nullable
+    static String joinedTypeBranchForeignKeyAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> parent,
+            ImmutableProp joinProp
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null ||
+                parent == null ||
+                joinProp == null ||
+                parent.isTreated() ||
+                astContext.isJoinedTypeBranchUpdateTarget(parent) ||
+                !parent.isJoinedTypeBranchTableRequiredBy(joinProp) ||
+                !isJoinedTypeBranchTableRendered(builder, parent)) {
+            return null;
+        }
+        return joinedTypeBranchAlias(builder.assertSimple(), parent);
     }
 
     void setHasBaseTable();
