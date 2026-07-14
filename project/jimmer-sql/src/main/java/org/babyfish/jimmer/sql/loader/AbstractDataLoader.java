@@ -904,13 +904,16 @@ public abstract class AbstractDataLoader {
             Collection<ImmutableSpi> sources,
             TransientResolverContext ctx
     ) {
-        Map<Object, Object> valueMap;
-        if (resolver instanceof TypedTransientResolver<?, ?, ?> && sources != null) {
-            TypedTransientResolver.Context<Object> context = new TypedTransientResolverContextImpl<>(sources);
-            valueMap = ((TypedTransientResolver<Object, Object, Object>) resolver).resolve(ids, context);
-        } else {
-            valueMap = resolver.resolve(ids, ctx);
-        }
+        // The resolver may execute queries with fetchers and use their results immediately.
+        // Those nested post-fetch tasks must be completed by their own fetcher context,
+        // not appended to the outer context that is still resolving this transient property.
+        Map<Object, Object> valueMap = FetcherUtil.withoutFetcherContext(() -> {
+            if (resolver instanceof TypedTransientResolver<?, ?, ?> && sources != null) {
+                TypedTransientResolver.Context<Object> context = new TypedTransientResolverContextImpl<>(sources);
+                return ((TypedTransientResolver<Object, Object, Object>) resolver).resolve(ids, context);
+            }
+            return resolver.resolve(ids, ctx);
+        });
 
         if (valueMap.keySet().containsAll(ids)) {
             return valueMap;

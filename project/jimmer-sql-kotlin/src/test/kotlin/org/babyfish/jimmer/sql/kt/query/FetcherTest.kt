@@ -14,11 +14,49 @@ import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.fetchBy
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.DependencyView
+import org.babyfish.jimmer.sql.kt.model.fetcher.Issue1434Message
+import org.babyfish.jimmer.sql.kt.model.fetcher.fetchBy
 import org.babyfish.jimmer.sql.kt.model.fetchBy
 import org.babyfish.jimmer.sql.kt.model.`parent?`
 import org.junit.Test
 
 class FetcherTest : AbstractQueryTest() {
+
+    @Test
+    fun testNestedFetcherInTransientResolverWhenUserHasNoDepartments() {
+        executeAndExpect(
+            sqlClient.createQuery(Issue1434Message::class) {
+                select(
+                    table.fetchBy {
+                        userDepartmentNames()
+                    }
+                )
+            }
+        ) {
+            sql("select tb_1_.ID from ISSUE_1434_MESSAGE tb_1_")
+            statement(1).sql(
+                "select tb_1_.ID, tb_1_.USER_ID " +
+                    "from ISSUE_1434_MESSAGE tb_1_ " +
+                    "where tb_1_.ID = ?"
+            ).variables(1L)
+            statement(2).sql(
+                "select tb_1_.ID " +
+                    "from ISSUE_1434_USER tb_1_ " +
+                    "where tb_1_.ID = ?"
+            ).variables(1L)
+            statement(3).sql(
+                "select tb_1_.ID, tb_1_.NAME " +
+                    "from ISSUE_1434_DEPARTMENT tb_1_ " +
+                    "inner join ISSUE_1434_USER_DEPARTMENT_MAPPING tb_2_ on tb_1_.ID = tb_2_.DEPARTMENT_ID " +
+                    "where tb_2_.USER_ID = ?"
+            ).variables(1L)
+            rows(
+                "[" +
+                    "--->{\"id\":1,\"userDepartmentNames\":\"\"}" +
+                    "]"
+            )
+        }
+    }
 
     @Test
     fun testWithoutFilter() {
