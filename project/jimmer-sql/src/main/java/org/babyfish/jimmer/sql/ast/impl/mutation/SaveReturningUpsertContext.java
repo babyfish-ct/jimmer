@@ -121,14 +121,6 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
     }
 
     @Override
-    public Dialect.UpsertContext appendUpdateConditionWithTableName(
-            String sourcePrefix,
-            String sourceSuffix
-    ) {
-        return appendUpdateCondition(tableName() + ".", "", sourcePrefix, sourceSuffix);
-    }
-
-    @Override
     public Dialect.UpsertContext appendInsertedColumns(String prefix) {
         for (SaveReturningColumnValue sourceValue : returning.sourceValues) {
             builder.separator().sql(prefix).sql(sourceValue.getter);
@@ -196,32 +188,14 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
 
     @Override
     public Dialect.UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix) {
-        return appendFakeUpdateAssignment(targetPrefix, targetSuffix, false);
-    }
-
-    @Override
-    public Dialect.UpsertContext appendFakeUpdateAssignmentWithTargetTableName() {
-        return appendFakeUpdateAssignment(null, null, true);
-    }
-
-    private Dialect.UpsertContext appendFakeUpdateAssignment(
-            String targetPrefix,
-            String targetSuffix,
-            boolean withTargetTableName
-    ) {
         PropertyGetter getter = Operator.fakeUpdateGetter(returning.ctx.options.getSqlClient(), returning.tableType);
         builder.sql(Dialect.FAKE_UPDATE_COMMENT)
                 .sql(" ")
                 .sql(getter)
                 .sql(" = ")
-                .sql(withTargetTableName ? tableName() : targetPrefix);
-        if (withTargetTableName) {
-            builder.sql(".");
-        }
-        builder.sql(getter);
-        if (!withTargetTableName) {
-            builder.sql(targetSuffix);
-        }
+                .sql(targetPrefix)
+                .sql(getter)
+                .sql(targetSuffix);
         return this;
     }
 

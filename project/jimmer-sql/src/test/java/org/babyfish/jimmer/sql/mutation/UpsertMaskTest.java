@@ -65,6 +65,8 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         .saveCommand(
                                 Immutables.createBook(draft -> {
                                     draft.setId(Constants.graphQLInActionId3);
+                                    draft.setName("GraphQL in Action");
+                                    draft.setEdition(3);
                                     draft.setPrice(BigDecimal.ONE);
                                 })
                         )
@@ -76,8 +78,10 @@ public class UpsertMaskTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK(ID, PRICE) values(?, ?) " +
-                                        "on conflict(ID) do update set PRICE = PRICE + ?"
+                                "insert into BOOK as tb_1_(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?) " +
+                                        "on conflict(ID) do update set " +
+                                        "NAME = excluded.NAME, EDITION = excluded.EDITION, " +
+                                        "PRICE = tb_1_.PRICE + ?"
                         );
                     });
                     ctx.entity(it -> {

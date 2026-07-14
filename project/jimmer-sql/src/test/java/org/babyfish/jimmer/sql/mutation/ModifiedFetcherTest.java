@@ -1424,7 +1424,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                "insert into SYS_USER as tb_1_(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
                                         "values(?, ?, ?, ?, ?) " +
                                         "on conflict(ID) do update set " +
                                         "ACCOUNT = excluded.ACCOUNT, " +
@@ -1471,14 +1471,14 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                "insert into SYS_USER as tb_1_(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
                                         "values(?, ?, ?, ?, ?) " +
                                         "on conflict(ID) do update set " +
                                         "ACCOUNT = excluded.ACCOUNT, " +
                                         "EMAIL = excluded.EMAIL, " +
                                         "AREA = excluded.AREA, " +
                                         "NICK_NAME = excluded.NICK_NAME " +
-                                        "where SYS_USER.ACCOUNT <> excluded.ACCOUNT " +
+                                        "where tb_1_.ACCOUNT <> excluded.ACCOUNT " +
                                         "returning ID, DESCRIPTION"
                         );
                     });
@@ -1520,14 +1520,14 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
+                                "insert into SYS_USER as tb_1_(ID, ACCOUNT, EMAIL, AREA, NICK_NAME) " +
                                         "values(?, ?, ?, ?, ?) " +
                                         "on conflict(ID) do update set " +
                                         "ACCOUNT = excluded.ACCOUNT, " +
                                         "EMAIL = excluded.EMAIL, " +
                                         "AREA = excluded.AREA, " +
                                         "NICK_NAME = excluded.NICK_NAME " +
-                                        "where SYS_USER.ACCOUNT <> ?"
+                                        "where tb_1_.ACCOUNT <> ?"
                         );
                     });
                     ctx.statement(it -> {

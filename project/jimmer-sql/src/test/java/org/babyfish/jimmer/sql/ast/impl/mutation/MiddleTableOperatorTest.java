@@ -872,7 +872,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                "insert into BOOK_AUTHOR_MAPPING as tb_1_(BOOK_ID, AUTHOR_ID) " +
                                         "values(?, ?) on conflict(BOOK_ID, AUTHOR_ID) do nothing"
                         );
                         it.batchVariables(0, learningGraphQLId1, alexId);

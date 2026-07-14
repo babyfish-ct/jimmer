@@ -3206,31 +3206,13 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix) {
-            return appendFakeUpdateAssignment(targetPrefix, targetSuffix, false);
-        }
-
-        @Override
-        public Dialect.UpsertContext appendFakeUpdateAssignmentWithTargetTableName() {
-            return appendFakeUpdateAssignment(null, null, true);
-        }
-
-        private Dialect.UpsertContext appendFakeUpdateAssignment(
-                String targetPrefix,
-                String targetSuffix,
-                boolean withTargetTableName
-        ) {
             builder.sql(Dialect.FAKE_UPDATE_COMMENT)
                     .sql(" ")
                     .sql(fakeUpdateGetter)
                     .sql(" = ")
-                    .sql(withTargetTableName ? tableName() : targetPrefix);
-            if (withTargetTableName) {
-                builder.sql(".");
-            }
-            builder.sql(fakeUpdateGetter);
-            if (!withTargetTableName) {
-                builder.sql(targetSuffix);
-            }
+                    .sql(targetPrefix)
+                    .sql(fakeUpdateGetter)
+                    .sql(targetSuffix);
             return this;
         }
 
@@ -3311,14 +3293,6 @@ class Operator {
                         .sql(sourceSuffix);
             }
             return this;
-        }
-
-        @Override
-        public Dialect.UpsertContext appendUpdateConditionWithTableName(
-                String sourcePrefix,
-                String sourceSuffix
-        ) {
-            return appendUpdateCondition(tableName() + ".", "", sourcePrefix, sourceSuffix);
         }
 
         private void appendConditionalUpdatingAssignment(

@@ -292,6 +292,7 @@ public class PostgresDialect extends DefaultDialect {
     public void upsert(UpsertContext ctx) {
         ctx.sql("insert into ")
                 .appendTableName()
+                .sql(" as tb_1_")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("")
                 .leave()
@@ -314,10 +315,10 @@ public class PostgresDialect extends DefaultDialect {
         } else if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update")
                     .enter(AbstractSqlBuilder.ScopeType.SET)
-                    .appendUpdatingAssignments("", "", "excluded.", "")
+                    .appendUpdatingAssignments("tb_1_.", "", "excluded.", "")
                     .leave();
             if (ctx.hasUpdateCondition()) {
-                ctx.sql(" where ").appendUpdateConditionWithTableName("excluded.", "");
+                ctx.sql(" where ").appendUpdateCondition("tb_1_.", "", "excluded.", "");
             }
             if (ctx.isCurrentRowReturningRequired()) {
                 ctx.sql(" returning ").appendReturning("");
@@ -325,7 +326,7 @@ public class PostgresDialect extends DefaultDialect {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
-            ctx.sql(" do update set ").appendFakeUpdateAssignmentWithTargetTableName();
+            ctx.sql(" do update set ").appendFakeUpdateAssignment("tb_1_.", "");
             if (ctx.isCurrentRowReturningRequired()) {
                 ctx.sql(" returning ").appendReturning("");
             } else if (ctx.hasGeneratedId()) {

@@ -1061,7 +1061,7 @@ public class OperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK(" +
+                                "insert into BOOK as tb_1_(" +
                                         "--->ID, NAME, EDITION, PRICE" +
                                         ") values(" +
                                         "--->?, ?, ?, ?" +
@@ -1136,7 +1136,7 @@ public class OperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into MACHINE(" +
+                                "insert into MACHINE as tb_1_(" +
                                         "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
                                         ") values(" +
                                         "--->?, ?, ?, ?, ?, ?, ?" +

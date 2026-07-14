@@ -75,7 +75,7 @@ public class BooleanLogicalDeletedKeyUpsertTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOL_KEY_FILE(PATH, NAME, DELETED) " +
+                                "insert into BOOL_KEY_FILE as tb_1_(PATH, NAME, DELETED) " +
                                         "values(?, ?, ?) " +
                                         "on conflict(PATH) where DELETED = false " +
                                         "do update set NAME = excluded.NAME " +
