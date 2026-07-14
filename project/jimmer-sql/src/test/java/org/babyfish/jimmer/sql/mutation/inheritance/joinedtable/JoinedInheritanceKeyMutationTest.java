@@ -1,16 +1,12 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.UpsertMask;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyClient;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyClientFetcher;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyOrganizationFetcher;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyOrganizationDraft;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyPersonFetcher;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.KeyPersonDraft;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.key.*;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -108,6 +104,52 @@ public class JoinedInheritanceKeyMutationTest extends AbstractMutationTest {
                     });
                     ctx.value("[400, ORG, same-code, Key Globex+, KEY-GLOBEX-003, null, null]; " +
                             "[401, KeyPerson, same-code, Key Alice, null, Key Alice, Smith]");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertDerivedTypeByKeyWithEmptyUpdateMasks() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                            .getEntities()
+                            .saveCommand(
+                                    KeyOrganizationDraft.$.produce(organization -> {
+                                        organization.setCode("same-code");
+                                        organization.setName("Ignored root value");
+                                        organization.setTaxCode("IGNORED-DERIVED-VALUE");
+                                    })
+                            )
+                            .setUpsertMask(UpsertMask.of(KeyClient.class).forbidUpdate())
+                            .setUpsertMask(UpsertMask.of(KeyOrganization.class).forbidUpdate())
+                            .execute(con);
+                    return joinedKeyClientRow(con, "ORG", "same-code");
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(CLIENT_TYPE, CODE, NAME) " +
+                                        "on tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE and tb_1_.CODE = tb_2_.CODE " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set " +
+                                        "/* fake update to return all ids */ CLIENT_TYPE = tb_1_.CLIENT_TYPE " +
+                                        "when not matched then insert(CLIENT_TYPE, CODE, NAME) " +
+                                        "values(tb_2_.CLIENT_TYPE, tb_2_.CODE, tb_2_.NAME)"
+                        );
+                        it.variables("ORG", "same-code", "Ignored root value");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into JOINED_KEY_ORGANIZATION tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.TAX_CODE)"
+                        );
+                        it.variables(400L, "IGNORED-DERIVED-VALUE");
+                    });
+                    ctx.value("[400, ORG, same-code, Key Globex, KEY-GLOBEX-001, null, null]");
                 }
         );
     }

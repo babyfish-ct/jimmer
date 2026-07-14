@@ -150,6 +150,37 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateAbstractRootWithAssignmentExpression() {
+        connectAndExpect(
+                con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    ClientDraft.$.produce(client -> {
+                                        client.setId(100L);
+                                        client.setName("!");
+                                    })
+                            )
+                            .setMode(SaveMode.UPDATE_ONLY)
+                            .set(
+                                    ClientTable.class,
+                                    ClientProps.NAME,
+                                    (target, values) -> target.name().concat(values.newString(ClientProps.NAME))
+                            )
+                            .execute(con);
+                    return clientRow(con, 100L);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update CLIENT set NAME = concat(NAME, ?) where ID = ?");
+                        it.variables("!", 100L);
+                    });
+                    ctx.value("[ORG, Acme!, ACME-001, null, null]");
+                }
+        );
+    }
+
+    @Test
     public void testUpdateAbstractRootByDefaultInputWithoutDiscriminator() {
         connectAndExpect(
                 con -> {

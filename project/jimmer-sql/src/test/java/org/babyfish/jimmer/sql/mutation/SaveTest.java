@@ -2,29 +2,26 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import static org.babyfish.jimmer.sql.common.Constants.*;
-
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.exception.SaveErrorCode;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
+import org.babyfish.jimmer.sql.model.inheritance.NamedEntity;
+import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
 import org.babyfish.jimmer.sql.model.issue1084.DocumentStorage;
 import org.babyfish.jimmer.sql.model.issue1084.DocumentStorageDraft;
 import org.babyfish.jimmer.sql.model.wild.Task;
 import org.babyfish.jimmer.sql.model.wild.TaskDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
-import org.babyfish.jimmer.sql.exception.SaveErrorCode;
-import org.babyfish.jimmer.sql.exception.SaveException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -36,6 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.babyfish.jimmer.sql.common.Constants.*;
+
 public class SaveTest extends AbstractMutationTest {
 
     @Test
@@ -43,7 +42,7 @@ public class SaveTest extends AbstractMutationTest {
         UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
-                        BookStoreDraft.$.produce(store-> {
+                        BookStoreDraft.$.produce(store -> {
                             store.setId(newId);
                             store.setName("TURING");
                             store.setWebsite(null);
@@ -183,6 +182,93 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
                 }
         );
+    }
+
+    @Test
+    public void testUpdateWithAssignmentExpression() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(graphQLInActionId3);
+                                    book.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = PRICE + ? where ID = ?");
+                        it.variables(BigDecimal.ONE, graphQLInActionId3);
+                    });
+                    ctx.totalRowCount(1);
+                    ctx.rowCount(AffectedTable.of(Book.class), 1);
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchUpdateWithAssignmentExpression() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveEntitiesCommand(
+                                Arrays.asList(
+                                        BookDraft.$.produce(book -> {
+                                            book.setId(graphQLInActionId3);
+                                            book.setPrice(BigDecimal.ONE);
+                                        }),
+                                        BookDraft.$.produce(book -> {
+                                            book.setId(learningGraphQLId1);
+                                            book.setPrice(BigDecimal.TEN);
+                                        })
+                                )
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = PRICE + ? where ID = ?");
+                        it.batchVariables(0, BigDecimal.ONE, graphQLInActionId3);
+                        it.batchVariables(1, BigDecimal.TEN, learningGraphQLId1);
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Book.class), 2);
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUnloadedAssignmentTargetInAssociationGraph() {
+        IllegalArgumentException ex = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> jdbc(null, true, con -> getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookStoreDraft.$.produce(store -> {
+                                    store.setId(oreillyId);
+                                    store.addIntoBooks(book -> book.setId(graphQLInActionId3));
+                                })
+                        )
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(BigDecimal.ONE)
+                        )
+                        .execute(con))
+        );
+        Assertions.assertTrue(ex.getMessage().contains("is not selected for update"), ex.getMessage());
     }
 
     @Test
@@ -540,14 +626,14 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":0," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}" +
-                                "]" +
-                                "}"
+                                        "\"name\":\"O'REILLY\"," +
+                                        "\"version\":0," +
+                                        "\"books\":[" +
+                                        "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
+                                        "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
+                                        "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
@@ -950,7 +1036,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.detail(ex -> {
                             Assertions.assertEquals(
                                     SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
-                                    ((SaveException)ex).getSaveErrorCode()
+                                    ((SaveException) ex).getSaveErrorCode()
                             );
                         });
                     });
@@ -989,10 +1075,41 @@ public class SaveTest extends AbstractMutationTest {
                         it.detail(ex -> {
                             Assertions.assertEquals(
                                     SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
-                                    ((SaveException)ex).getSaveErrorCode()
+                                    ((SaveException) ex).getSaveErrorCode()
                             );
                         });
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testAssignmentExpressionWithGeneralOptimisticLock() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(graphQLInActionId3);
+                                    book.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .setOptimisticLock(
+                                BookTable.class,
+                                (table, values) -> table.price().le(values.newValue(BookProps.PRICE))
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = PRICE + ? where ID = ? and PRICE <= ?");
+                        it.variables(BigDecimal.ONE, graphQLInActionId3, BigDecimal.ONE);
+                    });
+                    ctx.throwable(it -> it.type(SaveException.class));
                 }
         );
     }
@@ -1047,8 +1164,10 @@ public class SaveTest extends AbstractMutationTest {
                                         ")"
                         );
                     });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -1066,7 +1185,7 @@ public class SaveTest extends AbstractMutationTest {
                         .setOptimisticLock(BookStoreTable.class, UnloadedVersionBehavior.INCREASE, (table, it) -> {
                             return Predicate.sql(
                                     "char_length(%e) < char_length(%e)",
-                                    new Expression<?>[] {
+                                    new Expression<?>[]{
                                             table.name(),
                                             it.newString(BookStoreProps.NAME)
                                     }
@@ -1112,17 +1231,17 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK_STORE " +
-                                "set VERSION = VERSION + 1 " +
-                                "where ID = ? and " +
-                                "NAME = ?"
+                                        "set VERSION = VERSION + 1 " +
+                                        "where ID = ? and " +
+                                        "NAME = ?"
                         );
                         it.variables(manningId, "MANNING");
                     });
                     ctx.entity(it -> {
                         it.modified(
                                 "{" +
-                                "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
-                                "}"
+                                        "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                        "}"
                         );
                     });
                 }
@@ -1143,7 +1262,7 @@ public class SaveTest extends AbstractMutationTest {
                         .setOptimisticLock(BookStoreTable.class, (table, it) -> {
                             return Predicate.sql(
                                     "char_length(%e) < char_length(%e)",
-                                    new Expression<?>[] {
+                                    new Expression<?>[]{
                                             table.name(),
                                             it.newString(BookStoreProps.NAME)
                                     }
@@ -1230,17 +1349,17 @@ public class SaveTest extends AbstractMutationTest {
     @Test
     public void testSaveNullParent() {
         SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
-                jdbc(null, true, con -> {
-                    getSqlClient()
-                            .getEntities()
-                            .saveCommand(
-                                    AdministratorMetadataDraft.$.produce(metadata -> {
-                                        metadata.setName("am_4");
-                                        metadata.setAdministrator((Administrator) null);
-                                    })
-                            )
-                            .execute(con);
-                });
+            jdbc(null, true, con -> {
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                AdministratorMetadataDraft.$.produce(metadata -> {
+                                    metadata.setName("am_4");
+                                    metadata.setAdministrator((Administrator) null);
+                                })
+                        )
+                        .execute(con);
+            });
         });
         Assertions.assertEquals(
                 "Save error caused by the path: \"<root>.administrator\": " +
@@ -1397,10 +1516,14 @@ public class SaveTest extends AbstractMutationTest {
                         it.batchVariables(2, 50L, "Upgrade database", 1L);
                         it.batchVariables(3, 51L, "Upgrade redis", 1L);
                     });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
+                    ctx.entity(it -> {
+                    });
                     ctx.entity(it -> {
                         it.modified(entity -> {
                             Task task = (Task) entity;
@@ -1425,9 +1548,9 @@ public class SaveTest extends AbstractMutationTest {
     public void testIssue1084() {
         NativeDatabases.assumeNativeDatabase();
         DocumentStorage storage = DocumentStorageDraft.$.produce(draft -> {
-           draft.setId(1L);
-           draft.setFileName("uid.bat");
-           draft.setFileContent(new byte[] {9, 8, 7});
+            draft.setId(1L);
+            draft.setFileName("uid.bat");
+            draft.setFileContent(new byte[]{9, 8, 7});
         });
         executeAndExpectResult(
                 NativeDatabases.MYSQL_DATA_SOURCE,

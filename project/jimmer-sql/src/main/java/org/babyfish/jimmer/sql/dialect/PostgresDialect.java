@@ -314,7 +314,7 @@ public class PostgresDialect extends DefaultDialect {
         } else if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update")
                     .enter(AbstractSqlBuilder.ScopeType.SET)
-                    .appendUpdatingAssignments("excluded.", "")
+                    .appendUpdatingAssignments("", "", "excluded.", "")
                     .leave();
             if (ctx.hasUpdateCondition()) {
                 ctx.sql(" where ").appendUpdateConditionWithTableName("excluded.", "");

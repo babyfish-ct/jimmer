@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
@@ -10,6 +8,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.OneToMany;
 import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -130,6 +129,47 @@ abstract class AbstractEntitySaveCommandImpl
             Objects.requireNonNull(mask, "mask cannot be null");
             UpsertMaskCfg p = prev.as(UpsertMaskCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, mask.getType(), mask);
+        }
+    }
+
+    static class AssignmentCfg extends Cfg {
+
+        final MapNode<ImmutableProp, SaveAssignmentLambda> mapNode;
+
+        AssignmentCfg(
+                Cfg prev,
+                ImmutableProp prop,
+                ImmutableType type,
+                SaveAssignmentExpression<?, ?, ?> expression
+        ) {
+            super(prev);
+            if (type != prop.getDeclaringType()) {
+                throw new IllegalArgumentException(
+                        "The table type does not match the declaring type of save assignment target \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (!prop.isColumnDefinition() ||
+                    prop.isId() ||
+                    prop.isVersion() ||
+                    prop.isLogicalDeleted() ||
+                    prop.isDiscriminator()) {
+                throw new IllegalArgumentException(
+                        "The property \"" + prop + "\" cannot be a save assignment target"
+                );
+            }
+            AssignmentCfg p = prev.as(AssignmentCfg.class);
+            if (p != null && p.mapNode.containsKey(prop)) {
+                throw new IllegalArgumentException(
+                        "The save assignment target \"" + prop + "\" is configured more than once"
+                );
+            }
+            this.mapNode = new MapNode<>(
+                    p != null ? p.mapNode : null,
+                    prop,
+                    new SaveAssignmentLambda(type, expression)
+            );
         }
     }
 
@@ -442,6 +482,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, UpsertMask<?>> upsertMaskMap;
 
+        private final Map<ImmutableProp, SaveAssignmentLambda> assignmentMap;
+
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
         private final boolean autoCheckingAll;
@@ -507,6 +549,7 @@ abstract class AbstractEntitySaveCommandImpl
             MaxCommandJoinCountCfg maxCommandJoinCountCfg = cfg.as(MaxCommandJoinCountCfg.class);
             KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
             UpsertMaskCfg upsertMaskCfg = cfg.as(UpsertMaskCfg.class);
+            AssignmentCfg assignmentCfg = cfg.as(AssignmentCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
             IdOnlyAsReferenceCfg idOnlyAsReferenceCfg = cfg.as(IdOnlyAsReferenceCfg.class);
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
@@ -546,6 +589,12 @@ abstract class AbstractEntitySaveCommandImpl
                     sqlClient.getMaxCommandJoinCount();
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
             this.upsertMaskMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
+            this.assignmentMap = MapNode.toMap(assignmentCfg, it -> it.mapNode);
+            if (this.mode == SaveMode.INSERT_ONLY && !this.assignmentMap.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Save assignment expressions cannot be used with INSERT_ONLY mode"
+                );
+            }
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.idOnlyAsReferenceMap = MapNode.toMap(idOnlyAsReferenceCfg, it -> it.mapNode);
@@ -668,6 +717,16 @@ abstract class AbstractEntitySaveCommandImpl
         @Nullable
         public UpsertMask<?> getUpsertMask(ImmutableType type) {
             return upsertMaskMap.get(type);
+        }
+
+        @Override
+        public SaveAssignmentLambda getAssignment(ImmutableProp prop) {
+            return assignmentMap.get(prop);
+        }
+
+        @Override
+        public Map<ImmutableProp, SaveAssignmentLambda> getAssignments() {
+            return assignmentMap;
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -829,6 +888,7 @@ abstract class AbstractEntitySaveCommandImpl
                     mode,
                     associatedMode,
                     associatedModeMap,
+                    assignmentMap,
                     targetTransferModeMap,
                     targetTransferModeAll,
                     typeMatchMode,
@@ -876,6 +936,7 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedTypeChangeAllowedPropMap.equals(other.associatedTypeChangeAllowedPropMap) &&
                     associatedTypeChangeAllowedTypeMap.equals(other.associatedTypeChangeAllowedTypeMap) &&
                     associatedModeMap.equals(other.associatedModeMap) &&
+                    assignmentMap.equals(other.assignmentMap) &&
                     keyMatcherMap.equals(other.keyMatcherMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
                     dissociateActionMap.equals(other.dissociateActionMap) &&
@@ -889,6 +950,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", mode=" + mode +
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
+                    ", assignmentMap=" + assignmentMap +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", targetTransferModeAll=" + targetTransferModeAll +
                     ", typeMatchMode=" + typeMatchMode +

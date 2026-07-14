@@ -80,12 +80,19 @@ class SaveReturningUpdateContext implements Dialect.UpdateByValuesContext {
                     .sql(getter)
                     .sql(" = null");
         }
-        for (PropertyGetter getter : returning.updatedGetters) {
+        for (SaveAssignment assignment : returning.update.assignments) {
+            PropertyGetter getter = assignment.target;
             builder.separator()
                     .sql(getter)
-                    .sql(" = ")
-                    .sql(sourcePrefix)
-                    .sql(getter);
+                    .sql(" = ");
+            Operator.renderAssignmentValue(
+                    builder,
+                    assignment,
+                    targetPrefix,
+                    "",
+                    sourcePrefix,
+                    ""
+            );
         }
         if (returning.versionGetter != null) {
             builder.separator()

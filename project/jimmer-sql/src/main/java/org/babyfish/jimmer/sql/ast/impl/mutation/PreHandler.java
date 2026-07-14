@@ -189,6 +189,7 @@ abstract class AbstractPreHandler implements PreHandler {
         }
         if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
             if (ctx.options.isIdOnlyAsReference(prop) &&
+                    !ctx.options.hasAssignment(draft.__type()) &&
                     ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
                     !hasNonIdValues.get()
             ) {

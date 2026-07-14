@@ -353,7 +353,12 @@ public interface Dialect extends SqlTypeStrategy {
                     .appendInsertingValues()
                     .leave();
         }
-        UpsertContext appendUpdatingAssignments(String prefix, String suffix);
+        UpsertContext appendUpdatingAssignments(
+                String targetPrefix,
+                String targetSuffix,
+                String sourcePrefix,
+                String sourceSuffix
+        );
         UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix);
         UpsertContext appendFakeUpdateAssignmentWithTargetTableName();
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);

@@ -270,6 +270,9 @@ public class Saver {
             return false;
         }
         for (DraftSpi draft : drafts) {
+            if (ctx.options.hasAssignment(draft.__type())) {
+                return false;
+            }
             if (!draft.__isLoaded(draft.__type().getIdProp().getId())) {
                 return false;
             }
