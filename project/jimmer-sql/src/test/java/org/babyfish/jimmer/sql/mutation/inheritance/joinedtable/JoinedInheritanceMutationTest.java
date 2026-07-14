@@ -395,6 +395,70 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpsertDerivedTypeWithAssignmentExpressionAndLoadedFetcher() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(200L);
+                                    organization.setName("Globex All Loaded");
+                                    organization.setDescription("Description");
+                                    organization.setTaxCode("-X");
+                                    organization.setStatus("ACTIVE");
+                                })
+                        )
+                        .set(
+                                OrganizationTable.class,
+                                OrganizationProps.TAX_CODE,
+                                (target, values) -> target.taxCode().concat(
+                                        values.newString(OrganizationProps.TAX_CODE)
+                                )
+                        )
+                        .execute(con, OrganizationFetcher.$.allScalarFields())
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, CLIENT_TYPE from final table (" +
+                                        "merge into JOINED_CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, NAME, DESCRIPTION, CLIENT_TYPE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE then update set " +
+                                        "NAME = tb_2_.NAME, DESCRIPTION = tb_2_.DESCRIPTION " +
+                                        "when not matched then insert(ID, NAME, DESCRIPTION, CLIENT_TYPE) " +
+                                        "values(tb_2_.ID, tb_2_.NAME, tb_2_.DESCRIPTION, tb_2_.CLIENT_TYPE)" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, TAX_CODE from final table (" +
+                                        "merge into JOINED_ORGANIZATION tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, TAX_CODE, STATUS) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then update set " +
+                                        "TAX_CODE = concat(tb_1_.TAX_CODE, tb_2_.TAX_CODE), STATUS = tb_2_.STATUS " +
+                                        "when not matched then insert(ID, TAX_CODE, STATUS) " +
+                                        "values(tb_2_.ID, tb_2_.TAX_CODE, tb_2_.STATUS)" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"type\":\"ORG\"," +
+                                    "--->\"id\":200," +
+                                    "--->\"name\":\"Globex All Loaded\"," +
+                                    "--->\"description\":\"Description\"," +
+                                    "--->\"taxCode\":\"GLOBEX-001-X\"," +
+                                    "--->\"status\":\"ACTIVE\"" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testUpsertDerivedTypeMismatchWithStageReturningDoesNotMaterializeExistingRow() {
         connectAndExpect(
                 con -> {

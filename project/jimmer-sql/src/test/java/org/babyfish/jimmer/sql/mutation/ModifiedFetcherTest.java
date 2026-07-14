@@ -595,6 +595,47 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testSaveReturningByAssignmentExpressionWhenFetcherFieldsAreLoaded() {
+        connectAndExpect(
+                con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setPrice(BigDecimal.ONE);
+                        }))
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .set(
+                                BookTable.class,
+                                BookProps.PRICE,
+                                (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
+                        )
+                        .execute(
+                                con,
+                                BookFetcher.$.price()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID, PRICE " +
+                                        "from final table (" +
+                                        "--->merge into BOOK tb_1_ " +
+                                        "--->using(values(?, ?)) tb_2_(ID, PRICE) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "--->when matched then update set PRICE = tb_1_.PRICE + tb_2_.PRICE" +
+                                        ")"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"price\":81.00" +
+                                    "}"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testSaveReturningByUserOptimisticLockFailed() {
         connectAndExpect(
                 con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
