@@ -2050,6 +2050,8 @@ class DtoGenerator private constructor(
                 }
             }
 
+            "null", "notNull" -> BOOLEAN
+
             "valueIn", "valueNotIn" ->
                 LIST.parameterizedBy(baseProp.typeName())
 
@@ -2343,13 +2345,16 @@ class DtoGenerator private constructor(
 
     private val DtoProp<ImmutableType, ImmutableProp>.dtoConverterMetadata: ConverterMetadata?
         get() {
+            val funcName = getFuncName()
+            if ("null" == funcName || "notNull" == funcName) {
+                return null
+            }
             val baseProp = toTailProp().getBaseProp()
             val resolver = baseProp.ctx.resolver
             val metadata = baseProp.converterMetadata
             if (metadata != null) {
                 return metadata
             }
-            val funcName = getFuncName()
             if ("id" == funcName) {
                 val metadata = baseProp.targetType!!.idProp!!.converterMetadata
                 if (metadata != null && baseProp.isList && !dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
