@@ -15,13 +15,9 @@ import org.babyfish.jimmer.sql.kt.model.addBy
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
-import org.babyfish.jimmer.sql.kt.model.classic.book.Book
-import org.babyfish.jimmer.sql.kt.model.classic.book.addBy
-import org.babyfish.jimmer.sql.kt.model.classic.book.by
-import org.babyfish.jimmer.sql.kt.model.classic.book.edition
+import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
-import org.babyfish.jimmer.sql.kt.model.classic.store.version
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator
@@ -358,6 +354,56 @@ class SaveCommandTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testAssignmentExpression() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                Book {
+                    id = 1L
+                    price = BigDecimal("49.9")
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                set(Book::price) {
+                    target.price + newNonNull(Book::price)
+                }
+            }
+        }) {
+            statement {
+                sql("update BOOK set PRICE = PRICE + ? where ID = ?")
+                variables(BigDecimal("49.9"), 1L)
+            }
+            totalRowCount(1)
+            rowCount(Book::class, 1)
+            entity { }
+        }
+    }
+
+    @Test
+    fun testNullableAssignmentExpression() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.forConnection(con).save(
+                BookStore {
+                    id = 1L
+                    website = "https://unused.example"
+                }
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setNullable(BookStore::website) {
+                    target.website
+                }
+            }
+        }) {
+            statement {
+                sql("update BOOK_STORE set WEBSITE = WEBSITE where ID = ?")
+                variables(1L)
+            }
+            totalRowCount(1)
+            rowCount(BookStore::class, 1)
+            entity { }
+        }
+    }
+
+    @Test
     fun testOptimisticLock() {
         executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).save(
@@ -434,7 +480,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 website = "https://www.manning.com"
             }
         )
-        executeAndExpectResult({con ->
+        executeAndExpectResult({ con ->
             sqlClient.entities.forConnection(con).saveEntities(
                 stores,
                 SaveMode.UPDATE_ONLY,
@@ -461,8 +507,8 @@ class SaveCommandTest : AbstractMutationTest() {
                         |)""".trimMargin()
                 )
             }
-            entity {  }
-            entity {  }
+            entity { }
+            entity { }
         }
     }
 
@@ -478,7 +524,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 website = "https://www.manning.com"
             }
         )
-        executeAndExpectResult({ con->
+        executeAndExpectResult({ con ->
             sqlClient {
                 setDialect(H2Dialect())
             }.entities.forConnection(con).saveEntities(stores)
@@ -497,8 +543,8 @@ class SaveCommandTest : AbstractMutationTest() {
                 batchVariables(0, 1L, "https://www.oreilly.com", 0)
                 batchVariables(1, 2L, "https://www.manning.com", 0)
             }
-            entity {  }
-            entity {  }
+            entity { }
+            entity { }
         }
     }
 
@@ -511,7 +557,7 @@ class SaveCommandTest : AbstractMutationTest() {
             }
             version = "0.8.177"
         }
-        connectAndExpect({con ->
+        connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
             }.entities.forConnection(con).save(dependency)
@@ -547,7 +593,7 @@ class SaveCommandTest : AbstractMutationTest() {
             }
             version = "0.8.177"
         }
-        connectAndExpect(NativeDatabases.POSTGRES_DATA_SOURCE, {con ->
+        connectAndExpect(NativeDatabases.POSTGRES_DATA_SOURCE, { con ->
             sqlClient {
                 setDialect(PostgresDialect())
             }.entities.forConnection(con).save(dependency)
@@ -828,7 +874,7 @@ class SaveCommandTest : AbstractMutationTest() {
         }
         executeAndExpectResult({ con ->
             sqlClient {
-                setDialect(object: H2Dialect() {
+                setDialect(object : H2Dialect() {
                     override fun isUpsertSupported(): Boolean = false
                 })
                 setIdGenerator(IdentityIdGenerator.INSTANCE)

@@ -6,16 +6,18 @@ import org.babyfish.jimmer.sql.ast.ComparableExpression;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
-import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
+import org.babyfish.jimmer.sql.ast.mutation.ValueExpressionFactory;
 
-public class OptimisticLockValueFactoryFactories<E> implements UserOptimisticLock.ValueExpressionFactory<E> {
+public final class ValueExpressionFactories<E> implements ValueExpressionFactory<E> {
 
-    private static final OptimisticLockValueFactoryFactories<Object> FACTORY =
-            new OptimisticLockValueFactoryFactories<>();
+    private static final ValueExpressionFactories<Object> FACTORY =
+            new ValueExpressionFactories<>();
+
+    private ValueExpressionFactories() {}
 
     @SuppressWarnings("unchecked")
-    public static <E> UserOptimisticLock.ValueExpressionFactory<E> of() {
-        return (UserOptimisticLock.ValueExpressionFactory<E>) FACTORY;
+    public static <E> ValueExpressionFactory<E> of() {
+        return (ValueExpressionFactory<E>) FACTORY;
     }
 
     @SuppressWarnings("unchecked")
@@ -26,17 +28,17 @@ public class OptimisticLockValueFactoryFactories<E> implements UserOptimisticLoc
 
     @Override
     public StringExpression newString(TypedProp.Scalar<E, String> prop) {
-        return new OptimisticLockNewValueExpression.Str(prop.unwrap());
+        return new SaveInputValueExpression.Str(prop.unwrap());
     }
 
     @Override
     public <N extends Number & Comparable<N>> NumericExpression<N> newNumber(TypedProp.Scalar<E, N> prop) {
-        return new OptimisticLockNewValueExpression.Num<>(prop.unwrap());
+        return new SaveInputValueExpression.Num<>(prop.unwrap());
     }
 
     @Override
     public <C extends Comparable<?>> ComparableExpression<C> newComparable(TypedProp.Scalar<E, C> prop) {
-        return new OptimisticLockNewValueExpression.Cmp<>(prop.unwrap());
+        return new SaveInputValueExpression.Cmp<>(prop.unwrap());
     }
 
     @SuppressWarnings("unchecked")
@@ -44,14 +46,14 @@ public class OptimisticLockValueFactoryFactories<E> implements UserOptimisticLoc
     public <V> Expression<V> newValue(ImmutableProp prop) {
         Class<?> returnType = prop.getReturnClass();
         if (returnType == String.class) {
-            return (Expression<V>) new OptimisticLockNewValueExpression.Str(prop);
+            return (Expression<V>) new SaveInputValueExpression.Str(prop);
         }
         if (Number.class.isAssignableFrom(returnType)) {
-            return (Expression<V>) new OptimisticLockNewValueExpression.Num<>(prop);
+            return (Expression<V>) new SaveInputValueExpression.Num<>(prop);
         }
         if (Comparable.class.isAssignableFrom(returnType)) {
-            return (Expression<V>) new OptimisticLockNewValueExpression.Cmp<>(prop);
+            return (Expression<V>) new SaveInputValueExpression.Cmp<>(prop);
         }
-        return new OptimisticLockNewValueExpression<>(prop);
+        return new SaveInputValueExpression<>(prop);
     }
 }

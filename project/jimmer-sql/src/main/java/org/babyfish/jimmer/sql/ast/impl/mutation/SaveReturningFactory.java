@@ -14,7 +14,8 @@ import java.util.*;
 
 class SaveReturningFactory {
 
-    private SaveReturningFactory() {}
+    private SaveReturningFactory() {
+    }
 
     static @Nullable SaveReturning forInsert(
             SaveContext ctx,
@@ -111,7 +112,7 @@ class SaveReturningFactory {
             SaveContext ctx,
             Shape shape,
             EntityCollection<DraftSpi> entities,
-            List<PropertyGetter> updatedGetters,
+            List<SaveAssignment> assignments,
             @Nullable ImmutableProp discriminatorProp,
             @Nullable ImmutableProp discriminatorGuardProp,
             @Nullable Object discriminatorGuardValue,
@@ -131,7 +132,7 @@ class SaveReturningFactory {
         if (basic == null ||
                 fakeUpdate ||
                 forceOneByOne ||
-                (updatedGetters.isEmpty() &&
+                (assignments.isEmpty() &&
                         discriminatorProp == null &&
                         nullGetters.isEmpty() &&
                         versionGetter == null)) {
@@ -143,7 +144,7 @@ class SaveReturningFactory {
                 entities,
                 ctx.options.isSaveResultReadsAllProperties() ?
                         Collections.emptyList() :
-                        updatedGetters
+                        defaultSourceGetters(assignments)
         );
         if (returningFetcherProps.isEmpty() && versionGetter == null) {
             return null;
@@ -187,10 +188,12 @@ class SaveReturningFactory {
         }
         SaveReturningUpdate update = new SaveReturningUpdate(
                 discriminatorGetter,
-                Collections.unmodifiableList(new ArrayList<>(nullGetters))
+                Collections.unmodifiableList(new ArrayList<>(nullGetters)),
+                assignments
         );
+        List<PropertyGetter> updatedGetters = defaultSourceGetters(assignments);
         List<SaveReturningColumnValue> sourceValues =
-                new ArrayList<>(updatedGetters.size() + matchGetters.size() + 2);
+                new ArrayList<>(assignments.size() + matchGetters.size() + 2);
         for (PropertyGetter getter : matchGetters) {
             sourceValues.add(new SaveReturningColumnValue(getter, SaveReturningValueMode.VALUE, null));
         }
@@ -200,11 +203,22 @@ class SaveReturningFactory {
             }
             sourceValues.add(new SaveReturningColumnValue(versionGetter, SaveReturningValueMode.VALUE, null));
         }
-        for (PropertyGetter getter : updatedGetters) {
+        for (SaveAssignment assignment : assignments) {
+            PropertyGetter getter = assignment.target;
             if (!isSingleColumn(getter)) {
                 return null;
             }
-            sourceValues.add(new SaveReturningColumnValue(getter, SaveReturningValueMode.VALUE, null));
+            if (assignment.value == null) {
+                sourceValues.add(new SaveReturningColumnValue(getter, SaveReturningValueMode.VALUE, null));
+            } else {
+                for (PropertyGetter inputGetter : assignment.inputGetters) {
+                    SaveReturningColumnValue.addIfAbsent(
+                            sourceValues,
+                            inputGetter,
+                            SaveReturningValueMode.VALUE
+                    );
+                }
+            }
         }
         if (discriminatorGetter != null) {
             SaveReturningColumnValue.addIfAbsent(
@@ -242,7 +256,7 @@ class SaveReturningFactory {
                 idGetter,
                 updateReturningProps(
                         shape.getType(),
-                        versionGetter != null ? Collections.singletonList(versionGetter) : Collections.emptyList(),
+                        requiredUpdateReturningGetters(assignments, versionGetter),
                         returningFetcherProps
                 ),
                 basic.logicalDeletedInfo,
@@ -287,7 +301,7 @@ class SaveReturningFactory {
             List<PropertyGetter> nullGetters,
             List<PropertyGetter> conflictGetters,
             @Nullable LogicalDeletedInfo conflictPredicate,
-            List<PropertyGetter> updatedGetters,
+            List<SaveAssignment> assignments,
             boolean ignoreUpdate,
             @Nullable Predicate userOptimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
@@ -310,7 +324,7 @@ class SaveReturningFactory {
                 batch.entities(),
                 ctx.options.isSaveResultReadsAllProperties() ?
                         Collections.emptyList() :
-                        upsertKnownSourceGetters(insertedGetters, updatedGetters, ignoreUpdate)
+                        upsertKnownSourceGetters(insertedGetters, assignments, ignoreUpdate)
         );
         if (returningFetcherProps.isEmpty() && generatedIdProp == null) {
             return null;
@@ -348,6 +362,7 @@ class SaveReturningFactory {
                 Collections.unmodifiableList(new ArrayList<>(nullGetters)),
                 Collections.unmodifiableList(new ArrayList<>(conflictGetters)),
                 conflictPredicate,
+                assignments,
                 ignoreUpdate,
                 fakeUpdate
         );
@@ -359,6 +374,15 @@ class SaveReturningFactory {
                 discriminatorGetter,
                 nullGetters
         ));
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value != null) {
+                for (PropertyGetter inputGetter : assignment.inputGetters) {
+                    if (!SaveReturningColumnValue.contains(sourceValues, inputGetter)) {
+                        return null;
+                    }
+                }
+            }
+        }
         SaveReturningUpdateCondition updateCondition = null;
         if (userOptimisticLockPredicate != null) {
             if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
@@ -377,7 +401,7 @@ class SaveReturningFactory {
                 idGetter,
                 updateReturningProps(
                         batch.shape().getType(),
-                        Collections.emptyList(),
+                        customTargetGetters(assignments),
                         returningFetcherProps
                 ),
                 basic.logicalDeletedInfo,
@@ -393,7 +417,7 @@ class SaveReturningFactory {
                 SaveReturningKind.UPSERT,
                 matchMode,
                 Collections.unmodifiableList(sourceValues),
-                Collections.unmodifiableList(new ArrayList<>(updatedGetters)),
+                Collections.emptyList(),
                 updateCondition,
                 null,
                 idGetter,
@@ -569,7 +593,7 @@ class SaveReturningFactory {
 
     private static List<PropertyGetter> upsertKnownSourceGetters(
             List<PropertyGetter> insertedGetters,
-            List<PropertyGetter> updatedGetters,
+            List<SaveAssignment> assignments,
             boolean ignoreUpdate
     ) {
         if (ignoreUpdate) {
@@ -577,11 +601,54 @@ class SaveReturningFactory {
         }
         List<PropertyGetter> getters = new ArrayList<>();
         for (PropertyGetter insertedGetter : insertedGetters) {
-            if (containsGetterProp(updatedGetters, insertedGetter.prop())) {
+            if (containsDefaultAssignmentTargetProp(assignments, insertedGetter.prop())) {
                 getters.add(insertedGetter);
             }
         }
         return getters;
+    }
+
+    private static List<PropertyGetter> defaultSourceGetters(List<SaveAssignment> assignments) {
+        List<PropertyGetter> getters = new ArrayList<>(assignments.size());
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value == null) {
+                getters.add(assignment.target);
+            }
+        }
+        return getters;
+    }
+
+    private static List<PropertyGetter> requiredUpdateReturningGetters(
+            List<SaveAssignment> assignments,
+            @Nullable PropertyGetter versionGetter
+    ) {
+        List<PropertyGetter> getters = customTargetGetters(assignments);
+        if (versionGetter != null && !getters.contains(versionGetter)) {
+            getters.add(versionGetter);
+        }
+        return getters;
+    }
+
+    private static List<PropertyGetter> customTargetGetters(List<SaveAssignment> assignments) {
+        List<PropertyGetter> getters = new ArrayList<>();
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value != null) {
+                getters.add(assignment.target);
+            }
+        }
+        return getters;
+    }
+
+    private static boolean containsDefaultAssignmentTargetProp(
+            List<SaveAssignment> assignments,
+            ImmutableProp prop
+    ) {
+        for (SaveAssignment assignment : assignments) {
+            if (assignment.value == null && assignment.target.prop() == prop) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isLoadedSourceProp(

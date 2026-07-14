@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
 
 import java.util.function.IntSupplier;
@@ -84,7 +83,7 @@ public class MySqlDialect extends MySql5Dialect {
                 if (ctx.hasUpdateCondition()) {
                     ctx.separator().appendConditionalUpdatingAssignments("values(", ")", "values(", ")");
                 } else {
-                    ctx.separator().appendUpdatingAssignments("values(", ")");
+                ctx.separator().appendUpdatingAssignments("", "", "values(", ")");
                 }
             } else if (ctx.isFakeUpdateRequired() && !idAssignmentAppended) {
                 ctx.separator().appendFakeUpdateAssignment("", "");

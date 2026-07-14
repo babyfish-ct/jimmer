@@ -36,7 +36,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
     private ValueGetterRenderFrame valueGetterRenderFrame;
 
-    private OptimisticLockNewValueRenderFrame optimisticLockNewValueRenderFrame;
+    private SaveInputValueRenderFrame saveInputValueRenderFrame;
 
     private boolean indentRequired;
 
@@ -103,20 +103,20 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         return true;
     }
 
-    public void pushOptimisticLockNewValueRender(@Nullable String prefix, String suffix) {
-        this.optimisticLockNewValueRenderFrame = new OptimisticLockNewValueRenderFrame(
-                optimisticLockNewValueRenderFrame,
+    public void pushSaveInputValueRender(@Nullable String prefix, String suffix) {
+        this.saveInputValueRenderFrame = new SaveInputValueRenderFrame(
+                saveInputValueRenderFrame,
                 prefix,
                 suffix
         );
     }
 
-    public void popOptimisticLockNewValueRender() {
-        this.optimisticLockNewValueRenderFrame = optimisticLockNewValueRenderFrame.parent;
+    public void popSaveInputValueRender() {
+        this.saveInputValueRenderFrame = saveInputValueRenderFrame.parent;
     }
 
-    public boolean renderOptimisticLockNewValue(ImmutableProp prop) {
-        OptimisticLockNewValueRenderFrame frame = optimisticLockNewValueRenderFrame;
+    public boolean renderSaveInputValue(ImmutableProp prop) {
+        SaveInputValueRenderFrame frame = saveInputValueRenderFrame;
         if (frame == null) {
             return false;
         }
@@ -704,17 +704,17 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         }
     }
 
-    private static class OptimisticLockNewValueRenderFrame {
+    private static class SaveInputValueRenderFrame {
 
-        final OptimisticLockNewValueRenderFrame parent;
+        final SaveInputValueRenderFrame parent;
 
         @Nullable
         final String prefix;
 
         final String suffix;
 
-        OptimisticLockNewValueRenderFrame(
-                OptimisticLockNewValueRenderFrame parent,
+        SaveInputValueRenderFrame(
+                SaveInputValueRenderFrame parent,
                 @Nullable String prefix,
                 String suffix
         ) {

@@ -5,12 +5,12 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-class OptimisticLockNewValueExpression<V>
+class SaveInputValueExpression<V>
         extends AbstractExpression<V> {
 
     private final ImmutableProp prop;
 
-    OptimisticLockNewValueExpression(ImmutableProp prop) {
+    SaveInputValueExpression(ImmutableProp prop) {
         this.prop = prop;
     }
 
@@ -26,22 +26,22 @@ class OptimisticLockNewValueExpression<V>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitOptimisticLockNewValue(prop);
+        visitor.visitSaveInputValue(prop);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        if (builder.renderOptimisticLockNewValue(prop)) {
+        if (builder.renderSaveInputValue(prop)) {
             return;
         }
         if (!(builder instanceof BatchSqlBuilder)) {
             throw new IllegalStateException(
                     "The \"" +
-                            OptimisticLockNewValueExpression.class.getName() +
+                            SaveInputValueExpression.class.getName() +
                             "\" does not accept simple sql builder"
             );
         }
-        ((BatchSqlBuilder)builder).value(prop);
+        ((BatchSqlBuilder) builder).value(prop);
     }
 
     @SuppressWarnings("unchecked")
@@ -55,21 +55,21 @@ class OptimisticLockNewValueExpression<V>
         return 0;
     }
 
-    static class Str extends OptimisticLockNewValueExpression<String> implements StringExpressionImplementor {
+    static class Str extends SaveInputValueExpression<String> implements StringExpressionImplementor {
 
         Str(ImmutableProp prop) {
             super(prop);
         }
     }
 
-    static class Num<N extends Number & Comparable<N>> extends OptimisticLockNewValueExpression<N> implements NumericExpressionImplementor<N> {
+    static class Num<N extends Number & Comparable<N>> extends SaveInputValueExpression<N> implements NumericExpressionImplementor<N> {
 
         Num(ImmutableProp prop) {
             super(prop);
         }
     }
 
-    static class Cmp<V extends Comparable<?>> extends OptimisticLockNewValueExpression<V> implements ComparableExpressionImplementor<V> {
+    static class Cmp<V extends Comparable<?>> extends SaveInputValueExpression<V> implements ComparableExpressionImplementor<V> {
 
         Cmp(ImmutableProp prop) {
             super(prop);

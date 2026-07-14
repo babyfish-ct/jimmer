@@ -52,7 +52,7 @@ public abstract class AstVisitor {
 
     public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {}
 
-    public void visitOptimisticLockNewValue(ImmutableProp prop) {}
+    public void visitSaveInputValue(ImmutableProp prop) {}
 
     public void visitStatement(AbstractMutableStatementImpl statement) {}
 

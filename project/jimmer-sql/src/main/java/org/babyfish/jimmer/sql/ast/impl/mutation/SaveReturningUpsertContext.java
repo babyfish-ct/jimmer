@@ -28,7 +28,7 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
     @Override
     public boolean hasUpdatedColumns() {
         return !returning.upsert.ignoreUpdate &&
-                (!returning.updatedGetters.isEmpty() ||
+                (!returning.upsert.assignments.isEmpty() ||
                         (returning.upsert.updateDiscriminator && returning.upsert.discriminatorGetter != null) ||
                         !returning.upsert.nullGetters.isEmpty());
     }
@@ -165,25 +165,31 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
     }
 
     @Override
-    public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
+    public Dialect.UpsertContext appendUpdatingAssignments(
+            String targetPrefix,
+            String targetSuffix,
+            String sourcePrefix,
+            String sourceSuffix
+    ) {
         if (returning.upsert.updateDiscriminator && returning.upsert.discriminatorGetter != null) {
             builder.separator()
                     .sql(returning.upsert.discriminatorGetter)
                     .sql(" = ")
-                    .sql(prefix)
+                    .sql(sourcePrefix)
                     .sql(returning.upsert.discriminatorGetter)
-                    .sql(suffix);
+                    .sql(sourceSuffix);
         }
         for (PropertyGetter getter : returning.upsert.nullGetters) {
             builder.separator()
                     .sql(getter)
                     .sql(" = null");
         }
-        for (PropertyGetter getter : returning.updatedGetters) {
+        for (SaveAssignment assignment : returning.upsert.assignments) {
+            PropertyGetter getter = assignment.target;
             builder.separator()
                     .sql(getter)
                     .sql(" = ");
-            appendUpdatingValue(getter, prefix, suffix);
+            appendUpdatingValue(assignment, targetPrefix, targetSuffix, sourcePrefix, sourceSuffix);
         }
         return this;
     }
@@ -236,9 +242,10 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
                 builder.sql("null");
             });
         }
-        for (PropertyGetter getter : returning.updatedGetters) {
+        for (SaveAssignment assignment : returning.upsert.assignments) {
+            PropertyGetter getter = assignment.target;
             appendConditionalUpdatingAssignment(getter, sourcePrefix, sourceSuffix, () -> {
-                appendUpdatingValue(getter, valuePrefix, valueSuffix);
+                appendUpdatingValue(assignment, "", "", valuePrefix, valueSuffix);
             });
         }
         return this;
@@ -309,9 +316,20 @@ class SaveReturningUpsertContext implements Dialect.UpsertContext {
         builder.sql(", ").sql(getter).sql(")");
     }
 
-    private void appendUpdatingValue(PropertyGetter getter, String prefix, String suffix) {
-        builder.sql(prefix)
-                .sql(getter)
-                .sql(suffix);
+    private void appendUpdatingValue(
+            SaveAssignment assignment,
+            String targetPrefix,
+            String targetSuffix,
+            String inputPrefix,
+            String inputSuffix
+    ) {
+        Operator.renderAssignmentValue(
+                builder,
+                assignment,
+                targetPrefix,
+                targetSuffix,
+                inputPrefix,
+                inputSuffix
+        );
     }
 }

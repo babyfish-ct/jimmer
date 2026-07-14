@@ -10,24 +10,26 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
+import org.babyfish.jimmer.sql.ast.mutation.ValueExpressionFactory;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.babyfish.jimmer.sql.model.embedded.MachineDetailProps;
 import org.babyfish.jimmer.sql.model.embedded.MachineDraft;
 import org.babyfish.jimmer.sql.model.embedded.MachineProps;
-import org.babyfish.jimmer.sql.model.hr.*;
+import org.babyfish.jimmer.sql.model.hr.Department;
+import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
+import org.babyfish.jimmer.sql.model.hr.DepartmentProps;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorDraft;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.h2.value.ValueJson;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +44,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -402,7 +407,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new BookStore[] { store1, store2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
-                        options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
+        options.userOptimisticLock = (BookStoreTable table, ValueExpressionFactory<BookStore> f) -> {
                             return Predicate.sql(
                                     "coalesce(length(%e), 0) <= length(%e)",
                                     new Expression<?>[]{
@@ -457,7 +462,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new BookStore[] { store1, store2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
-                        options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
+        options.userOptimisticLock = (BookStoreTable table, ValueExpressionFactory<BookStore> f) -> {
                             return Predicate.sql(
                                     "coalesce(length(%e), 0) <= length(%e)",
                                     new Expression<?>[]{
