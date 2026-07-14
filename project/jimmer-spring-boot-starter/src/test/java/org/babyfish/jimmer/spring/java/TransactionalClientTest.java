@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.java;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.spring.SqlClients;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.datasource.DataSources;
@@ -9,6 +10,7 @@ import org.babyfish.jimmer.spring.java.model.BookTable;
 import org.babyfish.jimmer.spring.transaction.JimmerTransactionManager;
 import org.babyfish.jimmer.spring.transaction.TransactionalSqlClients;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,16 @@ public class TransactionalClientTest {
 
     @Autowired
     private JSqlClient sqlClient;
+
+    @Test
+    public void testEntityManagerOutsideTransaction() {
+        Assertions.assertFalse(
+                ((JSqlClientImplementor) sqlClient)
+                        .getEntityManager()
+                        .getAllTypes(null)
+                        .contains(ImmutableType.get(Book.class))
+        );
+    }
 
     @Transactional("tm")
     @Test
