@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -14,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Set;
 
 public final class QueryRenderContext {
 
@@ -55,8 +57,12 @@ public final class QueryRenderContext {
         return analysis.getRequiredJoinType(table);
     }
 
-    public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
-        return analysis.isJoinedTypeBranchTableRequired(table);
+    public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table, ImmutableType stageType) {
+        return analysis.isJoinedTypeBranchTableRequired(table, stageType);
+    }
+
+    public Set<ImmutableType> getJoinedTypeBranchTableTypes(TableImplementor<?> table) {
+        return analysis.getJoinedTypeBranchTableTypes(table);
     }
 
     @Nullable

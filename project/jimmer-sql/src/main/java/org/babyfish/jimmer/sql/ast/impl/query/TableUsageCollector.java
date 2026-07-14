@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
@@ -23,8 +24,8 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>();
 
-    private final Set<TableImplementor<?>> joinedTypeBranchTableRequirements =
-            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Map<TableImplementor<?>, Set<ImmutableType>> joinedTypeBranchTableRequirements =
+            new IdentityHashMap<>();
 
     private final BaseQueryExportUsages.Builder baseQueryExportUsagesBuilder =
             new BaseQueryExportUsages.Builder();
@@ -50,7 +51,7 @@ public class TableUsageCollector extends TableUsageVisitor {
     }
 
     public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
-        return joinedTypeBranchTableRequirements.contains(table);
+        return joinedTypeBranchTableRequirements.containsKey(table);
     }
 
     @Override
@@ -129,15 +130,19 @@ public class TableUsageCollector extends TableUsageVisitor {
         TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
         if (implementor instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
-            if (tableImplementor.isJoinedTypeBranchTableRequiredBy(prop)) {
-                joinedTypeBranchTableRequirements.add(tableImplementor);
+            ImmutableType stageType = tableImplementor.joinedTypeAdditionalTableType(prop);
+            if (stageType != null) {
+                joinedTypeBranchTableRequirements
+                        .computeIfAbsent(tableImplementor, it -> new LinkedHashSet<>())
+                        .add(stageType);
             }
         }
     }
 
-    // A foreign key declared in a JOINED-inheritance subtype lives in the branch
-    // table, so any join that reads it as its raw parent id must force the parent's
-    // branch table to be rendered. Mirror the plain-column join conditions of
+    // A JOINED-inheritance foreign key can live in a physical stage other
+    // than the source path's main table. A join that reads the source FK
+    // column directly must therefore require the stage that owns that column.
+    // The exclusions below mirror the plain-column join conditions of
     // RealTableImpl.renderJoin: skip inverse, middle-table and SQL-template joins,
     // which never read a raw parent foreign key column.
     private void collectJoinedTypeBranchJoinSourceRequirement(RealTable table) {

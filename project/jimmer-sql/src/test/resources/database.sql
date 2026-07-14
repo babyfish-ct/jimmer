@@ -12,6 +12,7 @@ drop table ml_joined_document if exists;
 drop table ml_joined_truck if exists;
 drop table ml_joined_car if exists;
 drop table ml_joined_vehicle if exists;
+drop table ml_joined_vehicle_owner if exists;
 drop table ml_joined_asset if exists;
 drop table ml_single_asset if exists;
 drop table logical_joined_person if exists;
@@ -33,6 +34,7 @@ drop table joined_inst_client if exists;
 drop table joined_person if exists;
 drop table joined_organization if exists;
 drop table joined_client if exists;
+drop table joined_passport_link if exists;
 drop table joined_passport if exists;
 drop table joined_document if exists;
 drop table joined_citizen if exists;
@@ -151,13 +153,23 @@ create table ml_joined_asset(
     constraint pk_ml_joined_asset primary key(id)
 );
 
+create table ml_joined_vehicle_owner(
+    id bigint not null,
+    name varchar(50) not null,
+    constraint pk_ml_joined_vehicle_owner primary key(id)
+);
+
 create table ml_joined_vehicle(
     id bigint not null,
     manufacturer varchar(50) not null,
+    owner_id bigint,
     constraint pk_ml_joined_vehicle primary key(id),
     constraint fk_ml_joined_vehicle__asset
         foreign key(id)
-            references ml_joined_asset(id)
+            references ml_joined_asset(id),
+    constraint fk_ml_joined_vehicle__owner
+        foreign key(owner_id)
+            references ml_joined_vehicle_owner(id)
 );
 
 create table ml_joined_car(
@@ -269,6 +281,15 @@ create table joined_passport(
     constraint fk_joined_passport__citizen
         foreign key(citizen_id)
             references joined_citizen(id)
+);
+
+create table joined_passport_link(
+    id bigint not null,
+    passport_id bigint not null,
+    constraint pk_joined_passport_link primary key(id),
+    constraint fk_joined_passport_link__passport
+        foreign key(passport_id)
+            references joined_passport(id)
 );
 
 create table joined_organization(
@@ -452,14 +473,18 @@ insert into ml_single_asset(id, asset_type, name, format)
 
 insert into ml_joined_asset(id, asset_type, name)
     values(800, 'CAR', 'Joined Car');
-insert into ml_joined_vehicle(id, manufacturer)
-    values(800, 'Toyota');
+insert into ml_joined_vehicle_owner(id, name)
+    values(900, 'Car Owner');
+insert into ml_joined_vehicle_owner(id, name)
+    values(901, 'Truck Owner');
+insert into ml_joined_vehicle(id, manufacturer, owner_id)
+    values(800, 'Toyota', 900);
 insert into ml_joined_car(id, seat_count)
     values(800, 5);
 insert into ml_joined_asset(id, asset_type, name)
     values(801, 'TRUCK', 'Joined Truck');
-insert into ml_joined_vehicle(id, manufacturer)
-    values(801, 'Volvo');
+insert into ml_joined_vehicle(id, manufacturer, owner_id)
+    values(801, 'Volvo', 901);
 insert into ml_joined_truck(id, payload)
     values(801, 12000);
 insert into ml_joined_asset(id, asset_type, name)
@@ -510,6 +535,8 @@ insert into joined_document(id, document_type, name)
     values(701, 'PASSPORT', 'primary-passport');
 insert into joined_passport(id, citizen_id)
     values(701, 700);
+insert into joined_passport_link(id, passport_id)
+    values(702, 701);
 insert into joined_client_project(id, name, client_id)
     values(2002, 'Joined person project', 201);
 insert into joined_org_project(id, name, organization_id)

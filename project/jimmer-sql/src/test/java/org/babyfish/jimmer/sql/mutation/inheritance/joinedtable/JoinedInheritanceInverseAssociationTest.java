@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.inverse.*;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.junit.jupiter.api.Test;
 
 public class JoinedInheritanceInverseAssociationTest extends AbstractQueryTest {
@@ -148,8 +150,65 @@ public class JoinedInheritanceInverseAssociationTest extends AbstractQueryTest {
         );
     }
 
+    @Test
+    public void testForwardJoinThroughJoinedSubTypeTarget() {
+        PassportLinkTable table = PassportLinkTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.passport().citizen().name().eq("PassportHolder"))
+                        .select(
+                                table.id(),
+                                table.passport().name(),
+                                table.passport().citizen().name()
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_2__document.NAME, tb_3_.NAME " +
+                                    "from JOINED_PASSPORT_LINK tb_1_ " +
+                                    "inner join JOINED_PASSPORT tb_2_ " +
+                                    "on tb_1_.PASSPORT_ID = tb_2_.ID " +
+                                    "inner join JOINED_DOCUMENT tb_2__document " +
+                                    "on tb_2_.ID = tb_2__document.ID " +
+                                    "inner join JOINED_CITIZEN tb_3_ " +
+                                    "on tb_2_.CITIZEN_ID = tb_3_.ID " +
+                                    "where tb_3_.NAME = ?"
+                    ).variables("PassportHolder");
+                    ctx.rows(
+                            "[{\"_1\":702,\"_2\":\"primary-passport\"," +
+                                    "\"_3\":\"PassportHolder\"}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testInheritedPropertyThroughLeftJoinedSubTypeTarget() {
+        PassportLinkTable table = PassportLinkTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(702L))
+                        .select(table.id(), table.passport(JoinType.LEFT).name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_2__document.NAME " +
+                                    "from JOINED_PASSPORT_LINK tb_1_ " +
+                                    "left join JOINED_PASSPORT tb_2_ " +
+                                    "on tb_1_.PASSPORT_ID = tb_2_.ID " +
+                                    "left join JOINED_DOCUMENT tb_2__document " +
+                                    "on tb_2_.ID = tb_2__document.ID " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(702L);
+                    ctx.rows("[{\"_1\":702,\"_2\":\"primary-passport\"}]");
+                }
+        );
+    }
+
     private JSqlClient triggerClient() {
-        JSqlClient client = getSqlClient();
+        JSqlClient client = getSqlClient(
+                it -> it.setEntityManager(new EntityManager(Citizen.class, Passport.class))
+        );
         client.getTriggers().addEntityListener(ImmutableType.get(Citizen.class), e -> {});
         client.getTriggers().addEntityListener(ImmutableType.get(Passport.class), e -> {});
         return client;

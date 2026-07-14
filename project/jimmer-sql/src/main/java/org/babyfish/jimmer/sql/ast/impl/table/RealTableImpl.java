@@ -30,7 +30,7 @@ import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implements RealTable {
@@ -324,6 +324,21 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder.sql(" and ");
                 ((Ast) filterPredicate).renderTo(builder);
             }
+            if (mode == TableImplementor.RenderMode.NORMAL) {
+                ImmutableType mainType = tableImplementor.joinedTypeMainTableType();
+                QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+                if (mainType != null && queryRenderContext != null) {
+                    renderJoinedTypeQueryStageJoins(
+                            builder,
+                            tableImplementor,
+                            mainType,
+                            builder.alias(this),
+                            builder.getAstContext().getSqlClient().getMetadataStrategy(),
+                            queryRenderContext.getJoinedTypeBranchTableTypes(tableImplementor),
+                            joinedTypeQueryStageJoinType()
+                    );
+                }
+            }
         }
     }
 
@@ -352,7 +367,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     .sql(rootAlias);
         }
         QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
-        if (queryRenderContext != null && !queryRenderContext.isJoinedTypeBranchTableRequired(tableImplementor)) {
+        if (queryRenderContext != null) {
             return;
         }
         renderJoinImpl(
@@ -367,6 +382,51 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 TableImplementor.RenderMode.NORMAL
         );
         renderJoinedTypeStageJoins(builder, tableImplementor, rootType, rootAlias, strategy);
+    }
+
+    private void renderJoinedTypeQueryStageJoins(
+            SqlBuilder builder,
+            TableImplementor<?> tableImplementor,
+            ImmutableType mainType,
+            String mainAlias,
+            MetadataStrategy strategy,
+            Set<ImmutableType> requiredStageTypes,
+            JoinType stageJoinType
+    ) {
+        if (requiredStageTypes.isEmpty()) {
+            return;
+        }
+        List<ImmutableType> stageTypes = new ArrayList<>();
+        for (ImmutableType stageType = tableImplementor.getImmutableType();
+             stageType != null;
+             stageType = stageType.getPrimarySuperType()) {
+            if (stageType != mainType &&
+                    stageType.isEntity() &&
+                    requiredStageTypes.contains(stageType)) {
+                stageTypes.add(stageType);
+            }
+        }
+        Collections.reverse(stageTypes);
+        for (ImmutableType stageType : stageTypes) {
+            renderJoinImpl(
+                    builder,
+                    stageJoinType,
+                    mainAlias,
+                    this,
+                    mainType.getIdProp().getStorage(strategy),
+                    stageType.getTableName(strategy),
+                    TableImplementor.joinedTypeStageAlias(builder, tableImplementor, stageType),
+                    stageType.getIdProp().getStorage(strategy),
+                    TableImplementor.RenderMode.NORMAL
+            );
+        }
+    }
+
+    private JoinType joinedTypeQueryStageJoinType() {
+        if (parent == null || joinType == JoinType.INNER || joinType == JoinType.RIGHT) {
+            return JoinType.INNER;
+        }
+        return JoinType.LEFT;
     }
 
     private void renderJoinedTypeStageJoins(
@@ -906,7 +966,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        if (joinProp == null && owner.isJoinedTypeBranchRoot()) {
+        if (readSupport == null && (owner.joinedTypeMainTableType() != null ||
+                joinProp == null && owner.isJoinedTypeBranchRoot() && owner.isTreated())) {
             renderJoinedTypeBranchSelection(
                     prop,
                     builder,
@@ -1056,6 +1117,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         boolean rootProp = owner.isRootTableProp(prop);
+        ImmutableType mainType = owner.joinedTypeMainTableType();
+        ImmutableType stageType = mainType != null ?
+                owner.joinedTypeTableType(prop) :
+                null;
+        boolean mainProp = stageType == mainType;
         SqlTemplate template = prop.getSqlTemplate();
         boolean updateTarget = builder.getAstContext().isJoinedTypeBranchUpdateTarget(owner);
         String updateRootAlias = builder.getAstContext().getJoinedTypeBranchUpdateRootAlias(owner);
@@ -1078,7 +1144,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return;
         }
         if (owner.isTreated()) {
-            RealTableImpl sourceTable = rootProp ? (RealTableImpl) parent : this;
+            RealTableImpl sourceTable = rootProp ? parent : this;
             if (template instanceof FormulaTemplate) {
                 builder.sql(((FormulaTemplate) template).toSql(builder.assertSimple().alias(sourceTable)));
                 if (asBlock != null) {
@@ -1099,9 +1165,9 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return;
         }
         if (template instanceof FormulaTemplate) {
-            String alias = rootProp ?
+            String alias = mainProp ?
                     builder.assertSimple().alias(this) :
-                    joinedTypeBranchAlias(builder.assertSimple());
+                    TableImplementor.joinedTypeStageAlias(builder.assertSimple(), owner, stageType);
             builder.sql(((FormulaTemplate) template).toSql(alias));
             if (asBlock != null) {
                 builder.sql(" ").sql(asBlock.apply(0));
@@ -1111,7 +1177,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         ColumnDefinition definition = optionalDefinition != null ?
                 optionalDefinition :
                 prop.getStorage(strategy);
-        if (rootProp) {
+        if (mainProp) {
             renderDefinition(
                     builder,
                     this,
@@ -1125,6 +1191,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         } else {
             renderJoinedTypeBranchDefinition(
                     builder,
+                    TableImplementor.joinedTypeStageAlias(builder.assertSimple(), owner, stageType),
                     definition,
                     withPrefix,
                     asBlock
@@ -1181,6 +1248,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private void renderJoinedTypeBranchDefinition(
             AbstractSqlBuilder<?> builder,
+            String alias,
             ColumnDefinition definition,
             boolean withPrefix,
             Function<Integer, String> asBlock
@@ -1191,7 +1259,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder.sql(", ");
             }
             if (withPrefix) {
-                builder.sql(joinedTypeBranchAlias(builder.assertSimple())).sql(".");
+                builder.sql(alias).sql(".");
             }
             builder.sql(definition.name(i));
             if (asBlock != null) {
@@ -1315,7 +1383,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             return null;
         }
         ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
-        return new ColumnMapping((RealTableImpl) table.parent, parentDefinition.name(index));
+        return new ColumnMapping(table.parent, parentDefinition.name(index));
     }
 
     private static class ColumnMapping {

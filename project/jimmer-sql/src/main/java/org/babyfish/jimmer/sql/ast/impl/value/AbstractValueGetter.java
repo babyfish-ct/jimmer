@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ScalarProviderUtils;
@@ -350,20 +351,23 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 columnProp.isId() ||
                 columnProp.toOriginal().isId() ||
                 tableImplementor.isTreated() ||
-                !tableImplementor.isJoinedTypeBranchRoot() ||
-                astContext.isJoinedTypeBranchUpdateTarget(tableImplementor) ||
-                !isJoinedTypeBranchTableRendered(builder, tableImplementor) ||
-                tableImplementor.isRootTableProp(columnProp)) {
+                astContext.isJoinedTypeBranchUpdateTarget(tableImplementor)) {
             return null;
         }
-        return TableImplementor.joinedTypeBranchAlias(builder.assertSimple(), tableImplementor);
-    }
-
-    private static boolean isJoinedTypeBranchTableRendered(
-            AbstractSqlBuilder<?> builder,
-            TableImplementor<?> tableImplementor
-    ) {
-        return TableImplementor.isJoinedTypeBranchTableRendered(builder, tableImplementor);
+        ImmutableType stageType = tableImplementor.joinedTypeAdditionalTableType(columnProp);
+        if (stageType == null ||
+                !TableImplementor.isJoinedTypeBranchTableRendered(
+                        builder,
+                        tableImplementor,
+                        stageType
+                )) {
+            return null;
+        }
+        return TableImplementor.joinedTypeStageAlias(
+                builder.assertSimple(),
+                tableImplementor,
+                stageType
+        );
     }
 
     private static boolean isLoaded(Object value, List<ImmutableProp> props) {
