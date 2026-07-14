@@ -13,6 +13,7 @@ include(
     "jimmer-dto-compiler",
     "jimmer-client-swagger",
     "jimmer-client-scalar",
+    "jimmer-ddl-compiler",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

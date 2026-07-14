@@ -12,6 +12,7 @@ dependencies {
         api(projects.jimmerCore)
         api(projects.jimmerCoreKotlin)
         api(projects.jimmerDtoCompiler)
+        api(projects.jimmerDdlCompiler)
         api(projects.jimmerKsp)
         api(projects.jimmerMapstructApt)
         api(projects.jimmerSpringBootStarter)
