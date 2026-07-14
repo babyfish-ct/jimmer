@@ -145,10 +145,15 @@ public class ImmutableProp implements BaseProp {
         this.declaringType = declaringType;
         this.executableElement = executableElement;
         getterName = executableElement.getSimpleName().toString();
-        returnType = ((ExecutableType) context.getTypes().asMemberOf(
-                (DeclaredType) declaringType.getTypeElement().asType(),
-                executableElement
-        )).getReturnType();
+        TypeElement enclosingTypeElement = (TypeElement) executableElement.getEnclosingElement();
+        if (enclosingTypeElement.getTypeParameters().isEmpty()) {
+            returnType = executableElement.getReturnType();
+        } else {
+            returnType = ((ExecutableType) context.getTypes().asMemberOf(
+                    (DeclaredType) declaringType.getTypeElement().asType(),
+                    executableElement
+            )).getReturnType();
+        }
         if (returnType.getKind() == TypeKind.VOID) {
             throw new MetaException(executableElement, "it cannot return void");
         }
