@@ -11,13 +11,15 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.*;
 
-import java.lang.reflect.*;
-import java.util.Map;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 abstract class WeakJoinHandleImpl implements WeakJoinHandle {
 
     private static final ClassCache<WeakJoinHandle> CACHE =
-            new ClassCache<>(WeakJoinHandleImpl::create, false);
+            new ClassCache<>(WeakJoinHandleImpl::create);
 
     private static final Class<?> K_BASE_TABLE_TYPE;
 
@@ -177,7 +179,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                         "\"";
 
         private static final ClassCache<WeakJoinHandle> CACHE =
-                new ClassCache<>(EntityTableHandleImpl::create, false);
+                new ClassCache<>(EntityTableHandleImpl::create);
 
         private final WeakJoinLambda weakJoinLambda;
 

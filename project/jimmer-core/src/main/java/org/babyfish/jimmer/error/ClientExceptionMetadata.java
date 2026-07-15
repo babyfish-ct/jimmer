@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.babyfish.jimmer.client.ApiIgnore;
-import org.babyfish.jimmer.impl.util.ClassCache;
-import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.ClientException;
+import org.babyfish.jimmer.client.ApiIgnore;
+import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.ModelException;
 
 import java.lang.reflect.Method;
@@ -250,7 +250,7 @@ public class ClientExceptionMetadata {
         this.subMetadatas = Collections.unmodifiableList(new ArrayList<>(metadataSet));
     }
 
-    private static class Cache extends ClassCache<ClientExceptionMetadata> {
+    private static class Cache extends StaticCache<Class<?>, ClientExceptionMetadata> {
 
         public Cache(Function<Class<?>, ClientExceptionMetadata> creator) {
             super(creator, false);
