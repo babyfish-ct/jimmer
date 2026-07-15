@@ -161,7 +161,7 @@ class JimmerDdlCompilerTest {
         val sqlFile = outputDir.resolve("apt_generated.sql")
         assertTrue(sqlFile.isFile, "APT should generate ddl file: ${sqlFile.absolutePath}")
         val sql = sqlFile.readText()
-        assertContains(sql, """CREATE TABLE "apt_book"""")
+        assertContains(sql, """CREATE TABLE IF NOT EXISTS "apt_book"""")
         assertContains(sql, """"id" BIGINT NOT NULL""")
         assertContains(sql, """"title" VARCHAR(255)""")
         assertContains(sql, """"subtitle" VARCHAR(255)""")
@@ -242,7 +242,7 @@ class JimmerDdlCompilerTest {
             )
         )
 
-        assertContains(result.sql, "CREATE TABLE \"book\"")
+        assertContains(result.sql, "CREATE TABLE IF NOT EXISTS \"book\"")
         assertContains(result.sql, """"title" VARCHAR(255) NOT NULL""")
         assertContains(result.sql, """ALTER TABLE "book" ALTER COLUMN "subtitle" DROP NOT NULL;""")
     }
@@ -304,7 +304,7 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
-        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN "summary" VARCHAR(255);""")
+        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "summary" VARCHAR(255);""")
         assertFalse("CREATE TABLE" in changed.sql)
     }
 
@@ -334,7 +334,7 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
-        assertContains(changed.sql, """ALTER TABLE "book" DROP COLUMN "summary";""")
+        assertContains(changed.sql, """ALTER TABLE "book" DROP COLUMN IF EXISTS "summary";""")
     }
 
     @Test
@@ -364,9 +364,9 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
-        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN "summary" VARCHAR(255);""")
-        assertContains(changed.sql, """ALTER TABLE "book" ALTER COLUMN "title" TYPE INTEGER;""")
-        assertContains(changed.sql, """ALTER TABLE "book" ALTER COLUMN "title" SET NOT NULL;""")
+        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "summary" VARCHAR(255);""")
+        assertContains(changed.sql, """ALTER COLUMN "title" TYPE INTEGER""")
+        assertContains(changed.sql, """USING CASE""")
         assertTrue(changed.warnings.none { warning -> "skipped column structure changes" in warning })
     }
 
@@ -474,11 +474,11 @@ class JimmerDdlCompilerTest {
             ),
         )
 
-        assertContains(result.sql, "CREATE TABLE \"ai_power_device\"")
-        assertContains(result.sql, "CREATE TABLE \"equipment_information_archive_person_in_charge_mapping\"")
+        assertContains(result.sql, "CREATE TABLE IF NOT EXISTS \"ai_power_device\"")
+        assertContains(result.sql, "CREATE TABLE IF NOT EXISTS \"equipment_information_archive_person_in_charge_mapping\"")
         assertContains(result.sql, "\"equipment_information_archive_id\" BIGINT NOT NULL")
         assertContains(result.sql, "\"user_id\" BIGINT NOT NULL")
-        assertFalse("CREATE TABLE \"system_users\"" in result.sql)
+        assertFalse("\"system_users\"" in result.sql)
     }
 
     private fun bookEntity(

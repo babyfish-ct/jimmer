@@ -1,5 +1,5 @@
 [versions]
-addzero = "2026.06.24"
+addzero = "2026.07.15.2"
 antlr = "4.13.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
