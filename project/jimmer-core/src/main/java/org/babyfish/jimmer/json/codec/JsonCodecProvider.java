@@ -4,8 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface JsonCodecProvider {
 
-    @NotNull
-    JsonCodecFamily family();
+    int priority();
 
     @NotNull
     JsonCodec create();

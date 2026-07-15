@@ -46,6 +46,4 @@ public interface JsonCodec {
     }
 
     JsonWriter writerFor(JsonType type);
-
-    JsonCodecFamily family();
 }

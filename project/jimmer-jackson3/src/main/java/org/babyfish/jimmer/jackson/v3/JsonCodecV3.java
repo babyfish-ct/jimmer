@@ -67,11 +67,6 @@ public class JsonCodecV3 implements JsonCodec {
         return new JsonWriterV3(mapper.writerFor(javaType(type)));
     }
 
-    @Override
-    public JsonCodecFamily family() {
-        return JsonCodecFamily.JACKSON3;
-    }
-
     private JavaType javaType(JsonType type) {
         return mapper.getTypeFactory().constructType(type.getType());
     }

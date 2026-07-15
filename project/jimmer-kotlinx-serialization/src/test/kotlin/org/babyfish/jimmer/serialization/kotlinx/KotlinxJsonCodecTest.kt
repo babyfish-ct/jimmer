@@ -2,12 +2,12 @@ package org.babyfish.jimmer.serialization.kotlinx
 
 import kotlinx.serialization.Serializable
 import org.babyfish.jimmer.json.codec.JsonCodec
-import org.babyfish.jimmer.json.codec.JsonCodecFamily
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.Serialized
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -27,7 +27,6 @@ class KotlinxJsonCodecTest {
 
         assertEquals("""{"id":1,"name":"jimmer","tags":["orm","json"]}""", json)
         assertEquals(payload, codec.readerFor(Payload::class.java).read(json))
-        assertEquals(JsonCodecFamily.KOTLINX_SERIALIZATION, codec.family())
     }
 
     @Test
@@ -71,7 +70,7 @@ class KotlinxJsonCodecTest {
 
     @Test
     fun `service loader can make kotlinx codec the default json codec`() {
-        assertEquals(JsonCodecFamily.KOTLINX_SERIALIZATION, JsonCodec.jsonCodec().family())
+        assertTrue(JsonCodec.jsonCodec() is KotlinxJsonCodec)
     }
 
     @Test

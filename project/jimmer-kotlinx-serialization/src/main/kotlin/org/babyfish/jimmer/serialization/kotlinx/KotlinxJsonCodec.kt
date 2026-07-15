@@ -22,7 +22,6 @@ import kotlinx.serialization.serializer
 import org.babyfish.jimmer.json.codec.JsonCodec
 import org.babyfish.jimmer.json.codec.JsonCodecCustomization
 import org.babyfish.jimmer.json.codec.JsonConverter
-import org.babyfish.jimmer.json.codec.JsonCodecFamily
 import org.babyfish.jimmer.json.codec.JsonReader
 import org.babyfish.jimmer.json.codec.JsonType
 import org.babyfish.jimmer.json.codec.JsonWriter
@@ -80,9 +79,6 @@ class KotlinxJsonCodec @JvmOverloads constructor(
     override fun writerFor(type: JsonType): JsonWriter =
         writerFor(KotlinxJsonTypes.constructType(type))
 
-    override fun family(): JsonCodecFamily =
-        JsonCodecFamily.KOTLINX_SERIALIZATION
-
     private fun <T> readerFor(type: KType): JsonReader<T> =
         KotlinxJsonReader(json, type)
 
@@ -98,8 +94,8 @@ class KotlinxJsonCodec @JvmOverloads constructor(
 }
 
 class KotlinxJsonCodecProvider : org.babyfish.jimmer.json.codec.JsonCodecProvider {
-    override fun family(): JsonCodecFamily =
-        JsonCodecFamily.KOTLINX_SERIALIZATION
+    override fun priority(): Int =
+        100
 
     override fun create(): JsonCodec =
         KotlinxJsonCodec()

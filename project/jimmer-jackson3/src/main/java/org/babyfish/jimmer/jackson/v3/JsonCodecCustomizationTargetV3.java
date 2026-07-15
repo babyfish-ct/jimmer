@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.jackson.v3;
 
 import org.babyfish.jimmer.json.codec.JsonCodecCustomizationTarget;
-import org.babyfish.jimmer.json.codec.JsonCodecFamily;
 import org.babyfish.jimmer.json.codec.PropertyNamingCustomization;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -16,11 +15,6 @@ class JsonCodecCustomizationTargetV3 implements JsonCodecCustomizationTarget {
 
     JsonCodecCustomizationTargetV3(JsonMapper.Builder builder) {
         this.builder = builder;
-    }
-
-    @Override
-    public JsonCodecFamily family() {
-        return JsonCodecFamily.JACKSON3;
     }
 
     @Override
@@ -55,6 +49,11 @@ class JsonCodecCustomizationTargetV3 implements JsonCodecCustomizationTarget {
     @Override
     public void setSharedAttributes(Map<?, ?> attributes) {
         builder.defaultAttributes(ContextAttributes.getEmpty().withSharedAttributes(attributes));
+    }
+
+    @Override
+    public boolean acceptsNativeModule(Class<?> moduleType) {
+        return JacksonModule.class.isAssignableFrom(moduleType);
     }
 
     @Override

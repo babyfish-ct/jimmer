@@ -924,17 +924,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     " of immutable object"
                     );
                 }
-                if (AnnotationUtils.hasAnnotation(this, "com.fasterxml.jackson.annotation.JsonFormat")) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it cannot be decorated by both \"@" +
-                                    JsonConverter.class +
-                                    "\" and \"@" +
-                                    "com.fasterxml.jackson.annotation.JsonFormat" +
-                                    "\""
-                    );
-                }
                 metadata = ConverterMetadata.of(jsonConverter.value());
                 Type genericReturnType = getJavaGetter().getGenericReturnType();
                 if (genericReturnType instanceof Class<?>) {

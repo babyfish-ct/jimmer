@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.cfg.ContextAttributes;
 import org.babyfish.jimmer.json.codec.JsonCodecCustomizationTarget;
-import org.babyfish.jimmer.json.codec.JsonCodecFamily;
 import org.babyfish.jimmer.json.codec.PropertyNamingCustomization;
 
 import java.util.Map;
@@ -15,11 +14,6 @@ class JsonCodecCustomizationTargetV2 implements JsonCodecCustomizationTarget {
 
     JsonCodecCustomizationTargetV2(ObjectMapperBuilder builder) {
         this.builder = builder;
-    }
-
-    @Override
-    public JsonCodecFamily family() {
-        return JsonCodecFamily.JACKSON2;
     }
 
     @Override
@@ -54,6 +48,11 @@ class JsonCodecCustomizationTargetV2 implements JsonCodecCustomizationTarget {
     @Override
     public void setSharedAttributes(Map<?, ?> attributes) {
         builder.defaultAttributes(ContextAttributes.getEmpty().withSharedAttributes(attributes));
+    }
+
+    @Override
+    public boolean acceptsNativeModule(Class<?> moduleType) {
+        return Module.class.isAssignableFrom(moduleType);
     }
 
     @Override
