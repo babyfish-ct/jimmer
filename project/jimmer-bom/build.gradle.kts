@@ -11,6 +11,7 @@ dependencies {
         api(projects.jimmerClientScalar)
         api(projects.jimmerCore)
         api(projects.jimmerCoreKotlin)
+        api(projects.jimmerKotlinxSerialization)
         api(projects.jimmerDtoCompiler)
         api(projects.jimmerDdlCompiler)
         api(projects.jimmerKsp)

@@ -2,6 +2,7 @@ rootProject.name = "jimmer"
 include(
     "jimmer-bom",
     "jimmer-core",
+    "jimmer-kotlinx-serialization",
     "jimmer-mapstruct-apt",
     "jimmer-apt",
     "jimmer-sql",

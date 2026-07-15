@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Facade to abstract jimmer from concrete jackson version.
- * Allows to support jimmer 2 and jimmer 3 simultaneously.
+ * Facade to abstract jimmer from concrete JSON implementation.
+ * Allows to support jackson 2, jackson 3 and other JSON codecs simultaneously.
  *
- * @param <JT> JavaType class from jackson
+ * @param <JT> implementation-specific type token
  */
 public interface JsonCodec<JT> {
     static JsonCodec<?> jsonCodec() {
