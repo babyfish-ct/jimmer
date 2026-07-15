@@ -59,12 +59,14 @@ public class UpsertMaskTest extends AbstractMutationTest {
     @Test
     public void testAssignmentExpressionByPostgres() {
         NativeDatabases.assumeNativeDatabase();
-        executeAndExpectResult(
+        connectAndExpect(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
-                getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                con -> getSqlClient(it -> it.setDialect(new PostgresDialect()))
                         .saveCommand(
                                 Immutables.createBook(draft -> {
                                     draft.setId(Constants.graphQLInActionId3);
+                                    draft.setName("GraphQL in Action");
+                                    draft.setEdition(3);
                                     draft.setPrice(BigDecimal.ONE);
                                 })
                         )
@@ -72,16 +74,24 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                 BookTable.class,
                                 BookProps.PRICE,
                                 (target, values) -> target.price().plus(values.newNumber(BookProps.PRICE))
-                        ),
+                        )
+                        .execute(con, BookFetcher.$.price())
+                        .getModifiedEntity(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK(ID, PRICE) values(?, ?) " +
-                                        "on conflict(ID) do update set PRICE = PRICE + ?"
+                                "insert into BOOK as tb_1_(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?) " +
+                                        "on conflict(ID) do update set " +
+                                        "NAME = excluded.NAME, EDITION = excluded.EDITION, " +
+                                        "PRICE = tb_1_.PRICE + excluded.PRICE returning ID, PRICE"
                         );
                     });
-                    ctx.entity(it -> {
-                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"price\":81.00" +
+                                    "}"
+                    );
                 }
         );
     }

@@ -1,12 +1,14 @@
 export org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient
     -> package org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto
 
+import testpkg.Named
+
 KInstantiableClientSimpleView {
     id
     name
 }
 
-KInstantiableClientDefaultView {
+KInstantiableClientDefaultView implements Named {
     id
     name
     #types {

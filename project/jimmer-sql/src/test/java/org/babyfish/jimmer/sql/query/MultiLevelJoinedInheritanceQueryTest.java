@@ -129,4 +129,48 @@ public class MultiLevelJoinedInheritanceQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testLeafIdViewDeclaredInIntermediateType() {
+        CarTable table = CarTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(800L))
+                        .select(table.ownerId()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1__vehicle.OWNER_ID " +
+                                    "from ML_JOINED_ASSET tb_1_ " +
+                                    "inner join ML_JOINED_VEHICLE tb_1__vehicle " +
+                                    "on tb_1_.ID = tb_1__vehicle.ID " +
+                                    "where tb_1_.ID = ? and tb_1_.ASSET_TYPE = ?"
+                    ).variables(800L, "CAR");
+                    ctx.rows("[900]");
+                }
+        );
+    }
+
+    @Test
+    public void testLeafJoinThroughForeignKeyDeclaredInIntermediateType() {
+        CarTable table = CarTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.owner().name().eq("Car Owner"))
+                        .select(table.name(), table.owner().name()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NAME, tb_2_.NAME " +
+                                    "from ML_JOINED_ASSET tb_1_ " +
+                                    "inner join ML_JOINED_VEHICLE tb_1__vehicle " +
+                                    "on tb_1_.ID = tb_1__vehicle.ID " +
+                                    "inner join ML_JOINED_VEHICLE_OWNER tb_2_ " +
+                                    "on tb_1__vehicle.OWNER_ID = tb_2_.ID " +
+                                    "where tb_2_.NAME = ? and tb_1_.ASSET_TYPE = ?"
+                    ).variables("Car Owner", "CAR");
+                    ctx.rows("[{\"_1\":\"Joined Car\",\"_2\":\"Car Owner\"}]");
+                }
+        );
+    }
 }

@@ -149,8 +149,12 @@ class EmbeddedValueGetter extends AbstractValueGetter {
                 if (middleTableAlias != null) {
                     builder.sql(middleTableAlias);
                 } else {
-                    TableImplementor<?> parent = tableImplementor.getParent();
-                    sqlBuilder.sqlAlias(parent.realTableForRender(builder));
+                    String branchAlias = TableImplementor.joinedTypeBranchForeignKeyAlias(builder, tableImplementor);
+                    if (branchAlias != null) {
+                        builder.sql(branchAlias);
+                    } else {
+                        sqlBuilder.sqlAlias(tableImplementor.getParent().realTableForRender(builder));
+                    }
                 }
             } else {
                 sqlBuilder.sqlAlias(tableImplementor.realTableForRender(builder));

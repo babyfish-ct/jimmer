@@ -713,7 +713,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(" +
+                                "insert into SYS_USER as tb_1_(" +
                                         "--->ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION" +
                                         ") values(?, ?, ?, ?, ?) on conflict(" +
                                         "--->AREA, NICK_NAME" +
@@ -793,7 +793,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(" +
+                                "insert into SYS_USER as tb_1_(" +
                                         "--->ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION" +
                                         ") values(?, ?, ?, ?, ?) on conflict(" +
                                         "--->AREA, NICK_NAME" +
@@ -884,7 +884,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(" +
+                                "insert into SYS_USER as tb_1_(" +
                                         "--->ID, ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION" +
                                         ") values(?, ?, ?, ?, ?, ?) on conflict(" +
                                         "--->ID" +
@@ -980,7 +980,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(" +
+                                "insert into SYS_USER as tb_1_(" +
                                         "--->ID, NICK_NAME" +
                                         ") values(?, ?) on conflict(" +
                                         "--->ID" +
@@ -1049,7 +1049,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(" +
+                                "insert into SYS_USER as tb_1_(" +
                                         "--->ACCOUNT, EMAIL, AREA, NICK_NAME, DESCRIPTION" +
                                         ") values(?, ?, ?, ?, ?) on conflict(" +
                                         "--->AREA, NICK_NAME" +
@@ -1132,7 +1132,7 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into SYS_USER(" +
+                                "insert into SYS_USER as tb_1_(" +
                                         "--->ACCOUNT, NICK_NAME" +
                                         ") values(?, ?) on conflict(" +
                                         "--->ACCOUNT" +

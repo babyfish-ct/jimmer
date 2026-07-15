@@ -128,7 +128,16 @@ class SaveReturningFactory {
         if (!sqlClient.getDialect().isUpdateByValuesReturningSupported()) {
             return null;
         }
-        SaveReturningBasic basic = basic(ctx, shape, entities, false);
+        List<PropertyGetter> customTargetGetters = customTargetGetters(assignments);
+        List<PropertyGetter> requiredReturningGetters =
+                requiredUpdateReturningGetters(customTargetGetters, versionGetter);
+        SaveReturningBasic basic = basic(
+                ctx,
+                shape,
+                entities,
+                false,
+                customTargetGetters
+        );
         if (basic == null ||
                 fakeUpdate ||
                 forceOneByOne ||
@@ -256,7 +265,7 @@ class SaveReturningFactory {
                 idGetter,
                 updateReturningProps(
                         shape.getType(),
-                        requiredUpdateReturningGetters(assignments, versionGetter),
+                        requiredReturningGetters,
                         returningFetcherProps
                 ),
                 basic.logicalDeletedInfo,
@@ -312,7 +321,14 @@ class SaveReturningFactory {
         if (!sqlClient.getDialect().isUpsertSupported()) {
             return null;
         }
-        SaveReturningBasic basic = basic(ctx, batch.shape(), batch.entities(), generatedIdProp != null);
+        List<PropertyGetter> requiredReturningGetters = customTargetGetters(assignments);
+        SaveReturningBasic basic = basic(
+                ctx,
+                batch.shape(),
+                batch.entities(),
+                generatedIdProp != null,
+                requiredReturningGetters
+        );
         if (basic == null ||
                 versionGetter != null ||
                 forceOneByOne) {
@@ -401,7 +417,7 @@ class SaveReturningFactory {
                 idGetter,
                 updateReturningProps(
                         batch.shape().getType(),
-                        customTargetGetters(assignments),
+                        requiredReturningGetters,
                         returningFetcherProps
                 ),
                 basic.logicalDeletedInfo,
@@ -437,7 +453,8 @@ class SaveReturningFactory {
             SaveContext ctx,
             Shape shape,
             EntityCollection<DraftSpi> entities,
-            boolean idWillBeLoadedByDml
+            boolean idWillBeLoadedByDml,
+            List<PropertyGetter> requiredReturningGetters
     ) {
         if (!ctx.options.isSaveReturningEnabled()) {
             return null;
@@ -449,7 +466,12 @@ class SaveReturningFactory {
         LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
         LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
         Fetcher<?> fetcher = ctx.fetcher;
-        if (!isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml)) {
+        if (!isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml) &&
+                !isReturningRequiredByFetcher(
+                        fetcher,
+                        shape.getType(),
+                        requiredReturningGetters
+                )) {
             return null;
         }
         return new SaveReturningBasic(fetcher, logicalDeletedInfo, logicalDeletedBehavior);
@@ -619,11 +641,11 @@ class SaveReturningFactory {
     }
 
     private static List<PropertyGetter> requiredUpdateReturningGetters(
-            List<SaveAssignment> assignments,
+            List<PropertyGetter> customTargetGetters,
             @Nullable PropertyGetter versionGetter
     ) {
-        List<PropertyGetter> getters = customTargetGetters(assignments);
-        if (versionGetter != null && !getters.contains(versionGetter)) {
+        List<PropertyGetter> getters = new ArrayList<>(customTargetGetters);
+        if (versionGetter != null) {
             getters.add(versionGetter);
         }
         return getters;
@@ -748,6 +770,22 @@ class SaveReturningFactory {
         ImmutableProp originalProp = prop.toOriginal();
         for (PropertyGetter getter : getters) {
             if (getter.prop().toOriginal() == originalProp) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isReturningRequiredByFetcher(
+            Fetcher<?> fetcher,
+            ImmutableType stageType,
+            Collection<PropertyGetter> requiredReturningGetters
+    ) {
+        if (requiredReturningGetters.isEmpty()) {
+            return false;
+        }
+        for (ImmutableProp prop : SaveFetcherAnalysis.of(fetcher, stageType).getReturningProps()) {
+            if (containsGetterProp(requiredReturningGetters, prop)) {
                 return true;
             }
         }

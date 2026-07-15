@@ -1197,6 +1197,9 @@ class DtoGenerator private constructor(
                 .builder(prop.name, typeName)
                 .addModifiers(KModifier.ABSTRACT)
                 .apply {
+                    if (interfacePropNames.contains(prop.name)) {
+                        addModifiers(KModifier.OVERRIDE)
+                    }
                     val doc = document[prop]
                         ?: prop.takeIf { it !is DtoProp<*, *> || it.nextProp === null }
                             ?.doc
