@@ -35,51 +35,6 @@ public class Constants {
     public static final ClassName SERIALIZABLE_CLASS_NAME =
             ClassName.get(Serializable.class);
 
-    public static final ClassName KOTLINX_SERIALIZABLE_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "Serializable");
-
-    public static final ClassName KOTLINX_TRANSIENT_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "Transient");
-
-    public static final ClassName KOTLINX_KSERIALIZER_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "KSerializer");
-
-    public static final ClassName KOTLINX_SERIALIZATION_EXCEPTION_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "SerializationException");
-
-    public static final ClassName KOTLINX_SERIALIZATION_STRATEGY_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "SerializationStrategy");
-
-    public static final ClassName KOTLINX_DESERIALIZATION_STRATEGY_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "DeserializationStrategy");
-
-    public static final ClassName KOTLINX_SERIALIZERS_CLASS_NAME =
-            ClassName.get("kotlinx.serialization", "SerializersKt");
-
-    public static final ClassName KOTLINX_BUILTIN_SERIALIZERS_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.builtins", "BuiltinSerializersKt");
-
-    public static final ClassName KOTLINX_SERIAL_DESCRIPTOR_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.descriptors", "SerialDescriptor");
-
-    public static final ClassName KOTLINX_ENCODER_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.encoding", "Encoder");
-
-    public static final ClassName KOTLINX_DECODER_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.encoding", "Decoder");
-
-    public static final ClassName KOTLINX_COMPOSITE_ENCODER_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.encoding", "CompositeEncoder");
-
-    public static final ClassName KOTLINX_COMPOSITE_DECODER_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.encoding", "CompositeDecoder");
-
-    public static final ClassName KOTLINX_GENERATED_SERIALIZER_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.internal", "GeneratedSerializer");
-
-    public static final ClassName KOTLINX_PLUGIN_GENERATED_SERIAL_DESCRIPTOR_CLASS_NAME =
-            ClassName.get("kotlinx.serialization.internal", "PluginGeneratedSerialDescriptor");
-
     public static final ClassName CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME =
             ClassName.get(CloneNotSupportedException.class);
 

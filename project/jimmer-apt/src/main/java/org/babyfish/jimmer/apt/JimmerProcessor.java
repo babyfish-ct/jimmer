@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
         "jimmer.dto.defaultNullableInputModifier",
         "jimmer.dto.fieldVisibility",
         "jimmer.dto.hibernateValidatorEnhancement",
-        "jimmer.dto.kotlinxSerialization",
         "jimmer.client.checkedException",
         "jimmer.client.ignoreJdkWarning",
         "jimmer.keepIsPrefix",
@@ -181,7 +180,6 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getOptions().get("jimmer.entry.fetchers"),
                 "true".equals(processingEnv.getOptions().get("jimmer.dto.hibernateValidatorEnhancement")),
                 "true".equals(processingEnv.getOptions().get("jimmer.buddy.ignoreResourceGeneration")),
-                "true".equals(processingEnv.getOptions().get("jimmer.dto.kotlinxSerialization")),
                 dtoFieldModifier
         );
         elements = processingEnv.getElementUtils();
