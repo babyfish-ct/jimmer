@@ -159,6 +159,7 @@ public class DtoGenerator {
         } else {
             typeBuilder.addAnnotation(GeneratedAnnotation.generatedAnnotation());
         }
+        addKotlinxSerializableIfNecessary();
         if (isSerializerRequired()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
@@ -252,6 +253,7 @@ public class DtoGenerator {
         if (dtoType.getModifiers().contains(DtoModifier.SEALED)) {
             typeBuilder.addModifiers(sealedModifier());
         }
+        addKotlinxSerializableIfNecessary();
         typeBuilder.addSuperinterface(
                 ParameterizedTypeName.get(
                         dtoType.getModifiers().contains(DtoModifier.INPUT) ?
@@ -362,6 +364,17 @@ public class DtoGenerator {
         if (!hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonSubTypes)) {
             addJacksonSubTypes(polymorphism);
         }
+    }
+
+    private void addKotlinxSerializableIfNecessary() {
+        if (isKotlinxSerializableGenerationRequired()) {
+            typeBuilder.addAnnotation(Constants.KOTLINX_SERIALIZABLE_CLASS_NAME);
+        }
+    }
+
+    boolean isKotlinxSerializableGenerationRequired() {
+        return ctx.isDtoKotlinxSerialization() &&
+                !hasTypeAnnotation(dtoType, Constants.KOTLINX_SERIALIZABLE_CLASS_NAME);
     }
 
     private void addJacksonTypeInfo(DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism) {
@@ -624,6 +637,9 @@ public class DtoGenerator {
 
         if (isSerializerRequired()) {
             new SerializerGenerator(this).generate();
+        }
+        if (isKotlinxSerializableGenerationRequired()) {
+            new KotlinxSerializerGenerator(this).generate();
         }
         if (isBuildRequired()) {
             new InputBuilderGenerator(this).generate();
@@ -1332,11 +1348,13 @@ public class DtoGenerator {
         if (stateFieldName == null) {
             return;
         }
-        typeBuilder.addField(
-                TypeName.BOOLEAN,
-                stateFieldName,
-                ctx.getDtoFieldModifier()
-        );
+        FieldSpec.Builder builder = FieldSpec
+                .builder(TypeName.BOOLEAN, stateFieldName)
+                .addModifiers(ctx.getDtoFieldModifier());
+        if (ctx.isDtoKotlinxSerialization()) {
+            builder.addAnnotation(Constants.KOTLINX_TRANSIENT_CLASS_NAME);
+        }
+        typeBuilder.addField(builder.build());
     }
 
     private void addAccessorDeclaration(AbstractProp prop) {
@@ -2773,7 +2791,7 @@ public class DtoGenerator {
         );
     }
 
-    private String setterName(AbstractProp prop) {
+    String setterName(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String suffix = prop.getAlias();
         if (suffix.startsWith("is") &&

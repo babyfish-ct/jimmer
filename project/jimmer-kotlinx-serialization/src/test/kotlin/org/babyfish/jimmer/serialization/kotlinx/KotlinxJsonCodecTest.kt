@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.serialization.kotlinx
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.babyfish.jimmer.json.codec.JsonCodec
+import org.babyfish.jimmer.serialization.kotlinx.model.dto.SerializableBookView
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.Serialized
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
@@ -87,6 +89,16 @@ class KotlinxJsonCodecTest {
 
         assertEquals("""{"name":"sql","scores":[1,2,3]}""", sqlValue)
         assertEquals(payload, provider.toScalar(sqlValue))
+    }
+
+    @Test
+    fun `generated kotlin dto is serializable when kotlinx dto generation is enabled`() {
+        val view = SerializableBookView(id = 1L, name = "GraphQL in Action")
+
+        val json = Json.encodeToString(view)
+
+        assertEquals("""{"id":1,"name":"GraphQL in Action"}""", json)
+        assertEquals(view, Json.decodeFromString<SerializableBookView>(json))
     }
 
     @Serializable

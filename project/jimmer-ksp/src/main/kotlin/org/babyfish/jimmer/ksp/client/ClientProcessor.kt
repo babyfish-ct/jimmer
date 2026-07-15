@@ -15,7 +15,7 @@ import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch
 import org.babyfish.jimmer.json.codec.ImmutableModuleCustomization
-import org.babyfish.jimmer.jackson.v2.JsonCodecV2
+import org.babyfish.jimmer.json.jackson.v2.JsonCodecV2
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable

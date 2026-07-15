@@ -2,10 +2,10 @@ package org.babyfish.jimmer.spring.cfg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.json.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.v2.ImmutableModuleV2;
-import org.babyfish.jimmer.jackson.v2.JsonCodecV2;
-import org.babyfish.jimmer.jackson.v3.ImmutableModuleV3;
-import org.babyfish.jimmer.jackson.v3.JsonCodecV3;
+import org.babyfish.jimmer.json.jackson.v2.ImmutableModuleV2;
+import org.babyfish.jimmer.json.jackson.v2.JsonCodecV2;
+import org.babyfish.jimmer.json.jackson.v3.ImmutableModuleV3;
+import org.babyfish.jimmer.json.jackson.v3.JsonCodecV3;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

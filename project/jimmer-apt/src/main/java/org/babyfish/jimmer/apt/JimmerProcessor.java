@@ -41,6 +41,25 @@ import java.util.stream.Collectors;
         "org.springframework.web.bind.annotation.RestController",
         "org.babyfish.jimmer.sql.transaction.Tx"
 })
+@SupportedOptions({
+        "jimmer.source.includes",
+        "jimmer.source.excludes",
+        "jimmer.dto.dirs",
+        "jimmer.dto.testDirs",
+        "jimmer.dto.defaultNullableInputModifier",
+        "jimmer.dto.fieldVisibility",
+        "jimmer.dto.hibernateValidatorEnhancement",
+        "jimmer.dto.kotlinxSerialization",
+        "jimmer.client.checkedException",
+        "jimmer.client.ignoreJdkWarning",
+        "jimmer.keepIsPrefix",
+        "jimmer.entry.immutables",
+        "jimmer.entry.tables",
+        "jimmer.entry.tableExes",
+        "jimmer.entry.fetchers",
+        "jimmer.buddy.ignoreResourceGeneration",
+        "jimmer.jackson3"
+})
 public class JimmerProcessor extends AbstractProcessor {
 
     private Context context;
@@ -162,6 +181,7 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getOptions().get("jimmer.entry.fetchers"),
                 "true".equals(processingEnv.getOptions().get("jimmer.dto.hibernateValidatorEnhancement")),
                 "true".equals(processingEnv.getOptions().get("jimmer.buddy.ignoreResourceGeneration")),
+                "true".equals(processingEnv.getOptions().get("jimmer.dto.kotlinxSerialization")),
                 dtoFieldModifier
         );
         elements = processingEnv.getElementUtils();

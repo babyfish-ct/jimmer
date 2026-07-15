@@ -16,7 +16,7 @@ import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.impl.*;
 import org.babyfish.jimmer.json.codec.ImmutableModuleCustomization;
 import org.babyfish.jimmer.json.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.v2.JsonCodecV2;
+import org.babyfish.jimmer.json.jackson.v2.JsonCodecV2;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.impl.util.StringUtil;

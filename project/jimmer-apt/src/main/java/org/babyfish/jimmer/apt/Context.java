@@ -79,6 +79,8 @@ public class Context {
 
     private final boolean buddyIgnoreResourceGeneration;
 
+    private final boolean dtoKotlinxSerialization;
+
     private final Modifier dtoFieldModifier;
 
     private final JacksonTypes jacksonTypes;
@@ -99,6 +101,7 @@ public class Context {
             String fetchersTypeName,
             boolean hibernateValidatorEnhancement,
             boolean buddyIgnoreResourceGeneration,
+            boolean dtoKotlinxSerialization,
             Modifier dtoFieldModifier
     ) {
         this.elements = elements;
@@ -143,6 +146,7 @@ public class Context {
                 "Fetchers";
         this.hibernateValidatorEnhancement = hibernateValidatorEnhancement;
         this.buddyIgnoreResourceGeneration = buddyIgnoreResourceGeneration;
+        this.dtoKotlinxSerialization = dtoKotlinxSerialization;
         this.dtoFieldModifier = dtoFieldModifier;
         comparableType = types
                 .getDeclaredType(
@@ -389,6 +393,10 @@ public class Context {
 
     public boolean isBuddyIgnoreResourceGeneration() {
         return buddyIgnoreResourceGeneration;
+    }
+
+    public boolean isDtoKotlinxSerialization() {
+        return dtoKotlinxSerialization;
     }
 
     public Modifier getDtoFieldModifier() {
