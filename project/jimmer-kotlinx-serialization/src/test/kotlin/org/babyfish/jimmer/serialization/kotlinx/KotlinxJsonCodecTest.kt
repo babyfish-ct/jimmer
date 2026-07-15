@@ -2,7 +2,11 @@ package org.babyfish.jimmer.serialization.kotlinx
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.json.codec.JsonCodec
+import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.serialization.kotlinx.model.SerializableBook
+import org.babyfish.jimmer.serialization.kotlinx.model.by
 import org.babyfish.jimmer.serialization.kotlinx.model.dto.SerializableBookView
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.Serialized
@@ -99,6 +103,20 @@ class KotlinxJsonCodecTest {
 
         assertEquals("""{"id":1,"name":"GraphQL in Action"}""", json)
         assertEquals(view, Json.decodeFromString<SerializableBookView>(json))
+    }
+
+    @Test
+    fun `immutable objects use the service loaded kotlinx codec by default`() {
+        val book = new(SerializableBook::class).by {
+            id = 2L
+            name = "Kotlinx in Action"
+        }
+
+        val json = ImmutableObjects.toString(book)
+        val decoded = ImmutableObjects.fromString(SerializableBook::class.java, json)
+
+        assertEquals("""{"id":2,"name":"Kotlinx in Action"}""", json)
+        assertEquals(json, ImmutableObjects.toString(decoded))
     }
 
     @Serializable
