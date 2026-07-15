@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.jackson.v3;
 
 import org.babyfish.jimmer.json.codec.*;
-import tools.jackson.databind.JavaType;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -12,6 +11,7 @@ import static tools.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALL
 public class JsonCodecV3 implements JsonCodec {
     private final JsonMapper mapper;
     private final JsonConverter converter;
+    private final JacksonTypeFactoryV3 typeFactory;
 
     public JsonCodecV3() {
         this(createDefaultMapper());
@@ -20,6 +20,7 @@ public class JsonCodecV3 implements JsonCodec {
     public JsonCodecV3(JsonMapper mapper) {
         this.mapper = mapper;
         this.converter = new JsonConverterV3(mapper);
+        this.typeFactory = new JacksonTypeFactoryV3(mapper.getTypeFactory());
     }
 
     private static JsonMapper createDefaultMapper() {
@@ -49,7 +50,7 @@ public class JsonCodecV3 implements JsonCodec {
 
     @Override
     public <T> JsonReader<T> readerFor(JsonType type) {
-        return new JsonReaderV3<>(mapper.readerFor(javaType(type)));
+        return new JsonReaderV3<>(mapper.readerFor(typeFactory.javaType(type)));
     }
 
     @Override
@@ -64,10 +65,6 @@ public class JsonCodecV3 implements JsonCodec {
 
     @Override
     public JsonWriter writerFor(JsonType type) {
-        return new JsonWriterV3(mapper.writerFor(javaType(type)));
-    }
-
-    private JavaType javaType(JsonType type) {
-        return mapper.getTypeFactory().constructType(type.getType());
+        return new JsonWriterV3(mapper.writerFor(typeFactory.javaType(type)));
     }
 }

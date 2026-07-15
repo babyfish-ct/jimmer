@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.jackson.v2;
 
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -13,6 +12,7 @@ import static org.babyfish.jimmer.jackson.v2.ModulesRegistrarV2.registerWellKnow
 public class JsonCodecV2 implements JsonCodec {
     private final ObjectMapper mapper;
     private final JsonConverter converter;
+    private final JacksonTypeFactoryV2 typeFactory;
 
     public JsonCodecV2() {
         this(createDefaultMapper());
@@ -21,6 +21,7 @@ public class JsonCodecV2 implements JsonCodec {
     public JsonCodecV2(ObjectMapper mapper) {
         this.mapper = mapper;
         this.converter = new JsonConverterV2(mapper);
+        this.typeFactory = new JacksonTypeFactoryV2(mapper.getTypeFactory());
     }
 
     private static ObjectMapper createDefaultMapper() {
@@ -50,7 +51,7 @@ public class JsonCodecV2 implements JsonCodec {
 
     @Override
     public <T> JsonReader<T> readerFor(JsonType type) {
-        return new JsonReaderV2<>(mapper.readerFor(javaType(type)));
+        return new JsonReaderV2<>(mapper.readerFor(typeFactory.javaType(type)));
     }
 
     @Override
@@ -65,10 +66,6 @@ public class JsonCodecV2 implements JsonCodec {
 
     @Override
     public JsonWriter writerFor(JsonType type) {
-        return new JsonWriterV2(mapper.writerFor(javaType(type)));
-    }
-
-    private JavaType javaType(JsonType type) {
-        return mapper.getTypeFactory().constructType(type.getType());
+        return new JsonWriterV2(mapper.writerFor(typeFactory.javaType(type)));
     }
 }
