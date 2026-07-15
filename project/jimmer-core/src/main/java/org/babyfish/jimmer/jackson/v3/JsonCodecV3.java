@@ -97,7 +97,7 @@ public class JsonCodecV3 implements JsonCodec<JavaType> {
     }
 
     @Override
-    public JacksonVersion version() {
-        return JacksonVersion.V3;
+    public JsonCodecFamily family() {
+        return JsonCodecFamily.JACKSON3;
     }
 }

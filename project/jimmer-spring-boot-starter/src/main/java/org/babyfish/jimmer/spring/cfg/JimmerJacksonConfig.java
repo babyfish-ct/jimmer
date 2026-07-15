@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.spring.cfg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.babyfish.jimmer.jackson.codec.JacksonVersion;
 import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.jackson.codec.JsonCodecFamily;
 import org.babyfish.jimmer.jackson.v2.ImmutableModuleV2;
 import org.babyfish.jimmer.jackson.v2.JsonCodecV2;
 import org.babyfish.jimmer.jackson.v3.ImmutableModuleV3;
@@ -43,7 +43,10 @@ public class JimmerJacksonConfig {
         @Bean
         public JsonCodec<?> jsonCodec(BeanFactory beanFactory) {
             JsonCodec<?> jsonCodec = JsonCodec.jsonCodec();
-            if (jsonCodec.version() == JacksonVersion.V2) {
+            if (jsonCodec.family() == JsonCodecFamily.KOTLINX_SERIALIZATION) {
+                return jsonCodec;
+            }
+            if (jsonCodec.family() == JsonCodecFamily.JACKSON2) {
                 ObjectMapper mapper = beanFactory.getBeanProvider(ObjectMapper.class).getIfAvailable();
                 if (mapper != null) {
                     return new JsonCodecV2(mapper);

@@ -19,10 +19,10 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
-import org.babyfish.jimmer.jackson.codec.JacksonVersion
 import org.babyfish.jimmer.jackson.codec.JsonCodec
 import org.babyfish.jimmer.jackson.codec.JsonCodecCustomization
 import org.babyfish.jimmer.jackson.codec.JsonConverter
+import org.babyfish.jimmer.jackson.codec.JsonCodecFamily
 import org.babyfish.jimmer.jackson.codec.JsonReader
 import org.babyfish.jimmer.jackson.codec.JsonTypeFactory
 import org.babyfish.jimmer.jackson.codec.JsonWriter
@@ -96,8 +96,8 @@ class KotlinxJsonCodec @JvmOverloads constructor(
     override fun writerFor(typeCreator: TypeCreator<KType>): JsonWriter =
         writerFor(typeCreator.createType(KotlinxJsonTypeFactory))
 
-    override fun version(): JacksonVersion =
-        JacksonVersion.KOTLINX
+    override fun family(): JsonCodecFamily =
+        JsonCodecFamily.KOTLINX_SERIALIZATION
 
     private fun <T> readerFor(type: KType): JsonReader<T> =
         KotlinxJsonReader(json, type)

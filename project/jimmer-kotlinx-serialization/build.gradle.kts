@@ -11,5 +11,6 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlin.reflect)
 
+    testImplementation(projects.jimmerSql)
     testImplementation(libs.kotlin.test)
 }
