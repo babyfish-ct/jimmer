@@ -18,6 +18,17 @@ KClientImplicitCatchAllView {
     }
 }
 
+KClientAllScalarsView {
+    id
+    name
+    #types {
+        KOrganization class Organization {
+            #allScalars
+            taxCode
+        }
+    }
+}
+
 KClientDefaultBranchFieldView {
     id
     #types {

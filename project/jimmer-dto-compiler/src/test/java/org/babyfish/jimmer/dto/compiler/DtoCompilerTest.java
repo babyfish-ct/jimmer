@@ -1170,6 +1170,53 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testAllScalarsInPolymorphicBranch() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        Organization {\n" +
+                        "            #allScalars\n" +
+                        "            taxCode\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        Assertions.assertEquals(
+                Arrays.asList("type", "taxCode"),
+                dtoType.getPolymorphism().getTypeBranches().get(0).getDtoType().getProps()
+                        .stream()
+                        .map(AbstractProp::getAlias)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    @Test
+    public void testAllScalarsInPolymorphicBranchWithRedundantNegativeProps() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    #types {\n" +
+                        "        Organization {\n" +
+                        "            #allScalars\n" +
+                        "            -id\n" +
+                        "            -name\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        Assertions.assertEquals(
+                Arrays.asList("taxCode", "type"),
+                dtoType.getPolymorphism().getTypeBranches().get(0).getDtoType().getProps()
+                        .stream()
+                        .map(AbstractProp::getAlias)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    @Test
     public void testSealedPolymorphicDto() {
         DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
                 "sealed ClientView {\n" +
