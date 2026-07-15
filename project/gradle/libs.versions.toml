@@ -120,6 +120,7 @@ spring-boot-configurationProcessor = { group = "org.springframework.boot", name 
 spring-boot-starter-jdbc = { group = "org.springframework.boot", name = "spring-boot-starter-jdbc", version.ref = "springBoot" }
 spring-boot-starter-json = { group = "org.springframework.boot", name = "spring-boot-starter-json", version.ref = "springBoot" }
 spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "springBoot" }
+spring-boot-starter-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation", version.ref = "springBoot" }
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
 
 spring-data-commons = { group = "org.springframework.data", name = "spring-data-commons", version.ref = "springBoot" }
