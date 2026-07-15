@@ -657,6 +657,7 @@ public class DtoGenerator {
                         getDtoClassName()
                 )
                 .indent()
+                .add("$T.class,\n", getDtoClassName())
                 .add("$T.$L", dtoType.getBaseType().getFetcherClassName(), "$")
                 .indent();
         addFetcherFields(dtoType, cb);
@@ -693,6 +694,7 @@ public class DtoGenerator {
                         getDtoClassName()
                 )
                 .indent()
+                .add("$T.class,\n", getDtoClassName())
                 .add("$T.$L", dtoType.getBaseType().getFetcherClassName(), "$")
                 .indent();
         addFetcherFields(dtoType, cb);

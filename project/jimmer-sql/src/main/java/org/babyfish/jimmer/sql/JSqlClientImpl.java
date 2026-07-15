@@ -40,6 +40,7 @@ import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
 import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -1014,6 +1015,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public Reader<?> getReader(Class<?> type) {
         return readerManager.reader(type);
+    }
+
+    @Override
+    public Reader<?> getViewReader(DtoMetadata<?, ?> metadata) {
+        return readerManager.viewReader(metadata);
     }
 
     @Override
