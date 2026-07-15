@@ -24,6 +24,10 @@ class JTransactionalSqlClient extends AbstractJSqlClientDelegate implements Tran
 
     @Override
     public EntityManager getEntityManager() {
-        return EMPTY_ENTITY_MANAGER;
+        JSqlClient sqlClient = JimmerTransactionManager.sqlClient();
+
+        return sqlClient != null
+                ? ((JSqlClientImplementor) sqlClient).getEntityManager()
+                : EMPTY_ENTITY_MANAGER;
     }
 }
