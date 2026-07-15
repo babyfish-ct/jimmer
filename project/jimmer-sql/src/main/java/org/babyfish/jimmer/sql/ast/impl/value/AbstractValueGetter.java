@@ -2,13 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ScalarProviderUtils;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
@@ -351,25 +351,23 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 columnProp.isId() ||
                 columnProp.toOriginal().isId() ||
                 tableImplementor.isTreated() ||
-                !tableImplementor.isJoinedTypeBranchRoot() ||
-                astContext.isJoinedTypeBranchUpdateTarget(tableImplementor) ||
-                !isJoinedTypeBranchTableRendered(builder, tableImplementor) ||
-                tableImplementor.isRootTableProp(columnProp)) {
+                astContext.isJoinedTypeBranchUpdateTarget(tableImplementor)) {
             return null;
         }
-        return TableImplementor.joinedTypeBranchAlias(builder.assertSimple(), tableImplementor);
-    }
-
-    private static boolean isJoinedTypeBranchTableRendered(
-            AbstractSqlBuilder<?> builder,
-            TableImplementor<?> tableImplementor
-    ) {
-        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
-        if (queryRenderContext != null) {
-            return queryRenderContext.isJoinedTypeBranchTableRequired(tableImplementor);
+        ImmutableType stageType = tableImplementor.joinedTypeAdditionalTableType(columnProp);
+        if (stageType == null ||
+                !TableImplementor.isJoinedTypeBranchTableRendered(
+                        builder,
+                        tableImplementor,
+                        stageType
+                )) {
+            return null;
         }
-        AstContext astContext = builder.getAstContext();
-        return astContext != null && astContext.isJoinedTypeBranchTableRendered(tableImplementor);
+        return TableImplementor.joinedTypeStageAlias(
+                builder.assertSimple(),
+                tableImplementor,
+                stageType
+        );
     }
 
     private static boolean isLoaded(Object value, List<ImmutableProp> props) {

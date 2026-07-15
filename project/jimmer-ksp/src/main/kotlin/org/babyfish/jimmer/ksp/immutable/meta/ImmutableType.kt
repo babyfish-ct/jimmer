@@ -285,24 +285,11 @@ class ImmutableType(
                 }
         } else if (inheritance !== null) {
             inheritanceRoot = this
-            val strategy = when (val value: Any? = inheritance["strategy"]) {
-                null -> InheritanceType.SINGLE_TABLE
-                is InheritanceType -> value
-                is KSClassDeclaration -> InheritanceType.valueOf(value.simpleName.asString())
-                else -> throw MetaException(
-                    classDeclaration,
-                    "Illegal value of @${Inheritance::class.java.name}.strategy: $value"
-                )
-            }
-            val joinedTableDissociateAction = when (val value: Any? = inheritance["joinedTableDissociateAction"]) {
-                null -> JoinedTableDissociateAction.DELETE
-                is JoinedTableDissociateAction -> value
-                is KSClassDeclaration -> JoinedTableDissociateAction.valueOf(value.simpleName.asString())
-                else -> throw MetaException(
-                    classDeclaration,
-                    "Illegal value of @${Inheritance::class.java.name}.joinedTableDissociateAction: $value"
-                )
-            }
+            val strategy =
+                inheritance.getEnumArgument(Inheritance::strategy) ?: InheritanceType.SINGLE_TABLE
+            val joinedTableDissociateAction =
+                inheritance.getEnumArgument(Inheritance::joinedTableDissociateAction)
+                    ?: JoinedTableDissociateAction.DELETE
             if (strategy != InheritanceType.JOINED && joinedTableDissociateAction != JoinedTableDissociateAction.DELETE) {
                 throw MetaException(
                     classDeclaration,
@@ -659,19 +646,10 @@ class ImmutableType(
         }
 
     private fun entityInstantiability(): EntityInstantiability =
-        when (val value = classDeclaration
+        classDeclaration
             .annotation(Entity::class)
-            ?.arguments
-            ?.firstOrNull { it.name?.asString() == Entity::instantiability.name }
-            ?.value
-        ) {
-            null -> EntityInstantiability.AUTO
-            is KSClassDeclaration -> EntityInstantiability.valueOf(value.simpleName.asString())
-            else -> throw MetaException(
-                classDeclaration,
-                "Illegal value of @${Entity::class.java.name}.instantiability: $value"
-            )
-        }
+            ?.getEnumArgument(Entity::instantiability)
+            ?: EntityInstantiability.AUTO
 
     override fun toString(): String =
         classDeclaration.fullName

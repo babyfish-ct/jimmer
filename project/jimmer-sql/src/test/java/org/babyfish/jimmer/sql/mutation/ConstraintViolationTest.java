@@ -1711,7 +1711,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into shop_customer_mapping(" +
+                                "insert into shop_customer_mapping as tb_1_(" +
                                         "--->shop_id, customer_id, deleted_millis, type" +
                                         ") values(?, ?, ?, ?) on conflict(" +
                                         "--->shop_id, customer_id, deleted_millis, type" +
@@ -1777,7 +1777,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into shop_customer_mapping(" +
+                                "insert into shop_customer_mapping as tb_1_(" +
                                         "--->shop_id, customer_id, deleted_millis, type" +
                                         ") values(?, ?, ?, ?) on conflict(" +
                                         "--->shop_id, customer_id, deleted_millis, type" +

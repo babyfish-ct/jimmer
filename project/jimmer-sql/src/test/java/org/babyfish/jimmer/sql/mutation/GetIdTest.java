@@ -665,7 +665,7 @@ public class GetIdTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                "insert into EMPLOYEE as tb_1_(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
                                         "values(?, ?, ?, ?) " +
                                         "on conflict(NAME, DELETED_MILLIS) do update " +
                                         "set GENDER = excluded.GENDER, DEPARTMENT_ID = excluded.DEPARTMENT_ID " +

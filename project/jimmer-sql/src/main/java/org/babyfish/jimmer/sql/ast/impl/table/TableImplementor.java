@@ -10,7 +10,10 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -20,6 +23,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
@@ -227,11 +231,40 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                 inheritanceInfo.getRootType() != type;
     }
 
-    default boolean isJoinedTypeBranchTableRequiredBy(@Nullable ImmutableProp prop) {
-        if (!isJoinedTypeBranchRoot()) {
-            return false;
+    @Nullable
+    default ImmutableType joinedTypeMainTableType() {
+        if (isTreated()) {
+            return null;
         }
-        return prop != null && !isRootTableProp(prop);
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo == null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.getRootType() == type) {
+            return null;
+        }
+        return getParent() == null ? inheritanceInfo.getRootType() : type;
+    }
+
+    @Nullable
+    default ImmutableType joinedTypeTableType(@Nullable ImmutableProp prop) {
+        ImmutableType mainType = joinedTypeMainTableType();
+        if (mainType == null || prop == null) {
+            return null;
+        }
+        ImmutableType type = getImmutableType();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        ImmutableType stageType = prop.isId() || prop.toOriginal().isId() ?
+                mainType :
+                inheritanceInfo.getTableTypeForProp(prop, type);
+        return stageType;
+    }
+
+    @Nullable
+    default ImmutableType joinedTypeAdditionalTableType(@Nullable ImmutableProp prop) {
+        ImmutableType mainType = joinedTypeMainTableType();
+        ImmutableType stageType = joinedTypeTableType(prop);
+        return stageType != mainType ? stageType : null;
     }
 
     default boolean isRootTableProp(ImmutableProp prop) {
@@ -248,6 +281,85 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     static String joinedTypeBranchAlias(SqlBuilder builder, TableImplementor<?> table) {
         return builder.alias(table.realTableForRender(builder)) + "_sub";
+    }
+
+    static String joinedTypeStageAlias(
+            SqlBuilder builder,
+            TableImplementor<?> table,
+            ImmutableType stageType
+    ) {
+        ImmutableType type = table.getImmutableType();
+        ImmutableType mainType = table.joinedTypeMainTableType();
+        if (stageType == mainType) {
+            return builder.alias(table.realTableForRender(builder));
+        }
+        if (table.getParent() == null && stageType == type) {
+            return joinedTypeBranchAlias(builder, table);
+        }
+        String alias = builder.alias(table.realTableForRender(builder));
+        return alias +
+                (alias.endsWith("_") ? "_" : "__") +
+                stageType.getJavaClass().getSimpleName().toLowerCase(Locale.ROOT);
+    }
+
+    static boolean isJoinedTypeBranchTableRendered(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> table,
+            ImmutableType stageType
+    ) {
+        QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
+        if (queryRenderContext != null) {
+            return stageType == table.joinedTypeMainTableType() ||
+                    queryRenderContext.isJoinedTypeBranchTableRequired(table, stageType);
+        }
+        AstContext astContext = builder.getAstContext();
+        return stageType == table.getImmutableType() &&
+                astContext != null &&
+                astContext.isJoinedTypeBranchTableRendered(table);
+    }
+
+    /**
+     * Resolves the alias of an additional physical JOINED-inheritance stage when
+     * a join source foreign key does not live in the source table's main stage.
+     *
+     * @return the physical stage alias, or {@code null} when the main table alias
+     * should be used.
+     */
+    @Nullable
+    static String joinedTypeBranchForeignKeyAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> table
+    ) {
+        if (table.isInverse()) {
+            return null;
+        }
+        return joinedTypeBranchForeignKeyAlias(builder, table.getParent(), table.getJoinProp());
+    }
+
+    /**
+     * The variant of {@link #joinedTypeBranchForeignKeyAlias(AbstractSqlBuilder, TableImplementor)}
+     * for call sites where the join source and the join property are already known
+     * and the inverse case is excluded by the caller.
+     */
+    @Nullable
+    static String joinedTypeBranchForeignKeyAlias(
+            AbstractSqlBuilder<?> builder,
+            TableImplementor<?> parent,
+            ImmutableProp joinProp
+    ) {
+        AstContext astContext = builder.getAstContext();
+        if (astContext == null ||
+                parent == null ||
+                joinProp == null ||
+                astContext.isJoinedTypeBranchUpdateTarget(parent)) {
+            return null;
+        }
+        ImmutableType stageType = parent.joinedTypeAdditionalTableType(joinProp);
+        if (stageType == null ||
+                !isJoinedTypeBranchTableRendered(builder, parent, stageType)) {
+            return null;
+        }
+        return joinedTypeStageAlias(builder.assertSimple(), parent, stageType);
     }
 
     void setHasBaseTable();

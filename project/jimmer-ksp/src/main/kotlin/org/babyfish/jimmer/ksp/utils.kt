@@ -3,7 +3,6 @@ package org.babyfish.jimmer.ksp
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.ksp.util.fastResolve
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -124,6 +123,22 @@ fun KSAnnotation.getClassListArgument(annoProp: KProperty1<out Annotation, Array
     (arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<*>?)
         ?.map { (it as KSType).declaration } as List<KSClassDeclaration>?
         ?: emptyList()
+
+inline fun <reified E : Enum<E>> KSAnnotation.getEnumArgument(annoProp: KProperty1<out Annotation, E>): E? {
+    val value = arguments
+        .firstOrNull { it.name?.asString() == annoProp.name }
+        ?.value
+        ?: return null
+    // KSP1 exposes enum entries as KSType, while KSP2 exposes them as KSClassDeclaration.
+    return when (value) {
+        is E -> value
+        is KSType -> enumValueOf<E>(value.declaration.simpleName.asString())
+        is KSClassDeclaration -> enumValueOf<E>(value.simpleName.asString())
+        else -> throw IllegalArgumentException(
+            "Illegal enum argument '${annoProp.name}': $value"
+        )
+    }
+}
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified E: Enum<E>> KSAnnotation.getEnumListArgument(annoProp: KProperty1<out Annotation, Array<out E>>): List<E> {
