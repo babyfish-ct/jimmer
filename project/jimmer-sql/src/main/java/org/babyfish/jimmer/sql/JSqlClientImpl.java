@@ -1996,7 +1996,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 foreignKeyStrategy = ForeignKeyStrategy.FAKE;
             }
             JsonCodec resolvedApplicationJsonCodec =
-                    jsonCodec != null ? jsonCodec : JsonCodec.jsonCodec();
+                    jsonCodec != null ? jsonCodec : JsonCodec.defaultCodec();
             JsonCodec resolvedSerializedJsonCodec =
                     serializedJsonCodec != null ? serializedJsonCodec : resolvedApplicationJsonCodec;
             JsonCodec resolvedBinLogJsonCodec =

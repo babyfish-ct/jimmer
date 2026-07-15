@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.pg
 
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 
 class PointProvider : ScalarProvider<Point, String> {
@@ -13,9 +13,9 @@ class PointProvider : ScalarProvider<Point, String> {
 
     companion object {
         @JvmStatic
-        private val READER = jsonCodec().readerFor(Point::class.java)
+        private val READER = defaultCodec().readerFor(Point::class.java)
 
         @JvmStatic
-        private val WRITER = jsonCodec().writer()
+        private val WRITER = defaultCodec().writer()
     }
 }

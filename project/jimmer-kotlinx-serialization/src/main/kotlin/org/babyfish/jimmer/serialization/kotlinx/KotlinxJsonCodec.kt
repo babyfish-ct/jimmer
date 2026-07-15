@@ -97,7 +97,7 @@ class KotlinxJsonCodecProvider : org.babyfish.jimmer.json.codec.JsonCodecProvide
     override fun priority(): Int =
         100
 
-    override fun create(): JsonCodec =
+    override fun codec(): JsonCodec =
         KotlinxJsonCodec()
 }
 

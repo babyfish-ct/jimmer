@@ -76,7 +76,7 @@ class KotlinxJsonCodecTest {
 
     @Test
     fun `service loader can make kotlinx codec the default json codec`() {
-        assertTrue(JsonCodec.jsonCodec() is KotlinxJsonCodec)
+        assertTrue(JsonCodec.defaultCodec() is KotlinxJsonCodec)
     }
 
     @Test

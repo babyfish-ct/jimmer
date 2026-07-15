@@ -7,7 +7,7 @@ import org.babyfish.jimmer.json.codec.PropertyNamingCustomization;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 import static org.babyfish.jimmer.json.codec.PropertyNamingCustomization.PropertyNaming.SNAKE_CASE;
 
 public class TreeNodeTest {
@@ -106,7 +106,7 @@ public class TreeNodeTest {
         );
         Assertions.assertEquals(
                 treeNode,
-                jsonCodec().readerFor(TreeNode.class).read(json)
+                defaultCodec().readerFor(TreeNode.class).read(json)
         );
     }
 
@@ -136,7 +136,7 @@ public class TreeNodeTest {
                                 "--->]" +
                                 "}"
                 ).replace("--->", ""),
-                jsonCodec().readerFor(TreeNode.class).read(
+                defaultCodec().readerFor(TreeNode.class).read(
                         (
                                 "{" +
                                         "--->\"name\":\"Root\"," +
@@ -180,7 +180,7 @@ public class TreeNodeTest {
                 ;
             });
         });
-        JsonCodec codec = jsonCodec().withCustomizations(new PropertyNamingCustomization(SNAKE_CASE));
+        JsonCodec codec = defaultCodec().withCustomizations(new PropertyNamingCustomization(SNAKE_CASE));
 
         String json =
                 "{" +

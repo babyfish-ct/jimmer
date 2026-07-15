@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.model.dto.DynamicBookStoreInput;
 import org.babyfish.jimmer.sql.model.dto.FuzzyBookInput;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class DynamicAndFuzzyInputTest extends Tests {
 
@@ -21,7 +21,7 @@ public class DynamicAndFuzzyInputTest extends Tests {
                 json,
                 input.toEntity()
         );
-        Book book = jsonCodec().readerFor(DynamicBookInput.class)
+        Book book = defaultCodec().readerFor(DynamicBookInput.class)
                 .read(json)
                 .toEntity();
         assertContentEquals(
@@ -35,7 +35,7 @@ public class DynamicAndFuzzyInputTest extends Tests {
         DynamicBookInput2 input = new DynamicBookInput2();
         input.setParentName("MANNING");
         assertContentEquals("DynamicBookInput2(parentName=MANNING)", input);
-        Book book = jsonCodec()
+        Book book = defaultCodec()
                 .readerFor(DynamicBookInput2.class)
                 .read("{\"parentName\":\"MANNING\"}")
                 .toEntity();
@@ -54,7 +54,7 @@ public class DynamicAndFuzzyInputTest extends Tests {
                 json,
                 input.toEntity()
         );
-        Book book = jsonCodec()
+        Book book = defaultCodec()
                 .readerFor(DynamicBookInput.class)
                 .read(json)
                 .toEntity();
@@ -68,12 +68,12 @@ public class DynamicAndFuzzyInputTest extends Tests {
     public void testIssue994() throws Exception {
         DynamicBookInput input = new DynamicBookInput();
         input.setName("MANNING");
-        String json = jsonCodec().writer().writeAsString(input);
+        String json = defaultCodec().writer().writeAsString(input);
         assertContentEquals(
                 "{\"name\":\"MANNING\"}",
                 json
         );
-        Book book = jsonCodec()
+        Book book = defaultCodec()
                 .readerFor(DynamicBookInput.class)
                 .read(json)
                 .toEntity();
@@ -87,7 +87,7 @@ public class DynamicAndFuzzyInputTest extends Tests {
     public void testFuzzyInput() throws Exception {
         FuzzyBookInput input = new FuzzyBookInput();
         input.setName("SQL in Action");
-        String json = jsonCodec().writer().writeAsString(input);
+        String json = defaultCodec().writer().writeAsString(input);
         String fuzzyJson = "{" +
                 "\"name\":\"SQL in Action\"," +
                 "\"edition\":null," +
@@ -100,7 +100,7 @@ public class DynamicAndFuzzyInputTest extends Tests {
                 "{\"name\":\"SQL in Action\"}",
                 input.toEntity().toString()
         );
-        Book book = jsonCodec()
+        Book book = defaultCodec()
                 .readerFor(FuzzyBookInput.class)
                 .read(fuzzyJson)
                 .toEntity();

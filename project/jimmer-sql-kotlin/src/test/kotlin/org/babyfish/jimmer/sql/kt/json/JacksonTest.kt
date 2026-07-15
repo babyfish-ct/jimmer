@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.json
 
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
 import kotlin.test.Test
 import kotlin.test.expect
@@ -13,7 +13,7 @@ class JacksonTest {
             |"id": 1,
             |"deleted": true
             |}""".trimMargin()
-        val administrator = jsonCodec()
+        val administrator = defaultCodec()
             .readerFor(Administrator::class.java)
             .read(json)
         expect(

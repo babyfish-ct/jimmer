@@ -3,11 +3,11 @@ package org.babyfish.jimmer.json.codec;
 import java.util.ServiceLoader;
 
 class JsonCodecDetector {
-    static final JsonCodec JSON_CODEC;
+    static final JsonCodec DEFAULT_CODEC;
 
     static {
         JsonCodecProvider provider = loadJsonCodecProvider();
-        JSON_CODEC = provider.create().withCustomizations(new ImmutableModuleCustomization());
+        DEFAULT_CODEC = provider.codec().withCustomizations(new ImmutableModuleCustomization());
     }
 
     static JsonCodecProvider loadJsonCodecProvider() {

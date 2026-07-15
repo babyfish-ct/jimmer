@@ -27,7 +27,7 @@ import java.util.Objects;
 public class RedisCacheCreator extends AbstractCacheCreator {
 
     public RedisCacheCreator(RedisDataSource redisDataSource) {
-        this(redisDataSource, JsonCodec.jsonCodec());
+        this(redisDataSource, JsonCodec.defaultCodec());
     }
 
     public RedisCacheCreator(RedisDataSource redisDataSource, @NotNull JsonCodec jsonCodec) {

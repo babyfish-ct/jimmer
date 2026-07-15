@@ -13,7 +13,7 @@ public class JsonCodecProviderV2 implements JsonCodecProvider {
 
     @Override
     @NonNull
-    public JsonCodec create() {
+    public JsonCodec codec() {
         return new JsonCodecV2();
     }
 }

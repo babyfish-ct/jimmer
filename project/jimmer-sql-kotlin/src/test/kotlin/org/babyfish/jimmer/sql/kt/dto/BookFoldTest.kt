@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContent
@@ -34,7 +34,7 @@ class BookFoldTest : AbstractQueryTest() {
         )
         assertContent(
             """{"id":1,"summary":{"name":"Programming TypeScript","edition":2}}""",
-            jsonCodec().writer().writeAsString(view)
+            defaultCodec().writer().writeAsString(view)
         )
     }
 
@@ -46,7 +46,7 @@ class BookFoldTest : AbstractQueryTest() {
         )
         assertContent(
             """{"id":1,"summary":null}""",
-            jsonCodec().writer().writeAsString(view)
+            defaultCodec().writer().writeAsString(view)
         )
     }
 
@@ -72,7 +72,7 @@ class BookFoldTest : AbstractQueryTest() {
                 |--->--->"detail":{"name":"GraphQL in Action","edition":3}
                 |--->}
                 |}""".trimMargin(),
-            jsonCodec().writer().writeAsString(view)
+            defaultCodec().writer().writeAsString(view)
         )
     }
 
@@ -86,7 +86,7 @@ class BookFoldTest : AbstractQueryTest() {
         )
         assertContent(
             """{"id":1,"storeKey":{"name":"MANNING"}}""",
-            jsonCodec().writer().writeAsString(view)
+            defaultCodec().writer().writeAsString(view)
         )
     }
 

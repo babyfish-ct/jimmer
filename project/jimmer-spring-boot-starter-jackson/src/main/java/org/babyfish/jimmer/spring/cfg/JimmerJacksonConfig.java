@@ -49,7 +49,7 @@ public class JimmerJacksonConfig {
             if (jsonMapper != null) {
                 return new JsonCodecV3(jsonMapper);
             }
-            return JsonCodec.jsonCodec();
+            return JsonCodec.defaultCodec();
         }
     }
 }

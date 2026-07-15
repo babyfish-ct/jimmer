@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class ParameterizedCaches {
 
@@ -139,7 +139,7 @@ public class ParameterizedCaches {
         private final Consumer<Collection<String>> onDelete;
 
         LevelTwoBinder(ImmutableProp prop, Consumer<Collection<String>> onDelete, Map<String, Map<String, byte[]>> valueMap) {
-            super(null, prop, null, jsonCodec(), null, Duration.ofSeconds(10), 0);
+            super(null, prop, null, defaultCodec(), null, Duration.ofSeconds(10), 0);
             this.valueMap = valueMap != null ? valueMap : new HashMap<>();
             this.onDelete = onDelete;
         }

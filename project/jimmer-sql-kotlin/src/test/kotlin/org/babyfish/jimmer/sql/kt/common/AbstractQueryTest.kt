@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.common
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.babyfish.jimmer.json.codec.JsonCodec
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedRootQuery
 import java.sql.Connection
 import java.util.function.Consumer
@@ -158,7 +158,7 @@ abstract class AbstractQueryTest : AbstractTest() {
 
         fun rows(json: String): QueryTestContext<R> {
             try {
-                contentEquals(json, jsonCodec().writer().writeAsString(rows))
+                contentEquals(json, defaultCodec().writer().writeAsString(rows))
             } catch (ex: JsonProcessingException) {
                 throw RuntimeException(ex)
             }

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class ImmutableObjects {
     private ImmutableObjects() {
@@ -358,7 +358,7 @@ public class ImmutableObjects {
      */
     public static String toString(Object immutable) {
         try {
-            return jsonCodec().writer().writeAsString(immutable);
+            return defaultCodec().writer().writeAsString(immutable);
         } catch (Exception e) {
             throw new IllegalArgumentException("Can't serialize object", e);
         }
@@ -388,7 +388,7 @@ public class ImmutableObjects {
      */
     public static <I> I fromString(Class<I> type, String json) {
         try {
-            return jsonCodec().readerFor(type).read(json);
+            return defaultCodec().readerFor(type).read(json);
         } catch (Exception e) {
             throw new IllegalArgumentException("Can't deserialize object ", e);
         }

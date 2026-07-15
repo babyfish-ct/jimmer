@@ -10,7 +10,7 @@ public class NoImmutableSerializationSupportTest {
 
     @Test
     public void test() throws Exception {
-        JsonCodec rawJsonCodec = JsonCodecDetector.loadJsonCodecProvider().create();
+        JsonCodec rawJsonCodec = JsonCodecDetector.loadJsonCodecProvider().codec();
         Throwable ex = assertThrows(
                 Throwable.class,
                 () -> rawJsonCodec.writer().writeAsString(BookDraft.$.produce(draft -> {

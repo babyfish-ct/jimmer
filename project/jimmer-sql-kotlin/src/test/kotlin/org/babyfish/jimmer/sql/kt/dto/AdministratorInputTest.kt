@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.inheritance.dto.AdministratorInputForIssue684
 import org.babyfish.jimmer.sql.kt.model.inheritance.dto.AdministratorInputForIssue819
@@ -41,7 +40,7 @@ class AdministratorInputTest {
             createdTime = LocalDateTime.parse("2024-12-02 13:07:24", formatter),
             modifiedTime = LocalDateTime.parse("2024-12-03 02:00:14", formatter),
         )
-        val json = jsonCodec().writer().writeAsString(input)
+        val json = defaultCodec().writer().writeAsString(input)
         assertContent(
             """{"
                 |--->id":10,
@@ -51,7 +50,7 @@ class AdministratorInputTest {
                 |}""".trimMargin(),
             json
         )
-        val input2 = jsonCodec()
+        val input2 = defaultCodec()
             .readerFor(AdministratorInputForIssue819::class.java)
             .read(json)
 

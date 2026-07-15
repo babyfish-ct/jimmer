@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -13,7 +13,7 @@ class EmbeddedMutationTest : AbstractMutationTest() {
 
     @Test
     fun testIssue527() {
-        val reader = jsonCodec()
+        val reader = defaultCodec()
             .readerFor(DynamicRectInput::class.java)
 
         val sourceJson = "{" +

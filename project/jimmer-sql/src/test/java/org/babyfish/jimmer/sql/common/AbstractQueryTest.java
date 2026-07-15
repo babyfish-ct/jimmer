@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class AbstractQueryTest extends AbstractTest {
 
@@ -230,7 +230,7 @@ public class AbstractQueryTest extends AbstractTest {
             try {
                 Assertions.assertEquals(
                         json.replace("--->", ""),
-                        jsonCodec().writer().writeAsString(rows.get(index))
+                        defaultCodec().writer().writeAsString(rows.get(index))
                 );
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -242,7 +242,7 @@ public class AbstractQueryTest extends AbstractTest {
             try {
                 Assertions.assertEquals(
                         json.replace("--->", ""),
-                        jsonCodec().writer().writeAsString(rows)
+                        defaultCodec().writer().writeAsString(rows)
                 );
             } catch (Exception ex) {
                 throw new RuntimeException(ex);

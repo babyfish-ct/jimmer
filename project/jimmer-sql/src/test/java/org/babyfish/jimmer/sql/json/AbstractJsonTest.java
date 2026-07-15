@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public abstract class AbstractJsonTest {
 
@@ -125,7 +125,7 @@ public abstract class AbstractJsonTest {
                 .setDialect(new PostgresDialect())
                 .setScalarProvider(JsonWrapperProps.TAGS, new TagsScalarProvider())
                 .setScalarProvider(JsonWrapperProps.SCORES, new ScoresScalarProvider())
-                .setDefaultSerializedTypeJsonCodec(jsonCodec())
+                .setDefaultSerializedTypeJsonCodec(defaultCodec())
                 .build();
 
         records.clear();

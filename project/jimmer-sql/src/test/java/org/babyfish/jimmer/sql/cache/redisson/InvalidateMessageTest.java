@@ -10,7 +10,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class InvalidateMessageTest extends Tests {
 
@@ -90,7 +90,7 @@ public class InvalidateMessageTest extends Tests {
 
     @Test
     public void testTypeByJacksonForIssue621() throws Exception {
-        String json = jsonCodec().writer().writeAsString(
+        String json = defaultCodec().writer().writeAsString(
                 new InvalidateMessage(
                         UUID.randomUUID(),
                         new CacheTracker.InvalidateEvent(
@@ -104,7 +104,7 @@ public class InvalidateMessageTest extends Tests {
                 )
         );
 
-        CacheTracker.InvalidateEvent event = jsonCodec()
+        CacheTracker.InvalidateEvent event = defaultCodec()
                 .readerFor(InvalidateMessage.class)
                 .read(json)
                 .toEvent();
@@ -121,7 +121,7 @@ public class InvalidateMessageTest extends Tests {
 
     @Test
     public void testPropByJacksonForIssue621() throws Exception {
-        String json = jsonCodec().writer().writeAsString(
+        String json = defaultCodec().writer().writeAsString(
                 new InvalidateMessage(
                         UUID.randomUUID(),
                         new CacheTracker.InvalidateEvent(
@@ -135,7 +135,7 @@ public class InvalidateMessageTest extends Tests {
                 )
         );
 
-        CacheTracker.InvalidateEvent event = jsonCodec()
+        CacheTracker.InvalidateEvent event = defaultCodec()
                 .readerFor(InvalidateMessage.class)
                 .read(json)
                 .toEvent();

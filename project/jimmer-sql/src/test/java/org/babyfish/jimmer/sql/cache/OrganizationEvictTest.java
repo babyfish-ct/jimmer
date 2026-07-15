@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class OrganizationEvictTest extends AbstractQueryTest {
 
@@ -70,8 +70,8 @@ public class OrganizationEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "organization",
-                                jsonCodec().treeReader().read("{\"id\":9, \"parent_id\":2}"),
-                                jsonCodec().treeReader().read("{\"id\":9, \"parent_id\":3}")
+                                defaultCodec().treeReader().read("{\"id\":9, \"parent_id\":2}"),
+                                defaultCodec().treeReader().read("{\"id\":9, \"parent_id\":3}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -94,8 +94,8 @@ public class OrganizationEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "organization",
-                                jsonCodec().treeReader().read("{\"tenant\":\"a\"}"),
-                                jsonCodec().treeReader().read("{\"id\":9, \"tenant\": \"b\", \"parent_id\":2}")
+                                defaultCodec().treeReader().read("{\"tenant\":\"a\"}"),
+                                defaultCodec().treeReader().read("{\"id\":9, \"tenant\": \"b\", \"parent_id\":2}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);

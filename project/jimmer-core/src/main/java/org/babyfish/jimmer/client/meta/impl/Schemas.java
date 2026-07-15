@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Set;
 
 import static java.util.Collections.singletonMap;
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class Schemas {
 
@@ -22,7 +22,7 @@ public class Schemas {
     }
 
     public static void writeTo(Schema schema, Writer writer) throws Exception {
-        writeTo(schema, writer, jsonCodec());
+        writeTo(schema, writer, defaultCodec());
     }
 
     public static void writeTo(Schema schema, Writer writer, JsonCodec jsonCodec) throws Exception {
@@ -34,7 +34,7 @@ public class Schemas {
     }
 
     public static Schema readFrom(Reader reader, Set<String> groups) throws Exception {
-        return readFrom(reader, groups, jsonCodec());
+        return readFrom(reader, groups, defaultCodec());
     }
 
     public static Schema readFrom(Reader reader, Set<String> groups, JsonCodec jsonCodec) throws Exception {
@@ -45,7 +45,7 @@ public class Schemas {
     }
 
     public static Schema readServicesFrom(Reader reader) throws Exception {
-        return readServicesFrom(reader, jsonCodec());
+        return readServicesFrom(reader, defaultCodec());
     }
 
     public static Schema readServicesFrom(Reader reader, JsonCodec jsonCodec) throws Exception {

@@ -24,8 +24,9 @@ public class Jackson3BinaryCompatibilityTest {
         assertEquals(json, codec.writer().writeAsString(map));
         assertEquals("jimmer", codec.treeReader().read(json).get("name").castTo(String.class));
 
-        assertEquals(300, new JsonCodecProviderV3().priority());
-        assertTrue(new JsonCodecProviderV3().create() instanceof JsonCodec);
+        JsonCodecProviderV3 provider = new JsonCodecProviderV3();
+        assertEquals(300, provider.priority());
+        assertTrue(provider.codec() instanceof JsonCodec);
         assertEquals(map, new JsonConverterV3(mapper).convert(map, Map.class));
         assertEquals(map, new JsonReaderV3<Map<String, Object>>(mapper.readerFor(Map.class)).read(json));
         assertEquals(json, new JsonWriterV3(mapper.writer()).writeAsString(map));

@@ -7,8 +7,11 @@ import java.util.Map;
  * 抽象 Jimmer 与具体 JSON 实现的门面。
  */
 public interface JsonCodec {
-    static JsonCodec jsonCodec() {
-        return JsonCodecDetector.JSON_CODEC;
+    /**
+     * 返回通过 SPI 自动选择的默认 JSON 编解码门面。
+     */
+    static JsonCodec defaultCodec() {
+        return JsonCodecDetector.DEFAULT_CODEC;
     }
 
     JsonCodec withCustomizations(JsonCodecCustomization... customizations);

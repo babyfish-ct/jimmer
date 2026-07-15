@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.Input
-import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.*
 import kotlin.reflect.KClass
@@ -19,7 +19,7 @@ class InputModifierTest {
             |"edition": 1,
             |"price": 49.9
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -50,7 +50,7 @@ class InputModifierTest {
             |"edition": 1,
             |"price": 49.9
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -80,7 +80,7 @@ class InputModifierTest {
             |"price": 49.9
             |}""".trimMargin()
 
-        val reader = jsonCodec()
+        val reader = defaultCodec()
             .readerFor(MixedBookInput::class.java)
 
         val ex = assertFails { reader.read(json) }
@@ -106,7 +106,7 @@ class InputModifierTest {
             |"edition": 1,
             |"price": 49.9
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -135,7 +135,7 @@ class InputModifierTest {
             |"edition": 1,
             |"price": 49.9
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -165,7 +165,7 @@ class InputModifierTest {
             |"edition": null,
             |"price": 49.9
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -194,7 +194,7 @@ class InputModifierTest {
             |"name": "SQL in Action",
             |"price": 49.9
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -223,7 +223,7 @@ class InputModifierTest {
             |"edition": 1,
             |"price": null
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -251,7 +251,7 @@ class InputModifierTest {
             |"name": "SQL in Action",
             |"edition": 1
             |}""".trimMargin()
-        val input = jsonCodec()
+        val input = defaultCodec()
             .readerFor(MixedBookInput::class.java)
             .read(json)
         assertContent(
@@ -356,7 +356,7 @@ class InputModifierTest {
             dtoJson: String,
             entityJson: String
         ) {
-            val input = jsonCodec().readerFor(type.java).read(json)
+            val input = defaultCodec().readerFor(type.java).read(json)
             assertContent(dtoJson, input)
             assertContent(entityJson, input.toEntity())
         }

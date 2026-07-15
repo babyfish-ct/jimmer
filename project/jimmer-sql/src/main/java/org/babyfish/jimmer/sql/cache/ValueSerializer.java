@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class ValueSerializer<T> {
     private static final byte[] NULL_BYTES = "<null>".getBytes(StandardCharsets.UTF_8);
@@ -23,11 +23,11 @@ public class ValueSerializer<T> {
     private final JsonWriter jsonWriter;
 
     public ValueSerializer(@NotNull ImmutableType type) {
-        this(type, null, jsonCodec());
+        this(type, null, defaultCodec());
     }
 
     public ValueSerializer(@NotNull ImmutableProp prop) {
-        this(null, prop, jsonCodec());
+        this(null, prop, defaultCodec());
     }
 
     public ValueSerializer(@NotNull ImmutableType type, @NotNull JsonCodec codec) {
