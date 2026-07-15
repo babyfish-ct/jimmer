@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.serialization.kotlinx
 
 import kotlinx.serialization.Serializable
-import org.babyfish.jimmer.jackson.codec.JsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodecFamily
+import org.babyfish.jimmer.json.codec.JsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodecFamily
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.Serialized
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor

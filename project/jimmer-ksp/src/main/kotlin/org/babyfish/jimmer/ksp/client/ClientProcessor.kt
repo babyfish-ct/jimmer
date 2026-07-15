@@ -14,6 +14,8 @@ import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch
+import org.babyfish.jimmer.json.codec.ImmutableModuleCustomization
+import org.babyfish.jimmer.jackson.v2.JsonCodecV2
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
@@ -27,6 +29,9 @@ class ClientProcessor(
     private val explicitClientApi: Boolean,
     private val delayedClientTypeNames: Collection<String>?
 ) {
+    private val jsonCodec = JsonCodecV2()
+        .withCustomizations(ImmutableModuleCustomization())
+
     private val clientExceptionContext = ClientExceptionContext()
 
     private val docMetadata = DocMetadata(ctx)
@@ -73,7 +78,7 @@ class ClientProcessor(
             "client",
             ""
         ).use {
-            Schemas.writeTo(schema, OutputStreamWriter(it, StandardCharsets.UTF_8))
+            Schemas.writeTo(schema, OutputStreamWriter(it, StandardCharsets.UTF_8), jsonCodec)
         }
     }
 

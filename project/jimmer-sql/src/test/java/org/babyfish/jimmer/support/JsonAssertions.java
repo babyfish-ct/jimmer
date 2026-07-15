@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.support;
 
-import org.babyfish.jimmer.jackson.codec.JsonReader;
+import org.babyfish.jimmer.json.codec.JsonReader;
 import org.junit.jupiter.api.Assertions;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class JsonAssertions {
     private static final JsonReader<?> READER = jsonCodec().treeReader();

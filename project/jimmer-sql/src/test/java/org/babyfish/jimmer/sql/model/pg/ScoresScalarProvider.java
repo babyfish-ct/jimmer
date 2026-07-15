@@ -6,7 +6,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class ScoresScalarProvider implements ScalarProvider<Map<Long, Integer>, String> {
 

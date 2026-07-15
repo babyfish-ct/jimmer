@@ -5,7 +5,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class TagsScalarProvider implements ScalarProvider<List<String>, String> {
     @Override

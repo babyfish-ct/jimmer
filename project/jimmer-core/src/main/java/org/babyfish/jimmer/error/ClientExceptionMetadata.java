@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.error;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -45,7 +44,7 @@ public class ClientExceptionMetadata {
                     method.getExceptionTypes().length != 0 ||
                     method.getName().equals("getFamily") ||
                     method.getName().equals("getCode") ||
-                    method.isAnnotationPresent(JsonIgnore.class) ||
+                    hasAnnotation(method, "com.fasterxml.jackson.annotation.JsonIgnore") ||
                     method.isAnnotationPresent(ApiIgnore.class)
             ) {
                 continue;
@@ -96,6 +95,11 @@ public class ClientExceptionMetadata {
 
     public static ClientExceptionMetadata of(Class<?> exceptionType) {
         return CACHE.get(exceptionType);
+    }
+
+    private static boolean hasAnnotation(Method method, String annotationTypeName) {
+        return Arrays.stream(method.getAnnotations())
+                .anyMatch(annotation -> annotation.annotationType().getName().equals(annotationTypeName));
     }
 
     private static ClientExceptionMetadata create(Class<?> type) {

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.kt
 
 import org.babyfish.jimmer.ImmutableObjects
-import org.babyfish.jimmer.jackson.codec.JsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import kotlin.reflect.KClass
@@ -51,11 +51,11 @@ fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
 inline fun <reified I : Any> fromString(json: String): I =
     ImmutableObjects.fromString(I::class.java, json)
 
-inline fun <reified I : Any> fromString(json: String, jsonCodec: JsonCodec<*>): I =
+inline fun <reified I : Any> fromString(json: String, jsonCodec: JsonCodec): I =
     ImmutableObjects.fromString(I::class.java, json, jsonCodec)
 
 fun <I : Any> fromString(type: KClass<I>, json: String): I =
     ImmutableObjects.fromString(type.java, json)
 
-fun <I : Any> fromString(type: KClass<I>, json: String, jsonCodec: JsonCodec<*>): I =
+fun <I : Any> fromString(type: KClass<I>, json: String, jsonCodec: JsonCodec): I =
     ImmutableObjects.fromString(type.java, json, jsonCodec)

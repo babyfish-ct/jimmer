@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -80,7 +80,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final SqlFormatter sqlFormatter;
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
     private final ReferenceFetchType defaultReferenceFetchType;
 
@@ -179,7 +179,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Executor executor,
             List<String> executorContextPrefixes,
             SqlFormatter sqlFormatter,
-            JsonCodec<?> jsonCodec,
+            JsonCodec jsonCodec,
             ReferenceFetchType defaultReferenceFetchType,
             int maxJoinFetchDepth,
             ZoneId zoneId,
@@ -325,7 +325,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public JsonCodec<?> getJsonCodec() {
+    public JsonCodec getJsonCodec() {
         return jsonCodec;
     }
 
@@ -1104,13 +1104,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private PropScalarProviderFactory propScalarProviderFactory;
 
-        private JsonCodec<?> jsonCodec;
+        private JsonCodec jsonCodec;
 
-        private JsonCodec<?> serializedJsonCodec;
+        private JsonCodec serializedJsonCodec;
 
-        private final Map<Class<?>, JsonCodec<?>> serializedTypeJsonCodecMap = new HashMap<>();
+        private final Map<Class<?>, JsonCodec> serializedTypeJsonCodecMap = new HashMap<>();
 
-        private final Map<ImmutableProp, JsonCodec<?>> serializedPropJsonCodecMap = new HashMap<>();
+        private final Map<ImmutableProp, JsonCodec> serializedPropJsonCodecMap = new HashMap<>();
 
         private Function<ImmutableProp, ScalarProvider<?, ?>> defaultJsonProviderCreator;
 
@@ -1175,7 +1175,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private final List<DraftInterceptor<?, ?>> interceptors = new ArrayList<>();
 
-        private JsonCodec<?> binLogJsonCodec;
+        private JsonCodec binLogJsonCodec;
 
         private final Map<ImmutableProp, BinLogPropReader> binLogPropReaderMap = new HashMap<>();
 
@@ -1480,19 +1480,19 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setJsonCodec(JsonCodec<?> jsonCodec) {
+        public Builder setJsonCodec(JsonCodec jsonCodec) {
             this.jsonCodec = jsonCodec;
             return this;
         }
 
         @Override
-        public Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec) {
+        public Builder setDefaultSerializedTypeJsonCodec(JsonCodec jsonCodec) {
             this.serializedJsonCodec = jsonCodec;
             return this;
         }
 
         @Override
-        public Builder setSerializedTypeJsonCodec(Class<?> type, JsonCodec<?> jsonCodec) {
+        public Builder setSerializedTypeJsonCodec(Class<?> type, JsonCodec jsonCodec) {
             if (type == null || type == Object.class) {
                 return setDefaultSerializedTypeJsonCodec(jsonCodec);
             }
@@ -1505,12 +1505,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setSerializedPropJsonCodec(TypedProp<?, ?> prop, JsonCodec<?> jsonCodec) {
+        public Builder setSerializedPropJsonCodec(TypedProp<?, ?> prop, JsonCodec jsonCodec) {
             return setSerializedPropJsonCodec(prop.unwrap(), jsonCodec);
         }
 
         @Override
-        public Builder setSerializedPropJsonCodec(ImmutableProp prop, JsonCodec<?> jsonCodec) {
+        public Builder setSerializedPropJsonCodec(ImmutableProp prop, JsonCodec jsonCodec) {
             if (prop.getAnnotation(Serialized.class) == null) {
                 throw new IllegalArgumentException(
                         "Cannot set the serialized property json codec for \"" +
@@ -1523,7 +1523,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             if (jsonCodec != null) {
                 serializedPropJsonCodecMap.put(prop, jsonCodec);
             } else {
-                serializedTypeJsonCodecMap.remove(prop);
+                serializedPropJsonCodecMap.remove(prop);
             }
             return this;
         }
@@ -1780,7 +1780,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setDefaultBinLogJsonCodec(JsonCodec<?> jsonCodec) {
+        public Builder setDefaultBinLogJsonCodec(JsonCodec jsonCodec) {
             this.binLogJsonCodec = jsonCodec;
             return this;
         }
@@ -1995,11 +1995,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
             } else {
                 foreignKeyStrategy = ForeignKeyStrategy.FAKE;
             }
-            JsonCodec<?> resolvedApplicationJsonCodec =
+            JsonCodec resolvedApplicationJsonCodec =
                     jsonCodec != null ? jsonCodec : JsonCodec.jsonCodec();
-            JsonCodec<?> resolvedSerializedJsonCodec =
+            JsonCodec resolvedSerializedJsonCodec =
                     serializedJsonCodec != null ? serializedJsonCodec : resolvedApplicationJsonCodec;
-            JsonCodec<?> resolvedBinLogJsonCodec =
+            JsonCodec resolvedBinLogJsonCodec =
                     binLogJsonCodec != null ? binLogJsonCodec : resolvedApplicationJsonCodec;
             ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
                     typeScalarProviderMap,

@@ -29,7 +29,7 @@ public interface Input<E> extends View<E> {
         return new IllegalStateException(
                 "An object whose type is \"" +
                         type.getName() +
-                        "\" cannot be deserialized by Jackson. " +
+                        "\" cannot be deserialized by JSON codec. " +
                         "the property \"" +
                         prop +
                         "\" must be specified it is non-null property"
@@ -40,7 +40,7 @@ public interface Input<E> extends View<E> {
         return new IllegalStateException(
                 "An object whose type is \"" +
                         type.getName() +
-                        "\" cannot be deserialized by Jackson. " +
+                        "\" cannot be deserialized by JSON codec. " +
                         "The current input has the fixed nullable property \"" +
                         prop +
                         "\", it is not specified by JSON explicitly. " +

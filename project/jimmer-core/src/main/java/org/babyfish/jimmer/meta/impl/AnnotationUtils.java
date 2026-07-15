@@ -17,6 +17,38 @@ class AnnotationUtils {
         return ctx.getAnnotation();
     }
 
+    static boolean hasAnnotation(ImmutableProp prop, String annotationTypeName) {
+        for (Annotation annotation : prop.getAnnotations()) {
+            if (hasAnnotation(annotation, annotationTypeName, new LinkedList<>())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasAnnotation(
+            Annotation annotation,
+            String annotationTypeName,
+            LinkedList<Class<? extends Annotation>> pathStack
+    ) {
+        Class<? extends Annotation> curAnnotationType = annotation.annotationType();
+        if (curAnnotationType.getName().equals(annotationTypeName)) {
+            return true;
+        }
+        if (pathStack.contains(curAnnotationType)) {
+            return false;
+        }
+        pathStack.push(curAnnotationType);
+        for (Annotation deeperAnnotation : curAnnotationType.getAnnotations()) {
+            if (hasAnnotation(deeperAnnotation, annotationTypeName, pathStack)) {
+                pathStack.pop();
+                return true;
+            }
+        }
+        pathStack.pop();
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     private static <A extends Annotation> void collectAnnotationType(
             Annotation annotation,

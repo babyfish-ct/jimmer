@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.cache.spi
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.CacheTracker
@@ -12,7 +12,7 @@ abstract class AbstractKRemoteValueBinder<K, V>(
     type: ImmutableType?,
     prop: ImmutableProp?,
     tracker: CacheTracker?,
-    jsonCodec: JsonCodec<*>,
+    jsonCodec: JsonCodec,
     keyPrefixProvider: RemoteKeyPrefixProvider?,
     duration: Duration,
     randomPercent: Int

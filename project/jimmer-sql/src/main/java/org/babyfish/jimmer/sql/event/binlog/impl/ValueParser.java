@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.codec.Node;
+import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.Node;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
@@ -131,7 +131,7 @@ class ValueParser {
         return value;
     }
 
-    static Object valueOrError(JsonCodec<?> codec, Node node, Class<?> type) {
+    static Object valueOrError(JsonCodec codec, Node node, Class<?> type) {
         if (node.isNull()) {
             return null;
         }
@@ -150,7 +150,7 @@ class ValueParser {
         }
     }
 
-    private static Object valueOf(JsonCodec<?> codec, Node node, Class<?> type) {
+    private static Object valueOf(JsonCodec codec, Node node, Class<?> type) {
         if (node.isNull()) {
             return null;
         }

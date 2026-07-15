@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.model.pg
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.runtime.ScalarProvider

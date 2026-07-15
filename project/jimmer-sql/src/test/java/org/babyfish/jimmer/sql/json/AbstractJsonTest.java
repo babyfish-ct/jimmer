@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public abstract class AbstractJsonTest {
 

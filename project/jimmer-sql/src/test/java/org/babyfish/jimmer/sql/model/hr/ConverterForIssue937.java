@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.model.hr;
 
-import org.babyfish.jimmer.jackson.Converter;
+import org.babyfish.jimmer.json.Converter;
 import org.jspecify.annotations.NonNull;
 
 public class ConverterForIssue937 implements Converter<String, String> {

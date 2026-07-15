@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.kt.model
 
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.jackson.JsonConverter
-import org.babyfish.jimmer.jackson.LongToStringConverter
-import org.babyfish.jimmer.jackson.LongListToStringListConverter
+import org.babyfish.jimmer.json.JsonConverter
+import org.babyfish.jimmer.json.LongToStringConverter
+import org.babyfish.jimmer.json.LongListToStringListConverter
 
 @Immutable
 interface LongData {

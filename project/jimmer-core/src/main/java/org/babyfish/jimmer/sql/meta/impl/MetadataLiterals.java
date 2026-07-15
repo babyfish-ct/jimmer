@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonType;
 
 import java.lang.reflect.Type;
 import java.text.ParseException;
@@ -14,7 +15,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class MetadataLiterals {
 
@@ -27,7 +28,7 @@ public class MetadataLiterals {
 
     private final static DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private static final JsonCodec<?> JSON_CODEC = jsonCodec();
+    private static final JsonCodec JSON_CODEC = jsonCodec();
 
     private static final Map<Class<?>, Function<String, Object>> DEFAULT_VALUE_PARSER_MAP;
 
@@ -57,7 +58,7 @@ public class MetadataLiterals {
             }
         }
         try {
-            return JSON_CODEC.readerFor(tf -> tf.constructType(type)).read(value);
+            return JSON_CODEC.readerFor(JsonType.of(type)).read(value);
         } catch (Exception ex) {
             throw new IllegalArgumentException(
                     "The value \"" +

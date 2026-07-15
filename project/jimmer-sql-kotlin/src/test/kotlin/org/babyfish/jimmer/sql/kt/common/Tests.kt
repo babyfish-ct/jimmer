@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.common
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
 import kotlin.test.expect
 
 fun assertContent(expected: String, actual: Any) {

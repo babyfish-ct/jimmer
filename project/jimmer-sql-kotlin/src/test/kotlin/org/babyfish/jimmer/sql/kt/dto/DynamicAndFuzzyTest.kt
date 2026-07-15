@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput2

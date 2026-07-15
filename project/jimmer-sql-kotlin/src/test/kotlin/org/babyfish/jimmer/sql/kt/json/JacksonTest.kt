@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.json
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
 import kotlin.test.Test
 import kotlin.test.expect

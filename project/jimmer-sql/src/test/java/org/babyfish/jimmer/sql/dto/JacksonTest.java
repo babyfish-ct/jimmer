@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.model.hr.dto.EmployeeInput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class JacksonTest {
 

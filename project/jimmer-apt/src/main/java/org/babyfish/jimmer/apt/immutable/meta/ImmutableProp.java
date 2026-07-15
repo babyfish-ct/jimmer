@@ -13,7 +13,7 @@ import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.apt.util.RecursiveAnnotations;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.impl.util.Keywords;
-import org.babyfish.jimmer.jackson.JsonConverter;
+import org.babyfish.jimmer.json.JsonConverter;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.*;

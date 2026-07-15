@@ -1,14 +1,14 @@
 package org.babyfish.jimmer;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.model.TreeNode;
 import org.babyfish.jimmer.model.TreeNodeDraft;
-import org.babyfish.jimmer.jackson.codec.PropertyNamingCustomization;
+import org.babyfish.jimmer.json.codec.PropertyNamingCustomization;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
-import static org.babyfish.jimmer.jackson.codec.PropertyNamingCustomization.PropertyNaming.SNAKE_CASE;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.PropertyNamingCustomization.PropertyNaming.SNAKE_CASE;
 
 public class TreeNodeTest {
 
@@ -180,7 +180,7 @@ public class TreeNodeTest {
                 ;
             });
         });
-        JsonCodec<?> codec = jsonCodec().withCustomizations(new PropertyNamingCustomization(SNAKE_CASE));
+        JsonCodec codec = jsonCodec().withCustomizations(new PropertyNamingCustomization(SNAKE_CASE));
 
         String json =
                 "{" +

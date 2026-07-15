@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class BookVIewTest extends Tests {

@@ -2,7 +2,8 @@ package org.babyfish.jimmer.spring.cloud;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import org.babyfish.jimmer.client.ApiIgnore;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonType;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -38,7 +39,7 @@ public class MicroServiceExporterController {
 
     private final MicroServiceExporter exporter;
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
     public MicroServiceExporterController(JSqlClient sqlClient) {
         this.exporter = new MicroServiceExporter(sqlClient);
@@ -68,7 +69,7 @@ public class MicroServiceExporterController {
         ImmutableProp immutableProp = fetcher.getImmutableType().getProp(prop);
         Class<?> targetIdType = immutableProp.getTargetType().getIdProp().getElementClass();
         List<?> targetIds = jsonCodec
-                .<List<?>>readerFor(tf -> tf.constructListType(targetIdType))
+                .<List<?>>readerFor(JsonType.listOf(targetIdType))
                 .read(targetIdArrStr);
 
         return exporter.findByAssociatedIds(

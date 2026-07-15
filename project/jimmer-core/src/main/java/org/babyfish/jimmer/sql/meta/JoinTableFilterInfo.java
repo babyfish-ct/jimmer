@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.meta;
 
-import org.babyfish.jimmer.jackson.codec.Node;
+import org.babyfish.jimmer.json.codec.Node;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.JoinTable;

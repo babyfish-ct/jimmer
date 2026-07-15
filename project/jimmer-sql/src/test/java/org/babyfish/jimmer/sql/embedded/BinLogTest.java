@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class BinLogTest {
 

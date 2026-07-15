@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.jackson.codec.JsonReader;
+import org.babyfish.jimmer.json.codec.JsonReader;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.dto.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class InputModifierPropTest extends Tests {
     private static final JsonReader<MixedBookInput> MIXED_BOOK_INPUT_READER =

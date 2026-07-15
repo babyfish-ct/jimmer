@@ -1,7 +1,8 @@
 package org.babyfish.jimmer.spring.cloud;
 
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonType;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -16,9 +17,9 @@ public class SpringCloudExchange implements MicroServiceExchange {
 
     private final RestTemplate restTemplate;
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
-    public SpringCloudExchange(RestTemplate restTemplate, JsonCodec<?> jsonCodec) {
+    public SpringCloudExchange(RestTemplate restTemplate, JsonCodec jsonCodec) {
         this.restTemplate = restTemplate;
         this.jsonCodec = jsonCodec;
     }
@@ -45,7 +46,7 @@ public class SpringCloudExchange implements MicroServiceExchange {
         );
 
         return (List<ImmutableSpi>) jsonCodec
-                .readerFor(tf -> tf.constructListType(fetcher.getImmutableType().getJavaClass()))
+                .readerFor(JsonType.listOf(fetcher.getImmutableType().getJavaClass()))
                 .read(json);
     }
 
@@ -74,9 +75,9 @@ public class SpringCloudExchange implements MicroServiceExchange {
         );
 
         return jsonCodec
-                .<List<Tuple2<Object, ImmutableSpi>>>readerFor(tf -> tf.constructCollectionType(
+                .<List<Tuple2<Object, ImmutableSpi>>>readerFor(JsonType.collectionOf(
                         List.class,
-                        tf.constructParametricType(
+                        JsonType.parameterized(
                                 Tuple2.class,
                                 Classes.boxTypeOf(prop.getTargetType().getIdProp().getElementClass()),
                                 fetcher.getImmutableType().getJavaClass())))

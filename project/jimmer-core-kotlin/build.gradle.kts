@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
 
     testAnnotationProcessor(projects.jimmerApt)
+    testAnnotationProcessor(projects.jimmerJackson2)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mapstruct)
     testImplementation(libs.javax.validation.api)
@@ -17,6 +18,7 @@ dependencies {
     testRuntimeOnly(libs.bundles.jackson)
 
     kspTest(projects.jimmerKsp)
+    kspTest(projects.jimmerJackson2)
 }
 
 kotlin {

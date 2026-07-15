@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.hr
 
-import org.babyfish.jimmer.jackson.Converter
+import org.babyfish.jimmer.json.Converter
 
 class ConverterForIssue937 : Converter<String, String> {
     override fun output(value: String): String = value

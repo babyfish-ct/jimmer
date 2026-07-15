@@ -11,8 +11,6 @@ dependencies {
     api(libs.spring.boot.starter.jdbc)
     api(libs.spring.data.commons)
 
-    compileOnly(libs.jackson2.databind)
-    compileOnly(libs.jackson3.databind)
     compileOnly(libs.spring.boot.starter.web)
     compileOnly(libs.spring.data.redis)
     compileOnly(libs.caffeine)
@@ -23,14 +21,17 @@ dependencies {
     annotationProcessor(libs.spring.boot.configurationProcessor)
 
     testAnnotationProcessor(projects.jimmerApt)
+    testAnnotationProcessor(projects.jimmerJackson2)
     testAnnotationProcessor(libs.lombok)
 
     kspTest(projects.jimmerKsp)
+    kspTest(projects.jimmerJackson2)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.boot.starter.web)
     testImplementation(libs.h2)
     testRuntimeOnly(libs.bundles.jackson)
+    testRuntimeOnly(projects.jimmerJackson2)
     testRuntimeOnly(projects.jimmerClientSwagger)
 }
 

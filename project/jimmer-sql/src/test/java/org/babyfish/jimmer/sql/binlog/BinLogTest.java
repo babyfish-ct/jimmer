@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class BinLogTest {

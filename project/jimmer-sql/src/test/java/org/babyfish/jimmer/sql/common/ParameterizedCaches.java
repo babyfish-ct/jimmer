@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.jsonCodec;
 
 public class ParameterizedCaches {
 
