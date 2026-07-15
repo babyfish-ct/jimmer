@@ -64,3 +64,8 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Ajimmer.dto.fieldVisibility=protected")
     options.compilerArgs.add("-Ajimmer.jackson3=true")
 }
+
+tasks.test {
+    maxHeapSize = "2g"
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
+}
