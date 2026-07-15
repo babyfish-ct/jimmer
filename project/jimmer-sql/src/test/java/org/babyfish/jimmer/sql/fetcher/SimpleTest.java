@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.fetcher.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,44 @@ public class SimpleTest extends AbstractQueryTest {
                                 "id", "name"
                         );
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testNestedFetcherInTransientResolverWhenUserHasNoDepartments() {
+        Issue1434MessageTable table = Issue1434MessageTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.fetch(
+                                        Issue1434MessageFetcher.$.userDepartmentNames()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql("select tb_1_.ID from ISSUE_1434_MESSAGE tb_1_");
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.USER_ID " +
+                                    "from ISSUE_1434_MESSAGE tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(1L);
+                    ctx.statement(2).sql(
+                            "select tb_1_.ID " +
+                                    "from ISSUE_1434_USER tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(1L);
+                    ctx.statement(3).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from ISSUE_1434_DEPARTMENT tb_1_ " +
+                                    "inner join ISSUE_1434_USER_DEPARTMENT_MAPPING tb_2_ on tb_1_.ID = tb_2_.DEPARTMENT_ID " +
+                                    "where tb_2_.USER_ID = ?"
+                    ).variables(1L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{\"id\":1,\"userDepartmentNames\":\"\"}" +
+                                    "]"
+                    );
                 }
         );
     }

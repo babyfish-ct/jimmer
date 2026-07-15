@@ -17,10 +17,15 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public class FetcherUtil {
 
     private FetcherUtil() {}
+
+    public static <T> T withoutFetcherContext(Supplier<T> supplier) {
+        return FetcherContext.withoutContext(supplier);
+    }
 
     private static void visitFetchColumns(
             JSqlClientImplementor sqlClient,
