@@ -11,10 +11,10 @@ class DtoFragmentRegistry<T extends BaseType, P extends BaseProp> {
 
     void add(
             CompilerContext<T, P> ctx,
-            DtoParser.DtoFragmentContext ast
+            DtoParser.DtoFragmentContext ast,
+            T baseType
     ) {
         String qualifiedName = ctx.getDtoQualifiedName(ast.name.getText());
-        T baseType = ctx.resolveTargetType(ast.targetType, ast.name, "fragment");
         DtoFragment<T, P> fragment = new DtoFragment<>(ctx, ast, baseType, qualifiedName);
         if (fragmentMap.put(qualifiedName, fragment) != null) {
             throw ctx.exception(
@@ -37,6 +37,14 @@ class DtoFragmentRegistry<T extends BaseType, P extends BaseProp> {
         String qualifiedName = ctx.resolveFragmentType(include.fragmentType);
         DtoFragment<T, P> fragment = fragmentMap.get(qualifiedName);
         if (fragment == null) {
+            if (ctx.inactiveFragmentTypeExists(qualifiedName)) {
+                throw ctx.exception(
+                        include.fragmentType.start.getLine(),
+                        include.fragmentType.start.getCharPositionInLine(),
+                        "Source fragment \"" + qualifiedName +
+                                "\" is not active in the current processor compilation"
+                );
+            }
             throw ctx.exception(
                     include.fragmentType.start.getLine(),
                     include.fragmentType.start.getCharPositionInLine(),

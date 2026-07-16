@@ -17,16 +17,24 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     private final Set<String> sourceDtoTypeNames;
 
+    private final Set<String> inactiveSourceDtoTypeNames;
+
+    private final Set<String> inactiveFragmentTypeNames;
+
     private final Map<String, DtoTypeBuilder<T, P>> typeBuilderMap = new LinkedHashMap<>();
 
     public CompilerContext(
             DtoCompiler<T, P> compiler,
             DtoFragmentRegistry<T, P> fragmentRegistry,
-            Set<String> sourceDtoTypeNames
+            Set<String> sourceDtoTypeNames,
+            Set<String> inactiveSourceDtoTypeNames,
+            Set<String> inactiveFragmentTypeNames
     ) {
         this.compiler = compiler;
         this.fragmentRegistry = fragmentRegistry;
         this.sourceDtoTypeNames = sourceDtoTypeNames;
+        this.inactiveSourceDtoTypeNames = inactiveSourceDtoTypeNames;
+        this.inactiveFragmentTypeNames = inactiveFragmentTypeNames;
         this.importing = new Importing(this);
     }
 
@@ -38,7 +46,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         importing.add(statement);
     }
 
-    public DtoTypeBuilder<T, P> add(DtoParser.DtoTypeContext type) {
+    public DtoTypeBuilder<T, P> add(DtoParser.DtoTypeContext type, T baseType) {
         String name = type.name.getText();
         if (typeBuilderMap.containsKey(name)) {
             throw exception(
@@ -50,7 +58,6 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         Set<DtoModifier> modifiers = EnumSet.noneOf(DtoModifier.class);
-        T baseType = resolveTargetType(type.targetType, type.name, "dto type");
         Token sealedModifier = null;
         for (Token modifier : type.modifiers) {
             DtoModifier dtoModifier;
@@ -180,15 +187,28 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return typeBuilder;
     }
 
+    String resolveTargetTypeName(@Nullable DtoParser.QualifiedNameContext targetType) {
+        return targetType != null ?
+                importing.resolveImmutableType(targetType) :
+                compiler.getSourceTypeName();
+    }
+
     T resolveTargetType(
+            String qualifiedName,
             @Nullable DtoParser.QualifiedNameContext targetType,
             Token declarationName,
             String declarationKind
     ) {
-        if (targetType == null) {
-            try {
-                return compiler.getBaseType();
-            } catch (IllegalStateException ex) {
+        T baseType = null;
+        if (targetType == null && compiler.baseTypeOrNull() != null &&
+                compiler.baseTypeOrNull().getQualifiedName().equals(qualifiedName)) {
+            baseType = compiler.baseTypeOrNull();
+        }
+        if (baseType == null) {
+            baseType = compiler.getType(qualifiedName);
+        }
+        if (baseType == null) {
+            if (targetType == null) {
                 throw exception(
                         declarationName.getLine(),
                         declarationName.getCharPositionInLine(),
@@ -199,10 +219,6 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                                 "\" must specify its target type by 'for' because this dto file is not associated with an immutable type"
                 );
             }
-        }
-        String qualifiedName = importing.resolveImmutableType(targetType);
-        T baseType = compiler.getType(qualifiedName);
-        if (baseType == null) {
             throw exception(
                     targetType.start.getLine(),
                     targetType.start.getCharPositionInLine(),
@@ -329,7 +345,16 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     }
 
     public String resolveDtoType(DtoParser.QualifiedNameContext ctx) {
-        return importing.resolveDtoType(ctx);
+        String qualifiedName = importing.resolveDtoType(ctx);
+        if (!sourceDtoTypeNames.contains(qualifiedName) &&
+                inactiveSourceDtoTypeNames.contains(qualifiedName)) {
+            throw exception(
+                    ctx.start.getLine(),
+                    ctx.start.getCharPositionInLine(),
+                    "Source DTO type \"" + qualifiedName + "\" is not active in the current processor compilation"
+            );
+        }
+        return qualifiedName;
     }
 
     String resolveFragmentType(DtoParser.QualifiedNameContext ctx) {
@@ -349,15 +374,21 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     }
 
     boolean immutableTypeExists(String qualifiedName) {
-        return compiler.getType(qualifiedName) != null;
+        return compiler.isImmutableType(qualifiedName);
     }
 
     boolean dtoTypeExists(String qualifiedName) {
-        return sourceDtoTypeNames.contains(qualifiedName) || typeExists(qualifiedName);
+        return sourceDtoTypeNames.contains(qualifiedName) ||
+                inactiveSourceDtoTypeNames.contains(qualifiedName) ||
+                typeExists(qualifiedName);
     }
 
     boolean fragmentTypeExists(String qualifiedName) {
-        return fragmentRegistry.contains(qualifiedName);
+        return fragmentRegistry.contains(qualifiedName) || inactiveFragmentTypeNames.contains(qualifiedName);
+    }
+
+    boolean inactiveFragmentTypeExists(String qualifiedName) {
+        return inactiveFragmentTypeNames.contains(qualifiedName) && !fragmentRegistry.contains(qualifiedName);
     }
 
     public DtoAstException exception(int line, int col, String message) {

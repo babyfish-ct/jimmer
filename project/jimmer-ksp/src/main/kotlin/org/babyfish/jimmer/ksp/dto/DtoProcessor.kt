@@ -2,21 +2,17 @@ package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.KspDtoCompiler
-import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.client.DocMetadata
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.GenericParser
 import org.babyfish.jimmer.ksp.util.fastResolve
-import org.babyfish.jimmer.sql.Embeddable
-import org.babyfish.jimmer.sql.Entity
 
 class DtoProcessor(
     private val ctx: Context,
@@ -33,7 +29,7 @@ class DtoProcessor(
     private fun findDtoTypeMap(): Map<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>> {
         val dtoTypeMap = mutableMapOf<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>>()
         val dtoCtx = DtoContext(ctx.resolver.getAllFiles().firstOrNull(), dtoDirs)
-        val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType?>()
+        val compilers = mutableListOf<KspDtoCompiler>()
         for (dtoFile in dtoCtx.dtoFiles) {
             val compiler = try {
                 KspDtoCompiler(dtoFile, ctx, defaultNullableInputModifier)
@@ -54,49 +50,10 @@ class DtoProcessor(
                     ex
                 )
             }
-            val classDeclaration = ctx.resolver.getClassDeclarationByName(compiler.sourceTypeName)
-            if (classDeclaration === null) {
-                if (compiler.isExplicitSourceType) {
-                    throw DtoException(
-                        "Failed to parse \"" +
-                                dtoFile.absolutePath +
-                                "\": No immutable type \"" +
-                                compiler.sourceTypeName +
-                                "\""
-                    )
-                }
-                immutableTypeMap[compiler] = null
-                continue
-            }
-            if (!ctx.include(classDeclaration)) {
-                continue
-            }
-            if (classDeclaration.annotation(Entity::class) == null &&
-                classDeclaration.annotation(Embeddable::class) == null &&
-                classDeclaration.annotation(Immutable::class) == null
-            ) {
-                throw DtoException(
-                    "Failed to parse \"" +
-                            dtoFile.absolutePath +
-                            "\": the \"" +
-                            compiler.sourceTypeName +
-                            "\" is not decorated by \"@" +
-                            Entity::class.qualifiedName +
-                            "\", \"" +
-                            Embeddable::class.qualifiedName +
-                            "\" or \"" +
-                            Immutable::class.qualifiedName +
-                            "\""
-                )
-            }
-            immutableTypeMap[compiler] = ctx.typeOf(classDeclaration)
+            compilers += compiler
         }
-        ctx.resolve()
-        for (dtoTypes in DtoCompiler.compileAll(immutableTypeMap).values) {
+        for (dtoTypes in DtoCompiler.compileAll(compilers, ctx::includeDtoTarget).values) {
             for (dtoType in dtoTypes) {
-                if (!ctx.include(dtoType.baseType.classDeclaration)) {
-                    continue
-                }
                 dtoTypeMap.computeIfAbsent(dtoType.baseType) {
                     mutableListOf()
                 } += dtoType

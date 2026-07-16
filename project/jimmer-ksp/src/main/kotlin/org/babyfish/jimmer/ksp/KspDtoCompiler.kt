@@ -26,6 +26,9 @@ class KspDtoCompiler(
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes
 
+    override fun isImmutableType(qualifiedName: String): Boolean =
+        resolver.getClassDeclarationByName(qualifiedName)?.let { ctx.typeAnnotationOf(it) !== null } == true
+
     override fun getType(qualifiedName: String): ImmutableType? =
         ctx.types.firstOrNull { it.qualifiedName == qualifiedName }
             ?: resolver

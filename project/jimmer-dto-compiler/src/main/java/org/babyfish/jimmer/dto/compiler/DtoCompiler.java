@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
@@ -94,6 +95,11 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
         return baseType;
     }
 
+    @Nullable
+    T baseTypeOrNull() {
+        return baseType;
+    }
+
     public DtoFile getDtoFile() {
         return dtoFile;
     }
@@ -125,40 +131,100 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             P extends BaseProp,
             C extends DtoCompiler<T, P>
             > Map<C, List<DtoType<T, P>>> compileAll(Map<C, T> compilerMap) {
+        return compileAll(compilerMap.keySet(), compilerMap, it -> true);
+    }
+
+    public static <
+            T extends BaseType,
+            P extends BaseProp,
+            C extends DtoCompiler<T, P>
+            > Map<C, List<DtoType<T, P>>> compileAll(
+            Collection<C> compilers,
+            Predicate<String> targetTypeNameFilter
+    ) {
+        return compileAll(compilers, Collections.emptyMap(), targetTypeNameFilter);
+    }
+
+    private static <
+            T extends BaseType,
+            P extends BaseProp,
+            C extends DtoCompiler<T, P>
+            > Map<C, List<DtoType<T, P>>> compileAll(
+            Collection<C> compilers,
+            Map<C, T> baseTypeMap,
+            Predicate<String> targetTypeNameFilter
+    ) {
         DtoFragmentRegistry<T, P> fragmentRegistry = new DtoFragmentRegistry<>();
         Set<String> sourceDtoTypeNames = new LinkedHashSet<>();
+        Set<String> inactiveSourceDtoTypeNames = new LinkedHashSet<>();
+        Set<String> inactiveFragmentTypeNames = new LinkedHashSet<>();
         Map<C, CompilerContext<T, P>> ctxMap = new LinkedHashMap<>();
-        for (Map.Entry<C, T> e : compilerMap.entrySet()) {
-            DtoCompiler<T, P> compiler = e.getKey();
-            compiler.baseType = e.getValue();
+        for (C compiler : compilers) {
+            DtoCompiler<T, P> rawCompiler = compiler;
+            rawCompiler.baseType = baseTypeMap.get(compiler);
             CompilerContext<T, P> ctx = new CompilerContext<>(
                     compiler,
                     fragmentRegistry,
-                    sourceDtoTypeNames
+                    sourceDtoTypeNames,
+                    inactiveSourceDtoTypeNames,
+                    inactiveFragmentTypeNames
             );
-            for (DtoParser.ImportStatementContext importStatement : compiler.ast.importStatements) {
+            for (DtoParser.ImportStatementContext importStatement : rawCompiler.ast.importStatements) {
                 ctx.importStatement(importStatement);
             }
-            ctxMap.put(e.getKey(), ctx);
+            ctxMap.put(compiler, ctx);
         }
+        Map<C, Map<DtoParser.DtoTypeContext, T>> dtoTargetMap = new LinkedHashMap<>();
         for (Map.Entry<C, CompilerContext<T, P>> e : ctxMap.entrySet()) {
-            DtoCompiler<T, P> compiler = e.getKey();
-            for (DtoParser.DtoTypeContext dtoType : compiler.ast.dtoTypes) {
-                sourceDtoTypeNames.add(e.getValue().getDtoQualifiedName(dtoType.name.getText()));
+            C compiler = e.getKey();
+            DtoCompiler<T, P> rawCompiler = compiler;
+            CompilerContext<T, P> ctx = e.getValue();
+            Map<DtoParser.DtoTypeContext, T> targets = new LinkedHashMap<>();
+            for (DtoParser.DtoTypeContext dtoType : rawCompiler.ast.dtoTypes) {
+                String dtoQualifiedName = ctx.getDtoQualifiedName(dtoType.name.getText());
+                String targetTypeName = ctx.resolveTargetTypeName(dtoType.targetType);
+                if (targetTypeNameFilter.test(targetTypeName)) {
+                    sourceDtoTypeNames.add(dtoQualifiedName);
+                    targets.put(
+                            dtoType,
+                            ctx.resolveTargetType(
+                                    targetTypeName,
+                                    dtoType.targetType,
+                                    dtoType.name,
+                                    "dto type"
+                            )
+                    );
+                } else {
+                    inactiveSourceDtoTypeNames.add(dtoQualifiedName);
+                }
             }
+            dtoTargetMap.put(compiler, targets);
         }
         for (Map.Entry<C, CompilerContext<T, P>> e : ctxMap.entrySet()) {
             DtoCompiler<T, P> compiler = e.getKey();
+            CompilerContext<T, P> ctx = e.getValue();
             for (DtoParser.DtoFragmentContext fragment : compiler.ast.fragments) {
-                fragmentRegistry.add(e.getValue(), fragment);
+                String fragmentQualifiedName = ctx.getDtoQualifiedName(fragment.name.getText());
+                String targetTypeName = ctx.resolveTargetTypeName(fragment.targetType);
+                if (targetTypeNameFilter.test(targetTypeName)) {
+                    T targetType = ctx.resolveTargetType(
+                            targetTypeName,
+                            fragment.targetType,
+                            fragment.name,
+                            "fragment"
+                    );
+                    fragmentRegistry.add(ctx, fragment, targetType);
+                } else {
+                    inactiveFragmentTypeNames.add(fragmentQualifiedName);
+                }
             }
         }
         fragmentRegistry.validate();
         Map<C, List<DtoType<T, P>>> resultMap = new LinkedHashMap<>();
         for (Map.Entry<C, CompilerContext<T, P>> e : ctxMap.entrySet()) {
             DtoCompiler<T, P> compiler = e.getKey();
-            for (DtoParser.DtoTypeContext dtoType : compiler.ast.dtoTypes) {
-                e.getValue().add(dtoType);
+            for (Map.Entry<DtoParser.DtoTypeContext, T> targetEntry : dtoTargetMap.get(compiler).entrySet()) {
+                e.getValue().add(targetEntry.getKey(), targetEntry.getValue());
             }
             resultMap.put(e.getKey(), e.getValue().getDtoTypes());
         }
@@ -167,9 +233,16 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract Collection<T> getSuperTypes(T baseType);
 
+    protected boolean isImmutableType(String qualifiedName) {
+        return getType(qualifiedName) != null;
+    }
+
     @Nullable
     protected T getType(String qualifiedName) {
-        T baseType = getBaseType();
+        T baseType = baseTypeOrNull();
+        if (baseType == null) {
+            return null;
+        }
         if (baseType.getQualifiedName().equals(qualifiedName)) {
             return baseType;
         }

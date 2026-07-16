@@ -18,6 +18,82 @@ import java.util.stream.Collectors;
 public class DtoCompilerTest {
 
     @Test
+    public void testExcludedDefaultTargetDoesNotExcludeFile() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "IgnoredBookView { illegalProp }\n" +
+                        "AuthorView for Author { id firstName }"
+        );
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap = DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> targetTypeName.equals(MyDtoCompiler.AUTHOR_TYPE.getQualifiedName())
+        );
+        List<DtoType<BaseType, BaseProp>> dtoTypes = resultMap.get(compiler);
+        Assertions.assertEquals(1, dtoTypes.size());
+        Assertions.assertSame(MyDtoCompiler.AUTHOR_TYPE, dtoTypes.get(0).getBaseType());
+        Assertions.assertEquals("AuthorView", dtoTypes.get(0).getName());
+    }
+
+    @Test
+    public void testExcludedDeclarationInUnboundFileIsNotCompiled() {
+        MyDtoCompiler compiler = MyDtoCompiler.compilerInPackage(
+                "Shared.dto",
+                "package org.example.api\n" +
+                        "import org.babyfish.jimmer.sql.model.*\n" +
+                        "IgnoredBookView for Book { illegalProp }\n" +
+                        "AuthorView for Author { id firstName }",
+                Arrays.asList("org", "example", "source")
+        );
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap = DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> targetTypeName.equals(MyDtoCompiler.AUTHOR_TYPE.getQualifiedName())
+        );
+        List<DtoType<BaseType, BaseProp>> dtoTypes = resultMap.get(compiler);
+        Assertions.assertEquals(1, dtoTypes.size());
+        Assertions.assertEquals("org.example.api.AuthorView", dtoTypes.get(0).getQualifiedName());
+    }
+
+    @Test
+    public void testActiveDtoCannotReuseExcludedSourceDto() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "StoreView for BookStore { id name }\n" +
+                        "BookView { id store -> StoreView }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoCompiler.compileAll(
+                        Collections.singletonList(compiler),
+                        targetTypeName -> targetTypeName.equals(MyDtoCompiler.BOOK_TYPE.getQualifiedName())
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Source DTO type \"org.babyfish.jimmer.sql.model.dto.StoreView\" " +
+                        "is not active in the current processor compilation"
+        ));
+    }
+
+    @Test
+    public void testActiveDtoCannotIncludeExcludedSourceFragment() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "fragment StoreProps for BookStore { id name }\n" +
+                        "BookView { #include(StoreProps) id }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoCompiler.compileAll(
+                        Collections.singletonList(compiler),
+                        targetTypeName -> targetTypeName.equals(MyDtoCompiler.BOOK_TYPE.getQualifiedName())
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Source fragment \"org.babyfish.jimmer.sql.model.dto.StoreProps\" " +
+                        "is not active in the current processor compilation"
+        ));
+    }
+
+    @Test
     public void testDeclarationTargetOverride() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "BookView { id name }\n" +

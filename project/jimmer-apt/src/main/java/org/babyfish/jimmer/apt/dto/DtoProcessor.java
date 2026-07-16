@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.apt.dto;
 
-import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.Context;
@@ -9,8 +8,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.dto.compiler.*;
-import org.babyfish.jimmer.sql.Embeddable;
-import org.babyfish.jimmer.sql.Entity;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -47,7 +44,7 @@ public class DtoProcessor {
 
     private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes() {
         Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap = new LinkedHashMap<>();
-        Map<AptDtoCompiler, ImmutableType> immutableTypeMap = new LinkedHashMap<>();
+        List<AptDtoCompiler> compilers = new ArrayList<>();
         DtoContext dtoContext = new DtoContext(context.getFiler(), dtoDirs);
         AptDtoCompiler compiler;
 
@@ -71,49 +68,11 @@ public class DtoProcessor {
                         ex
                 );
             }
-            TypeElement typeElement = elements.getTypeElement(compiler.getSourceTypeName());
-            if (typeElement == null) {
-                if (compiler.isExplicitSourceType()) {
-                    throw new DtoException(
-                            "Failed to parse \"" +
-                                    dtoFile.getAbsolutePath() +
-                                    "\": No immutable type \"" +
-                                    compiler.getSourceTypeName() +
-                                    "\""
-                    );
-                }
-                immutableTypeMap.put(compiler, null);
-                continue;
-            }
-            if (!context.include(typeElement)) {
-                continue;
-            }
-            if (typeElement.getAnnotation(Entity.class) == null &&
-                    typeElement.getAnnotation(Embeddable.class) == null &&
-                    typeElement.getAnnotation(Immutable.class) == null) {
-                throw new DtoException(
-                        "Failed to parse \"" +
-                                dtoFile.getAbsolutePath() +
-                                "\": the \"" +
-                                compiler.getSourceTypeName() +
-                                "\" is not decorated by \"@" +
-                                Entity.class.getName() +
-                                "\", \"" +
-                                Embeddable.class.getName() +
-                                "\" or \"" +
-                                Immutable.class.getName() +
-                                "\""
-                );
-            }
-            ImmutableType immutableType = context.getImmutableType(typeElement);
-            immutableTypeMap.put(compiler, immutableType);
+            compilers.add(compiler);
         }
         for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes :
-                DtoCompiler.compileAll(immutableTypeMap).values()) {
+                DtoCompiler.compileAll(compilers, context::includeDtoTarget).values()) {
             for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                if (!context.include(dtoType.getBaseType().getTypeElement())) {
-                    continue;
-                }
                 dtoTypeMap
                         .computeIfAbsent(dtoType.getBaseType(), it -> new ArrayList<>())
                         .add(dtoType);
