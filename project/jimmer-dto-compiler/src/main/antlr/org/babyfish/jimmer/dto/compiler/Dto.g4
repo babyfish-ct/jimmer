@@ -148,7 +148,7 @@ positiveProp
         ('implements' bodySuperInterfaces += typeRef (',' bodySuperInterfaces += typeRef)*)?
         dtoBody
         |
-        '->' enumBody
+        '->' (enumBody | referencedType = qualifiedName)
     )?
     ;
 

@@ -54,6 +54,13 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     }
 
     @Nullable
+    @SuppressWarnings("unchecked")
+    default DtoTypeRef<T, P> getTargetTypeRef() {
+        DtoPropTarget<T, P> target = getTarget();
+        return target instanceof DtoTypeRef<?, ?> ? (DtoTypeRef<T, P>) target : null;
+    }
+
+    @Nullable
     EnumType getEnumType();
 
     boolean isRecursive();

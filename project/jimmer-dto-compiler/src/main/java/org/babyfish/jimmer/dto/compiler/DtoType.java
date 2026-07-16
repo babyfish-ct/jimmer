@@ -101,6 +101,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> implements DtoPropT
     }
 
     @Nullable
+    public String getQualifiedName() {
+        return name != null ? packageName + '.' + name : null;
+    }
+
+    @Nullable
     public String getDoc() {
         return doc;
     }
@@ -376,7 +381,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> implements DtoPropT
         }
     }
 
-    private static String defaultPackageName(String entityPackageName) {
+    static String defaultPackageName(String entityPackageName) {
         if (entityPackageName == null || entityPackageName.isEmpty()) {
             return "dto";
         }

@@ -1863,6 +1863,66 @@ public class DtoCompilerTest {
         );
     }
 
+    @Test
+    public void testReusableViewInSameFile() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeNodeSummary { id name }\n" +
+                        "TreeNodeView { id parent -> TreeNodeSummary }"
+        );
+        DtoTypeLinker.link(dtoTypes);
+        Assertions.assertEquals(
+                "[TreeNodeSummary {id, name}, TreeNodeView {id, parent -> " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeSummary}]",
+                dtoTypes.toString()
+        );
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(1).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(0), ref.getSourceType());
+    }
+
+    @Test
+    public void testReusableViewAcrossFiles() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book("BookView { id store -> BookStoreView }"));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("BookStoreView { id name }"));
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
+    }
+
+    @Test
+    public void testIllegalReusableViewEntityType() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "WrongView { id }\n" +
+                        "BookView { id store -> WrongView }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "The association target type \"org.babyfish.jimmer.sql.model.BookStore\" " +
+                        "does not match the reusable DTO entity type \"org.babyfish.jimmer.sql.model.Book\""
+        ));
+    }
+
+    @Test
+    public void testReusableViewCycle() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeNodeViewA { id parent -> TreeNodeViewB }\n" +
+                        "TreeNodeViewB { id parent -> TreeNodeViewA }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Circular reusable DTO reference: " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeViewA.parent -> " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeViewB.parent -> " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeViewA"
+        ));
+    }
+
     private static void assertContentEquals(String expected, String actual) {
         Assertions.assertEquals(
                 expected.replace("--->", "").replace("    ", ""),
@@ -2176,6 +2236,26 @@ public class DtoCompilerTest {
                                 "TreeNode.dto"
                         )
                 ).compile(TREE_NODE_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
+        }
+
+        static List<DtoType<BaseType, BaseProp>> bookStore(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                new MockedOsFile(
+                                        "/User/test/BookStore.dto",
+                                        code
+                                ),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "BookStore.dto"
+                        )
+                ).compile(BOOK_STORE_TYPE);
             } catch (IOException ex) {
                 Assertions.fail(ex);
                 return null;

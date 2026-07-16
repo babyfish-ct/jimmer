@@ -6,6 +6,7 @@ import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
 import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.dto.compiler.DtoTypeLinker
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.KspDtoCompiler
 import org.babyfish.jimmer.ksp.annotation
@@ -90,6 +91,7 @@ class DtoProcessor(
                 mutableListOf()
             } += compiler.compile(immutableType)
         }
+        DtoTypeLinker.link(dtoTypeMap.values.flatten())
         return dtoTypeMap
     }
 

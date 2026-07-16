@@ -222,6 +222,11 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getTargetPackageName();
     }
 
+    public String getDtoPackageName() {
+        String packageName = compiler.getTargetPackageName();
+        return packageName != null ? packageName : DtoType.defaultPackageName(getBaseType().getPackageName());
+    }
+
     public T getBaseType() {
         return compiler.getBaseType();
     }
@@ -257,6 +262,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     public String resolve(DtoParser.QualifiedNameContext ctx) {
         return importing.resolve(ctx);
+    }
+
+    public String resolveDtoType(DtoParser.QualifiedNameContext ctx) {
+        return importing.resolveDtoType(ctx);
     }
 
     public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {

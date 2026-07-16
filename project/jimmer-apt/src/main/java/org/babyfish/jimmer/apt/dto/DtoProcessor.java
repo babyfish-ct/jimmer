@@ -5,10 +5,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.client.DocMetadata;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
-import org.babyfish.jimmer.dto.compiler.DtoAstException;
-import org.babyfish.jimmer.dto.compiler.DtoFile;
-import org.babyfish.jimmer.dto.compiler.DtoModifier;
-import org.babyfish.jimmer.dto.compiler.DtoType;
+import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 
@@ -103,6 +100,9 @@ public class DtoProcessor {
                     .computeIfAbsent(immutableType, it -> new ArrayList<>())
                     .addAll(compiler.compile(immutableType));
         }
+        DtoTypeLinker.link(
+                dtoTypeMap.values().stream().flatMap(Collection::stream).collect(java.util.stream.Collectors.toList())
+        );
         return dtoTypeMap;
     }
 

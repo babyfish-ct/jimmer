@@ -151,10 +151,39 @@ class Importing {
 
     public String resolve(DtoParser.QualifiedNameContext ctx) {
         String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
-        return resolve(qualifiedName, ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+        return resolve(
+                qualifiedName,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine(),
+                this.ctx.getBaseType().getPackageName()
+        );
+    }
+
+    public String resolveDtoType(DtoParser.QualifiedNameContext ctx) {
+        String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
+        return resolve(
+                qualifiedName,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine(),
+                this.ctx.getDtoPackageName()
+        );
     }
 
     public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
+        return resolve(
+                qualifiedName,
+                qualifiedNameLine,
+                qualifiedNameCol,
+                this.ctx.getBaseType().getPackageName()
+        );
+    }
+
+    private String resolve(
+            String qualifiedName,
+            int qualifiedNameLine,
+            int qualifiedNameCol,
+            String defaultPackageName
+    ) {
         if (STANDARD_TYPES.containsKey(qualifiedName)) {
             return qualifiedName;
         }
@@ -186,11 +215,10 @@ class Importing {
         if (Character.isLowerCase(qualifiedName.charAt(0))) {
             return qualifiedName;
         }
-        String pkg = this.ctx.getBaseType().getPackageName();
-        if (pkg.isEmpty()) {
+        if (defaultPackageName.isEmpty()) {
             return qualifiedName;
         }
-        return pkg + '.' + qualifiedName;
+        return defaultPackageName + '.' + qualifiedName;
     }
 
     static {

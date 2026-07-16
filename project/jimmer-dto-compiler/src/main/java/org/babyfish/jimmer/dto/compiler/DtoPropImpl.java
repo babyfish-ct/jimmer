@@ -392,6 +392,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             if (recursive) {
                 builder.append("...");
             }
+        } else if (target instanceof DtoTypeRef<?, ?>) {
+            builder.append(" -> ").append(((DtoTypeRef<?, ?>) target).getQualifiedName());
         }
         return builder.toString();
     }
