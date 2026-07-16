@@ -40,6 +40,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         Set<DtoModifier> modifiers = EnumSet.noneOf(DtoModifier.class);
+        T baseType = resolveTargetType(type.targetType, type.name);
         Token sealedModifier = null;
         for (Token modifier : type.modifiers) {
             DtoModifier dtoModifier;
@@ -108,7 +109,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                     "The modifier 'unsafe' cannot be used with specification"
             );
         }
-        if (modifiers.contains(DtoModifier.SPECIFICATION) && !compiler.getBaseType().isEntity()) {
+        if (modifiers.contains(DtoModifier.SPECIFICATION) && !baseType.isEntity()) {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
@@ -156,7 +157,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         }
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(
                 null,
-                compiler.getBaseType(),
+                baseType,
                 type.body,
                 type.name,
                 Docs.parse(type.doc),
@@ -167,6 +168,29 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         );
         typeBuilderMap.put(name, typeBuilder);
         return typeBuilder;
+    }
+
+    private T resolveTargetType(
+            @Nullable DtoParser.QualifiedNameContext targetType,
+            Token declarationName
+    ) {
+        if (targetType == null) {
+            return compiler.getBaseType();
+        }
+        String qualifiedName = importing.resolve(targetType);
+        T baseType = compiler.getType(qualifiedName);
+        if (baseType == null) {
+            throw exception(
+                    targetType.start.getLine(),
+                    targetType.start.getCharPositionInLine(),
+                    "Illegal target type \"" +
+                            qualifiedName +
+                            "\" of dto type \"" +
+                            declarationName.getText() +
+                            "\", it cannot be resolved as immutable type"
+            );
+        }
+        return baseType;
     }
 
     public List<DtoType<T, P>> getDtoTypes() {

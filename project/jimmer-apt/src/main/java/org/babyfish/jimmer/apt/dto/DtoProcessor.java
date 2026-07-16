@@ -47,6 +47,7 @@ public class DtoProcessor {
 
     private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes() {
         Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap = new LinkedHashMap<>();
+        Map<AptDtoCompiler, ImmutableType> immutableTypeMap = new LinkedHashMap<>();
         DtoContext dtoContext = new DtoContext(context.getFiler(), dtoDirs);
         AptDtoCompiler compiler;
 
@@ -101,9 +102,14 @@ public class DtoProcessor {
                 );
             }
             ImmutableType immutableType = context.getImmutableType(typeElement);
-            dtoTypeMap
-                    .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                    .addAll(compiler.compile(immutableType));
+            immutableTypeMap.put(compiler, immutableType);
+        }
+        for (Map.Entry<AptDtoCompiler, ImmutableType> e : immutableTypeMap.entrySet()) {
+            for (DtoType<ImmutableType, ImmutableProp> dtoType : e.getKey().compile(e.getValue())) {
+                dtoTypeMap
+                        .computeIfAbsent(dtoType.getBaseType(), it -> new ArrayList<>())
+                        .add(dtoType);
+            }
         }
         DtoTypeLinker.link(
                 dtoTypeMap.values().stream().flatMap(Collection::stream).collect(java.util.stream.Collectors.toList()),

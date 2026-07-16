@@ -18,6 +18,21 @@ import java.util.stream.Collectors;
 public class DtoCompilerTest {
 
     @Test
+    public void testDeclarationTargetOverride() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { id name }\n" +
+                        "StoreView for BookStore { id name website }"
+        );
+        Assertions.assertEquals(2, dtoTypes.size());
+        Assertions.assertSame(MyDtoCompiler.BOOK_TYPE, dtoTypes.get(0).getBaseType());
+        Assertions.assertSame(MyDtoCompiler.BOOK_STORE_TYPE, dtoTypes.get(1).getBaseType());
+        assertContentEquals(
+                "StoreView {--->id, --->name, --->website}",
+                dtoTypes.get(1).toString()
+        );
+    }
+
+    @Test
     public void testSimpleByAlias() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import org.babyfish.jimmer.sql.model.{Book as B}" +

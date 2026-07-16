@@ -89,9 +89,11 @@ class DtoProcessor(
         }
         ctx.resolve()
         for ((compiler, immutableType) in immutableTypeMap) {
-            dtoTypeMap.computeIfAbsent(immutableType) {
-                mutableListOf()
-            } += compiler.compile(immutableType)
+            for (dtoType in compiler.compile(immutableType)) {
+                dtoTypeMap.computeIfAbsent(dtoType.baseType) {
+                    mutableListOf()
+                } += dtoType
+            }
         }
         DtoTypeLinker.link(dtoTypeMap.values.flatten(), ::resolveDtoType)
         ctx.resolve()

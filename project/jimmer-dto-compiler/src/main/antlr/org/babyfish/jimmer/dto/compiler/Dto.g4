@@ -10,8 +10,15 @@ dto
     :
     exportStatement?
     (importStatements += importStatement)*
-    (dtoTypes+=dtoType)*
+    (dtoTypes += dtoType | fragments += dtoFragment)*
     EOF
+    ;
+
+dtoFragment
+    :
+    'fragment' name = Identifier
+    ('for' targetType = qualifiedName)?
+    body = dtoBody
     ;
 
 exportStatement
@@ -40,6 +47,7 @@ dtoType
     (annotations += annotation)*
     (modifiers += (Identifier | 'sealed' | 'fixed' | 'static' | 'dynamic' | 'fuzzy'))*
     name=Identifier
+    ('for' targetType = qualifiedName)?
     ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
     body=dtoBody
     ;
@@ -47,9 +55,15 @@ dtoType
 dtoBody
     :
     '{'
+    (includes += include)*
     (macros += macro)*
     (((typesBlocks += typesBlock | explicitProps += explicitProp)) (',' | ';')?)*
     '}'
+    ;
+
+include
+    :
+    '#include' '(' fragmentType = qualifiedName ')'
     ;
 
 explicitProp
