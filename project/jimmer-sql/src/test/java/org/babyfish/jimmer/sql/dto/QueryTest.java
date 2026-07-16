@@ -30,7 +30,7 @@ public class QueryTest extends AbstractQueryTest {
                     );
                     ctx.rows(rows -> {
                         BookWithReusableStoreView view = (BookWithReusableStoreView) rows.get(0);
-                        ReusableBookStoreView store = view.getStore();
+                        ReusableBookStoreView store = view.getStoreInfo();
                         Assertions.assertNotNull(store);
                         Assertions.assertEquals("MANNING", store.getName());
                         Book book = view.toImmutable();

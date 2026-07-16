@@ -2,6 +2,7 @@ export org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
     -> package org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto
 
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientImplicitCatchAllView
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientPatchInput
 
 KClientProjectWithClientView {
     id
@@ -21,4 +22,10 @@ KClientProjectWithReusableClientView {
     id
     name
     client -> KClientImplicitCatchAllView
+}
+
+input KClientProjectWithReusableClientInput {
+    id
+    name
+    client -> KClientPatchInput
 }

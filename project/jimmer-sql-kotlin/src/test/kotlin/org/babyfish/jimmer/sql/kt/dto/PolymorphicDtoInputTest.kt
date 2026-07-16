@@ -16,13 +16,29 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KPerson
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.*
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientCustomJsonSubTypesInput
 import kotlin.test.*
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient as KInstantiableClient
 
 class PolymorphicDtoInputTest {
 
     private val mapper = ObjectMapper().registerKotlinModule()
+
+    @Test
+    fun testReusablePolymorphicAssociationInput() {
+        val input = KClientProjectWithReusableClientInput(
+            id = 20L,
+            name = "Project patch",
+            client = KClientPatchInput.Organization(
+                id = 10L,
+                name = "Org patch",
+                taxCode = "T-10"
+            )
+        )
+
+        val project = input.toImmutable()
+        val client = assertIs<KOrganization>(project.client)
+        assertEquals("T-10", client.taxCode)
+    }
 
     @Test
     fun testImplicitDefaultInputCreatesRootEntityShape() {

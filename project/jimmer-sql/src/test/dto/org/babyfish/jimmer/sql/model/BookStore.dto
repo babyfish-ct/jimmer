@@ -12,6 +12,11 @@ ReusableBookStoreView {
     name
 }
 
+input ReusableBookStoreInput {
+    id
+    name
+}
+
 BookStoreWithFilterView {
 
     id

@@ -17,3 +17,9 @@ ClientProjectWithReusableClientView {
     name
     client -> ClientImplicitCatchAllView
 }
+
+input ClientProjectWithReusableClientInput {
+    id
+    name
+    client -> ClientPatchInput
+}

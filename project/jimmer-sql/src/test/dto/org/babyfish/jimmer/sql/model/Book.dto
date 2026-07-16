@@ -7,7 +7,7 @@ BookWithReusableStoreView {
     id
     name
     !fetchType(JOIN_ALWAYS)
-    store -> ReusableBookStoreView
+    store as storeInfo -> ReusableBookStoreView
 }
 
 BookWithReusableAuthorsView {
@@ -17,6 +17,13 @@ BookWithReusableAuthorsView {
     !where(firstName <> 'Nobody')
     !orderBy(firstName asc)
     authors -> ReusableAuthorView
+}
+
+input BookWithReusableAssociationsInput {
+    id
+    name
+    store -> ReusableBookStoreInput
+    authors -> ReusableAuthorInput
 }
 
 /**

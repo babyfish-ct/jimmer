@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumPerson;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.dto.EnumClientDiscriminatorInput;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.instantiable.dto.InstantiableClientDefaultInput;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Client;
+import org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Organization;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Person;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.*;
@@ -20,6 +21,23 @@ import org.junit.jupiter.api.Test;
 public class PolymorphicDtoInputTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
+
+    @Test
+    public void testReusablePolymorphicAssociationInput() {
+        ClientPatchInput.Organization client = new ClientPatchInput.Organization();
+        client.setId(10L);
+        client.setName("Org patch");
+        client.setTaxCode("T-10");
+
+        ClientProjectWithReusableClientInput input = new ClientProjectWithReusableClientInput();
+        input.setId(20L);
+        input.setName("Project patch");
+        input.setClient(client);
+
+        ClientProject project = input.toImmutable();
+        Assertions.assertTrue(project.client() instanceof Organization);
+        Assertions.assertEquals("T-10", ((Organization) project.client()).taxCode());
+    }
 
     @Test
     public void testImplicitDefaultInputCreatesRootEntityShape() {

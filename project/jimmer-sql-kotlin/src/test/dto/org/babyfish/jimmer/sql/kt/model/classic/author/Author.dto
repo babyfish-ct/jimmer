@@ -8,3 +8,9 @@ ReusableAuthorView {
     firstName
     lastName
 }
+
+input ReusableAuthorInput {
+    id
+    firstName
+    lastName
+}

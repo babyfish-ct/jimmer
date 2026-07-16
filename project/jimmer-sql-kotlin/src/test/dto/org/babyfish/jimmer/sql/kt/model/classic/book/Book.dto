@@ -3,13 +3,15 @@ import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.configurations.AuthorFilter
 import testpkg.{Named, TagProvider}
 import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorView
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorInput
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreInput
 
 BookWithReusableStoreView {
     id
     name
     !fetchType(JOIN_ALWAYS)
-    store -> ReusableBookStoreView
+    store as storeInfo -> ReusableBookStoreView
 }
 
 BookWithReusableAuthorsView {
@@ -19,6 +21,13 @@ BookWithReusableAuthorsView {
     !where(firstName <> 'Nobody')
     !orderBy(firstName asc)
     authors -> ReusableAuthorView
+}
+
+input BookWithReusableAssociationsInput {
+    id
+    name
+    store -> ReusableBookStoreInput
+    authors -> ReusableAuthorInput
 }
 
 /**
