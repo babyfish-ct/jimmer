@@ -2,10 +2,35 @@ import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.configurations.AuthorFilter
 import testpkg.{Named, TagProvider}
-import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorView
-import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorInput
-import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
-import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreInput
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+
+fragment ReusableBookStoreProps for BookStore {
+    id
+    name
+}
+
+ReusableBookStoreView for BookStore {
+    #include(ReusableBookStoreProps)
+}
+
+input ReusableBookStoreInput for BookStore {
+    #include(ReusableBookStoreProps)
+}
+
+fragment ReusableAuthorProps for Author {
+    id
+    firstName
+    lastName
+}
+
+ReusableAuthorView for Author {
+    #include(ReusableAuthorProps)
+}
+
+input ReusableAuthorInput for Author {
+    #include(ReusableAuthorProps)
+}
 
 BookWithReusableStoreView {
     id

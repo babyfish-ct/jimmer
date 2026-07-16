@@ -1,12 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorInput
-import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorView
-import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableAssociationsInput
-import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableAuthorsView
-import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableStoreView
-import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreInput
-import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -7,16 +7,6 @@ BookStoreView {
     newestBookIds
 }
 
-ReusableBookStoreView {
-    id
-    name
-}
-
-input ReusableBookStoreInput {
-    id
-    name
-}
-
 BookStoreWithFilterView {
 
     id

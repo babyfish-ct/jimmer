@@ -2,15 +2,3 @@ AuthorView {
     fullName
     fullName2
 }
-
-ReusableAuthorView {
-    id
-    firstName
-    lastName
-}
-
-input ReusableAuthorInput {
-    id
-    firstName
-    lastName
-}

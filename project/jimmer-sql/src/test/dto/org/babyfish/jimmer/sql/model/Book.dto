@@ -3,6 +3,33 @@ import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.Named
 import testpkg.configurations.AuthorFilter
 
+fragment ReusableBookStoreProps for BookStore {
+    id
+    name
+}
+
+ReusableBookStoreView for BookStore {
+    #include(ReusableBookStoreProps)
+}
+
+input ReusableBookStoreInput for BookStore {
+    #include(ReusableBookStoreProps)
+}
+
+fragment ReusableAuthorProps for Author {
+    id
+    firstName
+    lastName
+}
+
+ReusableAuthorView for Author {
+    #include(ReusableAuthorProps)
+}
+
+input ReusableAuthorInput for Author {
+    #include(ReusableAuthorProps)
+}
+
 BookWithReusableStoreView {
     id
     name
