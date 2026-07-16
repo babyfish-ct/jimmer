@@ -8,7 +8,7 @@ public final class DtoTypeRef<T extends BaseType, P extends BaseProp> implements
 
     private final String qualifiedName;
 
-    private final T baseType;
+    private final T targetBaseType;
 
     private final int line;
 
@@ -17,9 +17,12 @@ public final class DtoTypeRef<T extends BaseType, P extends BaseProp> implements
     @Nullable
     private DtoType<T, P> sourceType;
 
+    @Nullable
+    private DtoTypeInfo<T> typeInfo;
+
     DtoTypeRef(String qualifiedName, T baseType, int line, int col) {
         this.qualifiedName = qualifiedName;
-        this.baseType = baseType;
+        this.targetBaseType = baseType;
         this.line = line;
         this.col = col;
     }
@@ -28,8 +31,8 @@ public final class DtoTypeRef<T extends BaseType, P extends BaseProp> implements
         return qualifiedName;
     }
 
-    public T getBaseType() {
-        return baseType;
+    public T getTargetBaseType() {
+        return targetBaseType;
     }
 
     public int getLine() {
@@ -45,7 +48,13 @@ public final class DtoTypeRef<T extends BaseType, P extends BaseProp> implements
         return sourceType;
     }
 
-    void resolve(DtoType<T, P> sourceType) {
+    @Nullable
+    public DtoTypeInfo<T> getTypeInfo() {
+        return typeInfo;
+    }
+
+    void resolve(DtoTypeInfo<T> typeInfo, @Nullable DtoType<T, P> sourceType) {
+        this.typeInfo = typeInfo;
         this.sourceType = sourceType;
     }
 

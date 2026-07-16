@@ -12,6 +12,13 @@ public final class DtoTypeLinker {
     public static <T extends BaseType, P extends BaseProp> void link(
             Collection<DtoType<T, P>> dtoTypes
     ) {
+        link(dtoTypes, qualifiedName -> null);
+    }
+
+    public static <T extends BaseType, P extends BaseProp> void link(
+            Collection<DtoType<T, P>> dtoTypes,
+            DtoTypeResolver<T> resolver
+    ) {
         Map<String, DtoType<T, P>> typeMap = new LinkedHashMap<>();
         for (DtoType<T, P> dtoType : dtoTypes) {
             String qualifiedName = dtoType.getQualifiedName();
@@ -36,6 +43,7 @@ public final class DtoTypeLinker {
                     dtoType,
                     dtoType,
                     typeMap,
+                    resolver,
                     Collections.newSetFromMap(new IdentityHashMap<>()),
                     edges
             );
@@ -48,6 +56,7 @@ public final class DtoTypeLinker {
             DtoType<T, P> ownerType,
             DtoType<T, P> shape,
             Map<String, DtoType<T, P>> typeMap,
+            DtoTypeResolver<T> resolver,
             Set<DtoType<T, P>> visitedShapes,
             List<Edge<T, P>> edges
     ) {
@@ -58,34 +67,42 @@ public final class DtoTypeLinker {
             DtoTypeRef<T, P> ref = prop.getTargetTypeRef();
             if (ref != null) {
                 DtoType<T, P> targetType = typeMap.get(ref.getQualifiedName());
-                if (targetType == null) {
+                DtoTypeInfo<T> typeInfo;
+                if (targetType != null) {
+                    typeInfo = typeInfo(targetType);
+                } else {
+                    typeInfo = resolver.resolve(ref.getQualifiedName());
+                }
+                if (typeInfo == null) {
                     throw exception(
                             ownerType,
                             ref,
                             "Cannot resolve reusable DTO type \"" + ref.getQualifiedName() + "\""
                     );
                 }
-                validate(ownerType, ref, targetType);
-                ref.resolve(targetType);
-                edges.add(new Edge<>(prop, ref, targetType));
+                validate(ownerType, ref, typeInfo);
+                ref.resolve(typeInfo, targetType);
+                if (targetType != null) {
+                    edges.add(new Edge<>(prop, ref, targetType));
+                }
             } else {
                 DtoType<T, P> targetType = prop.getTargetType();
                 if (targetType != null) {
-                    collectEdges(ownerType, targetType, typeMap, visitedShapes, edges);
+                    collectEdges(ownerType, targetType, typeMap, resolver, visitedShapes, edges);
                 }
             }
         }
         for (FoldProp<T, P> prop : shape.getFoldProps()) {
-            collectEdges(ownerType, prop.getTargetType(), typeMap, visitedShapes, edges);
+            collectEdges(ownerType, prop.getTargetType(), typeMap, resolver, visitedShapes, edges);
         }
         DtoPolymorphism<T, P> polymorphism = shape.getPolymorphism();
         if (polymorphism != null) {
             DtoPolymorphicBranch<T, P> defaultBranch = polymorphism.getDefaultBranch();
             if (defaultBranch != null) {
-                collectEdges(ownerType, defaultBranch.getDtoType(), typeMap, visitedShapes, edges);
+                collectEdges(ownerType, defaultBranch.getDtoType(), typeMap, resolver, visitedShapes, edges);
             }
             for (DtoPolymorphicBranch<T, P> branch : polymorphism.getTypeBranches()) {
-                collectEdges(ownerType, branch.getDtoType(), typeMap, visitedShapes, edges);
+                collectEdges(ownerType, branch.getDtoType(), typeMap, resolver, visitedShapes, edges);
             }
         }
     }
@@ -93,35 +110,63 @@ public final class DtoTypeLinker {
     private static <T extends BaseType, P extends BaseProp> void validate(
             DtoType<T, P> ownerType,
             DtoTypeRef<T, P> ref,
-            DtoType<T, P> targetType
+            DtoTypeInfo<T> typeInfo
     ) {
-        if (ownerType.getModifiers().contains(DtoModifier.INPUT)) {
-            throw exception(ownerType, ref, "Reusable input DTO types are not supported yet");
-        }
-        if (ownerType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
+        DtoTypeKind ownerKind = kind(ownerType);
+        if (ownerKind == DtoTypeKind.SPECIFICATION) {
             throw exception(ownerType, ref, "Reusable DTO types cannot be used in specifications");
         }
-        if (targetType.getModifiers().contains(DtoModifier.INPUT) ||
-                targetType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
+        if (typeInfo.getKind() != ownerKind) {
             throw exception(
                     ownerType,
                     ref,
-                    "Reusable output property requires a view DTO, but \"" +
+                    "Reusable " +
+                            (ownerKind == DtoTypeKind.INPUT ? "input" : "output") +
+                            " property requires " +
+                            (ownerKind == DtoTypeKind.INPUT ? "an input" : "a view") +
+                            " DTO, but \"" +
                             ref.getQualifiedName() +
-                            "\" is not a view"
+                            "\" is " + article(typeInfo.getKind())
             );
         }
-        T associationTargetType = ref.getBaseType();
-        if (!associationTargetType.getQualifiedName().equals(targetType.getBaseType().getQualifiedName())) {
+        T associationTargetType = ref.getTargetBaseType();
+        if (!associationTargetType.getQualifiedName().equals(typeInfo.getBaseType().getQualifiedName())) {
             throw exception(
                     ownerType,
                     ref,
                     "The association target type \"" +
                             associationTargetType.getQualifiedName() +
                             "\" does not match the reusable DTO entity type \"" +
-                            targetType.getBaseType().getQualifiedName() +
+                            typeInfo.getBaseType().getQualifiedName() +
                             "\""
             );
+        }
+    }
+
+    private static <T extends BaseType, P extends BaseProp> DtoTypeInfo<T> typeInfo(
+            DtoType<T, P> dtoType
+    ) {
+        return new DtoTypeInfo<>(dtoType.getBaseType(), kind(dtoType));
+    }
+
+    private static DtoTypeKind kind(DtoType<?, ?> dtoType) {
+        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+            return DtoTypeKind.INPUT;
+        }
+        if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
+            return DtoTypeKind.SPECIFICATION;
+        }
+        return DtoTypeKind.VIEW;
+    }
+
+    private static String article(DtoTypeKind kind) {
+        switch (kind) {
+            case INPUT:
+                return "an input DTO";
+            case VIEW:
+                return "a view DTO";
+            default:
+                return "a specification DTO";
         }
     }
 

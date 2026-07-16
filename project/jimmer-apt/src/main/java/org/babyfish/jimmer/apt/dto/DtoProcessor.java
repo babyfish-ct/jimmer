@@ -1,16 +1,21 @@
 package org.babyfish.jimmer.apt.dto;
 
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.client.DocMetadata;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import java.util.*;
 
 public class DtoProcessor {
@@ -101,9 +106,44 @@ public class DtoProcessor {
                     .addAll(compiler.compile(immutableType));
         }
         DtoTypeLinker.link(
-                dtoTypeMap.values().stream().flatMap(Collection::stream).collect(java.util.stream.Collectors.toList())
+                dtoTypeMap.values().stream().flatMap(Collection::stream).collect(java.util.stream.Collectors.toList()),
+                this::resolveDtoType
         );
         return dtoTypeMap;
+    }
+
+    private DtoTypeInfo<ImmutableType> resolveDtoType(String qualifiedName) {
+        TypeElement typeElement = elements.getTypeElement(qualifiedName);
+        if (typeElement == null) {
+            return null;
+        }
+        Types types = context.getTypes();
+        TypeMirror type = types.erasure(typeElement.asType());
+        DtoTypeKind kind;
+        String superName;
+        if (types.isSubtype(type, types.erasure(elements.getTypeElement(Input.class.getName()).asType()))) {
+            kind = DtoTypeKind.INPUT;
+            superName = Input.class.getName();
+        } else if (types.isSubtype(type, types.erasure(elements.getTypeElement(View.class.getName()).asType()))) {
+            kind = DtoTypeKind.VIEW;
+            superName = View.class.getName();
+        } else {
+            return null;
+        }
+        TypeMirror baseTypeMirror = new GenericParser(
+                "reusable DTO",
+                typeElement,
+                superName
+        ).parse().arguments.get(0);
+        ImmutableType baseType = context.getImmutableType(baseTypeMirror);
+        if (baseType == null) {
+            throw new DtoException(
+                    "The entity type argument of reusable DTO type \"" +
+                            qualifiedName +
+                            "\" is not an immutable type"
+            );
+        }
+        return new DtoTypeInfo<>(baseType, kind);
     }
 
     private boolean generateDtoTypes(Map<?, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap) {

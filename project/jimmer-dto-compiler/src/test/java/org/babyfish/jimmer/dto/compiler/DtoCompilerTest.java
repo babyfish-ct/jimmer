@@ -1890,6 +1890,51 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testReusableViewFromDependency() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { id store -> dependency.BookStoreView }"
+        );
+        BaseType storeType = MyDtoCompiler.bookStore("BookStoreView { id }").get(0).getBaseType();
+        DtoTypeLinker.link(
+                dtoTypes,
+                qualifiedName ->
+                        qualifiedName.equals("dependency.BookStoreView") ?
+                                new DtoTypeInfo<>(storeType, DtoTypeKind.VIEW) :
+                                null
+        );
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertNull(ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.VIEW, ref.getTypeInfo().getKind());
+        Assertions.assertSame(storeType, ref.getTypeInfo().getBaseType());
+    }
+
+    @Test
+    public void testReusableInputAcrossFiles() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book("input BookInput { id store -> BookStoreInput }"));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("input BookStoreInput { id name }"));
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.INPUT, ref.getTypeInfo().getKind());
+    }
+
+    @Test
+    public void testIllegalReusableInputKind() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book("input BookInput { id store -> BookStoreView }"));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("BookStoreView { id name }"));
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Reusable input property requires an input DTO, but " +
+                        "\"org.babyfish.jimmer.sql.model.dto.BookStoreView\" is a view DTO"
+        ));
+    }
+
+    @Test
     public void testIllegalReusableViewEntityType() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "WrongView { id }\n" +
