@@ -3,6 +3,12 @@ import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.Named
 import testpkg.configurations.AuthorFilter
 
+BookWithReusableStoreView {
+    id
+    name
+    store -> ReusableBookStoreView
+}
+
 /**
  * BookView: Document for DTO language
  */

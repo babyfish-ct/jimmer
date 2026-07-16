@@ -2,6 +2,13 @@ import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.configurations.AuthorFilter
 import testpkg.{Named, TagProvider}
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
+
+BookWithReusableStoreView {
+    id
+    name
+    store -> ReusableBookStoreView
+}
 
 /**
  * The BookView DTO

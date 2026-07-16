@@ -2,12 +2,15 @@ package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.dto.BookFoldInsideFlatView;
 import org.babyfish.jimmer.sql.model.dto.BookNullableFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookNestedFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookView;
+import org.babyfish.jimmer.sql.model.dto.BookWithReusableStoreView;
+import org.babyfish.jimmer.sql.model.dto.ReusableBookStoreView;
 import org.babyfish.jimmer.sql.model.dto.TreeNodeFoldInsideFlatView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,37 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 public class QueryTest extends AbstractQueryTest {
+
+    @Test
+    public void testReusableAssociationView() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(Constants.graphQLInActionId1))
+                        .select(table.fetch(BookWithReusableStoreView.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        BookWithReusableStoreView view = (BookWithReusableStoreView) rows.get(0);
+                        ReusableBookStoreView store = view.getStore();
+                        Assertions.assertNotNull(store);
+                        Assertions.assertEquals("MANNING", store.getName());
+                        Book book = view.toImmutable();
+                        Assertions.assertEquals("MANNING", book.store().name());
+                    });
+                }
+        );
+    }
 
     @Test
     public void testFoldInsideFlatViewQuery() {
