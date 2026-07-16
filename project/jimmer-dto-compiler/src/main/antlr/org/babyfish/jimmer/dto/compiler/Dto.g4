@@ -8,10 +8,16 @@ package org.babyfish.jimmer.dto.compiler;
 
 dto
     :
+    packageStatement?
     exportStatement?
     (importStatements += importStatement)*
     (dtoTypes += dtoType | fragments += dtoFragment)*
     EOF
+    ;
+
+packageStatement
+    :
+    'package' packageParts += Identifier ('.' packageParts += Identifier)*
     ;
 
 dtoFragment
@@ -31,6 +37,7 @@ importStatement
     :
     'import' parts += Identifier ('.' parts += Identifier)*
     (
+        '.' wildcard = '*' |
         '.' '{' importedTypes += importedType (',' importedTypes += importedType)* '}' |
         'as' alias = Identifier
     )?

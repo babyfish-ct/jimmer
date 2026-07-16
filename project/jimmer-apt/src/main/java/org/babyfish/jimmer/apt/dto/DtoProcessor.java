@@ -73,15 +73,16 @@ public class DtoProcessor {
             }
             TypeElement typeElement = elements.getTypeElement(compiler.getSourceTypeName());
             if (typeElement == null) {
-                throw new DtoException(
-                        "Failed to parse \"" +
-                                dtoFile.getAbsolutePath() +
-                                "\": No immutable type \"" +
-                                compiler.getSourceTypeName() +
-                                "\""
-                );
-            }
-            if (!context.include(typeElement)) {
+                if (compiler.isExplicitSourceType()) {
+                    throw new DtoException(
+                            "Failed to parse \"" +
+                                    dtoFile.getAbsolutePath() +
+                                    "\": No immutable type \"" +
+                                    compiler.getSourceTypeName() +
+                                    "\""
+                    );
+                }
+                immutableTypeMap.put(compiler, null);
                 continue;
             }
             if (typeElement.getAnnotation(Entity.class) == null &&
@@ -104,8 +105,12 @@ public class DtoProcessor {
             ImmutableType immutableType = context.getImmutableType(typeElement);
             immutableTypeMap.put(compiler, immutableType);
         }
-        for (Map.Entry<AptDtoCompiler, ImmutableType> e : immutableTypeMap.entrySet()) {
-            for (DtoType<ImmutableType, ImmutableProp> dtoType : e.getKey().compile(e.getValue())) {
+        for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes :
+                DtoCompiler.compileAll(immutableTypeMap).values()) {
+            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
+                if (!context.include(dtoType.getBaseType().getTypeElement())) {
+                    continue;
+                }
                 dtoTypeMap
                         .computeIfAbsent(dtoType.getBaseType(), it -> new ArrayList<>())
                         .add(dtoType);

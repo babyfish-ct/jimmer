@@ -33,7 +33,7 @@ class DtoProcessor(
     private fun findDtoTypeMap(): Map<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>> {
         val dtoTypeMap = mutableMapOf<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>>()
         val dtoCtx = DtoContext(ctx.resolver.getAllFiles().firstOrNull(), dtoDirs)
-        val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType>()
+        val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType?>()
         for (dtoFile in dtoCtx.dtoFiles) {
             val compiler = try {
                 KspDtoCompiler(dtoFile, ctx, defaultNullableInputModifier)
@@ -56,15 +56,16 @@ class DtoProcessor(
             }
             val classDeclaration = ctx.resolver.getClassDeclarationByName(compiler.sourceTypeName)
             if (classDeclaration === null) {
-                throw DtoException(
-                    "Failed to parse \"" +
-                            dtoFile.absolutePath +
-                            "\": No immutable type \"" +
-                            compiler.sourceTypeName +
-                            "\""
-                )
-            }
-            if (!ctx.include(classDeclaration)) {
+                if (compiler.isExplicitSourceType) {
+                    throw DtoException(
+                        "Failed to parse \"" +
+                                dtoFile.absolutePath +
+                                "\": No immutable type \"" +
+                                compiler.sourceTypeName +
+                                "\""
+                    )
+                }
+                immutableTypeMap[compiler] = null
                 continue
             }
             if (classDeclaration.annotation(Entity::class) == null &&
@@ -88,8 +89,11 @@ class DtoProcessor(
             immutableTypeMap[compiler] = ctx.typeOf(classDeclaration)
         }
         ctx.resolve()
-        for ((compiler, immutableType) in immutableTypeMap) {
-            for (dtoType in compiler.compile(immutableType)) {
+        for (dtoTypes in DtoCompiler.compileAll(immutableTypeMap).values) {
+            for (dtoType in dtoTypes) {
+                if (!ctx.include(dtoType.baseType.classDeclaration)) {
+                    continue
+                }
                 dtoTypeMap.computeIfAbsent(dtoType.baseType) {
                     mutableListOf()
                 } += dtoType

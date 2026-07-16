@@ -7,10 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
@@ -25,6 +22,10 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     private final String targetPackageName;
 
+    private final String defaultBasePackageName;
+
+    private final boolean explicitSourceType;
+
     protected DtoCompiler(DtoFile dtoFile) throws IOException {
         this.dtoFile = dtoFile;
         try (Reader reader = dtoFile.openReader()) {
@@ -37,6 +38,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             parser.addErrorListener(listener);
             this.ast = parser.dto();
             DtoParser.ExportStatementContext export = ast.exportStatement();
+            DtoParser.PackageStatementContext packageStatement = ast.packageStatement();
             String sourceTypeName = null;
             String targetPackageName = null;
             if (export != null) {
@@ -54,12 +56,34 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                     targetPackageName = packageParts.stream().map(Token::getText).collect(Collectors.joining("."));
                 }
             }
+            if (packageStatement != null) {
+                if (targetPackageName != null) {
+                    throw exception(
+                            packageStatement.start.getLine(),
+                            packageStatement.start.getCharPositionInLine(),
+                            "The package cannot be specified by both 'package' and 'export'"
+                    );
+                }
+                targetPackageName = packageStatement.packageParts
+                        .stream()
+                        .map(Token::getText)
+                        .collect(Collectors.joining("."));
+            }
             if (sourceTypeName == null) {
                 String name = dtoFile.getName();
                 sourceTypeName = dtoFile.getPackageName() + '.' + name.substring(0, name.length() - 4);
             }
+            int lastDotIndex = sourceTypeName.lastIndexOf('.');
+            String defaultBasePackageName = lastDotIndex != -1 ?
+                    sourceTypeName.substring(0, lastDotIndex) :
+                    "";
+            if (targetPackageName == null) {
+                targetPackageName = DtoType.defaultPackageName(defaultBasePackageName);
+            }
             this.sourceTypeName = sourceTypeName;
             this.targetPackageName = targetPackageName;
+            this.defaultBasePackageName = defaultBasePackageName;
+            this.explicitSourceType = export != null;
         }
     }
 
@@ -82,16 +106,63 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
         return targetPackageName;
     }
 
-    public List<DtoType<T, P>> compile(T baseType) {
-        this.baseType = baseType;
-        CompilerContext<T, P> ctx = new CompilerContext<>(this);
-        for (DtoParser.ImportStatementContext importStatement : ast.importStatements) {
-            ctx.importStatement(importStatement);
+    public boolean isExplicitSourceType() {
+        return explicitSourceType;
+    }
+
+    String getDefaultBasePackageName() {
+        return defaultBasePackageName;
+    }
+
+    public List<DtoType<T, P>> compile(@Nullable T baseType) {
+        Map<DtoCompiler<T, P>, T> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(this, baseType);
+        return compileAll(compilerMap).get(this);
+    }
+
+    public static <
+            T extends BaseType,
+            P extends BaseProp,
+            C extends DtoCompiler<T, P>
+            > Map<C, List<DtoType<T, P>>> compileAll(Map<C, T> compilerMap) {
+        DtoFragmentRegistry<T, P> fragmentRegistry = new DtoFragmentRegistry<>();
+        Set<String> sourceDtoTypeNames = new LinkedHashSet<>();
+        Map<C, CompilerContext<T, P>> ctxMap = new LinkedHashMap<>();
+        for (Map.Entry<C, T> e : compilerMap.entrySet()) {
+            DtoCompiler<T, P> compiler = e.getKey();
+            compiler.baseType = e.getValue();
+            CompilerContext<T, P> ctx = new CompilerContext<>(
+                    compiler,
+                    fragmentRegistry,
+                    sourceDtoTypeNames
+            );
+            for (DtoParser.ImportStatementContext importStatement : compiler.ast.importStatements) {
+                ctx.importStatement(importStatement);
+            }
+            ctxMap.put(e.getKey(), ctx);
         }
-        for (DtoParser.DtoTypeContext dtoType : ast.dtoTypes) {
-            ctx.add(dtoType);
+        for (Map.Entry<C, CompilerContext<T, P>> e : ctxMap.entrySet()) {
+            DtoCompiler<T, P> compiler = e.getKey();
+            for (DtoParser.DtoTypeContext dtoType : compiler.ast.dtoTypes) {
+                sourceDtoTypeNames.add(e.getValue().getDtoQualifiedName(dtoType.name.getText()));
+            }
         }
-        return ctx.getDtoTypes();
+        for (Map.Entry<C, CompilerContext<T, P>> e : ctxMap.entrySet()) {
+            DtoCompiler<T, P> compiler = e.getKey();
+            for (DtoParser.DtoFragmentContext fragment : compiler.ast.fragments) {
+                fragmentRegistry.add(e.getValue(), fragment);
+            }
+        }
+        fragmentRegistry.validate();
+        Map<C, List<DtoType<T, P>>> resultMap = new LinkedHashMap<>();
+        for (Map.Entry<C, CompilerContext<T, P>> e : ctxMap.entrySet()) {
+            DtoCompiler<T, P> compiler = e.getKey();
+            for (DtoParser.DtoTypeContext dtoType : compiler.ast.dtoTypes) {
+                e.getValue().add(dtoType);
+            }
+            resultMap.put(e.getKey(), e.getValue().getDtoTypes());
+        }
+        return resultMap;
     }
 
     protected abstract Collection<T> getSuperTypes(T baseType);

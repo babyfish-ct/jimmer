@@ -13,10 +13,20 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     private final Importing importing;
 
+    private final DtoFragmentRegistry<T, P> fragmentRegistry;
+
+    private final Set<String> sourceDtoTypeNames;
+
     private final Map<String, DtoTypeBuilder<T, P>> typeBuilderMap = new LinkedHashMap<>();
 
-    public CompilerContext(DtoCompiler<T, P> compiler) {
+    public CompilerContext(
+            DtoCompiler<T, P> compiler,
+            DtoFragmentRegistry<T, P> fragmentRegistry,
+            Set<String> sourceDtoTypeNames
+    ) {
         this.compiler = compiler;
+        this.fragmentRegistry = fragmentRegistry;
+        this.sourceDtoTypeNames = sourceDtoTypeNames;
         this.importing = new Importing(this);
     }
 
@@ -40,7 +50,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         Set<DtoModifier> modifiers = EnumSet.noneOf(DtoModifier.class);
-        T baseType = resolveTargetType(type.targetType, type.name);
+        T baseType = resolveTargetType(type.targetType, type.name, "dto type");
         Token sealedModifier = null;
         for (Token modifier : type.modifiers) {
             DtoModifier dtoModifier;
@@ -170,14 +180,27 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return typeBuilder;
     }
 
-    private T resolveTargetType(
+    T resolveTargetType(
             @Nullable DtoParser.QualifiedNameContext targetType,
-            Token declarationName
+            Token declarationName,
+            String declarationKind
     ) {
         if (targetType == null) {
-            return compiler.getBaseType();
+            try {
+                return compiler.getBaseType();
+            } catch (IllegalStateException ex) {
+                throw exception(
+                        declarationName.getLine(),
+                        declarationName.getCharPositionInLine(),
+                        "The " +
+                                declarationKind +
+                                " \"" +
+                                declarationName.getText() +
+                                "\" must specify its target type by 'for' because this dto file is not associated with an immutable type"
+                );
+            }
         }
-        String qualifiedName = importing.resolve(targetType);
+        String qualifiedName = importing.resolveImmutableType(targetType);
         T baseType = compiler.getType(qualifiedName);
         if (baseType == null) {
             throw exception(
@@ -185,12 +208,21 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                     targetType.start.getCharPositionInLine(),
                     "Illegal target type \"" +
                             qualifiedName +
-                            "\" of dto type \"" +
+                            "\" of " +
+                            declarationKind +
+                            " \"" +
                             declarationName.getText() +
                             "\", it cannot be resolved as immutable type"
             );
         }
         return baseType;
+    }
+
+    DtoFragmentUse<T, P> resolveFragment(
+            DtoParser.IncludeContext include,
+            T baseType
+    ) {
+        return fragmentRegistry.resolve(this, include, baseType);
     }
 
     public List<DtoType<T, P>> getDtoTypes() {
@@ -247,12 +279,20 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     }
 
     public String getDtoPackageName() {
-        String packageName = compiler.getTargetPackageName();
-        return packageName != null ? packageName : DtoType.defaultPackageName(getBaseType().getPackageName());
+        return compiler.getTargetPackageName();
+    }
+
+    public String getDtoQualifiedName(String name) {
+        String packageName = getDtoPackageName();
+        return packageName.isEmpty() ? name : packageName + '.' + name;
     }
 
     public T getBaseType() {
         return compiler.getBaseType();
+    }
+
+    public String getDefaultBasePackageName() {
+        return compiler.getDefaultBasePackageName();
     }
 
     public Collection<T> getSuperTypes(T baseType) {
@@ -292,8 +332,32 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return importing.resolveDtoType(ctx);
     }
 
+    String resolveFragmentType(DtoParser.QualifiedNameContext ctx) {
+        return importing.resolveFragmentType(ctx);
+    }
+
+    public String resolveImmutableType(DtoParser.QualifiedNameContext ctx) {
+        return importing.resolveImmutableType(ctx);
+    }
+
     public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
         return importing.resolve(qualifiedName, qualifiedNameLine, qualifiedNameCol);
+    }
+
+    boolean typeExists(String qualifiedName) {
+        return compiler.getGenericTypeCount(qualifiedName) != null;
+    }
+
+    boolean immutableTypeExists(String qualifiedName) {
+        return compiler.getType(qualifiedName) != null;
+    }
+
+    boolean dtoTypeExists(String qualifiedName) {
+        return sourceDtoTypeNames.contains(qualifiedName) || typeExists(qualifiedName);
+    }
+
+    boolean fragmentTypeExists(String qualifiedName) {
+        return fragmentRegistry.contains(qualifiedName);
     }
 
     public DtoAstException exception(int line, int col, String message) {
