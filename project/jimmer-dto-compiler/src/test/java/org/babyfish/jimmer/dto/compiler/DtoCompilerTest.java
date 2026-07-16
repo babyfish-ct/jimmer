@@ -35,6 +35,19 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFileWithoutActiveDeclarationsIsNotCompiled() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "IgnoredBookView { illegalProp }"
+        );
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap = DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> false
+        );
+        Assertions.assertTrue(resultMap.get(compiler).isEmpty());
+    }
+
+    @Test
     public void testExcludedDeclarationInUnboundFileIsNotCompiled() {
         MyDtoCompiler compiler = MyDtoCompiler.compilerInPackage(
                 "Shared.dto",

@@ -18,7 +18,11 @@ dependencies {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
+    options.compilerArgs.add("-Ajimmer.source.includes=org.example.unused, org.babyfish.jimmer.client.java.")
+    options.compilerArgs.add(
+        "-Ajimmer.source.excludes=org.example.internal; " +
+            "org.babyfish.jimmer.client.java.model.ExcludedDefaultTarget"
+    )
     options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }
 
@@ -27,7 +31,11 @@ tasks.withType<JavaCompile>().configureEach {
 //}
 
 ksp {
-    arg("jimmer.source.includes", "org.babyfish.jimmer.client.kotlin.")
+    arg("jimmer.source.includes", "org.example.unused, org.babyfish.jimmer.client.kotlin.")
+    arg(
+        "jimmer.source.excludes",
+        "org.example.internal; org.babyfish.jimmer.client.kotlin.model.KExcludedDefaultTarget"
+    )
     arg("jimmer.dto.testDirs", "src/test/dto2")
 }
 
