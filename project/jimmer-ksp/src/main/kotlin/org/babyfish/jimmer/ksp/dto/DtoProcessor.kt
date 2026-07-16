@@ -68,6 +68,9 @@ class DtoProcessor(
                 immutableTypeMap[compiler] = null
                 continue
             }
+            if (!ctx.include(classDeclaration)) {
+                continue
+            }
             if (classDeclaration.annotation(Entity::class) == null &&
                 classDeclaration.annotation(Embeddable::class) == null &&
                 classDeclaration.annotation(Immutable::class) == null

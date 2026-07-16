@@ -85,6 +85,9 @@ public class DtoProcessor {
                 immutableTypeMap.put(compiler, null);
                 continue;
             }
+            if (!context.include(typeElement)) {
+                continue;
+            }
             if (typeElement.getAnnotation(Entity.class) == null &&
                     typeElement.getAnnotation(Embeddable.class) == null &&
                     typeElement.getAnnotation(Immutable.class) == null) {
