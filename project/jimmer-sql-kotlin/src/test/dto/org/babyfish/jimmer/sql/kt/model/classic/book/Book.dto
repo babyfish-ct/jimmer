@@ -2,12 +2,23 @@ import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.configurations.AuthorFilter
 import testpkg.{Named, TagProvider}
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorView
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
 
 BookWithReusableStoreView {
     id
     name
+    !fetchType(JOIN_ALWAYS)
     store -> ReusableBookStoreView
+}
+
+BookWithReusableAuthorsView {
+    id
+    name
+    !batch(16)
+    !where(firstName <> 'Nobody')
+    !orderBy(firstName asc)
+    authors -> ReusableAuthorView
 }
 
 /**

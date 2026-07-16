@@ -2,3 +2,9 @@ AuthorView {
     fullName
     fullName2
 }
+
+ReusableAuthorView {
+    id
+    firstName
+    lastName
+}

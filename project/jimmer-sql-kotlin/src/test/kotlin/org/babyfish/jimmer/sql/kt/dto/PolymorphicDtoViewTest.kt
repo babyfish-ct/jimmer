@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientDefaultBranchFieldView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientImplicitCatchAllView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientProjectWithClientView
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientProjectWithReusableClientView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientRuntimeView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.id
 import kotlin.test.Test
@@ -20,6 +21,22 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KCl
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.id as instantiableId
 
 class PolymorphicDtoViewTest : AbstractQueryTest() {
+
+    @Test
+    fun testReusablePolymorphicAssociationType() {
+        val view = KClientProjectWithReusableClientView(
+            id = 1L,
+            name = "Project",
+            client = KClientImplicitCatchAllView.Organization(
+                id = 2L,
+                name = "Acme",
+                taxCode = "ACME-001"
+            )
+        )
+
+        assertTrue(view.client is KClientImplicitCatchAllView.Organization)
+        assertTrue(view.toImmutable().client is org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization)
+    }
 
     @Test
     fun testSealedPolymorphicDtoRootSupportsExhaustiveWhen() {

@@ -11,3 +11,9 @@ ClientProjectWithClientView {
         }
     }
 }
+
+ClientProjectWithReusableClientView {
+    id
+    name
+    client -> ClientImplicitCatchAllView
+}

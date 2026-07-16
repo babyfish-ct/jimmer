@@ -65,7 +65,7 @@ public final class DtoTypeLinker {
                             "Cannot resolve reusable DTO type \"" + ref.getQualifiedName() + "\""
                     );
                 }
-                validate(ownerType, prop, ref, targetType);
+                validate(ownerType, ref, targetType);
                 ref.resolve(targetType);
                 edges.add(new Edge<>(prop, ref, targetType));
             } else {
@@ -92,7 +92,6 @@ public final class DtoTypeLinker {
 
     private static <T extends BaseType, P extends BaseProp> void validate(
             DtoType<T, P> ownerType,
-            DtoProp<T, P> prop,
             DtoTypeRef<T, P> ref,
             DtoType<T, P> targetType
     ) {
@@ -111,13 +110,6 @@ public final class DtoTypeLinker {
                             ref.getQualifiedName() +
                             "\" is not a view"
             );
-        }
-        P baseProp = prop.toTailProp().getBaseProp();
-        if (baseProp.isList()) {
-            throw exception(ownerType, ref, "Reusable DTO types for list associations are not supported yet");
-        }
-        if (targetType.getPolymorphism() != null) {
-            throw exception(ownerType, ref, "Reusable polymorphic DTO types are not supported yet");
         }
         T associationTargetType = ref.getBaseType();
         if (!associationTargetType.getQualifiedName().equals(targetType.getBaseType().getQualifiedName())) {

@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableAuthorsView
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableStoreView
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
 import kotlin.test.Test
@@ -20,5 +22,23 @@ class ReusableDtoTest {
 
         assertEquals("MANNING", view.store?.name)
         assertEquals("MANNING", view.toImmutable().store?.name)
+    }
+
+    @Test
+    fun testAssociationListTypeAndReverseConversion() {
+        val view = BookWithReusableAuthorsView(
+            id = 1L,
+            name = "GraphQL in Action",
+            authors = listOf(
+                ReusableAuthorView(
+                    id = 2L,
+                    firstName = "Samer",
+                    lastName = "Buna"
+                )
+            )
+        )
+
+        assertEquals("Samer", view.authors[0].firstName)
+        assertEquals("Samer", view.toImmutable().authors[0].firstName)
     }
 }
