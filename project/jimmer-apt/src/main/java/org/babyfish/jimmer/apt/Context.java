@@ -7,6 +7,7 @@ import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.client.DocMetadata;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.dto.compiler.SourceTypeFilter;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
@@ -61,9 +62,7 @@ public class Context {
 
     private final boolean keepIsPrefix;
 
-    private final String[] includes;
-
-    private final String[] excludes;
+    private final SourceTypeFilter sourceTypeFilter;
 
     private final boolean jackson3;
 
@@ -90,8 +89,7 @@ public class Context {
             Types types,
             Filer filer,
             boolean keepIsPrefix,
-            String[] includes,
-            String[] excludes,
+            SourceTypeFilter sourceTypeFilter,
             boolean jackson3,
             String immutablesTypeName,
             String tablesTypeName,
@@ -105,8 +103,7 @@ public class Context {
         this.types = types;
         this.filer = filer;
         this.keepIsPrefix = keepIsPrefix;
-        this.includes = includes;
-        this.excludes = excludes;
+        this.sourceTypeFilter = sourceTypeFilter;
         this.jackson3 = jackson3;
         objectType = elements
                 .getTypeElement(Object.class.getName())
@@ -346,21 +343,15 @@ public class Context {
             return false;
         }
         String qualifiedName = typeElement.getQualifiedName().toString();
-        if (includes != null) {
-            for (String include : includes) {
-                if (qualifiedName.startsWith(include)) {
-                    return true;
-                }
-            }
+        return sourceTypeFilter.test(qualifiedName);
+    }
+
+    public boolean includeDtoTarget(String qualifiedName) {
+        if (!sourceTypeFilter.test(qualifiedName)) {
+            return false;
         }
-        if (excludes != null) {
-            for (String exclude : excludes) {
-                if (qualifiedName.startsWith(exclude)) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        TypeElement typeElement = elements.getTypeElement(qualifiedName);
+        return typeElement == null || typeElement.getAnnotation(kotlin.Metadata.class) == null;
     }
 
     public String getImmutablesTypeName() {

@@ -14,6 +14,7 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
+import org.babyfish.jimmer.dto.compiler.SourceTypeFilter;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.babyfish.jimmer.sql.TypedTuple;
 
@@ -82,14 +83,6 @@ public class JimmerProcessor extends AbstractProcessor {
         messager = processingEnv.getMessager();
         String includes = processingEnv.getOptions().get("jimmer.source.includes");
         String excludes = processingEnv.getOptions().get("jimmer.source.excludes");
-        String[] includeArr = null;
-        String[] excludeArr = null;
-        if (includes != null && !includes.isEmpty()) {
-            includeArr = includes.trim().split("\\s*,\\s*");
-        }
-        if (excludes != null && !excludes.isEmpty()) {
-            excludeArr = excludes.trim().split("\\s*,\\s*");
-        }
         this.dtoDirs = dtoDirs(
                 processingEnv,
                 "jimmer.dto.dirs",
@@ -153,8 +146,7 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getTypeUtils(),
                 processingEnv.getFiler(),
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix")),
-                includeArr,
-                excludeArr,
+                new SourceTypeFilter(includes, excludes),
                 detectIsJackson3(processingEnv),
                 processingEnv.getOptions().get("jimmer.entry.immutables"),
                 processingEnv.getOptions().get("jimmer.entry.tables"),
