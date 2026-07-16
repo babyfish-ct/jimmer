@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.meta.impl;
 
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -19,7 +20,7 @@ public class MetaCache<T> {
 
     private T primaryValue;
 
-    private volatile ConcurrentHashMap<MetadataStrategy, T> secondaryMap;
+    private volatile Map<MetadataStrategy, T> secondaryMap;
 
     public MetaCache(Function<MetadataStrategy, T> creator) {
         this.creator = creator;
@@ -37,7 +38,7 @@ public class MetaCache<T> {
             if (strategy.equals(primaryKey)) {
                 return primaryValue;
             }
-            ConcurrentHashMap<MetadataStrategy, T> secondaryMap = this.secondaryMap;
+            Map<MetadataStrategy, T> secondaryMap = this.secondaryMap;
             if (secondaryMap != null) {
                 T value = secondaryMap.get(strategy);
                 if (value != null) {
@@ -61,7 +62,7 @@ public class MetaCache<T> {
         if (strategy.equals(primaryKey)) {
             return primaryValue;
         }
-        ConcurrentHashMap<MetadataStrategy, T> secondaryMap = this.secondaryMap;
+        Map<MetadataStrategy, T> secondaryMap = this.secondaryMap;
         if (secondaryMap == null) {
             this.secondaryMap = secondaryMap = new ConcurrentHashMap<>();
         } else {
