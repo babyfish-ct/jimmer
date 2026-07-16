@@ -117,7 +117,7 @@ class DtoGenerator private constructor(
         }
         if (codeGenerator != null) {
             codeGenerator.createNewFile(
-                Dependencies(false, *allFiles.toTypedArray()),
+                Dependencies(true, *allFiles.toTypedArray()),
                 root.dtoType.packageName,
                 dtoType.name!!
             ).use {
@@ -189,7 +189,7 @@ class DtoGenerator private constructor(
         }
         if (codeGenerator != null) {
             codeGenerator.createNewFile(
-                Dependencies(false, *allFiles.toTypedArray()),
+                Dependencies(true, *allFiles.toTypedArray()),
                 root.dtoType.packageName,
                 dtoType.name!!
             ).use {
