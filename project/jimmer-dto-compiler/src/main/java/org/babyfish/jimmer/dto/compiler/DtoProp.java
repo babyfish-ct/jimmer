@@ -44,7 +44,14 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     PropConfig<P> getConfig();
 
     @Nullable
-    DtoType<T, P> getTargetType();
+    DtoPropTarget<T, P> getTarget();
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    default DtoType<T, P> getTargetType() {
+        DtoPropTarget<T, P> target = getTarget();
+        return target instanceof DtoType<?, ?> ? (DtoType<T, P>) target : null;
+    }
 
     @Nullable
     EnumType getEnumType();

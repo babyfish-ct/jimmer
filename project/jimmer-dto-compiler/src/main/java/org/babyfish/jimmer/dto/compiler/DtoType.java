@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class DtoType<T extends BaseType, P extends BaseProp> {
+public class DtoType<T extends BaseType, P extends BaseProp> implements DtoPropTarget<T, P> {
 
     private final T baseType;
 
