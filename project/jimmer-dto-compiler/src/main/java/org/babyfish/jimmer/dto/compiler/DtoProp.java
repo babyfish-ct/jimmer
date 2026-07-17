@@ -35,7 +35,7 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
 
     boolean isFlat();
 
-    boolean isFunc(String ... funcNames);
+    boolean isFunc(String... funcNames);
 
     @Nullable
     String getAlias();
@@ -47,14 +47,12 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     DtoPropTarget<T, P> getTarget();
 
     @Nullable
-    @SuppressWarnings("unchecked")
     default DtoType<T, P> getTargetType() {
         DtoPropTarget<T, P> target = getTarget();
         return target instanceof DtoType<?, ?> ? (DtoType<T, P>) target : null;
     }
 
     @Nullable
-    @SuppressWarnings("unchecked")
     default DtoTypeRef<T, P> getTargetTypeRef() {
         DtoPropTarget<T, P> target = getTarget();
         return target instanceof DtoTypeRef<?, ?> ? (DtoTypeRef<T, P>) target : null;
