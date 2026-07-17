@@ -12,6 +12,14 @@ input ReusableAuthorInput {
     #include(ReusableAuthorProps)
 }
 
+fragment ReusableAuthorSpecificationProps {
+    like/i(firstName, lastName) as name
+}
+
+specification ReusableAuthorSpecification for Author {
+    #include(ReusableAuthorSpecificationProps)
+}
+
 AuthorView {
     fullName
     fullName2

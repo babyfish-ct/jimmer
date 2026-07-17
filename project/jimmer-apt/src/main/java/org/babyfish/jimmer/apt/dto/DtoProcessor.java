@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.client.DocMetadata;
+import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.GenericParser;
@@ -96,6 +97,14 @@ public class DtoProcessor {
         } else if (types.isSubtype(type, types.erasure(elements.getTypeElement(View.class.getName()).asType()))) {
             kind = DtoTypeKind.VIEW;
             superName = View.class.getName();
+        } else if (types.isSubtype(
+                type,
+                types.erasure(
+                        elements.getTypeElement(Constants.JSPECIFICATION_CLASS_NAME.canonicalName()).asType()
+                )
+        )) {
+            kind = DtoTypeKind.SPECIFICATION;
+            superName = Constants.JSPECIFICATION_CLASS_NAME.canonicalName();
         } else {
             return null;
         }

@@ -12,6 +12,15 @@ input ReusableBookStoreInput {
     label: String = "store"
 }
 
+fragment ReusableBookStoreSpecificationProps {
+    ge(name)
+    le(name)
+}
+
+specification ReusableBookStoreSpecification for BookStore {
+    #include(ReusableBookStoreSpecificationProps)
+}
+
 BookStoreView {
     avgPrice
     newestBooks {

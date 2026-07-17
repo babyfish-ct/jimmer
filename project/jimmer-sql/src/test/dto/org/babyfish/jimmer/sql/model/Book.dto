@@ -34,6 +34,17 @@ dynamic input DynamicBookWithReusableStoreInput {
     store -> ReusableBookStoreInput
 }
 
+fragment ReusableBookSpecificationProps {
+    like/i(name)
+    ge(price)
+}
+
+specification BookWithReusableAssociationsSpecification for Book {
+    #include(ReusableBookSpecificationProps)
+    store -> ReusableBookStoreSpecification
+    authors -> ReusableAuthorSpecification
+}
+
 /**
  * BookView: Document for DTO language
  */

@@ -337,6 +337,17 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testSpecificationFragment() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book(
+                "fragment Filters { like/i(name) ge(price) }\n" +
+                        "specification BookSpecification { #include(Filters) }"
+        ).get(0);
+        Assertions.assertTrue(dtoType.getModifiers().contains(DtoModifier.SPECIFICATION));
+        Assertions.assertTrue(dtoType.getDtoProps().get(0).isFunc("like"));
+        Assertions.assertTrue(dtoType.getDtoProps().get(1).isFunc("ge"));
+    }
+
+    @Test
     public void testFragmentConflictCannotBeExcluded() {
         DtoAstException ex = Assertions.assertThrows(
                 DtoAstException.class,
@@ -2432,6 +2443,59 @@ public class DtoCompilerTest {
         DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
         Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
         Assertions.assertEquals(DtoTypeKind.INPUT, ref.getTypeInfo().getKind());
+    }
+
+    @Test
+    public void testReusableSpecificationAcrossFiles() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book(
+                "specification BookSpecification for Book { name store -> BookStoreSpecification }"
+        ));
+        dtoTypes.addAll(MyDtoCompiler.bookStore(
+                "specification BookStoreSpecification for BookStore { like/i(name) }"
+        ));
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.SPECIFICATION, ref.getTypeInfo().getKind());
+    }
+
+    @Test
+    public void testReusableSpecificationFromDependency() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "specification BookSpecification { store -> dependency.BookStoreSpecification }"
+        );
+        BaseType storeType = MyDtoCompiler.bookStore(
+                "specification BookStoreSpecification { name }"
+        ).get(0).getBaseType();
+        DtoTypeLinker.link(
+                dtoTypes,
+                qualifiedName ->
+                        qualifiedName.equals("dependency.BookStoreSpecification") ?
+                                new DtoTypeInfo<>(storeType, DtoTypeKind.SPECIFICATION) :
+                                null
+        );
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(0).getTargetTypeRef();
+        Assertions.assertNull(ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.SPECIFICATION, ref.getTypeInfo().getKind());
+        Assertions.assertSame(storeType, ref.getTypeInfo().getBaseType());
+    }
+
+    @Test
+    public void testIllegalReusableSpecificationKind() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book(
+                "specification BookSpecification { store -> BookStoreView }"
+        ));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("BookStoreView { id name }"));
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Reusable specification property requires a specification DTO, but " +
+                        "\"org.babyfish.jimmer.sql.model.dto.BookStoreView\" is a view DTO"
+        ));
     }
 
     @Test

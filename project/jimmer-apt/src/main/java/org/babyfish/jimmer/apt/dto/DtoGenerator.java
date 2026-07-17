@@ -1991,9 +1991,9 @@ public class DtoGenerator {
         String propName = prop.getName();
         String propGetter = getterName(prop);
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
-        if (tailProp.getTargetType() != null) {
+        if (tailProp.getTarget() != null) {
             builder.beginControlFlow("if (this.$L != null)", propName);
-            if (tailProp.getTargetType().getBaseType().isEntity()) {
+            if (tailProp.getBaseProp().isAssociation(true)) {
                 builder.addStatement("this.$L.applyTo(args.child())", propName);
             } else {
                 builder.addStatement("this.$L.applyTo(args.getApplier())", propName);

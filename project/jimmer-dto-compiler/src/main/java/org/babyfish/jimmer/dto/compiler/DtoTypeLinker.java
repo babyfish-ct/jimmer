@@ -140,18 +140,15 @@ public final class DtoTypeLinker {
             DtoTypeRef<T, P> ref,
             DtoTypeInfo<T> typeInfo
     ) {
-        if (ownerKind == DtoTypeKind.SPECIFICATION) {
-            throw exception(ownerType, ref, "Reusable DTO types cannot be used in specifications");
-        }
         if (typeInfo.getKind() != ownerKind) {
             throw exception(
                     ownerType,
                     ref,
                     "Reusable " +
-                            (ownerKind == DtoTypeKind.INPUT ? "input" : "output") +
+                            propertyKind(ownerKind) +
                             " property requires " +
-                            (ownerKind == DtoTypeKind.INPUT ? "an input" : "a view") +
-                            " DTO, but \"" +
+                            article(ownerKind) +
+                            ", but \"" +
                             ref.getQualifiedName() +
                             "\" is " + article(typeInfo.getKind())
             );
@@ -194,6 +191,17 @@ public final class DtoTypeLinker {
                 return "a view DTO";
             default:
                 return "a specification DTO";
+        }
+    }
+
+    private static String propertyKind(DtoTypeKind kind) {
+        switch (kind) {
+            case INPUT:
+                return "input";
+            case VIEW:
+                return "output";
+            default:
+                return "specification";
         }
     }
 

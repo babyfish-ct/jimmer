@@ -9,6 +9,7 @@ import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.KspDtoCompiler
 import org.babyfish.jimmer.ksp.client.DocMetadata
+import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.GenericParser
@@ -65,6 +66,9 @@ class DtoProcessor(
         val viewType = ctx.resolver
             .getClassDeclarationByName(View::class.qualifiedName!!)!!
             .asStarProjectedType()
+        val specificationType = ctx.resolver
+            .getClassDeclarationByName(K_SPECIFICATION_CLASS_NAME.canonicalName)!!
+            .asStarProjectedType()
         val kind: DtoTypeKind
         val superName: String
         val type = declaration.asStarProjectedType()
@@ -74,6 +78,9 @@ class DtoProcessor(
         } else if (viewType.isAssignableFrom(type)) {
             kind = DtoTypeKind.VIEW
             superName = View::class.qualifiedName!!
+        } else if (specificationType.isAssignableFrom(type)) {
+            kind = DtoTypeKind.SPECIFICATION
+            superName = K_SPECIFICATION_CLASS_NAME.canonicalName
         } else {
             return null
         }

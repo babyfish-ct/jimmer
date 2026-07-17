@@ -1774,9 +1774,8 @@ class DtoGenerator private constructor(
     private fun FunSpec.Builder.addPredicateOperation(prop: DtoProp<ImmutableType, ImmutableProp>) {
         val propName = prop.name
         val tailProp = prop.toTailProp()
-        val targetType = tailProp.targetType
-        if (targetType !== null) {
-            if (targetType.baseType.isEntity) {
+        if (tailProp.target != null) {
+            if (tailProp.baseProp.isAssociation(true)) {
                 addStatement("this.%L?.let { it.applyTo(args.child()) }", propName)
             } else {
                 addStatement("this.%L?.let { it.applyTo(args.applier) }", propName)
