@@ -18,6 +18,42 @@ import java.util.stream.Collectors;
 public class DtoCompilerTest {
 
     @Test
+    public void testTargetResolutionIsCachedPerCompilation() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Shared.dto",
+                "BookView for Book { id }\n" +
+                        "BookSummary for Book { name }\n" +
+                        "fragment BookProps for Book { edition }"
+        );
+        int[] filterCount = new int[1];
+        DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> {
+                    filterCount[0]++;
+                    return true;
+                }
+        );
+        Assertions.assertEquals(1, filterCount[0]);
+        Assertions.assertEquals(1, compiler.immutableTypeLookupCount);
+        Assertions.assertEquals(1, compiler.typeLookupCount);
+    }
+
+    @Test
+    public void testIllegalExplicitDefaultTarget() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.compiler(
+                        "Shared.dto",
+                        "export Missing\nMissingView { id }"
+                ).compile(null)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Illegal target type \"org.babyfish.jimmer.sql.model.Missing\""
+        ));
+        Assertions.assertFalse(ex.getMessage().contains("must specify its target type by 'for'"));
+    }
+
+    @Test
     public void testExcludedDefaultTargetDoesNotExcludeFile() {
         MyDtoCompiler compiler = MyDtoCompiler.compiler(
                 "Book.dto",
@@ -130,7 +166,7 @@ public class DtoCompilerTest {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler
                 .compilerInPackage(
                         "Shared.dto",
-                                "package org.example.api\n" +
+                        "package org.example.api\n" +
                                 "import org.babyfish.jimmer.sql.model.*\n" +
                                 "BookView for Book { id name store -> StoreView }\n" +
                                 "StoreView for BookStore { id name }",
@@ -184,6 +220,120 @@ public class DtoCompilerTest {
                 "BookView {--->id, --->edition, --->price}",
                 dtoTypes.get(0).toString()
         );
+    }
+
+    @Test
+    public void testFragmentMacroAliasNegativeAndCustomProperty() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Summary {\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    name as title\n" +
+                        "    rank: Int\n" +
+                        "}\n" +
+                        "BookView { #include(Summary) }"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->id, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->name as title, " +
+                        "--->rank: Int" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testBodyContributorsCanBeInterleaved() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Extra { rank: Int }\n" +
+                        "BookView {\n" +
+                        "    name\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    #include(Extra)\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->id, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->name, " +
+                        "--->rank: Int" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentFlatAndFold() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment StoreKey {\n" +
+                        "    flat(store) {\n" +
+                        "        fold(key) { name }\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "BookView { #include(StoreKey) }"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->@optional fold(storeKey): {" +
+                        "--->--->@optional store.name" +
+                        "--->}" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentRecursiveAssociationConfiguration() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "fragment Children {\n" +
+                        "    !batch(4)\n" +
+                        "    !orderBy(name desc)\n" +
+                        "    childNodes*\n" +
+                        "}\n" +
+                        "TreeNodeView { name #include(Children) }"
+        );
+        assertContentEquals(
+                "TreeNodeView {" +
+                        "--->@optional !orderBy(name desc) !batch(4) childNodes: ..., " +
+                        "--->name" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentDeclaredForSuperTypeCanBeIncludedBySubtype() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.client(
+                "fragment ClientName { name }\n" +
+                        "OrganizationView for Organization { #include(ClientName) taxCode }"
+        );
+        assertContentEquals(
+                "OrganizationView {--->name, --->taxCode}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentReusableAssociation() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Authors {\n" +
+                        "    !batch(8)\n" +
+                        "    authors as contributors -> AuthorView\n" +
+                        "}\n" +
+                        "BookView { #include(Authors) }\n" +
+                        "AuthorView for Author { id firstName }"
+        );
+        DtoTypeLinker.link(dtoTypes);
+        DtoProp<BaseType, BaseProp> prop = dtoTypes.get(0).getDtoProps().get(0);
+        Assertions.assertEquals("contributors", prop.getName());
+        Assertions.assertSame(dtoTypes.get(1), prop.getTargetTypeRef().getSourceType());
+        Assertions.assertEquals(8, prop.getConfig().getBatch());
     }
 
     @Test
@@ -2118,6 +2268,91 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testUnresolvedReusableView() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { store -> MissingStoreView }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Cannot resolve reusable DTO type " +
+                        "\"org.babyfish.jimmer.sql.model.dto.MissingStoreView\""
+        ));
+    }
+
+    @Test
+    public void testDuplicatedReusableViewNameAcrossFiles() {
+        MyDtoCompiler firstCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "First.dto",
+                "package org.example.dto\nBookView for Book { id }"
+        );
+        MyDtoCompiler secondCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "Second.dto",
+                "package org.example.dto\nBookView for Book { name }"
+        );
+        Map<MyDtoCompiler, BaseType> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(firstCompiler, null);
+        compilerMap.put(secondCompiler, null);
+        List<DtoType<BaseType, BaseProp>> dtoTypes = DtoCompiler
+                .compileAll(compilerMap)
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Duplicated DTO type name \"org.example.dto.BookView\""
+        ));
+    }
+
+    @Test
+    public void testAmbiguousReusableViewWildcardImport() {
+        MyDtoCompiler firstCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "First.dto",
+                "package org.example.first\nStoreView for BookStore { id }"
+        );
+        MyDtoCompiler secondCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "Second.dto",
+                "package org.example.second\nStoreView for BookStore { name }"
+        );
+        MyDtoCompiler bookCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "Book.dto",
+                "package org.example.book\n" +
+                        "import org.example.first.*\n" +
+                        "import org.example.second.*\n" +
+                        "BookView for Book { store -> StoreView }"
+        );
+        Map<MyDtoCompiler, BaseType> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(firstCompiler, null);
+        compilerMap.put(secondCompiler, null);
+        compilerMap.put(bookCompiler, null);
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoCompiler.compileAll(compilerMap)
+        );
+        Assertions.assertTrue(ex.getMessage().contains("Ambiguous type name \"StoreView\""));
+    }
+
+    @Test
+    public void testReusableAssociationNullability() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    store -> StoreView\n" +
+                        "    authors -> AuthorView\n" +
+                        "}\n" +
+                        "StoreView for BookStore { id }\n" +
+                        "AuthorView for Author { id }"
+        );
+        Assertions.assertTrue(dtoTypes.get(0).getDtoProps().get(0).isBaseNullable());
+        Assertions.assertFalse(dtoTypes.get(0).getDtoProps().get(1).isBaseNullable());
+    }
+
+    @Test
     public void testReusableViewByWildcardImport() {
         MyDtoCompiler storeCompiler = MyDtoCompiler.sourceOnlyCompiler(
                 "StoreViews.dto",
@@ -2167,6 +2402,25 @@ public class DtoCompilerTest {
         Assertions.assertNull(ref.getSourceType());
         Assertions.assertEquals(DtoTypeKind.VIEW, ref.getTypeInfo().getKind());
         Assertions.assertSame(storeType, ref.getTypeInfo().getBaseType());
+    }
+
+    @Test
+    public void testReusableViewFromDependencyIsResolvedOnce() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { " +
+                        "creator -> dependency.UserView " +
+                        "editor -> dependency.UserView " +
+                        "}"
+        );
+        int[] resolveCount = new int[1];
+        DtoTypeLinker.link(
+                dtoTypes,
+                qualifiedName -> {
+                    resolveCount[0]++;
+                    return new DtoTypeInfo<>(MyDtoCompiler.USER_TYPE, DtoTypeKind.VIEW);
+                }
+        );
+        Assertions.assertEquals(1, resolveCount[0]);
     }
 
     @Test
@@ -2511,6 +2765,10 @@ public class DtoCompilerTest {
 
         private final boolean externalTypesVisible;
 
+        private int immutableTypeLookupCount;
+
+        private int typeLookupCount;
+
         private MyDtoCompiler(DtoFile dtoFile) throws IOException {
             this(dtoFile, true);
         }
@@ -2673,12 +2931,24 @@ public class DtoCompilerTest {
         @Nullable
         @Override
         protected BaseType getType(String qualifiedName) {
+            typeLookupCount++;
             for (BaseType type : TYPE_MAP.values()) {
                 if (type.getQualifiedName().equals(qualifiedName)) {
                     return type;
                 }
             }
             return null;
+        }
+
+        @Override
+        protected boolean isImmutableType(String qualifiedName) {
+            immutableTypeLookupCount++;
+            for (BaseType type : TYPE_MAP.values()) {
+                if (type.getQualifiedName().equals(qualifiedName)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override

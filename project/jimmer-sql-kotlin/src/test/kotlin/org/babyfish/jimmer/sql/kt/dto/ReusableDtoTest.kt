@@ -1,8 +1,18 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.sql.kt.model.classic.book.dto.*
+import org.babyfish.jimmer.ImmutableObjects
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorInput
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableAssociationsInput
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableAuthorsView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableStoreView
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookWithReusableStoreInput
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreInput
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreView
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ReusableDtoTest {
 
@@ -13,7 +23,8 @@ class ReusableDtoTest {
             name = "GraphQL in Action",
             store = ReusableBookStoreInput(
                 id = 2L,
-                name = "MANNING"
+                name = "MANNING",
+                label = "store"
             ),
             authors = listOf(
                 ReusableAuthorInput(
@@ -25,8 +36,34 @@ class ReusableDtoTest {
         )
 
         val book = input.toImmutable()
+        assertEquals("store", input.store?.label)
+        assertEquals(
+            "store",
+            ReusableBookStoreInput(
+                ReusableBookStoreView(
+                    id = 2L,
+                    name = "MANNING"
+                ).toImmutable()
+            ).label
+        )
         assertEquals("MANNING", book.store?.name)
         assertEquals("Samer", book.authors[0].firstName)
+    }
+
+    @Test
+    fun testDynamicAssociationInputPresence() {
+        val emptyBook = DynamicBookWithReusableStoreInput().toImmutable()
+        assertFalse(ImmutableObjects.isLoaded(emptyBook, "store"))
+
+        val book = DynamicBookWithReusableStoreInput(
+            store = ReusableBookStoreInput(
+                id = 2L,
+                name = "MANNING",
+                label = "store"
+            )
+        ).toImmutable()
+        assertTrue(ImmutableObjects.isLoaded(book, "store"))
+        assertEquals("MANNING", book.store?.name)
     }
 
     @Test

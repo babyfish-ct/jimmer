@@ -7,7 +7,8 @@ import java.util.*;
 
 public final class DtoTypeLinker {
 
-    private DtoTypeLinker() {}
+    private DtoTypeLinker() {
+    }
 
     public static <T extends BaseType, P extends BaseProp> void link(
             Collection<DtoType<T, P>> dtoTypes
@@ -19,13 +20,13 @@ public final class DtoTypeLinker {
             Collection<DtoType<T, P>> dtoTypes,
             DtoTypeResolver<T> resolver
     ) {
-        Map<String, DtoType<T, P>> typeMap = new LinkedHashMap<>();
+        LinkContext<T, P> ctx = new LinkContext<>(resolver);
         for (DtoType<T, P> dtoType : dtoTypes) {
             String qualifiedName = dtoType.getQualifiedName();
             if (qualifiedName == null) {
                 continue;
             }
-            DtoType<T, P> conflictType = typeMap.put(qualifiedName, dtoType);
+            DtoType<T, P> conflictType = ctx.typeMap.put(qualifiedName, dtoType);
             if (conflictType != null) {
                 throw new DtoAstException(
                         dtoType.getDtoFile(),
@@ -34,6 +35,7 @@ public final class DtoTypeLinker {
                         "Duplicated DTO type name \"" + qualifiedName + "\""
                 );
             }
+            ctx.typeInfoMap.put(qualifiedName, typeInfo(dtoType));
         }
 
         Map<DtoType<T, P>, List<Edge<T, P>>> graph = new IdentityHashMap<>();
@@ -41,9 +43,9 @@ public final class DtoTypeLinker {
             List<Edge<T, P>> edges = new ArrayList<>();
             collectEdges(
                     dtoType,
+                    kind(dtoType),
                     dtoType,
-                    typeMap,
-                    resolver,
+                    ctx,
                     Collections.newSetFromMap(new IdentityHashMap<>()),
                     edges
             );
@@ -54,9 +56,9 @@ public final class DtoTypeLinker {
 
     private static <T extends BaseType, P extends BaseProp> void collectEdges(
             DtoType<T, P> ownerType,
+            DtoTypeKind ownerKind,
             DtoType<T, P> shape,
-            Map<String, DtoType<T, P>> typeMap,
-            DtoTypeResolver<T> resolver,
+            LinkContext<T, P> ctx,
             Set<DtoType<T, P>> visitedShapes,
             List<Edge<T, P>> edges
     ) {
@@ -66,13 +68,10 @@ public final class DtoTypeLinker {
         for (DtoProp<T, P> prop : shape.getDtoProps()) {
             DtoTypeRef<T, P> ref = prop.getTargetTypeRef();
             if (ref != null) {
-                DtoType<T, P> targetType = typeMap.get(ref.getQualifiedName());
-                DtoTypeInfo<T> typeInfo;
-                if (targetType != null) {
-                    typeInfo = typeInfo(targetType);
-                } else {
-                    typeInfo = resolver.resolve(ref.getQualifiedName());
-                }
+                DtoType<T, P> targetType = ctx.typeMap.get(ref.getQualifiedName());
+                DtoTypeInfo<T> typeInfo = targetType != null ?
+                        ctx.typeInfoMap.get(ref.getQualifiedName()) :
+                        ctx.resolveExternal(ref.getQualifiedName());
                 if (typeInfo == null) {
                     throw exception(
                             ownerType,
@@ -80,7 +79,7 @@ public final class DtoTypeLinker {
                             "Cannot resolve reusable DTO type \"" + ref.getQualifiedName() + "\""
                     );
                 }
-                validate(ownerType, ref, typeInfo);
+                validate(ownerType, ownerKind, ref, typeInfo);
                 ref.resolve(typeInfo, targetType);
                 if (targetType != null) {
                     edges.add(new Edge<>(prop, ref, targetType));
@@ -88,31 +87,59 @@ public final class DtoTypeLinker {
             } else {
                 DtoType<T, P> targetType = prop.getTargetType();
                 if (targetType != null) {
-                    collectEdges(ownerType, targetType, typeMap, resolver, visitedShapes, edges);
+                    collectEdges(
+                            ownerType,
+                            ownerKind,
+                            targetType,
+                            ctx,
+                            visitedShapes,
+                            edges
+                    );
                 }
             }
         }
         for (FoldProp<T, P> prop : shape.getFoldProps()) {
-            collectEdges(ownerType, prop.getTargetType(), typeMap, resolver, visitedShapes, edges);
+            collectEdges(
+                    ownerType,
+                    ownerKind,
+                    prop.getTargetType(),
+                    ctx,
+                    visitedShapes,
+                    edges
+            );
         }
         DtoPolymorphism<T, P> polymorphism = shape.getPolymorphism();
         if (polymorphism != null) {
             DtoPolymorphicBranch<T, P> defaultBranch = polymorphism.getDefaultBranch();
             if (defaultBranch != null) {
-                collectEdges(ownerType, defaultBranch.getDtoType(), typeMap, resolver, visitedShapes, edges);
+                collectEdges(
+                        ownerType,
+                        ownerKind,
+                        defaultBranch.getDtoType(),
+                        ctx,
+                        visitedShapes,
+                        edges
+                );
             }
             for (DtoPolymorphicBranch<T, P> branch : polymorphism.getTypeBranches()) {
-                collectEdges(ownerType, branch.getDtoType(), typeMap, resolver, visitedShapes, edges);
+                collectEdges(
+                        ownerType,
+                        ownerKind,
+                        branch.getDtoType(),
+                        ctx,
+                        visitedShapes,
+                        edges
+                );
             }
         }
     }
 
     private static <T extends BaseType, P extends BaseProp> void validate(
             DtoType<T, P> ownerType,
+            DtoTypeKind ownerKind,
             DtoTypeRef<T, P> ref,
             DtoTypeInfo<T> typeInfo
     ) {
-        DtoTypeKind ownerKind = kind(ownerType);
         if (ownerKind == DtoTypeKind.SPECIFICATION) {
             throw exception(ownerType, ref, "Reusable DTO types cannot be used in specifications");
         }
@@ -240,6 +267,32 @@ public final class DtoTypeLinker {
             this.prop = prop;
             this.ref = ref;
             this.targetType = targetType;
+        }
+    }
+
+    private static class LinkContext<T extends BaseType, P extends BaseProp> {
+
+        final DtoTypeResolver<T> resolver;
+
+        final Map<String, DtoType<T, P>> typeMap = new LinkedHashMap<>();
+
+        final Map<String, DtoTypeInfo<T>> typeInfoMap = new HashMap<>();
+
+        final Map<String, DtoTypeInfo<T>> externalTypeInfoMap = new HashMap<>();
+
+        LinkContext(DtoTypeResolver<T> resolver) {
+            this.resolver = resolver;
+        }
+
+        DtoTypeInfo<T> resolveExternal(String qualifiedName) {
+            DtoTypeInfo<T> typeInfo = externalTypeInfoMap.get(qualifiedName);
+            if (typeInfo == null) {
+                typeInfo = resolver.resolve(qualifiedName);
+                if (typeInfo != null) {
+                    externalTypeInfoMap.put(qualifiedName, typeInfo);
+                }
+            }
+            return typeInfo;
         }
     }
 

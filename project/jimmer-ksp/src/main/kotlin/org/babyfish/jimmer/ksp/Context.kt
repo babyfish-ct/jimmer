@@ -90,16 +90,36 @@ class Context(
 
     private val typeMap: MutableMap<KSClassDeclaration, ImmutableType> = mutableMapOf()
 
-    private var newTypes = typeMap?.values?.toMutableList() ?: mutableListOf()
+    private val typeNameMap: MutableMap<String, ImmutableType> = mutableMapOf()
+
+    private var newTypes = mutableListOf<ImmutableType>()
 
     val types: Collection<ImmutableType>
         get() = typeMap.values
 
-    fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType =
-        typeMap[classDeclaration] ?: ImmutableType(this, classDeclaration).also {
+    fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType {
+        typeMap[classDeclaration]?.let {
+            return it
+        }
+        val qualifiedName = classDeclaration.qualifiedName?.asString()
+        qualifiedName?.let(typeNameMap::get)?.let {
+            return it
+        }
+        return ImmutableType(this, classDeclaration).also {
             typeMap[classDeclaration] = it
+            if (qualifiedName !== null) {
+                typeNameMap[qualifiedName] = it
+            }
             newTypes += it
         }
+    }
+
+    fun immutableTypeOf(qualifiedName: String): ImmutableType? =
+        typeNameMap[qualifiedName]
+            ?: resolver
+                .getClassDeclarationByName(qualifiedName)
+                ?.takeIf { typeAnnotationOf(it) !== null }
+                ?.let(::typeOf)
 
     fun typeAnnotationOf(classDeclaration: KSClassDeclaration): KSAnnotation? {
         var sqlAnnotation: KSAnnotation? = null

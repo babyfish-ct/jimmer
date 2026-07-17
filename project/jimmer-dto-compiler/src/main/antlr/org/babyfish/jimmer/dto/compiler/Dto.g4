@@ -62,9 +62,15 @@ dtoType
 dtoBody
     :
     '{'
-    (includes += include)*
-    (macros += macro)*
-    (((typesBlocks += typesBlock | explicitProps += explicitProp)) (',' | ';')?)*
+    (
+        (
+            includes += include |
+            macros += macro |
+            typesBlocks += typesBlock |
+            explicitProps += explicitProp
+        )
+        (',' | ';')?
+    )*
     '}'
     ;
 

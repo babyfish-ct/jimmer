@@ -21,13 +21,12 @@ class DtoProcessor(
     private val defaultNullableInputModifier: DtoModifier
 ) {
     fun process(): Boolean {
-        val dtoTypeMap = findDtoTypeMap()
-        generateDtoTypes(dtoTypeMap)
-        return dtoTypeMap.isNotEmpty()
+        val dtoTypes = findDtoTypes()
+        generateDtoTypes(dtoTypes)
+        return dtoTypes.isNotEmpty()
     }
 
-    private fun findDtoTypeMap(): Map<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>> {
-        val dtoTypeMap = mutableMapOf<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>>()
+    private fun findDtoTypes(): List<DtoType<ImmutableType, ImmutableProp>> {
         val dtoCtx = DtoContext(ctx.resolver.getAllFiles().firstOrNull(), dtoDirs)
         val compilers = mutableListOf<KspDtoCompiler>()
         for (dtoFile in dtoCtx.dtoFiles) {
@@ -52,16 +51,10 @@ class DtoProcessor(
             }
             compilers += compiler
         }
-        for (dtoTypes in DtoCompiler.compileAll(compilers, ctx::includeDtoTarget).values) {
-            for (dtoType in dtoTypes) {
-                dtoTypeMap.computeIfAbsent(dtoType.baseType) {
-                    mutableListOf()
-                } += dtoType
-            }
-        }
-        DtoTypeLinker.link(dtoTypeMap.values.flatten(), ::resolveDtoType)
+        val dtoTypes = DtoCompiler.compileAll(compilers, ctx::includeDtoTarget).values.flatten()
+        DtoTypeLinker.link(dtoTypes, ::resolveDtoType)
         ctx.resolve()
-        return dtoTypeMap
+        return dtoTypes
     }
 
     private fun resolveDtoType(qualifiedName: String): DtoTypeInfo<ImmutableType>? {
@@ -91,36 +84,34 @@ class DtoProcessor(
         ).parse().arguments[0].type!!.fastResolve().declaration as? KSClassDeclaration
             ?: throw DtoException(
                 "The entity type argument of reusable DTO type \"$qualifiedName\" " +
-                    "is not an immutable type"
+                        "is not an immutable type"
             )
         if (ctx.typeAnnotationOf(baseDeclaration) == null) {
             throw DtoException(
                 "The entity type argument of reusable DTO type \"$qualifiedName\" " +
-                    "is not an immutable type"
+                        "is not an immutable type"
             )
         }
         return DtoTypeInfo(ctx.typeOf(baseDeclaration), kind)
     }
 
     private fun generateDtoTypes(
-        dtoTypeMap: Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>>
+        dtoTypes: List<DtoType<ImmutableType, ImmutableProp>>
     ) {
         val allFiles = ctx.resolver.getAllFiles().toList()
         val docMetadata = DocMetadata(ctx)
-        for (dtoTypes in dtoTypeMap.values) {
-            for (dtoType in dtoTypes) {
-                val mutable = dtoType.annotations.firstOrNull {
-                    it.qualifiedName == "org.babyfish.jimmer.kt.dto.KotlinDto"
-                }?.let {
-                    val value = it.valueMap["immutability"] as EnumValue
-                    when (value.constant) {
-                        "IMMUTABLE" -> false
-                        "MUTABLE" -> true
-                        else -> null
-                    }
-                } ?: mutable
-                DtoGenerator(ctx, docMetadata, mutable, dtoType, ctx.environment.codeGenerator).generate(allFiles)
-            }
+        for (dtoType in dtoTypes) {
+            val mutable = dtoType.annotations.firstOrNull {
+                it.qualifiedName == "org.babyfish.jimmer.kt.dto.KotlinDto"
+            }?.let {
+                val value = it.valueMap["immutability"] as EnumValue
+                when (value.constant) {
+                    "IMMUTABLE" -> false
+                    "MUTABLE" -> true
+                    else -> null
+                }
+            } ?: mutable
+            DtoGenerator(ctx, docMetadata, mutable, dtoType, ctx.environment.codeGenerator).generate(allFiles)
         }
     }
 }

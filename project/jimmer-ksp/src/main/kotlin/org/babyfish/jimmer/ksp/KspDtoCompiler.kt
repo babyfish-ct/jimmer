@@ -30,13 +30,7 @@ class KspDtoCompiler(
         resolver.getClassDeclarationByName(qualifiedName)?.let { ctx.typeAnnotationOf(it) !== null } == true
 
     override fun getType(qualifiedName: String): ImmutableType? =
-        ctx.types.firstOrNull { it.qualifiedName == qualifiedName }
-            ?: resolver
-                .getClassDeclarationByName(qualifiedName)
-                ?.takeIf { ctx.typeAnnotationOf(it) !== null }
-                ?.let {
-                    ctx.typeOf(it).also { ctx.resolve() }
-                }
+        ctx.immutableTypeOf(qualifiedName)?.also { ctx.resolve() }
 
     override fun getDirectSubTypes(baseType: ImmutableType): Collection<ImmutableType> =
         ctx.types

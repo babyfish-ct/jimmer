@@ -23,6 +23,12 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     private final Map<String, DtoTypeBuilder<T, P>> typeBuilderMap = new LinkedHashMap<>();
 
+    private final Map<String, Boolean> immutableTypeExistenceMap = new HashMap<>();
+
+    private final Map<String, T> typeMap = new HashMap<>();
+
+    private final Set<String> unresolvedTypeNames = new HashSet<>();
+
     public CompilerContext(
             DtoCompiler<T, P> compiler,
             DtoFragmentRegistry<T, P> fragmentRegistry,
@@ -205,10 +211,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             baseType = compiler.baseTypeOrNull();
         }
         if (baseType == null) {
-            baseType = compiler.getType(qualifiedName);
+            baseType = getType(qualifiedName);
         }
         if (baseType == null) {
-            if (targetType == null) {
+            if (targetType == null && !compiler.isExplicitSourceType()) {
                 throw exception(
                         declarationName.getLine(),
                         declarationName.getCharPositionInLine(),
@@ -220,8 +226,8 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 );
             }
             throw exception(
-                    targetType.start.getLine(),
-                    targetType.start.getCharPositionInLine(),
+                    targetType != null ? targetType.start.getLine() : declarationName.getLine(),
+                    targetType != null ? targetType.start.getCharPositionInLine() : declarationName.getCharPositionInLine(),
                     "Illegal target type \"" +
                             qualifiedName +
                             "\" of " +
@@ -303,10 +309,6 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return packageName.isEmpty() ? name : packageName + '.' + name;
     }
 
-    public T getBaseType() {
-        return compiler.getBaseType();
-    }
-
     public String getDefaultBasePackageName() {
         return compiler.getDefaultBasePackageName();
     }
@@ -317,7 +319,17 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     @Nullable
     public T getType(String qualifiedName) {
-        return compiler.getType(qualifiedName);
+        T type = typeMap.get(qualifiedName);
+        if (type != null || unresolvedTypeNames.contains(qualifiedName)) {
+            return type;
+        }
+        type = compiler.getType(qualifiedName);
+        if (type != null) {
+            typeMap.put(qualifiedName, type);
+        } else {
+            unresolvedTypeNames.add(qualifiedName);
+        }
+        return type;
     }
 
     public Collection<T> getDirectSubTypes(T baseType) {
@@ -374,7 +386,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     }
 
     boolean immutableTypeExists(String qualifiedName) {
-        return compiler.isImmutableType(qualifiedName);
+        return immutableTypeExistenceMap.computeIfAbsent(qualifiedName, compiler::isImmutableType);
     }
 
     boolean dtoTypeExists(String qualifiedName) {

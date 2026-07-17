@@ -9,6 +9,8 @@ class DtoFragmentRegistry<T extends BaseType, P extends BaseProp> {
 
     private final Map<String, DtoFragment<T, P>> fragmentMap = new LinkedHashMap<>();
 
+    private final Map<String, Set<String>> superTypeNameMap = new HashMap<>();
+
     void add(
             CompilerContext<T, P> ctx,
             DtoParser.DtoFragmentContext ast,
@@ -148,11 +150,18 @@ class DtoFragmentRegistry<T extends BaseType, P extends BaseProp> {
         if (ctx.isSameType(superType, type)) {
             return true;
         }
-        for (T directSuperType : ctx.getSuperTypes(type)) {
-            if (isAssignableFrom(superType, directSuperType, ctx)) {
-                return true;
+        Set<String> superTypeNames = superTypeNameMap.get(type.getQualifiedName());
+        if (superTypeNames == null) {
+            superTypeNames = new HashSet<>();
+            Deque<T> stack = new ArrayDeque<>(ctx.getSuperTypes(type));
+            while (!stack.isEmpty()) {
+                T currentType = stack.removeLast();
+                if (superTypeNames.add(currentType.getQualifiedName())) {
+                    stack.addAll(ctx.getSuperTypes(currentType));
+                }
             }
+            superTypeNameMap.put(type.getQualifiedName(), superTypeNames);
         }
-        return false;
+        return superTypeNames.contains(superType.getQualifiedName());
     }
 }

@@ -158,6 +158,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
         Set<String> sourceDtoTypeNames = new LinkedHashSet<>();
         Set<String> inactiveSourceDtoTypeNames = new LinkedHashSet<>();
         Set<String> inactiveFragmentTypeNames = new LinkedHashSet<>();
+        Map<String, Boolean> targetTypeActivationMap = new HashMap<>();
         Map<C, CompilerContext<T, P>> ctxMap = new LinkedHashMap<>();
         for (C compiler : compilers) {
             DtoCompiler<T, P> rawCompiler = compiler;
@@ -183,7 +184,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             for (DtoParser.DtoTypeContext dtoType : rawCompiler.ast.dtoTypes) {
                 String dtoQualifiedName = ctx.getDtoQualifiedName(dtoType.name.getText());
                 String targetTypeName = ctx.resolveTargetTypeName(dtoType.targetType);
-                if (targetTypeNameFilter.test(targetTypeName)) {
+                if (targetTypeActivationMap.computeIfAbsent(targetTypeName, targetTypeNameFilter::test)) {
                     sourceDtoTypeNames.add(dtoQualifiedName);
                     targets.put(
                             dtoType,
@@ -206,7 +207,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             for (DtoParser.DtoFragmentContext fragment : compiler.ast.fragments) {
                 String fragmentQualifiedName = ctx.getDtoQualifiedName(fragment.name.getText());
                 String targetTypeName = ctx.resolveTargetTypeName(fragment.targetType);
-                if (targetTypeNameFilter.test(targetTypeName)) {
+                if (targetTypeActivationMap.computeIfAbsent(targetTypeName, targetTypeNameFilter::test)) {
                     T targetType = ctx.resolveTargetType(
                             targetTypeName,
                             fragment.targetType,

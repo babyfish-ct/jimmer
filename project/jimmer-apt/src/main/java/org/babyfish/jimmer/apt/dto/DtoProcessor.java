@@ -13,7 +13,10 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class DtoProcessor {
 
@@ -38,12 +41,10 @@ public class DtoProcessor {
     }
 
     public boolean process() {
-        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap = parseDtoTypes();
-        return generateDtoTypes(dtoTypeMap);
+        return generateDtoTypes(parseDtoTypes());
     }
 
-    private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes() {
-        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap = new LinkedHashMap<>();
+    private List<DtoType<ImmutableType, ImmutableProp>> parseDtoTypes() {
         List<AptDtoCompiler> compilers = new ArrayList<>();
         DtoContext dtoContext = new DtoContext(context.getFiler(), dtoDirs);
         AptDtoCompiler compiler;
@@ -70,19 +71,14 @@ public class DtoProcessor {
             }
             compilers.add(compiler);
         }
-        for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes :
-                DtoCompiler.compileAll(compilers, context::includeDtoTarget).values()) {
-            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                dtoTypeMap
-                        .computeIfAbsent(dtoType.getBaseType(), it -> new ArrayList<>())
-                        .add(dtoType);
-            }
-        }
-        DtoTypeLinker.link(
-                dtoTypeMap.values().stream().flatMap(Collection::stream).collect(java.util.stream.Collectors.toList()),
-                this::resolveDtoType
-        );
-        return dtoTypeMap;
+        List<DtoType<ImmutableType, ImmutableProp>> dtoTypes = DtoCompiler
+                .compileAll(compilers, context::includeDtoTarget)
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        DtoTypeLinker.link(dtoTypes, this::resolveDtoType);
+        return dtoTypes;
     }
 
     private DtoTypeInfo<ImmutableType> resolveDtoType(String qualifiedName) {
@@ -119,14 +115,12 @@ public class DtoProcessor {
         return new DtoTypeInfo<>(baseType, kind);
     }
 
-    private boolean generateDtoTypes(Map<?, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap) {
+    private boolean generateDtoTypes(List<DtoType<ImmutableType, ImmutableProp>> dtoTypes) {
         boolean result = false;
         DocMetadata docMetadata = new DocMetadata(context);
-        for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
-            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                new DtoGenerator(context, docMetadata, dtoType).generate();
-                result = true;
-            }
+        for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
+            new DtoGenerator(context, docMetadata, dtoType).generate();
+            result = true;
         }
         return result;
     }

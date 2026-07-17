@@ -1,3 +1,17 @@
+fragment ReusableAuthorProps {
+    id
+    firstName
+    lastName
+}
+
+ReusableAuthorView {
+    #include(ReusableAuthorProps)
+}
+
+input ReusableAuthorInput {
+    #include(ReusableAuthorProps)
+}
+
 AuthorView {
     fullName
     fullName2

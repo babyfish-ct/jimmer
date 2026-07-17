@@ -20,10 +20,24 @@ public final class SourceTypeFilter implements Predicate<String> {
 
     @Override
     public boolean test(String qualifiedName) {
-        if (!includes.isEmpty() && includes.stream().noneMatch(qualifiedName::startsWith)) {
-            return false;
+        if (!includes.isEmpty()) {
+            boolean matched = false;
+            for (String include : includes) {
+                if (qualifiedName.startsWith(include)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                return false;
+            }
         }
-        return excludes.stream().noneMatch(qualifiedName::startsWith);
+        for (String exclude : excludes) {
+            if (qualifiedName.startsWith(exclude)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static Set<String> parse(@Nullable String value) {
