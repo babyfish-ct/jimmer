@@ -8,14 +8,11 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.dto.KInstantiableClientSimpleView
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClientProject
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientDefaultBranchFieldView
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientImplicitCatchAllView
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientProjectWithClientView
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientProjectWithReusableClientView
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientRuntimeView
+import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.*
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.id
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient as KInstantiableClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.id as instantiableId
@@ -36,6 +33,33 @@ class PolymorphicDtoViewTest : AbstractQueryTest() {
 
         assertTrue(view.client is KClientImplicitCatchAllView.Organization)
         assertTrue(view.toImmutable().client is org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization)
+    }
+
+    @Test
+    fun testReusablePolymorphicListAssociationType() {
+        val view = KClientProjectWithReusableParticipantsView(
+            id = 1L,
+            name = "Project",
+            participants = listOf(
+                KClientImplicitCatchAllView.Organization(
+                    id = 2L,
+                    name = "Acme",
+                    taxCode = "ACME-001"
+                ),
+                KClientImplicitCatchAllView.Default(
+                    id = 3L,
+                    name = "Default"
+                )
+            )
+        )
+
+        val participants: List<KClientImplicitCatchAllView> = view.participants
+        assertIs<KClientImplicitCatchAllView.Organization>(participants[0])
+        assertIs<KClientImplicitCatchAllView.Default>(participants[1])
+
+        val project = view.toImmutable()
+        assertEquals(2, project.participants.size)
+        assertIs<org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization>(project.participants[0])
     }
 
     @Test
@@ -193,6 +217,45 @@ class PolymorphicDtoViewTest : AbstractQueryTest() {
                 assertEquals(100L, organization.id)
                 assertEquals("Acme", organization.name)
                 assertEquals("ACME-001", organization.taxCode)
+            }
+        }
+    }
+
+    @Test
+    fun testReusablePolymorphicListAssociationRouting() {
+        executeAndExpect(
+            sqlClient.createQuery(KClientProject::class) {
+                where(table.id eq 1000L)
+                select(table.fetch(KClientProjectWithReusableParticipantsView::class))
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME " +
+                        "from SINGLE_CLIENT_PROJECT tb_1_ " +
+                        "where tb_1_.ID = ?"
+            )
+            variables(1000L)
+            statement(1).sql(
+                "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_2_.TAX_CODE " +
+                        "from CLIENT tb_1_ " +
+                        "inner join SINGLE_CLIENT_PROJECT_PARTICIPANT_MAPPING tb_3_ " +
+                        "on tb_1_.ID = tb_3_.CLIENT_ID " +
+                        "left join CLIENT tb_2_ " +
+                        "on tb_1_.ID = tb_2_.ID and tb_2_.CLIENT_TYPE = ? " +
+                        "where tb_3_.PROJECT_ID = ?"
+            )
+            statement(1).variables("ORG", 1000L)
+            row(0) {
+                val projectView = it as KClientProjectWithReusableParticipantsView
+                val participants: List<KClientImplicitCatchAllView> = projectView.participants
+                val organization = assertIs<KClientImplicitCatchAllView.Organization>(participants[0])
+                assertEquals("ACME-001", organization.taxCode)
+                assertIs<KClientImplicitCatchAllView.Default>(participants[1])
+
+                val project = projectView.toImmutable()
+                assertIs<org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization>(
+                    project.participants[0]
+                )
             }
         }
     }

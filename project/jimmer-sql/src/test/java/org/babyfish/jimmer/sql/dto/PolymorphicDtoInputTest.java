@@ -18,6 +18,9 @@ import org.babyfish.jimmer.sql.model.inheritance.singletable.dto.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class PolymorphicDtoInputTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -37,6 +40,33 @@ public class PolymorphicDtoInputTest {
         ClientProject project = input.toImmutable();
         Assertions.assertTrue(project.client() instanceof Organization);
         Assertions.assertEquals("T-10", ((Organization) project.client()).taxCode());
+    }
+
+    @Test
+    public void testReusablePolymorphicListAssociationInput() {
+        ClientPatchInput.Organization organization = new ClientPatchInput.Organization();
+        organization.setId(10L);
+        organization.setName("Org patch");
+        organization.setTaxCode("T-10");
+
+        ClientPatchInput.Default defaultClient = new ClientPatchInput.Default();
+        defaultClient.setId(11L);
+        defaultClient.setName("Default patch");
+
+        List<ClientPatchInput> participants = Arrays.asList(organization, defaultClient);
+        ClientProjectWithReusableParticipantsInput input = new ClientProjectWithReusableParticipantsInput();
+        input.setId(20L);
+        input.setName("Project patch");
+        input.setParticipants(participants);
+
+        ClientProject project = input.toImmutable();
+        Assertions.assertEquals(2, project.participants().size());
+        Assertions.assertTrue(project.participants().get(0) instanceof Organization);
+        Assertions.assertEquals("T-10", ((Organization) project.participants().get(0)).taxCode());
+        Assertions.assertEquals(
+                Client.class,
+                ((ImmutableSpi) project.participants().get(1)).__type().getJavaClass()
+        );
     }
 
     @Test

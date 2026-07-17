@@ -14,4 +14,14 @@ interface KClientProject {
 
     @ManyToOne
     val client: KClient?
+
+    @ManyToMany
+    @JoinTable(
+        name = "SINGLE_CLIENT_PROJECT_PARTICIPANT_MAPPING",
+        joinColumnName = "PROJECT_ID",
+        inverseJoinColumnName = "CLIENT_ID",
+        readonly = true,
+        cascadeDeletedByTarget = true
+    )
+    val participants: List<KClient>
 }

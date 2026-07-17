@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.model.inheritance.singletable;
 import org.babyfish.jimmer.sql.*;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
+
 @Entity
 @Table(name = "SINGLE_CLIENT_PROJECT")
 public interface ClientProject {
@@ -16,4 +18,14 @@ public interface ClientProject {
     @Nullable
     @ManyToOne
     Client client();
+
+    @ManyToMany
+    @JoinTable(
+            name = "SINGLE_CLIENT_PROJECT_PARTICIPANT_MAPPING",
+            joinColumnName = "PROJECT_ID",
+            inverseJoinColumnName = "CLIENT_ID",
+            readonly = true,
+            cascadeDeletedByTarget = true
+    )
+    List<Client> participants();
 }

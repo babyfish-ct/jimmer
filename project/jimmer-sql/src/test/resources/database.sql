@@ -41,6 +41,7 @@ drop table joined_citizen if exists;
 drop table natural_client if exists;
 drop table enum_client if exists;
 drop table single_org_project if exists;
+drop table single_client_project_participant_mapping if exists;
 drop table single_client_project if exists;
 drop table client if exists;
 drop table dual_parent_child if exists;
@@ -239,6 +240,19 @@ create table single_client_project(
     constraint fk_single_client_project__client
         foreign key(client_id)
             references client(id)
+);
+
+create table single_client_project_participant_mapping(
+    project_id bigint not null,
+    client_id bigint not null,
+    constraint pk_single_client_project_participant_mapping primary key(project_id, client_id),
+    constraint fk_single_client_project_participant_mapping__project
+        foreign key(project_id)
+            references single_client_project(id),
+    constraint fk_single_client_project_participant_mapping__client
+        foreign key(client_id)
+            references client(id)
+                on delete cascade
 );
 
 create table single_org_project(
@@ -528,6 +542,10 @@ insert into single_client_project(id, name, client_id)
     values(1000, 'Single root project', 100);
 insert into single_client_project(id, name, client_id)
     values(1002, 'Single person project', 101);
+insert into single_client_project_participant_mapping(project_id, client_id)
+    values(1000, 100);
+insert into single_client_project_participant_mapping(project_id, client_id)
+    values(1000, 101);
 insert into single_org_project(id, name, organization_id)
     values(1001, 'Single organization project', 100);
 

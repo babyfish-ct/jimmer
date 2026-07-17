@@ -41,6 +41,32 @@ class PolymorphicDtoInputTest {
     }
 
     @Test
+    fun testReusablePolymorphicListAssociationInput() {
+        val participants: List<KClientPatchInput> = listOf(
+            KClientPatchInput.Organization(
+                id = 10L,
+                name = "Org patch",
+                taxCode = "T-10"
+            ),
+            KClientPatchInput.Default(
+                id = 11L,
+                name = "Default patch"
+            )
+        )
+        val input = KClientProjectWithReusableParticipantsInput(
+            id = 20L,
+            name = "Project patch",
+            participants = participants
+        )
+
+        val project = input.toImmutable()
+        assertEquals(2, project.participants.size)
+        val organization = assertIs<KOrganization>(project.participants[0])
+        assertEquals("T-10", organization.taxCode)
+        assertEquals(KClient::class.java, (project.participants[1] as ImmutableSpi).__type().javaClass)
+    }
+
+    @Test
     fun testImplicitDefaultInputCreatesRootEntityShape() {
         val entity = KClientPatchInput.Default(
             id = 10L,
