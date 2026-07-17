@@ -122,7 +122,7 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .where(table.id().in(Arrays.asList(200L, 201L)))
+                        .where(table.id().in(Arrays.asList(200L, 201L, 202L)))
                         .orderBy(table.id())
                         .select(
                                 table.fetch(
@@ -137,14 +137,14 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME " +
                                     "from JOINED_CLIENT tb_1_ " +
-                                    "where tb_1_.ID in (?, ?) " +
+                                    "where tb_1_.ID in (?, ?, ?) " +
                                     "order by tb_1_.ID asc"
-                    ).variables(200L, 201L);
+                    ).variables(200L, 201L, 202L);
                     ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.NAME " +
+                            "select tb_1_.ORGANIZATION_ID, tb_1_.ID, tb_1_.NAME " +
                                     "from JOINED_ORG_PROJECT tb_1_ " +
-                                    "where tb_1_.ORGANIZATION_ID = ?"
-                    ).variables(200L);
+                                    "where tb_1_.ORGANIZATION_ID in (?, ?)"
+                    ).variables(200L, 202L);
                     ctx.row(0, row -> {
                         assertEquals(Organization.class, ((ImmutableSpi) row).__type().getJavaClass());
                         assertLoadState(row, "id", "name", "projects");
@@ -154,6 +154,11 @@ public class JoinedInheritanceQueryTest extends AbstractQueryTest {
                     ctx.row(1, row -> {
                         assertEquals(Person.class, ((ImmutableSpi) row).__type().getJavaClass());
                         assertLoadState(row, "id", "name");
+                    });
+                    ctx.row(2, row -> {
+                        assertEquals(Organization.class, ((ImmutableSpi) row).__type().getJavaClass());
+                        assertLoadState(row, "id", "name", "projects");
+                        assertEquals(0, ((Organization) row).projects().size());
                     });
                 }
         );
