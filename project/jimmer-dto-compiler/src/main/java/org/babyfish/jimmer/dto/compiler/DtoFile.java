@@ -6,7 +6,7 @@ import java.util.List;
 
 public final class DtoFile {
 
-    private final OsFile osFile;
+    private final DtoSource source;
 
     private final String projectDir;
 
@@ -18,27 +18,24 @@ public final class DtoFile {
 
     private final String path;
 
-    public DtoFile(OsFile osFile, String projectDir, String dtoDir, List<String> packagePaths, String name) {
-        this.osFile = osFile;
+    public DtoFile(DtoSource source, String projectDir, String dtoDir, List<String> packagePaths, String name) {
+        this.source = source;
         this.projectDir = projectDir;
         this.dtoDir = dtoDir;
         this.packageName = String.join(".", packagePaths);
         this.name = name;
-        this.path = '<' + projectDir + '>' + '/' + dtoDir +
+        this.path = '<' + projectDir + '>' +
+                (dtoDir.isEmpty() ? "" : '/' + dtoDir) +
                 (packagePaths.isEmpty() ? "" : '/' + String.join("/", packagePaths)) +
                 '/' + name;
     }
 
-    public OsFile getOsFile() {
-        return osFile;
-    }
-
     public String getAbsolutePath() {
-        return osFile.getAbsolutePath();
+        return source.getName();
     }
 
     public Reader openReader() throws IOException {
-        return osFile.openReader();
+        return source.openReader();
     }
 
     public String getProjectDir() {

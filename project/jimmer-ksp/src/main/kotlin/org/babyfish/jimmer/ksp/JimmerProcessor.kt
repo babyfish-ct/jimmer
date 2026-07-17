@@ -7,6 +7,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import org.babyfish.jimmer.client.EnableImplicitApi
 import org.babyfish.jimmer.dto.compiler.DtoAstException
+import org.babyfish.jimmer.dto.compiler.DtoBundleLoader
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.ksp.client.ClientProcessor
@@ -30,6 +31,9 @@ class JimmerProcessor(
 
     private val dtoTestDirs: Collection<String> =
         dtoDir("jimmer.dto.testDirs", "src/test/") ?: listOf("src/test/dto")
+
+    private val dtoBundleEnabled: Boolean =
+        DtoBundleLoader.isEnabled(environment.options)
 
     private val defaultNullableInputModifier: DtoModifier =
         environment.options["jimmer.dto.defaultNullableInputModifier"]?.takeIf { it.isNotEmpty() }?.let {
@@ -92,6 +96,7 @@ class JimmerProcessor(
                     } else {
                         dtoDirs
                     },
+                    dtoBundleEnabled,
                     defaultNullableInputModifier
                 ).process()
                 TxProcessor(ctx).process()

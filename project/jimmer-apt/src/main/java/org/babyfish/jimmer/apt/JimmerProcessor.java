@@ -11,10 +11,7 @@ import org.babyfish.jimmer.apt.transactional.TxProcessor;
 import org.babyfish.jimmer.apt.tuple.TypedTupleProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.dto.compiler.DtoAstException;
-import org.babyfish.jimmer.dto.compiler.DtoModifier;
-import org.babyfish.jimmer.dto.compiler.DtoUtils;
-import org.babyfish.jimmer.dto.compiler.SourceTypeFilter;
+import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.babyfish.jimmer.sql.TypedTuple;
 
@@ -42,6 +39,7 @@ import java.util.stream.Collectors;
         "org.springframework.web.bind.annotation.RestController",
         "org.babyfish.jimmer.sql.transaction.Tx"
 })
+@SupportedOptions(DtoBundleLoader.ENABLED_OPTION)
 public class JimmerProcessor extends AbstractProcessor {
 
     private Context context;
@@ -53,6 +51,8 @@ public class JimmerProcessor extends AbstractProcessor {
     private Collection<String> dtoDirs;
 
     private Collection<String> dtoTestDirs;
+
+    private boolean dtoBundleEnabled;
 
     private DtoModifier defaultNullableInputModifier = DtoModifier.STATIC;
 
@@ -95,6 +95,7 @@ public class JimmerProcessor extends AbstractProcessor {
                 "src/test/",
                 Collections.singletonList("src/test/dto")
         );
+        this.dtoBundleEnabled = DtoBundleLoader.isEnabled(processingEnv.getOptions());
         String inputModifierText = processingEnv.getOptions().get("jimmer.dto.defaultNullableInputModifier");
         if (inputModifierText != null && !inputModifierText.isEmpty()) {
             switch (inputModifierText) {
@@ -189,6 +190,7 @@ public class JimmerProcessor extends AbstractProcessor {
                         context,
                         elements,
                         isTest() ? dtoTestDirs : dtoDirs,
+                        dtoBundleEnabled,
                         defaultNullableInputModifier
                 ).process();
                 new TxProcessor(context).process(roundEnv);

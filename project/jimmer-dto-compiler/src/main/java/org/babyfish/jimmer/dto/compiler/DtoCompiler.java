@@ -6,7 +6,6 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -29,63 +28,61 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected DtoCompiler(DtoFile dtoFile) throws IOException {
         this.dtoFile = dtoFile;
-        try (Reader reader = dtoFile.openReader()) {
-            DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
-            DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-            DtoErrorListener listener = new DtoErrorListener();
-            lexer.removeErrorListeners();
-            lexer.addErrorListener(listener);
-            parser.removeErrorListeners();
-            parser.addErrorListener(listener);
-            this.ast = parser.dto();
-            DtoParser.ExportStatementContext export = ast.exportStatement();
-            DtoParser.PackageStatementContext packageStatement = ast.packageStatement();
-            String sourceTypeName = null;
-            String targetPackageName = null;
-            if (export != null) {
-                List<Token> typeParts = export.typeParts;
-                if (typeParts.size() == 1) {
-                    sourceTypeName = dtoFile.getPackageName() + '.' + typeParts.get(0).getText();
-                } else {
-                    sourceTypeName = typeParts.stream().map(Token::getText).collect(Collectors.joining("."));
-                }
-                List<Token> packageParts = export.packageParts;
-                if (packageParts.isEmpty()) {
-                    int lastIndex = sourceTypeName.lastIndexOf('.');
-                    targetPackageName = lastIndex != -1 ? sourceTypeName.substring(0, lastIndex) + ".dto" : "";
-                } else {
-                    targetPackageName = packageParts.stream().map(Token::getText).collect(Collectors.joining("."));
-                }
+        DtoLexer lexer = new DtoLexer(CharStreams.fromReader(dtoFile.openReader()));
+        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
+        DtoErrorListener listener = new DtoErrorListener();
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(listener);
+        parser.removeErrorListeners();
+        parser.addErrorListener(listener);
+        this.ast = parser.dto();
+        DtoParser.ExportStatementContext export = ast.exportStatement();
+        DtoParser.PackageStatementContext packageStatement = ast.packageStatement();
+        String sourceTypeName = null;
+        String targetPackageName = null;
+        if (export != null) {
+            List<Token> typeParts = export.typeParts;
+            if (typeParts.size() == 1) {
+                sourceTypeName = dtoFile.getPackageName() + '.' + typeParts.get(0).getText();
+            } else {
+                sourceTypeName = typeParts.stream().map(Token::getText).collect(Collectors.joining("."));
             }
-            if (packageStatement != null) {
-                if (targetPackageName != null) {
-                    throw exception(
-                            packageStatement.start.getLine(),
-                            packageStatement.start.getCharPositionInLine(),
-                            "The package cannot be specified by both 'package' and 'export'"
-                    );
-                }
-                targetPackageName = packageStatement.packageParts
-                        .stream()
-                        .map(Token::getText)
-                        .collect(Collectors.joining("."));
+            List<Token> packageParts = export.packageParts;
+            if (packageParts.isEmpty()) {
+                int lastIndex = sourceTypeName.lastIndexOf('.');
+                targetPackageName = lastIndex != -1 ? sourceTypeName.substring(0, lastIndex) + ".dto" : "";
+            } else {
+                targetPackageName = packageParts.stream().map(Token::getText).collect(Collectors.joining("."));
             }
-            if (sourceTypeName == null) {
-                String name = dtoFile.getName();
-                sourceTypeName = dtoFile.getPackageName() + '.' + name.substring(0, name.length() - 4);
-            }
-            int lastDotIndex = sourceTypeName.lastIndexOf('.');
-            String defaultBasePackageName = lastDotIndex != -1 ?
-                    sourceTypeName.substring(0, lastDotIndex) :
-                    "";
-            if (targetPackageName == null) {
-                targetPackageName = DtoType.defaultPackageName(defaultBasePackageName);
-            }
-            this.sourceTypeName = sourceTypeName;
-            this.targetPackageName = targetPackageName;
-            this.defaultBasePackageName = defaultBasePackageName;
-            this.explicitSourceType = export != null;
         }
+        if (packageStatement != null) {
+            if (targetPackageName != null) {
+                throw exception(
+                        packageStatement.start.getLine(),
+                        packageStatement.start.getCharPositionInLine(),
+                        "The package cannot be specified by both 'package' and 'export'"
+                );
+            }
+            targetPackageName = packageStatement.packageParts
+                    .stream()
+                    .map(Token::getText)
+                    .collect(Collectors.joining("."));
+        }
+        if (sourceTypeName == null) {
+            String name = dtoFile.getName();
+            sourceTypeName = dtoFile.getPackageName() + '.' + name.substring(0, name.length() - 4);
+        }
+        int lastDotIndex = sourceTypeName.lastIndexOf('.');
+        String defaultBasePackageName = lastDotIndex != -1 ?
+                sourceTypeName.substring(0, lastDotIndex) :
+                "";
+        if (targetPackageName == null) {
+            targetPackageName = DtoType.defaultPackageName(defaultBasePackageName);
+        }
+        this.sourceTypeName = sourceTypeName;
+        this.targetPackageName = targetPackageName;
+        this.defaultBasePackageName = defaultBasePackageName;
+        this.explicitSourceType = export != null;
     }
 
     public T getBaseType() {

@@ -13,6 +13,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(testFixtures(projects.jimmerSql))
     kspTest(projects.jimmerKsp)
+    kspTest(files("src/test/dto-bundle"))
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.h2)

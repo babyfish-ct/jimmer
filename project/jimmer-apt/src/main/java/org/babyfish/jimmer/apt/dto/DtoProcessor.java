@@ -27,17 +27,21 @@ public class DtoProcessor {
 
     private final Collection<String> dtoDirs;
 
+    private final boolean dtoBundleEnabled;
+
     private final DtoModifier defaultNullableInputModifier;
 
     public DtoProcessor(
             Context context,
             Elements elements,
             Collection<String> dtoDirs,
+            boolean dtoBundleEnabled,
             DtoModifier defaultNullableInputModifier
     ) {
         this.context = context;
         this.elements = elements;
         this.dtoDirs = dtoDirs;
+        this.dtoBundleEnabled = dtoBundleEnabled;
         this.defaultNullableInputModifier = defaultNullableInputModifier;
     }
 
@@ -47,7 +51,7 @@ public class DtoProcessor {
 
     private List<DtoType<ImmutableType, ImmutableProp>> parseDtoTypes() {
         List<AptDtoCompiler> compilers = new ArrayList<>();
-        DtoContext dtoContext = new DtoContext(context.getFiler(), dtoDirs);
+        DtoContext dtoContext = new DtoContext(context.getFiler(), dtoDirs, dtoBundleEnabled);
         AptDtoCompiler compiler;
 
         for (DtoFile dtoFile : dtoContext.getDtoFiles()) {

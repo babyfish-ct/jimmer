@@ -19,6 +19,7 @@ class DtoProcessor(
     private val ctx: Context,
     private val mutable: Boolean,
     private val dtoDirs: Collection<String>,
+    private val dtoBundleEnabled: Boolean,
     private val defaultNullableInputModifier: DtoModifier
 ) {
     fun process(): Boolean {
@@ -28,7 +29,7 @@ class DtoProcessor(
     }
 
     private fun findDtoTypes(): List<DtoType<ImmutableType, ImmutableProp>> {
-        val dtoCtx = DtoContext(ctx.resolver.getAllFiles().firstOrNull(), dtoDirs)
+        val dtoCtx = DtoContext(ctx.resolver.getAllFiles().firstOrNull(), dtoDirs, dtoBundleEnabled)
         val compilers = mutableListOf<KspDtoCompiler>()
         for (dtoFile in dtoCtx.dtoFiles) {
             val compiler = try {

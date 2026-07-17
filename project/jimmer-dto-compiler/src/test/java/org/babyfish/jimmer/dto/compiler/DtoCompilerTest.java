@@ -1500,7 +1500,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : There is no property \"city\" in " +
+                "file:/User/test/Book.dto:2 : There is no property \"city\" in " +
                         "\"org.babyfish.jimmer.sql.model.Book\" or its super types\n" +
                         "    city\n" +
                         "    ^",
@@ -1518,7 +1518,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : extraneous input '<' expecting {'allScalars', 'allReferences'}\n" +
+                "file:/User/test/Book.dto:2 : extraneous input '<' expecting {'allScalars', 'allReferences'}\n" +
                         "    #<allScalars>\n" +
                         "     ^",
                 ex.getMessage()
@@ -1637,7 +1637,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:1 : The modifier 'sealed' can only be used for polymorphic DTOs with #types\n" +
+                "file:/User/test/Client.dto:1 : The modifier 'sealed' can only be used for polymorphic DTOs with #types\n" +
                         "sealed ClientView {\n" +
                         "^",
                 ex.getMessage()
@@ -1753,7 +1753,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #types\n" +
+                "file:/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #types\n" +
                         "    #types {\n" +
                         "    ^",
                 ex.getMessage()
@@ -1778,7 +1778,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:5 : default branch cannot be used together with #exhaustive\n" +
+                "file:/User/test/Client.dto:5 : default branch cannot be used together with #exhaustive\n" +
                         "        default {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1829,7 +1829,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:4 : Illegal type branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
+                "file:/User/test/Client.dto:4 : Illegal type branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
                         "        Client {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1854,7 +1854,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:7 : Duplicated polymorphic DTO branch class name \"Person\"\n" +
+                "file:/User/test/Client.dto:7 : Duplicated polymorphic DTO branch class name \"Person\"\n" +
                         "        Person {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1876,7 +1876,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:5 : Duplicated property alias \"name\" between polymorphic DTO base and branch\n" +
+                "file:/User/test/Client.dto:5 : Duplicated property alias \"name\" between polymorphic DTO base and branch\n" +
                         "            firstName as name\n" +
                         "                         ^",
                 ex.getMessage()
@@ -1903,7 +1903,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                "file:/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
                         "            #types {\n" +
                         "            ^",
                 ex.getMessage()
@@ -1930,7 +1930,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                "file:/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
                         "            #types {\n" +
                         "            ^",
                 ex.getMessage()
@@ -1948,7 +1948,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : Duplicated property alias \"id\"\n" +
+                "file:/User/test/Book.dto:3 : Duplicated property alias \"id\"\n" +
                         "    name as id\n" +
                         "            ^",
                 ex.getMessage()
@@ -1969,7 +1969,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:5 : Duplicated property alias \"name\"\n" +
+                "file:/User/test/Book.dto:5 : Duplicated property alias \"name\"\n" +
                         "        name\n" +
                         "        ^",
                 ex.getMessage()
@@ -1988,7 +1988,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:4 : Duplicated property alias \"myName\"\n" +
+                "file:/User/test/Book.dto:4 : Duplicated property alias \"myName\"\n" +
                         "    myName: String\n" +
                         "    ^",
                 ex.getMessage()
@@ -2008,7 +2008,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:5 : Base property \"entity::authors\" cannot be referenced too many times\n" +
+                "file:/User/test/Book.dto:5 : Base property \"entity::authors\" cannot be referenced too many times\n" +
                         "    id(authors) as authorIds\n" +
                         "       ^",
                 ex.getMessage()
@@ -2025,7 +2025,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal property \"store\", the child body is required\n" +
+                "file:/User/test/Book.dto:2 : Illegal property \"store\", the child body is required\n" +
                         "    flat(store)\n" +
                         "              ^",
                 ex.getMessage()
@@ -2044,7 +2044,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal property \"store\", " +
+                "file:/User/test/Book.dto:2 : Illegal property \"store\", " +
                         "child body cannot be specified by it is id view property\n" +
                         "    id(store) {\n" +
                         "              ^",
@@ -2062,7 +2062,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Cannot call the function \"id\" " +
+                "file:/User/test/Book.dto:2 : Cannot call the function \"id\" " +
                         "because the current prop \"entity::name\" is not entity level association property\n" +
                         "    id(name)\n" +
                         "    ^",
@@ -2080,7 +2080,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Cannot call the function \"flat\" because " +
+                "file:/User/test/Book.dto:2 : Cannot call the function \"flat\" because " +
                         "the current prop \"entity::authors\" is list and " +
                         "the current dto type is not specification\n" +
                         "    flat(authors)\n" +
@@ -2100,7 +2100,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : Illegal required modifier '!' for non-id property, " +
+                "file:/User/test/Book.dto:3 : Illegal required modifier '!' for non-id property, " +
                         "the declared type is neither unsafe nor specification\n" +
                         "    id(store)!\n" +
                         "             ^",
@@ -2118,7 +2118,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
+                "file:/User/test/Book.dto:2 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
                         "    store*\n" +
                         "         ^",
                 ex.getMessage()
@@ -2136,7 +2136,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
+                "file:/User/test/Book.dto:3 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
                         "    flat(store)*\n" +
                         "               ^",
                 ex.getMessage()
@@ -2156,7 +2156,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : The alias cannot be specified when the function `flat` is used\n" +
+                "file:/User/test/Book.dto:3 : The alias cannot be specified when the function `flat` is used\n" +
                         "    flat(store) as parent {\n" +
                         "                   ^",
                 ex.getMessage()
@@ -2174,7 +2174,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : There is no property alias \"tag\" that is need to be removed\n" +
+                "file:/User/test/Book.dto:3 : There is no property alias \"tag\" that is need to be removed\n" +
                         "-tag\n" +
                         " ^",
                 ex.getMessage()
@@ -2191,7 +2191,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the declaring dto type is not input\n" +
+                "file:/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the declaring dto type is not input\n" +
                         "dynamic name\n" +
                         "^",
                 ex.getMessage()
@@ -2208,7 +2208,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"name\" is not nullable\n" +
+                "file:/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"name\" is not nullable\n" +
                         "dynamic name\n" +
                         "^",
                 ex.getMessage()
@@ -2225,7 +2225,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"storeId\" is not nullable\n" +
+                "file:/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"storeId\" is not nullable\n" +
                         "dynamic id(store)!\n" +
                         "^",
                 ex.getMessage()
@@ -2245,7 +2245,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/TreeNode.dto:3 : Illegal symbol \"*\", the child type of recursive property \"childNodes\" cannot not specified\n" +
+                "file:/User/test/TreeNode.dto:3 : Illegal symbol \"*\", the child type of recursive property \"childNodes\" cannot not specified\n" +
                         "childNodes* {\n" +
                         "            ^",
                 ex.getMessage()
@@ -2858,7 +2858,7 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile("/User/test/" + fileName, code),
+                                mockedSource("file:/User/test/" + fileName, code),
                                 "project",
                                 "src/main/dto",
                                 packageParts,
@@ -2874,7 +2874,7 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile("/User/test/" + fileName, code),
+                                mockedSource("file:/User/test/" + fileName, code),
                                 "project",
                                 "src/main/dto",
                                 Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
@@ -2891,8 +2891,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/Book.dto",
+                                mockedSource(
+                                        "file:/User/test/Book.dto",
                                         code
                                 ),
                                 "project",
@@ -2911,8 +2911,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/TreeNode.dto",
+                                mockedSource(
+                                        "file:/User/test/TreeNode.dto",
                                         code
                                 ),
                                 "project",
@@ -2931,8 +2931,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/BookStore.dto",
+                                mockedSource(
+                                        "file:/User/test/BookStore.dto",
                                         code
                                 ),
                                 "project",
@@ -2951,8 +2951,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/Client.dto",
+                                mockedSource(
+                                        "file:/User/test/Client.dto",
                                         code
                                 ),
                                 "project",
@@ -2971,8 +2971,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/Payment.dto",
+                                mockedSource(
+                                        "file:/User/test/Payment.dto",
                                         code
                                 ),
                                 "project",
@@ -3126,25 +3126,17 @@ public class DtoCompilerTest {
         }
     }
 
-    private static class MockedOsFile implements OsFile {
+    private static DtoSource mockedSource(String name, String content) {
+        return new DtoSource() {
+            @Override
+            public String getName() {
+                return name;
+            }
 
-        private final String absolutePath;
-
-        private final String content;
-
-        private MockedOsFile(String absolutePath, String content) {
-            this.absolutePath = absolutePath;
-            this.content = content;
-        }
-
-        @Override
-        public String getAbsolutePath() {
-            return absolutePath;
-        }
-
-        @Override
-        public Reader openReader() throws IOException {
-            return new StringReader(content);
-        }
+            @Override
+            public Reader openReader() {
+                return new StringReader(content);
+            }
+        };
     }
 }
