@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class BookVIewTest extends Tests {
@@ -32,7 +32,7 @@ public class BookVIewTest extends Tests {
                         "--->\"name\":\"Programming TypeScript\"," +
                         "--->\"price\":59.99" +
                         "}",
-                jsonCodec().writer().writeAsString(view)
+                defaultCodec().writer().writeAsString(view)
         );
     }
 
@@ -49,7 +49,7 @@ public class BookVIewTest extends Tests {
                         "--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
                         "--->\"summary\":{\"name\":\"Programming TypeScript\",\"edition\":2}" +
                         "}",
-                jsonCodec().writer().writeAsString(view)
+                defaultCodec().writer().writeAsString(view)
         );
     }
 
@@ -62,7 +62,7 @@ public class BookVIewTest extends Tests {
                         "--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
                         "--->\"summary\":null" +
                         "}",
-                jsonCodec().writer().writeAsString(view)
+                defaultCodec().writer().writeAsString(view)
         );
     }
 
@@ -88,7 +88,7 @@ public class BookVIewTest extends Tests {
                         "--->--->\"detail\":{\"name\":\"GraphQL in Action\",\"edition\":3}" +
                         "--->}" +
                         "}",
-                jsonCodec().writer().writeAsString(view)
+                defaultCodec().writer().writeAsString(view)
         );
     }
 
@@ -105,7 +105,7 @@ public class BookVIewTest extends Tests {
                         "--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
                         "--->\"storeKey\":{\"name\":\"MANNING\"}" +
                         "}",
-                jsonCodec().writer().writeAsString(view)
+                defaultCodec().writer().writeAsString(view)
         );
     }
 

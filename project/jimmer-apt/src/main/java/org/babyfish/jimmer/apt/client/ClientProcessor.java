@@ -14,6 +14,9 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.impl.*;
+import org.babyfish.jimmer.json.codec.ImmutableModuleCustomization;
+import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.json.jackson.v2.JsonCodecV2;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -39,6 +42,9 @@ import java.util.stream.Stream;
 public class ClientProcessor {
 
     private static final String JIMMER_CLIENT = "META-INF/jimmer/client";
+
+    private static final JsonCodec JSON_CODEC = new JsonCodecV2()
+            .withCustomizations(new ImmutableModuleCustomization());
 
     private static final Method RECORD_COMPONENT_ELEMENT_GET_ACCESSOR;
 
@@ -113,7 +119,7 @@ public class ClientProcessor {
     private Schema existingSchema() {
         if (jimmerClientFile.exists()) {
             try (Reader reader = new InputStreamReader(Files.newInputStream(jimmerClientFile.toPath()), StandardCharsets.UTF_8)) {
-                return Schemas.readServicesFrom(reader);
+                return Schemas.readServicesFrom(reader, JSON_CODEC);
             } catch (Exception ex) {
                 throw new GeneratorException("Cannot read content of  \"" + jimmerClientFile + "\"", ex);
             }
@@ -138,7 +144,7 @@ public class ClientProcessor {
         Schema schema = builder.build();
         jimmerClientFile.getParentFile().mkdirs();
         try (Writer writer = new OutputStreamWriter(Files.newOutputStream(jimmerClientFile.toPath()), StandardCharsets.UTF_8)) {
-            Schemas.writeTo(schema, writer);
+            Schemas.writeTo(schema, writer, JSON_CODEC);
         } catch (Exception ex) {
             throw new GeneratorException("Cannot write \"" + jimmerClientFile + "\"", ex);
         }

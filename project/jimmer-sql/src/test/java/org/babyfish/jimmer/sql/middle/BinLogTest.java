@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.middle;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class BinLogTest {
 
-    private static final JsonCodec<?> JSON_CODEC = jsonCodec();
+    private static final JsonCodec JSON_CODEC = defaultCodec();
 
     private JSqlClient sqlClient;
 

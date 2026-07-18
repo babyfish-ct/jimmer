@@ -38,6 +38,9 @@ class Context(
     val isBuddyIgnoreResourceGeneration: Boolean =
         environment.options["jimmer.buddy.ignoreResourceGeneration"]?.trim() == "true"
 
+    val isDtoKotlinxSerialization: Boolean =
+        environment.options["jimmer.dto.kotlinxSerialization"]?.trim() == "true"
+
     val jackson3 = detectIsJackson3(resolver, environment)
 
     val jacksonTypes: JacksonTypes =

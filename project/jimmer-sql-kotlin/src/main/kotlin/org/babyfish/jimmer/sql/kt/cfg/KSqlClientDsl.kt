@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.cfg
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
@@ -198,23 +198,23 @@ class KSqlClientDsl constructor(
         javaBuilder.addPropScalarProviderFactory(factory)
     }
 
-    fun setJsonCodec(jsonCodec: JsonCodec<*>) {
+    fun setJsonCodec(jsonCodec: JsonCodec) {
         javaBuilder.setJsonCodec(jsonCodec)
     }
 
-    fun setDefaultSerializedTypeJsonCodec(jsonCodec: JsonCodec<*>) {
+    fun setDefaultSerializedTypeJsonCodec(jsonCodec: JsonCodec) {
         javaBuilder.setDefaultSerializedTypeJsonCodec(jsonCodec)
     }
 
-    fun setSerializedTypeJsonCodec(type: KClass<*>, jsonCodec: JsonCodec<*>) {
+    fun setSerializedTypeJsonCodec(type: KClass<*>, jsonCodec: JsonCodec) {
         javaBuilder.setSerializedTypeJsonCodec(type.java, jsonCodec)
     }
 
-    fun setSerializedPropOJsonCodec(prop: KProperty1<*, *>, jsonCodec: JsonCodec<*>) {
+    fun setSerializedPropOJsonCodec(prop: KProperty1<*, *>, jsonCodec: JsonCodec) {
         javaBuilder.setSerializedPropJsonCodec(prop.toImmutableProp(), jsonCodec)
     }
 
-    fun setSerializedPropJsonCodec(prop: ImmutableProp, jsonCodec: JsonCodec<*>) {
+    fun setSerializedPropJsonCodec(prop: ImmutableProp, jsonCodec: JsonCodec) {
         javaBuilder.setSerializedPropJsonCodec(prop, jsonCodec)
     }
 
@@ -317,7 +317,7 @@ class KSqlClientDsl constructor(
         javaBuilder.addDraftInterceptors(interceptor)
     }
 
-    fun setDefaultBinLogJsonCodec(jsonCodec: JsonCodec<*>) {
+    fun setDefaultBinLogJsonCodec(jsonCodec: JsonCodec) {
         javaBuilder.setDefaultBinLogJsonCodec(jsonCodec)
     }
 

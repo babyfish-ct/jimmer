@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.common
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
@@ -186,8 +186,8 @@ abstract class AbstractTest {
 
             // Try to parse as JSON and compare semantically to handle property ordering issues
             try {
-                val expectedJson = jsonCodec().treeReader().read(normalizedExpected)
-                val actualJson = jsonCodec().treeReader().read(actual)
+                val expectedJson = defaultCodec().treeReader().read(normalizedExpected)
+                val actualJson = defaultCodec().treeReader().read(actual)
                 assertEquals(expectedJson, actualJson, message)
             } catch (_: Exception) {
                 // Fall back to string comparison if JSON parsing fails

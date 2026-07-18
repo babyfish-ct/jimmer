@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookViewForIssue843
 import org.babyfish.jimmer.sql.kt.model.dto.UserView
@@ -38,7 +37,7 @@ class AnnotationTest {
         )
         assertContent(
             """{"id":3,"name":"RUST programming","price":53.4}""",
-            jsonCodec().writer().writeAsString(view)
+            defaultCodec().writer().writeAsString(view)
         )
     }
 }

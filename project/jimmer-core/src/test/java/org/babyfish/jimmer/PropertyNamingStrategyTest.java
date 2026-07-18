@@ -1,16 +1,16 @@
 package org.babyfish.jimmer;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.model.AssociationInput;
 import org.babyfish.jimmer.model.AssociationInputDraft;
-import org.babyfish.jimmer.jackson.codec.PropertyNamingCustomization;
+import org.babyfish.jimmer.json.codec.PropertyNamingCustomization;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
-import static org.babyfish.jimmer.jackson.codec.PropertyNamingCustomization.PropertyNaming;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
+import static org.babyfish.jimmer.json.codec.PropertyNamingCustomization.PropertyNaming;
 
 public class PropertyNamingStrategyTest {
 
@@ -20,7 +20,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testLowerCamel() throws Exception {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.LOWER_CAMEL_CASE));
         String json = codec.writer().writeAsString(INPUT);
         Assertions.assertEquals(
@@ -35,7 +35,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testUpperCamel() throws Exception {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.UPPER_CAMEL_CASE));
         String json = codec.writer().writeAsString(INPUT);
         Assertions.assertEquals(
@@ -50,7 +50,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testLowerCase() throws Exception {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.LOWER_CASE));
         String json = codec.writer().writeAsString(INPUT);
         Assertions.assertEquals(
@@ -65,7 +65,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testSnakeCase() throws Exception {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.SNAKE_CASE));
         String json = codec.writer().writeAsString(INPUT);
         Assertions.assertEquals(
@@ -80,7 +80,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testExplicitCodecForImmutableObjectsToString() {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.SNAKE_CASE));
         Assertions.assertEquals(
                 "{\"parent_id\":1,\"child_ids\":[2,3]}",
@@ -90,7 +90,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testKebabCase() throws Exception {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.KEBAB_CASE));
         String json = codec.writer().writeAsString(INPUT);
         Assertions.assertEquals(
@@ -105,7 +105,7 @@ public class PropertyNamingStrategyTest {
 
     @Test
     public void testLowerDot() throws Exception {
-        JsonCodec<?> codec = jsonCodec()
+        JsonCodec codec = defaultCodec()
                 .withCustomizations(new PropertyNamingCustomization(PropertyNaming.LOWER_DOT_CASE));
         String json = codec.writer().writeAsString(INPUT);
         Assertions.assertEquals(

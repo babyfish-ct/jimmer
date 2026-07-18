@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.cache.redis.spring;
 
 import io.quarkus.redis.datasource.RedisDataSource;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
@@ -28,12 +28,12 @@ import java.util.Objects;
 public class RedisCacheCreator extends AbstractCacheCreator {
 
     public RedisCacheCreator(RedisConnectionFactory connectionFactory) {
-        this(connectionFactory, JsonCodec.jsonCodec());
+        this(connectionFactory, JsonCodec.defaultCodec());
     }
 
     public RedisCacheCreator(
             RedisConnectionFactory connectionFactory,
-            @NotNull JsonCodec<?> jsonCodec
+            @NotNull JsonCodec jsonCodec
     ) {
         super(new Root(connectionFactory, jsonCodec));
     }
@@ -168,9 +168,9 @@ public class RedisCacheCreator extends AbstractCacheCreator {
 
         final RedisConnectionFactory connectionFactory;
 
-        final JsonCodec<?> jsonCodec;
+        final JsonCodec jsonCodec;
 
-        private Root(RedisConnectionFactory connectionFactory, @NotNull JsonCodec<?> jsonCodec) {
+        private Root(RedisConnectionFactory connectionFactory, @NotNull JsonCodec jsonCodec) {
             super(null);
             this.connectionFactory = Objects.requireNonNull(connectionFactory, "connectionFactory cannot be null");
             this.jsonCodec = jsonCodec;
@@ -180,7 +180,7 @@ public class RedisCacheCreator extends AbstractCacheCreator {
     static class Args extends AbstractCacheCreator.Args {
 
         final RedisConnectionFactory connectionFactory;
-        final JsonCodec<?> jsonCodec;
+        final JsonCodec jsonCodec;
 
         Args(Cfg cfg) {
             super(cfg);

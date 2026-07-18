@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.cache.spi;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.cache.CacheCreator;
 import org.babyfish.jimmer.sql.cache.CacheLocker;
@@ -118,9 +118,9 @@ public abstract class AbstractCacheCreator implements CacheCreator {
 
         final RedisConnectionFactory connectionFactory;
 
-        final JsonCodec<?> jsonCodec;
+        final JsonCodec jsonCodec;
 
-        private Root(RedisConnectionFactory connectionFactory, JsonCodec<?> jsonCodec) {
+        private Root(RedisConnectionFactory connectionFactory, JsonCodec jsonCodec) {
             super(null);
             this.connectionFactory = Objects.requireNonNull(connectionFactory, "connectionFactory cannot be null");
             this.jsonCodec = jsonCodec;

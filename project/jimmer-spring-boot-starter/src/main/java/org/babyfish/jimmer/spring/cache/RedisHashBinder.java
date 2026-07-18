@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.spring.cache;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
@@ -27,7 +27,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
-            @NotNull JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec jsonCodec,
             @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
@@ -95,7 +95,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
     }
 
     @NotNull
-    public static <K, V> Builder<K, V> forProp(ImmutableProp prop, @NotNull JsonCodec<?> jsonCodec) {
+    public static <K, V> Builder<K, V> forProp(ImmutableProp prop, @NotNull JsonCodec jsonCodec) {
         return new Builder<>(null, prop, jsonCodec);
     }
 
@@ -103,7 +103,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
         private RedisOperations<String, byte[]> operations;
 
-        protected Builder(ImmutableType type, ImmutableProp prop, JsonCodec<?> jsonCodec) {
+        protected Builder(ImmutableType type, ImmutableProp prop, JsonCodec jsonCodec) {
             super(type, prop, jsonCodec);
         }
 

@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
 import org.babyfish.jimmer.impl.util.PropCache;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.codec.Node;
+import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.Node;
 import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -31,14 +31,14 @@ public class BinLogParser {
 
     private final PropCache<BinLogPropReader> readerCache = new PropCache<>(this::createReader, true);
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
     private final Map<ImmutableProp, BinLogPropReader> configuredReaderMap;
 
     private JSqlClientImplementor sqlClient;
 
     public BinLogParser(
-            @NotNull JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec jsonCodec,
             @NotNull Map<ImmutableProp, BinLogPropReader> propReaderMap,
             @NotNull Map<Class<?>, BinLogPropReader> typePropReaderMap
     ) {
@@ -75,7 +75,7 @@ public class BinLogParser {
         return readerCache.get(prop);
     }
 
-    JsonCodec<?> codec() {
+    JsonCodec codec() {
         return jsonCodec;
     }
 

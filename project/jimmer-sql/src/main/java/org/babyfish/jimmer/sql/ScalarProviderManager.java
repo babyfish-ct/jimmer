@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.impl.util.PropCache;
-import org.babyfish.jimmer.jackson.codec.*;
+import org.babyfish.jimmer.json.codec.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
@@ -36,7 +36,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
 
     private final PropScalarProviderFactory propScalarProviderFactory;
 
-    private final JsonCodec<?> serializedJsonCodec;
+    private final JsonCodec serializedJsonCodec;
 
     private final Map<Class<?>, JsonCodec> serializedTypeJsonCodecMap;
 
@@ -52,9 +52,9 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             Map<Class<?>, ScalarProvider<?, ?>> customizedTypeScalarProviderMap,
             Map<ImmutableProp, ScalarProvider<?, ?>> customizedPropScalarProviderMap,
             PropScalarProviderFactory propScalarProviderFactory,
-            JsonCodec<?> serializedJsonCodec,
-            Map<Class<?>, JsonCodec<?>> serializedTypeJsonCodecMap,
-            Map<ImmutableProp, JsonCodec<?>> serializedPropJsonCodecMap,
+            JsonCodec serializedJsonCodec,
+            Map<Class<?>, JsonCodec> serializedTypeJsonCodecMap,
+            Map<ImmutableProp, JsonCodec> serializedPropJsonCodecMap,
             Function<ImmutableProp, ScalarProvider<?, ?>> defaultJsonProviderCreator,
             EnumType.Strategy defaultEnumStrategy,
             Dialect dialect
@@ -124,9 +124,9 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         if (defaultJsonProviderCreator != null) {
             return defaultJsonProviderCreator.apply(prop);
         }
-        JsonCodec<?> serializedPropJsonCodec = serializedPropJsonCodec(prop);
-        JsonCodec<?> jsonCodec = serializedPropJsonCodec != null ? serializedPropJsonCodec : serializedJsonCodec;
-        return createJsonProvider(prop.getReturnClass(), tf -> jacksonType(tf, prop.getGenericType()), jsonCodec);
+        JsonCodec serializedPropJsonCodec = serializedPropJsonCodec(prop);
+        JsonCodec jsonCodec = serializedPropJsonCodec != null ? serializedPropJsonCodec : serializedJsonCodec;
+        return createJsonProvider(prop.getReturnClass(), jsonType(prop.getGenericType()), jsonCodec);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -172,9 +172,9 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         }
 
         if (serialized != null) {
-            JsonCodec<?> serializedTypeJsonCodec = serializedTypeJsonCodec(type);
-            JsonCodec<?> jsonCodec = serializedTypeJsonCodec != null ? serializedTypeJsonCodec : serializedJsonCodec;
-            return createJsonProvider(type, tf -> tf.constructType(type), jsonCodec);
+            JsonCodec serializedTypeJsonCodec = serializedTypeJsonCodec(type);
+            JsonCodec jsonCodec = serializedTypeJsonCodec != null ? serializedTypeJsonCodec : serializedJsonCodec;
+            return createJsonProvider(type, JsonType.of(type), jsonCodec);
         }
 
         return null;
@@ -241,12 +241,12 @@ class ScalarProviderManager implements ScalarTypeStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private ScalarProvider<?, String> createJsonProvider(Class<?> type, TypeCreator typeCreator, JsonCodec<?> jsonCodec) {
+    private ScalarProvider<?, String> createJsonProvider(Class<?> type, JsonType jsonType, JsonCodec jsonCodec) {
         return new AbstractScalarProvider<Object, String>(
                 (Class<Object>) type,
                 String.class
         ) {
-            final JsonReader<?> reader = jsonCodec.readerFor(typeCreator);
+            final JsonReader<?> reader = jsonCodec.readerFor(jsonType);
             final JsonWriter writer = jsonCodec.writer();
 
             @Override
@@ -266,7 +266,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
 
             @Override
             public String toString() {
-                return "JacksonScalarProvider";
+                return "JsonScalarProvider";
             }
         };
     }
@@ -297,8 +297,8 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         return provider;
     }
 
-    private JsonCodec<?> serializedTypeJsonCodec(Class<?> type) {
-        JsonCodec<?> jsonCodec = serializedTypeJsonCodecMap.get(type);
+    private JsonCodec serializedTypeJsonCodec(Class<?> type) {
+        JsonCodec jsonCodec = serializedTypeJsonCodecMap.get(type);
         if (jsonCodec != null) {
             return jsonCodec;
         }
@@ -307,7 +307,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             jsonCodec = serializedTypeJsonCodec(superType);
         }
         for (Class<?> superItfType : type.getInterfaces()) {
-            JsonCodec<?> superJsonCodec = serializedTypeJsonCodec(superItfType);
+            JsonCodec superJsonCodec = serializedTypeJsonCodec(superItfType);
             if (superJsonCodec == null) {
                 continue;
             }
@@ -323,8 +323,8 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         return jsonCodec;
     }
 
-    private JsonCodec<?> serializedPropJsonCodec(ImmutableProp prop) {
-        JsonCodec<?> jsonCodec = serializedPropJsonCodecMap.get(prop);
+    private JsonCodec serializedPropJsonCodec(ImmutableProp prop) {
+        JsonCodec jsonCodec = serializedPropJsonCodecMap.get(prop);
         if (jsonCodec != null) {
             return jsonCodec;
         }
@@ -333,7 +333,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             if (superProp == null) {
                 continue;
             }
-            JsonCodec<?> superJsonCodec = serializedPropJsonCodec(superProp);
+            JsonCodec superJsonCodec = serializedPropJsonCodec(superProp);
             if (superJsonCodec == null) {
                 continue;
             }
@@ -349,8 +349,8 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         return serializedTypeJsonCodec(prop.getReturnClass());
     }
 
-    @SuppressWarnings("unchecked")
-    private static <JT extends Type> JT jacksonType(JsonTypeFactory<JT> typeFactory, Type type) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static JsonType jsonType(Type type) {
         if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
             Type rawType = parameterizedType.getRawType();
@@ -361,14 +361,14 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             }
             Class<?> rawClass = (Class<?>) rawType;
             if (Map.class.isAssignableFrom(rawClass)) {
-                return typeFactory.constructMapType(
+                return JsonType.mapOf(
                         Map.class,
-                        jacksonType(typeFactory, parameterizedType.getActualTypeArguments()[0]),
-                        jacksonType(typeFactory, parameterizedType.getActualTypeArguments()[1]));
+                        jsonType(parameterizedType.getActualTypeArguments()[0]),
+                        jsonType(parameterizedType.getActualTypeArguments()[1]));
             }
-            return typeFactory.constructCollectionType(
-                    (Class<? extends Collection<?>>) rawClass,
-                    jacksonType(typeFactory, parameterizedType.getActualTypeArguments()[0])
+            return JsonType.collectionOf(
+                    (Class<? extends Collection>) rawClass,
+                    jsonType(parameterizedType.getActualTypeArguments()[0])
             );
         } else if (type instanceof Class<?>) {
             if (GENERIC_TYPES.contains(type)) {
@@ -380,12 +380,12 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             }
             Class<?> clazz = (Class<?>) type;
             if (clazz.isArray()) {
-                return typeFactory.constructArrayType(jacksonType(typeFactory, clazz.getComponentType()));
+                return JsonType.arrayOf(jsonType(clazz.getComponentType()));
             }
-            return typeFactory.constructType(clazz);
+            return JsonType.of(clazz);
         } else if (type instanceof WildcardType) {
             WildcardType wildcardType = (WildcardType) type;
-            return jacksonType(typeFactory, wildcardType.getLowerBounds()[0]);
+            return jsonType(wildcardType.getLowerBounds()[0]);
         } else if (type instanceof TypeVariable<?>) {
             throw new IllegalArgumentException("type variable is not allowed");
         } else if (type instanceof GenericArrayType) {

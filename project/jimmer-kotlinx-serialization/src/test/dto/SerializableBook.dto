@@ -1,0 +1,7 @@
+export org.babyfish.jimmer.serialization.kotlinx.model.SerializableBook
+    -> package org.babyfish.jimmer.serialization.kotlinx.model.dto
+
+SerializableBookView {
+    id
+    name
+}

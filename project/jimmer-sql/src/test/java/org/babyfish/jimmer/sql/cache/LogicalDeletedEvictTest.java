@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class LogicalDeletedEvictTest extends AbstractQueryTest {
 
@@ -69,8 +69,8 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "administrator",
-                                jsonCodec().treeReader().read("{\"id\":1, \"deleted\":false}"),
-                                jsonCodec().treeReader().read("{\"id\":1, \"deleted\":true}")
+                                defaultCodec().treeReader().read("{\"id\":1, \"deleted\":false}"),
+                                defaultCodec().treeReader().read("{\"id\":1, \"deleted\":true}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -107,8 +107,8 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "role",
-                                jsonCodec().treeReader().read("{\"id\":100, \"deleted\":false}"),
-                                jsonCodec().treeReader().read("{\"id\":100, \"deleted\":true}")
+                                defaultCodec().treeReader().read("{\"id\":100, \"deleted\":false}"),
+                                defaultCodec().treeReader().read("{\"id\":100, \"deleted\":true}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -146,8 +146,8 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "permission",
-                                jsonCodec().treeReader().read("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
-                                jsonCodec().treeReader().read("{\"id\":1000, \"deleted\":true}")
+                                defaultCodec().treeReader().read("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
+                                defaultCodec().treeReader().read("{\"id\":1000, \"deleted\":true}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -178,8 +178,8 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "permission",
-                                jsonCodec().treeReader().read("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
-                                jsonCodec().treeReader().read("{\"id\":1000, \"deleted\":true, \"role_id\": 200}")
+                                defaultCodec().treeReader().read("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
+                                defaultCodec().treeReader().read("{\"id\":1000, \"deleted\":true, \"role_id\": 200}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -211,7 +211,7 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                         sqlClient.getBinLog().accept(
                                 "administrator_role_mapping",
                                 null,
-                                jsonCodec().treeReader().read("{\"administrator_id\":1, \"role_id\": 400}")
+                                defaultCodec().treeReader().read("{\"administrator_id\":1, \"role_id\": 400}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -241,7 +241,7 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "administrator_role_mapping",
-                                jsonCodec().treeReader().read("{\"administrator_id\":1, \"role_id\": 200}"),
+                                defaultCodec().treeReader().read("{\"administrator_id\":1, \"role_id\": 200}"),
                                 null
                         );
                     } catch (Exception ex) {

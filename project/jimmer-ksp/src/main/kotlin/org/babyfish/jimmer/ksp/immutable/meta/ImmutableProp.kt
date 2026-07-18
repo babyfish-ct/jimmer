@@ -12,7 +12,7 @@ import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.Scalar
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
-import org.babyfish.jimmer.jackson.JsonConverter
+import org.babyfish.jimmer.json.JsonConverter
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
 import org.babyfish.jimmer.ksp.immutable.generator.KEY_FULL_NAME

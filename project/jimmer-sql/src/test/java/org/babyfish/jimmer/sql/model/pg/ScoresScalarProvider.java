@@ -6,7 +6,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class ScoresScalarProvider implements ScalarProvider<Map<Long, Integer>, String> {
 
@@ -16,14 +16,14 @@ public class ScoresScalarProvider implements ScalarProvider<Map<Long, Integer>, 
 
     @Override
     public @NonNull Map<Long, Integer> toScalar(@NonNull String sqlValue) throws Exception {
-        return jsonCodec()
+        return defaultCodec()
                 .readerForMapOf(Long.class, Integer.class)
                 .read(sqlValue);
     }
 
     @Override
     public @NonNull String toSql(@NonNull Map<Long, Integer> scalarValue) throws Exception {
-        return jsonCodec().writer().writeAsString(scalarValue);
+        return defaultCodec().writer().writeAsString(scalarValue);
     }
 
     @Override

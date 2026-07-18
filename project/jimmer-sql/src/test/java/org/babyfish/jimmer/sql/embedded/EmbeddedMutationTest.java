@@ -9,7 +9,7 @@ import org.babyfish.jimmer.sql.model.embedded.dto.DynamicRectInput;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class EmbeddedMutationTest extends AbstractMutationTest {
 
@@ -117,13 +117,13 @@ public class EmbeddedMutationTest extends AbstractMutationTest {
         Transform transform = TransformDraft.$.produce(draft -> {
             draft.setId(1L);
             draft.setSource(
-                    jsonCodec()
+                    defaultCodec()
                             .readerFor(DynamicRectInput.class)
                             .read(sourceJson)
                             .toImmutable()
             );
             draft.setTarget(
-                    jsonCodec()
+                    defaultCodec()
                             .readerFor(DynamicRectInput.class)
                             .read(targetJson)
                             .toImmutable()

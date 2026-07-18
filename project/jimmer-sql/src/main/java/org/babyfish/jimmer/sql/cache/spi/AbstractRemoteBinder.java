@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.cache.spi;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder<K> implements LockableBinder<K, V> {
 
-    final JsonCodec<?> jsonCodec;
+    final JsonCodec jsonCodec;
 
     final RemoteKeyPrefixProvider keyPrefixProvider;
 
@@ -36,7 +36,7 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
-            @NotNull JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec jsonCodec,
             @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             Duration duration,
             int randomPercent
@@ -105,12 +105,12 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder
         protected final ImmutableType type;
         protected final ImmutableProp prop;
         protected CacheTracker tracker;
-        protected final JsonCodec<?> jsonCodec;
+        protected final JsonCodec jsonCodec;
         protected RemoteKeyPrefixProvider keyPrefixProvider;
         protected Duration duration = Duration.ofMinutes(30);
         protected int randomPercent = 30;
 
-        protected AbstractBuilder(ImmutableType type, ImmutableProp prop, @NotNull JsonCodec<?> jsonCodec) {
+        protected AbstractBuilder(ImmutableType type, ImmutableProp prop, @NotNull JsonCodec jsonCodec) {
             this.type = type;
             this.prop = prop;
             this.jsonCodec = jsonCodec;

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.model.Book;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class ViewJacksonTest {
 
@@ -17,7 +17,7 @@ public class ViewJacksonTest {
                 "{\"id\":\"1639d9d5-7b92-43cf-a03f-25314832f794\"}" +
                 "]" +
                 "}";
-        Book book2 = jsonCodec().readerFor(Book.class).read(json);
+        Book book2 = defaultCodec().readerFor(Book.class).read(json);
         Assertions.assertEquals(
                 json,
                 book2.toString()
@@ -33,7 +33,7 @@ public class ViewJacksonTest {
                 "\"1639d9d5-7b92-43cf-a03f-25314832f794\"" +
                 "]" +
                 "}";
-        Book book = jsonCodec().readerFor(Book.class).read(json);
+        Book book = defaultCodec().readerFor(Book.class).read(json);
         Assertions.assertEquals(
                 json,
                 book.toString()

@@ -4,7 +4,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Constants;
-import org.babyfish.jimmer.jackson.Converter;
+import org.babyfish.jimmer.json.Converter;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;

@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput2
@@ -20,7 +19,7 @@ class DynamicAndFuzzyTest {
             "{\"name\":\"MANNING\"}",
             input.toEntity()
         )
-        val store = jsonCodec()
+        val store = defaultCodec()
             .readerFor(DynamicBookStoreInput::class.java)
             .read("{\"name\":\"MANNING\"}")
             .toEntity()
@@ -37,7 +36,7 @@ class DynamicAndFuzzyTest {
             "{}",
             input.toEntity()
         )
-        val book = jsonCodec()
+        val book = defaultCodec()
             .readerFor(DynamicBookInput::class.java)
             .read("{}")
             .toEntity()
@@ -64,7 +63,7 @@ class DynamicAndFuzzyTest {
                     "}",
             input.toEntity().toString()
         )
-        val book = jsonCodec()
+        val book = defaultCodec()
             .readerFor(DynamicBookInput::class.java)
             .read(
                 "{" +
@@ -98,7 +97,7 @@ class DynamicAndFuzzyTest {
             "{\"store\":{\"name\":\"MANNING\",\"website\":null}}",
             input.toEntity()
         )
-        val book = jsonCodec()
+        val book = defaultCodec()
             .readerFor(DynamicBookInput2::class.java)
             .read("{\"parentName\":\"MANNING\",\"parentWebsite\":null}")
             .toEntity()
@@ -129,7 +128,7 @@ class DynamicAndFuzzyTest {
                     "}",
             input.toEntity().toString()
         )
-        val book = jsonCodec()
+        val book = defaultCodec()
             .readerFor(DynamicBookInput2::class.java)
             .read(
                 "{" +
@@ -159,9 +158,9 @@ class DynamicAndFuzzyTest {
         val input = DynamicBookInput(name = "MANNING")
         assertContent(
             "{\"name\":\"MANNING\"}",
-            jsonCodec().writer().writeAsString(input)
+            defaultCodec().writer().writeAsString(input)
         )
-        val book = jsonCodec()
+        val book = defaultCodec()
             .readerFor(DynamicBookInput::class.java)
             .read("{\"name\":\"MANNING\"}")
             .toEntity()
@@ -180,9 +179,9 @@ class DynamicAndFuzzyTest {
                     "\"price\":null," +
                     "\"storeId\":null," +
                     "\"authorIds\":null}",
-            jsonCodec().writer().writeAsString(input)
+            defaultCodec().writer().writeAsString(input)
         )
-        val book = jsonCodec()
+        val book = defaultCodec()
             .readerFor(FuzzyBookInput::class.java)
             .read(
                 "{\"name\":\"SQL in Action\"," +

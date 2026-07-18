@@ -10,10 +10,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = SchemaImpl.SerializerV2.class)
-@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = SchemaImpl.DeserializerV2.class)
-@tools.jackson.databind.annotation.JsonSerialize(using = SchemaImpl.SerializerV3.class)
-@tools.jackson.databind.annotation.JsonDeserialize(using = SchemaImpl.DeserializerV3.class)
 public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
     private Map<TypeName, ApiServiceImpl<S>> apiServiceMap;
@@ -79,81 +75,4 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
                 '}';
     }
 
-    static class SerializerV2 extends com.fasterxml.jackson.databind.JsonSerializer<SchemaImpl<?>> {
-
-        @Override
-        public void serialize(SchemaImpl<?> schema,
-                              com.fasterxml.jackson.core.JsonGenerator gen,
-                              com.fasterxml.jackson.databind.SerializerProvider provider) throws IOException {
-            gen.writeStartObject();
-            provider.defaultSerializeField("services", schema.getApiServiceMap().values(), gen);
-            provider.defaultSerializeField("definitions", schema.getTypeDefinitionMap().values(), gen);
-            gen.writeEndObject();
-        }
     }
-
-    static class DeserializerV2 extends com.fasterxml.jackson.databind.JsonDeserializer<SchemaImpl<?>> {
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public SchemaImpl<?> deserialize(com.fasterxml.jackson.core.JsonParser jp,
-                                         com.fasterxml.jackson.databind.DeserializationContext ctx) throws IOException {
-            com.fasterxml.jackson.databind.JsonNode jsonNode = jp.getCodec().readTree(jp);
-            SchemaImpl<Object> schema = new SchemaImpl<>();
-            for (com.fasterxml.jackson.databind.JsonNode serviceNode : jsonNode.get("services")) {
-                ApiServiceImpl<Object> apiService = ctx.readTreeAsValue(serviceNode, ApiServiceImpl.class);
-                if (Schemas.isAllowed(ctx, apiService.getGroups())) {
-                    schema.addApiService(apiService);
-                }
-            }
-            if (ctx.getAttribute(Schemas.IGNORE_DEFINITIONS) == null) {
-                for (com.fasterxml.jackson.databind.JsonNode definitionNode : jsonNode.get("definitions")) {
-                    TypeDefinitionImpl<Object> typeDefinition = ctx.readTreeAsValue(definitionNode, TypeDefinitionImpl.class);
-                    if (Schemas.isAllowed(ctx, typeDefinition.getGroups())) {
-                        schema.addTypeDefinition(typeDefinition);
-                    }
-                }
-            }
-            return schema;
-        }
-    }
-
-    static class SerializerV3 extends tools.jackson.databind.ValueSerializer<SchemaImpl<?>> {
-
-        @Override
-        public void serialize(SchemaImpl<?> schema,
-                              tools.jackson.core.JsonGenerator gen,
-                              tools.jackson.databind.SerializationContext ctx) {
-            gen.writeStartObject();
-            ctx.defaultSerializeProperty("services", schema.getApiServiceMap().values(), gen);
-            ctx.defaultSerializeProperty("definitions", schema.getTypeDefinitionMap().values(), gen);
-            gen.writeEndObject();
-        }
-    }
-
-    static class DeserializerV3 extends tools.jackson.databind.ValueDeserializer<SchemaImpl<?>> {
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public SchemaImpl<?> deserialize(tools.jackson.core.JsonParser jp,
-                                         tools.jackson.databind.DeserializationContext ctx) {
-            tools.jackson.databind.JsonNode jsonNode = ctx.readTree(jp);
-            SchemaImpl<Object> schema = new SchemaImpl<>();
-            for (tools.jackson.databind.JsonNode serviceNode : jsonNode.get("services")) {
-                ApiServiceImpl<Object> apiService = ctx.readTreeAsValue(serviceNode, ApiServiceImpl.class);
-                if (Schemas.isAllowed(ctx, apiService.getGroups())) {
-                    schema.addApiService(apiService);
-                }
-            }
-            if (ctx.getAttribute(Schemas.IGNORE_DEFINITIONS) == null) {
-                for (tools.jackson.databind.JsonNode definitionNode : jsonNode.get("definitions")) {
-                    TypeDefinitionImpl<Object> typeDefinition = ctx.readTreeAsValue(definitionNode, TypeDefinitionImpl.class);
-                    if (Schemas.isAllowed(ctx, typeDefinition.getGroups())) {
-                        schema.addTypeDefinition(typeDefinition);
-                    }
-                }
-            }
-            return schema;
-        }
-    }
-}

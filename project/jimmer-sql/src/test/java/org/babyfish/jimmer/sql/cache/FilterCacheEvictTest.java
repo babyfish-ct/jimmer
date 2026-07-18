@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
 
 public class FilterCacheEvictTest extends AbstractQueryTest {
 
@@ -70,8 +70,8 @@ public class FilterCacheEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "file",
-                                jsonCodec().treeReader().read("{\"id\":9, \"parent_id\":8}"),
-                                jsonCodec().treeReader().read("{\"id\":9, \"parent_id\":2}")
+                                defaultCodec().treeReader().read("{\"id\":9, \"parent_id\":8}"),
+                                defaultCodec().treeReader().read("{\"id\":9, \"parent_id\":2}")
                         );
                     } catch (Exception ex) {
                         Assertions.fail(ex);
@@ -94,7 +94,7 @@ public class FilterCacheEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getBinLog().accept(
                                 "file_user_mapping",
-                                jsonCodec().treeReader().read("{\"file_id\":28, \"user_id\":2}"),
+                                defaultCodec().treeReader().read("{\"file_id\":28, \"user_id\":2}"),
                                 null
                         );
                     } catch (Exception ex) {

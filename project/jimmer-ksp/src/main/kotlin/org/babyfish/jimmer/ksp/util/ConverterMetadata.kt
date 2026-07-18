@@ -5,7 +5,7 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.jackson.Converter
+import org.babyfish.jimmer.json.Converter
 import org.babyfish.jimmer.ksp.MetaException
 import java.lang.IllegalStateException
 
