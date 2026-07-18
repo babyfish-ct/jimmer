@@ -368,7 +368,7 @@ public class EntitiesImpl implements Entities {
             Shapes.reshape(sqlClient, con, entities, fetcher, converter);
             return entities;
         }
-        ConfigurableRootQuery<?, E> query = Queries.createQuery(
+        ConfigurableRootQuery<?, E> query = Queries.<E>createQuery(
                 sqlClient,
                 immutableType,
                 purpose,
@@ -381,7 +381,12 @@ public class EntitiesImpl implements Entities {
                     } else {
                         q.where(idProp.in(distinctIds));
                     }
-                    return q.select(new FetcherSelectionImpl<>(table, fetcher, converter));
+                    return q.select(
+                            new FetcherSelectionImpl<E>(
+                                    table,
+                                    (DtoMetadata<?, E>) metadata
+                            )
+                    );
                 }
         );
         if (forUpdate) {
@@ -498,7 +503,6 @@ public class EntitiesImpl implements Entities {
             TypedProp.Scalar<?, ?>... sortedProps
     ) {
         Fetcher<?> fetcher = metadata.getFetcher();
-        Function<?, V> converter = (Function<?, V>) metadata.getConverter();
         ImmutableType type = fetcher.getImmutableType();
         MutableRootQueryImpl<Table<?>> query =
                 new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT);
@@ -531,8 +535,11 @@ public class EntitiesImpl implements Entities {
             }
             query.orderBy(astOrder);
         }
-        return query.select(
-                new FetcherSelectionImpl<>(table, fetcher, converter)
+        return query.<V>select(
+                new FetcherSelectionImpl<V>(
+                        table,
+                        (DtoMetadata<?, V>) metadata
+                )
         ).execute(con);
     }
 

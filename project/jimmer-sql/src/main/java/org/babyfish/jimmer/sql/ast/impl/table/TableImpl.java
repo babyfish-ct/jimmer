@@ -803,7 +803,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
                             "\""
             );
         }
-        return new FetcherSelectionImpl<>(this, fetcher, metadata.getConverter());
+        return new FetcherSelectionImpl<>(this, metadata);
     }
 
     @Override

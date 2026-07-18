@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -120,14 +121,12 @@ class Readers {
             return sqlClient.getReader(immutableType);
         }
         if (selection instanceof FetcherSelection<?>) {
-            Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
-            ImmutableType type = fetcher.getImmutableType();
-            if (type.isEmbeddable()) {
-                return createDynamicEmbeddableReader(sqlClient, type, fetcher);
+            FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
+            DtoMetadata<?, ?> metadata = fetcherSelection.getDtoMetadata();
+            if (metadata != null) {
+                return sqlClient.getViewReader(metadata);
             }
-            DynamicEntityReaderCreator creator = new DynamicEntityReaderCreator(sqlClient, type);
-            creator.visit(fetcher);
-            return creator.create();
+            return createFetcherReader(sqlClient, fetcherSelection.getFetcher());
         }
         ExpressionImplementor<?> unwrapped = AbstractTypedEmbeddedPropExpression.<ExpressionImplementor<?>>unwrap(selection);
         if (unwrapped instanceof PropExpression<?>) {
@@ -137,6 +136,16 @@ class Readers {
             }
         }
         return sqlClient.getReader(unwrapped.getType());
+    }
+
+    static Reader<?> createFetcherReader(JSqlClientImplementor sqlClient, Fetcher<?> fetcher) {
+        ImmutableType type = fetcher.getImmutableType();
+        if (type.isEmbeddable()) {
+            return createDynamicEmbeddableReader(sqlClient, type, fetcher);
+        }
+        DynamicEntityReaderCreator creator = new DynamicEntityReaderCreator(sqlClient, type);
+        creator.visit(fetcher);
+        return creator.create();
     }
 
     private static Reader<?> createDynamicEmbeddableReader(JSqlClientImplementor sqlClient, ImmutableType type, Fetcher<?> fetcher) {

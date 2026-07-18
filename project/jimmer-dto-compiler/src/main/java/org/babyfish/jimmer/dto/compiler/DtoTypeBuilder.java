@@ -39,6 +39,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final List<Token> negativePropAliasTokens;
 
+    final Set<String> inheritedPropAliases;
+
     private DtoType<T, P> dtoType;
 
     private AliasPattern currentAliasGroup;
@@ -58,6 +60,32 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             List<DtoParser.TypeRefContext> superInterfaces,
             CompilerContext<T, P> ctx
     ) {
+        this(
+                parentProp,
+                baseType,
+                body,
+                name,
+                doc,
+                modifiers,
+                annotations,
+                superInterfaces,
+                ctx,
+                Collections.emptySet()
+        );
+    }
+
+    DtoTypeBuilder(
+            DtoPropBuilder<T, P> parentProp,
+            T baseType,
+            DtoParser.DtoBodyContext body,
+            Token name,
+            String doc,
+            Set<DtoModifier> modifiers,
+            List<DtoParser.AnnotationContext> annotations,
+            List<DtoParser.TypeRefContext> superInterfaces,
+            CompilerContext<T, P> ctx,
+            Set<String> inheritedPropAliases
+    ) {
         this.parentProp = parentProp;
         this.baseType = baseType;
         this.ctx = ctx;
@@ -69,6 +97,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.flatPositiveProps = new ArrayList<>();
         this.negativePropAliasMap = new LinkedHashMap<>();
         this.negativePropAliasTokens = new ArrayList<>();
+        this.inheritedPropAliases = inheritedPropAliases;
         this.doc = doc;
         this.modifiers = Collections.unmodifiableSet(modifiers);
         if (annotations.isEmpty()) {
@@ -706,7 +735,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 modifiers,
                 branch.annotations,
                 branch.superInterfaces,
-                ctx
+                ctx,
+                declaredProps.keySet()
         ).build();
         validateNoNestedTypesBlock(branchType, branch.dtoBody());
         return new DtoPolymorphicBranch<>(
@@ -785,7 +815,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 modifiers,
                 branch.annotations,
                 branch.superInterfaces,
-                ctx
+                ctx,
+                declaredProps.keySet()
         ).build();
         validateNoNestedTypesBlock(branchType, branch.dtoBody());
         return new DtoPolymorphicBranch<>(
@@ -922,10 +953,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             DtoPolymorphicBranch<T, P> defaultBranch,
             List<DtoPolymorphicBranch<T, P>> typeBranches
     ) {
-        Set<String> baseAliases = new HashSet<>();
-        for (AbstractProp prop : dtoType.getProps()) {
-            baseAliases.add(prop.getAlias());
-        }
+        Set<String> baseAliases = declaredProps.keySet();
         if (defaultBranch != null) {
             validateBranchPropAliases(baseAliases, defaultBranch);
         }
@@ -957,7 +985,9 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
         Map<String, AbstractProp> declaredPropMap = new LinkedHashMap<>();
         for (DtoPropBuilder<T, P> builder : autoPropMap.values()) {
-            if (isExcluded(builder.getAlias()) || positivePropMap.containsKey(builder.getBaseProp())) {
+            if (isExcluded(builder.getAlias()) ||
+                    inheritedPropAliases.contains(builder.getAlias()) ||
+                    positivePropMap.containsKey(builder.getBaseProp())) {
                 continue;
             }
             addProps(builder, declaredPropMap);

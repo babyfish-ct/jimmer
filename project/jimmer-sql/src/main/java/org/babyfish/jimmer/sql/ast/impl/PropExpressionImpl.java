@@ -411,7 +411,7 @@ public class PropExpressionImpl<T>
                                 "\""
                 );
             }
-            return new FetcherSelectionImpl<V>(this, fetcher, metadata.getConverter());
+            return new FetcherSelectionImpl<V>(this, metadata);
         }
 
         @Override

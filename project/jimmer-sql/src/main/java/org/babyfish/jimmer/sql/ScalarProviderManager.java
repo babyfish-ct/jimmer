@@ -25,7 +25,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
     private static final Set<Class<?>> GENERIC_TYPES;
 
     private final ClassCache<ScalarProvider<?, ?>> typeScalarProviderCache =
-            new ClassCache<>(this::createProvider, true);
+            new ClassCache<>(this::createProvider);
 
     private final PropCache<ScalarProvider<?, ?>> propScalarProviderCache =
             new PropCache<>(this::createProvider, true);

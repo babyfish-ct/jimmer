@@ -1,30 +1,22 @@
 package org.babyfish.jimmer.impl.util;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 
-/*
- * Fight with spring-dev-tools
- */
 public class PropCache<V> {
+
+    private static final Object NULL = new Object();
 
     private final Function<ImmutableProp, V> creator;
 
-    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private final boolean nullable;
 
-    private final Map<ImmutableProp, V> positiveMap = new HashMap<>();
+    private final ClassCache<Bucket<V>> classCache;
 
-    private final Map<String, V> positiveMap2 = new HashMap<>();
-
-    private final Map<ImmutableProp, Void> negativeMap;
-
-    private final Map<String, Void> negativeMap2;
+    private final StaticCache<ImmutableProp, V> fallbackCache;
 
     public PropCache(Function<ImmutableProp, V> creator) {
         this(creator, false);
@@ -32,69 +24,76 @@ public class PropCache<V> {
 
     public PropCache(Function<ImmutableProp, V> creator, boolean nullable) {
         this.creator = creator;
-        negativeMap = nullable ? new LRUMap<>() : null;
-        negativeMap2 = nullable ? new LRUMap<>() : null;
+        this.nullable = nullable;
+        classCache = new ClassCache<>(this::createBucket);
+        fallbackCache = new StaticCache<>(creator, nullable);
     }
 
     public V get(ImmutableProp key) {
+        ImmutableType declaringType = key.getDeclaringType();
+        Bucket<V> bucket = classCache.get(declaringType.getJavaClass());
+        int index = key.getId().asIndex();
+        if (bucket.type == declaringType && index >= 0 && index < bucket.values.length()) {
+            return bucket.get(key, index);
+        }
+        return fallbackCache.get(key);
+    }
 
-        String keyString = key != null ? key.toString() : null;
-        V value;
-        Lock lock;
+    private Bucket<V> createBucket(Class<?> javaClass) {
+        ImmutableType type = ImmutableType.tryGet(javaClass);
+        if (type == null) {
+            return new Bucket<>(null, 0, creator, nullable);
+        }
+        int size = 0;
+        for (ImmutableProp prop : type.getProps().values()) {
+            int index = prop.getId().asIndex();
+            if (index >= size) {
+                size = index + 1;
+            }
+        }
+        return new Bucket<>(type, size, creator, nullable);
+    }
 
-        (lock = cacheLock.readLock()).lock();
-        try {
-            if (negativeMap != null && negativeMap.containsKey(key)) {
-                return null;
-            }
-            if (negativeMap2 != null && negativeMap2.containsKey(keyString)) {
-                negativeMap.put(key, null);
-            }
-            value = positiveMap.get(key);
+    private static class Bucket<V> {
+
+        final ImmutableType type;
+
+        final AtomicReferenceArray<Object> values;
+
+        private final Function<ImmutableProp, V> creator;
+
+        private final boolean nullable;
+
+        private Bucket(
+                ImmutableType type,
+                int size,
+                Function<ImmutableProp, V> creator,
+                boolean nullable
+        ) {
+            this.type = type;
+            this.values = new AtomicReferenceArray<>(size);
+            this.creator = creator;
+            this.nullable = nullable;
+        }
+
+        @SuppressWarnings("unchecked")
+        V get(ImmutableProp prop, int index) {
+            Object value = values.get(index);
             if (value == null) {
-                value = positiveMap2.get(keyString);
-                if (value != null) {
-                    positiveMap.put(key, value);
+                V created = creator.apply(prop);
+                if (created == null && !nullable) {
+                    throw new IllegalStateException(
+                            "The creator cannot return null because current prop cache does not accept null values"
+                    );
+                }
+                Object newValue = created != null ? created : NULL;
+                if (values.compareAndSet(index, null, newValue)) {
+                    value = newValue;
+                } else {
+                    value = values.get(index);
                 }
             }
-        } finally {
-            lock.unlock();
+            return value != NULL ? (V) value : null;
         }
-
-        if (value == null) {
-            (lock = cacheLock.writeLock()).lock();
-            try {
-                if (negativeMap != null && negativeMap.containsKey(key)) {
-                    return null;
-                }
-                if (negativeMap2 != null && negativeMap2.containsKey(keyString)) {
-                    negativeMap.put(key, null);
-                }
-                value = positiveMap.get(key);
-                if (value == null) {
-                    value = positiveMap2.get(keyString);
-                    if (value != null) {
-                        positiveMap.put(key, value);
-                    } else {
-                        value = creator.apply(key);
-                        if (value != null) {
-                            positiveMap.put(key, value);
-                            positiveMap2.put(keyString, value);
-                        } else if (negativeMap != null) {
-                            negativeMap.put(key, null);
-                            negativeMap2.put(keyString, null);
-                        } else {
-                            throw new IllegalStateException(
-                                    "The creator cannot return null because current type cache does not accept null values"
-                            );
-                        }
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        return value;
     }
 }

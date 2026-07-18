@@ -12,10 +12,8 @@ import java.util.List;
 
 public class ConverterMetadata {
 
-    private static final ClassCache<ConverterMetadata> CACHE = new ClassCache<>(
-            ConverterMetadata::create,
-            false
-    );
+    private static final ClassCache<ConverterMetadata> CACHE =
+            new ClassCache<>(ConverterMetadata::create);
 
     final Type sourceType;
 

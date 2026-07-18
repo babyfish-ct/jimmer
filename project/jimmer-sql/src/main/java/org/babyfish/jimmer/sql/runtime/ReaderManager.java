@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,13 @@ public class ReaderManager {
     private final PropCache<Reader<?>> propReaderCache =
             new PropCache<>(this::createPropReader, true);
 
+    private final ClassValue<Reader<?>> viewReaderCache = new ClassValue<Reader<?>>() {
+        @Override
+        protected Reader<?> computeValue(Class<?> type) {
+            return createViewReader(type);
+        }
+    };
+
     public ReaderManager(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
     }
@@ -53,12 +61,24 @@ public class ReaderManager {
         return immutableType != null ? reader(immutableType) : scalarReader(type);
     }
 
+    public Reader<?> viewReader(DtoMetadata<?, ?> metadata) {
+        return viewReaderCache.get(metadata.getDtoType());
+    }
+
     public Reader<?> reader(ImmutableType type) {
         return typeReaderCache.get(type);
     }
 
     public Reader<?> reader(ImmutableProp prop) {
         return propReaderCache.get(prop);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Reader<?> createViewReader(Class<?> viewType) {
+        return Readers.createFetcherReader(
+                sqlClient,
+                DtoMetadata.of((Class) viewType).getFetcher()
+        );
     }
 
     private Reader<?> createPropReader(ImmutableProp prop) {
