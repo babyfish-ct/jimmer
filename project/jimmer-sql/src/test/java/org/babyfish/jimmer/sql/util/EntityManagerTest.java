@@ -3,12 +3,11 @@ package org.babyfish.jimmer.sql.util;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
-import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.model.inheritance.Administrator;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
-import org.babyfish.jimmer.sql.model.inheritance.Permission;
-import org.babyfish.jimmer.sql.model.inheritance.Role;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
+import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
+import org.babyfish.jimmer.sql.meta.MetaStringResolver;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.model.schema.SchemaATable;
 import org.babyfish.jimmer.sql.model.schema.SchemaBTable;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
@@ -71,6 +70,7 @@ public class EntityManagerTest {
         Assertions.assertEquals(
                 Arrays.asList(
                         "org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject.client",
+                        "org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject.participants",
                         "org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationProject.organization"
                 ),
                 entityManager
@@ -84,6 +84,7 @@ public class EntityManagerTest {
         Assertions.assertEquals(
                 Arrays.asList(
                         "org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject.client",
+                        "org.babyfish.jimmer.sql.model.inheritance.singletable.ClientProject.participants",
                         "org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationProject.organization"
                 ),
                 entityManager

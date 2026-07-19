@@ -30,6 +30,7 @@ dependencies {
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
     testAnnotationProcessor(projects.jimmerApt)
+    testAnnotationProcessor(files("src/test/dto-bundle"))
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.spring.jdbc)

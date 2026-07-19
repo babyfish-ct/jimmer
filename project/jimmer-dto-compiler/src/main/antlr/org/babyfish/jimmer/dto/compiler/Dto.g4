@@ -8,10 +8,23 @@ package org.babyfish.jimmer.dto.compiler;
 
 dto
     :
+    packageStatement?
     exportStatement?
     (importStatements += importStatement)*
-    (dtoTypes+=dtoType)*
+    (dtoTypes += dtoType | fragments += dtoFragment)*
     EOF
+    ;
+
+packageStatement
+    :
+    'package' packageParts += Identifier ('.' packageParts += Identifier)*
+    ;
+
+dtoFragment
+    :
+    'fragment' name = Identifier
+    ('for' targetType = qualifiedName)?
+    body = dtoBody
     ;
 
 exportStatement
@@ -24,6 +37,7 @@ importStatement
     :
     'import' parts += Identifier ('.' parts += Identifier)*
     (
+        '.' wildcard = '*' |
         '.' '{' importedTypes += importedType (',' importedTypes += importedType)* '}' |
         'as' alias = Identifier
     )?
@@ -40,6 +54,7 @@ dtoType
     (annotations += annotation)*
     (modifiers += (Identifier | 'sealed' | 'fixed' | 'static' | 'dynamic' | 'fuzzy'))*
     name=Identifier
+    ('for' targetType = qualifiedName)?
     ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
     body=dtoBody
     ;
@@ -47,9 +62,21 @@ dtoType
 dtoBody
     :
     '{'
-    (macros += macro)*
-    (((typesBlocks += typesBlock | explicitProps += explicitProp)) (',' | ';')?)*
+    (
+        (
+            includes += include |
+            macros += macro |
+            typesBlocks += typesBlock |
+            explicitProps += explicitProp
+        )
+        (',' | ';')?
+    )*
     '}'
+    ;
+
+include
+    :
+    '#include' '(' fragmentType = qualifiedName ')'
     ;
 
 explicitProp
@@ -148,7 +175,7 @@ positiveProp
         ('implements' bodySuperInterfaces += typeRef (',' bodySuperInterfaces += typeRef)*)?
         dtoBody
         |
-        '->' enumBody
+        '->' (enumBody | referencedType = qualifiedName)
     )?
     ;
 

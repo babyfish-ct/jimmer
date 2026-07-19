@@ -96,9 +96,6 @@ class SimpleValueGetter extends AbstractValueGetter {
         if (table != null && astContext != null) {
             SqlBuilder sqlBuilder = builder.assertSimple();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
-            if (renderJoinedTypeBranchColumn(builder, tableImplementor, columnProp, columnName)) {
-                return;
-            }
             if (valueProp.isId() && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
                 RealTable realTable = tableImplementor.realTableForRender(builder);
                 String middleTableAlias = sqlBuilder.middleTableAlias(realTable);
@@ -116,6 +113,9 @@ class SimpleValueGetter extends AbstractValueGetter {
                     }
                 }
             } else {
+                if (renderJoinedTypeBranchColumn(builder, tableImplementor, columnProp, columnName)) {
+                    return;
+                }
                 tableImplementor.realTableForRender(builder).renderColumn(builder, columnName, false, null, null);
             }
             return;

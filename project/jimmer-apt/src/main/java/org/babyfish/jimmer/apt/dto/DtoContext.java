@@ -1,12 +1,15 @@
 package org.babyfish.jimmer.apt.dto;
 
+import org.babyfish.jimmer.dto.compiler.DtoBundleLoader;
 import org.babyfish.jimmer.dto.compiler.DtoFile;
-import org.babyfish.jimmer.dto.compiler.OsFile;
+import org.babyfish.jimmer.dto.compiler.PathDtoSource;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.processing.Filer;
 import javax.tools.StandardLocation;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -16,16 +19,23 @@ public class DtoContext {
 
     private final List<DtoFile> dtoFiles;
 
-    public DtoContext(Filer filer, Collection<String> dtoDirs) {
+    public DtoContext(Filer filer, Collection<String> dtoDirs, boolean dtoBundleEnabled) {
         this.filer = filer;
         DtoDirInfo dtoDirInfo = getDtoDirInfo(dtoDirs);
         List<DtoFile> dtoFiles = new ArrayList<>();
         for (Map.Entry<String, File> e : dtoDirInfo.dtoDirFileMap.entrySet()) {
             File[] subFiles = e.getValue().listFiles();
             if (subFiles != null) {
-                for (File subFile : subFiles){
+                for (File subFile : subFiles) {
                     collectDtoFiles(dtoDirInfo.projectDir, e.getKey(), subFile, new ArrayList<>(), dtoFiles);
                 }
+            }
+        }
+        if (dtoBundleEnabled) {
+            try {
+                dtoFiles.addAll(DtoBundleLoader.load(DtoContext.class.getClassLoader()));
+            } catch (IOException ex) {
+                throw new DtoException("Failed to load DTO bundles: " + ex.getMessage(), ex);
             }
         }
         this.dtoFiles = dtoFiles;
@@ -96,7 +106,7 @@ public class DtoContext {
     private static void collectDtoFiles(String projectDir, String dtoDir, File file, List<String> paths, List<DtoFile> dtoFiles) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
             dtoFiles.add(
-                    new DtoFile(OsFile.of(file), projectDir, dtoDir, paths, file.getName())
+                    new DtoFile(new PathDtoSource(file.toPath()), projectDir, dtoDir, paths, file.getName())
             );
         } else {
             File[] subFiles = file.listFiles();

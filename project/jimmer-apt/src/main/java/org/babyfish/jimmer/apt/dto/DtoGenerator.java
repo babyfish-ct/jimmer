@@ -781,7 +781,7 @@ public class DtoGenerator {
     private void addFetcherField(DtoProp<ImmutableType, ImmutableProp> prop, CodeBlock.Builder cb) {
         if (prop.getBaseProp().getAnnotation(Id.class) == null) {
             PropConfig<ImmutableProp> config = prop.getConfig();
-            if (prop.getTargetType() != null) {
+            if (prop.getTarget() != null) {
                 if (prop.isRecursive()) {
                     cb.add("\n.$N(", StringUtil.identifier("recursive", prop.getBaseProp().getName()));
                 } else {
@@ -876,7 +876,7 @@ public class DtoGenerator {
                     recursionTypeElement,
                     "org.babyfish.jimmer.sql.fetcher.RecursionStrategy"
             ).parse().argumentTypeNames.get(0);
-            TypeName associatedEntityTypeName = prop.getTargetType().getBaseType().getClassName();
+            TypeName associatedEntityTypeName = prop.toTailProp().getBaseProp().getTargetType().getClassName();
             if (!associatedEntityTypeName.equals(entityTypeName)) {
                 throw new DtoException(
                         "The recursion class \"" +
@@ -1105,11 +1105,12 @@ public class DtoGenerator {
                 addConverterLoading(cb, prop, false);
                 cb.add(")");
             }
-        } else if (withConverters && tailProp.getTargetType() != null) {
+        } else if (withConverters && tailProp.getTarget() != null) {
             if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
-                if (tailProp.getTargetType().getPolymorphism() != null) {
+                DtoTypeRef<ImmutableType, ImmutableProp> targetTypeRef = tailProp.getTargetTypeRef();
+                if (targetTypeRef != null || tailProp.getTargetType().getPolymorphism() != null) {
                     cb.add(
                             ",\n$T.<$T, $T>$L($T.METADATA.getConverter())",
                             org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
@@ -1133,7 +1134,9 @@ public class DtoGenerator {
                         org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
                         getPropElementName(tailProp),
-                        tailProp.getTargetType().getBaseType().isEntity() ? "toEntity" : "toImmutable"
+                        targetTypeRef != null ?
+                                "toImmutable" :
+                                tailProp.getTargetType().getBaseType().isEntity() ? "toEntity" : "toImmutable"
                 );
             }
         } else if (withConverters && prop.getEnumType() != null) {
@@ -1947,7 +1950,7 @@ public class DtoGenerator {
             List<ImmutableProp> newStack = new ArrayList<>(stack.size() + 2);
             DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
             for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
-                if (p != tailProp || p.getTargetType() != null) {
+                if (p != tailProp || p.getTarget() != null) {
                     newStack.add(p.getBaseProp());
                 }
             }
@@ -1988,9 +1991,9 @@ public class DtoGenerator {
         String propName = prop.getName();
         String propGetter = getterName(prop);
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
-        if (tailProp.getTargetType() != null) {
+        if (tailProp.getTarget() != null) {
             builder.beginControlFlow("if (this.$L != null)", propName);
-            if (tailProp.getTargetType().getBaseType().isEntity()) {
+            if (tailProp.getBaseProp().isAssociation(true)) {
                 builder.addStatement("this.$L.applyTo(args.child())", propName);
             } else {
                 builder.addStatement("this.$L.applyTo(args.getApplier())", propName);
@@ -2488,6 +2491,10 @@ public class DtoGenerator {
 
     public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+        DtoTypeRef<ImmutableType, ImmutableProp> targetTypeRef = tailProp.getTargetTypeRef();
+        if (targetTypeRef != null) {
+            return ClassName.bestGuess(targetTypeRef.getQualifiedName());
+        }
         DtoType<ImmutableType, ImmutableProp> targetType = tailProp.getTargetType();
         if (targetType != null) {
             if (tailProp.isRecursive() && !targetType.isFocusedRecursion()) {

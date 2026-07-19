@@ -414,6 +414,10 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableLikeImplement
 
     @Override
     public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
+        ImmutableProp mappedBy = prop.getMappedBy();
+        if (mappedBy != null) {
+            return getAssociatedId(mappedBy);
+        }
         ImmutableProp oppositeProp = prop.getOpposite();
         TableImplementor<?> joinedTable = inverseJoinImplementor(
                 prop,

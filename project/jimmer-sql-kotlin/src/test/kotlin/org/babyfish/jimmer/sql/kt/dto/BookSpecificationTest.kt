@@ -2,13 +2,17 @@ package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.ReusableAuthorSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification2
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification3
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification4
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookWithReusableAssociationsSpecification
+import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreSpecificationForIssue562
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.ReusableBookStoreSpecification
 import org.junit.Test
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -357,6 +361,59 @@ class BookSpecificationTest : AbstractQueryTest() {
             ).variables("%e%", "%g%", "%a%")
             rows(
                 "[{\"id\":1,\"name\":\"O'REILLY\",\"version\":0,\"website\":null}]"
+            )
+        }
+    }
+
+    @Test
+    fun testReusableSpecificationAssociationsAndFragments() {
+        val specification = BookWithReusableAssociationsSpecification(
+            name = "GraphQL",
+            minPrice = BigDecimal("50"),
+            store = ReusableBookStoreSpecification(
+                minName = "M",
+                maxName = "Z"
+            ),
+            authors = ReusableAuthorSpecification(
+                name = "Alex"
+            )
+        )
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(specification)
+                orderBy(table.id)
+                select(table)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                    "from BOOK tb_1_ " +
+                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                    "where " +
+                    "--->lower(tb_1_.NAME) like ? " +
+                    "and " +
+                    "--->tb_1_.PRICE >= ? " +
+                    "and " +
+                    "--->tb_2_.NAME >= ? " +
+                    "and " +
+                    "--->tb_2_.NAME <= ? " +
+                    "and exists(" +
+                    "--->select 1 " +
+                    "--->from AUTHOR tb_3_ " +
+                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
+                    "--->where " +
+                    "--->--->tb_1_.ID = tb_4_.BOOK_ID " +
+                    "--->and " +
+                    "--->--->(lower(tb_3_.FIRST_NAME) like ? or lower(tb_3_.LAST_NAME) like ?)" +
+                    ") " +
+                    "order by tb_1_.ID asc"
+            ).variables(
+                "%graphql%",
+                BigDecimal("50"),
+                "M",
+                "Z",
+                "%alex%",
+                "%alex%"
             )
         }
     }

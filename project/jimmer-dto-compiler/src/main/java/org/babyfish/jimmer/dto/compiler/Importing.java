@@ -3,6 +3,7 @@ package org.babyfish.jimmer.dto.compiler;
 import org.antlr.v4.runtime.Token;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 class Importing {
@@ -17,13 +18,23 @@ class Importing {
 
     private final Map<String, String> typeMap = new HashMap<>();
 
+    private final Set<String> wildcardPackageNames = new LinkedHashSet<>();
+
     Importing(CompilerContext<?, ?> ctx) {
         this.ctx = ctx;
     }
 
     public void add(DtoParser.ImportStatementContext ctx) {
         String path = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
-        if (ctx.alias != null) {
+        if (ctx.wildcard != null) {
+            if (!wildcardPackageNames.add(path)) {
+                throw this.ctx.exception(
+                        ctx.wildcard.getLine(),
+                        ctx.wildcard.getCharPositionInLine(),
+                        "Duplicated wildcard import \"" + path + ".*\""
+                );
+            }
+        } else if (ctx.alias != null) {
             Token lastPart = ctx.parts.get(ctx.parts.size() - 1);
             add0(ctx.alias, path, lastPart.getLine(), lastPart.getCharPositionInLine());
         } else if (!ctx.importedTypes.isEmpty()) {
@@ -63,7 +74,18 @@ class Importing {
     }
 
     public TypeRef resolve(DtoParser.TypeRefContext ctx, DtoCompiler<?, ?> compiler) {
-        String name = resolve(ctx.qualifiedName());
+        String qualifiedName = ctx.qualifiedName().parts
+                .stream()
+                .map(Token::getText)
+                .collect(Collectors.joining("."));
+        String name = resolve(
+                qualifiedName,
+                ctx.qualifiedName().stop.getLine(),
+                ctx.qualifiedName().stop.getCharPositionInLine(),
+                this.ctx.getDefaultBasePackageName(),
+                candidate -> STANDARD_TYPES.containsKey(candidate) ||
+                        compiler.getGenericTypeCount(candidate) != null
+        );
         Integer expectedArgumentCount = STANDARD_TYPES.get(name);
         if (expectedArgumentCount == null) {
             expectedArgumentCount = compiler.getGenericTypeCount(name);
@@ -151,10 +173,65 @@ class Importing {
 
     public String resolve(DtoParser.QualifiedNameContext ctx) {
         String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
-        return resolve(qualifiedName, ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+        return resolve(
+                qualifiedName,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine(),
+                this.ctx.getDefaultBasePackageName(),
+                this.ctx::typeExists
+        );
+    }
+
+    public String resolveDtoType(DtoParser.QualifiedNameContext ctx) {
+        String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
+        return resolve(
+                qualifiedName,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine(),
+                this.ctx.getDtoPackageName(),
+                this.ctx::dtoTypeExists
+        );
+    }
+
+    String resolveFragmentType(DtoParser.QualifiedNameContext ctx) {
+        String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
+        return resolve(
+                qualifiedName,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine(),
+                this.ctx.getDtoPackageName(),
+                this.ctx::fragmentTypeExists
+        );
+    }
+
+    public String resolveImmutableType(DtoParser.QualifiedNameContext ctx) {
+        String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
+        return resolve(
+                qualifiedName,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine(),
+                this.ctx.getDefaultBasePackageName(),
+                this.ctx::immutableTypeExists
+        );
     }
 
     public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
+        return resolve(
+                qualifiedName,
+                qualifiedNameLine,
+                qualifiedNameCol,
+                this.ctx.getDefaultBasePackageName(),
+                this.ctx::typeExists
+        );
+    }
+
+    private String resolve(
+            String qualifiedName,
+            int qualifiedNameLine,
+            int qualifiedNameCol,
+            String defaultPackageName,
+            Predicate<String> typeExists
+    ) {
         if (STANDARD_TYPES.containsKey(qualifiedName)) {
             return qualifiedName;
         }
@@ -186,11 +263,33 @@ class Importing {
         if (Character.isLowerCase(qualifiedName.charAt(0))) {
             return qualifiedName;
         }
-        String pkg = this.ctx.getBaseType().getPackageName();
-        if (pkg.isEmpty()) {
-            return qualifiedName;
+        String defaultQualifiedName = defaultPackageName.isEmpty() ?
+                qualifiedName :
+                defaultPackageName + '.' + qualifiedName;
+        if (typeExists.test(defaultQualifiedName)) {
+            return defaultQualifiedName;
         }
-        return pkg + '.' + qualifiedName;
+        String wildcardQualifiedName = null;
+        for (String packageName : wildcardPackageNames) {
+            String candidate = packageName + '.' + qualifiedName;
+            if (typeExists.test(candidate)) {
+                if (wildcardQualifiedName != null) {
+                    throw this.ctx.exception(
+                            qualifiedNameLine,
+                            qualifiedNameCol,
+                            "Ambiguous type name \"" +
+                                    qualifiedName +
+                                    "\", both \"" +
+                                    wildcardQualifiedName +
+                                    "\" and \"" +
+                                    candidate +
+                                    "\" are matched by wildcard imports"
+                    );
+                }
+                wildcardQualifiedName = candidate;
+            }
+        }
+        return wildcardQualifiedName != null ? wildcardQualifiedName : defaultQualifiedName;
     }
 
     static {

@@ -1,3 +1,26 @@
+fragment ReusableBookStoreProps {
+    id
+    name
+}
+
+ReusableBookStoreView {
+    #include(ReusableBookStoreProps)
+}
+
+input ReusableBookStoreInput {
+    #include(ReusableBookStoreProps)
+    label: String = "store"
+}
+
+fragment ReusableBookStoreSpecificationProps {
+    ge(name)
+    le(name)
+}
+
+specification ReusableBookStoreSpecification for BookStore {
+    #include(ReusableBookStoreSpecificationProps)
+}
+
 BookStoreView {
     avgPrice
     newestBooks {

@@ -38,6 +38,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final DtoTypeBuilder<T, P> targetTypeBuilder;
 
+    private final DtoTypeRef<T, P> targetTypeRef;
+
     private final EnumType enumType;
 
     private final boolean recursive;
@@ -92,6 +94,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
         this.funcName = funcName;
         this.targetTypeBuilder = null;
+        this.targetTypeRef = null;
         this.enumType = null;
         this.recursive = false;
         this.likeOptions = Collections.emptySet();
@@ -649,6 +652,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
 
         DtoTypeBuilder<T, P> targetTypeBuilder = null;
+        DtoTypeRef<T, P> targetTypeRef = null;
         DtoParser.DtoBodyContext dtoBody = prop.dtoBody();
         if (dtoBody != null) {
             if (!baseProp.isAssociation(true) && !baseProp.isEmbedded()) {
@@ -711,6 +715,40 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     prop.bodyAnnotations,
                     prop.bodySuperInterfaces,
                     ctx
+            );
+        } else if (prop.referencedType != null) {
+            if (!baseProp.isAssociation(true)) {
+                throw ctx.exception(
+                        prop.referencedType.start.getLine(),
+                        prop.referencedType.start.getCharPositionInLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", reusable DTO type can only be specified for an association"
+                );
+            }
+            if (funcName != null) {
+                throw ctx.exception(
+                        prop.referencedType.start.getLine(),
+                        prop.referencedType.start.getCharPositionInLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", reusable DTO type cannot be specified for a function property"
+                );
+            }
+            if (prop.recursive != null) {
+                throw ctx.exception(
+                        prop.recursive.getLine(),
+                        prop.recursive.getCharPositionInLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", reusable DTO type cannot be specified for a recursive property"
+                );
+            }
+            targetTypeRef = new DtoTypeRef<>(
+                    ctx.resolveDtoType(prop.referencedType),
+                    ctx.getTargetType(baseProp),
+                    prop.referencedType.start.getLine(),
+                    prop.referencedType.start.getCharPositionInLine()
             );
         } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
@@ -810,6 +848,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             this.inputModifier = isNullable() ? DtoModifier.STATIC : DtoModifier.FIXED;
         }
         this.targetTypeBuilder = targetTypeBuilder;
+        this.targetTypeRef = targetTypeRef;
         this.recursive = prop.recursive != null;
     }
 
@@ -994,7 +1033,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         (DtoType<T, P>) type :
                         targetTypeBuilder != null ?
                                 targetTypeBuilder.build() :
-                                null,
+                                targetTypeRef,
                 enumType,
                 mandatory,
                 inputModifier,

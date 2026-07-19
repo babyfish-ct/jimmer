@@ -637,4 +637,59 @@ public class BookSpecificationTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testReusableSpecificationAssociationsAndFragments() {
+        BookWithReusableAssociationsSpecification specification =
+                new BookWithReusableAssociationsSpecification();
+        specification.setName("GraphQL");
+        specification.setMinPrice(new BigDecimal("50"));
+
+        ReusableBookStoreSpecification store = new ReusableBookStoreSpecification();
+        store.setMinName("M");
+        store.setMaxName("Z");
+        specification.setStore(store);
+
+        ReusableAuthorSpecification authors = new ReusableAuthorSpecification();
+        authors.setName("Alex");
+        specification.setAuthors(authors);
+
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .orderBy(table.id())
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "where " +
+                                    "--->tb_1_.NAME ilike ? " +
+                                    "and " +
+                                    "--->tb_1_.PRICE >= ? " +
+                                    "and " +
+                                    "--->tb_2_.NAME >= ? " +
+                                    "and " +
+                                    "--->tb_2_.NAME <= ? " +
+                                    "and exists(" +
+                                    "--->select 1 from AUTHOR tb_3_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_4_ on tb_3_.ID = tb_4_.AUTHOR_ID " +
+                                    "--->where " +
+                                    "--->--->tb_1_.ID = tb_4_.BOOK_ID " +
+                                    "--->and " +
+                                    "--->--->(tb_3_.FIRST_NAME ilike ? or tb_3_.LAST_NAME ilike ?)" +
+                                    ") order by tb_1_.ID asc"
+                    ).variables(
+                            "%graphql%",
+                            new BigDecimal("50"),
+                            "M",
+                            "Z",
+                            "%alex%",
+                            "%alex%"
+                    );
+                }
+        );
+    }
 }

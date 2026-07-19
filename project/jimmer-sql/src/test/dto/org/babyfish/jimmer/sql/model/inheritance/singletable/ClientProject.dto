@@ -11,3 +11,27 @@ ClientProjectWithClientView {
         }
     }
 }
+
+ClientProjectWithReusableClientView {
+    id
+    name
+    client -> ClientImplicitCatchAllView
+}
+
+ClientProjectWithReusableParticipantsView {
+    id
+    name
+    participants -> ClientImplicitCatchAllView
+}
+
+input ClientProjectWithReusableClientInput {
+    id
+    name
+    client -> ClientPatchInput
+}
+
+input ClientProjectWithReusableParticipantsInput {
+    id
+    name
+    participants -> ClientPatchInput
+}

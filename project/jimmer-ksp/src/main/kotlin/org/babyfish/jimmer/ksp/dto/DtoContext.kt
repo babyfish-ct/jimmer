@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.symbol.KSFile
+import org.babyfish.jimmer.dto.compiler.DtoBundleLoader
 import org.babyfish.jimmer.dto.compiler.DtoFile
-import org.babyfish.jimmer.dto.compiler.OsFile
+import org.babyfish.jimmer.dto.compiler.PathDtoSource
 import java.io.File
+import java.io.IOException
 
-class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
+class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>, dtoBundleEnabled: Boolean) {
 
     val dtoFiles: List<DtoFile>
 
@@ -29,6 +31,13 @@ class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
                 }
             }
         }
+        if (dtoBundleEnabled) {
+            try {
+                dtoFiles += DtoBundleLoader.load(DtoContext::class.java.classLoader)
+            } catch (ex: IOException) {
+                throw DtoException("Failed to load DTO bundles: ${ex.message}", ex)
+            }
+        }
         this.dtoFiles = dtoFiles
     }
 
@@ -36,7 +45,7 @@ class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
         baseFile: File,
         dtoDirs: Collection<String>,
         dtoDirFileMap: MutableMap<String, File>
-    ) : String? {
+    ): String? {
         var projectDir: String? = null
         for (dtoDir in dtoDirs) {
             var subFile: File? = baseFile
@@ -55,9 +64,15 @@ class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
         return projectDir
     }
 
-    private fun collectDtoFiles(projectDir: String, dtoDir: String, file: File, paths: MutableList<String>, dtoFiles: MutableList<DtoFile>) {
+    private fun collectDtoFiles(
+        projectDir: String,
+        dtoDir: String,
+        file: File,
+        paths: MutableList<String>,
+        dtoFiles: MutableList<DtoFile>
+    ) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
-            dtoFiles += DtoFile(OsFile.of(file), projectDir, dtoDir, paths, file.name)
+            dtoFiles += DtoFile(PathDtoSource(file.toPath()), projectDir, dtoDir, paths, file.name)
         } else {
             val subFiles = file.listFiles()
             if (subFiles != null) {

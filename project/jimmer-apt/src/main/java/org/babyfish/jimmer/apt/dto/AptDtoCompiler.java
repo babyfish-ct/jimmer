@@ -51,6 +51,12 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
         return baseType.getSuperTypes();
     }
 
+    @Override
+    protected boolean isImmutableType(String qualifiedName) {
+        TypeElement typeElement = elements.getTypeElement(qualifiedName);
+        return typeElement != null && context.isImmutable(typeElement);
+    }
+
     @Nullable
     @Override
     protected ImmutableType getType(String qualifiedName) {

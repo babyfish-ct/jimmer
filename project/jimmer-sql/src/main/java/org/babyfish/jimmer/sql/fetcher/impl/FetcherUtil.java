@@ -180,40 +180,18 @@ public class FetcherUtil {
             FetcherSelection<?> selection,
             List<Object> fetchedList
     ) {
-        Map<ImmutableType, TypeGroup> groupMap = new LinkedHashMap<>();
-        Object[] arr = new Object[fetchedList.size()];
-        for (int i = 0; i < fetchedList.size(); i++) {
-            Object fetched = fetchedList.get(i);
-            if (fetched == null) {
-                continue;
-            }
-            TypeGroup group = groupMap.computeIfAbsent(
-                    ((ImmutableSpi) fetched).__type(),
-                    it -> new TypeGroup()
-            );
-            group.indices.add(i);
-            group.values.add(fetched);
-        }
-        for (Map.Entry<ImmutableType, TypeGroup> e : groupMap.entrySet()) {
-            TypeGroup group = e.getValue();
-            List<Object> producedList = Internal.produceList(
-                    e.getKey(),
-                    group.values,
-                    values -> {
-                        fetch(
-                                sqlClient,
-                                con,
-                                selection.getPath(),
-                                selection.getFetcher(),
-                                (List<DraftSpi>) values
-                        );
-                    }
-            );
-            for (int i = 0; i < producedList.size(); i++) {
-                arr[group.indices.get(i)] = producedList.get(i);
-            }
-        }
-        return Arrays.asList(arr);
+        return Internal.produceList(
+                fetchedList,
+                fetched -> ((ImmutableSpi) fetched).__type(),
+                values -> fetch(
+                        sqlClient,
+                        con,
+                        selection.getPath(),
+                        selection.getFetcher(),
+                        (List<DraftSpi>) values
+                ),
+                null
+        );
     }
 
     public static boolean requiresPostFetch(JSqlClientImplementor sqlClient, Fetcher<?> fetcher) {
@@ -249,13 +227,6 @@ public class FetcherUtil {
             }
         }
         return false;
-    }
-
-    private static class TypeGroup {
-
-        final List<Integer> indices = new ArrayList<>();
-
-        final List<Object> values = new ArrayList<>();
     }
 
     private static boolean hasReferenceFilter(ImmutableType type, JSqlClientImplementor sqlClient) {

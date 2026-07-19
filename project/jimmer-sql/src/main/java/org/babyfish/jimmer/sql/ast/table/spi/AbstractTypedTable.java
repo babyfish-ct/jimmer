@@ -7,15 +7,16 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AssociatedPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -316,6 +317,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
         if (raw != null) {
             return raw.inverseGetAssociatedId(prop);
+        }
+        ImmutableProp mappedBy = prop.getMappedBy();
+        if (mappedBy != null) {
+            return getAssociatedId(mappedBy);
         }
         Table<?> joinedTable = inverseJoin(prop);
         return (PropExpression<X>) PropExpressionImpl.of(joinedTable, joinedTable.getImmutableType().getIdProp(), true);
