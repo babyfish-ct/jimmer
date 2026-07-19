@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -511,6 +512,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public Reader<?> getReader(Class<?> type) {
         return sqlClient().getReader(type);
+    }
+
+    @Override
+    public Reader<?> getViewReader(DtoMetadata<?, ?> metadata) {
+        return sqlClient().getViewReader(metadata);
     }
 
     @Override

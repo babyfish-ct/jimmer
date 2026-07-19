@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
@@ -44,7 +45,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     private final PropExpression.Embedded<?> embeddedPropExpression;
 
+    @Nullable
     private final Fetcher<?> fetcher;
+
+    @Nullable
+    private final DtoMetadata<?, ?> dtoMetadata;
 
     @Nullable
     private final Function<?, ?> converter;
@@ -54,6 +59,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         this.table = table;
         this.embeddedPropExpression = null;
         this.fetcher = fetcher;
+        this.dtoMetadata = null;
         this.converter = null;
     }
 
@@ -62,6 +68,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         this.table = table;
         this.embeddedPropExpression = null;
         this.fetcher = fetcher;
+        this.dtoMetadata = null;
         this.converter = null;
     }
 
@@ -70,7 +77,20 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         this.table = table;
         this.fetcher = fetcher;
         this.embeddedPropExpression = null;
+        this.dtoMetadata = null;
         this.converter = converter;
+    }
+
+    public FetcherSelectionImpl(
+            Table<?> table,
+            DtoMetadata<?, T> metadata
+    ) {
+        this.path = null;
+        this.table = table;
+        this.fetcher = null;
+        this.embeddedPropExpression = null;
+        this.dtoMetadata = metadata;
+        this.converter = null;
     }
 
     public FetcherSelectionImpl(PropExpression.Embedded<T> embeddedPropExpression, Fetcher<T> fetcher) {
@@ -78,6 +98,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         this.table = ((PropExpressionImplementor<?>) embeddedPropExpression).getTable();
         this.fetcher = fetcher;
         this.embeddedPropExpression = embeddedPropExpression;
+        this.dtoMetadata = null;
         this.converter = null;
     }
 
@@ -90,7 +111,20 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         this.table = ((PropExpressionImplementor<?>) embeddedPropExpression).getTable();
         this.fetcher = fetcher;
         this.embeddedPropExpression = embeddedPropExpression;
+        this.dtoMetadata = null;
         this.converter = converter;
+    }
+
+    public FetcherSelectionImpl(
+            PropExpression.Embedded<?> embeddedPropExpression,
+            DtoMetadata<?, ?> metadata
+    ) {
+        this.path = null;
+        this.table = ((PropExpressionImplementor<?>) embeddedPropExpression).getTable();
+        this.fetcher = null;
+        this.embeddedPropExpression = embeddedPropExpression;
+        this.dtoMetadata = metadata;
+        this.converter = null;
     }
 
     public Table<?> getTable() {
@@ -109,13 +143,21 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     @Override
     public Fetcher<?> getFetcher() {
-        return fetcher;
+        DtoMetadata<?, ?> metadata = dtoMetadata;
+        return metadata != null ? metadata.getFetcher() : fetcher;
+    }
+
+    @Nullable
+    @Override
+    public DtoMetadata<?, ?> getDtoMetadata() {
+        return dtoMetadata;
     }
 
     @Nullable
     @Override
     public Function<?, ?> getConverter() {
-        return converter;
+        DtoMetadata<?, ?> metadata = dtoMetadata;
+        return metadata != null ? metadata.getConverter() : converter;
     }
 
     @Override
@@ -152,6 +194,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         if (tableImplementor.getPolymorphicDiscriminatorProp() != null) {
             visitor.visitTableReference(realTable, null, false);
         }
+        Fetcher<?> fetcher = getFetcher();
         acceptFields(visitor, realTable, fetcher);
         visitor.visitTableFetcher(realTable, fetcher);
     }
@@ -399,7 +442,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         .sql(Integer.toString(read.index(index)));
             }
         };
-        visitor.visit(fetcher);
+        visitor.visit(getFetcher());
     }
 
     private static Map<ImmutableType, Fetcher<?>> typeBranchFetcherMap(Fetcher<?> fetcher) {
@@ -453,7 +496,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     @Override
     public String toString() {
         return "FetcherSelectionImpl{" +
-                "fetcher=" + fetcher +
+                "fetcher=" + getFetcher() +
                 '}';
     }
 }

@@ -2,25 +2,19 @@ package org.babyfish.jimmer.sql.meta.impl;
 
 import org.babyfish.jimmer.sql.meta.SqlContext;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
 /*
  * Often there is only ONE key,
- * so ConcurrentHashMap is not cost-effective.
+ * so keep it outside the lazily created WeakHashMap.
  */
 public class SqlContextCache<T> {
 
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-
     private final Function<SqlContext, T> creator;
 
-    private SqlContext primaryKey;
+    private volatile SqlContext primaryKey;
 
     private T primaryValue;
 
@@ -37,52 +31,49 @@ public class SqlContextCache<T> {
             strategy = unwrapped;
         }
 
-        Lock lock;
-        T value;
-
-        (lock = readWriteLock.readLock()).lock();
-        try {
-            value = strategy.equals(primaryKey) ?
-                    primaryValue :
-                    otherMap != null ?
-                            otherMap.get(strategy) :
-                            null;
-        } finally {
-            lock.unlock();
+        SqlContext primaryKey = this.primaryKey;
+        if (strategy.equals(primaryKey)) {
+            return primaryValue;
         }
+        return getSlow(strategy);
+    }
 
-        if (value == null) {
-            (lock = readWriteLock.writeLock()).lock();
-            try {
-                Map<SqlContext, T> om = otherMap;
-                if (om != null && om.size() > 512) {
-                    otherMap = om = null;
-                }
-                value = strategy.equals(primaryKey) ?
-                        primaryValue :
-                        om != null ?
-                                om.get(strategy) :
-                                null;
-                if (value == null) {
-                    value = creator.apply(strategy);
-                    if (value == null) {
-                        throw new AssertionError("Internal bug: creator of MetaCache cannot return null");
-                    }
-                    if (primaryKey == null) {
-                        primaryKey = strategy;
-                        primaryValue = value;
-                    } else {
-                        if (om == null) {
-                            otherMap = om = new WeakHashMap<>();
-                        }
-                        om.put(strategy, value);
-                    }
-                }
-            } finally {
-                lock.unlock();
+    private synchronized T getSlow(SqlContext strategy) {
+        SqlContext primaryKey = this.primaryKey;
+        if (primaryKey == null) {
+            T value = createValue(strategy);
+            // Publish the value before the volatile key. A reader that sees
+            // the key is therefore guaranteed to see the value as well.
+            primaryValue = value;
+            this.primaryKey = strategy;
+            return value;
+        }
+        if (strategy.equals(primaryKey)) {
+            return primaryValue;
+        }
+        Map<SqlContext, T> otherMap = this.otherMap;
+        if (otherMap != null && otherMap.size() > 512) {
+            this.otherMap = otherMap = null;
+        }
+        if (otherMap != null) {
+            T value = otherMap.get(strategy);
+            if (value != null) {
+                return value;
             }
         }
+        T value = createValue(strategy);
+        if (otherMap == null) {
+            this.otherMap = otherMap = new WeakHashMap<>();
+        }
+        otherMap.put(strategy, value);
+        return value;
+    }
 
+    private T createValue(SqlContext strategy) {
+        T value = creator.apply(strategy);
+        if (value == null) {
+            throw new AssertionError("Internal bug: creator of MetaCache cannot return null");
+        }
         return value;
     }
 }

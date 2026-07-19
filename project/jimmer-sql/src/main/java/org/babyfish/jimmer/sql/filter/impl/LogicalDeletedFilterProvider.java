@@ -1,14 +1,12 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
@@ -16,15 +14,18 @@ import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedMap;
 
 public class LogicalDeletedFilterProvider {
 
     private final TypeCache<Filter<Props>> typeCache =
             new TypeCache<>(this::createTypeProvider, true);
 
-    private final StaticCache<ImmutableProp, Filter<Props>> propCache =
-            new StaticCache<>(this::createPropProvider, true);
+    private final PropCache<Filter<Props>> propCache =
+            new PropCache<>(this::createPropProvider, true);
 
     private final LogicalDeletedBehavior defaultBehavior;
 

@@ -32,10 +32,8 @@ public interface CacheLoader<K, V> {
 
 class ObjectCacheFetchers {
 
-    private static final ClassCache<Fetcher<?>> CACHE = new ClassCache<>(
-            ObjectCacheFetchers::create,
-            false
-    );
+    private static final ClassCache<Fetcher<?>> CACHE =
+            new ClassCache<>(ObjectCacheFetchers::create);
 
     @SuppressWarnings("unchecked")
     static <V> Fetcher<V> of(Class<V> type) {

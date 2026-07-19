@@ -431,7 +431,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             return raw.fetch(viewType);
         }
         DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
-        return new FetcherSelectionImpl<>(this, metadata.getFetcher(), metadata.getConverter());
+        return new FetcherSelectionImpl<>(this, metadata);
     }
 
     @Override

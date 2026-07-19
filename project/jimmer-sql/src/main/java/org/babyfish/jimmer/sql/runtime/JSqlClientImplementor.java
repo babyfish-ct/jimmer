@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
@@ -118,6 +119,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     DraftInterceptor<?, ?> getDraftInterceptor(ImmutableType type);
 
     Reader<?> getReader(Class<?> type);
+
+    Reader<?> getViewReader(DtoMetadata<?, ?> metadata);
 
     Reader<?> getReader(ImmutableType type);
 

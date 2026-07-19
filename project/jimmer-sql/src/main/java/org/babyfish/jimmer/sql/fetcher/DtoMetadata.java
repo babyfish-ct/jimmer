@@ -1,20 +1,27 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.Dto;
-import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.lang.Generics;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 import java.util.function.Function;
 
 public final class DtoMetadata<E, V> {
 
-    private static final ClassCache<DtoMetadata<?, ?>> cache =
-            new ClassCache<>(DtoMetadata::create, false);
+    private static final ClassValue<DtoMetadata<?, ?>> CACHE = new ClassValue<DtoMetadata<?, ?>>() {
+        @Override
+        protected DtoMetadata<?, ?> computeValue(@NotNull Class<?> type) {
+            return create(type);
+        }
+    };
+
+    @Nullable
+    private final Class<V> dtoType;
 
     private final Fetcher<E> fetcher;
 
@@ -26,15 +33,40 @@ public final class DtoMetadata<E, V> {
      * @param fetcher
      * @param converter
      */
-    public DtoMetadata(Fetcher<E> fetcher, Function<E, V> converter) {
-        this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
-        this.converter = Objects.requireNonNull(converter, "converter cannot be null");
+    public DtoMetadata(@NotNull Fetcher<E> fetcher, @NotNull Function<E, V> converter) {
+        this.dtoType = null;
+        this.fetcher = fetcher;
+        this.converter = converter;
     }
 
+    /**
+     * This constructor should not be invoked by developer,
+     * it is designed for code generator.
+     * @param dtoType
+     * @param fetcher
+     * @param converter
+     */
+    public DtoMetadata(
+            @NotNull Class<V> dtoType,
+            @NotNull Fetcher<E> fetcher,
+            @NotNull Function<E, V> converter
+    ) {
+        this.dtoType = dtoType;
+        this.fetcher = fetcher;
+        this.converter = converter;
+    }
+
+    @Nullable
+    public Class<V> getDtoType() {
+        return dtoType;
+    }
+
+    @NotNull
     public Fetcher<E> getFetcher() {
         return fetcher;
     }
 
+    @NotNull
     public Function<E, V> getConverter() {
         return converter;
     }
@@ -61,8 +93,9 @@ public final class DtoMetadata<E, V> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, V extends Dto<E>> DtoMetadata<E, V> of(Class<V> dtoType) {
-        return (DtoMetadata<E, V>) cache.get(dtoType);
+    @NotNull
+    public static <E, V extends Dto<E>> DtoMetadata<E, V> of(@NotNull Class<V> dtoType) {
+        return (DtoMetadata<E, V>) CACHE.get(dtoType);
     }
 
     private static DtoMetadata<?, ?> create(Class<?> dtoType) {
@@ -124,7 +157,6 @@ public final class DtoMetadata<E, V> {
                             "\""
             );
         }
-        TypeVariable<?>[] typeParameters = DtoMetadata.class.getTypeParameters();
         Type[] typeArguments =
                 Generics.getTypeArguments(metadataField.getGenericType(), DtoMetadata.class);
         if (typeArguments[0] != entityType) {
@@ -151,9 +183,17 @@ public final class DtoMetadata<E, V> {
         }
         metadataField.setAccessible(true);
         try {
-            return (DtoMetadata<?, ?>)metadataField.get(null);
+            DtoMetadata<?, ?> metadata = (DtoMetadata<?, ?>) metadataField.get(null);
+            return metadata.dtoType != null ?
+                    metadata :
+                    metadata.withDtoType(dtoType);
         } catch (IllegalAccessException ex) {
             throw new AssertionError("Internal bug", ex);
         }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private DtoMetadata<?, ?> withDtoType(Class<?> dtoType) {
+        return new DtoMetadata(dtoType, fetcher, converter);
     }
 }

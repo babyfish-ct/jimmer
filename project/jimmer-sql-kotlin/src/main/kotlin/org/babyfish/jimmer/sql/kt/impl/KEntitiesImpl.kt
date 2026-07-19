@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt.impl
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
-import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
@@ -12,8 +11,8 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
+import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.*
@@ -21,7 +20,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection
-import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
@@ -162,7 +160,6 @@ internal class KEntitiesImpl(
         block: (SortDsl<*>.() -> Unit)?
     ): List<V> {
         val fetcher = metadata.getFetcher()
-        val converter = metadata.getConverter() as Function<*, V>
         val type = fetcher.immutableType
         val entities = javaEntities as EntitiesImpl
         val query = MutableRootQueryImpl<Table<*>>(entities.sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT)
@@ -175,13 +172,7 @@ internal class KEntitiesImpl(
             dsl.block()
             dsl.applyTo(query)
         }
-        return query.select(
-            if (fetcher !== null) {
-                FetcherSelectionImpl(table, fetcher, converter)
-            } else {
-                table as Selection<V>
-            }
-        ).execute(entities.con)
+        return query.select(FetcherSelectionImpl(table, metadata)).execute(entities.con)
     }
 
     @Suppress("UNCHECKED_CAST")
