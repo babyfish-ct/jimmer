@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.event.binlog;
 
-import org.babyfish.jimmer.json.codec.Node;
+import org.babyfish.jimmer.jackson.codec.Node;
 
 /**
  * Accepts row-change events from an external CDC/binlog/message-queue integration

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
-import org.babyfish.jimmer.json.jackson.v3.NodeV3;
+import org.babyfish.jimmer.jackson.v3.NodeV3;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;

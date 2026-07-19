@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.cache.redis.quarkus;
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.value.GetExArgs;
 import io.quarkus.redis.datasource.value.ValueCommands;
-import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
@@ -35,7 +35,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
-            @NotNull JsonCodec jsonCodec,
+            @NotNull JsonCodec<?> jsonCodec,
             @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             @NotNull Duration duration,
             int randomPercent,
@@ -80,12 +80,12 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
     }
 
     @NotNull
-    public static <K, V> Builder<K, V> forObject(ImmutableType type, @NotNull JsonCodec jsonCodec) {
+    public static <K, V> Builder<K, V> forObject(ImmutableType type, @NotNull JsonCodec<?> jsonCodec) {
         return new Builder<>(type, null, jsonCodec);
     }
 
     @NotNull
-    public static <K, V> Builder<K, V> forProp(ImmutableProp prop, @NotNull JsonCodec jsonCodec) {
+    public static <K, V> Builder<K, V> forProp(ImmutableProp prop, @NotNull JsonCodec<?> jsonCodec) {
         return new Builder<>(null, prop, jsonCodec);
     }
 
@@ -93,7 +93,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
 
         private RedisDataSource redisDataSource;
 
-        protected Builder(ImmutableType type, ImmutableProp prop, JsonCodec jsonCodec) {
+        protected Builder(ImmutableType type, ImmutableProp prop, JsonCodec<?> jsonCodec) {
             super(type, prop, jsonCodec);
         }
 

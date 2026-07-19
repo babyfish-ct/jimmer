@@ -10,9 +10,7 @@ dependencies {
     annotationProcessor(libs.spring.boot.configurationProcessor)
 
     testAnnotationProcessor(projects.jimmerApt)
-    testAnnotationProcessor(projects.jimmerJackson2)
     kspTest(projects.jimmerKsp)
-    kspTest(projects.jimmerJackson2)
 
     testImplementation(projects.jimmerSqlKotlin)
     testImplementation(libs.spring.web)

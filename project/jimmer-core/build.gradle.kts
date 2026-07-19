@@ -9,6 +9,7 @@ dependencies {
     api(libs.kotlin.reflect)
     implementation(libs.javax.validation.api)
     implementation(libs.kotlin.stdlib)
+    compileOnly(libs.bundles.jackson)
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -37,14 +38,12 @@ testing {
                 implementation(libs.javax.validation.api)
                 compileOnly(libs.lombok)
                 annotationProcessor(projects.jimmerApt)
-                annotationProcessor(projects.jimmerJackson2)
                 annotationProcessor(libs.lombok)
                 annotationProcessor(libs.mapstruct.processor)
             }
         }
         val test by getting(JvmTestSuite::class) {
             dependencies {
-                implementation(projects.jimmerJackson2)
                 implementation(libs.jackson2.databind)
                 implementation(libs.jackson2.datatype.jsr310)
             }
@@ -56,8 +55,6 @@ testing {
             }
             dependencies {
                 implementation(project())
-                implementation(projects.jimmerJackson3)
-                implementation(libs.jackson.annotations)
                 implementation(libs.jackson3.databind)
             }
         }

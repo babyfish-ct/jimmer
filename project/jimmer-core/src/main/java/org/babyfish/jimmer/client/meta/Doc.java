@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.meta;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -9,6 +10,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = Doc.SerializerV2.class)
+@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = Doc.DeserializerV2.class)
+@tools.jackson.databind.annotation.JsonSerialize(using = Doc.SerializerV3.class)
+@tools.jackson.databind.annotation.JsonDeserialize(using = Doc.DeserializerV3.class)
 public class Doc {
 
     private final String value;
@@ -21,6 +26,7 @@ public class Doc {
 
     private String toString;
 
+    @JsonCreator
     public Doc(
             String value,
             Map<String, String> parameterValueMap,
@@ -282,4 +288,135 @@ public class Doc {
         }
     }
 
+    static class SerializerV2 extends com.fasterxml.jackson.databind.JsonSerializer<Doc> {
+
+        @Override
+        public void serialize(Doc doc,
+                              com.fasterxml.jackson.core.JsonGenerator gen,
+                              com.fasterxml.jackson.databind.SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            if (doc.getValue() != null) {
+                provider.defaultSerializeField("value", doc.getValue(), gen);
+            }
+            if (!doc.getParameterValueMap().isEmpty()) {
+                provider.defaultSerializeField("parameters", doc.getParameterValueMap(), gen);
+            }
+            if (doc.getReturnValue() != null) {
+                provider.defaultSerializeField("return", doc.getReturnValue(), gen);
+            }
+            if (!doc.getPropertyValueMap().isEmpty()) {
+                provider.defaultSerializeField("properties", doc.getPropertyValueMap(), gen);
+            }
+            gen.writeEndObject();
+        }
     }
+
+    static class DeserializerV2 extends com.fasterxml.jackson.databind.JsonDeserializer<Doc> {
+
+        private static final com.fasterxml.jackson.databind.JavaType DOC_MAP_TYPE =
+                com.fasterxml.jackson.databind.type.MapType.construct(
+                        LinkedHashMap.class,
+                        null,
+                        null,
+                        null,
+                        com.fasterxml.jackson.databind.type.SimpleType.constructUnsafe(String.class),
+                        com.fasterxml.jackson.databind.type.SimpleType.constructUnsafe(String.class)
+                );
+
+        @Override
+        public Doc deserialize(com.fasterxml.jackson.core.JsonParser jp,
+                               com.fasterxml.jackson.databind.DeserializationContext ctx) throws IOException {
+
+            String value;
+            Map<String, String> parameters;
+            String returnValue;
+            Map<String, String> properties;
+
+            com.fasterxml.jackson.databind.JsonNode jsonNode = jp.getCodec().readTree(jp);
+            if (jsonNode.has("value")) {
+                value = jsonNode.get("value").asText();
+            } else {
+                value = null;
+            }
+            if (jsonNode.has("parameters")) {
+                parameters = Collections.unmodifiableMap(ctx.readTreeAsValue(jsonNode.get("parameters"), DOC_MAP_TYPE));
+            } else {
+                parameters = Collections.emptyMap();
+            }
+            if (jsonNode.has("return")) {
+                returnValue = jsonNode.get("return").asText();
+            } else {
+                returnValue = null;
+            }
+            if (jsonNode.has("properties")) {
+                properties = Collections.unmodifiableMap(ctx.readTreeAsValue(jsonNode.get("properties"), DOC_MAP_TYPE));
+            } else {
+                properties = Collections.emptyMap();
+            }
+
+            return new Doc(value, parameters, returnValue, properties);
+        }
+    }
+
+    static class SerializerV3 extends tools.jackson.databind.ValueSerializer<Doc> {
+
+        @Override
+        public void serialize(Doc doc,
+                              tools.jackson.core.JsonGenerator gen,
+                              tools.jackson.databind.SerializationContext ctx) {
+            gen.writeStartObject();
+            if (doc.getValue() != null) {
+                ctx.defaultSerializeProperty("value", doc.getValue(), gen);
+            }
+            if (!doc.getParameterValueMap().isEmpty()) {
+                ctx.defaultSerializeProperty("parameters", doc.getParameterValueMap(), gen);
+            }
+            if (doc.getReturnValue() != null) {
+                ctx.defaultSerializeProperty("return", doc.getReturnValue(), gen);
+            }
+            if (!doc.getPropertyValueMap().isEmpty()) {
+                ctx.defaultSerializeProperty("properties", doc.getPropertyValueMap(), gen);
+            }
+            gen.writeEndObject();
+        }
+    }
+
+    static class DeserializerV3 extends tools.jackson.databind.ValueDeserializer<Doc> {
+
+        @Override
+        public Doc deserialize(tools.jackson.core.JsonParser jp,
+                               tools.jackson.databind.DeserializationContext ctx) {
+
+            String value;
+            Map<String, String> parameters;
+            String returnValue;
+            Map<String, String> properties;
+
+            tools.jackson.databind.JsonNode jsonNode = ctx.readTree(jp);
+            if (jsonNode.has("value")) {
+                value = jsonNode.get("value").asText();
+            } else {
+                value = null;
+            }
+            if (jsonNode.has("parameters")) {
+                parameters = Collections.unmodifiableMap(ctx.readTreeAsValue(jsonNode.get("parameters"),
+                        ctx.getTypeFactory().constructMapType(LinkedHashMap.class, String.class, String.class)));
+            } else {
+                parameters = Collections.emptyMap();
+            }
+            if (jsonNode.has("return")) {
+                returnValue = jsonNode.get("return").asText();
+            } else {
+                returnValue = null;
+            }
+            if (jsonNode.has("properties")) {
+                properties = Collections.unmodifiableMap(ctx.readTreeAsValue(jsonNode.get("properties"),
+                        ctx.getTypeFactory().constructMapType(LinkedHashMap.class, String.class, String.class)));
+            } else {
+                properties = Collections.emptyMap();
+            }
+
+            return new Doc(value, parameters, returnValue, properties);
+        }
+    }
+}

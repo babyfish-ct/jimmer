@@ -13,11 +13,8 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(testFixtures(projects.jimmerSql))
     kspTest(projects.jimmerKsp)
-    kspTest(projects.jimmerJackson2)
 
-    testImplementation(projects.jimmerJackson2)
     testImplementation(libs.bundles.jackson)
-    testRuntimeOnly(projects.jimmerJackson3)
     testImplementation(libs.h2)
     testImplementation(libs.mysql.connector.java)
     testImplementation(libs.postgresql)

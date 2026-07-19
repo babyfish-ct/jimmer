@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.cache
 
-import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
@@ -63,8 +63,8 @@ class LogicalDeletedCacheEvictTest : AbstractQueryTest() {
         connectAndExpect({
             _sqlClient.binLog.accept(
                 "administrator",
-                defaultCodec().treeReader().read("""{"id": 1, "deleted": false}"""),
-                defaultCodec().treeReader().read("""{"id": 1, "deleted": true}""")
+                jsonCodec().treeReader().read("""{"id": 1, "deleted": false}"""),
+                jsonCodec().treeReader().read("""{"id": 1, "deleted": true}""")
             )
         }) {
             sql(
@@ -93,8 +93,8 @@ class LogicalDeletedCacheEvictTest : AbstractQueryTest() {
         connectAndExpect({
             _sqlClient.binLog.accept(
                 "role",
-                defaultCodec().treeReader().read("""{"id": 100, "deleted": false}"""),
-                defaultCodec().treeReader().read("""{"id": 100, "deleted": true}""")
+                jsonCodec().treeReader().read("""{"id": 100, "deleted": false}"""),
+                jsonCodec().treeReader().read("""{"id": 100, "deleted": true}""")
             )
         }) {
             sql(
@@ -125,8 +125,8 @@ class LogicalDeletedCacheEvictTest : AbstractQueryTest() {
         connectAndExpect({
             _sqlClient.binLog.accept(
                 "permission",
-                defaultCodec().treeReader().read("""{"id":1000, "deleted":false, "role_id": 100}"""),
-                defaultCodec().treeReader().read("""{"id": 1000, "deleted": true}""")
+                jsonCodec().treeReader().read("""{"id":1000, "deleted":false, "role_id": 100}"""),
+                jsonCodec().treeReader().read("""{"id": 1000, "deleted": true}""")
             )
         }) {
         }
@@ -150,8 +150,8 @@ class LogicalDeletedCacheEvictTest : AbstractQueryTest() {
         connectAndExpect({
             _sqlClient.binLog.accept(
                 "permission",
-                defaultCodec().treeReader().read("""{"id":1000, "deleted":false, "role_id": 100}"""),
-                defaultCodec().treeReader().read("""{"id":1000, "deleted":false, "role_id": 200}""")
+                jsonCodec().treeReader().read("""{"id":1000, "deleted":false, "role_id": 100}"""),
+                jsonCodec().treeReader().read("""{"id":1000, "deleted":false, "role_id": 200}""")
             )
         }) {
         }

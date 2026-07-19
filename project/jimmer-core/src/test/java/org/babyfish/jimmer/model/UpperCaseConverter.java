@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.model;
 
-import org.babyfish.jimmer.json.Converter;
+import org.babyfish.jimmer.jackson.Converter;
 import org.jetbrains.annotations.NotNull;
 
 public class UpperCaseConverter implements Converter<String, String> {

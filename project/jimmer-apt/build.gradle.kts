@@ -5,10 +5,10 @@ plugins {
 dependencies {
     implementation(projects.jimmerMapstructApt)
     implementation(projects.jimmerCore)
-    implementation(projects.jimmerJackson2)
     implementation(projects.jimmerDtoCompiler)
 
     implementation(libs.spring.core)
     implementation(libs.intellij.annotations)
     implementation(libs.javapoet)
+    implementation(libs.jackson2.databind)
 }

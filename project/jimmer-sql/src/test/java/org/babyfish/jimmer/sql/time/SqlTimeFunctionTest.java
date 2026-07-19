@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.time;
 
-import org.babyfish.jimmer.json.jackson.v2.JsonCodecV2;
+import org.babyfish.jimmer.jackson.v2.JsonCodecV2;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;

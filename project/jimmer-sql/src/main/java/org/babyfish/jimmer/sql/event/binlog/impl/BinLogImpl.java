@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.babyfish.jimmer.json.codec.Node;
+import org.babyfish.jimmer.jackson.codec.Node;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;

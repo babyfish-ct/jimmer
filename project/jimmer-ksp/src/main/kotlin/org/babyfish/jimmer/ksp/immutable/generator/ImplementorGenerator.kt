@@ -2,7 +2,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.impl.util.StringUtil
-import org.babyfish.jimmer.json.ImmutableSerializationException
+import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -29,7 +29,7 @@ class ImplementorGenerator(
                     addGetFun(PropId::class)
                     addGetFun(String::class)
                     addTypeFun()
-                    addDummyPropForNoImmutableSerializationSupportError()
+                    addDummyPropForNoImmutableModuleError()
                     addCompanionObject()
                 }
                 .build()
@@ -43,7 +43,7 @@ class ImplementorGenerator(
                 .addMember(
                     CodeBlock
                         .builder()
-                        .add("%S", "dummyPropForSerializationError__")
+                        .add("%S", "dummyPropForJacksonError__")
                         .apply {
                             for (prop in type.propsOrderById) {
                                 add(", %S", prop.name)
@@ -100,14 +100,14 @@ class ImplementorGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addDummyPropForNoImmutableSerializationSupportError() {
+    private fun TypeSpec.Builder.addDummyPropForNoImmutableModuleError() {
         addProperty(
             PropertySpec
-                .builder("dummyPropForSerializationError__", INT)
+                .builder("dummyPropForJacksonError__", INT)
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addStatement("throw %T()", ImmutableSerializationException::class)
+                        .addStatement("throw %T()", ImmutableModuleRequiredException::class)
                         .build()
                 )
                 .build()

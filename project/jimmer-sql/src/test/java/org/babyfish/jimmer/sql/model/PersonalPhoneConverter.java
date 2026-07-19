@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.json.Converter;
+import org.babyfish.jimmer.jackson.Converter;
 import org.jspecify.annotations.NonNull;
 
 public class PersonalPhoneConverter implements Converter<String, String> {
