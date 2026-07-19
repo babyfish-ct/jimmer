@@ -16,8 +16,6 @@ javaxValidation = "2.0.1.Final"
 jetbrainsAnnotations = "24.0.0"
 jspecify = "1.0.0"
 kafka = "0.10.0.0"
-kotlin = "2.1.20"
-kotlinxSerialization = "1.8.1"
 kotlinpoet = "2.2.0"
 ksp = "2.1.20-2.0.0"
 lombok = "1.18.38"
@@ -88,8 +86,6 @@ kafka-connect-api = { group = "org.apache.kafka", name = "connect-api", version.
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test" }
-kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
 kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
@@ -142,4 +138,3 @@ jackson = ["jackson-annotations", "jackson3-databind", "jackson3-module-kotlin",
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
