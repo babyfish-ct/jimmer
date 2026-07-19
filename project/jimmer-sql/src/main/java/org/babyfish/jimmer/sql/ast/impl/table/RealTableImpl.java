@@ -949,6 +949,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             boolean idViewAllowed
     ) {
         TableImpl<?> owner = (TableImpl<?>) this.owner;
+        ImmutableProp joinProp = owner.joinProp;
         QueryRenderContext queryRenderContext = builder.getQueryRenderContext();
         BaseTableOwner baseTableOwner = owner.getBaseTableOwner();
         BaseQueryReadSupport readSupport =
@@ -964,10 +965,15 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         ) ?
                         queryRenderContext.getBaseQueryReadSupport() :
                         null;
-        ImmutableProp joinProp = owner.joinProp;
+        boolean rawIdSelection = prop.isId() &&
+                joinProp != null &&
+                !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+                (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient()));
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        if (readSupport == null && (owner.joinedTypeMainTableType() != null ||
-                joinProp == null && owner.isJoinedTypeBranchRoot() && owner.isTreated())) {
+        if (!(rawIdSelection && !owner.isInverse) &&
+                readSupport == null &&
+                (owner.joinedTypeMainTableType() != null ||
+                        joinProp == null && owner.isJoinedTypeBranchRoot() && owner.isTreated())) {
             renderJoinedTypeBranchSelection(
                     prop,
                     builder,
@@ -978,8 +984,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             );
             return;
         }
-        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || idViewAllowed && TableUtils.isRawIdAllowed(owner, builder.sqlClient()))) {
+        if (rawIdSelection) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {
                 middleTable = joinProp.getStorage(strategy);

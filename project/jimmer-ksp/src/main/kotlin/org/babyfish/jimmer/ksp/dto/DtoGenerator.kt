@@ -117,7 +117,7 @@ class DtoGenerator private constructor(
         }
         if (codeGenerator != null) {
             codeGenerator.createNewFile(
-                Dependencies(false, *allFiles.toTypedArray()),
+                Dependencies(true, *allFiles.toTypedArray()),
                 root.dtoType.packageName,
                 dtoType.name!!
             ).use {
@@ -189,7 +189,7 @@ class DtoGenerator private constructor(
         }
         if (codeGenerator != null) {
             codeGenerator.createNewFile(
-                Dependencies(false, *allFiles.toTypedArray()),
+                Dependencies(true, *allFiles.toTypedArray()),
                 root.dtoType.packageName,
                 dtoType.name!!
             ).use {
@@ -817,7 +817,7 @@ class DtoGenerator private constructor(
 
     private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!prop.baseProp.isId) {
-            if (prop.targetType !== null) {
+            if (prop.target !== null) {
                 if (prop.isRecursive) {
                     add("`%L*`", prop.baseProp.name)
                     if (prop.config == null) {
@@ -1730,7 +1730,7 @@ class DtoGenerator private constructor(
                                 val tailProp = dtoProp.toTailProp()
                                 var p: DtoProp<ImmutableType, ImmutableProp>? = dtoProp
                                 while (p != null) {
-                                    if (p !== tailProp || p.getTargetType() != null) {
+                                    if (p !== tailProp || p.target != null) {
                                         newStack.add(p.getBaseProp())
                                     }
                                     p = p.getNextProp()
@@ -1774,9 +1774,8 @@ class DtoGenerator private constructor(
     private fun FunSpec.Builder.addPredicateOperation(prop: DtoProp<ImmutableType, ImmutableProp>) {
         val propName = prop.name
         val tailProp = prop.toTailProp()
-        val targetType = tailProp.targetType
-        if (targetType !== null) {
-            if (targetType.baseType.isEntity) {
+        if (tailProp.target != null) {
+            if (tailProp.baseProp.isAssociation(true)) {
                 addStatement("this.%L?.let { it.applyTo(args.child()) }", propName)
             } else {
                 addStatement("this.%L?.let { it.applyTo(args.applier) }", propName)
@@ -1953,11 +1952,12 @@ class DtoGenerator private constructor(
                             addConverterLoading(prop, false)
                             add(")")
                         }
-                    } else if (withConverters && tailProp.targetType != null) {
+                    } else if (withConverters && tailProp.target != null) {
                         if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
-                            if (tailProp.targetType!!.polymorphism !== null) {
+                            val targetTypeRef = tailProp.targetTypeRef
+                            if (targetTypeRef !== null || tailProp.targetType!!.polymorphism !== null) {
                                 add(
                                     ",\n%T.%L<%T, %L>(%T.METADATA.converter)",
                                     DTO_PROP_ACCESSOR,
@@ -1990,7 +1990,13 @@ class DtoGenerator private constructor(
                             indent()
                             add(
                                 "\nit.%L()",
-                                if (tailBaseProp.targetType!!.isEntity) "toEntity" else "toImmutable"
+                                if (targetTypeRef !== null) {
+                                    "toImmutable"
+                                } else if (tailBaseProp.targetType!!.isEntity) {
+                                    "toEntity"
+                                } else {
+                                    "toImmutable"
+                                }
                             )
                             unindent()
                             add("\n}")
@@ -2212,6 +2218,9 @@ class DtoGenerator private constructor(
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
         val tailProp = prop.toTailProp()
+        tailProp.targetTypeRef?.let {
+            return ClassName.bestGuess(it.qualifiedName)
+        }
         val targetType = tailProp.targetType
         if (targetType !== null) {
             if (tailProp.isRecursive && !targetType.isFocusedRecursion) {

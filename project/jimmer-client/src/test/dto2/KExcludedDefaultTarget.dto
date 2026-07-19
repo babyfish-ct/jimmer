@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.client.kotlin.model.KExcludedDefaultTarget
+    -> package org.babyfish.jimmer.client.kotlin.model.dto.filter
+
+import org.babyfish.jimmer.client.kotlin.model.KAuthor
+
+IgnoredView {
+    illegalProp
+}
+
+KAuthorFromFilteredFile for KAuthor {
+    id
+}

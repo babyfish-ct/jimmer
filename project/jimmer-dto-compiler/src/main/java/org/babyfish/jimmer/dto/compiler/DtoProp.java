@@ -35,7 +35,7 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
 
     boolean isFlat();
 
-    boolean isFunc(String ... funcNames);
+    boolean isFunc(String... funcNames);
 
     @Nullable
     String getAlias();
@@ -44,7 +44,19 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     PropConfig<P> getConfig();
 
     @Nullable
-    DtoType<T, P> getTargetType();
+    DtoPropTarget<T, P> getTarget();
+
+    @Nullable
+    default DtoType<T, P> getTargetType() {
+        DtoPropTarget<T, P> target = getTarget();
+        return target instanceof DtoType<?, ?> ? (DtoType<T, P>) target : null;
+    }
+
+    @Nullable
+    default DtoTypeRef<T, P> getTargetTypeRef() {
+        DtoPropTarget<T, P> target = getTarget();
+        return target instanceof DtoTypeRef<?, ?> ? (DtoTypeRef<T, P>) target : null;
+    }
 
     @Nullable
     EnumType getEnumType();

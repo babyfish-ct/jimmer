@@ -41,6 +41,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Set<String> inheritedPropAliases;
 
+    final List<DtoFragmentUse<T, P>> includedFragments;
+
     private DtoType<T, P> dtoType;
 
     private AliasPattern currentAliasGroup;
@@ -98,6 +100,15 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.negativePropAliasMap = new LinkedHashMap<>();
         this.negativePropAliasTokens = new ArrayList<>();
         this.inheritedPropAliases = inheritedPropAliases;
+        if (body.includes.isEmpty()) {
+            this.includedFragments = Collections.emptyList();
+        } else {
+            List<DtoFragmentUse<T, P>> includedFragments = new ArrayList<>(body.includes.size());
+            for (DtoParser.IncludeContext include : body.includes) {
+                includedFragments.add(ctx.resolveFragment(include, baseType));
+            }
+            this.includedFragments = Collections.unmodifiableList(includedFragments);
+        }
         this.doc = doc;
         this.modifiers = Collections.unmodifiableSet(modifiers);
         if (annotations.isEmpty()) {
@@ -648,6 +659,13 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return dtoType;
     }
 
+    Map<String, AbstractProp> buildFragment(DtoType<T, P> ownerType) {
+        dtoType = ownerType;
+        Map<String, AbstractProp> propMap = resolveDeclaredProps();
+        validateUnusedNegativePropTokens();
+        return propMap;
+    }
+
     private DtoPolymorphism<T, P> buildPolymorphism() {
         DtoParser.TypesBlockContext block = typesBlock;
         if (block == null) {
@@ -872,7 +890,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private T resolveTypeBranchType(DtoParser.TypeBranchContext branch) {
-        String qualifiedName = ctx.resolve(branch.targetType);
+        String qualifiedName = ctx.resolveImmutableType(branch.targetType);
         T targetType = ctx.getType(qualifiedName);
         if (targetType == null) {
             throw ctx.exception(
@@ -984,16 +1002,35 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             return this.declaredProps;
         }
         Map<String, AbstractProp> declaredPropMap = new LinkedHashMap<>();
+        for (DtoFragmentUse<T, P> use : includedFragments) {
+            mergeFragmentProps(
+                    declaredPropMap,
+                    use.fragment.resolve(dtoType, modifiers),
+                    use
+            );
+        }
+        mergeFragmentProps(declaredPropMap, resolveLocalDeclaredProps(), null);
+        for (Map.Entry<String, Boolean> e : negativePropAliasMap.entrySet()) {
+            if (declaredPropMap.remove(e.getKey()) != null ||
+                    inheritedPropAliases.contains(e.getKey()) ||
+                    autoPropMap.containsKey(e.getKey())) {
+                e.setValue(true);
+            }
+        }
+        return this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
+    }
+
+    private Map<String, AbstractProp> resolveLocalDeclaredProps() {
+        Map<String, AbstractProp> declaredPropMap = new LinkedHashMap<>();
         for (DtoPropBuilder<T, P> builder : autoPropMap.values()) {
-            if (isExcluded(builder.getAlias()) ||
-                    inheritedPropAliases.contains(builder.getAlias()) ||
+            if (inheritedPropAliases.contains(builder.getAlias()) ||
                     positivePropMap.containsKey(builder.getBaseProp())) {
                 continue;
             }
             addProps(builder, declaredPropMap);
         }
         for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
-            if (isExcluded(builder.getAlias()) || declaredPropMap.containsKey(builder.getAlias())) {
+            if (declaredPropMap.containsKey(builder.getAlias())) {
                 continue;
             }
             addProps(builder, declaredPropMap);
@@ -1011,9 +1048,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     );
                 }
                 AbstractProp flatProp = flatProp(head, deeperProp, null, true);
-                if (isExcluded(flatProp.getAlias())) {
-                    continue;
-                }
                 if (declaredPropMap.put(flatProp.getAlias(), flatProp) != null) {
                     throw ctx.exception(
                             flatProp.getAliasLine(),
@@ -1025,7 +1059,29 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 }
             }
         }
-        return this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
+        return declaredPropMap;
+    }
+
+    private void mergeFragmentProps(
+            Map<String, AbstractProp> outMap,
+            Map<String, AbstractProp> props,
+            DtoFragmentUse<T, P> use
+    ) {
+        for (AbstractProp prop : props.values()) {
+            if (outMap.put(prop.getAlias(), prop) != null) {
+                int line = use != null ?
+                        use.ast.fragmentType.start.getLine() :
+                        prop.getAliasLine();
+                int col = use != null ?
+                        use.ast.fragmentType.start.getCharPositionInLine() :
+                        prop.getAliasColumn();
+                throw ctx.exception(
+                        line,
+                        col,
+                        "Duplicated property alias \"" + prop.getAlias() + "\""
+                );
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -1120,14 +1176,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 nullGuardProp,
                 targetType
         );
-    }
-
-    private boolean isExcluded(String alias) {
-        if (!negativePropAliasMap.containsKey(alias)) {
-            return false;
-        }
-        negativePropAliasMap.put(alias, true);
-        return true;
     }
 
     private void validateUnusedNegativePropTokens() {

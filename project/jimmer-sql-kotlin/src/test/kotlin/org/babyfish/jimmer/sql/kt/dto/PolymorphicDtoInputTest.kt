@@ -16,13 +16,55 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KClient
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.KPerson
 import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.*
-import org.babyfish.jimmer.sql.kt.model.inheritance.singletable.dto.KClientCustomJsonSubTypesInput
 import kotlin.test.*
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KClient as KInstantiableClient
 
 class PolymorphicDtoInputTest {
 
     private val mapper = ObjectMapper().registerKotlinModule()
+
+    @Test
+    fun testReusablePolymorphicAssociationInput() {
+        val input = KClientProjectWithReusableClientInput(
+            id = 20L,
+            name = "Project patch",
+            client = KClientPatchInput.Organization(
+                id = 10L,
+                name = "Org patch",
+                taxCode = "T-10"
+            )
+        )
+
+        val project = input.toImmutable()
+        val client = assertIs<KOrganization>(project.client)
+        assertEquals("T-10", client.taxCode)
+    }
+
+    @Test
+    fun testReusablePolymorphicListAssociationInput() {
+        val participants: List<KClientPatchInput> = listOf(
+            KClientPatchInput.Organization(
+                id = 10L,
+                name = "Org patch",
+                taxCode = "T-10"
+            ),
+            KClientPatchInput.Default(
+                id = 11L,
+                name = "Default patch"
+            )
+        )
+        val input = KClientProjectWithReusableParticipantsInput(
+            id = 20L,
+            name = "Project patch",
+            participants = participants
+        )
+
+        val project = input.toImmutable()
+        assertEquals(2, project.participants.size)
+        val organization = assertIs<KOrganization>(project.participants[0])
+        assertEquals("T-10", organization.taxCode)
+        assertEquals(KClient::class.java, (project.participants[1] as ImmutableSpi).__type().javaClass)
+    }
 
     @Test
     fun testImplicitDefaultInputCreatesRootEntityShape() {

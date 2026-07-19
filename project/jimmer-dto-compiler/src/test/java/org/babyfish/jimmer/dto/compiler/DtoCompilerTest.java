@@ -18,6 +18,395 @@ import java.util.stream.Collectors;
 public class DtoCompilerTest {
 
     @Test
+    public void testTargetResolutionIsCachedPerCompilation() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Shared.dto",
+                "BookView for Book { id }\n" +
+                        "BookSummary for Book { name }\n" +
+                        "fragment BookProps for Book { edition }"
+        );
+        int[] filterCount = new int[1];
+        DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> {
+                    filterCount[0]++;
+                    return true;
+                }
+        );
+        Assertions.assertEquals(1, filterCount[0]);
+        Assertions.assertEquals(1, compiler.immutableTypeLookupCount);
+        Assertions.assertEquals(1, compiler.typeLookupCount);
+    }
+
+    @Test
+    public void testIllegalExplicitDefaultTarget() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.compiler(
+                        "Shared.dto",
+                        "export Missing\nMissingView { id }"
+                ).compile(null)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Illegal target type \"org.babyfish.jimmer.sql.model.Missing\""
+        ));
+        Assertions.assertFalse(ex.getMessage().contains("must specify its target type by 'for'"));
+    }
+
+    @Test
+    public void testExcludedDefaultTargetDoesNotExcludeFile() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "IgnoredBookView { illegalProp }\n" +
+                        "AuthorView for Author { id firstName }"
+        );
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap = DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> targetTypeName.equals(MyDtoCompiler.AUTHOR_TYPE.getQualifiedName())
+        );
+        List<DtoType<BaseType, BaseProp>> dtoTypes = resultMap.get(compiler);
+        Assertions.assertEquals(1, dtoTypes.size());
+        Assertions.assertSame(MyDtoCompiler.AUTHOR_TYPE, dtoTypes.get(0).getBaseType());
+        Assertions.assertEquals("AuthorView", dtoTypes.get(0).getName());
+    }
+
+    @Test
+    public void testFileWithoutActiveDeclarationsIsNotCompiled() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "IgnoredBookView { illegalProp }"
+        );
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap = DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> false
+        );
+        Assertions.assertTrue(resultMap.get(compiler).isEmpty());
+    }
+
+    @Test
+    public void testExcludedDeclarationInUnboundFileIsNotCompiled() {
+        MyDtoCompiler compiler = MyDtoCompiler.compilerInPackage(
+                "Shared.dto",
+                "package org.example.api\n" +
+                        "import org.babyfish.jimmer.sql.model.*\n" +
+                        "IgnoredBookView for Book { illegalProp }\n" +
+                        "AuthorView for Author { id firstName }",
+                Arrays.asList("org", "example", "source")
+        );
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap = DtoCompiler.compileAll(
+                Collections.singletonList(compiler),
+                targetTypeName -> targetTypeName.equals(MyDtoCompiler.AUTHOR_TYPE.getQualifiedName())
+        );
+        List<DtoType<BaseType, BaseProp>> dtoTypes = resultMap.get(compiler);
+        Assertions.assertEquals(1, dtoTypes.size());
+        Assertions.assertEquals("org.example.api.AuthorView", dtoTypes.get(0).getQualifiedName());
+    }
+
+    @Test
+    public void testActiveDtoCannotReuseExcludedSourceDto() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "StoreView for BookStore { id name }\n" +
+                        "BookView { id store -> StoreView }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoCompiler.compileAll(
+                        Collections.singletonList(compiler),
+                        targetTypeName -> targetTypeName.equals(MyDtoCompiler.BOOK_TYPE.getQualifiedName())
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Source DTO type \"org.babyfish.jimmer.sql.model.dto.StoreView\" " +
+                        "is not active in the current processor compilation"
+        ));
+    }
+
+    @Test
+    public void testActiveDtoCannotIncludeExcludedSourceFragment() {
+        MyDtoCompiler compiler = MyDtoCompiler.compiler(
+                "Book.dto",
+                "fragment StoreProps for BookStore { id name }\n" +
+                        "BookView { #include(StoreProps) id }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoCompiler.compileAll(
+                        Collections.singletonList(compiler),
+                        targetTypeName -> targetTypeName.equals(MyDtoCompiler.BOOK_TYPE.getQualifiedName())
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Source fragment \"org.babyfish.jimmer.sql.model.dto.StoreProps\" " +
+                        "is not active in the current processor compilation"
+        ));
+    }
+
+    @Test
+    public void testDeclarationTargetOverride() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { id name }\n" +
+                        "StoreView for BookStore { id name website }"
+        );
+        Assertions.assertEquals(2, dtoTypes.size());
+        Assertions.assertSame(MyDtoCompiler.BOOK_TYPE, dtoTypes.get(0).getBaseType());
+        Assertions.assertSame(MyDtoCompiler.BOOK_STORE_TYPE, dtoTypes.get(1).getBaseType());
+        assertContentEquals(
+                "StoreView {--->id, --->name, --->website}",
+                dtoTypes.get(1).toString()
+        );
+        Assertions.assertEquals(
+                "org.babyfish.jimmer.sql.model.dto.StoreView",
+                dtoTypes.get(1).getQualifiedName()
+        );
+    }
+
+    @Test
+    public void testUnboundDtoFile() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler
+                .compilerInPackage(
+                        "Shared.dto",
+                        "package org.example.api\n" +
+                                "import org.babyfish.jimmer.sql.model.*\n" +
+                                "BookView for Book { id name store -> StoreView }\n" +
+                                "StoreView for BookStore { id name }",
+                        Arrays.asList("org", "example", "source")
+                )
+                .compile(null);
+        Assertions.assertEquals(2, dtoTypes.size());
+        Assertions.assertEquals("org.example.api.BookView", dtoTypes.get(0).getQualifiedName());
+        Assertions.assertEquals("org.example.api.StoreView", dtoTypes.get(1).getQualifiedName());
+        DtoTypeLinker.link(dtoTypes);
+        Assertions.assertSame(
+                dtoTypes.get(1),
+                dtoTypes.get(0).getDtoProps().get(2).getTargetTypeRef().getSourceType()
+        );
+    }
+
+    @Test
+    public void testUnboundDtoFileRequiresTarget() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.compiler("Shared.dto", "BookView { id }").compile(null)
+        );
+        Assertions.assertTrue(ex.getMessage().contains("must specify its target type by 'for'"));
+    }
+
+    @Test
+    public void testAmbiguousWildcardImport() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler
+                        .compilerInPackage(
+                                "Shared.dto",
+                                "import org.babyfish.jimmer.sql.model.*\n" +
+                                        "import org.example.alt.*\n" +
+                                        "BookView for Book { id }",
+                                Arrays.asList("org", "example", "source")
+                        )
+                        .compile(null)
+        );
+        Assertions.assertTrue(ex.getMessage().contains("Ambiguous type name \"Book\""));
+    }
+
+    @Test
+    public void testFragments() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Identified { id }\n" +
+                        "fragment Summary { #include(Identified) name }\n" +
+                        "BookView { #include(Summary) edition price -name }"
+        );
+        assertContentEquals(
+                "BookView {--->id, --->edition, --->price}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentMacroAliasNegativeAndCustomProperty() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Summary {\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    name as title\n" +
+                        "    rank: Int\n" +
+                        "}\n" +
+                        "BookView { #include(Summary) }"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->id, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->name as title, " +
+                        "--->rank: Int" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testBodyContributorsCanBeInterleaved() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Extra { rank: Int }\n" +
+                        "BookView {\n" +
+                        "    name\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    #include(Extra)\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->id, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->name, " +
+                        "--->rank: Int" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentFlatAndFold() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment StoreKey {\n" +
+                        "    flat(store) {\n" +
+                        "        fold(key) { name }\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "BookView { #include(StoreKey) }"
+        );
+        assertContentEquals(
+                "BookView {" +
+                        "--->@optional fold(storeKey): {" +
+                        "--->--->@optional store.name" +
+                        "--->}" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentRecursiveAssociationConfiguration() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "fragment Children {\n" +
+                        "    !batch(4)\n" +
+                        "    !orderBy(name desc)\n" +
+                        "    childNodes*\n" +
+                        "}\n" +
+                        "TreeNodeView { name #include(Children) }"
+        );
+        assertContentEquals(
+                "TreeNodeView {" +
+                        "--->@optional !orderBy(name desc) !batch(4) childNodes: ..., " +
+                        "--->name" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentDeclaredForSuperTypeCanBeIncludedBySubtype() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.client(
+                "fragment ClientName { name }\n" +
+                        "OrganizationView for Organization { #include(ClientName) taxCode }"
+        );
+        assertContentEquals(
+                "OrganizationView {--->name, --->taxCode}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFragmentReusableAssociation() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "fragment Authors {\n" +
+                        "    !batch(8)\n" +
+                        "    authors as contributors -> AuthorView\n" +
+                        "}\n" +
+                        "BookView { #include(Authors) }\n" +
+                        "AuthorView for Author { id firstName }"
+        );
+        DtoTypeLinker.link(dtoTypes);
+        DtoProp<BaseType, BaseProp> prop = dtoTypes.get(0).getDtoProps().get(0);
+        Assertions.assertEquals("contributors", prop.getName());
+        Assertions.assertSame(dtoTypes.get(1), prop.getTargetTypeRef().getSourceType());
+        Assertions.assertEquals(8, prop.getConfig().getBatch());
+    }
+
+    @Test
+    public void testSpecificationFragment() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book(
+                "fragment Filters { like/i(name) ge(price) }\n" +
+                        "specification BookSpecification { #include(Filters) }"
+        ).get(0);
+        Assertions.assertTrue(dtoType.getModifiers().contains(DtoModifier.SPECIFICATION));
+        Assertions.assertTrue(dtoType.getDtoProps().get(0).isFunc("like"));
+        Assertions.assertTrue(dtoType.getDtoProps().get(1).isFunc("ge"));
+    }
+
+    @Test
+    public void testFragmentConflictCannotBeExcluded() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book(
+                        "fragment A { id }\n" +
+                                "fragment B { id }\n" +
+                                "BookView { #include(A) #include(B) -id }"
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains("Duplicated property alias \"id\""));
+    }
+
+    @Test
+    public void testFragmentCycle() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book(
+                        "fragment A { #include(B) id }\n" +
+                                "fragment B { #include(A) name }\n" +
+                                "BookView { #include(A) }"
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains("Fragment inclusion cycle:"));
+        Assertions.assertTrue(ex.getMessage().contains("A ->"));
+    }
+
+    @Test
+    public void testCrossFileFragment() {
+        MyDtoCompiler fragments = MyDtoCompiler.compiler(
+                "BookFragments.dto",
+                "fragment Summary for Book { id name }"
+        );
+        MyDtoCompiler views = MyDtoCompiler.compiler(
+                "Book.dto",
+                "BookView { #include(Summary) edition }"
+        );
+        Map<MyDtoCompiler, BaseType> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(fragments, null);
+        compilerMap.put(views, MyDtoCompiler.BOOK_TYPE);
+        List<DtoType<BaseType, BaseProp>> dtoTypes = DtoCompiler.compileAll(compilerMap).get(views);
+        assertContentEquals(
+                "BookView {--->id, --->name, --->edition}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testTypesInFragment() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.client(
+                        "fragment Illegal { #types { default { id } } }\n" +
+                                "ClientView { #include(Illegal) }"
+                )
+        );
+        Assertions.assertTrue(ex.getMessage().contains("#types is not supported inside fragment"));
+    }
+
+    @Test
     public void testSimpleByAlias() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import org.babyfish.jimmer.sql.model.{Book as B}" +
@@ -1111,7 +1500,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : There is no property \"city\" in " +
+                "file:/User/test/Book.dto:2 : There is no property \"city\" in " +
                         "\"org.babyfish.jimmer.sql.model.Book\" or its super types\n" +
                         "    city\n" +
                         "    ^",
@@ -1129,7 +1518,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : extraneous input '<' expecting {'allScalars', 'allReferences'}\n" +
+                "file:/User/test/Book.dto:2 : extraneous input '<' expecting {'allScalars', 'allReferences'}\n" +
                         "    #<allScalars>\n" +
                         "     ^",
                 ex.getMessage()
@@ -1248,7 +1637,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:1 : The modifier 'sealed' can only be used for polymorphic DTOs with #types\n" +
+                "file:/User/test/Client.dto:1 : The modifier 'sealed' can only be used for polymorphic DTOs with #types\n" +
                         "sealed ClientView {\n" +
                         "^",
                 ex.getMessage()
@@ -1364,7 +1753,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #types\n" +
+                "file:/User/test/Client.dto:3 : Polymorphic specification DTOs are not supported by #types\n" +
                         "    #types {\n" +
                         "    ^",
                 ex.getMessage()
@@ -1389,7 +1778,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:5 : default branch cannot be used together with #exhaustive\n" +
+                "file:/User/test/Client.dto:5 : default branch cannot be used together with #exhaustive\n" +
                         "        default {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1440,7 +1829,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:4 : Illegal type branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
+                "file:/User/test/Client.dto:4 : Illegal type branch \"org.babyfish.jimmer.sql.model.Client\", it is not instantiable\n" +
                         "        Client {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1465,7 +1854,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:7 : Duplicated polymorphic DTO branch class name \"Person\"\n" +
+                "file:/User/test/Client.dto:7 : Duplicated polymorphic DTO branch class name \"Person\"\n" +
                         "        Person {\n" +
                         "        ^",
                 ex.getMessage()
@@ -1487,7 +1876,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:5 : Duplicated property alias \"name\" between polymorphic DTO base and branch\n" +
+                "file:/User/test/Client.dto:5 : Duplicated property alias \"name\" between polymorphic DTO base and branch\n" +
                         "            firstName as name\n" +
                         "                         ^",
                 ex.getMessage()
@@ -1514,7 +1903,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                "file:/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
                         "            #types {\n" +
                         "            ^",
                 ex.getMessage()
@@ -1541,7 +1930,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
+                "file:/User/test/Client.dto:6 : Nested #types block is not supported inside polymorphic DTO branch\n" +
                         "            #types {\n" +
                         "            ^",
                 ex.getMessage()
@@ -1559,7 +1948,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : Duplicated property alias \"id\"\n" +
+                "file:/User/test/Book.dto:3 : Duplicated property alias \"id\"\n" +
                         "    name as id\n" +
                         "            ^",
                 ex.getMessage()
@@ -1580,7 +1969,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:5 : Duplicated property alias \"name\"\n" +
+                "file:/User/test/Book.dto:5 : Duplicated property alias \"name\"\n" +
                         "        name\n" +
                         "        ^",
                 ex.getMessage()
@@ -1599,7 +1988,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:4 : Duplicated property alias \"myName\"\n" +
+                "file:/User/test/Book.dto:4 : Duplicated property alias \"myName\"\n" +
                         "    myName: String\n" +
                         "    ^",
                 ex.getMessage()
@@ -1619,7 +2008,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:5 : Base property \"entity::authors\" cannot be referenced too many times\n" +
+                "file:/User/test/Book.dto:5 : Base property \"entity::authors\" cannot be referenced too many times\n" +
                         "    id(authors) as authorIds\n" +
                         "       ^",
                 ex.getMessage()
@@ -1636,7 +2025,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal property \"store\", the child body is required\n" +
+                "file:/User/test/Book.dto:2 : Illegal property \"store\", the child body is required\n" +
                         "    flat(store)\n" +
                         "              ^",
                 ex.getMessage()
@@ -1655,7 +2044,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal property \"store\", " +
+                "file:/User/test/Book.dto:2 : Illegal property \"store\", " +
                         "child body cannot be specified by it is id view property\n" +
                         "    id(store) {\n" +
                         "              ^",
@@ -1673,7 +2062,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Cannot call the function \"id\" " +
+                "file:/User/test/Book.dto:2 : Cannot call the function \"id\" " +
                         "because the current prop \"entity::name\" is not entity level association property\n" +
                         "    id(name)\n" +
                         "    ^",
@@ -1691,7 +2080,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Cannot call the function \"flat\" because " +
+                "file:/User/test/Book.dto:2 : Cannot call the function \"flat\" because " +
                         "the current prop \"entity::authors\" is list and " +
                         "the current dto type is not specification\n" +
                         "    flat(authors)\n" +
@@ -1711,7 +2100,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : Illegal required modifier '!' for non-id property, " +
+                "file:/User/test/Book.dto:3 : Illegal required modifier '!' for non-id property, " +
                         "the declared type is neither unsafe nor specification\n" +
                         "    id(store)!\n" +
                         "             ^",
@@ -1729,7 +2118,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
+                "file:/User/test/Book.dto:2 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
                         "    store*\n" +
                         "         ^",
                 ex.getMessage()
@@ -1747,7 +2136,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
+                "file:/User/test/Book.dto:3 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
                         "    flat(store)*\n" +
                         "               ^",
                 ex.getMessage()
@@ -1767,7 +2156,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : The alias cannot be specified when the function `flat` is used\n" +
+                "file:/User/test/Book.dto:3 : The alias cannot be specified when the function `flat` is used\n" +
                         "    flat(store) as parent {\n" +
                         "                   ^",
                 ex.getMessage()
@@ -1785,7 +2174,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:3 : There is no property alias \"tag\" that is need to be removed\n" +
+                "file:/User/test/Book.dto:3 : There is no property alias \"tag\" that is need to be removed\n" +
                         "-tag\n" +
                         " ^",
                 ex.getMessage()
@@ -1802,7 +2191,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the declaring dto type is not input\n" +
+                "file:/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the declaring dto type is not input\n" +
                         "dynamic name\n" +
                         "^",
                 ex.getMessage()
@@ -1819,7 +2208,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"name\" is not nullable\n" +
+                "file:/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"name\" is not nullable\n" +
                         "dynamic name\n" +
                         "^",
                 ex.getMessage()
@@ -1836,7 +2225,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"storeId\" is not nullable\n" +
+                "file:/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"storeId\" is not nullable\n" +
                         "dynamic id(store)!\n" +
                         "^",
                 ex.getMessage()
@@ -1856,11 +2245,306 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/TreeNode.dto:3 : Illegal symbol \"*\", the child type of recursive property \"childNodes\" cannot not specified\n" +
+                "file:/User/test/TreeNode.dto:3 : Illegal symbol \"*\", the child type of recursive property \"childNodes\" cannot not specified\n" +
                         "childNodes* {\n" +
                         "            ^",
                 ex.getMessage()
         );
+    }
+
+    @Test
+    public void testReusableViewInSameFile() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeNodeSummary { id name }\n" +
+                        "TreeNodeView { id parent -> TreeNodeSummary }"
+        );
+        DtoTypeLinker.link(dtoTypes);
+        Assertions.assertEquals(
+                "[TreeNodeSummary {id, name}, TreeNodeView {id, parent -> " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeSummary}]",
+                dtoTypes.toString()
+        );
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(1).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(0), ref.getSourceType());
+    }
+
+    @Test
+    public void testReusableViewAcrossFiles() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book("BookView { id store -> BookStoreView }"));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("BookStoreView { id name }"));
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
+    }
+
+    @Test
+    public void testUnresolvedReusableView() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { store -> MissingStoreView }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Cannot resolve reusable DTO type " +
+                        "\"org.babyfish.jimmer.sql.model.dto.MissingStoreView\""
+        ));
+    }
+
+    @Test
+    public void testDuplicatedReusableViewNameAcrossFiles() {
+        MyDtoCompiler firstCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "First.dto",
+                "package org.example.dto\nBookView for Book { id }"
+        );
+        MyDtoCompiler secondCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "Second.dto",
+                "package org.example.dto\nBookView for Book { name }"
+        );
+        Map<MyDtoCompiler, BaseType> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(firstCompiler, null);
+        compilerMap.put(secondCompiler, null);
+        List<DtoType<BaseType, BaseProp>> dtoTypes = DtoCompiler
+                .compileAll(compilerMap)
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Duplicated DTO type name \"org.example.dto.BookView\""
+        ));
+    }
+
+    @Test
+    public void testAmbiguousReusableViewWildcardImport() {
+        MyDtoCompiler firstCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "First.dto",
+                "package org.example.first\nStoreView for BookStore { id }"
+        );
+        MyDtoCompiler secondCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "Second.dto",
+                "package org.example.second\nStoreView for BookStore { name }"
+        );
+        MyDtoCompiler bookCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "Book.dto",
+                "package org.example.book\n" +
+                        "import org.example.first.*\n" +
+                        "import org.example.second.*\n" +
+                        "BookView for Book { store -> StoreView }"
+        );
+        Map<MyDtoCompiler, BaseType> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(firstCompiler, null);
+        compilerMap.put(secondCompiler, null);
+        compilerMap.put(bookCompiler, null);
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoCompiler.compileAll(compilerMap)
+        );
+        Assertions.assertTrue(ex.getMessage().contains("Ambiguous type name \"StoreView\""));
+    }
+
+    @Test
+    public void testReusableAssociationNullability() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    store -> StoreView\n" +
+                        "    authors -> AuthorView\n" +
+                        "}\n" +
+                        "StoreView for BookStore { id }\n" +
+                        "AuthorView for Author { id }"
+        );
+        Assertions.assertTrue(dtoTypes.get(0).getDtoProps().get(0).isBaseNullable());
+        Assertions.assertFalse(dtoTypes.get(0).getDtoProps().get(1).isBaseNullable());
+    }
+
+    @Test
+    public void testReusableViewByWildcardImport() {
+        MyDtoCompiler storeCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "StoreViews.dto",
+                "package org.example.store.dto\n" +
+                        "StoreView for BookStore { id name }"
+        );
+        MyDtoCompiler bookCompiler = MyDtoCompiler.sourceOnlyCompiler(
+                "BookViews.dto",
+                "package org.example.book.dto\n" +
+                        "import org.example.store.dto.*\n" +
+                        "BookView for Book { id store -> StoreView }"
+        );
+        Map<MyDtoCompiler, BaseType> compilerMap = new LinkedHashMap<>();
+        compilerMap.put(storeCompiler, null);
+        compilerMap.put(bookCompiler, null);
+        Map<MyDtoCompiler, List<DtoType<BaseType, BaseProp>>> resultMap =
+                DtoCompiler.compileAll(compilerMap);
+        List<DtoType<BaseType, BaseProp>> dtoTypes = resultMap
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = resultMap
+                .get(bookCompiler)
+                .get(0)
+                .getDtoProps()
+                .get(1)
+                .getTargetTypeRef();
+        Assertions.assertSame(resultMap.get(storeCompiler).get(0), ref.getSourceType());
+    }
+
+    @Test
+    public void testReusableViewFromDependency() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { id store -> dependency.BookStoreView }"
+        );
+        BaseType storeType = MyDtoCompiler.bookStore("BookStoreView { id }").get(0).getBaseType();
+        DtoTypeLinker.link(
+                dtoTypes,
+                qualifiedName ->
+                        qualifiedName.equals("dependency.BookStoreView") ?
+                                new DtoTypeInfo<>(storeType, DtoTypeKind.VIEW) :
+                                null
+        );
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertNull(ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.VIEW, ref.getTypeInfo().getKind());
+        Assertions.assertSame(storeType, ref.getTypeInfo().getBaseType());
+    }
+
+    @Test
+    public void testReusableViewFromDependencyIsResolvedOnce() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView { " +
+                        "creator -> dependency.UserView " +
+                        "editor -> dependency.UserView " +
+                        "}"
+        );
+        int[] resolveCount = new int[1];
+        DtoTypeLinker.link(
+                dtoTypes,
+                qualifiedName -> {
+                    resolveCount[0]++;
+                    return new DtoTypeInfo<>(MyDtoCompiler.USER_TYPE, DtoTypeKind.VIEW);
+                }
+        );
+        Assertions.assertEquals(1, resolveCount[0]);
+    }
+
+    @Test
+    public void testReusableInputAcrossFiles() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book("input BookInput { id store -> BookStoreInput }"));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("input BookStoreInput { id name }"));
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.INPUT, ref.getTypeInfo().getKind());
+    }
+
+    @Test
+    public void testReusableSpecificationAcrossFiles() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book(
+                "specification BookSpecification for Book { name store -> BookStoreSpecification }"
+        ));
+        dtoTypes.addAll(MyDtoCompiler.bookStore(
+                "specification BookStoreSpecification for BookStore { like/i(name) }"
+        ));
+        DtoTypeLinker.link(dtoTypes);
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(1).getTargetTypeRef();
+        Assertions.assertSame(dtoTypes.get(1), ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.SPECIFICATION, ref.getTypeInfo().getKind());
+    }
+
+    @Test
+    public void testReusableSpecificationFromDependency() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "specification BookSpecification { store -> dependency.BookStoreSpecification }"
+        );
+        BaseType storeType = MyDtoCompiler.bookStore(
+                "specification BookStoreSpecification { name }"
+        ).get(0).getBaseType();
+        DtoTypeLinker.link(
+                dtoTypes,
+                qualifiedName ->
+                        qualifiedName.equals("dependency.BookStoreSpecification") ?
+                                new DtoTypeInfo<>(storeType, DtoTypeKind.SPECIFICATION) :
+                                null
+        );
+        DtoTypeRef<BaseType, BaseProp> ref = dtoTypes.get(0).getDtoProps().get(0).getTargetTypeRef();
+        Assertions.assertNull(ref.getSourceType());
+        Assertions.assertEquals(DtoTypeKind.SPECIFICATION, ref.getTypeInfo().getKind());
+        Assertions.assertSame(storeType, ref.getTypeInfo().getBaseType());
+    }
+
+    @Test
+    public void testIllegalReusableSpecificationKind() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book(
+                "specification BookSpecification { store -> BookStoreView }"
+        ));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("BookStoreView { id name }"));
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Reusable specification property requires a specification DTO, but " +
+                        "\"org.babyfish.jimmer.sql.model.dto.BookStoreView\" is a view DTO"
+        ));
+    }
+
+    @Test
+    public void testIllegalReusableInputKind() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.book("input BookInput { id store -> BookStoreView }"));
+        dtoTypes.addAll(MyDtoCompiler.bookStore("BookStoreView { id name }"));
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Reusable input property requires an input DTO, but " +
+                        "\"org.babyfish.jimmer.sql.model.dto.BookStoreView\" is a view DTO"
+        ));
+    }
+
+    @Test
+    public void testIllegalReusableViewEntityType() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "WrongView { id }\n" +
+                        "BookView { id store -> WrongView }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "The association target type \"org.babyfish.jimmer.sql.model.BookStore\" " +
+                        "does not match the reusable DTO entity type \"org.babyfish.jimmer.sql.model.Book\""
+        ));
+    }
+
+    @Test
+    public void testReusableViewCycle() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeNodeViewA { id parent -> TreeNodeViewB }\n" +
+                        "TreeNodeViewB { id parent -> TreeNodeViewA }"
+        );
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(dtoTypes)
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "Circular reusable DTO reference: " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeViewA.parent -> " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeViewB.parent -> " +
+                        "org.babyfish.jimmer.sql.model.dto.TreeNodeViewA"
+        ));
     }
 
     private static void assertContentEquals(String expected, String actual) {
@@ -2073,6 +2757,11 @@ public class DtoCompilerTest {
                 new BasePropImpl("books", () -> TYPE_MAP.get("Book"), false, true)
         );
 
+        private static final BaseTypeImpl ALT_BOOK_TYPE = new BaseTypeImpl(
+                "org.example.alt.Book",
+                new BasePropImpl("id")
+        );
+
         private static final BaseTypeImpl AUTHOR_TYPE = new BaseTypeImpl(
                 "org.babyfish.jimmer.sql.model.Author",
                 new BasePropImpl("id"),
@@ -2138,16 +2827,72 @@ public class DtoCompilerTest {
                 new BasePropImpl("swiftCode")
         );
 
+        private final boolean externalTypesVisible;
+
+        private int immutableTypeLookupCount;
+
+        private int typeLookupCount;
+
         private MyDtoCompiler(DtoFile dtoFile) throws IOException {
+            this(dtoFile, true);
+        }
+
+        private MyDtoCompiler(DtoFile dtoFile, boolean externalTypesVisible) throws IOException {
             super(dtoFile);
+            this.externalTypesVisible = externalTypesVisible;
+        }
+
+        static MyDtoCompiler compiler(String fileName, String code) {
+            return compilerInPackage(
+                    fileName,
+                    code,
+                    Arrays.asList("org", "babyfish", "jimmer", "sql", "model")
+            );
+        }
+
+        static MyDtoCompiler compilerInPackage(
+                String fileName,
+                String code,
+                List<String> packageParts
+        ) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                mockedSource("file:/User/test/" + fileName, code),
+                                "project",
+                                "src/main/dto",
+                                packageParts,
+                                fileName
+                        )
+                );
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+            }
+        }
+
+        static MyDtoCompiler sourceOnlyCompiler(String fileName, String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                mockedSource("file:/User/test/" + fileName, code),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                fileName
+                        ),
+                        false
+                );
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+            }
         }
 
         static List<DtoType<BaseType, BaseProp>> book(String code) {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/Book.dto",
+                                mockedSource(
+                                        "file:/User/test/Book.dto",
                                         code
                                 ),
                                 "project",
@@ -2166,8 +2911,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/TreeNode.dto",
+                                mockedSource(
+                                        "file:/User/test/TreeNode.dto",
                                         code
                                 ),
                                 "project",
@@ -2182,12 +2927,32 @@ public class DtoCompilerTest {
             }
         }
 
+        static List<DtoType<BaseType, BaseProp>> bookStore(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                mockedSource(
+                                        "file:/User/test/BookStore.dto",
+                                        code
+                                ),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "BookStore.dto"
+                        )
+                ).compile(BOOK_STORE_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
+        }
+
         static List<DtoType<BaseType, BaseProp>> client(String code) {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/Client.dto",
+                                mockedSource(
+                                        "file:/User/test/Client.dto",
                                         code
                                 ),
                                 "project",
@@ -2206,8 +2971,8 @@ public class DtoCompilerTest {
             try {
                 return new MyDtoCompiler(
                         new DtoFile(
-                                new MockedOsFile(
-                                        "/User/test/Payment.dto",
+                                mockedSource(
+                                        "file:/User/test/Payment.dto",
                                         code
                                 ),
                                 "project",
@@ -2230,12 +2995,24 @@ public class DtoCompilerTest {
         @Nullable
         @Override
         protected BaseType getType(String qualifiedName) {
+            typeLookupCount++;
             for (BaseType type : TYPE_MAP.values()) {
                 if (type.getQualifiedName().equals(qualifiedName)) {
                     return type;
                 }
             }
             return null;
+        }
+
+        @Override
+        protected boolean isImmutableType(String qualifiedName) {
+            immutableTypeLookupCount++;
+            for (BaseType type : TYPE_MAP.values()) {
+                if (type.getQualifiedName().equals(qualifiedName)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -2310,6 +3087,9 @@ public class DtoCompilerTest {
 
         @Override
         protected Integer getGenericTypeCount(String qualifiedName) {
+            if (!externalTypesVisible) {
+                return null;
+            }
             switch (qualifiedName) {
                 case "java.lang.Comparable":
                 case "java.util.SequencedSet":
@@ -2322,6 +3102,7 @@ public class DtoCompilerTest {
         static {
             TYPE_MAP.put("Book", BOOK_TYPE);
             TYPE_MAP.put("BookStore", BOOK_STORE_TYPE);
+            TYPE_MAP.put("AltBook", ALT_BOOK_TYPE);
             TYPE_MAP.put("Author", AUTHOR_TYPE);
             TYPE_MAP.put("Chapter", CHAPTER_TYPE);
             TYPE_MAP.put("TreeNode", TREE_NODE_TYPE);
@@ -2345,25 +3126,17 @@ public class DtoCompilerTest {
         }
     }
 
-    private static class MockedOsFile implements OsFile {
+    private static DtoSource mockedSource(String name, String content) {
+        return new DtoSource() {
+            @Override
+            public String getName() {
+                return name;
+            }
 
-        private final String absolutePath;
-
-        private final String content;
-
-        private MockedOsFile(String absolutePath, String content) {
-            this.absolutePath = absolutePath;
-            this.content = content;
-        }
-
-        @Override
-        public String getAbsolutePath() {
-            return absolutePath;
-        }
-
-        @Override
-        public Reader openReader() throws IOException {
-            return new StringReader(content);
-        }
+            @Override
+            public Reader openReader() {
+                return new StringReader(content);
+            }
+        };
     }
 }

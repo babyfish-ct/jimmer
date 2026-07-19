@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProjectTable;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,7 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.babyfish.jimmer.sql.common.Constants.*;
+import static org.babyfish.jimmer.sql.common.Constants.graphQLInActionId3;
+import static org.babyfish.jimmer.sql.common.Constants.manningId;
 
 public class ValueGetterTest extends AbstractQueryTest {
 
@@ -48,6 +51,21 @@ public class ValueGetterTest extends AbstractQueryTest {
         Assertions.assertEquals(
                 Arrays.asList(manningId),
                 getters.stream().map(it -> it.get(manningId)).collect(Collectors.toList())
+        );
+    }
+
+    @Test
+    public void testInverseAssociatedIdExpression() {
+        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient();
+        OrganizationProjectTable table = OrganizationProjectTable.$;
+        List<ValueGetter> getters = ValueGetter.valueGetters(
+                sqlClient,
+                table.inverseGetAssociatedId(OrganizationProps.PROJECTS.unwrap()),
+                null
+        );
+        Assertions.assertEquals(
+                "[ORGANIZATION_ID]",
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
     }
 

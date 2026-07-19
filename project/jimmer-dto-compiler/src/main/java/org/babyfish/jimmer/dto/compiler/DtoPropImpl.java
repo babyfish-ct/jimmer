@@ -33,7 +33,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Nullable
     private final String doc;
 
-    private final DtoType<T, P> targetType;
+    private final DtoPropTarget<T, P> target;
 
     private final EnumType enumType;
 
@@ -61,7 +61,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable PropConfig<P> config,
             List<Anno> annotations,
             @Nullable String doc,
-            @Nullable DtoType<T, P> targetType,
+            @Nullable DtoPropTarget<T, P> target,
             @Nullable EnumType enumType,
             Mandatory mandatory,
             DtoModifier inputModifier,
@@ -82,7 +82,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.aliasLine = aliasLine;
         this.aliasCol = aliasCol;
         this.config = config;
-        this.targetType = targetType;
+        this.target = target;
         this.enumType = enumType;
         this.mandatory = mandatory;
         this.inputModifier = inputModifier;
@@ -116,7 +116,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.config = next.getConfig();
         this.annotations = next.getAnnotations();
         this.doc = next.getDoc();
-        this.targetType = next.getTargetType();
+        this.target = next.getTarget();
         this.enumType = next.getEnumType();
         if (head.isNullable() && next.getMandatory() != Mandatory.REQUIRED) {
             this.mandatory = Mandatory.OPTIONAL;
@@ -156,7 +156,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.aliasLine = original.getAliasLine();
         this.aliasCol = original.getAliasColumn();
         this.config = original.getConfig();
-        this.targetType = targetType;
+        this.target = targetType;
         this.enumType = null;
         this.mandatory = original.getMandatory();
         this.inputModifier = original.getInputModifier();
@@ -182,9 +182,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.aliasCol = original.getAliasColumn();
         this.config = original.getConfig();
         if (original.getTargetType() == null) {
-            this.targetType = null;
+            this.target = null;
         } else {
-            this.targetType = original.getTargetType().recursiveOne(original);
+            this.target = original.getTargetType().recursiveOne(original);
         }
         this.enumType = original.getEnumType();
         this.mandatory = original.getMandatory();
@@ -331,8 +331,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     @Override
     @Nullable
-    public DtoType<T, P> getTargetType() {
-        return targetType;
+    public DtoPropTarget<T, P> getTarget() {
+        return target;
     }
 
     @Override
@@ -383,6 +383,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (alias != null && !alias.equals(tail.getBaseProp().getName())) {
             builder.append(" as ").append(alias);
         }
+        DtoType<T, P> targetType = getTargetType();
         if (targetType != null) {
             builder.append(": ");
             if (!recursive || targetType.isFocusedRecursion()) {
@@ -391,6 +392,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             if (recursive) {
                 builder.append("...");
             }
+        } else if (target instanceof DtoTypeRef<?, ?>) {
+            builder.append(" -> ").append(((DtoTypeRef<?, ?>) target).getQualifiedName());
         }
         return builder.toString();
     }

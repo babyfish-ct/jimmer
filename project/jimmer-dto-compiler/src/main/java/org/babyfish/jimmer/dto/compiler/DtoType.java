@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class DtoType<T extends BaseType, P extends BaseProp> {
+public class DtoType<T extends BaseType, P extends BaseProp> implements DtoPropTarget<T, P> {
 
     private final T baseType;
 
@@ -98,6 +98,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     public String getPackageName() {
         return packageName;
+    }
+
+    @Nullable
+    public String getQualifiedName() {
+        return name != null ? packageName + '.' + name : null;
     }
 
     @Nullable
@@ -376,7 +381,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         }
     }
 
-    private static String defaultPackageName(String entityPackageName) {
+    static String defaultPackageName(String entityPackageName) {
         if (entityPackageName == null || entityPackageName.isEmpty()) {
             return "dto";
         }

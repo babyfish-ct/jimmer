@@ -1,14 +1,7 @@
 package org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable;
 
-import org.babyfish.jimmer.sql.Column;
-import org.babyfish.jimmer.sql.Discriminator;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.GeneratedValue;
-import org.babyfish.jimmer.sql.GenerationType;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.Inheritance;
-import org.babyfish.jimmer.sql.InheritanceType;
-import org.babyfish.jimmer.sql.Table;
+import org.babyfish.jimmer.sql.*;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 @Table(name = "ML_JOINED_ASSET")
@@ -24,4 +17,9 @@ public interface Asset {
     String type();
 
     String name();
+
+    @Nullable
+    @ManyToOne
+    @JoinColumn(name = "MANAGER_ID")
+    VehicleOwner manager();
 }

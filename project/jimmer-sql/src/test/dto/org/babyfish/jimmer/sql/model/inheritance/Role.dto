@@ -1,0 +1,8 @@
+fragment NamedEntityScalars for NamedEntity {
+    #allScalars
+}
+
+RoleWithMappedSuperclassFragmentView for Role {
+    id
+    #include(NamedEntityScalars)
+}

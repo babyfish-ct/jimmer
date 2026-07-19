@@ -2,6 +2,50 @@ import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.configurations.AuthorFilter
 import testpkg.{Named, TagProvider}
+import org.babyfish.jimmer.sql.kt.model.classic.author.dto.{ReusableAuthorInput, ReusableAuthorSpecification, ReusableAuthorView}
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.{ReusableBookStoreInput, ReusableBookStoreSpecification, ReusableBookStoreView}
+
+fragment ReusableStoreAssociation {
+    id
+    name
+    !fetchType(JOIN_ALWAYS)
+    store as storeInfo -> ReusableBookStoreView
+}
+
+BookWithReusableStoreView {
+    #include(ReusableStoreAssociation)
+}
+
+BookWithReusableAuthorsView {
+    id
+    name
+    !batch(16)
+    !where(firstName <> 'Nobody')
+    !orderBy(firstName asc)
+    authors -> ReusableAuthorView
+}
+
+input BookWithReusableAssociationsInput {
+    id
+    name
+    store -> ReusableBookStoreInput
+    authors -> ReusableAuthorInput
+}
+
+dynamic input DynamicBookWithReusableStoreInput {
+    store -> ReusableBookStoreInput
+}
+
+fragment ReusableBookSpecificationProps {
+    like/i(name)
+    ge(price)
+}
+
+specification BookWithReusableAssociationsSpecification for Book {
+    #include(ReusableBookSpecificationProps)
+    store -> ReusableBookStoreSpecification
+    authors -> ReusableAuthorSpecification
+}
 
 /**
  * The BookView DTO

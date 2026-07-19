@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable;
 
-import org.babyfish.jimmer.sql.DiscriminatorValue;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Table;
+import org.babyfish.jimmer.sql.*;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 @Table(name = "ML_JOINED_CAR")
@@ -10,4 +9,9 @@ import org.babyfish.jimmer.sql.Table;
 public interface Car extends Vehicle {
 
     int seatCount();
+
+    @Nullable
+    @ManyToOne
+    @JoinColumn(name = "DRIVER_ID")
+    VehicleOwner driver();
 }

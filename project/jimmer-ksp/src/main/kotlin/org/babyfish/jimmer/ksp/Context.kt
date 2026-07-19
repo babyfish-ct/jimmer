@@ -6,8 +6,10 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.Origin
 import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.dto.compiler.SourceTypeFilter
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
@@ -81,32 +83,43 @@ class Context(
             )
         }
 
-    private val includes: Array<String>? =
-        environment.options["jimmer.source.includes"]
-            ?.takeIf { it.isNotEmpty() }
-            ?.let {
-                it.trim().split("\\s*,[,;]\\s*").toTypedArray()
-            }
-
-    private val excludes: Array<String>? =
+    private val sourceTypeFilter = SourceTypeFilter(
+        environment.options["jimmer.source.includes"],
         environment.options["jimmer.source.excludes"]
-            ?.takeIf { it.isNotEmpty() }
-            ?.let {
-                it.trim().split("\\s*[,;]\\s*").toTypedArray()
-            }
+    )
 
     private val typeMap: MutableMap<KSClassDeclaration, ImmutableType> = mutableMapOf()
 
-    private var newTypes = typeMap?.values?.toMutableList() ?: mutableListOf()
+    private val typeNameMap: MutableMap<String, ImmutableType> = mutableMapOf()
+
+    private var newTypes = mutableListOf<ImmutableType>()
 
     val types: Collection<ImmutableType>
         get() = typeMap.values
 
-    fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType =
-        typeMap[classDeclaration] ?: ImmutableType(this, classDeclaration).also {
+    fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType {
+        typeMap[classDeclaration]?.let {
+            return it
+        }
+        val qualifiedName = classDeclaration.qualifiedName?.asString()
+        qualifiedName?.let(typeNameMap::get)?.let {
+            return it
+        }
+        return ImmutableType(this, classDeclaration).also {
             typeMap[classDeclaration] = it
+            if (qualifiedName !== null) {
+                typeNameMap[qualifiedName] = it
+            }
             newTypes += it
         }
+    }
+
+    fun immutableTypeOf(qualifiedName: String): ImmutableType? =
+        typeNameMap[qualifiedName]
+            ?: resolver
+                .getClassDeclarationByName(qualifiedName)
+                ?.takeIf { typeAnnotationOf(it) !== null }
+                ?.let(::typeOf)
 
     fun typeAnnotationOf(classDeclaration: KSClassDeclaration): KSAnnotation? {
         var sqlAnnotation: KSAnnotation? = null
@@ -139,14 +152,19 @@ class Context(
 
     fun include(declaration: KSClassDeclaration): Boolean {
         val qualifiedName = declaration.qualifiedName!!.asString()
-        if (includes !== null && !includes.any { qualifiedName.startsWith(it) }) {
-            return false
-        }
-        if (excludes !== null && excludes.any { qualifiedName.startsWith(it) }) {
-            return false
-        }
-        return true
+        return isKotlinType(declaration) && sourceTypeFilter.test(qualifiedName)
     }
+
+    fun includeDtoTarget(qualifiedName: String): Boolean {
+        if (!sourceTypeFilter.test(qualifiedName)) {
+            return false
+        }
+        val declaration = resolver.getClassDeclarationByName(qualifiedName)
+        return declaration === null || isKotlinType(declaration)
+    }
+
+    private fun isKotlinType(declaration: KSClassDeclaration): Boolean =
+        declaration.origin == Origin.KOTLIN || declaration.origin == Origin.KOTLIN_LIB
 
     companion object {
         private val ORM_ANNOTATION_TYPES = listOf(

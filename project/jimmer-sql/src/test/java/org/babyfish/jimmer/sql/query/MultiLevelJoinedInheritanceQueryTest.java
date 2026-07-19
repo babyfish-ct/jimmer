@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.inheritance.multilevel.joinedtable.*;
 import org.junit.jupiter.api.Test;
 
@@ -89,6 +90,81 @@ public class MultiLevelJoinedInheritanceQueryTest extends AbstractQueryTest {
                         assertEquals("Joined Manual", row.name());
                         assertEquals("PDF", ((Document) row).format());
                         assertLoadState(row, "id", "name", "format");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testPostFetchIsBatchedAtEachHierarchyLevel() {
+        AssetTable table = AssetTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().in(Arrays.asList(800L, 801L, 802L)))
+                        .orderBy(table.id())
+                        .select(
+                                table.fetch(
+                                        AssetFetcher.$
+                                                .manager(
+                                                        ReferenceFetchType.SELECT,
+                                                        VehicleOwnerFetcher.$.name()
+                                                )
+                                                .forType(
+                                                        VehicleFetcher.$.owner(
+                                                                ReferenceFetchType.SELECT,
+                                                                VehicleOwnerFetcher.$.name()
+                                                        )
+                                                )
+                                                .forType(
+                                                        CarFetcher.$.driver(
+                                                                ReferenceFetchType.SELECT,
+                                                                VehicleOwnerFetcher.$.name()
+                                                        )
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.ASSET_TYPE, tb_1_.MANAGER_ID, " +
+                                    "tb_2_.OWNER_ID, tb_3_.DRIVER_ID " +
+                                    "from ML_JOINED_ASSET tb_1_ " +
+                                    "left join ML_JOINED_VEHICLE tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.ASSET_TYPE in (?, ?) " +
+                                    "left join ML_JOINED_CAR tb_3_ " +
+                                    "on tb_1_.ID = tb_3_.ID and tb_1_.ASSET_TYPE = ? " +
+                                    "where tb_1_.ID in (?, ?, ?) " +
+                                    "order by tb_1_.ID asc"
+                    ).variables("CAR", "TRUCK", "CAR", 800L, 801L, 802L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from ML_JOINED_VEHICLE_OWNER tb_1_ " +
+                                    "where tb_1_.ID in (?, ?, ?)"
+                    ).variables(910L, 911L, 912L);
+                    ctx.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from ML_JOINED_VEHICLE_OWNER tb_1_ " +
+                                    "where tb_1_.ID in (?, ?)"
+                    ).variables(900L, 901L);
+                    ctx.statement(3).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from ML_JOINED_VEHICLE_OWNER tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(920L);
+                    ctx.row(0, row -> {
+                        assertEquals("Car Manager", row.manager().name());
+                        assertEquals("Car Owner", ((Vehicle) row).owner().name());
+                        assertEquals("Car Driver", ((Car) row).driver().name());
+                        assertLoadState(row, "id", "manager", "owner", "driver");
+                    });
+                    ctx.row(1, row -> {
+                        assertEquals("Truck Manager", row.manager().name());
+                        assertEquals("Truck Owner", ((Vehicle) row).owner().name());
+                        assertLoadState(row, "id", "manager", "owner");
+                    });
+                    ctx.row(2, row -> {
+                        assertEquals("Document Manager", row.manager().name());
+                        assertLoadState(row, "id", "manager");
                     });
                 }
         );
