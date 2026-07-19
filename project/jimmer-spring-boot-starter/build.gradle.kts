@@ -28,6 +28,7 @@ dependencies {
     kspTest(projects.jimmerKsp)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.validation)
     testImplementation(libs.spring.boot.starter.web)
     testImplementation(libs.h2)
     testRuntimeOnly(libs.bundles.jackson)
