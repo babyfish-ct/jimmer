@@ -7,11 +7,13 @@ import org.babyfish.jimmer.spring.java.validation.ValidatedImmutableDraft;
 import org.babyfish.jimmer.spring.java.validation.ValidatedImmutableProps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.TraversableResolver;
 import javax.validation.ValidationException;
 import javax.validation.Validator;
 import java.util.Arrays;
@@ -68,6 +70,53 @@ public class JimmerBeanValidationConfigTest {
         } finally {
             validator.destroy();
         }
+    }
+
+    @Test
+    public void testUserInitializerCanReplaceJimmerTraversableResolver() {
+        try (AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext()) {
+            ctx.register(JimmerBeanValidationConfig.class);
+            ctx.registerBean(LocalValidatorFactoryBean.class, () -> {
+                LocalValidatorFactoryBean validatorFactoryBean = new LocalValidatorFactoryBean();
+                validatorFactoryBean.setConfigurationInitializer(
+                        configuration -> configuration.traversableResolver(alwaysTraversableResolver())
+                );
+                return validatorFactoryBean;
+            });
+            ctx.refresh();
+
+            Validator validator = ctx.getBean(Validator.class);
+            Assertions.assertThrows(ValidationException.class, () -> validator.validate(unloadedImmutable()));
+        }
+    }
+
+    @Test
+    public void testExplicitTraversableResolverDisablesJimmerInitializer() {
+        try (AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext()) {
+            AtomicBoolean initializerCalled = new AtomicBoolean();
+
+            ctx.register(JimmerBeanValidationConfig.class);
+            ctx.registerBean(LocalValidatorFactoryBean.class, () -> {
+                LocalValidatorFactoryBean validatorFactoryBean = new LocalValidatorFactoryBean();
+                validatorFactoryBean.setTraversableResolver(alwaysTraversableResolver());
+                validatorFactoryBean.setConfigurationInitializer(configuration -> initializerCalled.set(true));
+                return validatorFactoryBean;
+            });
+            ctx.refresh();
+
+            Validator validator = ctx.getBean(Validator.class);
+            Assertions.assertTrue(initializerCalled.get());
+            Assertions.assertThrows(ValidationException.class, () -> validator.validate(unloadedImmutable()));
+        }
+    }
+
+    private static TraversableResolver alwaysTraversableResolver() {
+        TraversableResolver resolver = Mockito.mock(TraversableResolver.class);
+        Mockito.when(resolver.isReachable(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(true);
+        Mockito.when(resolver.isCascadable(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(true);
+        return resolver;
     }
 
     private static ValidatedImmutable unloadedImmutable() {
