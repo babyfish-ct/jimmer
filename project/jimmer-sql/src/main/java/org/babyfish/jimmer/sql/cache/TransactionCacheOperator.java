@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.json.codec.JsonCodec;
+import org.babyfish.jimmer.jackson.codec.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheOperator;
@@ -33,7 +33,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
 
     private Sql sql;
 
-    private JsonCodec jsonCodec;
+    private JsonCodec<?> jsonCodec;
 
     private final int batchSize;
 
@@ -45,11 +45,11 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         this(null, batchSize);
     }
 
-    public TransactionCacheOperator(JsonCodec jsonCodec) {
+    public TransactionCacheOperator(JsonCodec<?> jsonCodec) {
         this(jsonCodec, 32);
     }
 
-    public TransactionCacheOperator(JsonCodec jsonCodec, int batchSize) {
+    public TransactionCacheOperator(JsonCodec<?> jsonCodec, int batchSize) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("`batchSize` cannot be less than 1");
         }

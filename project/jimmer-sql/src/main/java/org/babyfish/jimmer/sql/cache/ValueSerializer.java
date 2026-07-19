@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.json.codec.JsonCodec;
-import org.babyfish.jimmer.json.codec.JsonReader;
-import org.babyfish.jimmer.json.codec.JsonType;
-import org.babyfish.jimmer.json.codec.JsonWriter;
+import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.jackson.codec.JsonReader;
+import org.babyfish.jimmer.jackson.codec.JsonTypeFactory;
+import org.babyfish.jimmer.jackson.codec.JsonWriter;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 
 public class ValueSerializer<T> {
     private static final byte[] NULL_BYTES = "<null>".getBytes(StandardCharsets.UTF_8);
@@ -23,41 +23,41 @@ public class ValueSerializer<T> {
     private final JsonWriter jsonWriter;
 
     public ValueSerializer(@NotNull ImmutableType type) {
-        this(type, null, defaultCodec());
+        this(type, null, jsonCodec());
     }
 
     public ValueSerializer(@NotNull ImmutableProp prop) {
-        this(null, prop, defaultCodec());
+        this(null, prop, jsonCodec());
     }
 
-    public ValueSerializer(@NotNull ImmutableType type, @NotNull JsonCodec codec) {
+    public ValueSerializer(@NotNull ImmutableType type, @NotNull JsonCodec<?> codec) {
         this(type, null, codec);
     }
 
-    public ValueSerializer(@NotNull ImmutableProp prop, @NotNull JsonCodec codec) {
+    public ValueSerializer(@NotNull ImmutableProp prop, @NotNull JsonCodec<?> codec) {
         this(null, prop, codec);
     }
 
-    private ValueSerializer(ImmutableType type, ImmutableProp prop, JsonCodec codec) {
+    private ValueSerializer(ImmutableType type, ImmutableProp prop, JsonCodec<?> codec) {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("Internal bug: nullity of type and prop must be different");
         }
-        this.jsonReader = codec.readerFor(createValueType(type, prop));
+        this.jsonReader = codec.readerFor(tf -> createValueType(tf, type, prop));
         this.jsonWriter = codec.writer();
     }
 
-    private static JsonType createValueType(ImmutableType type, ImmutableProp prop) {
+    private static <JT> JT createValueType(JsonTypeFactory<JT> typeFactory, ImmutableType type, ImmutableProp prop) {
         if (prop == null) {
-            return JsonType.of(type.getJavaClass());
+            return typeFactory.constructType(type.getJavaClass());
         } else if (prop.isAssociation(TargetLevel.ENTITY)) {
             ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
             if (prop.isReferenceList(TargetLevel.OBJECT)) {
-                return JsonType.listOf(targetIdProp.getElementClass());
+                return typeFactory.constructListType(targetIdProp.getElementClass());
             } else {
-                return JsonType.of(targetIdProp.getElementClass());
+                return typeFactory.constructType(targetIdProp.getElementClass());
             }
         } else {
-            return JsonType.of(prop.getElementClass());
+            return typeFactory.constructType(prop.getElementClass());
         }
     }
 

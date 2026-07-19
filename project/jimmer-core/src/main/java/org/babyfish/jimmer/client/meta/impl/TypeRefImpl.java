@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = TypeRefImpl.SerializerV2.class)
+@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = TypeRefImpl.DeserializerV2.class)
+@tools.jackson.databind.annotation.JsonSerialize(using = TypeRefImpl.SerializerV3.class)
+@tools.jackson.databind.annotation.JsonDeserialize(using = TypeRefImpl.DeserializerV3.class)
 public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
 
     private TypeName typeName;
@@ -146,4 +150,113 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
                 '}';
     }
 
+    static class SerializerV2 extends com.fasterxml.jackson.databind.JsonSerializer<TypeRefImpl<?>> {
+
+        @Override
+        public void serialize(TypeRefImpl<?> typeRef,
+                              com.fasterxml.jackson.core.JsonGenerator gen,
+                              com.fasterxml.jackson.databind.SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            provider.defaultSerializeField("typeName", typeRef.getTypeName(), gen);
+            if (typeRef.isNullable()) {
+                gen.writeFieldName("nullable");
+                gen.writeBoolean(true);
+            }
+            if (!typeRef.getArguments().isEmpty()) {
+                provider.defaultSerializeField("arguments", typeRef.getArguments(), gen);
+            }
+            if (typeRef.getFetchBy() != null) {
+                gen.writeFieldName("fetchBy");
+                gen.writeString(typeRef.getFetchBy());
+                gen.writeFieldName("fetcherOwner");
+                gen.writeString(typeRef.getFetcherOwner().toString());
+                provider.defaultSerializeField("fetcherDoc", typeRef.getFetcherDoc(), gen);
+            }
+            gen.writeEndObject();
+        }
     }
+
+    static class DeserializerV2 extends com.fasterxml.jackson.databind.JsonDeserializer<TypeRefImpl<?>> {
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public TypeRefImpl<?> deserialize(com.fasterxml.jackson.core.JsonParser jp,
+                                          com.fasterxml.jackson.databind.DeserializationContext ctx) throws IOException {
+            com.fasterxml.jackson.databind.JsonNode jsonNode = jp.getCodec().readTree(jp);
+            TypeRefImpl<Object> typeRef = new TypeRefImpl<>();
+            typeRef.setTypeName(ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class));
+            if (jsonNode.has("nullable")) {
+                typeRef.setNullable(jsonNode.get("nullable").asBoolean());
+            }
+            if (jsonNode.has("arguments")) {
+                for (com.fasterxml.jackson.databind.JsonNode argNode : jsonNode.get("arguments")) {
+                    TypeRefImpl<Object> arg = (TypeRefImpl<Object>) ctx.readTreeAsValue(argNode, TypeRefImpl.class);
+                    typeRef.addArgument(arg);
+                }
+            }
+            if (jsonNode.has("fetchBy")) {
+                typeRef.setFetchBy(jsonNode.get("fetchBy").asText());
+                typeRef.setFetcherOwner(TypeName.parse(jsonNode.get("fetcherOwner").asText()));
+                if (jsonNode.has("fetcherDoc")) {
+                    typeRef.setFetcherDoc(ctx.readTreeAsValue(jsonNode.get("fetcherDoc"), Doc.class));
+                }
+            }
+            return typeRef;
+        }
+    }
+
+    static class SerializerV3 extends tools.jackson.databind.ValueSerializer<TypeRefImpl<?>> {
+
+        @Override
+        public void serialize(TypeRefImpl<?> typeRef,
+                              tools.jackson.core.JsonGenerator gen,
+                              tools.jackson.databind.SerializationContext ctx) {
+            gen.writeStartObject();
+            ctx.defaultSerializeProperty("typeName", typeRef.getTypeName(), gen);
+            if (typeRef.isNullable()) {
+                gen.writeName("nullable");
+                gen.writeBoolean(true);
+            }
+            if (!typeRef.getArguments().isEmpty()) {
+                ctx.defaultSerializeProperty("arguments", typeRef.getArguments(), gen);
+            }
+            if (typeRef.getFetchBy() != null) {
+                gen.writeName("fetchBy");
+                gen.writeString(typeRef.getFetchBy());
+                gen.writeName("fetcherOwner");
+                gen.writeString(typeRef.getFetcherOwner().toString());
+                ctx.defaultSerializeProperty("fetcherDoc", typeRef.getFetcherDoc(), gen);
+            }
+            gen.writeEndObject();
+        }
+    }
+
+    static class DeserializerV3 extends tools.jackson.databind.ValueDeserializer<TypeRefImpl<?>> {
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public TypeRefImpl<?> deserialize(tools.jackson.core.JsonParser jp,
+                                          tools.jackson.databind.DeserializationContext ctx) {
+            tools.jackson.databind.JsonNode jsonNode = ctx.readTree(jp);
+            TypeRefImpl<Object> typeRef = new TypeRefImpl<>();
+            typeRef.setTypeName(ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class));
+            if (jsonNode.has("nullable")) {
+                typeRef.setNullable(jsonNode.get("nullable").asBoolean());
+            }
+            if (jsonNode.has("arguments")) {
+                for (tools.jackson.databind.JsonNode argNode : jsonNode.get("arguments")) {
+                    TypeRefImpl<Object> arg = (TypeRefImpl<Object>) ctx.readTreeAsValue(argNode, TypeRefImpl.class);
+                    typeRef.addArgument(arg);
+                }
+            }
+            if (jsonNode.has("fetchBy")) {
+                typeRef.setFetchBy(jsonNode.get("fetchBy").asText());
+                typeRef.setFetcherOwner(TypeName.parse(jsonNode.get("fetcherOwner").asText()));
+                if (jsonNode.has("fetcherDoc")) {
+                    typeRef.setFetcherDoc(ctx.readTreeAsValue(jsonNode.get("fetcherDoc"), Doc.class));
+                }
+            }
+            return typeRef;
+        }
+    }
+}

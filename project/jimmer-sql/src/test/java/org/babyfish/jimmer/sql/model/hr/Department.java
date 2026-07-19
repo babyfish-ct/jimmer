@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.model.hr;
 
 import org.babyfish.jimmer.Formula;
-import org.babyfish.jimmer.json.JsonConverter;
-import org.babyfish.jimmer.json.LongToStringConverter;
+import org.babyfish.jimmer.jackson.JsonConverter;
+import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.*;
 import org.jspecify.annotations.Nullable;
 

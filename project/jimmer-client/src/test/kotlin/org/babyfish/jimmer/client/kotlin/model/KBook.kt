@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.client.kotlin.model
 
 import org.babyfish.jimmer.client.kotlin.KBaseEntityWithId
-import org.babyfish.jimmer.json.JsonConverter
-import org.babyfish.jimmer.json.LongListToStringListConverter
-import org.babyfish.jimmer.json.LongToStringConverter
+import org.babyfish.jimmer.jackson.JsonConverter
+import org.babyfish.jimmer.jackson.LongListToStringListConverter
+import org.babyfish.jimmer.jackson.LongToStringConverter
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.IdView
 import org.babyfish.jimmer.sql.ManyToMany

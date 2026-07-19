@@ -6,9 +6,9 @@ import kotlin.reflect.full.KClasses;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.json.Converter;
-import org.babyfish.jimmer.json.ConverterMetadata;
-import org.babyfish.jimmer.json.JsonConverter;
+import org.babyfish.jimmer.jackson.Converter;
+import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
@@ -922,6 +922,17 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     "\" because it is " +
                                     (isReferenceList(TargetLevel.OBJECT) ? "list" : "reference") +
                                     " of immutable object"
+                    );
+                }
+                if (AnnotationUtils.getAnnotation(this, com.fasterxml.jackson.annotation.JsonFormat.class) != null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it cannot be decorated by both \"@" +
+                                    JsonConverter.class +
+                                    "\" and \"@" +
+                                    com.fasterxml.jackson.annotation.JsonFormat.class +
+                                    "\""
                     );
                 }
                 metadata = ConverterMetadata.of(jsonConverter.value());

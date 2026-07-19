@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 
 public class BinLogTest {
 
     private final BinLogParser parser = 
             new BinLogParser(
-                    defaultCodec(),
+                    jsonCodec(),
                     Collections.emptyMap(),
                     Collections.emptyMap()
             )

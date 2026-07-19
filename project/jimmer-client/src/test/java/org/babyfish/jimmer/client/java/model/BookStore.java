@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.client.java.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.babyfish.jimmer.json.JsonConverter;
-import org.babyfish.jimmer.json.LongToStringConverter;
+import org.babyfish.jimmer.jackson.JsonConverter;
+import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.OneToMany;

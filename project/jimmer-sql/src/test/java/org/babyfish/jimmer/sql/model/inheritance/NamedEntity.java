@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import org.babyfish.jimmer.json.JsonConverter;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.model.hr.ConverterForIssue937;
 

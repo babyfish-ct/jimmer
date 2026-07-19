@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.query
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import org.babyfish.jimmer.json.jackson.v2.JsonCodecV2
+import org.babyfish.jimmer.jackson.v2.JsonCodecV2
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.diff

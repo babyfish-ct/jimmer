@@ -5,7 +5,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.babyfish.jimmer.json.ImmutableSerializationException;
+import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
@@ -51,7 +51,7 @@ public class ImplementorGenerator {
 
     private void addPropertyOrderAnnotation() {
         CodeBlock.Builder builder = CodeBlock.builder();
-        builder.add("{$S", "dummyPropForSerializationError__");
+        builder.add("{$S", "dummyPropForJacksonError__");
         for (ImmutableProp prop : type.getPropsOrderById()) {
             builder.add(", $S", prop.getName());
         }
@@ -170,10 +170,10 @@ public class ImplementorGenerator {
 
     private void addDummyProp() {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("getDummyPropForSerializationError__")
+                .methodBuilder("getDummyPropForJacksonError__")
                 .returns(TypeName.INT)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addStatement("throw new $T()", ImmutableSerializationException.class);
+                .addStatement("throw new $T()", ImmutableModuleRequiredException.class);
         typeBuilder.addMethod(builder.build());
     }
 }

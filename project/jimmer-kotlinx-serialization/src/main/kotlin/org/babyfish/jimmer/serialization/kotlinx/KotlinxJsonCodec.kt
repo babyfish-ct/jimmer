@@ -19,13 +19,15 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
-import org.babyfish.jimmer.json.codec.JsonCodec
-import org.babyfish.jimmer.json.codec.JsonCodecCustomization
-import org.babyfish.jimmer.json.codec.JsonConverter
-import org.babyfish.jimmer.json.codec.JsonReader
-import org.babyfish.jimmer.json.codec.JsonType
-import org.babyfish.jimmer.json.codec.JsonWriter
-import org.babyfish.jimmer.json.codec.Node
+import org.babyfish.jimmer.jackson.codec.JacksonVersion
+import org.babyfish.jimmer.jackson.codec.JsonCodec
+import org.babyfish.jimmer.jackson.codec.JsonCodecCustomization
+import org.babyfish.jimmer.jackson.codec.JsonConverter
+import org.babyfish.jimmer.jackson.codec.JsonReader
+import org.babyfish.jimmer.jackson.codec.JsonTypeFactory
+import org.babyfish.jimmer.jackson.codec.JsonWriter
+import org.babyfish.jimmer.jackson.codec.Node
+import org.babyfish.jimmer.jackson.codec.TypeCreator
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.DraftSpi
 import org.babyfish.jimmer.runtime.ImmutableSpi
@@ -59,16 +61,28 @@ import kotlin.reflect.jvm.jvmErasure
 @OptIn(ExperimentalSerializationApi::class)
 class KotlinxJsonCodec @JvmOverloads constructor(
     private val json: Json = DEFAULT_JSON
-) : JsonCodec {
+) : JsonCodec<KType> {
 
-    override fun withCustomizations(vararg customizations: JsonCodecCustomization): JsonCodec =
+    override fun withCustomizations(vararg customizations: JsonCodecCustomization): JsonCodec<KType> =
         this
 
     override fun converter(): JsonConverter =
         KotlinxJsonConverter(json)
 
-    override fun <T : Any?> readerFor(type: JsonType): JsonReader<T> =
-        readerFor(KotlinxJsonTypes.constructType(type))
+    override fun <T : Any?> readerFor(clazz: Class<T>): JsonReader<T> =
+        readerFor(KotlinxJsonTypeFactory.constructType(clazz))
+
+    override fun <T : Any?> readerFor(typeCreator: TypeCreator<KType>): JsonReader<T> =
+        readerFor(typeCreator.createType(KotlinxJsonTypeFactory))
+
+    override fun <T : Any?> readerForArrayOf(componentType: Class<T>): JsonReader<Array<T>> =
+        readerFor(KotlinxJsonTypeFactory.constructArrayType(componentType))
+
+    override fun <T : Any?> readerForListOf(elementType: Class<T>): JsonReader<List<T>> =
+        readerFor(KotlinxJsonTypeFactory.constructListType(elementType))
+
+    override fun <V : Any?> readerForMapOf(valueType: Class<V>): JsonReader<Map<String, V>> =
+        readerFor(KotlinxJsonTypeFactory.constructMapType(String::class.java, valueType))
 
     override fun treeReader(): JsonReader<Node> =
         KotlinxTreeReader(json)
@@ -76,8 +90,14 @@ class KotlinxJsonCodec @JvmOverloads constructor(
     override fun writer(): JsonWriter =
         KotlinxJsonWriter(json, null)
 
-    override fun writerFor(type: JsonType): JsonWriter =
-        writerFor(KotlinxJsonTypes.constructType(type))
+    override fun writerFor(clazz: Class<*>): JsonWriter =
+        writerFor(KotlinxJsonTypeFactory.constructType(clazz))
+
+    override fun writerFor(typeCreator: TypeCreator<KType>): JsonWriter =
+        writerFor(typeCreator.createType(KotlinxJsonTypeFactory))
+
+    override fun version(): JacksonVersion =
+        JacksonVersion.KOTLINX
 
     private fun <T> readerFor(type: KType): JsonReader<T> =
         KotlinxJsonReader(json, type)
@@ -93,11 +113,8 @@ class KotlinxJsonCodec @JvmOverloads constructor(
     }
 }
 
-class KotlinxJsonCodecProvider : org.babyfish.jimmer.json.codec.JsonCodecProvider {
-    override fun priority(): Int =
-        100
-
-    override fun codec(): JsonCodec =
+class KotlinxJsonCodecProvider : org.babyfish.jimmer.jackson.codec.JsonCodecProvider {
+    override fun create(): JsonCodec<*> =
         KotlinxJsonCodec()
 }
 
@@ -184,10 +201,13 @@ private class KotlinxJsonConverter(
 ) : JsonConverter {
 
     override fun <T : Any?> convert(value: Any?, targetType: Class<T>): T =
-        convert(value, KotlinxJsonTypes.constructType(targetType))
+        convert(value, KotlinxJsonTypeFactory.constructType(targetType))
 
-    override fun <T : Any?> convert(value: Any?, targetType: JsonType): T =
-        convert(value, KotlinxJsonTypes.constructType(targetType))
+    override fun <T : Any?> convert(value: Any?, typeCreator: TypeCreator<*>): T {
+        @Suppress("UNCHECKED_CAST")
+        val creator = typeCreator as TypeCreator<KType>
+        return convert(value, creator.createType(KotlinxJsonTypeFactory))
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> convert(value: Any?, type: KType): T {
@@ -271,7 +291,7 @@ private object KotlinxJsonSupport {
             val spi = draft as DraftSpi
             for (prop in immutableType.props.values) {
                 val propElement = element[prop.name] ?: continue
-                val value = decodeElement(json, propElement, KotlinxJsonTypes.constructType(prop.genericType))
+                val value = decodeElement(json, propElement, KotlinxJsonTypeFactory.constructType(prop.genericType))
                 spi.__set(prop.id, value)
             }
         }
@@ -280,40 +300,37 @@ private object KotlinxJsonSupport {
         jvmErasure.java
 }
 
-private object KotlinxJsonTypes {
+private object KotlinxJsonTypeFactory : JsonTypeFactory<KType> {
 
-    fun constructType(type: JsonType): KType =
-        constructType(type.type)
-
-    fun constructType(type: Type): KType =
+    override fun constructType(type: Type): KType =
         type.toKType()
 
-    fun constructParametricType(parametrized: Class<*>, vararg parameterClasses: Class<*>): KType =
+    override fun constructParametricType(parametrized: Class<*>, vararg parameterClasses: Class<*>): KType =
         parametrized.kotlin.createType(
             parameterClasses.map { KTypeProjection.invariant(constructType(it)) }
         )
 
-    fun constructParametricType(parametrized: Class<*>, parameterClasses: Array<KType>): KType =
+    override fun constructParametricType(parametrized: Class<*>, parameterClasses: Array<KType>): KType =
         parametrized.kotlin.createType(
             parameterClasses.map { KTypeProjection.invariant(it) }
         )
 
-    fun constructArrayType(componentType: Class<*>): KType =
+    override fun constructArrayType(componentType: Class<*>): KType =
         constructArrayType(constructType(componentType))
 
-    fun constructArrayType(componentType: KType): KType =
+    override fun constructArrayType(componentType: KType): KType =
         Array<Any?>::class.createType(listOf(KTypeProjection.invariant(componentType)))
 
-    fun constructCollectionType(collectionType: Class<out Collection<*>>, elementType: Class<*>): KType =
+    override fun constructCollectionType(collectionType: Class<out Collection<*>>, elementType: Class<*>): KType =
         constructCollectionType(collectionType, constructType(elementType))
 
-    fun constructCollectionType(collectionType: Class<out Collection<*>>, elementType: KType): KType =
+    override fun constructCollectionType(collectionType: Class<out Collection<*>>, elementType: KType): KType =
         collectionType.kotlin.createType(listOf(KTypeProjection.invariant(elementType)))
 
-    fun constructMapType(mapType: Class<out Map<*, *>>, keyType: Class<*>, valueType: Class<*>): KType =
+    override fun constructMapType(mapType: Class<out Map<*, *>>, keyType: Class<*>, valueType: Class<*>): KType =
         constructMapType(mapType, constructType(keyType), constructType(valueType))
 
-    fun constructMapType(mapType: Class<out Map<*, *>>, keyType: KType, valueType: KType): KType =
+    override fun constructMapType(mapType: Class<out Map<*, *>>, keyType: KType, valueType: KType): KType =
         mapType.kotlin.createType(
             listOf(
                 KTypeProjection.invariant(keyType),

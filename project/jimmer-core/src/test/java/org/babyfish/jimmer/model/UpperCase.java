@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.model;
 
-import org.babyfish.jimmer.json.JsonConverter;
+import org.babyfish.jimmer.jackson.JsonConverter;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1332,10 +1332,11 @@ public class DtoGenerator {
         if (stateFieldName == null) {
             return;
         }
-        FieldSpec.Builder builder = FieldSpec
-                .builder(TypeName.BOOLEAN, stateFieldName)
-                .addModifiers(ctx.getDtoFieldModifier());
-        typeBuilder.addField(builder.build());
+        typeBuilder.addField(
+                TypeName.BOOLEAN,
+                stateFieldName,
+                ctx.getDtoFieldModifier()
+        );
     }
 
     private void addAccessorDeclaration(AbstractProp prop) {
@@ -2772,7 +2773,7 @@ public class DtoGenerator {
         );
     }
 
-    String setterName(AbstractProp prop) {
+    private String setterName(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String suffix = prop.getAlias();
         if (suffix.startsWith("is") &&

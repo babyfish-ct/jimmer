@@ -1,5 +1,7 @@
 package org.babyfish.jimmer;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -21,10 +23,11 @@ public class Page<T> {
 
     private final long totalPageCount;
 
+    @JsonCreator
     public Page(
-            List<T> rows,
-            long totalRowCount,
-            long totalPageCount
+            @JsonProperty("rows") List<T> rows,
+            @JsonProperty("totalRowCount") long totalRowCount,
+            @JsonProperty("totalPageCount") long totalPageCount
     ) {
         this.rows = rows != null && !rows.isEmpty() ? rows : Collections.emptyList();
         this.totalRowCount = totalRowCount;

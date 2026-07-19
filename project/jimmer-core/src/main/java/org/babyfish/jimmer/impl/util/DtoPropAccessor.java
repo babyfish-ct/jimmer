@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.impl.util;
 
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.json.Converter;
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;

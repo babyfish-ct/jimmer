@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.cache
 
-import org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec
+import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
@@ -61,8 +61,8 @@ class FilterCacheEvictTest : AbstractQueryTest() {
         connectAndExpect({
             _sqlClient.binLog.accept(
                 "file",
-                defaultCodec().treeReader().read("{\"id\":9, \"parent_id\":8}"),
-                defaultCodec().treeReader().read("{\"id\":9, \"parent_id\":2}")
+                jsonCodec().treeReader().read("{\"id\":9, \"parent_id\":8}"),
+                jsonCodec().treeReader().read("{\"id\":9, \"parent_id\":2}")
             )
         }) {
 
@@ -78,7 +78,7 @@ class FilterCacheEvictTest : AbstractQueryTest() {
         connectAndExpect({
             _sqlClient.binLog.accept(
                 "file_user_mapping",
-                defaultCodec().treeReader().read("{\"file_id\":28, \"user_id\":2}"),
+                jsonCodec().treeReader().read("{\"file_id\":28, \"user_id\":2}"),
                 null
             )
         }) {

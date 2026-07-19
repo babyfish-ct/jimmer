@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static org.babyfish.jimmer.json.codec.JsonCodec.defaultCodec;
+import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
 
 public class Issue190Test extends AbstractQueryTest {
 
@@ -134,7 +134,7 @@ public class Issue190Test extends AbstractQueryTest {
             Internal.requiresNewDraftContext(ctx -> {
                 try {
                     for (Object key : keys) {
-                        resultMap.put(key, defaultCodec().readerFor(type.getJavaClass()).read(map.get(prefix + key)));
+                        resultMap.put(key, jsonCodec().readerFor(type.getJavaClass()).read(map.get(prefix + key)));
                     }
                 } catch (Exception ex) {
                     Assertions.fail(ex);
