@@ -1,7 +1,6 @@
 plugins {
-    `kotlin-convention`
+    `kotlin-publish-convention`
     `dokka-convention`
-    alias(libs.plugins.ksp)
 }
 
 dependencies {
@@ -11,9 +10,8 @@ dependencies {
     api(projects.jimmerSql)
 
     testImplementation(libs.kotlin.test)
-    testImplementation(testFixtures(projects.jimmerSql))
-    kspTest(projects.jimmerKsp)
-    kspTest(files("src/test/dto-bundle"))
+    testImplementation(projects.jimmerSqlTestSupport)
+    testImplementation(projects.jimmerSqlKotlinTestModel)
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.h2)
@@ -23,19 +21,6 @@ dependencies {
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.caffeine)
-    testImplementation("com.alibaba:easyexcel:4.0.3")
-}
-
-ksp {
-    arg("jimmer.dto.mutable", "true")
-    arg("jimmer.dto.hibernateValidatorEnhancement", "true")
-//    arg("jimmer.jackson3", "true")
-}
-
-kotlin {
-    sourceSets.test {
-        kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
 }
 
 tasks.test {

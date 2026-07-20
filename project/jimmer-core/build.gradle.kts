@@ -1,5 +1,5 @@
 plugins {
-    `kotlin-convention`
+    `kotlin-publish-convention`
     `jvm-test-suite`
     alias(libs.plugins.buildconfig)
 }
