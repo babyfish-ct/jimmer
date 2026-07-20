@@ -3,10 +3,13 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.ClientFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationFetcher;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
@@ -22,6 +25,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class ObjectCacheTest extends AbstractQueryTest {
@@ -280,6 +284,28 @@ public class ObjectCacheTest extends AbstractQueryTest {
         } catch (SQLException ex) {
             Assertions.fail("SQL error", ex);
         }
+    }
+
+    @Test
+    public void testPolymorphicRootFetcher() {
+        connectAndExpect(con -> {
+            List<Client> clients = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findByIds(ClientFetcher.$.name(), singletonList(200L));
+            Assertions.assertEquals(1, clients.size());
+            Client client = clients.get(0);
+            Assertions.assertEquals(Organization.class, ((ImmutableSpi) client).__type().getJavaClass());
+            Assertions.assertEquals("Globex", client.name());
+            Assertions.assertFalse(client instanceof DraftSpi);
+            return clients;
+        }, ctx -> {
+            ctx.sql(
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION " +
+                            "from JOINED_CLIENT tb_1_ where tb_1_.ID = ?"
+            );
+            ctx.rows("[{\"id\":200,\"name\":\"Globex\"}]");
+        });
     }
 
     @Test

@@ -55,7 +55,7 @@ public class Shapes {
             while (itr.hasNext()) {
                 ImmutableSpi spi = itr.next();
                 itr.set(
-                        (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
+                        (ImmutableSpi) Internal.produce(spi.__type(), spi, draft -> {
                             for (ImmutableProp prop : immutableType.getProps().values()) {
                                 if (spi.__isLoaded(prop.getId())) {
                                     Field field = fetcher.getFieldMap().get(prop.getName());
