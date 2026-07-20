@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -282,7 +283,7 @@ public class ObjectCacheTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testIssue1154() {
+    public void testIssue1154WithId() {
         for (int i = 0; i < 2; i++) {
             final boolean useSql = i == 0;
             connectAndExpect(con -> {
@@ -322,6 +323,72 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                     "--->\"taxCode\":\"GLOBEX-001\"," +
                                     "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
                                     "}]"
+                    );
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testIssue1154WithIds() {
+        for (int i = 0; i < 2; i++) {
+            final boolean useSql = i == 0;
+            connectAndExpect(con -> {
+                List<Organization> orgs = sqlClient
+                        .getEntities()
+                        .forConnection(con)
+                        .findByIds(OrganizationFetcher.$.allScalarFields(), Arrays.asList(200L, 202L));
+                for (Organization org : orgs) {
+                    Assertions.assertFalse(org instanceof DraftSpi);
+                }
+                return orgs;
+            }, ctx -> {
+                if (useSql) {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "--->inner join JOINED_ORGANIZATION tb_1__sub on tb_1_.ID = tb_1__sub.ID " +
+                                    "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE = ?"
+                    );
+                }
+                if (useSql) { // BUG！discriminator is loaded first time, but is not loaded at second time.
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"type\":\"ORG\"," +
+                                    "--->--->\"id\":200," +
+                                    "--->--->\"name\":\"Globex\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"GLOBEX-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->},{" +
+                                    "--->--->\"type\":\"ORG\"," +
+                                    "--->--->\"id\":202," +
+                                    "--->--->\"name\":\"Initech\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"INI-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                } else {
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":200," +
+                                    "--->--->\"name\":\"Globex\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"GLOBEX-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":202," +
+                                    "--->--->\"name\":\"Initech\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"INI-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
             });
