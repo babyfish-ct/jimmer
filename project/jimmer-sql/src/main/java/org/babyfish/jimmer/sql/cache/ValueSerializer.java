@@ -19,8 +19,9 @@ public class ValueSerializer<T> {
 
     private final JsonReader<T> jsonReader;
     private final JsonWriter jsonWriter;
-    private final ImmutableType polymorphicType;
-    private final InheritanceInfo inheritanceInfo;
+    private final String discriminatorPropName;
+    private final Class<?> discriminatorType;
+    private final Map<Object, Class<?>> discriminatorTypeMap;
     private final JsonReader<Node> treeReader;
     private final JsonConverter jsonConverter;
 
@@ -48,13 +49,22 @@ public class ValueSerializer<T> {
         this.jsonWriter = codec.writer();
         InheritanceInfo inheritanceInfo = type != null ? type.getInheritanceInfo() : null;
         if (inheritanceInfo != null && !type.getDirectDerivedTypes().isEmpty()) {
-            this.polymorphicType = type;
-            this.inheritanceInfo = inheritanceInfo;
+            ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
+            this.discriminatorPropName = discriminatorProp.getName();
+            this.discriminatorType = discriminatorProp.getReturnClass();
+            Map<Object, Class<?>> discriminatorTypeMap = new HashMap<>();
+            for (Map.Entry<Object, ImmutableType> e : inheritanceInfo.getDiscriminatorTypeMap().entrySet()) {
+                if (type.isAssignableFrom(e.getValue())) {
+                    discriminatorTypeMap.put(e.getKey(), e.getValue().getJavaClass());
+                }
+            }
+            this.discriminatorTypeMap = discriminatorTypeMap;
             this.treeReader = codec.treeReader();
             this.jsonConverter = codec.converter();
         } else {
-            this.polymorphicType = null;
-            this.inheritanceInfo = null;
+            this.discriminatorPropName = null;
+            this.discriminatorType = null;
+            this.discriminatorTypeMap = null;
             this.treeReader = null;
             this.jsonConverter = null;
         }
@@ -75,8 +85,7 @@ public class ValueSerializer<T> {
         }
     }
 
-    @NotNull
-    public byte[] serialize(T value) {
+    public byte @NotNull [] serialize(T value) {
         if (value == null) {
             return NULL_BYTES.clone();
         }
@@ -111,18 +120,16 @@ public class ValueSerializer<T> {
             return null;
         }
         try {
-            if (inheritanceInfo != null) {
+            if (discriminatorTypeMap != null) {
                 Node node = treeReader.read(value);
-                ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
-                Node discriminatorNode = node.get(discriminatorProp.getName());
+                Node discriminatorNode = node.get(discriminatorPropName);
                 if (discriminatorNode != null && !discriminatorNode.isNull()) {
-                    Object discriminator = discriminatorNode.convertTo(
-                            discriminatorProp.getReturnClass(),
-                            jsonConverter
-                    );
-                    ImmutableType actualType = inheritanceInfo.getDiscriminatorTypeMap().get(discriminator);
-                    if (actualType != null && polymorphicType.isAssignableFrom(actualType)) {
-                        return (T) node.convertTo(actualType.getJavaClass(), jsonConverter);
+                    Object discriminator = discriminatorNode.canCastTo(discriminatorType) ?
+                            discriminatorNode.castTo(discriminatorType) :
+                            discriminatorNode.convertTo(discriminatorType, jsonConverter);
+                    Class<?> actualType = discriminatorTypeMap.get(discriminator);
+                    if (actualType != null) {
+                        return (T) node.convertTo(actualType, jsonConverter);
                     }
                 }
             }

@@ -29,7 +29,8 @@ public class Shapes {
             Fetcher<?> fetcher,
             Function<?, E> converter
     ) {
-        if (entities.isEmpty()) {
+        if (entities.isEmpty() ||
+                fetcher == null && immutableType.getDirectDerivedTypes().isEmpty()) {
             return;
         }
         Map<ImmutableType, Map<String, Field>> fieldMapCache = new HashMap<>();
