@@ -36,9 +36,12 @@ public class Shapes {
         boolean needReshape = false;
         for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
             ImmutableType actualType = spi.__type();
-            Shape shape = shapeMap.computeIfAbsent(actualType, it -> createShape(immutableType, fetcher, it));
+            Shape shape = shapeMap.computeIfAbsent(
+                    actualType,
+                    it -> createShape(immutableType, fetcher, it)
+            );
             if (!needReshape) {
-                needReshape = shape.isRequired(spi);
+                needReshape = shape.requiresReshape();
             }
         }
         if (needReshape) {
@@ -48,7 +51,7 @@ public class Shapes {
                 return (E) Internal.produce(
                         spi.__type(),
                         spi,
-                        draft -> shape.apply(spi, (DraftSpi) draft)
+                        draft -> shape.apply((DraftSpi) draft)
                 );
             });
         }
@@ -66,14 +69,18 @@ public class Shapes {
         Map<String, ImmutableProp> objectCachePropMap = fetcher == null ?
                 immutableType.getObjectCacheProps() :
                 null;
+        Map<String, ImmutableProp> actualObjectCachePropMap = actualType.getObjectCacheProps();
         List<PropId> unloadPropIds = new ArrayList<>();
         List<PropId> hidePropIds = new ArrayList<>();
         List<PropId> showPropIds = new ArrayList<>();
         for (ImmutableProp prop : actualType.getProps().values()) {
+            if (!isAvailableInObjectCache(prop, actualObjectCachePropMap)) {
+                continue;
+            }
             Field field = fieldMap != null ? fieldMap.get(prop.getName()) : null;
             boolean included = fieldMap != null ?
                     field != null :
-                    objectCachePropMap.containsKey(prop.getName());
+                    !prop.isDiscriminator() && objectCachePropMap.containsKey(prop.getName());
             if (!included) {
                 if (prop.isView()) {
                     hidePropIds.add(prop.getId());
@@ -93,6 +100,17 @@ public class Shapes {
             }
         }
         return new Shape(unloadPropIds, hidePropIds, showPropIds);
+    }
+
+    private static boolean isAvailableInObjectCache(
+            ImmutableProp prop,
+            Map<String, ImmutableProp> objectCachePropMap
+    ) {
+        if (objectCachePropMap.containsKey(prop.getName())) {
+            return true;
+        }
+        ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+        return idViewBaseProp != null && objectCachePropMap.containsKey(idViewBaseProp.getName());
     }
 
     private static Map<String, Field> fieldMap(Fetcher<?> fetcher, ImmutableType actualType) {
@@ -140,30 +158,18 @@ public class Shapes {
             this.showPropIds = showPropIds;
         }
 
-        private boolean isRequired(ImmutableSpi spi) {
-            for (PropId propId : unloadPropIds) {
-                if (spi.__isLoaded(propId)) {
-                    return true;
-                }
-            }
-            for (PropId propId : hidePropIds) {
-                if (spi.__isLoaded(propId)) {
-                    return true;
-                }
-            }
-            return false;
+        private boolean requiresReshape() {
+            return !unloadPropIds.isEmpty() || !hidePropIds.isEmpty();
         }
 
-        private void apply(ImmutableSpi spi, DraftSpi draft) {
+        private void apply(DraftSpi draft) {
+            // These operations are idempotent for unloaded properties, so the same
+            // target shape can be applied to cache hits and freshly loaded values.
             for (PropId propId : unloadPropIds) {
-                if (spi.__isLoaded(propId)) {
-                    draft.__unload(propId);
-                }
+                draft.__unload(propId);
             }
             for (PropId propId : hidePropIds) {
-                if (spi.__isLoaded(propId)) {
-                    draft.__show(propId, false);
-                }
+                draft.__show(propId, false);
             }
             for (PropId propId : showPropIds) {
                 draft.__show(propId, true);

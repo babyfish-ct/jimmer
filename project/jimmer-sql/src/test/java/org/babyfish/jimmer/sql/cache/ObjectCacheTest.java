@@ -377,6 +377,57 @@ public class ObjectCacheTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testMixedPolymorphicObjectCacheHitAndMiss() {
+        connectAndExpect(con -> {
+            Client cachedClient = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findById(Client.class, 200L);
+            Assertions.assertInstanceOf(Organization.class, cachedClient);
+            assertLoadState(cachedClient, "id", "name", "description");
+            List<Client> clients = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findByIds(Client.class, Arrays.asList(200L, 202L));
+            Assertions.assertEquals(2, clients.size());
+            for (Client client : clients) {
+                Assertions.assertInstanceOf(Organization.class, client);
+            }
+            assertLoadState(clients, "id", "name", "description");
+            return clients;
+        }, ctx -> {
+            ctx.sql(
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, " +
+                            "tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "left join JOINED_ORGANIZATION tb_2_ " +
+                            "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "left join JOINED_PERSON tb_3_ " +
+                            "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "where tb_1_.ID = ?"
+            );
+            ctx.variables("ORG", "Person", 200L);
+            ctx.statement(1).sql(
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, " +
+                            "tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "left join JOINED_ORGANIZATION tb_2_ " +
+                            "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "left join JOINED_PERSON tb_3_ " +
+                            "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "where tb_1_.ID = ?"
+            );
+            ctx.statement(1).variables("ORG", "Person", 202L);
+            ctx.rows(
+                    "[" +
+                            "--->{\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}," +
+                            "--->{\"id\":202,\"name\":\"Initech\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}" +
+                            "]"
+            );
+        });
+    }
+
+    @Test
     public void testIssue1154WithId() {
         for (int i = 0; i < 2; i++) {
             final boolean useSql = i == 0;
