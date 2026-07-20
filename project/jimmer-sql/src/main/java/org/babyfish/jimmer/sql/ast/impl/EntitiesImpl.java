@@ -293,7 +293,7 @@ public class EntitiesImpl implements Entities {
                     entities.add(entity);
                 }
             }
-            Shapes.reshape(sqlClient, con, entities, fetcher, null);
+            Shapes.reshape(sqlClient, con, entities, immutableType, fetcher, null);
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
@@ -365,7 +365,7 @@ public class EntitiesImpl implements Entities {
                     entities.add(entity);
                 }
             }
-            Shapes.reshape(sqlClient, con, entities, fetcher, converter);
+            Shapes.reshape(sqlClient, con, entities, immutableType, fetcher, converter);
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.<E>createQuery(

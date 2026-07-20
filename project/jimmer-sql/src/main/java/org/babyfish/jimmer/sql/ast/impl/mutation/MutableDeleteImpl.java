@@ -159,7 +159,7 @@ public class MutableDeleteImpl
         }
         boolean manualPredicateRequired =
                 type == inheritanceInfo.getRootType() ||
-                        (resolvedMode == TypeMatchMode.EXACT && !type.getAllDerivedTypes().isEmpty());
+                        (resolvedMode == TypeMatchMode.EXACT && type.hasDerivedTypes());
         if (!manualPredicateRequired) {
             return;
         }
