@@ -17,7 +17,8 @@ dependencies {
     compileOnly(libs.spring.data.redis)
     compileOnly(libs.caffeine)
     compileOnly(libs.spring.graphql)
-    compileOnly(libs.jakartaee.api)
+    compileOnly(libs.javax.validation.api)
+    compileOnly(libs.jakarta.validation.api)
     compileOnly(libs.springdoc.openapi.common)
 
     annotationProcessor(libs.spring.boot.configurationProcessor)
@@ -30,6 +31,8 @@ dependencies {
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.boot.starter.validation)
     testImplementation(libs.spring.boot.starter.web)
+    testImplementation(libs.javax.validation.api)
+    testImplementation(libs.jakarta.validation.api)
     testImplementation(libs.h2)
     testRuntimeOnly(libs.bundles.jackson)
     testRuntimeOnly(projects.jimmerClientSwagger)
