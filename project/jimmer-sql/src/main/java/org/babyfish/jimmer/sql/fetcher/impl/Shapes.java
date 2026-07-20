@@ -29,17 +29,14 @@ public class Shapes {
             Function<?, E> converter
     ) {
         if (entities.isEmpty() ||
-                fetcher == null && immutableType.getDirectDerivedTypes().isEmpty()) {
+                fetcher == null && !immutableType.hasDerivedTypes()) {
             return;
         }
         Map<ImmutableType, Shape> shapeMap = new HashMap<>();
         boolean needReshape = false;
         for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
             ImmutableType actualType = spi.__type();
-            Shape shape = shapeMap.computeIfAbsent(
-                    actualType,
-                    it -> createShape(immutableType, fetcher, it)
-            );
+            Shape shape = shapeMap.computeIfAbsent(actualType, it -> createShape(immutableType, fetcher, it));
             if (!needReshape) {
                 needReshape = shape.requiresReshape();
             }
@@ -48,11 +45,7 @@ public class Shapes {
             entities.replaceAll(entity -> {
                 ImmutableSpi spi = (ImmutableSpi) entity;
                 Shape shape = shapeMap.get(spi.__type());
-                return (E) Internal.produce(
-                        spi.__type(),
-                        spi,
-                        draft -> shape.apply((DraftSpi) draft)
-                );
+                return (E) Internal.produce(spi.__type(), spi, draft -> shape.apply((DraftSpi) draft));
             });
         }
         if (fetcher != null) {
@@ -66,9 +59,7 @@ public class Shapes {
             ImmutableType actualType
     ) {
         Map<String, Field> fieldMap = fetcher != null ? fieldMap(fetcher, actualType) : null;
-        Map<String, ImmutableProp> objectCachePropMap = fetcher == null ?
-                immutableType.getObjectCacheProps() :
-                null;
+        Map<String, ImmutableProp> objectCachePropMap = fetcher == null ? immutableType.getObjectCacheProps() : null;
         Map<String, ImmutableProp> actualObjectCachePropMap = actualType.getObjectCacheProps();
         List<PropId> unloadPropIds = new ArrayList<>();
         List<PropId> hidePropIds = new ArrayList<>();

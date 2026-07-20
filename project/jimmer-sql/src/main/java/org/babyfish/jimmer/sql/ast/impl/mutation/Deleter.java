@@ -238,7 +238,7 @@ public class Deleter {
             return false;
         }
         ImmutableType type = deletedTypes.iterator().next();
-        return type != inheritanceInfo.getRootType() && type.getAllDerivedTypes().isEmpty();
+        return type != inheritanceInfo.getRootType() && !type.hasDerivedTypes();
     }
 
     private int executeStagedJoinedExactDelete(Collection<Object> ids) {

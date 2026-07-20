@@ -48,7 +48,7 @@ public class ValueSerializer<T> {
         this.jsonReader = codec.readerFor(tf -> createValueType(tf, type, prop));
         this.jsonWriter = codec.writer();
         InheritanceInfo inheritanceInfo = type != null ? type.getInheritanceInfo() : null;
-        if (inheritanceInfo != null && !type.getDirectDerivedTypes().isEmpty()) {
+        if (inheritanceInfo != null && type.hasDerivedTypes()) {
             ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
             this.discriminatorPropName = discriminatorProp.getName();
             this.discriminatorType = discriminatorProp.getReturnClass();
