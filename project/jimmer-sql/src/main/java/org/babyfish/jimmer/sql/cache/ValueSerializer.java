@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.codec.JsonReader;
-import org.babyfish.jimmer.jackson.codec.JsonTypeFactory;
-import org.babyfish.jimmer.jackson.codec.JsonWriter;
+import org.babyfish.jimmer.jackson.codec.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.exception.SerializationException;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +19,10 @@ public class ValueSerializer<T> {
 
     private final JsonReader<T> jsonReader;
     private final JsonWriter jsonWriter;
+    private final ImmutableType polymorphicType;
+    private final InheritanceInfo inheritanceInfo;
+    private final JsonReader<Node> treeReader;
+    private final JsonConverter jsonConverter;
 
     public ValueSerializer(@NotNull ImmutableType type) {
         this(type, null, jsonCodec());
@@ -44,6 +46,18 @@ public class ValueSerializer<T> {
         }
         this.jsonReader = codec.readerFor(tf -> createValueType(tf, type, prop));
         this.jsonWriter = codec.writer();
+        InheritanceInfo inheritanceInfo = type != null ? type.getInheritanceInfo() : null;
+        if (inheritanceInfo != null && !type.getDirectDerivedTypes().isEmpty()) {
+            this.polymorphicType = type;
+            this.inheritanceInfo = inheritanceInfo;
+            this.treeReader = codec.treeReader();
+            this.jsonConverter = codec.converter();
+        } else {
+            this.polymorphicType = null;
+            this.inheritanceInfo = null;
+            this.treeReader = null;
+            this.jsonConverter = null;
+        }
     }
 
     private static <JT> JT createValueType(JsonTypeFactory<JT> typeFactory, ImmutableType type, ImmutableProp prop) {
@@ -91,11 +105,27 @@ public class ValueSerializer<T> {
         return serializedMap;
     }
 
+    @SuppressWarnings("unchecked")
     public T deserialize(byte[] value) {
         if (value == null || value.length == 0 || Arrays.equals(value, NULL_BYTES)) {
             return null;
         }
         try {
+            if (inheritanceInfo != null) {
+                Node node = treeReader.read(value);
+                ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
+                Node discriminatorNode = node.get(discriminatorProp.getName());
+                if (discriminatorNode != null && !discriminatorNode.isNull()) {
+                    Object discriminator = discriminatorNode.convertTo(
+                            discriminatorProp.getReturnClass(),
+                            jsonConverter
+                    );
+                    ImmutableType actualType = inheritanceInfo.getDiscriminatorTypeMap().get(discriminator);
+                    if (actualType != null && polymorphicType.isAssignableFrom(actualType)) {
+                        return (T) node.convertTo(actualType.getJavaClass(), jsonConverter);
+                    }
+                }
+            }
             return jsonReader.read(value);
         } catch (Exception ex) {
             throw new SerializationException(ex);

@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -18,32 +17,31 @@ import java.util.function.Function;
 
 public class Shapes {
 
-    private Shapes() {}
+    private Shapes() {
+    }
 
     @SuppressWarnings("unchecked")
     public static <E> void reshape(
             JSqlClientImplementor sqlClient,
             Connection con,
             List<E> entities,
+            ImmutableType immutableType,
             Fetcher<?> fetcher,
             Function<?, E> converter
     ) {
-        if (entities.isEmpty() || fetcher == null) {
+        if (entities.isEmpty()) {
             return;
         }
-        ImmutableType immutableType = fetcher.getImmutableType();
-        List<PropId> shownPropIds = new ArrayList<>();
-        for (Field field : fetcher.getFieldMap().values()) {
-            if (field.getProp().isView() || field.getProp().isFormula()) {
-                shownPropIds.add(field.getProp().getId());
-            }
-        }
+        Map<ImmutableType, Map<String, Field>> fieldMapCache = new HashMap<>();
         boolean needDrop = false;
         for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-            for (ImmutableProp prop : immutableType.getProps().values()) {
+            ImmutableType actualType = spi.__type();
+            Map<String, Field> fieldMap = fetcher != null ?
+                    fieldMapCache.computeIfAbsent(actualType, it -> fieldMap(fetcher, it)) :
+                    null;
+            for (ImmutableProp prop : actualType.getProps().values()) {
                 if (spi.__isLoaded(prop.getId())) {
-                    Field field = fetcher.getFieldMap().get(prop.getName());
-                    if (field == null || field.isImplicit()) {
+                    if (!isIncluded(immutableType, fieldMap, prop) || isImplicit(fieldMap, prop)) {
                         needDrop = true;
                         break;
                     }
@@ -54,58 +52,110 @@ public class Shapes {
             ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
             while (itr.hasNext()) {
                 ImmutableSpi spi = itr.next();
+                Map<String, Field> fieldMap = fetcher != null ? fieldMapCache.get(spi.__type()) : null;
                 itr.set(
                         (ImmutableSpi) Internal.produce(spi.__type(), spi, draft -> {
-                            for (ImmutableProp prop : immutableType.getProps().values()) {
+                            for (ImmutableProp prop : spi.__type().getProps().values()) {
                                 if (spi.__isLoaded(prop.getId())) {
-                                    Field field = fetcher.getFieldMap().get(prop.getName());
-                                    if (field == null) {
+                                    if (!isIncluded(immutableType, fieldMap, prop)) {
                                         if (!prop.isView()) {
                                             ((DraftSpi) draft).__unload(prop.getId());
                                         } else {
                                             ((DraftSpi) draft).__show(prop.getId(), false);
                                         }
-                                    } else if (field.isImplicit()) {
+                                    } else if (isImplicit(fieldMap, prop)) {
                                         ((DraftSpi) draft).__show(prop.getId(), false);
                                     }
                                 }
-                                for (PropId shownPropId : shownPropIds) {
-                                    ((DraftSpi) draft).__show(shownPropId, true);
+                            }
+                            if (fieldMap != null) {
+                                for (Field field : fieldMap.values()) {
+                                    ImmutableProp prop = field.getProp();
+                                    if (prop.isView() || prop.isFormula()) {
+                                        ((DraftSpi) draft).__show(prop.getId(), true);
+                                    }
                                 }
                             }
                         })
                 );
             }
         }
-        FetcherUtil.fetch(
-                sqlClient,
-                con,
-                Collections.singletonList(
-                        new FetcherSelection<E>() {
+        if (fetcher != null) {
+            FetcherUtil.fetch(
+                    sqlClient,
+                    con,
+                    Collections.singletonList(
+                            new FetcherSelection<E>() {
 
-                            @Override
-                            public FetchPath getPath() {
-                                return null;
-                            }
+                                @Override
+                                public FetchPath getPath() {
+                                    return null;
+                                }
 
-                            @Override
-                            public Fetcher<?> getFetcher() {
-                                return fetcher;
-                            }
+                                @Override
+                                public Fetcher<?> getFetcher() {
+                                    return fetcher;
+                                }
 
-                            @Override
-                            public PropExpression.Embedded<?> getEmbeddedPropExpression() {
-                                return null;
-                            }
+                                @Override
+                                public PropExpression.Embedded<?> getEmbeddedPropExpression() {
+                                    return null;
+                                }
 
-                            @Override
-                            public @Nullable Function<?, E> getConverter() {
-                                return converter;
+                                @Override
+                                public @Nullable Function<?, E> getConverter() {
+                                    return converter;
+                                }
                             }
-                        }
-                ),
-                null,
-                entities
-        );
+                    ),
+                    null,
+                    entities
+            );
+        }
+    }
+
+    private static boolean isIncluded(
+            ImmutableType immutableType,
+            Map<String, Field> fieldMap,
+            ImmutableProp prop
+    ) {
+        return fieldMap != null ?
+                fieldMap.containsKey(prop.getName()) :
+                immutableType.getObjectCacheProps().containsKey(prop.getName());
+    }
+
+    private static boolean isImplicit(Map<String, Field> fieldMap, ImmutableProp prop) {
+        if (fieldMap == null) {
+            return false;
+        }
+        Field field = fieldMap.get(prop.getName());
+        return field != null && field.isImplicit();
+    }
+
+    private static Map<String, Field> fieldMap(Fetcher<?> fetcher, ImmutableType actualType) {
+        Map<String, Field> fieldMap = new LinkedHashMap<>();
+        collectFields(fetcher, actualType, fieldMap);
+        return fieldMap;
+    }
+
+    private static void collectFields(
+            Fetcher<?> fetcher,
+            ImmutableType actualType,
+            Map<String, Field> fieldMap
+    ) {
+        for (Field field : fetcher.getFieldMap().values()) {
+            Field oldField = fieldMap.get(field.getProp().getName());
+            if (oldField == null || oldField.isImplicit() || !field.isImplicit()) {
+                fieldMap.put(field.getProp().getName(), field);
+            }
+        }
+        if (fetcher instanceof FetcherImplementor<?>) {
+            for (Map.Entry<ImmutableType, Fetcher<?>> e :
+                    ((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().entrySet()) {
+                if (e.getKey().isAssignableFrom(actualType)) {
+                    collectFields(e.getValue(), actualType, fieldMap);
+                }
+            }
+        }
     }
 }

@@ -8,10 +8,8 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Client;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.ClientFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
-import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationFetcher;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2Fetcher;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +23,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-import static java.util.Collections.singletonList;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class ObjectCacheTest extends AbstractQueryTest {
@@ -288,24 +285,66 @@ public class ObjectCacheTest extends AbstractQueryTest {
 
     @Test
     public void testPolymorphicRootFetcher() {
+        for (int i = 0; i < 2; i++) {
+            final boolean useSql = i == 0;
+            connectAndExpect(con -> {
+                List<Client> clients = sqlClient
+                        .getEntities()
+                        .forConnection(con)
+                        .findByIds(
+                                ClientFetcher.$
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName()),
+                                Arrays.asList(200L, 201L)
+                        );
+                Assertions.assertEquals(2, clients.size());
+                Organization organization = (Organization) clients.get(0);
+                Assertions.assertEquals("Globex", organization.name());
+                Assertions.assertEquals("GLOBEX-001", organization.taxCode());
+                Assertions.assertFalse(organization instanceof DraftSpi);
+                Person person = (Person) clients.get(1);
+                Assertions.assertEquals("Alice", person.name());
+                Assertions.assertEquals("Alice", person.firstName());
+                Assertions.assertFalse(person instanceof DraftSpi);
+                return clients;
+            }, ctx -> {
+                if (useSql) {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, " +
+                                    "tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "left join JOINED_ORGANIZATION tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "left join JOINED_PERSON tb_3_ " +
+                                    "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "where tb_1_.ID in (?, ?)"
+                    );
+                }
+                ctx.rows(
+                        "[" +
+                                "--->{\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}," +
+                                "--->{\"id\":201,\"name\":\"Alice\",\"firstName\":\"Alice\"}" +
+                                "]"
+                );
+            });
+        }
         connectAndExpect(con -> {
             List<Client> clients = sqlClient
                     .getEntities()
                     .forConnection(con)
-                    .findByIds(ClientFetcher.$.name(), singletonList(200L));
-            Assertions.assertEquals(1, clients.size());
-            Client client = clients.get(0);
-            Assertions.assertEquals(Organization.class, ((ImmutableSpi) client).__type().getJavaClass());
-            Assertions.assertEquals("Globex", client.name());
-            Assertions.assertFalse(client instanceof DraftSpi);
+                    .findByIds(Client.class, Arrays.asList(200L, 201L));
+            Assertions.assertEquals(Organization.class, ((ImmutableSpi) clients.get(0)).__type().getJavaClass());
+            Assertions.assertEquals(Person.class, ((ImmutableSpi) clients.get(1)).__type().getJavaClass());
+            assertLoadState(clients.get(0), "id", "name", "description");
+            assertLoadState(clients.get(1), "id", "name", "description");
             return clients;
-        }, ctx -> {
-            ctx.sql(
-                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION " +
-                            "from JOINED_CLIENT tb_1_ where tb_1_.ID = ?"
-            );
-            ctx.rows("[{\"id\":200,\"name\":\"Globex\"}]");
-        });
+        }, ctx -> ctx.rows(
+                "[" +
+                        "--->{\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}," +
+                        "--->{\"id\":201,\"name\":\"Alice\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}" +
+                        "]"
+        ));
     }
 
     @Test
