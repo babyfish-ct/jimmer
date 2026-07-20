@@ -85,9 +85,9 @@ public class JimmerBeanValidationConfig {
 
         private static Class<?> traversableResolverType(ClassLoader classLoader) throws ClassNotFoundException {
             try {
-                return Class.forName("javax.validation.TraversableResolver", false, classLoader);
-            } catch (ClassNotFoundException ex) {
                 return Class.forName("jakarta.validation.TraversableResolver", false, classLoader);
+            } catch (ClassNotFoundException ex) {
+                return Class.forName("javax.validation.TraversableResolver", false, classLoader);
             }
         }
 
