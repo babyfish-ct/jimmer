@@ -2,10 +2,13 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationFetcher;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2Fetcher;
 import org.jetbrains.annotations.NotNull;
@@ -275,6 +278,53 @@ public class ObjectCacheTest extends AbstractQueryTest {
             stmt.executeUpdate();
         } catch (SQLException ex) {
             Assertions.fail("SQL error", ex);
+        }
+    }
+
+    @Test
+    public void testIssue1154() {
+        for (int i = 0; i < 2; i++) {
+            final boolean useSql = i == 0;
+            connectAndExpect(con -> {
+                Organization org = sqlClient
+                        .getEntities()
+                        .forConnection(con)
+                        .findById(OrganizationFetcher.$.allScalarFields(), 200L);
+                Assertions.assertFalse(org instanceof DraftSpi);
+                return org;
+            }, ctx -> {
+                if (useSql) {
+                    ctx.sql(
+                            "select " +
+                            "--->tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "--->inner join JOINED_ORGANIZATION tb_1__sub on tb_1_.ID = tb_1__sub.ID " +
+                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
+                    );
+                }
+                if (useSql) { // BUG！discriminator is loaded first time, but is not loaded at second time.
+                    ctx.rows(
+                            "[{" +
+                            "--->\"type\":\"ORG\"," +
+                            "--->\"id\":200," +
+                            "--->\"name\":\"Globex\"," +
+                            "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                            "--->\"taxCode\":\"GLOBEX-001\"," +
+                            "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                            "}]"
+                    );
+                } else {
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":200," +
+                                    "--->\"name\":\"Globex\"," +
+                                    "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->\"taxCode\":\"GLOBEX-001\"," +
+                                    "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "}]"
+                    );
+                }
+            });
         }
     }
 }
