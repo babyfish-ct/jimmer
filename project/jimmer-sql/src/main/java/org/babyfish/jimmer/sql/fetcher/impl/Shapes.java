@@ -6,11 +6,9 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -39,55 +37,23 @@ public class Shapes {
         for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
             ImmutableType actualType = spi.__type();
             Shape shape = shapeMap.computeIfAbsent(actualType, it -> createShape(immutableType, fetcher, it));
-            if (shape.isRequired(spi)) {
-                needReshape = true;
+            if (!needReshape) {
+                needReshape = shape.isRequired(spi);
             }
         }
         if (needReshape) {
-            ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
-            while (itr.hasNext()) {
-                ImmutableSpi spi = itr.next();
+            entities.replaceAll(entity -> {
+                ImmutableSpi spi = (ImmutableSpi) entity;
                 Shape shape = shapeMap.get(spi.__type());
-                itr.set(
-                        (ImmutableSpi) Internal.produce(
-                                spi.__type(),
-                                spi,
-                                draft -> shape.apply(spi, (DraftSpi) draft)
-                        )
+                return (E) Internal.produce(
+                        spi.__type(),
+                        spi,
+                        draft -> shape.apply(spi, (DraftSpi) draft)
                 );
-            }
+            });
         }
         if (fetcher != null) {
-            FetcherUtil.fetch(
-                    sqlClient,
-                    con,
-                    Collections.singletonList(
-                            new FetcherSelection<E>() {
-
-                                @Override
-                                public FetchPath getPath() {
-                                    return null;
-                                }
-
-                                @Override
-                                public Fetcher<?> getFetcher() {
-                                    return fetcher;
-                                }
-
-                                @Override
-                                public PropExpression.Embedded<?> getEmbeddedPropExpression() {
-                                    return null;
-                                }
-
-                                @Override
-                                public @Nullable Function<?, E> getConverter() {
-                                    return converter;
-                                }
-                            }
-                    ),
-                    null,
-                    entities
-            );
+            FetcherUtil.fetch(sqlClient, con, fetcher, converter, entities);
         }
     }
 

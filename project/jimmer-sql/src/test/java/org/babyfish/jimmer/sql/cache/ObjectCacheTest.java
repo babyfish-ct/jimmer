@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.dto.ReusableBookStoreView;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
 import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
@@ -90,6 +91,34 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                         "--->}" +
                                         "]"
                         );
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void testDto() {
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            connectAndExpect(
+                    con -> {
+                        ReusableBookStoreView view = sqlClient
+                                .getEntities()
+                                .forConnection(con)
+                                .findById(ReusableBookStoreView.class, oreillyId);
+                        Assertions.assertNotNull(view);
+                        Assertions.assertEquals(oreillyId, view.getId());
+                        Assertions.assertEquals("O'REILLY", view.getName());
+                        return view;
+                    }, ctx -> {
+                        if (useSql) {
+                            ctx.sql(
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                            "from BOOK_STORE tb_1_ " +
+                                            "where tb_1_.ID = ?"
+                            );
+                            ctx.variables(oreillyId);
+                        }
                     }
             );
         }

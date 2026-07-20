@@ -127,21 +127,17 @@ public class FetcherUtil {
 
         for (Map.Entry<Integer, List<Object>> e : columnMap.entrySet()) {
             int columnIndex = e.getKey();
-            List<Object> fetchedList = e.getValue();
             FetcherSelection<?> selection = (FetcherSelection<?>) selections.get(columnIndex);
-            Fetcher<?> fetcher = selection.getFetcher();
-            if (requiresPostFetch(sqlClient, fetcher)) {
-                fetchedList = produceList(sqlClient, con, selection, fetchedList);
-            }
-            Function<Object, Object> converter = (Function<Object, Object>) selection.getConverter();
-            if (converter != null) {
-                List<Object> list = new ArrayList<>(fetchedList.size());
-                for (Object fetched : fetchedList) {
-                    list.add(fetched != null ? converter.apply(fetched) : null);
-                }
-                fetchedList = list;
-            }
-            e.setValue(fetchedList);
+            e.setValue(
+                    fetchColumn(
+                            sqlClient,
+                            con,
+                            selection.getPath(),
+                            selection.getFetcher(),
+                            (Function<Object, Object>) selection.getConverter(),
+                            e.getValue()
+                    )
+            );
         }
 
         Map<Integer, Object> indexValueMap = new HashMap<>();
@@ -156,6 +152,48 @@ public class FetcherUtil {
             itr.set(ColumnAccessors.set(itr.next(), indexValueMap, tupleCreator));
             rowIndex++;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E> void fetch(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            Fetcher<?> fetcher,
+            @Nullable Function<?, E> converter,
+            List<E> entities
+    ) {
+        List<Object> fetchedList = fetchColumn(
+                sqlClient,
+                con,
+                null,
+                fetcher,
+                (Function<Object, Object>) converter,
+                (List<Object>) entities
+        );
+        if (fetchedList != entities) {
+            Collections.copy(entities, (List<E>) fetchedList);
+        }
+    }
+
+    private static List<Object> fetchColumn(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            FetchPath path,
+            Fetcher<?> fetcher,
+            @Nullable Function<Object, Object> converter,
+            List<Object> fetchedList
+    ) {
+        if (requiresPostFetch(sqlClient, fetcher)) {
+            fetchedList = produceList(sqlClient, con, path, fetcher, fetchedList);
+        }
+        if (converter != null) {
+            List<Object> convertedList = new ArrayList<>(fetchedList.size());
+            for (Object fetched : fetchedList) {
+                convertedList.add(fetched != null ? converter.apply(fetched) : null);
+            }
+            return convertedList;
+        }
+        return fetchedList;
     }
 
     private static void fetch(
@@ -177,7 +215,8 @@ public class FetcherUtil {
     private static List<Object> produceList(
             JSqlClientImplementor sqlClient,
             Connection con,
-            FetcherSelection<?> selection,
+            FetchPath path,
+            Fetcher<?> fetcher,
             List<Object> fetchedList
     ) {
         return Internal.produceList(
@@ -186,8 +225,8 @@ public class FetcherUtil {
                 values -> fetch(
                         sqlClient,
                         con,
-                        selection.getPath(),
-                        selection.getFetcher(),
+                        path,
+                        fetcher,
                         (List<DraftSpi>) values
                 ),
                 null
