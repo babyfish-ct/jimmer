@@ -1260,7 +1260,9 @@ class DtoGenerator private constructor(
                         addParameter(
                             ParameterSpec.builder(prop.name, propTypeName(prop))
                                 .apply {
-                                    if (isGeneratedNullable(prop)) {
+                                    if (prop is UserProp && prop.defaultValueText != null) {
+                                        defaultValue(prop.defaultValueText!!)
+                                    } else if (isGeneratedNullable(prop)) {
                                         defaultValue("null")
                                     } else if (propTypeName(prop) == BOOLEAN) {
                                         defaultValue("false")
