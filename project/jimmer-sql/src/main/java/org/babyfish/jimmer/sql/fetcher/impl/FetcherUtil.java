@@ -206,6 +206,10 @@ public class FetcherUtil {
         if (hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
             return true;
         }
+        if (fetcher instanceof FetcherImplementor<?> &&
+                ((FetcherImplementor<?>) fetcher).__isSimpleFetcher()) {
+            return false;
+        }
         for (Field field : fetcher.getFieldMap().values()) {
             if (field.isSimpleField()) {
                 continue;
