@@ -3,6 +3,6 @@ plugins {
     id("publish-convention")
 }
 
-extensions.configure<JavaPluginExtension> {
+java {
     withSourcesJar()
 }
