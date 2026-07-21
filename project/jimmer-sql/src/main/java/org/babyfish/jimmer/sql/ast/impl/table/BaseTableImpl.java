@@ -157,7 +157,7 @@ public class BaseTableImpl extends AbstractDataManager<BaseTableImpl.Key, BaseTa
 
     private static TypedBaseQueryImplementor<?> actualQuery(BaseTableSymbol symbol) {
         ConfigurableBaseQueryImpl<?> query = symbol.getQuery();
-        MergedBaseQueryImpl<?> mergedBy = query.getMergedBy();
+        MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(query);
         return mergedBy != null ? mergedBy : query;
     }
 

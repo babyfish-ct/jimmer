@@ -243,7 +243,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public List<Selection<?>> getSelections() {
-        return ((BaseTableSymbol) baseTable).getSelections();
+        T baseTable = this.baseTable;
+        return baseTable != null ?
+                ((BaseTableSymbol) baseTable).getSelections() :
+                queries[0].getSelections();
     }
 
     @Override

@@ -1300,6 +1300,37 @@ class BaseQueryTest : AbstractQueryTest() {
         }
     }
 
+    @Test
+    fun testChainedUnionAll() {
+        val union = baseTableSymbol {
+            sqlClient.createBaseQuery(Book::class) {
+                where(table.id eq 1L)
+                selections.add(table.id)
+            } unionAll sqlClient.createBaseQuery(Book::class) {
+                where(table.id eq 2L)
+                selections.add(table.id)
+            } unionAll sqlClient.createBaseQuery(Book::class) {
+                where(table.id eq 3L)
+                selections.add(table.id)
+            }
+        }
+        executeAndExpect(
+            sqlClient.createQuery(union) {
+                select(table._1)
+            }
+        ) {
+            sql(
+                "select tb_1_.c1 from (" +
+                    "select tb_2_.ID c1 from BOOK tb_2_ where tb_2_.ID = ? " +
+                    "union all select tb_3_.ID c1 from BOOK tb_3_ where tb_3_.ID = ? " +
+                    "union all select tb_4_.ID c1 from BOOK tb_4_ where tb_4_.ID = ?" +
+                    ") tb_1_"
+            )
+            variables(1L, 2L, 3L)
+            rows("[1,2,3]")
+        }
+    }
+
     private class BaseBookAuthorJoin : KPropsWeakJoin<
         KNonNullBaseTable1<KNonNullTable<Book>, KNullableTable<Book>>,
         KNonNullBaseTable1<KNonNullTable<Author>, KNullableTable<Author>>
