@@ -102,6 +102,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
     private List<MappedId> mappedIds;
     private Set<ImmutableProp> mappedIdProps;
     private ImmutableProp fakeUpdateProp;
+    private int typeCacheSlotCount;
+    private int propCacheSlotCount;
 
     ImmutableTypeImpl(
             Class<?> javaClass,
@@ -258,6 +260,27 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
     @Override
     public Class<?> getJavaClass() {
         return javaClass;
+    }
+
+    @NotNull
+    @Override
+    public ImmutableType getCacheOwnerType() {
+        return this;
+    }
+
+    @Override
+    public int getTypeCacheSlot() {
+        return 0;
+    }
+
+    @Override
+    public int getTypeCacheSlotCount() {
+        return typeCacheSlotCount;
+    }
+
+    @Override
+    public int getPropCacheSlotCount() {
+        return propCacheSlotCount;
     }
 
     @Override
@@ -877,6 +900,17 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
     void setProps(Map<String, ImmutableProp> declaredPropMap, Map<String, PropId> redefinedMap) {
         this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
         this.props = Collections.unmodifiableMap(createPropMap(redefinedMap));
+        int propCacheSlot = 0;
+        int associationOrdinal = 0;
+        for (ImmutableProp prop : props.values()) {
+            ImmutablePropImpl propImpl = (ImmutablePropImpl) prop;
+            propImpl.setPropCacheSlot(propCacheSlot++);
+            if (prop.getCategory().isAssociation()) {
+                propImpl.setAssociationOrdinal(associationOrdinal++);
+            }
+        }
+        typeCacheSlotCount = associationOrdinal + 1;
+        propCacheSlotCount = propCacheSlot + associationOrdinal * 2;
     }
 
     void resolveInheritanceInfo() {

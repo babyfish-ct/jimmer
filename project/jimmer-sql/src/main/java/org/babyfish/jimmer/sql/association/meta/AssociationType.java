@@ -4,6 +4,8 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
+import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
+import org.babyfish.jimmer.meta.spi.ImmutableTypeImplementor;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.*;
@@ -14,12 +16,18 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
 
-public class AssociationType extends AbstractImmutableTypeImpl {
+public class AssociationType extends AbstractImmutableTypeImpl implements ImmutableTypeImplementor {
 
     private static final PropCache<AssociationType> CACHE =
             new PropCache<>(AssociationType::new, false);
 
     private final ImmutableProp baseProp;
+
+    private final ImmutableType cacheOwnerType;
+
+    private final int typeCacheSlot;
+
+    private final int propCacheSlot;
 
     private final ImmutableType sourceType;
 
@@ -46,9 +54,14 @@ public class AssociationType extends AbstractImmutableTypeImpl {
     private AssociationType(ImmutableProp baseProp) {
 
         this.baseProp = baseProp;
+        ImmutablePropImplementor basePropImplementor = (ImmutablePropImplementor) baseProp;
+        cacheOwnerType = basePropImplementor.getCacheOwnerType();
+        int associationOrdinal = basePropImplementor.getAssociationOrdinal();
+        typeCacheSlot = associationOrdinal + 1;
+        propCacheSlot = cacheOwnerType.getProps().size() + associationOrdinal * 2;
 
         ImmutableProp mappedBy = baseProp.getMappedBy();
-        
+
         if (!(mappedBy != null ? mappedBy : baseProp).isMiddleTableDefinition()) {
             throw new IllegalArgumentException(
                     "\"" +
@@ -72,6 +85,36 @@ public class AssociationType extends AbstractImmutableTypeImpl {
 
     public ImmutableProp getBaseProp() {
         return baseProp;
+    }
+
+    @NotNull
+    @Override
+    public ImmutableType getCacheOwnerType() {
+        return cacheOwnerType;
+    }
+
+    @Override
+    public int getTypeCacheSlot() {
+        return typeCacheSlot;
+    }
+
+    @Override
+    public int getTypeCacheSlotCount() {
+        return ((ImmutableTypeImplementor) cacheOwnerType).getTypeCacheSlotCount();
+    }
+
+    @Override
+    public int getPropCacheSlotCount() {
+        return ((ImmutableTypeImplementor) cacheOwnerType).getPropCacheSlotCount();
+    }
+
+    @Override
+    public ImmutableProp getFakeUpdateProp() {
+        return null;
+    }
+
+    int getPropCacheSlot() {
+        return propCacheSlot;
     }
 
     public ImmutableType getSourceType() {

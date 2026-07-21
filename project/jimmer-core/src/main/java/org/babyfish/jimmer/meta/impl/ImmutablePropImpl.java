@@ -20,12 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -88,6 +83,10 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     private final DissociateAction dissociateAction;
 
     private final ImmutablePropImpl original;
+
+    private int propCacheSlot = -1;
+
+    private int associationOrdinal = -1;
 
     private ConverterMetadata converterMetadata;
 
@@ -393,6 +392,30 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public ImmutableType getDeclaringType() {
         return declaringType;
+    }
+
+    @NotNull
+    @Override
+    public ImmutableType getCacheOwnerType() {
+        return declaringType;
+    }
+
+    @Override
+    public int getPropCacheSlot() {
+        return propCacheSlot;
+    }
+
+    @Override
+    public int getAssociationOrdinal() {
+        return associationOrdinal;
+    }
+
+    void setPropCacheSlot(int propCacheSlot) {
+        this.propCacheSlot = propCacheSlot;
+    }
+
+    void setAssociationOrdinal(int associationOrdinal) {
+        this.associationOrdinal = associationOrdinal;
     }
 
     @Override

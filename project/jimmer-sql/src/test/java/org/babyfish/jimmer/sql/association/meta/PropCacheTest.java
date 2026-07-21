@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.model.Author;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.inheritance.NamedEntity;
+import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -26,15 +27,28 @@ public class PropCacheTest {
         AssociationType authorBooksType = AssociationType.of(
                 ImmutableType.get(Author.class).getProp("books")
         );
+        ImmutableType shopType = ImmutableType.get(Shop.class);
+        AssociationType shopCustomersType = AssociationType.of(shopType.getProp("customers"));
+        AssociationType shopVendorsType = AssociationType.of(shopType.getProp("vendors"));
         ImmutableProp bookAuthorsSourceProp = bookAuthorsType.getSourceProp();
         ImmutableProp bookAuthorsTargetProp = bookAuthorsType.getTargetProp();
         ImmutableProp authorBooksSourceProp = authorBooksType.getSourceProp();
+        ImmutableProp shopNameProp = shopType.getProp("name");
+        ImmutableProp shopCustomersSourceProp = shopCustomersType.getSourceProp();
+        ImmutableProp shopVendorsSourceProp = shopVendorsType.getSourceProp();
 
         Object bookAuthorsSourceValue = cache.get(bookAuthorsSourceProp);
         Assertions.assertSame(bookAuthorsSourceValue, cache.get(bookAuthorsSourceProp));
         Assertions.assertNotSame(bookAuthorsSourceValue, cache.get(bookAuthorsTargetProp));
         Assertions.assertNotSame(bookAuthorsSourceValue, cache.get(authorBooksSourceProp));
-        Assertions.assertEquals(3, invocationCount.get());
+        Object shopNameValue = cache.get(shopNameProp);
+        Object shopCustomersSourceValue = cache.get(shopCustomersSourceProp);
+        Object shopVendorsSourceValue = cache.get(shopVendorsSourceProp);
+        Assertions.assertNotSame(shopNameValue, shopCustomersSourceValue);
+        Assertions.assertNotSame(shopCustomersSourceValue, shopVendorsSourceValue);
+        Assertions.assertSame(shopCustomersSourceValue, cache.get(shopCustomersSourceProp));
+        Assertions.assertSame(shopVendorsSourceValue, cache.get(shopVendorsSourceProp));
+        Assertions.assertEquals(6, invocationCount.get());
     }
 
     @Test

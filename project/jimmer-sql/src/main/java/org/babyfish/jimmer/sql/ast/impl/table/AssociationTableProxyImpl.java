@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.Association;
@@ -12,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.util.function.Function;
 
@@ -20,8 +20,8 @@ public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends 
         extends AbstractTypedTable<Association<SE, TE>> implements
         AssociationTable<SE, ST, TE, TT>, TableProxy<Association<SE, TE>> {
 
-    private static final StaticCache<AssociationType, AssociationTableProxyImpl<?, ?, ?, ?>> CACHE =
-            new StaticCache<>(AssociationTableProxyImpl::new, false);
+    private static final TypeCache<AssociationTableProxyImpl<?, ?, ?, ?>> CACHE =
+            new TypeCache<>(type -> new AssociationTableProxyImpl<>((AssociationType) type), false);
 
     AssociationTableProxyImpl(AssociationType type) {
         super(type);
