@@ -4,7 +4,9 @@ import org.babyfish.jimmer.sql.kt.ast.expression.concat
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoinFun
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KWeakJoinLambdaFactory
-import org.babyfish.jimmer.sql.kt.model.classic.author.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
+import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
+import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.name
 import kotlin.reflect.KClass
@@ -27,6 +29,10 @@ class WeakJoinLambdaTest {
         val lambda1 = KWeakJoinLambdaFactory(Book::class.java, Author::class.java).get(weakJoin1)
         val lambda2 = KWeakJoinLambdaFactory(Book::class.java, Author::class.java).get(weakJoin2)
         val lambda3 = KWeakJoinLambdaFactory(Book::class.java, Author::class.java).get(weakJoin3)
+        val lambda4 = KWeakJoinLambdaFactory(Author::class.java, Book::class.java).get(weakJoin1)
+        expect(true) { lambda1 === KWeakJoinLambdaFactory(Book::class.java, Author::class.java).get(weakJoin1) }
+        expect(true) { lambda4?.sourceType == Author::class.java }
+        expect(true) { lambda4?.targetType == Book::class.java }
         expect(true) { lambda1.hashCode() == lambda2.hashCode() }
         expect(false) { lambda1.hashCode() == lambda3.hashCode() }
         expect(true) { lambda1 == lambda2 }
@@ -34,7 +40,7 @@ class WeakJoinLambdaTest {
     }
 
     companion object {
-        fun <S: Any, T: Any> weakJoin(
+        fun <S : Any, T : Any> weakJoin(
             sourceType: KClass<S>,
             targetType: KClass<T>,
             block: KWeakJoinFun<S, T>

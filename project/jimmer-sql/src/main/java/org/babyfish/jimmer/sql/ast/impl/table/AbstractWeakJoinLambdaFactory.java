@@ -6,60 +6,44 @@ import org.babyfish.jimmer.impl.org.objectweb.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.org.objectweb.asm.Opcodes;
 import org.babyfish.jimmer.impl.org.objectweb.asm.tree.InsnList;
 import org.babyfish.jimmer.impl.org.objectweb.asm.tree.MethodNode;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.invoke.*;
-import java.lang.reflect.*;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public abstract class AbstractWeakJoinLambdaFactory {
 
-    private static final WeakJoinLambda NIL =
-            new WeakJoinLambda(new InsnList(), void.class, void.class);
+    private static final Object NIL = new Object();
 
-    private final ReadWriteLock cacheRwl = new ReentrantReadWriteLock();
-
-    private final Map<Class<?>, WeakJoinLambda> cacheMap = new WeakHashMap<>();
+    private static final ClassCache<LambdaInfoSlot> CACHE =
+            new ClassCache<>(it -> new LambdaInfoSlot());
 
     protected final WeakJoinLambda getLambda(Object join) {
-        WeakJoinLambda weakJoinLambda;
-        Lock lock;
-        (lock = cacheRwl.readLock()).lock();
-        try {
-            weakJoinLambda = cacheMap.get(join.getClass());
-        } finally {
-            lock.unlock();
+        LambdaInfo lambdaInfo = CACHE.get(join.getClass()).get(join);
+        if (lambdaInfo == null) {
+            return null;
         }
-        if (weakJoinLambda == null) {
-            (lock = cacheRwl.writeLock()).lock();
-            try {
-                weakJoinLambda = cacheMap.get(join.getClass());
-                if (weakJoinLambda == null) {
-                    weakJoinLambda = create(join);
-                    if (weakJoinLambda == null) {
-                        weakJoinLambda = NIL;
-                    }
-                    cacheMap.put(join.getClass(), weakJoinLambda);
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-        return weakJoinLambda == NIL ? null : weakJoinLambda;
+        Class<?>[] types = getTypes(lambdaInfo.implClass, lambdaInfo.implMethodSignature);
+        return lambdaInfo.getLambda(types[0], types[1]);
     }
 
-    private WeakJoinLambda create(Object join) {
+    protected final WeakJoinLambda getClassInvariantLambda(Object join) {
+        LambdaInfo lambdaInfo = CACHE.get(join.getClass()).get(join);
+        if (lambdaInfo == null) {
+            return null;
+        }
+        return lambdaInfo.getClassInvariantLambda(this);
+    }
+
+    private static LambdaInfo create(Object join) {
         SerializedLambda serializedLambda = getSerializedLambda(join);
         if (serializedLambda == null) {
             return null;
         }
-        Class<?>[] types = getTypes(serializedLambda);
         ClassReader classReader = null;
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(
                 serializedLambda.getImplClass() + ".class"
@@ -88,10 +72,14 @@ public abstract class AbstractWeakJoinLambdaFactory {
         ClassVisitorImpl cv = new ClassVisitorImpl(serializedLambda.getImplMethodName());
         classReader.accept(cv, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         InsnListUtils.eraseLambdaMagicNumber(cv.methodNode.instructions);
-        return new WeakJoinLambda(cv.methodNode.instructions, types[0], types[1]);
+        return new LambdaInfo(
+                cv.methodNode.instructions,
+                serializedLambda.getImplClass(),
+                serializedLambda.getImplMethodSignature()
+        );
     }
 
-    protected abstract Class<?>[] getTypes(SerializedLambda serializedLambda);
+    protected abstract Class<?>[] getTypes(String implClass, String implMethodSignature);
 
     private static SerializedLambda getSerializedLambda(Object join) {
 
@@ -114,6 +102,68 @@ public abstract class AbstractWeakJoinLambdaFactory {
             throw new IllegalStateException("Not a SerializedLambda: " + serializedLambda.getClass());
         }
         return (SerializedLambda) serializedLambda;
+    }
+
+    private static class LambdaInfoSlot {
+
+        private volatile Object value;
+
+        LambdaInfo get(Object join) {
+            Object value = this.value;
+            if (value == null) {
+                LambdaInfo lambdaInfo = create(join);
+                value = lambdaInfo != null ? lambdaInfo : NIL;
+                this.value = value;
+            }
+            return value != NIL ? (LambdaInfo) value : null;
+        }
+    }
+
+    private static class LambdaInfo {
+
+        private final InsnList instructions;
+
+        private final String implClass;
+
+        private final String implMethodSignature;
+
+        private volatile WeakJoinLambda primaryLambda;
+
+        private volatile WeakJoinLambda classInvariantLambda;
+
+        private LambdaInfo(
+                InsnList instructions,
+                String implClass,
+                String implMethodSignature
+        ) {
+            this.instructions = instructions;
+            this.implClass = implClass;
+            this.implMethodSignature = implMethodSignature;
+        }
+
+        WeakJoinLambda getLambda(Class<?> sourceType, Class<?> targetType) {
+            WeakJoinLambda lambda = primaryLambda;
+            if (lambda != null &&
+                    lambda.getSourceType() == sourceType &&
+                    lambda.getTargetType() == targetType) {
+                return lambda;
+            }
+            lambda = new WeakJoinLambda(instructions, sourceType, targetType);
+            if (primaryLambda == null) {
+                primaryLambda = lambda;
+            }
+            return lambda;
+        }
+
+        WeakJoinLambda getClassInvariantLambda(AbstractWeakJoinLambdaFactory factory) {
+            WeakJoinLambda lambda = classInvariantLambda;
+            if (lambda == null) {
+                Class<?>[] types = factory.getTypes(implClass, implMethodSignature);
+                lambda = getLambda(types[0], types[1]);
+                classInvariantLambda = lambda;
+            }
+            return lambda;
+        }
     }
 
     private static class ClassVisitorImpl extends ClassVisitor {

@@ -4,7 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.AuthorTableEx;
+import org.babyfish.jimmer.sql.model.BookTableEx;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,7 @@ public class WeakJoinLambdaTest {
         Assertions.assertNotNull(lambda1);
         Assertions.assertNotNull(lambda2);
         Assertions.assertNotNull(lambda3);
+        Assertions.assertSame(lambda1, JWeakJoinLambdaFactory.get(join1));
         Assertions.assertEquals(lambda1.hashCode(), lambda2.hashCode());
         Assertions.assertNotEquals(lambda1.hashCode(), lambda3.hashCode());
         Assertions.assertEquals(lambda1, lambda2);

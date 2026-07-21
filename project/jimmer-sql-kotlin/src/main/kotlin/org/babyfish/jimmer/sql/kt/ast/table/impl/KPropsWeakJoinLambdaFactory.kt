@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 import org.babyfish.jimmer.sql.ast.impl.table.AbstractWeakJoinLambdaFactory
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda
 import org.babyfish.jimmer.sql.kt.ast.table.KPropsWeakJoinFun
-import java.lang.invoke.SerializedLambda
 
 internal class KPropsWeakJoinLambdaFactory(
     private val sourceType: Class<*>,
@@ -13,7 +12,7 @@ internal class KPropsWeakJoinLambdaFactory(
     fun get(fn: KPropsWeakJoinFun<*, *>): WeakJoinLambda? =
         getLambda(fn)
 
-    override fun getTypes(serializedLambda: SerializedLambda?): Array<Class<*>?> {
+    override fun getTypes(implClass: String, implMethodSignature: String): Array<Class<*>> {
         return arrayOf(sourceType, targetType)
     }
 }

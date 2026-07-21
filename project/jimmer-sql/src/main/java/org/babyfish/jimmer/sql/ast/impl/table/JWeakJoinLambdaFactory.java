@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 
-import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
 
 public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
@@ -15,13 +14,13 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
             new JWeakJoinLambdaFactory();
 
     public static WeakJoinLambda get(WeakJoin<?, ?> join) {
-        return INSTANCE.getLambda(join);
+        return INSTANCE.getClassInvariantLambda(join);
     }
 
     @Override
-    protected Class<?>[] getTypes(SerializedLambda serializedLambda) {
+    protected Class<?>[] getTypes(String implClass, String implMethodSignature) {
         org.babyfish.jimmer.impl.org.objectweb.asm.Type[] asmTypes =
-                org.babyfish.jimmer.impl.org.objectweb.asm.Type.getArgumentTypes(serializedLambda.getImplMethodSignature());
+                org.babyfish.jimmer.impl.org.objectweb.asm.Type.getArgumentTypes(implMethodSignature);
         Class<?>[] types = new Class[asmTypes.length];
         for (int i = 0; i < asmTypes.length; i++) {
             String className = asmTypes[i].getInternalName().replace('/', '.');
@@ -31,7 +30,7 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
             } catch (ClassNotFoundException ex) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +
-                                serializedLambda.getImplClass() +
+                                implClass +
                                 "\", the type arguments[" +
                                 i +
                                 "] \"" +
@@ -46,7 +45,7 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
             if (!AbstractTypedTable.class.isAssignableFrom(type)) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +
-                                serializedLambda.getImplClass() +
+                                implClass +
                                 "\", the type arguments[" +
                                 i +
                                 "] \"" +
@@ -59,7 +58,7 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
             if (type.getTypeParameters().length != 0) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +
-                                serializedLambda.getImplClass() +
+                                implClass +
                                 "\", the type arguments[" +
                                 i +
                                 "] \"" +
@@ -71,7 +70,7 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
             if (arguments.length == 0) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +
-                                serializedLambda.getImplClass() +
+                                implClass +
                                 "\", the type arguments[" +
                                 i +
                                 "] \"" +
@@ -85,7 +84,7 @@ public class JWeakJoinLambdaFactory extends AbstractWeakJoinLambdaFactory {
             if (!(argumentType instanceof Class<?>)) {
                 throw new IllegalArgumentException(
                         "Cannot pass the work join type \"" +
-                                serializedLambda.getImplClass() +
+                                implClass +
                                 "\", the type arguments[" +
                                 i +
                                 "] \"" +
