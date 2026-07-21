@@ -784,7 +784,7 @@ insert into transform(id, `left`, top, `right`, bottom, target_left, target_top,
 create table department(
     id bigint not null,
     name varchar(20) not null,
-    deleted_time datetime
+    deleted_time timestamp
 );
 alter table department
     add constraint pk_department
@@ -939,7 +939,7 @@ create sequence file_id_seq as bigint start with 100;
 create table file_user(
     id bigint not null,
     name varchar(20) not null,
-    deleted_time datetime
+    deleted_time timestamp
 );
 
 alter table file_user

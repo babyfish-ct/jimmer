@@ -635,12 +635,12 @@ create table B.TABLE_B(
 
 create table C.TABLE_C(
     id bigint not null primary key,
-    deleted_time datetime
+    deleted_time timestamp
 );
 
 create table D.TABLE_D(
     id bigint not null primary key,
-    created_time datetime
+    created_time timestamp
 );
 
 insert into C.TABLE_C(id, deleted_time) values(1, null);
@@ -1536,7 +1536,7 @@ create sequence file_id_seq as bigint start with 100;
 create table file_user(
     id bigint not null,
     name varchar(20) not null,
-    deleted_time datetime
+    deleted_time timestamp
 );
 
 alter table file_user
