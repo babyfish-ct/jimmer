@@ -203,7 +203,7 @@ class ClientProcessor(
             val resolvedType = type.fastResolve()
             determineNullity(resolvedType)
             determineFetchBy(type)
-            determineTypeNameAndArguments(resolvedType)
+            determineTypeNameAndArguments(resolvedType, type)
             typeRef.removeOptional()
         } catch (ex: JsonValueTypeChangeException) {
             typeRef.replaceBy(
@@ -313,7 +313,10 @@ class ClientProcessor(
         typeRef.fetcherDoc = docMetadata.getDoc(field)
     }
 
-    private fun SchemaBuilder<KSDeclaration>.determineTypeNameAndArguments(type: KSType) {
+    private fun SchemaBuilder<KSDeclaration>.determineTypeNameAndArguments(
+        type: KSType,
+        typeReference: KSTypeReference
+    ) {
         val typeRef = current<TypeRefImpl<KSDeclaration>>()
         (type.declaration as? KSTypeParameter)?.let {
             typeRef.typeName = it.parentDeclaration!!.toTypeName().typeVariable(type.declaration.simpleName.asString())
@@ -421,7 +424,14 @@ class ClientProcessor(
                 "Client API system does not accept unambiguous type `java.lang.Object`"
             )
         }
-        for (argument in type.arguments) {
+        val resolvedArguments = type.arguments
+        // Source arguments retain the declaration parent required by KSP's
+        // incremental tracking of type-use annotation values.
+        val arguments = typeReference.element
+            ?.typeArguments
+            ?.takeIf { it.size == resolvedArguments.size }
+            ?: resolvedArguments
+        for (argument in arguments) {
             when (argument.variance) {
                 Variance.STAR -> throw UnambiguousTypeException(
                     ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
