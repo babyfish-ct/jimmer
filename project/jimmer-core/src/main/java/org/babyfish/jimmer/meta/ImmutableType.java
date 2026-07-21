@@ -85,6 +85,10 @@ public interface ImmutableType {
 
     Set<ImmutableType> getAllDerivedTypes();
 
+    default boolean hasDerivedTypes() {
+        return !getDirectDerivedTypes().isEmpty();
+    }
+
     @Nullable
     String getDiscriminatorValue();
 

@@ -8,10 +8,10 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 @FunctionalInterface
 public interface CacheLoader<K, V> {
@@ -40,11 +40,17 @@ class ObjectCacheFetchers {
         return (Fetcher<V>) CACHE.get(type);
     }
 
-    @SuppressWarnings("unchecked")
     private static Fetcher<?> create(Class<?> type) {
-        ImmutableType immutableType = ImmutableType.get(type);
-        Fetcher<?> fetcher = new FetcherImpl<>((Class<Object>) type);
+        return create(ImmutableType.get(type), Collections.emptySet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Fetcher<?> create(ImmutableType immutableType, Set<String> inheritedPropNames) {
+        Fetcher<?> fetcher = new FetcherImpl<>((Class<Object>) immutableType.getJavaClass());
         for (ImmutableProp prop : immutableType.getObjectCacheProps().values()) {
+            if (inheritedPropNames.contains(prop.getName())) {
+                continue;
+            }
             ImmutableProp idViewProp = prop.getIdViewProp();
             ImmutableProp fetchedProp = idViewProp != null ? idViewProp : prop;
             if (prop.isReference(TargetLevel.PERSISTENT)) {
@@ -52,6 +58,15 @@ class ObjectCacheFetchers {
             } else {
                 fetcher = fetcher.add(fetchedProp.getName());
             }
+        }
+        Set<String> propNames = new HashSet<>(inheritedPropNames);
+        propNames.addAll(immutableType.getObjectCacheProps().keySet());
+        List<ImmutableType> derivedTypes = new ArrayList<>(immutableType.getDirectDerivedTypes());
+        derivedTypes.sort(Comparator.comparing(it -> it.getJavaClass().getName()));
+        for (ImmutableType derivedType : derivedTypes) {
+            fetcher = ((FetcherImplementor<?>) fetcher).__forType(
+                    create(derivedType, propNames)
+            );
         }
         return fetcher;
     }

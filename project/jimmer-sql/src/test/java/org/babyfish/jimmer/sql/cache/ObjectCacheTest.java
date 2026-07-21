@@ -2,10 +2,15 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.dto.ReusableBookStoreView;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.*;
+import org.babyfish.jimmer.sql.model.inheritance.joinedtable.Organization;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2;
 import org.babyfish.jimmer.sql.model.issue1252.TreeNode2Fetcher;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -85,6 +91,34 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                         "--->}" +
                                         "]"
                         );
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void testDto() {
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            connectAndExpect(
+                    con -> {
+                        ReusableBookStoreView view = sqlClient
+                                .getEntities()
+                                .forConnection(con)
+                                .findById(ReusableBookStoreView.class, oreillyId);
+                        Assertions.assertNotNull(view);
+                        Assertions.assertEquals(oreillyId, view.getId());
+                        Assertions.assertEquals("O'REILLY", view.getName());
+                        return view;
+                    }, ctx -> {
+                        if (useSql) {
+                            ctx.sql(
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                            "from BOOK_STORE tb_1_ " +
+                                            "where tb_1_.ID = ?"
+                            );
+                            ctx.variables(oreillyId);
+                        }
                     }
             );
         }
@@ -275,6 +309,234 @@ public class ObjectCacheTest extends AbstractQueryTest {
             stmt.executeUpdate();
         } catch (SQLException ex) {
             Assertions.fail("SQL error", ex);
+        }
+    }
+
+    @Test
+    public void testPolymorphicRootFetcher() {
+        for (int i = 0; i < 2; i++) {
+            final boolean useSql = i == 0;
+            connectAndExpect(con -> {
+                List<Client> clients = sqlClient
+                        .getEntities()
+                        .forConnection(con)
+                        .findByIds(
+                                ClientFetcher.$
+                                        .name()
+                                        .forType(OrganizationFetcher.$.taxCode())
+                                        .forType(PersonFetcher.$.firstName()),
+                                Arrays.asList(200L, 201L)
+                        );
+                Assertions.assertEquals(2, clients.size());
+                Organization organization = (Organization) clients.get(0);
+                Assertions.assertEquals("Globex", organization.name());
+                Assertions.assertEquals("GLOBEX-001", organization.taxCode());
+                Assertions.assertFalse(organization instanceof DraftSpi);
+                Person person = (Person) clients.get(1);
+                Assertions.assertEquals("Alice", person.name());
+                Assertions.assertEquals("Alice", person.firstName());
+                Assertions.assertFalse(person instanceof DraftSpi);
+                return clients;
+            }, ctx -> {
+                if (useSql) {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, " +
+                                    "tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "left join JOINED_ORGANIZATION tb_2_ " +
+                                    "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "left join JOINED_PERSON tb_3_ " +
+                                    "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                                    "where tb_1_.ID in (?, ?)"
+                    );
+                }
+                ctx.rows(
+                        "[" +
+                                "--->{\"id\":200,\"name\":\"Globex\",\"taxCode\":\"GLOBEX-001\"}," +
+                                "--->{\"id\":201,\"name\":\"Alice\",\"firstName\":\"Alice\"}" +
+                                "]"
+                );
+            });
+        }
+        connectAndExpect(con -> {
+            List<Client> clients = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findByIds(Client.class, Arrays.asList(200L, 201L));
+            Assertions.assertEquals(Organization.class, ((ImmutableSpi) clients.get(0)).__type().getJavaClass());
+            Assertions.assertEquals(Person.class, ((ImmutableSpi) clients.get(1)).__type().getJavaClass());
+            assertLoadState(clients.get(0), "id", "name", "description");
+            assertLoadState(clients.get(1), "id", "name", "description");
+            return clients;
+        }, ctx -> ctx.rows(
+                "[" +
+                        "--->{\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}," +
+                        "--->{\"id\":201,\"name\":\"Alice\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}" +
+                        "]"
+        ));
+    }
+
+    @Test
+    public void testMixedPolymorphicObjectCacheHitAndMiss() {
+        connectAndExpect(con -> {
+            Client cachedClient = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findById(Client.class, 200L);
+            Assertions.assertInstanceOf(Organization.class, cachedClient);
+            assertLoadState(cachedClient, "id", "name", "description");
+            List<Client> clients = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findByIds(Client.class, Arrays.asList(200L, 202L));
+            Assertions.assertEquals(2, clients.size());
+            for (Client client : clients) {
+                Assertions.assertInstanceOf(Organization.class, client);
+            }
+            assertLoadState(clients, "id", "name", "description");
+            return clients;
+        }, ctx -> {
+            ctx.sql(
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, " +
+                            "tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "left join JOINED_ORGANIZATION tb_2_ " +
+                            "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "left join JOINED_PERSON tb_3_ " +
+                            "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "where tb_1_.ID = ?"
+            );
+            ctx.variables("ORG", "Person", 200L);
+            ctx.statement(1).sql(
+                    "select tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, " +
+                            "tb_2_.TAX_CODE, tb_2_.STATUS, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "left join JOINED_ORGANIZATION tb_2_ " +
+                            "on tb_1_.ID = tb_2_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "left join JOINED_PERSON tb_3_ " +
+                            "on tb_1_.ID = tb_3_.ID and tb_1_.CLIENT_TYPE = ? " +
+                            "where tb_1_.ID = ?"
+            );
+            ctx.statement(1).variables("ORG", "Person", 202L);
+            ctx.rows(
+                    "[" +
+                            "--->{\"id\":200,\"name\":\"Globex\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}," +
+                            "--->{\"id\":202,\"name\":\"Initech\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"}" +
+                            "]"
+            );
+        });
+    }
+
+    @Test
+    public void testIssue1154WithId() {
+        for (int i = 0; i < 2; i++) {
+            final boolean useSql = i == 0;
+            connectAndExpect(con -> {
+                Organization org = sqlClient
+                        .getEntities()
+                        .forConnection(con)
+                        .findById(OrganizationFetcher.$.allScalarFields(), 200L);
+                Assertions.assertFalse(org instanceof DraftSpi);
+                return org;
+            }, ctx -> {
+                if (useSql) {
+                    ctx.sql(
+                            "select " +
+                            "--->tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
+                            "from JOINED_CLIENT tb_1_ " +
+                            "--->inner join JOINED_ORGANIZATION tb_1__sub on tb_1_.ID = tb_1__sub.ID " +
+                            "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
+                    );
+                }
+                if (useSql) { // BUG！discriminator is loaded first time, but is not loaded at second time.
+                    ctx.rows(
+                            "[{" +
+                            "--->\"type\":\"ORG\"," +
+                            "--->\"id\":200," +
+                            "--->\"name\":\"Globex\"," +
+                            "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                            "--->\"taxCode\":\"GLOBEX-001\"," +
+                            "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                            "}]"
+                    );
+                } else {
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":200," +
+                                    "--->\"name\":\"Globex\"," +
+                                    "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->\"taxCode\":\"GLOBEX-001\"," +
+                                    "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "}]"
+                    );
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testIssue1154WithIds() {
+        for (int i = 0; i < 2; i++) {
+            final boolean useSql = i == 0;
+            connectAndExpect(con -> {
+                List<Organization> orgs = sqlClient
+                        .getEntities()
+                        .forConnection(con)
+                        .findByIds(OrganizationFetcher.$.allScalarFields(), Arrays.asList(200L, 202L));
+                for (Organization org : orgs) {
+                    Assertions.assertFalse(org instanceof DraftSpi);
+                }
+                return orgs;
+            }, ctx -> {
+                if (useSql) {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ID, tb_1_.CLIENT_TYPE, tb_1_.NAME, tb_1_.DESCRIPTION, tb_1__sub.TAX_CODE, tb_1__sub.STATUS " +
+                                    "from JOINED_CLIENT tb_1_ " +
+                                    "--->inner join JOINED_ORGANIZATION tb_1__sub on tb_1_.ID = tb_1__sub.ID " +
+                                    "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE = ?"
+                    );
+                }
+                if (useSql) { // BUG！discriminator is loaded first time, but is not loaded at second time.
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"type\":\"ORG\"," +
+                                    "--->--->\"id\":200," +
+                                    "--->--->\"name\":\"Globex\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"GLOBEX-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->},{" +
+                                    "--->--->\"type\":\"ORG\"," +
+                                    "--->--->\"id\":202," +
+                                    "--->--->\"name\":\"Initech\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"INI-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                } else {
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":200," +
+                                    "--->--->\"name\":\"Globex\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"GLOBEX-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":202," +
+                                    "--->--->\"name\":\"Initech\"," +
+                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                    "--->--->\"taxCode\":\"INI-001\"," +
+                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+            });
         }
     }
 }
