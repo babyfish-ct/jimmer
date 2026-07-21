@@ -1,6 +1,7 @@
 package org.babyfish.jimmer;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.babyfish.jimmer.error.ClientExceptionMetadata;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +13,7 @@ public class ExceptionTest {
     public void testException() {
         String string = new AException("hello", "world").getFields().toString();
         Assertions.assertTrue(
-                "{x=hello, y=world}".equals(string)||
+                "{x=hello, y=world}".equals(string) ||
                         "{y=world, x=hello}".equals(string)
 
         );
@@ -26,6 +27,19 @@ public class ExceptionTest {
                         "{y=world, x=hello}".equals(string)
 
         );
+    }
+
+    @Test
+    public void testLeafFirstMetadataInitialization() {
+        ClientExceptionMetadata leafMetadata = ClientExceptionMetadata.of(LeafException.class);
+        ClientExceptionMetadata branchMetadata = leafMetadata.getSuperMetadata();
+        ClientExceptionMetadata rootMetadata = branchMetadata.getSuperMetadata();
+
+        Assertions.assertSame(leafMetadata, ClientExceptionMetadata.of(LeafException.class));
+        Assertions.assertSame(branchMetadata, ClientExceptionMetadata.of(BranchException.class));
+        Assertions.assertSame(rootMetadata, ClientExceptionMetadata.of(RootException.class));
+        Assertions.assertSame(leafMetadata, branchMetadata.getSubMetadatas().get(0));
+        Assertions.assertSame(branchMetadata, rootMetadata.getSubMetadatas().get(0));
     }
 
     @ClientException(code = "A")
@@ -69,5 +83,17 @@ public class ExceptionTest {
         public String getY() {
             return y;
         }
+    }
+
+    @ClientException(family = "HIERARCHY", subTypes = BranchException.class)
+    private abstract static class RootException extends CodeBasedRuntimeException {
+    }
+
+    @ClientException(subTypes = LeafException.class)
+    private abstract static class BranchException extends RootException {
+    }
+
+    @ClientException(code = "LEAF")
+    private static class LeafException extends BranchException {
     }
 }

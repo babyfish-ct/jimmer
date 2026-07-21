@@ -3,18 +3,18 @@ package org.babyfish.jimmer.error;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.babyfish.jimmer.ClientException;
 import org.babyfish.jimmer.client.ApiIgnore;
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.ModelException;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.Function;
 
 public class ClientExceptionMetadata {
 
-    private static final Cache CACHE = new Cache(ClientExceptionMetadata::create);
+    private static final ClassCache<ClientExceptionMetadata> CACHE =
+            new ClassCache<>(ClientExceptionMetadata::create);
 
     private final Class<?> exceptionType;
 
@@ -28,13 +28,16 @@ public class ClientExceptionMetadata {
 
     private final ClientExceptionMetadata superMetadata;
 
-    private List<ClientExceptionMetadata> subMetadatas;
+    private final ClientExceptionMetadata rootMetadata;
+
+    private volatile List<ClientExceptionMetadata> subMetadatas;
 
     private ClientExceptionMetadata(Class<?> exceptionType, String family, String code, ClientExceptionMetadata superMetadata) {
         this.exceptionType = exceptionType;
         this.family = family;
         this.code = code;
         this.superMetadata = superMetadata;
+        this.rootMetadata = superMetadata != null ? superMetadata.rootMetadata : this;
         Map<String, Method> declaredGetterMap = new LinkedHashMap<>();
         for (Method method : exceptionType.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers()) ||
@@ -95,7 +98,9 @@ public class ClientExceptionMetadata {
     }
 
     public static ClientExceptionMetadata of(Class<?> exceptionType) {
-        return CACHE.get(exceptionType);
+        ClientExceptionMetadata metadata = CACHE.get(exceptionType);
+        metadata.rootMetadata.init();
+        return metadata;
     }
 
     private static ClientExceptionMetadata create(Class<?> type) {
@@ -189,7 +194,7 @@ public class ClientExceptionMetadata {
                                     "\" but the \"subTypes\" of the annotation does not contain current type"
                     );
                 }
-                superMetadata = CACHE.internallyGet(superType);
+                superMetadata = CACHE.get(superType);
             }
         }
 
@@ -215,7 +220,10 @@ public class ClientExceptionMetadata {
         );
     }
 
-    void init() {
+    private void init() {
+        if (subMetadatas != null) {
+            return;
+        }
         ClientException ce = exceptionType.getAnnotation(ClientException.class);
         Class<?>[] subTypes = ce.subTypes();
         Set<ClientExceptionMetadata> metadataSet = new LinkedHashSet<>((subTypes.length * 4 + 2) / 3);
@@ -245,24 +253,10 @@ public class ClientExceptionMetadata {
                                 "\""
                 );
             }
-            metadataSet.add(CACHE.internallyGet(subType));
+            ClientExceptionMetadata subMetadata = CACHE.get(subType);
+            subMetadata.init();
+            metadataSet.add(subMetadata);
         }
         this.subMetadatas = Collections.unmodifiableList(new ArrayList<>(metadataSet));
-    }
-
-    private static class Cache extends StaticCache<Class<?>, ClientExceptionMetadata> {
-
-        public Cache(Function<Class<?>, ClientExceptionMetadata> creator) {
-            super(creator, false);
-        }
-
-        ClientExceptionMetadata internallyGet(Class<?> type) {
-            return getWithoutLock(type);
-        }
-
-        @Override
-        protected void onCreated(Class<?> key, ClientExceptionMetadata value) {
-            value.init();
-        }
     }
 }
