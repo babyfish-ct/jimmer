@@ -469,9 +469,9 @@ public final class PolymorphicEntityReadPlan {
             if (!tableType.isAssignableFrom(concreteType)) {
                 continue;
             }
-            String discriminatorValue = concreteType.getDiscriminatorValue();
+            Object discriminatorValue = inheritanceInfo.getDiscriminatorValue(concreteType);
             if (discriminatorValue != null) {
-                values.add(discriminatorValueGetter.get(inheritanceInfo.discriminatorValue(discriminatorValue)));
+                values.add(discriminatorValueGetter.get(discriminatorValue));
             }
         }
         return Collections.unmodifiableList(values);

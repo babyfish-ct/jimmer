@@ -153,7 +153,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
                             "\" because it is abstract"
             );
         }
-        String value = targetType.getDiscriminatorValue();
+        Object value = inheritanceInfo.getDiscriminatorValue(targetType);
         if (value == null) {
             throw new ExecutionException(
                     "Cannot check whether table \"" +
@@ -166,7 +166,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
         return new DiscriminatorPredicate(
                 this,
                 inheritanceInfo.getDiscriminatorProp(),
-                inheritanceInfo.discriminatorValue(value)
+                value
         );
     }
 

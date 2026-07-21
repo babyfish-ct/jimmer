@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -153,7 +154,7 @@ class Rows {
                         unloaded = true;
                         if (!keyProp.isNullable()) {
                             //  Add missing non-null key prop name
-                            spiMissingProps.add(keyProp.getName()); 
+                            spiMissingProps.add(keyProp.getName());
                         }
                     }
                 }
@@ -225,7 +226,7 @@ class Rows {
 
     private static boolean isLoaded(ImmutableSpi spi, ImmutableProp prop) {
         return spi.__isLoaded(prop.getId()) ||
-                prop.isDiscriminator() && spi.__type().getDiscriminatorValue() != null;
+                prop.isDiscriminator() && ImmutableObjects.getDiscriminator(spi) != null;
     }
 
     @SuppressWarnings("unchecked")

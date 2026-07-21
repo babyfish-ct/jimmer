@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
@@ -98,7 +99,7 @@ public class KeyMatcherImpl implements KeyMatcher {
     public List<ImmutableProp> getAllProps() {
         return allProps;
     }
-    
+
     @Nullable
     @Override
     public Group match(Object entity) {
@@ -222,7 +223,7 @@ public class KeyMatcherImpl implements KeyMatcher {
         public boolean isLoaded(ImmutableSpi spi) {
             for (PropId propId : propIds) {
                 ImmutableProp prop = type.getProp(propId);
-                if (prop.isDiscriminator() && spi.__type().getDiscriminatorValue() != null) {
+                if (prop.isDiscriminator() && ImmutableObjects.getDiscriminator(spi) != null) {
                     continue;
                 }
                 if (!spi.__isLoaded(prop.getId())) {

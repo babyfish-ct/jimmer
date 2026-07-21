@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
@@ -219,14 +219,10 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
     }
 
     private static Object valueOf(ImmutableSpi spi, PropId propId) {
-        if (!spi.__isLoaded(propId)) {
-            Object value = DiscriminatorValues.of(spi.__type());
+        if (!spi.__isLoaded(propId) && spi.__type().getProp(propId).isDiscriminator()) {
+            Object value = ImmutableObjects.getDiscriminator(spi);
             if (value != null) {
-                for (ImmutableProp prop : spi.__type().getProps().values()) {
-                    if (prop.isDiscriminator() && prop.getId().equals(propId)) {
-                        return value;
-                    }
-                }
+                return value;
             }
         }
         return spi.__get(propId);

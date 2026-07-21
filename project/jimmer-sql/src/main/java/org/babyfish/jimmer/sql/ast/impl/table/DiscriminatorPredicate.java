@@ -59,9 +59,9 @@ class DiscriminatorPredicate extends AbstractPredicate {
     ) {
         List<Object> values = new ArrayList<>();
         for (ImmutableType concreteType : inheritanceInfo.getConcreteTypes(targetType)) {
-            String value = concreteType.getDiscriminatorValue();
+            Object value = inheritanceInfo.getDiscriminatorValue(concreteType);
             if (value != null) {
-                values.add(inheritanceInfo.discriminatorValue(value));
+                values.add(value);
             }
         }
         return values;

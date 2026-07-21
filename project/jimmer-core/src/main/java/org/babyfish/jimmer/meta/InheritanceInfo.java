@@ -120,14 +120,25 @@ public final class InheritanceInfo {
     }
 
     public Map<Object, ImmutableType> getDiscriminatorTypeMap() {
+        return getDiscriminatorTypeMap(rootType);
+    }
+
+    public Map<Object, ImmutableType> getDiscriminatorTypeMap(@NotNull ImmutableType baseType) {
         Map<Object, ImmutableType> map = new LinkedHashMap<>();
-        for (ImmutableType type : getConcreteTypes()) {
-            String value = type.getDiscriminatorValue();
+        for (ImmutableType type : getConcreteTypes(baseType)) {
+            Object value = getDiscriminatorValue(type);
             if (value != null) {
-                map.put(discriminatorValue(value), type);
+                map.put(value, type);
             }
         }
         return Collections.unmodifiableMap(map);
+    }
+
+    @Nullable
+    public Object getDiscriminatorValue(@NotNull ImmutableType type) {
+        getDiscriminatorProp(type);
+        String value = type.getDiscriminatorValue();
+        return value != null ? discriminatorValue(value) : null;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

@@ -199,6 +199,27 @@ public class ImmutableObjects {
         return (X) get(immutable, prop.unwrap().getId());
     }
 
+    /**
+     * Get the discriminator represented by the actual immutable type.
+     * Unlike reading the discriminator property, this does not require that
+     * property to be loaded.
+     *
+     * @param immutable Object instance
+     * @return The discriminator, or {@code null} if the object does not belong
+     * to an inheritance hierarchy or its actual type is not instantiable
+     * @throws IllegalArgumentException The argument is not an immutable object
+     *                                  created by jimmer
+     */
+    @Nullable
+    public static Object getDiscriminator(@NotNull Object immutable) {
+        if (!(immutable instanceof ImmutableSpi)) {
+            throw new IllegalArgumentException("The argument is not immutable object created by jimmer");
+        }
+        ImmutableType type = ((ImmutableSpi) immutable).__type();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null ? inheritanceInfo.getDiscriminatorValue(type) : null;
+    }
+
     public static boolean isIdOnly(Object immutable) {
         if (immutable == null) {
             return false;

@@ -13,6 +13,9 @@ fun <T : Any> isLoaded(obj: T, prop: KProperty1<T, *>): Boolean =
 fun <T : Any> isLonely(obj: T): Boolean =
     ImmutableObjects.isLonely(obj)
 
+fun getDiscriminator(obj: Any): Any? =
+    ImmutableObjects.getDiscriminator(obj)
+
 @Suppress("UNCHECKED_CAST")
 fun <T : Any, X> get(obj: T, prop: KProperty1<T, X>): X =
     ImmutableObjects.get(obj, prop.toImmutableProp()) as X

@@ -354,7 +354,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                             " type match mode."
             );
         }
-        Object value = inheritanceInfo.discriminatorValue(type.getDiscriminatorValue());
+        Object value = inheritanceInfo.getDiscriminatorValue(type);
         PropExpression<Object> expr = table.get(inheritanceInfo.getDiscriminatorProp(type), false);
         manualTypeMatchPredicateApplied = true;
         where(expr.eq(value));

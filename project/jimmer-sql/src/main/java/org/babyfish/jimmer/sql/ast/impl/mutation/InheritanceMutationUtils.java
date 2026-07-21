@@ -84,9 +84,9 @@ final class InheritanceMutationUtils {
     ) {
         List<Object> values = new ArrayList<>();
         for (ImmutableType type : types) {
-            String value = type.getDiscriminatorValue();
+            Object value = inheritanceInfo.getDiscriminatorValue(type);
             if (value != null) {
-                values.add(inheritanceInfo.discriminatorValue(value));
+                values.add(value);
             }
         }
         return values;

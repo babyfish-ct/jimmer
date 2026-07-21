@@ -844,7 +844,7 @@ class Operator {
                     rootType,
                     oldType != targetType ? discriminatorProp : null,
                     discriminatorProp,
-                    DiscriminatorValues.of(oldType),
+                    inheritanceInfo.getDiscriminatorValue(oldType),
                     Collections.emptyList(),
                     true,
                     forceOneByOne,
@@ -2818,11 +2818,6 @@ class Operator {
                 Map<ImmutableProp, List<PropertyGetter>> getterMap = shape.getGetterMap();
                 for (ImmutableProp keyProp : keyProps) {
                     List<PropertyGetter> getters = getterMap.get(keyProp);
-                    if (getters == null) {
-                        if (keyProp.isDiscriminator()) {
-                            getters = PropertyGetter.propertyGetters(ctx.options.getSqlClient(), keyProp);
-                        }
-                    }
                     if (getters == null) {
                         getters = PropertyGetter.propertyGetters(ctx.options.getSqlClient(), keyProp);
                     }

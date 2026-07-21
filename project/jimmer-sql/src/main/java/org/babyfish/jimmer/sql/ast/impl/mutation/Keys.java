@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -33,7 +34,7 @@ class Keys {
 
     static Object valueOf(ImmutableSpi spi, ImmutableProp prop) {
         if (prop.isDiscriminator() && !spi.__isLoaded(prop.getId())) {
-            Object value = DiscriminatorValues.of(spi.__type());
+            Object value = ImmutableObjects.getDiscriminator(spi);
             if (value != null) {
                 return value;
             }

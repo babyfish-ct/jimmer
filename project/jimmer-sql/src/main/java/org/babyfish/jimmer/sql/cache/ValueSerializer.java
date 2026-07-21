@@ -5,6 +5,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.exception.SerializationException;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,7 +24,8 @@ public class ValueSerializer<T> {
     private final JsonWriter jsonWriter;
     private final String discriminatorPropName;
     private final Class<?> discriminatorType;
-    private final Map<Object, Class<?>> discriminatorTypeMap;
+    private final InheritanceInfo inheritanceInfo;
+    private final Map<Object, ImmutableType> typeByDiscriminator;
     private final JsonReader<Node> treeReader;
     private final JsonConverter jsonConverter;
 
@@ -47,24 +51,18 @@ public class ValueSerializer<T> {
         }
         this.jsonReader = codec.readerFor(tf -> createValueType(tf, type, prop));
         this.jsonWriter = codec.writer();
-        InheritanceInfo inheritanceInfo = type != null ? type.getInheritanceInfo() : null;
+        this.inheritanceInfo = type != null ? type.getInheritanceInfo() : null;
         if (inheritanceInfo != null && type.hasDerivedTypes()) {
             ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
             this.discriminatorPropName = discriminatorProp.getName();
             this.discriminatorType = discriminatorProp.getReturnClass();
-            Map<Object, Class<?>> discriminatorTypeMap = new HashMap<>();
-            for (Map.Entry<Object, ImmutableType> e : inheritanceInfo.getDiscriminatorTypeMap().entrySet()) {
-                if (type.isAssignableFrom(e.getValue())) {
-                    discriminatorTypeMap.put(e.getKey(), e.getValue().getJavaClass());
-                }
-            }
-            this.discriminatorTypeMap = discriminatorTypeMap;
+            this.typeByDiscriminator = inheritanceInfo.getDiscriminatorTypeMap(type);
             this.treeReader = codec.treeReader();
             this.jsonConverter = codec.converter();
         } else {
             this.discriminatorPropName = null;
             this.discriminatorType = null;
-            this.discriminatorTypeMap = null;
+            this.typeByDiscriminator = null;
             this.treeReader = null;
             this.jsonConverter = null;
         }
@@ -120,23 +118,49 @@ public class ValueSerializer<T> {
             return null;
         }
         try {
-            if (discriminatorTypeMap != null) {
+            if (typeByDiscriminator != null) {
                 Node node = treeReader.read(value);
                 Node discriminatorNode = node.get(discriminatorPropName);
-                if (discriminatorNode != null && !discriminatorNode.isNull()) {
-                    Object discriminator = discriminatorNode.canCastTo(discriminatorType) ?
-                            discriminatorNode.castTo(discriminatorType) :
-                            discriminatorNode.convertTo(discriminatorType, jsonConverter);
-                    Class<?> actualType = discriminatorTypeMap.get(discriminator);
-                    if (actualType != null) {
-                        return (T) node.convertTo(actualType, jsonConverter);
-                    }
+                if (discriminatorNode == null || discriminatorNode.isNull()) {
+                    throw new IllegalArgumentException(
+                            "The serialized polymorphic object does not contain discriminator property \"" +
+                                    discriminatorPropName +
+                                    "\""
+                    );
                 }
+                Object discriminator = discriminatorNode.canCastTo(discriminatorType) ?
+                        discriminatorNode.castTo(discriminatorType) :
+                        discriminatorNode.convertTo(discriminatorType, jsonConverter);
+                ImmutableType actualType = typeByDiscriminator.get(discriminator);
+                if (actualType == null) {
+                    throw new IllegalArgumentException(
+                            "The serialized polymorphic object has illegal discriminator \"" +
+                                    discriminator +
+                                    "\""
+                    );
+                }
+                return loadDiscriminator(
+                        (T) node.convertTo(actualType.getJavaClass(), jsonConverter)
+                );
             }
-            return jsonReader.read(value);
+            T result = jsonReader.read(value);
+            return inheritanceInfo != null ? loadDiscriminator(result) : result;
         } catch (Exception ex) {
             throw new SerializationException(ex);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private T loadDiscriminator(T value) {
+        ImmutableSpi spi = (ImmutableSpi) value;
+        ImmutableType actualType = spi.__type();
+        ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp(actualType);
+        Object discriminator = inheritanceInfo.getDiscriminatorValue(actualType);
+        return (T) Internal.produce(
+                actualType,
+                spi,
+                draft -> ((DraftSpi) draft).__set(discriminatorProp.getId(), discriminator)
+        );
     }
 
     @NotNull

@@ -448,28 +448,16 @@ public class ObjectCacheTest extends AbstractQueryTest {
                             "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
                     );
                 }
-                if (useSql) { // BUG！discriminator is loaded first time, but is not loaded at second time.
-                    ctx.rows(
-                            "[{" +
-                            "--->\"type\":\"ORG\"," +
-                            "--->\"id\":200," +
-                            "--->\"name\":\"Globex\"," +
-                            "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
-                            "--->\"taxCode\":\"GLOBEX-001\"," +
-                            "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
-                            "}]"
-                    );
-                } else {
-                    ctx.rows(
-                            "[{" +
-                                    "--->\"id\":200," +
-                                    "--->\"name\":\"Globex\"," +
-                                    "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
-                                    "--->\"taxCode\":\"GLOBEX-001\"," +
-                                    "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
-                                    "}]"
-                    );
-                }
+                ctx.rows(
+                        "[{" +
+                        "--->\"type\":\"ORG\"," +
+                        "--->\"id\":200," +
+                        "--->\"name\":\"Globex\"," +
+                        "--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                        "--->\"taxCode\":\"GLOBEX-001\"," +
+                        "--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                        "}]"
+                );
             });
         }
     }
@@ -497,45 +485,25 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                     "where tb_1_.ID in (?, ?) and tb_1_.CLIENT_TYPE = ?"
                     );
                 }
-                if (useSql) { // BUG！discriminator is loaded first time, but is not loaded at second time.
-                    ctx.rows(
-                            "[" +
-                                    "--->{" +
-                                    "--->--->\"type\":\"ORG\"," +
-                                    "--->--->\"id\":200," +
-                                    "--->--->\"name\":\"Globex\"," +
-                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
-                                    "--->--->\"taxCode\":\"GLOBEX-001\"," +
-                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
-                                    "--->},{" +
-                                    "--->--->\"type\":\"ORG\"," +
-                                    "--->--->\"id\":202," +
-                                    "--->--->\"name\":\"Initech\"," +
-                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
-                                    "--->--->\"taxCode\":\"INI-001\"," +
-                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
-                                    "--->}" +
-                                    "]"
-                    );
-                } else {
-                    ctx.rows(
-                            "[" +
-                                    "--->{" +
-                                    "--->--->\"id\":200," +
-                                    "--->--->\"name\":\"Globex\"," +
-                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
-                                    "--->--->\"taxCode\":\"GLOBEX-001\"," +
-                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
-                                    "--->},{" +
-                                    "--->--->\"id\":202," +
-                                    "--->--->\"name\":\"Initech\"," +
-                                    "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
-                                    "--->--->\"taxCode\":\"INI-001\"," +
-                                    "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
-                                    "--->}" +
-                                    "]"
-                    );
-                }
+                ctx.rows(
+                        "[" +
+                                "--->{" +
+                                "--->--->\"type\":\"ORG\"," +
+                                "--->--->\"id\":200," +
+                                "--->--->\"name\":\"Globex\"," +
+                                "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                "--->--->\"taxCode\":\"GLOBEX-001\"," +
+                                "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                "--->},{" +
+                                "--->--->\"type\":\"ORG\"," +
+                                "--->--->\"id\":202," +
+                                "--->--->\"name\":\"Initech\"," +
+                                "--->--->\"description\":\"DEFAULT_CLIENT_DESCRIPTION\"," +
+                                "--->--->\"taxCode\":\"INI-001\"," +
+                                "--->--->\"status\":\"DEFAULT_ORGANIZATION_STATUS\"" +
+                                "--->}" +
+                                "]"
+                );
             });
         }
     }
