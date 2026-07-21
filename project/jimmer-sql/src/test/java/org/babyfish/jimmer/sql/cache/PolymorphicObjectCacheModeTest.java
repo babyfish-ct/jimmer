@@ -66,23 +66,31 @@ public class PolymorphicObjectCacheModeTest extends AbstractQueryTest {
                     .getEntities()
                     .forConnection(con)
                     .findById(Client.class, 100L);
-            assertInstanceOf(Organization.class, client);
-            assertFalse(ImmutableObjects.isLoaded(client, "type"));
-            assertEquals("ORG", ImmutableObjects.getDiscriminator(client));
-            assertLoadState(client, "id", "name");
+            Organization organization = assertInstanceOf(Organization.class, client);
+            assertEquals("ORG", organization.type());
+            assertLoadState(organization, "id", "type", "name");
 
             List<Client> clients = sqlClient
                     .getEntities()
                     .forConnection(con)
                     .findByIds(Client.class, Arrays.asList(100L, 101L));
-            assertInstanceOf(Organization.class, clients.get(0));
-            assertFalse(ImmutableObjects.isLoaded(clients.get(0), "type"));
-            assertEquals("ORG", ImmutableObjects.getDiscriminator(clients.get(0)));
-            assertLoadState(clients.get(0), "id", "name");
-            assertInstanceOf(Person.class, clients.get(1));
-            assertFalse(ImmutableObjects.isLoaded(clients.get(1), "type"));
-            assertEquals("Person", ImmutableObjects.getDiscriminator(clients.get(1)));
-            assertLoadState(clients.get(1), "id", "name");
+            organization = assertInstanceOf(Organization.class, clients.get(0));
+            assertEquals("ORG", organization.type());
+            assertLoadState(organization, "id", "type", "name");
+            Person person = assertInstanceOf(Person.class, clients.get(1));
+            assertEquals("Person", person.type());
+            assertLoadState(person, "id", "type", "name");
+
+            Map<Long, Client> clientMap = sqlClient
+                    .getEntities()
+                    .forConnection(con)
+                    .findMapByIds(Client.class, Arrays.asList(100L, 101L));
+            organization = assertInstanceOf(Organization.class, clientMap.get(100L));
+            assertEquals("ORG", organization.type());
+            assertLoadState(organization, "id", "type", "name");
+            person = assertInstanceOf(Person.class, clientMap.get(101L));
+            assertEquals("Person", person.type());
+            assertLoadState(person, "id", "type", "name");
 
             clients = sqlClient
                     .getEntities()
@@ -95,11 +103,11 @@ public class PolymorphicObjectCacheModeTest extends AbstractQueryTest {
                                     .forType(PersonFetcher.$.firstName()),
                             Arrays.asList(100L, 101L)
                     );
-            Organization organization = assertInstanceOf(Organization.class, clients.get(0));
+            organization = assertInstanceOf(Organization.class, clients.get(0));
             assertEquals("ORG", organization.type());
             assertEquals("ACME-001", organization.taxCode());
             assertLoadState(organization, "id", "type", "name", "taxCode");
-            Person person = assertInstanceOf(Person.class, clients.get(1));
+            person = assertInstanceOf(Person.class, clients.get(1));
             assertEquals("Person", person.type());
             assertEquals("Bob", person.firstName());
             assertLoadState(person, "id", "type", "name", "firstName");

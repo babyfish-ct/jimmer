@@ -71,7 +71,7 @@ public class Shapes {
             Field field = fieldMap != null ? fieldMap.get(prop.getName()) : null;
             boolean included = fieldMap != null ?
                     field != null :
-                    !prop.isDiscriminator() && objectCachePropMap.containsKey(prop.getName());
+                    objectCachePropMap.containsKey(prop.getName());
             if (!included) {
                 if (prop.isView()) {
                     hidePropIds.add(prop.getId());
