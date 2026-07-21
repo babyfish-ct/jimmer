@@ -4,7 +4,6 @@ import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.Origin
@@ -28,7 +27,10 @@ import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
-import org.babyfish.jimmer.ksp.util.*
+import org.babyfish.jimmer.ksp.util.ConverterMetadata
+import org.babyfish.jimmer.ksp.util.GenericParser
+import org.babyfish.jimmer.ksp.util.fastResolve
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -49,7 +51,7 @@ class DtoGenerator private constructor(
 
     private val document: Document = Document()
 
-    private val useSiteTargetMap = mutableMapOf<String, Set<AnnotationUseSiteTarget>>()
+    private val useSiteTargetMap = mutableMapOf<String, Set<AnnotationSpec.UseSiteTarget>>()
 
     private val interfacePropNames = abstractPropNames(ctx, dtoType).let {
         if (polymorphicBranch) {
@@ -1149,10 +1151,7 @@ class DtoGenerator private constructor(
                             allowedTargets(anno.fullName).firstOrNull()?.let {
                                 addAnnotation(
                                     standardSpec(
-                                        object : KSAnnotation by anno {
-                                            override val useSiteTarget: AnnotationUseSiteTarget
-                                                get() = it
-                                        }.toAnnotationSpec()
+                                        annotationOf(anno, it)
                                     )
                                 )
                             }
@@ -1163,13 +1162,13 @@ class DtoGenerator private constructor(
                             continue
                         }
                         val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
-                            AnnotationUseSiteTarget.GET
+                            AnnotationSpec.UseSiteTarget.GET
                         } else {
                             allowedTargets(anno.qualifiedName).firstOrNull() ?: continue
                         }
                         addAnnotation(
                             standardSpec(
-                                annotationOf(anno, ctx.resolver, target.toPoetTarget())
+                                annotationOf(anno, ctx.resolver, target)
                             )
                         )
                     }
@@ -1219,14 +1218,12 @@ class DtoGenerator private constructor(
                             isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
                             allowedTargets(anno.fullName).firstOrNull {
-                                it == AnnotationUseSiteTarget.GET || it == AnnotationUseSiteTarget.PROPERTY
+                                it == AnnotationSpec.UseSiteTarget.GET ||
+                                    it == AnnotationSpec.UseSiteTarget.PROPERTY
                             }?.let {
                                 addAnnotation(
                                     standardSpec(
-                                        object : KSAnnotation by anno {
-                                            override val useSiteTarget: AnnotationUseSiteTarget
-                                                get() = it
-                                        }.toAnnotationSpec()
+                                        annotationOf(anno, it)
                                     )
                                 )
                             }
@@ -1234,15 +1231,16 @@ class DtoGenerator private constructor(
                     }
                     for (anno in prop.annotations) {
                         val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
-                            AnnotationUseSiteTarget.GET
+                            AnnotationSpec.UseSiteTarget.GET
                         } else {
                             allowedTargets(anno.qualifiedName).firstOrNull {
-                                it == AnnotationUseSiteTarget.GET || it == AnnotationUseSiteTarget.PROPERTY
+                                it == AnnotationSpec.UseSiteTarget.GET ||
+                                    it == AnnotationSpec.UseSiteTarget.PROPERTY
                             } ?: continue
                         }
                         addAnnotation(
                             standardSpec(
-                                annotationOf(anno, ctx.resolver, target.toPoetTarget())
+                                annotationOf(anno, ctx.resolver, target)
                             )
                         )
                     }
@@ -1260,7 +1258,9 @@ class DtoGenerator private constructor(
                         addParameter(
                             ParameterSpec.builder(prop.name, propTypeName(prop))
                                 .apply {
-                                    if (isGeneratedNullable(prop)) {
+                                    if (prop is UserProp && prop.defaultValueText != null) {
+                                        defaultValue(prop.defaultValueText!!)
+                                    } else if (isGeneratedNullable(prop)) {
                                         defaultValue("null")
                                     } else if (propTypeName(prop) == BOOLEAN) {
                                         defaultValue("false")
@@ -2390,7 +2390,7 @@ class DtoGenerator private constructor(
             return null
         }
 
-    private fun allowedTargets(typeName: String): Set<AnnotationUseSiteTarget> =
+    private fun allowedTargets(typeName: String): Set<AnnotationSpec.UseSiteTarget> =
         useSiteTargetMap.computeIfAbsent(typeName) { tn ->
             val annotation = ctx.resolver.getClassDeclarationByName(tn)
                 ?: error("Internal bug, cannot resolve annotation type \"$typeName\"")
@@ -2433,18 +2433,18 @@ class DtoGenerator private constructor(
                             getter = true
                     }
                 }
-            val targets = mutableSetOf<AnnotationUseSiteTarget>()
+            val targets = linkedSetOf<AnnotationSpec.UseSiteTarget>()
             if (field) {
-                targets += AnnotationUseSiteTarget.FIELD
+                targets += AnnotationSpec.UseSiteTarget.FIELD
             }
             if (getter) {
-                targets += AnnotationUseSiteTarget.GET
+                targets += AnnotationSpec.UseSiteTarget.GET
             }
             if (setter) {
-                targets += AnnotationUseSiteTarget.SET
+                targets += AnnotationSpec.UseSiteTarget.SET
             }
             if (property) {
-                targets += AnnotationUseSiteTarget.PROPERTY
+                targets += AnnotationSpec.UseSiteTarget.PROPERTY
             }
             targets
         }
@@ -2800,6 +2800,16 @@ class DtoGenerator private constructor(
                         useSiteTarget(it)
                     }
                 }
+                .build()
+
+        private fun annotationOf(
+            anno: KSAnnotation,
+            target: AnnotationSpec.UseSiteTarget
+        ): AnnotationSpec =
+            anno
+                .toAnnotationSpec()
+                .toBuilder()
+                .useSiteTarget(target)
                 .build()
 
         private fun CodeBlock.Builder.add(value: Value) {

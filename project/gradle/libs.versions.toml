@@ -3,8 +3,9 @@ addzero = "2026.07.15.2"
 antlr = "4.13.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
+easyexcel = "4.0.3"
 redisson = "3.32.0"
-h2 = "2.3.232"
+h2 = "2.4.240"
 intellijAnnotations = "12.0"
 jackson2 = "2.15.2"
 jackson3 = "3.0.3"
@@ -53,6 +54,7 @@ addzero-tool-database-model = { group = "site.addzero", name = "tool-database-mo
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
+easyexcel = { group = "com.alibaba", name = "easyexcel", version.ref = "easyexcel" }
 redisson = { group = "org.redisson", name = "redisson", version.ref = "redisson" }
 redisson-spring-boot-starter = { group = "org.redisson", name = "redisson-spring-boot-starter", version.ref = "redisson" }
 

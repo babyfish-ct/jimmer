@@ -2,8 +2,7 @@ import org.gradle.jvm.tasks.Jar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    `kotlin-convention`
-    `java-test-fixtures`
+    `kotlin-publish-convention`
     antlr
 }
 
@@ -27,11 +26,8 @@ dependencies {
         exclude("com.ibm.icu", "icu4j")
     }
 
-    testCompileOnly(libs.lombok)
-    testAnnotationProcessor(libs.lombok)
-    testAnnotationProcessor(projects.jimmerApt)
-    testAnnotationProcessor(files("src/test/dto-bundle"))
-
+    testImplementation(projects.jimmerSqlTestSupport)
+    testImplementation(projects.jimmerSqlTestModel)
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.h2)
@@ -61,9 +57,6 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xmaxerrs")
     options.compilerArgs.add("2000")
-    options.compilerArgs.add("-Ajimmer.dto.hibernateValidatorEnhancement=true")
-    options.compilerArgs.add("-Ajimmer.dto.fieldVisibility=protected")
-    options.compilerArgs.add("-Ajimmer.jackson3=true")
 }
 
 tasks.test {

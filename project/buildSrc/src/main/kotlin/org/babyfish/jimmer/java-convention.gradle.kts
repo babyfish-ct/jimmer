@@ -1,11 +1,9 @@
 plugins {
     `java-library`
-    id("publish-convention")
 }
 
 extensions.configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
 }
 
 tasks.test {

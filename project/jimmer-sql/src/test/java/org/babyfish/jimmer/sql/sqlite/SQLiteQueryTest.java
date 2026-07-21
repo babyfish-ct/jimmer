@@ -51,7 +51,7 @@ public class SQLiteQueryTest extends AbstractQueryTest {
                                     "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                     );
                     ctx.statement(1).sql(
-                            "select tb_1_.ID, coalesce(avg(tb_2_.PRICE), ?) " +
+                            "select tb_1_.ID, coalesce(round(avg(tb_2_.PRICE), 2), ?) " +
                                     "from BOOK_STORE tb_1_ " +
                                     "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_1_.ID = ? group by tb_1_.ID"
@@ -118,7 +118,7 @@ public class SQLiteQueryTest extends AbstractQueryTest {
                                     "--->--->--->--->]" +
                                     "--->--->--->}" +
                                     "--->--->]," +
-                                    "--->--->\"avgPrice\":80.3333333333333" +
+                                    "--->--->\"avgPrice\":80.33" +
                                     "--->}" +
                                     "]"
                     );

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model.calc;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.TransientResolver;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
@@ -14,7 +15,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.util.*;
 
 public class BookStoreAvgPriceResolver implements TransientResolver<UUID, BigDecimal> {
@@ -35,7 +35,11 @@ public class BookStoreAvgPriceResolver implements TransientResolver<UUID, BigDec
                         .groupBy(table.id())
                         .select(
                                 table.id(),
-                                table.asTableEx().books(JoinType.LEFT).price().avgAsDecimal().coalesce(BigDecimal.ZERO)
+                                Expression.numeric().sql(
+                                        BigDecimal.class,
+                                        "round(%e, 2)",
+                                        table.asTableEx().books(JoinType.LEFT).price().avgAsDecimal()
+                                ).coalesce(BigDecimal.ZERO)
                         )
                         .execute(TransientResolver.currentConnection());
         return Tuple2.toMap(tuples);

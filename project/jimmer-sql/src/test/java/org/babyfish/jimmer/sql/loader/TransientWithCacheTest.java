@@ -25,7 +25,7 @@ public class TransientWithCacheTest extends AbstractCachedLoaderTest {
                     ctx -> {
                         if (useSql) {
                             ctx.sql(
-                                    "select tb_1_.ID, coalesce(avg(tb_2_.PRICE), ?) " +
+                                    "select tb_1_.ID, coalesce(round(avg(tb_2_.PRICE), 2), ?) " +
                                             "from BOOK_STORE tb_1_ " +
                                             "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                             "where tb_1_.ID in (?, ?) " +
@@ -34,11 +34,11 @@ public class TransientWithCacheTest extends AbstractCachedLoaderTest {
                         }
                         ctx.row(0, map -> {
                             Assertions.assertEquals(
-                                    new BigDecimal("58.500000000000"),
+                                    new BigDecimal("58.50"),
                                     map.get(Entities.BOOK_STORES.get(0))
                             );
                             Assertions.assertEquals(
-                                    new BigDecimal("80.333333333333"),
+                                    new BigDecimal("80.33"),
                                     map.get(Entities.BOOK_STORES.get(1))
                             );
                         });
