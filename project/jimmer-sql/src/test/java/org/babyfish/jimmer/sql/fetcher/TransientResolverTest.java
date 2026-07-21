@@ -31,7 +31,7 @@ public class TransientResolverTest extends AbstractQueryTest {
                                     "from BOOK_STORE tb_1_"
                     );
                     it.statement(1).sql(
-                            "select tb_1_.ID, coalesce(avg(tb_2_.PRICE), ?) " +
+                            "select tb_1_.ID, coalesce(round(avg(tb_2_.PRICE), 2), ?) " +
                                     "from BOOK_STORE tb_1_ " +
                                     "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_1_.ID in (?, ?) " +
@@ -43,13 +43,13 @@ public class TransientResolverTest extends AbstractQueryTest {
                                     "--->\"name\":\"O'REILLY\"," +
                                     "--->\"website\":null," +
                                     "--->\"version\":0," +
-                                    "--->\"avgPrice\":58.500000000000" +
+                                    "--->\"avgPrice\":58.50" +
                                     "},{" +
                                     "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                     "--->\"name\":\"MANNING\"," +
                                     "--->\"website\":null," +
                                     "--->\"version\":0," +
-                                    "--->\"avgPrice\":80.333333333333" +
+                                    "--->\"avgPrice\":80.33" +
                                     "}" +
                                     "]"
                     );
