@@ -29,6 +29,7 @@ dependencies {
     testImplementation(projects.jimmerSqlTestSupport)
     testImplementation(projects.jimmerSqlTestModel)
     testImplementation(libs.bundles.jackson)
+    testImplementation(libs.caffeine)
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.h2)
     testImplementation(libs.mysql.connector.java)

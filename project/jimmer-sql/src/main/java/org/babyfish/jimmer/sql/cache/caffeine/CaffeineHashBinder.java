@@ -12,15 +12,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentMap;
 
 public class CaffeineHashBinder<K, V> extends AbstractTrackingConsumerBinder<K> implements SimpleBinder.Parameterized<K, V> {
 
     private final Cache<K, Map<SortedMap<String, Object>, V>> cache;
-
-    private final ReadWriteLock rwl = new ReentrantReadWriteLock();
 
     public CaffeineHashBinder(
             @Nullable ImmutableType type,
@@ -39,60 +35,34 @@ public class CaffeineHashBinder<K, V> extends AbstractTrackingConsumerBinder<K> 
 
     @Override
     public Map<K, V> getAll(Collection<K> keys, SortedMap<String, Object> parameterMap) {
-        Lock lock = rwl.readLock();
-        lock.lock();
-        try {
-            Map<K, V> resutMap = new LinkedHashMap<>((keys.size() * 4 + 2) / 3);
-            Map<K, Map<SortedMap<String, Object>, V>> subMapMap = cache.getAllPresent(keys);
-            for (Map.Entry<K, Map<SortedMap<String, Object>, V>> e : subMapMap.entrySet()) {
-                Map<SortedMap<String, Object>, V> subMap = e.getValue();
-                if (subMap == null) {
-                    continue;
-                }
-                V value = subMap.get(parameterMap);
-                if (value == null && subMap.containsKey(parameterMap)) {
-                    continue;
-                }
-                resutMap.put(e.getKey(), value);
+        Map<K, V> resultMap = new LinkedHashMap<>((keys.size() * 4 + 2) / 3);
+        Map<K, Map<SortedMap<String, Object>, V>> subMapMap = cache.getAllPresent(keys);
+        for (Map.Entry<K, Map<SortedMap<String, Object>, V>> e : subMapMap.entrySet()) {
+            Map<SortedMap<String, Object>, V> subMap = e.getValue();
+            V value = subMap.get(parameterMap);
+            if (value != null || subMap.containsKey(parameterMap)) {
+                resultMap.put(e.getKey(), value);
             }
-            return resutMap;
-        } finally {
-            lock.unlock();
         }
+        return resultMap;
     }
 
     @Override
     public void setAll(Map<K, V> map, SortedMap<String, Object> parameterMap) {
-        Lock lock = rwl.writeLock();
-        lock.lock();
-        try {
-            Map<K, Map<SortedMap<String, Object>, V>> subMapMap = cache.getAllPresent(map.keySet());
-            Map<K, Map<SortedMap<String, Object>, V>> newSubMapMap = new HashMap<>((map.size() * 4 + 2) / 3);
-            for (Map.Entry<K, V> e : map.entrySet()) {
-                Map<SortedMap<String, Object>, V> subMap = subMapMap.get(e.getKey());
-                if (subMap == null) {
-                    subMap = new HashMap<>();
-                } else {
-                    subMap = new HashMap<>(subMap);
-                }
+        ConcurrentMap<K, Map<SortedMap<String, Object>, V>> cacheMap = cache.asMap();
+        for (Map.Entry<K, V> e : map.entrySet()) {
+            cacheMap.compute(e.getKey(), (key, oldSubMap) -> {
+                Map<SortedMap<String, Object>, V> subMap =
+                        oldSubMap != null ? new HashMap<>(oldSubMap) : new HashMap<>();
                 subMap.put(parameterMap, e.getValue());
-                newSubMapMap.put(e.getKey(), subMap);
-            }
-            cache.putAll(newSubMapMap);
-        } finally {
-            lock.unlock();
+                return subMap;
+            });
         }
     }
 
     @Override
     public void deleteAllImpl(@NotNull Collection<K> keys) {
-        Lock lock = rwl.writeLock();
-        lock.lock();
-        try {
-            cache.invalidateAll(keys);
-        } finally {
-            lock.unlock();
-        }
+        cache.invalidateAll(keys);
     }
 
     @Override
