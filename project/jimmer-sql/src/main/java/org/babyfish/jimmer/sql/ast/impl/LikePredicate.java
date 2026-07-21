@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -74,24 +73,20 @@ class LikePredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        if (pattern.equals("%")) {
-            builder.sql("1 = 1");
+        boolean ignoreCaseLikeSupported = builder.sqlClient().getDialect().isIgnoreCaseLikeSupported();
+        if (insensitive && !ignoreCaseLikeSupported) {
+            builder.sql("lower(");
+            renderChild((Ast) expression, builder);
+            builder.sql(")");
         } else {
-            boolean ignoreCaseLikeSupported = builder.sqlClient().getDialect().isIgnoreCaseLikeSupported();
-            if (insensitive && !ignoreCaseLikeSupported) {
-                builder.sql("lower(");
-                renderChild((Ast) expression, builder);
-                builder.sql(")");
-            } else {
-                renderChild((Ast) expression, builder);
-            }
-            if (insensitive && ignoreCaseLikeSupported) {
-                builder.sql(negative ? " not ilike " : " ilike ");
-            } else {
-                builder.sql(negative ? " not like " : " like ");
-            }
-            builder.rawVariable(pattern);
+            renderChild((Ast) expression, builder);
         }
+        if (insensitive && ignoreCaseLikeSupported) {
+            builder.sql(negative ? " not ilike " : " ilike ");
+        } else {
+            builder.sql(negative ? " not like " : " like ");
+        }
+        builder.rawVariable(pattern);
     }
 
     @Override

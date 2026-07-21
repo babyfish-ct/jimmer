@@ -84,6 +84,44 @@ public class ComplexExprTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testLikeWildcard() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
+                    q.where(store.website().like("%"));
+                    return q.select(store);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "where tb_1_.WEBSITE like ?"
+                    );
+                    ctx.variables("%");
+                    ctx.rows("[]");
+                }
+        );
+    }
+
+    @Test
+    public void testNotLikeWildcard() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
+                    q.where(Predicate.not(store.website().like("%")));
+                    return q.select(store);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "where tb_1_.WEBSITE not like ?"
+                    );
+                    ctx.variables("%");
+                    ctx.rows("[]");
+                }
+        );
+    }
+
+    @Test
     public void testTupleInList() {
         executeAndExpect(
                 getLambdaClient().createQuery(BookTable.class, (q, book) -> {
