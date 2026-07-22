@@ -4,18 +4,11 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public final class TableAliasScope implements TableAliasAllocator {
 
     private int sequence;
-
-    private final Set<String> aliases = new HashSet<>();
 
     private final Map<RealTable, AliasBinding> aliasBindings;
 
@@ -31,18 +24,7 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     @Override
     public String allocateTableAlias(TableLikeImplementor<?> owner) {
-        String alias;
-        do {
-            alias = "tb_" + ++sequence + '_';
-        } while (!aliases.add(alias));
-        return alias;
-    }
-
-    @Override
-    public void reserveTableAlias(String alias) {
-        if (alias != null) {
-            aliases.add(alias);
-        }
+        return "tb_" + ++sequence + '_';
     }
 
     public void ensureAlias(RealTable table) {
@@ -71,8 +53,6 @@ public final class TableAliasScope implements TableAliasAllocator {
     }
 
     private void bind(RealTable table, String value, String middleValue) {
-        reserveTableAlias(value);
-        reserveTableAlias(middleValue);
         AliasBinding binding = new AliasBinding(value, middleValue, null, middleValue != null);
         bind(table, binding);
     }
