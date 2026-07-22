@@ -9,8 +9,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,18 +59,15 @@ final class BaseQueryExportUsages {
 
     static final class Builder {
 
-        private final Set<BaseTableOwner> fullRowExports = new LinkedHashSet<>();
-
-        private final Set<BaseTableOwner> expressionExports = new LinkedHashSet<>();
-
-        private final Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap = new LinkedHashMap<>();
+        @Nullable
+        private State state;
 
         void requireFullRowExport(BaseTableOwner baseTableOwner) {
-            fullRowExports.addAll(expandedOwners(baseTableOwner));
+            state().fullRowExports.addAll(expandedOwners(baseTableOwner));
         }
 
         void requireExpressionExport(BaseTableOwner baseTableOwner) {
-            expressionExports.addAll(expandedOwners(baseTableOwner));
+            state().expressionExports.addAll(expandedOwners(baseTableOwner));
         }
 
         void requireTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
@@ -115,6 +112,7 @@ final class BaseQueryExportUsages {
                 @Nullable Collection<String> columnNames
         ) {
             TableReferenceUsage usage = new TableReferenceUsage(table, prop, rawId, columnNames);
+            Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap = state().tableReferenceUsageMap;
             for (BaseTableOwner owner : expandedOwners(baseTableOwner)) {
                 tableReferenceUsageMap
                         .computeIfAbsent(owner, it -> new ArrayList<>())
@@ -123,11 +121,16 @@ final class BaseQueryExportUsages {
         }
 
         BaseQueryExportUsages build() {
-            if (fullRowExports.isEmpty() && expressionExports.isEmpty() && tableReferenceUsageMap.isEmpty()) {
+            State state = this.state;
+            if (state == null) {
                 return EMPTY;
             }
+            Set<BaseTableOwner> fullRowExports = state.fullRowExports;
+            Set<BaseTableOwner> expressionExports = state.expressionExports;
+            Map<BaseTableOwner, List<TableReferenceUsage>> sourceTableReferenceUsageMap =
+                    state.tableReferenceUsageMap;
             Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap = new LinkedHashMap<>();
-            for (Map.Entry<BaseTableOwner, List<TableReferenceUsage>> e : this.tableReferenceUsageMap.entrySet()) {
+            for (Map.Entry<BaseTableOwner, List<TableReferenceUsage>> e : sourceTableReferenceUsageMap.entrySet()) {
                 tableReferenceUsageMap.put(e.getKey(), new ArrayList<>(e.getValue()));
             }
             return new BaseQueryExportUsages(
@@ -135,6 +138,14 @@ final class BaseQueryExportUsages {
                     new LinkedHashSet<>(expressionExports),
                     tableReferenceUsageMap
             );
+        }
+
+        private State state() {
+            State state = this.state;
+            if (state == null) {
+                state = this.state = new State();
+            }
+            return state;
         }
 
         private static List<BaseTableOwner> expandedOwners(BaseTableOwner baseTableOwner) {
@@ -155,6 +166,15 @@ final class BaseQueryExportUsages {
                 );
             }
             return owners;
+        }
+
+        private static class State {
+
+            final Set<BaseTableOwner> fullRowExports = new LinkedHashSet<>();
+
+            final Set<BaseTableOwner> expressionExports = new LinkedHashSet<>();
+
+            final Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap = new LinkedHashMap<>();
         }
     }
 

@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysisContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
-import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -18,11 +19,8 @@ public final class BaseQueryExportsCollector {
 
     private final QueryAnalysisContext ctx;
 
-    private final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap = new IdentityHashMap<>();
-
-    private final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery = new IdentityHashMap<>();
-
-    private final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable = new IdentityHashMap<>();
+    @Nullable
+    private State state;
 
     public BaseQueryExportsCollector(QueryAnalysisContext ctx) {
         this.ctx = ctx;
@@ -54,7 +52,7 @@ public final class BaseQueryExportsCollector {
             for (ConfigurableBaseQueryImpl<?> itemQuery : mergedBy.getExpandedQueries()) {
                 BaseTableSymbol itemBaseTable = mergedBy.itemBaseTable(itemQuery, cte);
                 register(itemBaseTable, scope);
-                scopeMapByQuery.put(itemQuery, scope);
+                state().scopeMapByQuery.put(itemQuery, scope);
                 scope.requireExportSelection(new BaseTableOwner(itemBaseTable, baseTableOwner.getIndex()));
             }
         }
@@ -73,15 +71,19 @@ public final class BaseQueryExportsCollector {
     }
 
     public BaseQueryExports toExports() {
-        synchronizeMergedExports();
+        State state = this.state;
+        if (state == null) {
+            return BaseQueryExports.EMPTY;
+        }
+        synchronizeMergedExports(state);
         Map<BaseQueryScope, BaseQueryExportResolver> resolverMap = new IdentityHashMap<>();
         Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery = new IdentityHashMap<>();
         Map<ConfigurableBaseQuery<?>, BaseTableSymbol> baseTableMapByQuery = new IdentityHashMap<>();
-        for (Map.Entry<ConfigurableBaseQuery<?>, BaseQueryScope> e : scopeMapByQuery.entrySet()) {
+        for (Map.Entry<ConfigurableBaseQuery<?>, BaseQueryScope> e : state.scopeMapByQuery.entrySet()) {
             resolverMapByQuery.put(e.getKey(), resolver(e.getValue(), resolverMap));
         }
         Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable = new IdentityHashMap<>();
-        for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : scopeMapByBaseTable.entrySet()) {
+        for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : state.scopeMapByBaseTable.entrySet()) {
             BaseTableSymbol baseTable = e.getKey();
             resolverMapByBaseTable.put(baseTable, resolver(e.getValue(), resolverMap));
             baseTableMapByQuery.put(baseTable.getQuery(), baseTable);
@@ -104,21 +106,22 @@ public final class BaseQueryExportsCollector {
     }
 
     private void register(BaseTableSymbol baseTable, BaseQueryScope scope) {
-        scopeMapByBaseTable.put(baseTable, scope);
-        scopeMapByQuery.put(baseTable.getQuery(), scope);
+        State state = state();
+        state.scopeMapByBaseTable.put(baseTable, scope);
+        state.scopeMapByQuery.put(baseTable.getQuery(), scope);
         MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
         if (mergedBy != null) {
             boolean cte = baseTable.isCte();
             for (ConfigurableBaseQueryImpl<?> itemQuery : mergedBy.getExpandedQueries()) {
                 BaseTableSymbol itemBaseTable = mergedBy.itemBaseTable(itemQuery, cte);
-                scopeMapByBaseTable.put(itemBaseTable, scope);
-                scopeMapByQuery.put(itemQuery, scope);
+                state.scopeMapByBaseTable.put(itemBaseTable, scope);
+                state.scopeMapByQuery.put(itemQuery, scope);
             }
         }
     }
 
     private BaseQueryScope scope(AbstractMutableStatementImpl statement) {
-        return scopeMap.computeIfAbsent(statement, it -> new BaseQueryScope(ctx));
+        return state().scopeMap.computeIfAbsent(statement, it -> new BaseQueryScope(ctx));
     }
 
     private BaseQueryScope scope(BaseTableOwner baseTableOwner) {
@@ -130,7 +133,8 @@ public final class BaseQueryExportsCollector {
     }
 
     private BaseQueryScope scope(BaseTableSymbol baseTable) {
-        BaseQueryScope scope = scopeMapByBaseTable.get(baseTable);
+        State state = this.state;
+        BaseQueryScope scope = state != null ? state.scopeMapByBaseTable.get(baseTable) : null;
         if (scope != null) {
             return scope;
         }
@@ -141,7 +145,7 @@ public final class BaseQueryExportsCollector {
         }
         for (TableLike<?> parent = baseTable.getParent(); parent != null; parent = TableUtils.parent(parent)) {
             if (parent instanceof BaseTableSymbol) {
-                scope = scopeMapByBaseTable.get(parent);
+                scope = state != null ? state.scopeMapByBaseTable.get(parent) : null;
                 if (scope != null) {
                     return scope;
                 }
@@ -150,9 +154,9 @@ public final class BaseQueryExportsCollector {
         return null;
     }
 
-    private void synchronizeMergedExports() {
+    private static void synchronizeMergedExports(State state) {
         Map<BaseTableSymbol, Boolean> synchronizedMap = new IdentityHashMap<>();
-        for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : scopeMapByBaseTable.entrySet()) {
+        for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : state.scopeMapByBaseTable.entrySet()) {
             BaseTableSymbol baseTable = e.getKey();
             MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
             if (mergedBy == null || synchronizedMap.containsKey(baseTable)) {
@@ -202,5 +206,22 @@ public final class BaseQueryExportsCollector {
             Map<BaseQueryScope, BaseQueryExportResolver> resolverMap
     ) {
         return resolverMap.computeIfAbsent(scope, BaseQueryScope::toResolver);
+    }
+
+    private State state() {
+        State state = this.state;
+        if (state == null) {
+            state = this.state = new State();
+        }
+        return state;
+    }
+
+    private static class State {
+
+        final Map<AbstractMutableStatementImpl, BaseQueryScope> scopeMap = new IdentityHashMap<>();
+
+        final Map<ConfigurableBaseQuery<?>, BaseQueryScope> scopeMapByQuery = new IdentityHashMap<>();
+
+        final Map<BaseTableSymbol, BaseQueryScope> scopeMapByBaseTable = new IdentityHashMap<>();
     }
 }
