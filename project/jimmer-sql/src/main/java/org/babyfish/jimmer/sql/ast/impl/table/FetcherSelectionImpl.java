@@ -233,12 +233,17 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         RealTable realTable = TableProxies
                 .resolve(table, builder.getAstContext())
                 .realTable(builder.getQueryRenderContext());
-        Set<RealTable> discriminatorRenderedTables = Collections.newSetFromMap(new IdentityHashMap<>());
         JoinFetchFieldVisitor visitor = new JoinFetchFieldVisitor(builder.sqlClient()) {
 
             private RealTable table = realTable;
 
             private int typeBranchDepth;
+
+            @Nullable
+            private RealTable discriminatorRenderedTable;
+
+            @Nullable
+            private Set<RealTable> discriminatorRenderedTables;
 
             @Override
             protected Object enter(Field field) {
@@ -350,7 +355,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
             private void renderDiscriminator(RealTable table) {
                 ImmutableProp discriminatorProp = discriminatorProp(table);
-                if (discriminatorProp == null || !discriminatorRenderedTables.add(table)) {
+                if (discriminatorProp == null || !markDiscriminatorRendered(table)) {
                     return;
                 }
                 builder.separator();
@@ -363,6 +368,24 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                         null,
                         null
                 );
+            }
+
+            private boolean markDiscriminatorRendered(RealTable table) {
+                RealTable discriminatorRenderedTable = this.discriminatorRenderedTable;
+                if (discriminatorRenderedTable == null) {
+                    this.discriminatorRenderedTable = table;
+                    return true;
+                }
+                if (discriminatorRenderedTable == table) {
+                    return false;
+                }
+                Set<RealTable> discriminatorRenderedTables = this.discriminatorRenderedTables;
+                if (discriminatorRenderedTables == null) {
+                    discriminatorRenderedTables = this.discriminatorRenderedTables =
+                            Collections.newSetFromMap(new IdentityHashMap<>());
+                    discriminatorRenderedTables.add(discriminatorRenderedTable);
+                }
+                return discriminatorRenderedTables.add(table);
             }
 
             @Nullable

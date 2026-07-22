@@ -5,23 +5,31 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class TableAliases {
 
-    public static final TableAliases EMPTY = new TableAliases(Collections.emptyMap(), Collections.emptyMap());
+    public static final TableAliases EMPTY = new TableAliases(Collections.emptyMap());
 
     private final Map<RealTable, Alias> aliasMap;
 
-    private final Map<TableAliasKey, Alias> aliasMapByKey;
+    @Nullable
+    private RealTable primaryTable;
 
-    private TableAliases(Map<RealTable, Alias> aliasMap, Map<TableAliasKey, Alias> aliasMapByKey) {
-        this.aliasMap = Collections.unmodifiableMap(aliasMap);
-        this.aliasMapByKey = Collections.unmodifiableMap(aliasMapByKey);
+    @Nullable
+    private List<RealTable> additionalTables;
+
+    @Nullable
+    private Map<TableAliasKey, Alias> aliasMapByKey;
+
+    private TableAliases(Map<RealTable, Alias> aliasMap) {
+        this.aliasMap = aliasMap;
     }
 
     public static TableAliases allocate(
@@ -35,33 +43,40 @@ public final class TableAliases {
         Map<RealTable, Alias> aliasMap = new IdentityHashMap<>(
                 Math.max(rootTables.size(), tableStateMap.size())
         );
-        Map<TableAliasKey, Alias> aliasMapByKey = new HashMap<>();
+        TableAliases aliases = new TableAliases(aliasMap);
         for (RealTable rootTable : rootTables) {
-            allocate(rootTable, true, tableStateMap, aliasMap, aliasMapByKey, allocator);
+            allocate(rootTable, true, tableStateMap, aliases, allocator);
         }
-        return new TableAliases(aliasMap, aliasMapByKey);
+        return aliases;
     }
 
     @Nullable
     Alias get(RealTable table) {
         Alias alias = aliasMap.get(table);
-        return alias != null ? alias : aliasMapByKey.get(table.getAliasKey());
+        if (alias != null || aliasMap.isEmpty()) {
+            return alias;
+        }
+        Map<TableAliasKey, Alias> aliasMapByKey = this.aliasMapByKey;
+        if (aliasMapByKey == null) {
+            aliasMapByKey = createAliasMapByKey();
+            this.aliasMapByKey = aliasMapByKey;
+        }
+        return aliasMapByKey.get(table.getAliasKey());
     }
 
     private static void allocate(
             RealTable table,
             boolean root,
             Map<RealTable, TableUsedState> tableStateMap,
-            Map<RealTable, Alias> aliasMap,
-            Map<TableAliasKey, Alias> aliasMapByKey,
+            TableAliases aliases,
             TableAliasAllocator allocator
     ) {
-        if (aliasMap.containsKey(table)) {
+        if (aliases.aliasMap.containsKey(table)) {
             return;
         }
         if (!root && !isUsed(table, tableStateMap)) {
             for (RealTable childTable : table) {
-                allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey, allocator);
+                allocate(childTable, false, tableStateMap, aliases, allocator);
             }
             return;
         }
@@ -71,22 +86,48 @@ public final class TableAliases {
             BaseTableImplementor recursive = baseTable.getRecursive();
             if (recursive != null) {
                 RealTable recursiveTable = recursive.realTable(table.getKey().scope);
-                allocate(recursiveTable, true, tableStateMap, aliasMap, aliasMapByKey, allocator);
-                Alias recursiveAlias = aliasMap.get(recursiveTable);
+                allocate(recursiveTable, true, tableStateMap, aliases, allocator);
+                Alias recursiveAlias = aliases.aliasMap.get(recursiveTable);
                 if (recursiveAlias != null) {
-                    aliasMap.put(table, recursiveAlias);
-                    aliasMapByKey.put(table.getAliasKey(), recursiveAlias);
+                    aliases.put(table, recursiveAlias);
                 }
                 return;
             }
         }
         String middleAlias = allocateMiddleAlias(owner, allocator);
         Alias alias = new Alias(allocator.allocateTableAlias(owner), middleAlias);
-        aliasMap.put(table, alias);
-        aliasMapByKey.put(table.getAliasKey(), alias);
+        aliases.put(table, alias);
         for (RealTable childTable : table) {
-            allocate(childTable, false, tableStateMap, aliasMap, aliasMapByKey, allocator);
+            allocate(childTable, false, tableStateMap, aliases, allocator);
         }
+    }
+
+    private void put(RealTable table, Alias alias) {
+        aliasMap.put(table, alias);
+        if (primaryTable == null) {
+            primaryTable = table;
+            return;
+        }
+        List<RealTable> additionalTables = this.additionalTables;
+        if (additionalTables == null) {
+            additionalTables = this.additionalTables = new ArrayList<>();
+        }
+        additionalTables.add(table);
+    }
+
+    private Map<TableAliasKey, Alias> createAliasMapByKey() {
+        Map<TableAliasKey, Alias> aliasMapByKey = new HashMap<>();
+        RealTable primaryTable = this.primaryTable;
+        if (primaryTable != null) {
+            aliasMapByKey.put(primaryTable.getAliasKey(), aliasMap.get(primaryTable));
+        }
+        List<RealTable> additionalTables = this.additionalTables;
+        if (additionalTables != null) {
+            for (RealTable table : additionalTables) {
+                aliasMapByKey.put(table.getAliasKey(), aliasMap.get(table));
+            }
+        }
+        return aliasMapByKey;
     }
 
     private static boolean isUsed(

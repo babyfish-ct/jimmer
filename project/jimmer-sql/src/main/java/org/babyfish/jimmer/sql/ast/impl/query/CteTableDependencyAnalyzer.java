@@ -6,7 +6,12 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 final class CteTableDependencyAnalyzer {
 
@@ -40,8 +45,8 @@ final class CteTableDependencyAnalyzer {
         }
         List<RealTable> aliasRootTables = collectAliasRootTables(tableUsages.getRootTables(), astContext);
         return new CteTableDependencies(
-                Collections.unmodifiableMap(declarationMap),
-                Collections.unmodifiableList(aliasRootTables)
+                declarationMap,
+                aliasRootTables
         );
     }
 
@@ -71,7 +76,7 @@ final class CteTableDependencyAnalyzer {
             BaseTableImplementor baseTable = (BaseTableImplementor) table.getTableLikeImplementor();
             declarations.add(new CteTableDeclaration(table, baseTable.toSymbol(), baseTable.isRecursiveCte()));
         }
-        return Collections.unmodifiableList(declarations);
+        return declarations;
     }
 
     private static class State {
@@ -83,7 +88,7 @@ final class CteTableDependencyAnalyzer {
         private final Set<RealTable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
 
         List<RealTable> result() {
-            return Collections.unmodifiableList(new ArrayList<>(cteTables));
+            return cteTables;
         }
 
         List<RealTable> drain() {

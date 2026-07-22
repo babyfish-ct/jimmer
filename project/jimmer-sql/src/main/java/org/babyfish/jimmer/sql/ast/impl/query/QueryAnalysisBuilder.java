@@ -13,7 +13,11 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 
 final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinRequirementCollector {
 
@@ -110,35 +114,60 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
     }
 
     private TableUsageAnalysis collectTableUsagesAndBaseExports(TypedQueryImplementor ast, QueryAnalysis joinAwareAnalysis) {
-        List<AbstractMutableStatementImpl> statements = new ArrayList<>();
-        TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
+        class Visitor extends TableUsageCollector {
+
+            @Nullable
+            private AbstractMutableStatementImpl primaryStatement;
+
+            @Nullable
+            private List<AbstractMutableStatementImpl> statements;
 
             @Nullable
             private Set<AbstractMutableStatementImpl> statementSet;
 
+            private Visitor() {
+                super(astContext, joinAwareAnalysis);
+            }
+
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
                 super.visitStatement(statement);
-                if (statements.isEmpty()) {
-                    statements.add(statement);
+                AbstractMutableStatementImpl primaryStatement = this.primaryStatement;
+                if (primaryStatement == null) {
+                    this.primaryStatement = statement;
+                    return;
+                }
+                if (primaryStatement == statement) {
                     return;
                 }
                 Set<AbstractMutableStatementImpl> statementSet = this.statementSet;
                 if (statementSet == null) {
-                    AbstractMutableStatementImpl firstStatement = statements.get(0);
-                    if (firstStatement == statement) {
-                        return;
-                    }
                     statementSet = this.statementSet =
-                            Collections.newSetFromMap(new IdentityHashMap<>(2));
-                    statementSet.add(firstStatement);
+                            Collections.newSetFromMap(new IdentityHashMap<>());
+                    statementSet.add(primaryStatement);
+                    List<AbstractMutableStatementImpl> statements = new ArrayList<>();
+                    statements.add(primaryStatement);
+                    this.statements = statements;
                 }
                 if (statementSet.add(statement)) {
                     statements.add(statement);
                 }
             }
-        };
+
+            private List<AbstractMutableStatementImpl> statements() {
+                List<AbstractMutableStatementImpl> statements = this.statements;
+                if (statements != null) {
+                    return statements;
+                }
+                AbstractMutableStatementImpl primaryStatement = this.primaryStatement;
+                return primaryStatement != null ?
+                        Collections.singletonList(primaryStatement) :
+                        Collections.emptyList();
+            }
+        }
+        Visitor visitor = new Visitor();
         ast.accept(visitor);
+        List<AbstractMutableStatementImpl> statements = visitor.statements();
         baseQueryExportUsages = visitor.toBaseQueryExportUsages();
         for (AbstractMutableStatementImpl statement : statements) {
             analysisContext.pushStatement(statement);

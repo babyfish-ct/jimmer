@@ -28,7 +28,7 @@ public final class TableAliasKey {
         Collections.reverse(path);
         return new TableAliasKey(
                 table.getTableLikeImplementor().getStatement(),
-                Collections.unmodifiableList(path)
+                path
         );
     }
 

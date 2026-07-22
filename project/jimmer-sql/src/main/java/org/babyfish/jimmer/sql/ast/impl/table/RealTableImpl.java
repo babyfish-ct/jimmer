@@ -45,7 +45,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     private JoinType joinType;
 
-    private final TableAliasKey aliasKey;
+    @Nullable
+    private volatile TableAliasKey aliasKey;
 
     RealTableImpl(TableLikeImplementor<?> owner) {
         this(
@@ -63,7 +64,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         this.key = key;
         this.owner = owner;
         this.parent = parent;
-        this.aliasKey = TableAliasKey.create(this);
         if (owner instanceof BaseTableImplementor) {
             BaseTableImplementor baseTableImpl = (BaseTableImplementor) owner;
             this.joinType = baseTableImpl.getJoinType();
@@ -214,6 +214,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
 
     @Override
     public TableAliasKey getAliasKey() {
+        TableAliasKey aliasKey = this.aliasKey;
+        if (aliasKey == null) {
+            aliasKey = TableAliasKey.create(this);
+            this.aliasKey = aliasKey;
+        }
         return aliasKey;
     }
 
