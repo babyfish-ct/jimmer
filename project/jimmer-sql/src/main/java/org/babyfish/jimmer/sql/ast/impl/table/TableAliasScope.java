@@ -19,9 +19,11 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     private final Map<RealTable, AliasBinding> aliasBindings;
 
-    private final Map<TableAliasKey, AliasBinding> aliasBindingsByKey = new HashMap<>();
+    @Nullable
+    private Map<TableAliasKey, AliasBinding> aliasBindingsByKey;
 
-    private final Set<TableAliasKey> ambiguousAliasKeys = new HashSet<>();
+    @Nullable
+    private Set<TableAliasKey> ambiguousAliasKeys;
 
     public TableAliasScope(int expectedTableCount) {
         aliasBindings = new IdentityHashMap<>(expectedTableCount);
@@ -146,15 +148,31 @@ public final class TableAliasScope implements TableAliasAllocator {
     }
 
     private void bind(RealTable table, AliasBinding binding) {
-        aliasBindings.put(table, binding);
+        AliasBinding oldBinding = aliasBindings.put(table, binding);
+        Map<TableAliasKey, AliasBinding> aliasBindingsByKey = this.aliasBindingsByKey;
+        if (aliasBindingsByKey == null) {
+            if (oldBinding != null && oldBinding != binding) {
+                ambiguousAliasKeys().add(table.getAliasKey());
+            }
+            return;
+        }
+        bindByKey(aliasBindingsByKey, table, binding);
+    }
+
+    private void bindByKey(
+            Map<TableAliasKey, AliasBinding> aliasBindingsByKey,
+            RealTable table,
+            AliasBinding binding
+    ) {
         TableAliasKey key = table.getAliasKey();
-        if (ambiguousAliasKeys.contains(key)) {
+        Set<TableAliasKey> ambiguousAliasKeys = this.ambiguousAliasKeys;
+        if (ambiguousAliasKeys != null && ambiguousAliasKeys.contains(key)) {
             return;
         }
         AliasBinding existing = aliasBindingsByKey.putIfAbsent(key, binding);
         if (existing != null && existing != binding) {
             aliasBindingsByKey.remove(key);
-            ambiguousAliasKeys.add(key);
+            ambiguousAliasKeys().add(key);
         }
     }
 
@@ -170,8 +188,17 @@ public final class TableAliasScope implements TableAliasAllocator {
         if (binding != null) {
             return binding;
         }
+        Map<TableAliasKey, AliasBinding> aliasBindingsByKey = this.aliasBindingsByKey;
+        if (aliasBindingsByKey == null) {
+            aliasBindingsByKey = new HashMap<>(aliasBindings.size());
+            for (Map.Entry<RealTable, AliasBinding> e : aliasBindings.entrySet()) {
+                bindByKey(aliasBindingsByKey, e.getKey(), e.getValue());
+            }
+            this.aliasBindingsByKey = aliasBindingsByKey;
+        }
         TableAliasKey key = table.getAliasKey();
-        if (ambiguousAliasKeys.contains(key)) {
+        Set<TableAliasKey> ambiguousAliasKeys = this.ambiguousAliasKeys;
+        if (ambiguousAliasKeys != null && ambiguousAliasKeys.contains(key)) {
             return null;
         }
         binding = aliasBindingsByKey.get(key);
@@ -179,6 +206,14 @@ public final class TableAliasScope implements TableAliasAllocator {
             aliasBindings.put(table, binding);
         }
         return binding;
+    }
+
+    private Set<TableAliasKey> ambiguousAliasKeys() {
+        Set<TableAliasKey> ambiguousAliasKeys = this.ambiguousAliasKeys;
+        if (ambiguousAliasKeys == null) {
+            ambiguousAliasKeys = this.ambiguousAliasKeys = new HashSet<>();
+        }
+        return ambiguousAliasKeys;
     }
 
     final class AliasBinding {
