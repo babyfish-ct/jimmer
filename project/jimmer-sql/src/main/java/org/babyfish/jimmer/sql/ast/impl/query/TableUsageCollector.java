@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Set;
 
 public class TableUsageCollector extends TableUsageVisitor {
 
-    private List<RealTable> rootTables = Collections.emptyList();
+    private final List<RealTable> rootTables = new ArrayList<>();
 
     private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>(1);
 
@@ -74,16 +73,7 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     @Override
     protected void addRootTable(RealTable table) {
-        List<RealTable> rootTables = this.rootTables;
-        int size = rootTables.size();
-        if (size == 0) {
-            this.rootTables = Collections.singletonList(table);
-        } else if (size == 1) {
-            rootTables = this.rootTables = new ArrayList<>(rootTables);
-            rootTables.add(table);
-        } else {
-            rootTables.add(table);
-        }
+        rootTables.add(table);
     }
 
     @Override
