@@ -28,7 +28,6 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
@@ -470,7 +469,7 @@ public class MutableDeleteImpl
             }
             LogicalDeletedInfo logicalDeletedInfo = table.getImmutableType().getLogicalDeletedInfo();
             LogicalDeletedValueGenerator<?> generator =
-                    LogicalDeletedValueGenerators.of(logicalDeletedInfo, getSqlClient());
+                    getSqlClient().getGeneratorContext().getLogicalDeletedValueGenerator(logicalDeletedInfo);
             assert generator != null;
             MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), table.getImmutableType());
             update.shareRootAliasWith(deleteQuery.getTableLikeImplementor());
@@ -634,7 +633,7 @@ public class MutableDeleteImpl
         ImmutableType type = table.getImmutableType();
         LogicalDeletedInfo logicalDeletedInfo = type.getLogicalDeletedInfo();
         LogicalDeletedValueGenerator<?> generator =
-                LogicalDeletedValueGenerators.of(logicalDeletedInfo, getSqlClient());
+                getSqlClient().getGeneratorContext().getLogicalDeletedValueGenerator(logicalDeletedInfo);
         assert generator != null;
         MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
         builder.enter(SqlBuilder.ScopeType.SET);

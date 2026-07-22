@@ -4,10 +4,7 @@ import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -172,10 +169,6 @@ public interface ImmutableType {
     String getMicroServiceName();
 
     String getTableName(MetadataStrategy strategy);
-
-    IdGenerator getIdGenerator(SqlContext sqlContext);
-
-    LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext);
 
     default List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy) {
         return getPropChain(columnName, strategy, false);

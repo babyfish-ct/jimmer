@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.di;
 
-import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 public abstract class JLazyInitializationSqlClient extends AbstractJSqlClientDelegate {
 
@@ -31,10 +30,8 @@ public abstract class JLazyInitializationSqlClient extends AbstractJSqlClientDel
 
     protected void afterCreate(JSqlClientImplementor sqlClient) {}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends SqlContext> T unwrap() {
-        return (T) sqlClient();
+    public JSqlClientImplementor unwrap() {
+        return sqlClient();
     }
 
     public static JSqlClient.Builder newBuilder() {

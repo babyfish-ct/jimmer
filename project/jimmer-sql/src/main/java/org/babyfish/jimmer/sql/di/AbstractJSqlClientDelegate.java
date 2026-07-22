@@ -29,7 +29,8 @@ import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.GeneratorContext;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.babyfish.jimmer.sql.transaction.Propagation;
 import org.jetbrains.annotations.NotNull;
@@ -46,28 +47,8 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     protected abstract JSqlClientImplementor sqlClient();
 
     @Override
-    public <T extends SqlContext> T unwrap() {
-        return sqlClient().unwrap();
-    }
-
-    @Override
-    public UserIdGenerator<?> getUserIdGenerator(String ref) throws Exception {
-        return sqlClient().getUserIdGenerator(ref);
-    }
-
-    @Override
-    public UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGeneratorType) throws Exception {
-        return sqlClient().getUserIdGenerator(userIdGeneratorType);
-    }
-
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(String ref) throws Exception {
-        return sqlClient().getLogicalDeletedValueGenerator(ref);
-    }
-
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(Class<?> logicalDeletedValueGeneratorType) throws Exception {
-        return sqlClient().getLogicalDeletedValueGenerator(logicalDeletedValueGeneratorType);
+    public GeneratorContext getGeneratorContext() {
+        return sqlClient().getGeneratorContext();
     }
 
     @Override
@@ -385,10 +366,6 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
         return sqlClient().getZoneId();
     }
 
-    public IdGenerator getIdGenerator(Class<?> entityType) {
-        return sqlClient().getIdGenerator(entityType);
-    }
-
     @Override
     public int getDefaultBatchSize() {
         return sqlClient().getDefaultBatchSize();
@@ -476,11 +453,6 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return sqlClient().getResolver(prop);
-    }
-
-    @Override
-    public StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider() {
-        return sqlClient().getUserIdGeneratorProvider();
     }
 
     @Override

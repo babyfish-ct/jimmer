@@ -368,7 +368,10 @@ abstract class AbstractPreHandler implements PreHandler {
                 return QueryReason.NO_ID_UPSERT_NOT_SUPPORTED;
             }
             if (saveMode != SaveMode.UPDATE_ONLY) {
-                IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
+                IdGenerator idGenerator = ctx.options
+                        .getSqlClient()
+                        .getGeneratorContext()
+                        .getIdGenerator(ctx.path.getType());
                 if (idGenerator == null) {
                     ctx.throwNoIdGenerator();
                 }
@@ -858,7 +861,10 @@ class InsertPreHandler extends AbstractPreHandler {
     @Override
     void onResolve() {
         if (!draftsWithKey.isEmpty()) {
-            IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
+            IdGenerator idGenerator = ctx.options
+                    .getSqlClient()
+                    .getGeneratorContext()
+                    .getIdGenerator(ctx.path.getType());
             if (idGenerator instanceof UserIdGenerator<?>) {
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 for (DraftSpi draft : draftsWithKey) {

@@ -140,7 +140,9 @@ public class DefaultExecutor implements Executor {
             PreparedStatement statement;
             try {
                 if (generatedIdProp != null) {
-                    IdGenerator idGenerator = sqlClient.getIdGenerator(generatedIdProp.getDeclaringType().getJavaClass());
+                    IdGenerator idGenerator = sqlClient
+                            .getGeneratorContext()
+                            .getIdGenerator(generatedIdProp.getDeclaringType());
                     if (idGenerator instanceof SequenceIdGenerator) {
                         statement = con.prepareStatement(sql, new int[]{1});
                     } else {

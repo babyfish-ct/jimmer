@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -11,13 +9,13 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -28,7 +26,6 @@ import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -739,7 +736,7 @@ public class Deleter {
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
         LogicalDeletedValueGenerator<?> generator =
-                LogicalDeletedValueGenerators.of(info, sqlClient);
+                sqlClient.getGeneratorContext().getLogicalDeletedValueGenerator(info);
         if (trigger != null) {
             return deleteWithTrigger(
                     sqlClient,

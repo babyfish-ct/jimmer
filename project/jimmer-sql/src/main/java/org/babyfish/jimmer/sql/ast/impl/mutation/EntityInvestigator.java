@@ -55,7 +55,7 @@ class EntityInvestigator {
         this.keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
         this.missedProps = keyMatcher.missedProps(shape.getGetterMap().keySet());
         this.isIdMissed = shape.getIdGetters().isEmpty() &&
-                shape.getType().getIdGenerator(ctx.options.getSqlClient()) instanceof IdentityIdGenerator;
+                ctx.options.getSqlClient().getGeneratorContext().getIdGenerator(shape.getType()) instanceof IdentityIdGenerator;
         this.primaryGroup = isIdMissed ?
                 keyMatcher.match(shape.getGetterMap().keySet()) :
                 null;

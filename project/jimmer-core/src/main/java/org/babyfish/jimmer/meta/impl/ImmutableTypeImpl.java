@@ -9,14 +9,8 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.ImmutableTypeImplementor;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SqlContext;
-import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
-import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
-import org.babyfish.jimmer.sql.meta.impl.SqlContextCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,16 +27,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
             Entity.class,
             MappedSuperclass.class,
             Embeddable.class
-    };
-
-    private static final IdGenerator NIL_ID_GENERATOR = new IdGenerator() {
-    };
-
-    private static final LogicalDeletedValueGenerator<?> NIL_LOGICAL_DELETED_VALUE_GENERATOR = new LogicalDeletedValueGenerator<Object>() {
-        @Override
-        public Object generate() {
-            throw new UnsupportedOperationException();
-        }
     };
 
     private final Class<?> javaClass;
@@ -74,10 +58,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
     private final BiFunction<DraftContext, Object, Draft> draftFactory;
     private final String microServiceName;
     private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
-    private final SqlContextCache<IdGenerator> idGeneratorCache = new SqlContextCache<>(it -> {
-        IdGenerator g = IdGenerators.of(this, it);
-        return g != null ? g : NIL_ID_GENERATOR;
-    });
     private KClass<?> kotlinClass;
     private Set<ImmutableType> allTypes;
     private Map<String, ImmutableProp> declaredProps;
@@ -94,10 +74,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
     private ImmutableProp versionProp;
     private LogicalDeletedInfo declaredLogicalDeletedInfo;
     private LogicalDeletedInfo logicalDeletedInfo;
-    private final SqlContextCache<LogicalDeletedValueGenerator<?>> logicalDeletedValueGeneratorCache = new SqlContextCache<>(it -> {
-        LogicalDeletedValueGenerator<?> g = LogicalDeletedValueGenerators.of(getLogicalDeletedInfo(), it);
-        return g != null ? g : NIL_LOGICAL_DELETED_VALUE_GENERATOR;
-    });
     private KeyMatcher keyMatcher = KeyMatcher.EMPTY;
     private List<MappedId> mappedIds;
     private Set<ImmutableProp> mappedIdProps;
@@ -1015,18 +991,6 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl implements ImmutableTy
                 Utils.resolveMetaString(tableName, strategy.getMetaStringResolver());
 
         return schema == null || schema.isEmpty() ? tableName : schema + "." + tableName;
-    }
-
-    @Override
-    public IdGenerator getIdGenerator(SqlContext sqlContext) {
-        IdGenerator generator = idGeneratorCache.get(sqlContext);
-        return generator == NIL_ID_GENERATOR ? null : generator;
-    }
-
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
-        LogicalDeletedValueGenerator<?> generator = logicalDeletedValueGeneratorCache.get(sqlContext);
-        return generator == NIL_LOGICAL_DELETED_VALUE_GENERATOR ? null : generator;
     }
 
     @Override

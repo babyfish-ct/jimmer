@@ -6,7 +6,9 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -110,8 +112,6 @@ public interface ImmutableProp {
     boolean isRecursive();
 
     <S extends Storage> S getStorage(MetadataStrategy strategy);
-
-    LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext);
 
     boolean isId();
 

@@ -49,6 +49,7 @@ import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
+import org.babyfish.jimmer.sql.meta.GeneratorContext;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.babyfish.jimmer.sql.transaction.Propagation;
@@ -89,7 +90,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final ZoneId zoneId;
 
-    private final Map<Class<?>, IdGenerator> idGeneratorMap;
+    private final GeneratorManager generatorManager;
 
     private final ScalarProviderManager scalarProviderManager;
 
@@ -145,11 +146,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final BinLog binLog;
 
-    private final UserIdGeneratorProvider userIdGeneratorProvider;
-
     private final boolean dissociationLogicalDeleteEnabled;
-
-    private final LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider;
 
     private final TransientResolverManager transientResolverManager;
 
@@ -184,7 +181,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ReferenceFetchType defaultReferenceFetchType,
             int maxJoinFetchDepth,
             ZoneId zoneId,
-            Map<Class<?>, IdGenerator> idGeneratorMap,
+            GeneratorManager generatorManager,
             ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
             int defaultListBatchSize,
@@ -212,9 +209,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             MetadataStrategy metadataStrategy,
             BinLog binLog,
             FilterManager filterManager,
-            UserIdGeneratorProvider userIdGeneratorProvider,
             boolean dissociationLogicalDeleteEnabled,
-            LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider,
             TransientResolverManager transientResolverManager,
             boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
@@ -242,7 +237,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultReferenceFetchType = defaultReferenceFetchType;
         this.maxJoinFetchDepth = maxJoinFetchDepth;
         this.zoneId = zoneId != null ? zoneId : ZoneId.systemDefault();
-        this.idGeneratorMap = idGeneratorMap;
+        this.generatorManager = generatorManager;
         this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
@@ -273,15 +268,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.metadataStrategy = metadataStrategy;
         this.binLog = binLog;
         this.filterManager = filterManager;
-        this.userIdGeneratorProvider =
-                userIdGeneratorProvider != null ?
-                        userIdGeneratorProvider :
-                        new DefaultUserIdGeneratorProvider();
         this.dissociationLogicalDeleteEnabled = dissociationLogicalDeleteEnabled;
-        this.logicalDeletedValueGeneratorProvider =
-                logicalDeletedValueGeneratorProvider != null ?
-                        logicalDeletedValueGeneratorProvider :
-                        new DefaultLogicalDeletedValueGeneratorProvider();
         this.transientResolverManager = transientResolverManager;
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
@@ -363,42 +350,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public IdGenerator getIdGenerator(Class<?> entityType) {
-        IdGenerator userIdGenerator = idGeneratorMap.get(entityType);
-        if (userIdGenerator == null) {
-            userIdGenerator = idGeneratorMap.get(null);
-            if (userIdGenerator == null) {
-                userIdGenerator = ImmutableType.get(entityType).getIdGenerator(this);
-            }
-        }
-        return userIdGenerator;
-    }
-
-    @Override
-    public <T extends SqlContext> T unwrap() {
-        return null;
-    }
-
-    @Override
-    public UserIdGenerator<?> getUserIdGenerator(String ref) throws Exception {
-        return userIdGeneratorProvider.get(ref, this);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGeneratorType) throws Exception {
-        return userIdGeneratorProvider.get((Class<UserIdGenerator<?>>) userIdGeneratorType, this);
-    }
-
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(String ref) throws Exception {
-        return logicalDeletedValueGeneratorProvider.get(ref, this);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(Class<?> logicalDeletedValueGeneratorType) throws Exception {
-        return logicalDeletedValueGeneratorProvider.get((Class<LogicalDeletedValueGenerator<?>>) logicalDeletedValueGeneratorType, this);
+    public GeneratorContext getGeneratorContext() {
+        return generatorManager;
     }
 
     @Override
@@ -751,7 +704,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
-                idGeneratorMap,
+                generatorManager,
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -779,9 +732,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 metadataStrategy,
                 binLog,
                 filterManager,
-                userIdGeneratorProvider,
                 dissociationLogicalDeleteEnabled,
-                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -813,7 +764,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
-                idGeneratorMap,
+                generatorManager,
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -841,9 +792,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 metadataStrategy,
                 binLog,
                 cfg.getFilterManager(),
-                userIdGeneratorProvider,
                 dissociationLogicalDeleteEnabled,
-                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -870,7 +819,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
-                idGeneratorMap,
+                generatorManager,
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -898,9 +847,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 metadataStrategy,
                 binLog,
                 filterManager,
-                userIdGeneratorProvider,
                 dissociationLogicalDeleteEnabled,
-                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -930,7 +877,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultReferenceFetchType,
                 maxJoinFetchDepth,
                 zoneId,
-                idGeneratorMap,
+                generatorManager,
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -958,9 +905,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 metadataStrategy,
                 binLog,
                 filterManager,
-                userIdGeneratorProvider,
                 dissociationLogicalDeleteEnabled,
-                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -974,11 +919,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return transientResolverManager.get(prop);
-    }
-
-    @Override
-    public UserIdGeneratorProvider getUserIdGeneratorProvider() {
-        return userIdGeneratorProvider;
     }
 
     @Override
@@ -2060,6 +2000,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                     DefaultTransientResolverProvider.INSTANCE,
                             aopProxyProvider
                     );
+            GeneratorManager generatorManager = new GeneratorManager(
+                    idGeneratorMap,
+                    userIdGeneratorProvider,
+                    logicalDeletedValueGeneratorProvider,
+                    metadataStrategy
+            );
             JSqlClientImplementor sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
@@ -2071,7 +2017,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     defaultReferenceFetchType,
                     maxJoinFetchDepth,
                     zoneId,
-                    idGeneratorMap,
+                    generatorManager,
                     scalarProviderManager,
                     defaultBatchSize,
                     defaultListBatchSize,
@@ -2099,9 +2045,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     metadataStrategy,
                     binLog,
                     filterManager,
-                    userIdGeneratorProvider,
                     dissociationLogicalDeleteEnabled,
-                    logicalDeletedValueGeneratorProvider,
                     transientResolverManager,
                     defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,
@@ -2110,6 +2054,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     microServiceName,
                     microServiceExchange
             );
+            generatorManager.initialize(sqlClient);
             CachesImpl.initialize(caches, sqlClient);
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient);

@@ -20,7 +20,6 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -166,8 +165,9 @@ class ChildTableOperator extends AbstractAssociationOperator {
                 ).withTrigger(args.fireEvents);
             }
             if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-                Object generatedValue = LogicalDeletedValueGenerators
-                        .of(ctx.path.getType().getLogicalDeletedInfo(), sqlClient)
+                Object generatedValue = sqlClient
+                        .getGeneratorContext()
+                        .getLogicalDeletedValueGenerator(ctx.path.getType().getLogicalDeletedInfo())
                         .generate();
                 args = args.withLogicalDeletedValue(generatedValue);
             }

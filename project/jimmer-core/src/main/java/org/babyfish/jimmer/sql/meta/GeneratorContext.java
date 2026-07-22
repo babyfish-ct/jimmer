@@ -1,11 +1,15 @@
 package org.babyfish.jimmer.sql.meta;
 
-public interface SqlContext {
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.jetbrains.annotations.Nullable;
 
-    /**
-     * If the current `SqlContext` is wrapper,
-     */
-    <T extends SqlContext> T unwrap();
+public interface GeneratorContext {
+
+    IdGenerator getIdGenerator(ImmutableType type);
+
+    @Nullable
+    LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(@Nullable LogicalDeletedInfo info);
 
     UserIdGenerator<?> getUserIdGenerator(String ref) throws Exception;
 
@@ -14,6 +18,4 @@ public interface SqlContext {
     LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(String ref) throws Exception;
 
     LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(Class<?> logicalDeletedValueGeneratorType) throws Exception;
-
-    MetadataStrategy getMetadataStrategy();
 }

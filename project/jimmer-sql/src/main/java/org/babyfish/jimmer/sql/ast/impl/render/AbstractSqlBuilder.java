@@ -16,7 +16,6 @@ import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -190,7 +189,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             generatedValue = generatedValueRef.getValue();
         } else {
             LogicalDeletedValueGenerator<?> generator =
-                    LogicalDeletedValueGenerators.of(logicalDeletedInfo, sqlClient());
+                    sqlClient().getGeneratorContext().getLogicalDeletedValueGenerator(logicalDeletedInfo);
             generatedValue = generator != null ? generator.generate() : null;
         }
         if (generatedValue == null) {

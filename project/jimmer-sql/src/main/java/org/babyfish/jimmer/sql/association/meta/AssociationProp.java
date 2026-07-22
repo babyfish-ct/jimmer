@@ -9,7 +9,10 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -206,11 +209,6 @@ public abstract class AssociationProp implements ImmutableProp, ImmutablePropImp
 
     @Override
     public <S, T> Converter<S, T> getAssociatedIdConverter(boolean forList) {
-        return null;
-    }
-
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
         return null;
     }
 

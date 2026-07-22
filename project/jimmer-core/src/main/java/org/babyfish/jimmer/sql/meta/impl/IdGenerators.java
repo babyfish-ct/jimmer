@@ -7,15 +7,23 @@ import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.GeneratedValue;
 import org.babyfish.jimmer.sql.GenerationType;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.GeneratorContext;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 
 import java.lang.reflect.InvocationTargetException;
 
 public class IdGenerators {
 
-    private IdGenerators() {}
+    private IdGenerators() {
+    }
 
-    public static IdGenerator of(ImmutableType type, SqlContext sqlContext) {
+    public static IdGenerator of(
+            ImmutableType type,
+            MetadataStrategy metadataStrategy,
+            GeneratorContext generatorContext
+    ) {
         ImmutableProp idProp = type.getIdProp();
 
         GeneratedValue generatedValue = idProp.getAnnotation(GeneratedValue.class);
@@ -125,7 +133,7 @@ public class IdGenerators {
             Throwable errorCause = null;
             if (!generatorRef.isEmpty()) {
                 try {
-                    idGenerator = sqlContext.getUserIdGenerator(generatorRef);
+                    idGenerator = generatorContext.getUserIdGenerator(generatorRef);
                 } catch (Exception ex) {
                     error = "cannot get id generator named \"" + generatorRef + "\" from IOC framework";
                     errorCause = ex instanceof InvocationTargetException ?
@@ -137,7 +145,7 @@ public class IdGenerators {
                         .validate();
             } else {
                 try {
-                    idGenerator = sqlContext.getUserIdGenerator(generatorType);
+                    idGenerator = generatorContext.getUserIdGenerator(generatorType);
                 } catch (Exception ex) {
                     error = "cannot create the instance of \"" + generatorType.getName() + "\"";
                     errorCause = ex instanceof InvocationTargetException ?
@@ -156,8 +164,8 @@ public class IdGenerators {
         } else if (strategy == GenerationType.SEQUENCE) {
             String sequenceName = generatedValue.sequenceName();
             idGenerator = new SequenceIdGenerator(sequenceName.isEmpty() ?
-                    sqlContext.getMetadataStrategy().getNamingStrategy().sequenceName(idProp.getDeclaringType()) :
-                    Utils.resolveMetaString(sequenceName, sqlContext.getMetadataStrategy().getMetaStringResolver())
+                    metadataStrategy.getNamingStrategy().sequenceName(idProp.getDeclaringType()) :
+                    Utils.resolveMetaString(sequenceName, metadataStrategy.getMetaStringResolver())
             );
         }
         return idGenerator;

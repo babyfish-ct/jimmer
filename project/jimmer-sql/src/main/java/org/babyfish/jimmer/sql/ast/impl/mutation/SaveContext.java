@@ -148,7 +148,10 @@ class SaveContext extends MutationContext {
     }
 
     public Object allocateId() {
-        IdGenerator idGenerator = options.getSqlClient().getIdGenerator(path.getType().getJavaClass());
+        IdGenerator idGenerator = options
+                .getSqlClient()
+                .getGeneratorContext()
+                .getIdGenerator(path.getType());
         if (idGenerator == null) {
             throw new SaveException.NoIdGenerator(
                     path,

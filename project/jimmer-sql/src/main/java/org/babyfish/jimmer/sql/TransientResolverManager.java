@@ -1,24 +1,24 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.spi.PropCacheInvalidators;
+import org.babyfish.jimmer.sql.di.AopProxyProvider;
+import org.babyfish.jimmer.sql.di.TransientResolverProvider;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.di.AopProxyProvider;
-import org.babyfish.jimmer.sql.di.StrategyProvider;
-import org.babyfish.jimmer.sql.di.TransientResolverProvider;
 
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -66,7 +66,7 @@ class TransientResolverManager {
         return resolverCache.get(prop);
     }
 
-    public StrategyProvider<TransientResolver<?,?>> getTransientResolverProvider() {
+    public TransientResolverProvider getTransientResolverProvider() {
         return transientResolverProvider;
     }
 

@@ -8,7 +8,9 @@ import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.meta.spi.ImmutableTypeImplementor;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -333,16 +335,6 @@ public class AssociationType extends AbstractImmutableTypeImpl implements Immuta
     @Override
     public String getTableName(MetadataStrategy strategy) {
         return getMiddleTable(strategy).getTableName();
-    }
-
-    @Override
-    public IdGenerator getIdGenerator(SqlContext sqlContext) {
-        return null;
-    }
-
-    @Override
-    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
-        return null;
     }
 
     @Override

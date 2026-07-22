@@ -16,17 +16,15 @@ import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.GeneratorContext;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SqlContext;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface JSqlClientImplementor extends JSqlClient, SqlContext {
+public interface JSqlClientImplementor extends JSqlClient {
 
     ConnectionManager getConnectionManager();
 
@@ -60,7 +58,7 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     ZoneId getZoneId();
 
-    IdGenerator getIdGenerator(Class<?> entityType);
+    GeneratorContext getGeneratorContext();
 
     int getDefaultBatchSize();
 
@@ -104,8 +102,6 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     ExceptionTranslator<Exception> getExceptionTranslator();
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
-
-    StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
 
     StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider();
 

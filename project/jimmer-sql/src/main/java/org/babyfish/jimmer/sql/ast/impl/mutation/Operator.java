@@ -271,7 +271,7 @@ class Operator {
         SequenceIdGenerator sequenceIdGenerator = null;
         UserIdGenerator<?> userIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
-            IdGenerator idGenerator = sqlClient.getIdGenerator(tableType.getJavaClass());
+            IdGenerator idGenerator = sqlClient.getGeneratorContext().getIdGenerator(tableType);
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (idGenerator instanceof UserIdGenerator<?>) {
@@ -1805,7 +1805,7 @@ class Operator {
         }
         SequenceIdGenerator sequenceIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
-            IdGenerator idGenerator = sqlClient.getIdGenerator(tableType.getJavaClass());
+            IdGenerator idGenerator = sqlClient.getGeneratorContext().getIdGenerator(tableType);
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {

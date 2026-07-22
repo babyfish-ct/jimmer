@@ -2,12 +2,11 @@ package org.babyfish.jimmer.spring.cfg.support;
 
 import org.babyfish.jimmer.spring.util.ApplicationContextUtils;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.di.DefaultUserIdGeneratorProvider;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.springframework.context.ApplicationContext;
 
 import java.util.List;
-import java.util.Map;
 
 public class SpringUserIdGeneratorProvider extends DefaultUserIdGeneratorProvider {
 
