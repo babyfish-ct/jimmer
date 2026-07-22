@@ -77,8 +77,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return state != null ? state : TableUsedState.NONE;
     }
 
-    public TableAliasScope beginTableAliasScope() {
-        return tableAliasScope = new TableAliasScope();
+    public TableAliasScope beginTableAliasScope(int expectedTableCount) {
+        return tableAliasScope = new TableAliasScope(expectedTableCount);
     }
 
     public TableAliasScope getTableAliasScope() {

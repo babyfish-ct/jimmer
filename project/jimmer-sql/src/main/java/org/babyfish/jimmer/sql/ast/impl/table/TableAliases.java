@@ -32,7 +32,9 @@ public final class TableAliases {
         if (rootTables.isEmpty()) {
             return EMPTY;
         }
-        Map<RealTable, Alias> aliasMap = new IdentityHashMap<>();
+        Map<RealTable, Alias> aliasMap = new IdentityHashMap<>(
+                Math.max(rootTables.size(), tableStateMap.size())
+        );
         Map<TableAliasKey, Alias> aliasMapByKey = new HashMap<>();
         for (RealTable rootTable : rootTables) {
             allocate(rootTable, true, tableStateMap, aliasMap, aliasMapByKey, allocator);

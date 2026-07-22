@@ -21,7 +21,7 @@ final class CteTableDependencyAnalyzer {
         if (statements.isEmpty()) {
             return CteTableDependencies.EMPTY;
         }
-        Map<AbstractMutableStatementImpl, List<CteTableDeclaration>> declarationMap = new IdentityHashMap<>();
+        Map<AbstractMutableStatementImpl, List<CteTableDeclaration>> declarationMap = null;
         for (AbstractMutableStatementImpl statement : statements) {
             TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
             if (!tableLikeImplementor.hasBaseTable()) {
@@ -29,8 +29,14 @@ final class CteTableDependencyAnalyzer {
             }
             List<RealTable> tables = collectRenderTables(tableLikeImplementor.realTable(astContext));
             if (!tables.isEmpty()) {
+                if (declarationMap == null) {
+                    declarationMap = new IdentityHashMap<>();
+                }
                 declarationMap.put(statement, toDeclarations(tables));
             }
+        }
+        if (declarationMap == null) {
+            return CteTableDependencies.EMPTY;
         }
         List<RealTable> aliasRootTables = collectAliasRootTables(tableUsages.getRootTables(), astContext);
         return new CteTableDependencies(

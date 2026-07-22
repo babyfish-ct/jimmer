@@ -5,8 +5,8 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -17,11 +17,15 @@ public final class TableAliasScope implements TableAliasAllocator {
 
     private final Set<String> aliases = new HashSet<>();
 
-    private final Map<RealTable, AliasBinding> aliasBindings = new IdentityHashMap<>();
+    private final Map<RealTable, AliasBinding> aliasBindings;
 
     private final Map<TableAliasKey, AliasBinding> aliasBindingsByKey = new HashMap<>();
 
     private final Set<TableAliasKey> ambiguousAliasKeys = new HashSet<>();
+
+    public TableAliasScope(int expectedTableCount) {
+        aliasBindings = new IdentityHashMap<>(expectedTableCount);
+    }
 
     @Override
     public String allocateTableAlias(TableLikeImplementor<?> owner) {

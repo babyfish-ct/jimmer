@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliases;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -110,11 +111,28 @@ final class QueryAnalysisBuilder implements TypedQueryImplementor.SelectionJoinR
 
     private TableUsageAnalysis collectTableUsagesAndBaseExports(TypedQueryImplementor ast, QueryAnalysis joinAwareAnalysis) {
         List<AbstractMutableStatementImpl> statements = new ArrayList<>();
-        Set<AbstractMutableStatementImpl> statementSet = Collections.newSetFromMap(new IdentityHashMap<>());
         TableUsageCollector visitor = new TableUsageCollector(astContext, joinAwareAnalysis) {
+
+            @Nullable
+            private Set<AbstractMutableStatementImpl> statementSet;
+
             @Override
             public void visitStatement(AbstractMutableStatementImpl statement) {
                 super.visitStatement(statement);
+                if (statements.isEmpty()) {
+                    statements.add(statement);
+                    return;
+                }
+                Set<AbstractMutableStatementImpl> statementSet = this.statementSet;
+                if (statementSet == null) {
+                    AbstractMutableStatementImpl firstStatement = statements.get(0);
+                    if (firstStatement == statement) {
+                        return;
+                    }
+                    statementSet = this.statementSet =
+                            Collections.newSetFromMap(new IdentityHashMap<>(2));
+                    statementSet.add(firstStatement);
+                }
                 if (statementSet.add(statement)) {
                     statements.add(statement);
                 }

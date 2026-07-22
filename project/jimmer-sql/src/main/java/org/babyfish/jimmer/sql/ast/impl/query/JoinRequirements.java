@@ -9,9 +9,14 @@ import java.util.Map;
 
 final class JoinRequirements {
 
-    private final Map<TableImplementor<?>, JoinType> map = new IdentityHashMap<>();
+    @Nullable
+    private Map<TableImplementor<?>, JoinType> map;
 
     void require(TableImplementor<?> table, JoinType joinType) {
+        Map<TableImplementor<?>, JoinType> map = this.map;
+        if (map == null) {
+            map = this.map = new IdentityHashMap<>();
+        }
         JoinType oldJoinType = map.get(table);
         if (oldJoinType == null || oldJoinType == joinType) {
             map.put(table, joinType);
@@ -22,6 +27,7 @@ final class JoinRequirements {
 
     @Nullable
     JoinType get(TableImplementor<?> table) {
-        return map.get(table);
+        Map<TableImplementor<?>, JoinType> map = this.map;
+        return map != null ? map.get(table) : null;
     }
 }

@@ -22,10 +22,10 @@ public class TableUsageCollector extends TableUsageVisitor {
 
     private final List<RealTable> rootTables = new ArrayList<>();
 
-    private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>();
+    private final Map<RealTable, TableUsedState> tableStateMap = new IdentityHashMap<>(1);
 
-    private final Map<TableImplementor<?>, Set<ImmutableType>> joinedTypeBranchTableRequirements =
-            new IdentityHashMap<>();
+    @Nullable
+    private Map<TableImplementor<?>, Set<ImmutableType>> joinedTypeBranchTableRequirements;
 
     private final BaseQueryExportUsages.Builder baseQueryExportUsagesBuilder =
             new BaseQueryExportUsages.Builder();
@@ -47,11 +47,15 @@ public class TableUsageCollector extends TableUsageVisitor {
     }
 
     public JoinedTypeBranchTableUsages toJoinedTypeBranchTableUsages() {
-        return new JoinedTypeBranchTableUsages(joinedTypeBranchTableRequirements);
+        Map<TableImplementor<?>, Set<ImmutableType>> requirements = joinedTypeBranchTableRequirements;
+        return requirements != null ?
+                new JoinedTypeBranchTableUsages(requirements) :
+                JoinedTypeBranchTableUsages.EMPTY;
     }
 
     public boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table) {
-        return joinedTypeBranchTableRequirements.containsKey(table);
+        Map<TableImplementor<?>, Set<ImmutableType>> requirements = joinedTypeBranchTableRequirements;
+        return requirements != null && requirements.containsKey(table);
     }
 
     @Override
@@ -132,7 +136,7 @@ public class TableUsageCollector extends TableUsageVisitor {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
             ImmutableType stageType = tableImplementor.joinedTypeAdditionalTableType(prop);
             if (stageType != null) {
-                joinedTypeBranchTableRequirements
+                joinedTypeBranchTableRequirements()
                         .computeIfAbsent(tableImplementor, it -> new LinkedHashSet<>())
                         .add(stageType);
             }
@@ -164,6 +168,14 @@ public class TableUsageCollector extends TableUsageVisitor {
                 collectJoinedTypeBranchTableRequirement(parent, joinProp);
             }
         }
+    }
+
+    private Map<TableImplementor<?>, Set<ImmutableType>> joinedTypeBranchTableRequirements() {
+        Map<TableImplementor<?>, Set<ImmutableType>> requirements = joinedTypeBranchTableRequirements;
+        if (requirements == null) {
+            requirements = joinedTypeBranchTableRequirements = new IdentityHashMap<>();
+        }
+        return requirements;
     }
 
     private BaseTableOwner canonicalTableOwner(BaseTableOwner baseTableOwner) {

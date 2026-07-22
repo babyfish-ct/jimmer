@@ -36,9 +36,14 @@ public final class TableUsages {
     }
 
     TableAliases allocateAndBindAliases(AstContext astContext, CteTableDependencies cteTableDependencies) {
-        TableAliasScope aliasScope = astContext.beginTableAliasScope();
+        TableAliasScope aliasScope = astContext.beginTableAliasScope(
+                Math.max(rootTables.size(), tableStateMap.size())
+        );
+        List<RealTable> aliasRootTables = cteTableDependencies != null ?
+                cteTableDependencies.aliasRootTables() :
+                Collections.emptyList();
         TableAliases aliases = TableAliases.allocate(
-                cteTableDependencies != null ? cteTableDependencies.aliasRootTables() : rootTables,
+                !aliasRootTables.isEmpty() ? aliasRootTables : rootTables,
                 tableStateMap,
                 aliasScope
         );
