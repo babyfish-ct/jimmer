@@ -6,14 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 final class BaseQueryExportUsages {
 
@@ -50,6 +43,9 @@ final class BaseQueryExportUsages {
     }
 
     Set<BaseTableOwner> owners() {
+        if (fullRowExports.isEmpty() && expressionExports.isEmpty() && tableReferenceUsageMap.isEmpty()) {
+            return Collections.emptySet();
+        }
         Set<BaseTableOwner> owners = new LinkedHashSet<>();
         owners.addAll(fullRowExports);
         owners.addAll(expressionExports);
@@ -62,6 +58,26 @@ final class BaseQueryExportUsages {
         @Nullable
         private State state;
 
+        private static List<BaseTableOwner> expandedOwners(BaseTableOwner baseTableOwner) {
+            BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
+            MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
+            if (mergedBy == null) {
+                return Collections.singletonList(baseTableOwner);
+            }
+            List<BaseTableOwner> owners = new ArrayList<>();
+            owners.add(baseTableOwner);
+            boolean cte = baseTable.isCte();
+            for (ConfigurableBaseQueryImpl<?> itemQuery : mergedBy.getExpandedQueries()) {
+                owners.add(
+                        new BaseTableOwner(
+                                mergedBy.itemBaseTable(itemQuery, cte),
+                                baseTableOwner.getIndex()
+                        )
+                );
+            }
+            return owners;
+        }
+
         void requireFullRowExport(BaseTableOwner baseTableOwner) {
             state().fullRowExports.addAll(expandedOwners(baseTableOwner));
         }
@@ -70,16 +86,8 @@ final class BaseQueryExportUsages {
             state().expressionExports.addAll(expandedOwners(baseTableOwner));
         }
 
-        void requireTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
-            requireTableReference(table, prop, rawId, null);
-        }
-
         void requireTableReference(BaseTableOwner baseTableOwner, RealTable table, ImmutableProp prop, boolean rawId) {
             requireTableReference(baseTableOwner, table, prop, rawId, null);
-        }
-
-        void requireTableColumns(RealTable table, ImmutableProp prop, Collection<String> columnNames) {
-            requireTableReference(table, prop, false, columnNames);
         }
 
         void requireTableColumns(
@@ -89,19 +97,6 @@ final class BaseQueryExportUsages {
                 Collection<String> columnNames
         ) {
             requireTableReference(baseTableOwner, table, prop, false, columnNames);
-        }
-
-        private void requireTableReference(
-                RealTable table,
-                ImmutableProp prop,
-                boolean rawId,
-                @Nullable Collection<String> columnNames
-        ) {
-            BaseTableOwner baseTableOwner = table.getBaseTableOwner();
-            if (baseTableOwner == null) {
-                return;
-            }
-            requireTableReference(baseTableOwner, table, prop, rawId, columnNames);
         }
 
         private void requireTableReference(
@@ -146,26 +141,6 @@ final class BaseQueryExportUsages {
                 state = this.state = new State();
             }
             return state;
-        }
-
-        private static List<BaseTableOwner> expandedOwners(BaseTableOwner baseTableOwner) {
-            BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-            MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
-            if (mergedBy == null) {
-                return Collections.singletonList(baseTableOwner);
-            }
-            List<BaseTableOwner> owners = new ArrayList<>();
-            owners.add(baseTableOwner);
-            boolean cte = baseTable.isCte();
-            for (ConfigurableBaseQueryImpl<?> itemQuery : mergedBy.getExpandedQueries()) {
-                owners.add(
-                        new BaseTableOwner(
-                                mergedBy.itemBaseTable(itemQuery, cte),
-                                baseTableOwner.getIndex()
-                        )
-                );
-            }
-            return owners;
         }
 
         private static class State {
