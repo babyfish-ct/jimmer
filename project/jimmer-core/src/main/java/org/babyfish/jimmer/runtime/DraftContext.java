@@ -3,6 +3,7 @@ package org.babyfish.jimmer.runtime;
 import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.sql.collection.AbstractIdViewList;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -13,9 +14,11 @@ public class DraftContext {
 
     private final DraftContext parent;
 
-    private final IdentityHashMap<Object, Draft> objDraftMap = new IdentityHashMap<>();
+    @Nullable
+    private IdentityHashMap<Object, Draft> objDraftMap;
 
-    private final IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = new IdentityHashMap<>();
+    @Nullable
+    private IdentityHashMap<List<?>, ListDraft<?>> listDraftMap;
 
     private DisposerHolder disposerHolder;
 
@@ -26,17 +29,21 @@ public class DraftContext {
     @SuppressWarnings("unchecked")
     public <D> D toDraftObject(Object obj) {
         if (obj == null || obj instanceof Draft) {
-            return (D)obj;
+            return (D) obj;
         }
-        Draft draft = objDraftMap.get(obj);
+        IdentityHashMap<Object, Draft> objDraftMap = this.objDraftMap;
+        Draft draft = objDraftMap != null ? objDraftMap.get(obj) : null;
         if (draft == null) {
             if (obj instanceof List<?>) {
                 throw new IllegalArgumentException("DraftContext.toDraftObject dose not accept list");
             }
-            draft = ((ImmutableSpi)obj).__type().getDraftFactory().apply(this, obj);
+            draft = ((ImmutableSpi) obj).__type().getDraftFactory().apply(this, obj);
+            if (objDraftMap == null) {
+                objDraftMap = this.objDraftMap = new IdentityHashMap<>(1);
+            }
             objDraftMap.put(obj, draft);
         }
-        return (D)draft;
+        return (D) draft;
     }
 
     @SuppressWarnings("unchecked")
@@ -46,18 +53,22 @@ public class DraftContext {
             boolean isElementImmutable
     ) {
         if (list == null || list instanceof Draft || list instanceof AbstractIdViewList<?, ?>) {
-            return (List<D>)list;
+            return (List<D>) list;
         }
-        ListDraft<?> draft = listDraftMap.get(list);
+        IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = this.listDraftMap;
+        ListDraft<?> draft = listDraftMap != null ? listDraftMap.get(list) : null;
         if (draft == null) {
             if (isElementImmutable) {
                 draft = new ListDraft<>(this, elementType, list);
             } else {
                 draft = new ListDraft<>(elementType, list);
             }
+            if (listDraftMap == null) {
+                listDraftMap = this.listDraftMap = new IdentityHashMap<>(1);
+            }
             listDraftMap.put(list, draft);
         }
-        return (List<D>)draft;
+        return (List<D>) draft;
     }
 
     @SuppressWarnings("unchecked")
@@ -70,25 +81,26 @@ public class DraftContext {
         }
         Draft draft;
         if (obj instanceof Draft) {
-            draft = (Draft)obj;
+            draft = (Draft) obj;
         } else if (obj instanceof ImmutableSpi) {
-            draft = objDraftMap.get(obj);
+            IdentityHashMap<Object, Draft> objDraftMap = this.objDraftMap;
+            draft = objDraftMap != null ? objDraftMap.get(obj) : null;
         } else {
             draft = null;
         }
         if (draft == null) {
             return obj;
         }
-        DraftSpi spi = (DraftSpi)draft;
+        DraftSpi spi = (DraftSpi) draft;
         if (spi.__isResolved()) {
             // Issue #597
-            return (E)spi.__resolve();
+            return (E) spi.__resolve();
         }
         validateOtherDraft(
                 spi.__draftContext(),
                 "Cannot resolve the draft object because it belong to another draft context"
         );
-        return (E)spi.__resolve();
+        return (E) spi.__resolve();
     }
 
     @SuppressWarnings("unchecked")
@@ -98,9 +110,10 @@ public class DraftContext {
         }
         ListDraft<?> draft;
         if (list instanceof Draft) {
-            draft = (ListDraft<?>)list;
+            draft = (ListDraft<?>) list;
         } else {
-            draft = listDraftMap.get(list);
+            IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = this.listDraftMap;
+            draft = listDraftMap != null ? listDraftMap.get(list) : null;
         }
         if (draft == null) {
             List<E> newList = null;
@@ -123,7 +136,7 @@ public class DraftContext {
                 draft.draftContext(),
                 "Cannot resolve the draft list because it belong to another draft context"
         );
-        return (List<E>)draft.resolve();
+        return (List<E>) draft.resolve();
     }
 
     private void validateOtherDraft(DraftContext ctx, String errorMessage) {
