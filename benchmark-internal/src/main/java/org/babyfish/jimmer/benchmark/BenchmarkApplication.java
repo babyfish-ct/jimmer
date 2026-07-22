@@ -14,6 +14,7 @@ public class BenchmarkApplication {
         int threads = argument(args, 0, 20);
         int warmupIterations = argument(args, 1, 5);
         int measurementIterations = argument(args, 2, 5);
+        int forks = argument(args, 3, 1);
         Options options = new OptionsBuilder()
                 .include("\\." + QueryBenchmark.class.getSimpleName() + "\\.")
                 .warmupIterations(warmupIterations)
@@ -21,12 +22,12 @@ public class BenchmarkApplication {
                 .measurementIterations(measurementIterations)
                 .measurementTime(TimeValue.seconds(1))
                 .threads(threads)
-                .forks(1)
+                .forks(forks)
                 .addProfiler(GCProfiler.class)
                 .resultFormat(ResultFormatType.JSON)
-                .result("benchmark-report-" + threads + ".json")
+                .result("benchmark-report-" + threads + "t-" + forks + "f.json")
                 .shouldFailOnError(true)
-                .jvmArgs("-server")
+                .jvmArgs("-server", "-Xms2g", "-Xmx2g")
                 .build();
         new Runner(options).run();
     }
