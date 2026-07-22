@@ -59,9 +59,11 @@ public final class TableAliasScope implements TableAliasAllocator {
     }
 
     public void applyAliases(RealTable table, TableAliases aliases) {
-        TableAliases.Alias alias = aliases.get(table);
-        if (alias != null) {
-            bind(table, alias.value, alias.middleValue);
+        if (!isIdentityBound(table)) {
+            TableAliases.Alias alias = aliases.get(table);
+            if (alias != null) {
+                bind(table, alias.value, alias.middleValue);
+            }
         }
         for (RealTable childTable : table) {
             applyAliases(childTable, aliases);
@@ -150,13 +152,21 @@ public final class TableAliasScope implements TableAliasAllocator {
     private void bind(RealTable table, AliasBinding binding) {
         AliasBinding oldBinding = aliasBindings.put(table, binding);
         Map<TableAliasKey, AliasBinding> aliasBindingsByKey = this.aliasBindingsByKey;
-        if (aliasBindingsByKey == null) {
-            if (oldBinding != null && oldBinding != binding) {
-                ambiguousAliasKeys().add(table.getAliasKey());
-            }
-            return;
+        if (aliasBindingsByKey != null || (oldBinding != null && oldBinding != binding)) {
+            updateStructuralBindings(table, binding, aliasBindingsByKey);
         }
-        bindByKey(aliasBindingsByKey, table, binding);
+    }
+
+    private void updateStructuralBindings(
+            RealTable table,
+            AliasBinding binding,
+            @Nullable Map<TableAliasKey, AliasBinding> aliasBindingsByKey
+    ) {
+        if (aliasBindingsByKey != null) {
+            bindByKey(aliasBindingsByKey, table, binding);
+        } else {
+            ambiguousAliasKeys().add(table.getAliasKey());
+        }
     }
 
     private void bindByKey(
