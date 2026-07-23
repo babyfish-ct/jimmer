@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -342,9 +343,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         astContext.pushStatement(this);
         try {
             if (start != null) {
-                applyGlobalFilerImpl(visitor, start);
+                applyGlobalFilterImpl(visitor, start);
             } else if (tableLikeImplementor instanceof TableImplementor<?>) {
-                applyGlobalFilerImpl(visitor, (TableImplementor<?>) tableLikeImplementor);
+                applyGlobalFilterImpl(visitor, (TableImplementor<?>) tableLikeImplementor);
             } else {
                 ((BaseTableImplementor) tableLikeImplementor)
                         .getQuery()
@@ -407,7 +408,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         }
     }
 
-    private void applyGlobalFilerImpl(ApplyFilterVisitor visitor, TableImplementor<?> table) {
+    private void applyGlobalFilterImpl(ApplyFilterVisitor visitor, TableImplementor<?> table) {
         FilterLevel level = visitor.level;
         if (level == FilterLevel.IGNORE_ALL || filterPredicates.get(table) != null) {
             return;
@@ -530,15 +531,12 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 implementor = table.getTableLikeImplementor();
                 if (implementor instanceof TableImplementor<?>) {
                     TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
-                    BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
                     // The base query already filters its selected entity. Descendant
                     // joins belong to the outer query, but traversal must stop here.
-                    if (baseTableOwner != null && baseTableOwner.isSelectionRoot(tableImplementor, ctx)) {
+                    if (isBaseTableSelectionRoot(tableImplementor)) {
                         break;
                     }
-                    tableImplementor
-                            .getStatement()
-                            .applyGlobalFilerImpl(this, tableImplementor);
+                    ctx.getStatement().applyGlobalFilterImpl(this, tableImplementor);
                 } else if (implementor instanceof BaseTableImplementor) {
                     ((BaseTableImplementor) implementor)
                             .getQuery()
@@ -546,6 +544,16 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 }
                 table = table.getParent();
             }
+        }
+
+        private boolean isBaseTableSelectionRoot(TableImplementor<?> table) {
+            BaseTableOwner owner = table.getBaseTableOwner();
+            if (owner == null) {
+                return false;
+            }
+            Selection<?> selection = owner.getBaseTable().getSelections().get(owner.getIndex());
+            return selection instanceof Table<?> &&
+                    TableProxies.resolve((Table<?>) selection, getAstContext()) == table;
         }
 
         @Nullable
@@ -606,9 +614,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                                 field.getProp(),
                                 oldTableImplementor.getBaseTableOwner()
                         );
-                newTableImplementor
+                getAstContext()
                         .getStatement()
-                        .applyGlobalFilerImpl(ApplyFilterVisitor.this, newTableImplementor);
+                        .applyGlobalFilterImpl(ApplyFilterVisitor.this, newTableImplementor);
                 tableImplementor = newTableImplementor;
                 return oldTableImplementor;
             }

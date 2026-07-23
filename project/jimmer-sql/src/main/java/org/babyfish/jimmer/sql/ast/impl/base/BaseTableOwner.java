@@ -1,16 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 
@@ -41,15 +37,6 @@ public final class BaseTableOwner {
 
     public int getIndex() {
         return index;
-    }
-
-    public boolean isSelectionRoot(
-            TableImplementor<?> table,
-            RootTableResolver resolver
-    ) {
-        Selection<?> selection = baseTable.getSelections().get(index);
-        return selection instanceof Table<?> &&
-                TableProxies.resolve((Table<?>) selection, resolver) == table;
     }
 
     void visitOwnerStatementChain(AstContext ctx, Runnable block) {

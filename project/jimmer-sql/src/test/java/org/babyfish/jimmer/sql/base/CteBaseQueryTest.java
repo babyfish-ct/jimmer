@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.*;
+import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -167,6 +168,65 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                     "--->}" +
                                     "}]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testLogicalDeletedFilterOnInnerJoinFromExportedTable() {
+        EmployeeTable table = EmployeeTable.$;
+        BaseTable1<EmployeeTable> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(baseTable.get_1().department().name()),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1) as (" +
+                                    "select tb_2_.DEPARTMENT_ID " +
+                                    "from EMPLOYEE tb_2_ " +
+                                    "where tb_2_.DELETED_MILLIS = ?" +
+                                    ") " +
+                                    "select tb_4_.NAME " +
+                                    "from tb_1_ " +
+                                    "inner join DEPARTMENT tb_4_ on tb_1_.c1 = tb_4_.ID " +
+                                    "where tb_4_.DELETED_MILLIS = ?"
+                    );
+                    ctx.variables(0L, 0L);
+                    ctx.rows("[\"Market\",\"Market\"]");
+                }
+        );
+    }
+
+    @Test
+    public void testLogicalDeletedFilterOnLeftJoinFromExportedTable() {
+        EmployeeTable table = EmployeeTable.$;
+        BaseTable1<EmployeeTable> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(baseTable.get_1().department(JoinType.LEFT).name()),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1) as (" +
+                                    "select tb_2_.DEPARTMENT_ID " +
+                                    "from EMPLOYEE tb_2_ " +
+                                    "where tb_2_.DELETED_MILLIS = ?" +
+                                    ") " +
+                                    "select tb_4_.NAME " +
+                                    "from tb_1_ " +
+                                    "left join DEPARTMENT tb_4_ " +
+                                    "--->on tb_1_.c1 = tb_4_.ID " +
+                                    "--->and tb_4_.DELETED_MILLIS = ?"
+                    );
+                    ctx.variables(0L, 0L);
+                    ctx.rows("[\"Market\",\"Market\"]");
                 }
         );
     }

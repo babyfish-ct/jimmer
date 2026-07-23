@@ -193,7 +193,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 bridgeProp != null &&
                 bridgeProp.isMappedId() &&
                 childProp == bridgeProp &&
-                bridgeImplementor.getStatement().getFilterPredicate(bridgeImplementor, ctx) == null;
+                ctx.getStatement().getFilterPredicate(bridgeImplementor, ctx) == null;
     }
 
     @Override
@@ -209,7 +209,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 tableOwner.weakJoinHandle == null &&
                 !joinProp.isMiddleTableDefinition() &&
                 !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                tableOwner.getStatement().getFilterPredicate(tableOwner, ctx) == null;
+                ctx.getStatement().getFilterPredicate(tableOwner, ctx) == null;
     }
 
     @Override
@@ -303,7 +303,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             renderBaseTableCore(builder, cte);
         } else if (owner instanceof TableImplementor<?>) {
             TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
-            AbstractMutableStatementImpl statement = tableImplementor.getStatement();
+            AbstractMutableStatementImpl statement = builder.getAstContext().getStatement();
             Predicate filterPredicate;
             if (tableImplementor.isTreated()) {
                 renderTreatedJoin(builder, tableImplementor, mode);
