@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.ld.BoolKeyFileTable;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -142,8 +143,8 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                        "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
-                                        "tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
+                                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
+                                    "tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
                                     "from BOOK tb_1_ " +
                                     "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
@@ -709,6 +710,49 @@ public class PagingTest extends AbstractQueryTest {
                                     " tb_3_.PRICE c4, tb_3_.STORE_ID c5 " +
                                     "from BOOK tb_3_) tb_1_ limit ?")
                             .variables(2);
+                }
+        );
+    }
+
+    @Test
+    public void testCteBaseQueryPagingWithLogicalDeleted() {
+        BoolKeyFileTable table = BoolKeyFileTable.$;
+        connectAndExpect(
+                con -> {
+                    JSqlClient client = getSqlClient(
+                            it -> it.setConnectionManager(ConnectionManager.singleConnectionManager(con))
+                    );
+                    BaseTable1<BoolKeyFileTable> baseTable = client
+                            .createBaseQuery(table)
+                            .addSelect(table)
+                            .asCteBaseTable();
+                    return client
+                            .createQuery(baseTable)
+                            .select(baseTable.get_1())
+                            .fetchPage(0, 2);
+                },
+                ctx -> {
+                    ctx.sql(
+                            "select count(1) " +
+                                    "from (" +
+                                    "with tb_1_(c1, c2, c3, c4) as (" +
+                                    "select tb_2_.ID, tb_2_.PATH, tb_2_.NAME, tb_2_.DELETED " +
+                                    "from BOOL_KEY_FILE tb_2_ " +
+                                    "where tb_2_.DELETED <> ?" +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 from tb_1_" +
+                                    ") tb_simple_count__"
+                    );
+                    ctx.variables(true);
+                    ctx.statement(1).sql(
+                            "with tb_1_(c1, c2, c3, c4) as (" +
+                                    "select tb_2_.ID, tb_2_.PATH, tb_2_.NAME, tb_2_.DELETED " +
+                                    "from BOOL_KEY_FILE tb_2_ " +
+                                    "where tb_2_.DELETED <> ?" +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
+                                    "from tb_1_ limit ?"
+                    ).variables(true, 2);
                 }
         );
     }
