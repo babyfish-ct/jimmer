@@ -252,6 +252,10 @@ public class EntityManager {
         return set;
     }
 
+    public boolean hasLogicalDeletedTypes(String microServiceName) {
+        return data.microServiceNamesWithLogicalDeletedTypes.contains(microServiceName);
+    }
+
     public List<ImmutableType> getImplementationTypes(ImmutableType type) {
         return info(type).implementationTypes;
     }
@@ -641,6 +645,8 @@ public class EntityManager {
 
         final Map<String, ImmutableType> typeMapForSpringDevTools;
 
+        final Set<String> microServiceNamesWithLogicalDeletedTypes;
+
         final MetaCache<Map<Key, Map<List<Object>, ImmutableType>>> typeMapCache =
                 new MetaCache<>(this::createTypeMap, 128);
 
@@ -649,6 +655,18 @@ public class EntityManager {
         Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
             this.map = map;
             this.typeMapForSpringDevTools = typeMapForSpringDevTools;
+            Set<String> microServiceNamesWithLogicalDeletedTypes = null;
+            for (ImmutableType type : map.keySet()) {
+                if (type.getLogicalDeletedInfo() != null) {
+                    if (microServiceNamesWithLogicalDeletedTypes == null) {
+                        microServiceNamesWithLogicalDeletedTypes = new HashSet<>();
+                    }
+                    microServiceNamesWithLogicalDeletedTypes.add(type.getMicroServiceName());
+                }
+            }
+            this.microServiceNamesWithLogicalDeletedTypes = microServiceNamesWithLogicalDeletedTypes != null ?
+                    microServiceNamesWithLogicalDeletedTypes :
+                    Collections.emptySet();
         }
 
         public Map<Key, Map<List<Object>, ImmutableType>> getTypeMap(MetadataStrategy strategy) {

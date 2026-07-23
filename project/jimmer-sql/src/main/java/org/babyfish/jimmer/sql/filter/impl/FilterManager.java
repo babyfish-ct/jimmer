@@ -335,6 +335,10 @@ public class FilterManager implements Filters {
         return false;
     }
 
+    public boolean hasUserFilters() {
+        return !filterMap.isEmpty();
+    }
+
     public Set<Filter<?>> getFiltersAffectNullity(ImmutableProp prop) {
         if (!prop.isReference(TargetLevel.ENTITY)) {
             return Collections.emptySet();

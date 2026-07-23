@@ -11,15 +11,20 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableSubQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.util.FlaternIterator;
 import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
@@ -323,12 +328,15 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             @Nullable List<Selection<?>> selections,
             @Nullable QueryAnalysis queryAnalysis
     ) {
-        if (level != FilterLevel.IGNORE_ALL) {
+        if (hasGlobalFilters(level)) {
             applyGlobalFiltersImpl(new ApplyFilterVisitor(astContext, level, queryAnalysis), selections, null);
         }
     }
 
     public final void applyDataLoaderGlobalFilters(TableImplementor<?> table) {
+        if (!hasGlobalFilters(FilterLevel.DEFAULT)) {
+            return;
+        }
         AstContext astContext = new AstContext(sqlClient);
         ApplyFilterVisitor visitor = new ApplyFilterVisitor(astContext, FilterLevel.DEFAULT);
         for (Predicate predicate : unfrozenPredicates()) {
@@ -339,6 +347,19 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         }
         getTableLikeImplementor();
         applyGlobalFiltersImpl(visitor, null, table);
+    }
+
+    private boolean hasGlobalFilters(FilterLevel level) {
+        if (level == FilterLevel.IGNORE_ALL) {
+            return false;
+        }
+        if (level != FilterLevel.IGNORE_USER_FILTERS &&
+                ((FilterManager) sqlClient.getFilters()).hasUserFilters()) {
+            return true;
+        }
+        return sqlClient
+                .getEntityManager()
+                .hasLogicalDeletedTypes(sqlClient.getMicroServiceName());
     }
 
     private void applyGlobalFiltersImpl(
@@ -363,10 +384,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                         .getQuery()
                         .applyGlobalFilters(astContext, visitor.level, visitor.getQueryAnalysis());
             }
-            int modCount = -1;
             __APPLY_STEP__:
-            while (modCount != modCount()) {
-                modCount = modCount();
+            while (true) {
+                int modCount = modCount();
                 if (selections != null) {
                     for (Selection<?> selection : selections) {
                         if (!visitor.isApplied(this, selection)) {
@@ -414,6 +434,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                         visitor.apply(this, order);
                     }
                 }
+                break;
             }
         } finally {
             astContext.popStatement();

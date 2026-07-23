@@ -22,6 +22,18 @@ import java.util.stream.Collectors;
 public class EntityManagerTest {
 
     @Test
+    public void testLogicalDeletedTypes() {
+        Assertions.assertFalse(
+                new EntityManager(SchemaATable.class).hasLogicalDeletedTypes("")
+        );
+        EntityManager entityManager = new EntityManager(
+                org.babyfish.jimmer.sql.model.ld.BoolKeyFile.class
+        );
+        Assertions.assertTrue(entityManager.hasLogicalDeletedTypes(""));
+        Assertions.assertFalse(entityManager.hasLogicalDeletedTypes("other"));
+    }
+
+    @Test
     public void testBackProps() {
         Assertions.assertEquals(
                 Arrays.asList(
