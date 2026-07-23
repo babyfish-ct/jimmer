@@ -994,7 +994,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (metadata == null) {
             return null;
         }
-        metadata = forList && isReferenceList(TargetLevel.ENTITY) ? metadata.toListMetadata() : metadata;
+        metadata = forList ? metadata.toListMetadata() : metadata;
         return metadata.getConverter();
     }
 
