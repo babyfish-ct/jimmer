@@ -36,3 +36,7 @@ specification EmployeeSpecificationForIssue980 {
         name as departmentName
     }
 }
+
+specification EmployeeDepartmentSpecification {
+    associatedIdIn(department) as departmentIds
+}

@@ -2,10 +2,34 @@ package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
+import org.babyfish.jimmer.sql.model.hr.dto.EmployeeDepartmentSpecification;
 import org.babyfish.jimmer.sql.model.hr.dto.EmployeeSpecificationForIssue735;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 public class EmployeeSpecificationTest extends AbstractQueryTest {
+
+    @Test
+    public void testAssociatedIdInForReference() {
+        EmployeeTable table = EmployeeTable.$;
+        EmployeeDepartmentSpecification spec = new EmployeeDepartmentSpecification();
+        spec.setDepartmentIds(Arrays.asList("1", "2"));
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(spec)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                                    "from EMPLOYEE tb_1_ " +
+                                    "where tb_1_.DEPARTMENT_ID in (?, ?) and tb_1_.DELETED_MILLIS = ?"
+                    ).variables(1L, 2L, 0L);
+                    ctx.rows(it -> {});
+                }
+        );
+    }
 
     @Test
     public void testParentEmpty() {
