@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.base;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
@@ -1090,6 +1091,39 @@ public class CteBaseQueryTest extends AbstractQueryTest {
                                     "--->tb_2_ inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_2_.c1 = tb_5_.AUTHOR_ID" +
                                     ") on tb_1_.ID = tb_5_.BOOK_ID " +
                                     "where tb_2_.c5 < ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testWeakOuterJoinFromExportedTable() {
+        BookStoreTable store = BookStoreTable.$;
+        BaseTable1<BookStoreTable> baseStore = getSqlClient()
+                .createBaseQuery(store)
+                .addSelect(store)
+                .asCteBaseTable();
+        BookStoreTable exportedStore = baseStore.get_1();
+        BookTable book = exportedStore.asTableEx().weakJoin(
+                BookTable.class,
+                JoinType.LEFT,
+                (source, target) -> target.storeId().eq(source.id())
+        );
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseStore)
+                        .select(exportedStore, book),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2, c3, c4) as (" +
+                                    "--->select tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
+                                    "--->from BOOK_STORE tb_2_" +
+                                    ") " +
+                                    "select " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_3_.ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID " +
+                                    "from tb_1_ " +
+                                    "left join BOOK tb_3_ on tb_3_.STORE_ID = tb_1_.c1"
                     );
                 }
         );

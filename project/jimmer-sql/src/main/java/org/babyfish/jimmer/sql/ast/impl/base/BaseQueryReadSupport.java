@@ -6,7 +6,11 @@ import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.JoinTemplate;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,15 +103,21 @@ public final class BaseQueryReadSupport {
             boolean foreignKeyInBaseQuery
     ) {
         BaseQueryExportSelection selection = selection(owner);
-        return selection != null ?
-                read(selection, selection.columnIndex(table, columnName, foreignKeyInBaseQuery)) :
-                null;
+        if (selection == null) {
+            return null;
+        }
+        Integer index = selection.columnIndexIfContained(table, columnName, foreignKeyInBaseQuery);
+        return index != null ? read(selection, index) : null;
     }
 
     @Nullable
     public BaseQueryRead formula(BaseTableOwner owner, RealTable table, FormulaTemplate formula) {
         BaseQueryExportSelection selection = selection(owner);
-        return selection != null ? read(selection, selection.formulaIndex(table, formula)) : null;
+        if (selection == null) {
+            return null;
+        }
+        Integer index = selection.formulaIndexIfContained(table, formula);
+        return index != null ? read(selection, index) : null;
     }
 
     public boolean canReadSelection(
