@@ -24,7 +24,9 @@ public abstract class AstVisitor {
 
     public AstVisitor(AstContext ctx, @Nullable QueryAnalysis queryAnalysis) {
         this.ctx = ctx;
-        this.queryRenderContext = queryAnalysis != null ? new QueryRenderContext(ctx, queryAnalysis) : null;
+        this.queryRenderContext = queryAnalysis != null ?
+                QueryRenderContext.forAnalysis(ctx, queryAnalysis) :
+                null;
     }
 
     public AstContext getAstContext() {

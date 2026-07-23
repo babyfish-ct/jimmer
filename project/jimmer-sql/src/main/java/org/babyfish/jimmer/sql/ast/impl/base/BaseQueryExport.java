@@ -10,7 +10,7 @@ import java.util.Map;
 
 public final class BaseQueryExport {
 
-    private final BaseQueryScope scope;
+    private final ColumnIndexSequence columnIndexSequence;
 
     private final RealTable realBaseTable;
 
@@ -18,8 +18,8 @@ public final class BaseQueryExport {
 
     private final Map<Integer, BaseQueryExportSelection> selectionMap = new LinkedHashMap<>();
 
-    BaseQueryExport(BaseQueryScope scope, RealTable realBaseTable) {
-        this.scope = scope;
+    BaseQueryExport(ColumnIndexSequence columnIndexSequence, RealTable realBaseTable) {
+        this.columnIndexSequence = columnIndexSequence;
         this.realBaseTable = realBaseTable;
     }
 
@@ -45,19 +45,19 @@ public final class BaseQueryExport {
         return collectorSelection;
     }
 
-    public BaseQueryExportSelection selectionOrNull(int selectionIndex, RealTable rootRealTable) {
-        if (!selectionExportMap.containsKey(selectionIndex)) {
-            return null;
-        }
-        return selection(selectionIndex, rootRealTable);
-    }
-
     BaseQueryExportSelection selectionOrNull(int selectionIndex) {
         if (!selectionExportMap.containsKey(selectionIndex)) {
             return null;
         }
-        BaseQueryExportSelection selection = selectionMap.get(selectionIndex);
-        return selection != null ? selection : selection(selectionIndex, null);
+        return selectionMap.get(selectionIndex);
+    }
+
+    void prepareSelections(BaseQueryScope scope) {
+        BaseTableImplementor baseTable =
+                (BaseTableImplementor) realBaseTable.getTableLikeImplementor();
+        for (Integer selectionIndex : selectionExportMap.keySet()) {
+            selection(selectionIndex, scope.rootRealTable(baseTable, selectionIndex));
+        }
     }
 
     BaseQueryExportColumn column(
@@ -145,7 +145,16 @@ public final class BaseQueryExport {
     }
 
     int nextColumnIndex() {
-        return scope.colNo();
+        return columnIndexSequence.next();
+    }
+
+    static final class ColumnIndexSequence {
+
+        private int value;
+
+        int next() {
+            return ++value;
+        }
     }
 
     void copyMissingFrom(BaseQueryExport source) {

@@ -208,7 +208,7 @@ public class ConfigurableSubQueryImpl<R>
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         SqlBuilder sqlBuilder = builder.assertSimple();
         sqlBuilder.usingQueryAnalysisIfAbsent(
-                () -> QueryAnalysisBuilder.analyze(sqlBuilder.getAstContext(), this, false),
+                () -> QueryAnalyzer.analyze(sqlBuilder.getAstContext(), this, false),
                 () -> renderWithCurrentQueryAnalysis(builder)
         );
     }

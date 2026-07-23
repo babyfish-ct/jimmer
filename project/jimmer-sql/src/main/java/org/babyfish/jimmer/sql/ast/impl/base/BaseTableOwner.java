@@ -39,7 +39,7 @@ public final class BaseTableOwner {
         return index;
     }
 
-    void visitOwnerStatementChain(AstContext ctx, Runnable block) {
+    public void visitOwnerStatementChain(AstContext ctx, Runnable block) {
         visitStatementChain(
                 ctx,
                 baseTable.getQuery().getMutableQuery(),

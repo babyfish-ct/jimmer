@@ -11,7 +11,12 @@ import java.util.*;
 final class BaseQueryExportUsages {
 
     static final BaseQueryExportUsages EMPTY =
-            new BaseQueryExportUsages(Collections.emptySet(), Collections.emptySet(), Collections.emptyMap());
+            new BaseQueryExportUsages(
+                    Collections.emptySet(),
+                    Collections.emptySet(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap()
+            );
 
     private final Set<BaseTableOwner> fullRowExports;
 
@@ -19,14 +24,18 @@ final class BaseQueryExportUsages {
 
     private final Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap;
 
+    private final Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap;
+
     BaseQueryExportUsages(
             Set<BaseTableOwner> fullRowExports,
             Set<BaseTableOwner> expressionExports,
-            Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap
+            Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap,
+            Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap
     ) {
         this.fullRowExports = fullRowExports;
         this.expressionExports = expressionExports;
         this.tableReferenceUsageMap = tableReferenceUsageMap;
+        this.canonicalBaseTableMap = canonicalBaseTableMap;
     }
 
     boolean isFullRowExportRequired(BaseTableOwner baseTableOwner) {
@@ -53,6 +62,10 @@ final class BaseQueryExportUsages {
         return owners;
     }
 
+    Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap() {
+        return canonicalBaseTableMap;
+    }
+
     static final class Builder {
 
         @Nullable
@@ -76,6 +89,14 @@ final class BaseQueryExportUsages {
                 );
             }
             return owners;
+        }
+
+        void registerCanonicalOwner(BaseTableOwner owner, BaseTableOwner canonicalOwner) {
+            BaseTableSymbol baseTable = owner.getBaseTable();
+            BaseTableSymbol canonicalBaseTable = canonicalOwner.getBaseTable();
+            if (baseTable != canonicalBaseTable) {
+                state().canonicalBaseTableMap.put(baseTable, canonicalBaseTable);
+            }
         }
 
         void requireFullRowExport(BaseTableOwner baseTableOwner) {
@@ -131,7 +152,8 @@ final class BaseQueryExportUsages {
             return new BaseQueryExportUsages(
                     new LinkedHashSet<>(fullRowExports),
                     new LinkedHashSet<>(expressionExports),
-                    tableReferenceUsageMap
+                    tableReferenceUsageMap,
+                    state.canonicalBaseTableMap
             );
         }
 
@@ -150,6 +172,8 @@ final class BaseQueryExportUsages {
             final Set<BaseTableOwner> expressionExports = new LinkedHashSet<>();
 
             final Map<BaseTableOwner, List<TableReferenceUsage>> tableReferenceUsageMap = new LinkedHashMap<>();
+
+            final Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap = new IdentityHashMap<>();
         }
     }
 

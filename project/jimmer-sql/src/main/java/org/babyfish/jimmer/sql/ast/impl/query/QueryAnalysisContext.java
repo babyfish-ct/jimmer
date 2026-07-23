@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -42,6 +43,12 @@ public final class QueryAnalysisContext {
 
     public TableImplementor<?> resolve(Table<?> table) {
         return TableProxies.resolve(table, astContext);
+    }
+
+    public TableImplementor<?> resolve(BaseTableOwner owner, Table<?> table) {
+        TableImplementor<?>[] resolved = new TableImplementor<?>[1];
+        owner.visitOwnerStatementChain(astContext, () -> resolved[0] = resolve(table));
+        return resolved[0];
     }
 
     public BaseTableImplementor resolveBaseTable(BaseTableSymbol baseTable) {

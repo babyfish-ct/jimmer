@@ -19,6 +19,11 @@ public final class TableAliasScope implements TableAliasAllocator {
     private Set<TableAliasKey> ambiguousAliasKeys;
 
     public TableAliasScope(int expectedTableCount) {
+        this(expectedTableCount, 0);
+    }
+
+    public TableAliasScope(int expectedTableCount, int sequence) {
+        this.sequence = sequence;
         aliasBindings = new IdentityHashMap<>(expectedTableCount);
     }
 

@@ -124,7 +124,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
     }
 
     public void setQueryAnalysis(QueryAnalysis queryAnalysis) {
-        this.queryRenderContext = new QueryRenderContext(ctx, queryAnalysis);
+        this.queryRenderContext = QueryRenderContext.forRender(ctx, queryAnalysis);
     }
 
     public void usingQueryAnalysisIfAbsent(Supplier<QueryAnalysis> queryAnalysisSupplier, Runnable block) {
@@ -132,7 +132,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
             block.run();
             return;
         }
-        queryRenderContext = new QueryRenderContext(ctx, queryAnalysisSupplier.get());
+        queryRenderContext = QueryRenderContext.forRender(ctx, queryAnalysisSupplier.get());
         try {
             block.run();
         } finally {

@@ -25,10 +25,19 @@ public final class QueryRenderContext {
 
     private final BaseQueryReadSupport baseQueryReadSupport;
 
-    public QueryRenderContext(AstContext astContext, QueryAnalysis analysis) {
+    private QueryRenderContext(AstContext astContext, QueryAnalysis analysis) {
         this.astContext = astContext;
         this.analysis = analysis;
         this.baseQueryReadSupport = new BaseQueryReadSupport(this);
+    }
+
+    public static QueryRenderContext forAnalysis(AstContext astContext, QueryAnalysis analysis) {
+        return new QueryRenderContext(astContext, analysis);
+    }
+
+    public static QueryRenderContext forRender(AstContext astContext, QueryAnalysis analysis) {
+        analysis.applyTo(astContext);
+        return new QueryRenderContext(astContext, analysis);
     }
 
     public AstContext getAstContext() {

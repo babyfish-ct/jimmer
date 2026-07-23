@@ -38,21 +38,29 @@ public final class TableUsages {
     }
 
     TableAliases allocateAndBindAliases(AstContext astContext, CteTableDependencies cteTableDependencies) {
-        TableAliasScope aliasScope = astContext.beginTableAliasScope(
-                Math.max(rootTables.size(), tableStateMap.size())
-        );
+        TableAliases aliases = allocateAliases(cteTableDependencies);
+        bindAliases(astContext, aliases);
+        return aliases;
+    }
+
+    TableAliases allocateAliases(CteTableDependencies cteTableDependencies) {
         List<RealTable> aliasRootTables = cteTableDependencies != null ?
                 cteTableDependencies.aliasRootTables() :
                 Collections.emptyList();
-        TableAliases aliases = TableAliases.allocate(
+        return TableAliases.allocate(
                 !aliasRootTables.isEmpty() ? aliasRootTables : rootTables,
-                tableStateMap,
-                aliasScope
+                tableStateMap
+        );
+    }
+
+    void bindAliases(AstContext astContext, TableAliases aliases) {
+        TableAliasScope aliasScope = astContext.beginTableAliasScope(
+                Math.max(rootTables.size(), tableStateMap.size()),
+                aliases.getAliasCount()
         );
         for (RealTable rootTable : rootTables) {
             aliasScope.applyAliases(rootTable, aliases);
         }
-        return aliases;
     }
 
     List<RealTable> getRootTables() {

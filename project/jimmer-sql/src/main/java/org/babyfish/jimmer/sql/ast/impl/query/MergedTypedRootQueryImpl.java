@@ -209,7 +209,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
-        builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
+        builder.setQueryAnalysis(QueryAnalyzer.analyze(builder.getAstContext(), this));
         renderTo(builder);
         return builder.build();
     }

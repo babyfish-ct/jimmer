@@ -59,36 +59,49 @@ public final class BaseQueryExportsCollector {
         return scope.requireExportSelection(baseTableOwner);
     }
 
-    public void requireExpressionIndex(BaseTableOwner baseTableOwner) {
-        BaseQueryScope scope = scope(baseTableOwner);
-        if (scope == null) {
-            return;
-        }
-        for (BaseTableOwner owner : expandedOwners(baseTableOwner)) {
-            register(owner.getBaseTable(), scope);
-            scope.requireExportSelection(owner).requireExpressionIndex();
-        }
-    }
-
-    public BaseQueryExports toExports() {
+    public BaseQueryExports toExports(
+            Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap
+    ) {
         State state = this.state;
         if (state == null) {
             return BaseQueryExports.EMPTY;
         }
         synchronizeMergedExports(state);
         Map<BaseQueryScope, BaseQueryExportResolver> resolverMap = new IdentityHashMap<>();
-        Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery = new IdentityHashMap<>();
-        Map<ConfigurableBaseQuery<?>, BaseTableSymbol> baseTableMapByQuery = new IdentityHashMap<>();
-        for (Map.Entry<ConfigurableBaseQuery<?>, BaseQueryScope> e : state.scopeMapByQuery.entrySet()) {
-            resolverMapByQuery.put(e.getKey(), resolver(e.getValue(), resolverMap));
+        for (BaseQueryScope scope : state.scopeMap.values()) {
+            scope.prepareExports();
+            resolverMap.put(scope, new BaseQueryExportResolver());
         }
+        Map<ConfigurableBaseQuery<?>, BaseTableSymbol> baseTableMapByQuery = new IdentityHashMap<>();
         Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable = new IdentityHashMap<>();
         for (Map.Entry<BaseTableSymbol, BaseQueryScope> e : state.scopeMapByBaseTable.entrySet()) {
             BaseTableSymbol baseTable = e.getKey();
-            resolverMapByBaseTable.put(baseTable, resolver(e.getValue(), resolverMap));
+            BaseQueryExportResolver resolver = resolverMap.get(e.getValue());
+            resolverMapByBaseTable.put(baseTable, resolver);
+            BaseQueryExport export = e.getValue().exportOrNull(baseTable);
+            if (export != null) {
+                resolver.put(baseTable, export);
+            }
             baseTableMapByQuery.put(baseTable.getQuery(), baseTable);
         }
-        return new BaseQueryExports(resolverMapByQuery, resolverMapByBaseTable, baseTableMapByQuery);
+        Map<ConfigurableBaseQuery<?>, BaseSelectionAliasRender> renderMapByQuery = new IdentityHashMap<>();
+        for (Map.Entry<ConfigurableBaseQuery<?>, BaseQueryScope> e : state.scopeMapByQuery.entrySet()) {
+            BaseTableSymbol baseTable = baseTableMapByQuery.get(e.getKey());
+            if (baseTable != null) {
+                renderMapByQuery.put(
+                        e.getKey(),
+                        resolverMap.get(e.getValue()).baseSelectionRender(
+                                baseTable,
+                                canonicalBaseTableMap
+                        )
+                );
+            }
+        }
+        return new BaseQueryExports(
+                renderMapByQuery,
+                resolverMapByBaseTable,
+                canonicalBaseTableMap
+        );
     }
 
     private void register(TableLikeImplementor<?> tableLikeImplementor, BaseQueryScope scope) {
@@ -181,31 +194,6 @@ public final class BaseQueryExportsCollector {
             baseTables.add(mergedBy.itemBaseTable(itemQuery, cte));
         }
         return baseTables;
-    }
-
-    private static List<BaseTableOwner> expandedOwners(BaseTableOwner baseTableOwner) {
-        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
-        MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
-        if (mergedBy == null) {
-            return java.util.Collections.singletonList(baseTableOwner);
-        }
-        List<BaseTableOwner> owners = new ArrayList<>();
-        for (BaseTableSymbol itemBaseTable : mergedBaseTables(baseTable, mergedBy)) {
-            owners.add(
-                    new BaseTableOwner(
-                            itemBaseTable,
-                            baseTableOwner.getIndex()
-                    )
-            );
-        }
-        return owners;
-    }
-
-    private static BaseQueryExportResolver resolver(
-            BaseQueryScope scope,
-            Map<BaseQueryScope, BaseQueryExportResolver> resolverMap
-    ) {
-        return resolverMap.computeIfAbsent(scope, BaseQueryScope::toResolver);
     }
 
     private State state() {

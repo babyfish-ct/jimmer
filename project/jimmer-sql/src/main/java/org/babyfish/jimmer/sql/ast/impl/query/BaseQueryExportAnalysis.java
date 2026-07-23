@@ -24,14 +24,14 @@ final class BaseQueryExportAnalysis {
 
     private BaseQueryExportAnalysis() {}
 
-    static void analyze(AbstractMutableStatementImpl statement, QueryAnalysisBuilder analysis) {
+    static void analyze(AbstractMutableStatementImpl statement, QueryAnalyzer analysis) {
         if (!TableUtils.hasBaseTable(statement.getTableLikeImplementor())) {
             return;
         }
         analyze(statement.getTableLikeImplementor(), analysis);
     }
 
-    static void analyzeUsages(QueryAnalysisBuilder analysis) {
+    static void analyzeUsages(QueryAnalyzer analysis) {
         for (BaseTableOwner baseTableOwner : analysis.baseQueryExportOwners()) {
             analyze(baseTableOwner, analysis);
         }
@@ -39,7 +39,7 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             TableLikeImplementor<?> tableLikeImplementor,
-            QueryAnalysisBuilder analysis
+            QueryAnalyzer analysis
     ) {
         if (tableLikeImplementor instanceof BaseTableImplementor) {
             analyze((BaseTableImplementor) tableLikeImplementor, analysis);
@@ -56,7 +56,7 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             BaseTableImplementor baseTableImplementor,
-            QueryAnalysisBuilder analysis
+            QueryAnalyzer analysis
     ) {
         QueryAnalysisContext ctx = analysis.getAnalysisContext();
         java.util.List<Selection<?>> selections = baseTableImplementor.getSelections();
@@ -73,7 +73,7 @@ final class BaseQueryExportAnalysis {
 
     private static void analyze(
             BaseTableOwner baseTableOwner,
-            QueryAnalysisBuilder analysis
+            QueryAnalyzer analysis
     ) {
         QueryAnalysisContext ctx = analysis.getAnalysisContext();
         BaseTableImplementor baseTableImplementor = ctx.resolveBaseTable(baseTableOwner.getBaseTable());
@@ -99,90 +99,90 @@ final class BaseQueryExportAnalysis {
             BaseTableImplementor baseTableImplementor,
             Table<?> table,
             int index,
-            QueryAnalysisBuilder analysis,
+            QueryAnalyzer analysis,
             QueryAnalysisContext ctx
     ) {
-            TableImplementor<?> tableImplementor = ctx.resolve(table);
-            BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-            if (baseTableOwner == null) {
-                return;
-            }
-            BaseQueryExportCollectorSelection exportSelection =
-                    analysis.requireBaseQueryExportSelection(baseTableOwner);
-            if (exportSelection == null) {
-                return;
-            }
-            RealTable realTable = ctx.realTable(tableImplementor);
-            java.util.List<BaseQueryExportUsages.TableReferenceUsage> usages =
-                    analysis.tableReferenceUsages(baseTableOwner);
-            boolean[] consumedUsages = new boolean[usages.size()];
-            boolean fullRow = analysis.isFullRowExportRequired(baseTableOwner);
-            for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
-                if (fullRow) {
-                    analyzeProp(realTable, tableImplementor, prop, false, false, exportSelection, ctx);
-                }
-                for (int i = 0; i < usages.size(); i++) {
-                    BaseQueryExportUsages.TableReferenceUsage usage = usages.get(i);
-                    if (consumedUsages[i] ||
-                            usage.prop != prop ||
-                            !exportSelection.isRootTable(usage.table)) {
-                        continue;
-                    }
-                    analyzeProp(
-                            realTable,
-                            tableImplementor,
-                            usage.prop,
-                            usage.rawId,
-                            usage.columnNames,
-                            exportSelection,
-                            ctx
-                    );
-                    consumedUsages[i] = true;
-                }
+        TableImplementor<?> tableImplementor = ctx.resolve(table);
+        BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
+        if (baseTableOwner == null) {
+            return;
+        }
+        BaseQueryExportCollectorSelection exportSelection =
+                analysis.requireBaseQueryExportSelection(baseTableOwner);
+        if (exportSelection == null) {
+            return;
+        }
+        RealTable realTable = ctx.realTable(tableImplementor);
+        java.util.List<BaseQueryExportUsages.TableReferenceUsage> usages =
+                analysis.tableReferenceUsages(baseTableOwner);
+        boolean[] consumedUsages = new boolean[usages.size()];
+        boolean fullRow = analysis.isFullRowExportRequired(baseTableOwner);
+        for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
+            if (fullRow) {
+                analyzeProp(realTable, tableImplementor, prop, false, false, exportSelection, ctx);
             }
             for (int i = 0; i < usages.size(); i++) {
-                if (!consumedUsages[i]) {
-                    analyzeTableReference(usages.get(i), exportSelection, ctx);
-                }
-            }
-            for (RealTable childTable : realTable) {
-                if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+                BaseQueryExportUsages.TableReferenceUsage usage = usages.get(i);
+                if (consumedUsages[i] ||
+                        usage.prop != prop ||
+                        !exportSelection.isRootTable(usage.table)) {
                     continue;
                 }
-                TableImplementor<?> childTableImplementor =
-                        (TableImplementor<?>) childTable.getTableLikeImplementor();
-                ImmutableProp prop = childTableImplementor.getJoinProp();
+                analyzeProp(
+                        realTable,
+                        tableImplementor,
+                        usage.prop,
+                        usage.rawId,
+                        usage.columnNames,
+                        exportSelection,
+                        ctx
+                );
+                consumedUsages[i] = true;
+            }
+        }
+        for (int i = 0; i < usages.size(); i++) {
+            if (!consumedUsages[i]) {
+                analyzeTableReference(usages.get(i), exportSelection, ctx);
+            }
+        }
+        for (RealTable childTable : realTable) {
+            if (!(childTable.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+                continue;
+            }
+            TableImplementor<?> childTableImplementor =
+                    (TableImplementor<?>) childTable.getTableLikeImplementor();
+            ImmutableProp prop = childTableImplementor.getJoinProp();
+            if (prop == null) {
+                break;
+            }
+            if (childTableImplementor.isInverse()) {
+                prop = prop.getOpposite();
                 if (prop == null) {
-                    break;
-                }
-                if (childTableImplementor.isInverse()) {
-                    prop = prop.getOpposite();
-                    if (prop == null) {
-                        continue;
-                    }
-                }
-                if (!prop.isColumnDefinition()) {
                     continue;
                 }
-                ColumnDefinition definition = prop.getStorage(ctx.getMetadataStrategy());
-                int size = definition.size();
-                for (int i = 0; i < size; i++) {
-                    exportSelection.requireJoinKeyColumnIndex(realTable, definition.name(i), false);
-                }
             }
+            if (!prop.isColumnDefinition()) {
+                continue;
+            }
+            ColumnDefinition definition = prop.getStorage(ctx.getMetadataStrategy());
+            int size = definition.size();
+            for (int i = 0; i < size; i++) {
+                exportSelection.requireJoinKeyColumnIndex(realTable, definition.name(i), false);
+            }
+        }
     }
 
     private static void analyzeExpressionSelection(
             BaseTableImplementor baseTableImplementor,
             int index,
-            QueryAnalysisBuilder analysis
+            QueryAnalyzer analysis
     ) {
         analyzeExpressionSelection(new BaseTableOwner(baseTableImplementor, index), analysis);
     }
 
     private static void analyzeExpressionSelection(
             BaseTableOwner baseTableOwner,
-            QueryAnalysisBuilder analysis
+            QueryAnalyzer analysis
     ) {
         if (analysis.isExpressionExportRequired(baseTableOwner)) {
             BaseQueryExportCollectorSelection exportSelection =

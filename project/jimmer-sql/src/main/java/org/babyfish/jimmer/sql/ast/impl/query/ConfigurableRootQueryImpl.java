@@ -495,16 +495,17 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
     ) {
         AstContext astContext = new AstContext(sqlClient, mode);
         SqlBuilder builder = new SqlBuilder(astContext);
+        QueryAnalyzer analyzer = new QueryAnalyzer(astContext, this);
         if (!getMutableQuery().isFrozen()) {
             getMutableQuery().applyVirtualPredicates(astContext);
             getMutableQuery().applyGlobalFilters(
                     astContext,
                     getMutableQuery().getContext().getFilterLevel(),
                     getData().selections,
-                    QueryAnalysisBuilder.analyzeJoinRequirements(astContext, this)
+                    analyzer.analyzeJoinRequirements()
             );
         }
-        builder.setQueryAnalysis(QueryAnalysisBuilder.analyze(builder.getAstContext(), this));
+        builder.setQueryAnalysis(analyzer.analyze());
         renderTo(builder);
         return builder.build();
     }

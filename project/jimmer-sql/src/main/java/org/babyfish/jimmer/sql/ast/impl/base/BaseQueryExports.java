@@ -11,22 +11,23 @@ import static java.util.Collections.emptyMap;
 
 public final class BaseQueryExports {
 
-    public static final BaseQueryExports EMPTY = new BaseQueryExports(emptyMap(), emptyMap(), emptyMap());
+    public static final BaseQueryExports EMPTY =
+            new BaseQueryExports(emptyMap(), emptyMap(), emptyMap());
 
-    private final Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery;
+    private final Map<ConfigurableBaseQuery<?>, BaseSelectionAliasRender> renderMapByQuery;
 
     private final Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable;
 
-    private final Map<ConfigurableBaseQuery<?>, BaseTableSymbol> baseTableMapByQuery;
+    private final Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap;
 
     BaseQueryExports(
-            Map<ConfigurableBaseQuery<?>, BaseQueryExportResolver> resolverMapByQuery,
+            Map<ConfigurableBaseQuery<?>, BaseSelectionAliasRender> renderMapByQuery,
             Map<BaseTableSymbol, BaseQueryExportResolver> resolverMapByBaseTable,
-            Map<ConfigurableBaseQuery<?>, BaseTableSymbol> baseTableMapByQuery
+            Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap
     ) {
-        this.resolverMapByQuery = resolverMapByQuery;
+        this.renderMapByQuery = renderMapByQuery;
         this.resolverMapByBaseTable = resolverMapByBaseTable;
-        this.baseTableMapByQuery = baseTableMapByQuery;
+        this.canonicalBaseTableMap = canonicalBaseTableMap;
     }
 
     @Nullable
@@ -38,16 +39,17 @@ public final class BaseQueryExports {
         if (recursive != null) {
             baseTableOwner = new BaseTableOwner(recursive, baseTableOwner.getIndex());
         }
-        BaseTableSymbol baseTable = baseTableOwner.getBaseTable();
+        BaseTableSymbol baseTable = canonical(baseTableOwner.getBaseTable());
+        if (baseTable != baseTableOwner.getBaseTable()) {
+            baseTableOwner = new BaseTableOwner(baseTable, baseTableOwner.getIndex());
+        }
         BaseQueryExportResolver resolver = resolver(baseTable);
         return resolver != null ? resolver.exportSelectionOrNull(baseTableOwner) : null;
     }
 
     @Nullable
     public BaseSelectionAliasRender baseSelectionRender(ConfigurableBaseQuery<?> query) {
-        BaseQueryExportResolver resolver = resolverMapByQuery.get(query);
-        BaseTableSymbol baseTable = baseTableMapByQuery.get(query);
-        return resolver != null && baseTable != null ? resolver.baseSelectionRender(baseTable) : null;
+        return renderMapByQuery.get(query);
     }
 
     private BaseQueryExportResolver resolver(BaseTableSymbol baseTable) {
@@ -57,12 +59,17 @@ public final class BaseQueryExports {
         }
         for (TableLike<?> parent = baseTable.getParent(); parent != null; parent = TableUtils.parent(parent)) {
             if (parent instanceof BaseTableSymbol) {
-                resolver = resolverMapByBaseTable.get(parent);
+                resolver = resolverMapByBaseTable.get(canonical((BaseTableSymbol) parent));
                 if (resolver != null) {
                     return resolver;
                 }
             }
         }
         return null;
+    }
+
+    private BaseTableSymbol canonical(BaseTableSymbol baseTable) {
+        BaseTableSymbol canonical = canonicalBaseTableMap.get(baseTable);
+        return canonical != null ? canonical : baseTable;
     }
 }

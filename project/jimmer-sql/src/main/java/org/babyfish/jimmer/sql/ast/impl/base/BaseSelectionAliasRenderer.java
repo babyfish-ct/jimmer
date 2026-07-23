@@ -3,9 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -17,22 +15,30 @@ import java.util.Map;
 
 final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
 
-    private final Map<RealTable, BaseQueryExport> exportMap;
+    private final Map<BaseTableSymbol, BaseQueryExport> exportMap;
+
+    private final Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap;
 
     private final boolean cte;
 
-    BaseSelectionAliasRenderer(Map<RealTable, BaseQueryExport> exportMap, BaseTableSymbol baseTableSymbol) {
+    BaseSelectionAliasRenderer(
+            Map<BaseTableSymbol, BaseQueryExport> exportMap,
+            Map<BaseTableSymbol, BaseTableSymbol> canonicalBaseTableMap,
+            BaseTableSymbol baseTableSymbol
+    ) {
         this.exportMap = exportMap;
+        this.canonicalBaseTableMap = canonicalBaseTableMap;
         this.cte = baseTableSymbol.isCte();
     }
 
     @Override
     public void render(int index, Selection<?> selection, SqlBuilder builder) {
         RealTable realBaseTable = builder.getAstContext().getRenderedRealBaseTable();
-        BaseQueryExport export = exportMap.get(realBaseTable);
-        BaseQueryExportSelection exportSelection = export != null ?
-                export.selectionOrNull(index, rootRealTable(selection, builder)) :
-                null;
+        BaseQueryExport export = export(
+                ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).toSymbol()
+        );
+        BaseQueryExportSelection exportSelection =
+                export != null ? export.selectionOrNull(index) : null;
         if (exportSelection == null) {
             return;
         }
@@ -73,14 +79,15 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
 
     @Override
     public void renderCteColumns(RealTable realBaseTable, SqlBuilder builder) {
-        BaseTableImplementor baseTableImplementor = (BaseTableImplementor) realBaseTable.getTableLikeImplementor();
+        BaseTableImplementor baseTableImplementor =
+                (BaseTableImplementor) realBaseTable.getTableLikeImplementor();
         ConfigurableBaseQueryImpl<?> query = baseTableImplementor.toSymbol().getQuery();
         List<Selection<?>> selections = query.getSelections();
         int size = selections.size();
+        BaseQueryExport export = export(baseTableImplementor.toSymbol());
         builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
         for (int i = 0; i < size; i++) {
             Selection<?> selection = selections.get(i);
-            BaseQueryExport export = exportMap.get(realBaseTable);
             BaseQueryExportSelection exportSelection = export != null ? export.selectionOrNull(i) : null;
             if (exportSelection == null) {
                 continue;
@@ -96,20 +103,15 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         builder.leave();
     }
 
-    private static RealTable rootRealTable(Selection<?> selection, SqlBuilder builder) {
-        if (!(selection instanceof Table<?>)) {
-            return null;
-        }
-        AstContext astContext = builder.getAstContext();
-        return TableProxies
-                .resolve((Table<?>) selection, astContext)
-                .realTableForRender(builder);
-    }
-
     private static RealTable childTableByKeys(RealTable table, List<RealTable.Key> keys) {
         for (RealTable.Key key : keys) {
             table = table.child(key);
         }
         return table;
+    }
+
+    private BaseQueryExport export(BaseTableSymbol baseTable) {
+        BaseTableSymbol canonical = canonicalBaseTableMap.get(baseTable);
+        return exportMap.get(canonical != null ? canonical : baseTable);
     }
 }

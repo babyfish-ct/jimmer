@@ -13,7 +13,11 @@ final class BaseQueryScope {
 
     private final Map<RealTable, BaseQueryExport> exportMap = new LinkedHashMap<>();
 
-    private int colNoSequence;
+    private final Map<BaseTableSymbol, BaseQueryExport> exportMapByBaseTable =
+            new IdentityHashMap<>();
+
+    private final BaseQueryExport.ColumnIndexSequence columnIndexSequence =
+            new BaseQueryExport.ColumnIndexSequence();
 
     BaseQueryScope(QueryAnalysisContext ctx) {
         this.ctx = ctx;
@@ -27,9 +31,10 @@ final class BaseQueryScope {
         RealTable realBaseTable = ctx.realTable(baseTable);
         BaseQueryExport export = exportMap.get(realBaseTable);
         if (export == null) {
-            export = new BaseQueryExport(this, realBaseTable);
+            export = new BaseQueryExport(columnIndexSequence, realBaseTable);
             exportMap.put(realBaseTable, export);
         }
+        exportMapByBaseTable.put(baseTableOwner.getBaseTable(), export);
         return export.requireSelection(baseTableOwner.index, rootRealTable(baseTable, baseTableOwner.index));
     }
 
@@ -57,16 +62,14 @@ final class BaseQueryScope {
         }
     }
 
-    int colNo() {
-        return ++colNoSequence;
-    }
-
     RealTable rootRealTable(BaseTableImplementor baseTable, int selectionIndex) {
         Selection<?> selection = baseTable.getSelections().get(selectionIndex);
         if (!(selection instanceof Table<?>)) {
             return null;
         }
-        return ctx.realTable(ctx.resolve((Table<?>) selection));
+        Table<?> table = (Table<?>) selection;
+        BaseTableOwner owner = BaseTableOwner.of(table);
+        return ctx.realTable(owner != null ? ctx.resolve(owner, table) : ctx.resolve(table));
     }
 
     private BaseQueryExport export(BaseTableSymbol baseTableSymbol) {
@@ -77,18 +80,32 @@ final class BaseQueryScope {
         RealTable realBaseTable = ctx.realTable(baseTable);
         BaseQueryExport export = exportMap.get(realBaseTable);
         if (export == null) {
-            export = new BaseQueryExport(this, realBaseTable);
+            export = new BaseQueryExport(columnIndexSequence, realBaseTable);
             exportMap.put(realBaseTable, export);
+        }
+        exportMapByBaseTable.put(baseTableSymbol, export);
+        return export;
+    }
+
+    BaseQueryExport exportOrNull(BaseTableSymbol baseTableSymbol) {
+        BaseQueryExport export = exportMapByBaseTable.get(baseTableSymbol);
+        if (export != null) {
+            return export;
+        }
+        BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableSymbol);
+        if (baseTable == null) {
+            return null;
+        }
+        export = exportMap.get(ctx.realTable(baseTable));
+        if (export != null) {
+            exportMapByBaseTable.put(baseTableSymbol, export);
         }
         return export;
     }
 
-    private BaseQueryExport exportOrNull(BaseTableSymbol baseTableSymbol) {
-        BaseTableImplementor baseTable = ctx.resolveBaseTable(baseTableSymbol);
-        return baseTable != null ? exportMap.get(ctx.realTable(baseTable)) : null;
-    }
-
-    BaseQueryExportResolver toResolver() {
-        return new BaseQueryExportResolver(ctx, exportMap);
+    void prepareExports() {
+        for (BaseQueryExport export : exportMap.values()) {
+            export.prepareSelections(this);
+        }
     }
 }

@@ -185,7 +185,9 @@ public class TableUsageCollector extends TableUsageVisitor {
     }
 
     private BaseTableOwner canonicalTableOwner(BaseTableOwner baseTableOwner) {
-        return getAstContext().resolveBaseTableOwner(baseTableOwner);
+        BaseTableOwner canonicalOwner = getAstContext().resolveBaseTableOwner(baseTableOwner);
+        baseQueryExportUsagesBuilder.registerCanonicalOwner(baseTableOwner, canonicalOwner);
+        return canonicalOwner;
     }
 
     private void useResolvedBaseTable(BaseTableOwner baseTableOwner) {

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExports;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportSelection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
@@ -17,47 +18,70 @@ import java.util.Set;
 
 public final class QueryAnalysis {
 
-    private final AstContext astContext;
+    private final JoinRequirements joinRequirements;
 
-    private final QueryAnalysisModel model;
+    private final TableUsages tableUsages;
 
-    QueryAnalysis(AstContext astContext, QueryAnalysisModel model) {
-        this.astContext = astContext;
-        this.model = model;
+    private final JoinedTypeBranchTableUsages joinedTypeBranchTableUsages;
+
+    private final TableAliases tableAliases;
+
+    private final BaseQueryExports baseQueryExports;
+
+    private final CteTableDependencies cteTableDependencies;
+
+    QueryAnalysis(
+            JoinRequirements joinRequirements,
+            TableUsages tableUsages,
+            JoinedTypeBranchTableUsages joinedTypeBranchTableUsages,
+            TableAliases tableAliases,
+            BaseQueryExports baseQueryExports,
+            CteTableDependencies cteTableDependencies
+    ) {
+        this.joinRequirements = joinRequirements;
+        this.tableUsages = tableUsages;
+        this.joinedTypeBranchTableUsages = joinedTypeBranchTableUsages;
+        this.tableAliases = tableAliases;
+        this.baseQueryExports = baseQueryExports;
+        this.cteTableDependencies = cteTableDependencies;
     }
 
     @Nullable
     BaseQueryExportSelection getBaseQueryExportSelection(BaseTableOwner baseTableOwner) {
-        BaseQueryExportSelection selection = model.getBaseQueryExports().exportSelection(baseTableOwner);
-        if (selection != null) {
-            return selection;
-        }
-        return model.getBaseQueryExports().exportSelection(astContext.resolveBaseTableOwner(baseTableOwner));
+        return baseQueryExports.exportSelection(baseTableOwner);
     }
 
     @Nullable
     BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
-        return model.getBaseQueryExports().baseSelectionRender(query);
+        return baseQueryExports.baseSelectionRender(query);
     }
 
     @Nullable
     JoinType getRequiredJoinType(TableImplementor<?> table) {
-        return model.getJoinRequirements().get(table);
+        return joinRequirements.get(table);
     }
 
     boolean isJoinedTypeBranchTableRequired(TableImplementor<?> table, ImmutableType stageType) {
-        return model.getJoinedTypeBranchTableUsages().isRequired(table, stageType);
+        return joinedTypeBranchTableUsages.isRequired(table, stageType);
     }
 
     Set<ImmutableType> getJoinedTypeBranchTableTypes(TableImplementor<?> table) {
-        return model.getJoinedTypeBranchTableUsages().stageTypes(table);
+        return joinedTypeBranchTableUsages.stageTypes(table);
     }
 
     TableAliases getTableAliases() {
-        return model.getTableAliases();
+        return tableAliases;
     }
 
     List<CteTableDeclaration> getCteTableDeclarations(AbstractMutableStatementImpl statement) {
-        return model.getCteTableDependencies().declarations(statement);
+        return cteTableDependencies.declarations(statement);
+    }
+
+    void applyTo(AstContext astContext) {
+        if (tableAliases == TableAliases.EMPTY) {
+            return;
+        }
+        tableUsages.applyUsedStatesTo(astContext);
+        tableUsages.bindAliases(astContext, tableAliases);
     }
 }

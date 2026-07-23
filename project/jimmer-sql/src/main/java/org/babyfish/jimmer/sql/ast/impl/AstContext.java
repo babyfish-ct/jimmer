@@ -81,6 +81,10 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return tableAliasScope = new TableAliasScope(expectedTableCount);
     }
 
+    public TableAliasScope beginTableAliasScope(int expectedTableCount, int sequence) {
+        return tableAliasScope = new TableAliasScope(expectedTableCount, sequence);
+    }
+
     public TableAliasScope getTableAliasScope() {
         return tableAliasScope;
     }
