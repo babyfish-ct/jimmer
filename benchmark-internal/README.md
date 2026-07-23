@@ -26,6 +26,18 @@ The narrower retained-query path can be measured separately:
 gradle run --args="20 5 5 1 retained"
 ```
 
+Entity materialization can be compared with equivalent handwritten JDBC
+mapping independently of query preparation:
+
+```shell
+gradle run --args="1 5 5 1 materialization"
+```
+
+The materialization benchmark reads batches of 1, 100, 1000 and 10000 rows.
+`@OperationsPerInvocation` normalizes its time and allocation results per row.
+Use one thread for intrinsic `ns/row` measurements and 20 threads separately
+when investigating scalability and contention.
+
 ## IDEA profiler
 
 Open `benchmark-internal` as a Gradle project and profile

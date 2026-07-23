@@ -16,17 +16,29 @@ public class BenchmarkApplication {
         int measurementIterations = argument(args, 2, 5);
         int forks = argument(args, 3, 1);
         String benchmarkMode = benchmarkMode(args);
-        String benchmarkMethod = "one-shot".equals(benchmarkMode) ?
-                "executeOneShotQuery" :
-                "executeRetainedQuery";
-        Options options = new OptionsBuilder()
-                .include(
+        String benchmarkPattern;
+        switch (benchmarkMode) {
+            case "one-shot":
+                benchmarkPattern =
                         "\\." +
                                 QueryBenchmark.class.getSimpleName() +
-                                "\\." +
-                                benchmarkMethod +
-                                "$"
-                )
+                                "\\.executeOneShotQuery$";
+                break;
+            case "retained":
+                benchmarkPattern =
+                        "\\." +
+                                QueryBenchmark.class.getSimpleName() +
+                                "\\.executeRetainedQuery$";
+                break;
+            default:
+                benchmarkPattern =
+                        "\\." +
+                                MaterializationBenchmark.class.getSimpleName() +
+                                "\\.";
+                break;
+        }
+        Options options = new OptionsBuilder()
+                .include(benchmarkPattern)
                 .warmupIterations(warmupIterations)
                 .warmupTime(TimeValue.seconds(1))
                 .measurementIterations(measurementIterations)
@@ -56,11 +68,13 @@ public class BenchmarkApplication {
 
     private static String benchmarkMode(String[] args) {
         String mode = args.length > 4 ? args[4] : "one-shot";
-        if (!"one-shot".equals(mode) && !"retained".equals(mode)) {
+        if (!"one-shot".equals(mode) &&
+                !"retained".equals(mode) &&
+                !"materialization".equals(mode)) {
             throw new IllegalArgumentException(
                     "Illegal benchmark mode \"" +
                             mode +
-                            "\", expected \"one-shot\" or \"retained\""
+                            "\", expected \"one-shot\", \"retained\" or \"materialization\""
             );
         }
         return mode;
