@@ -26,19 +26,16 @@ public class QueryBenchmark {
     @Param({"1", "10", "100"})
     private int rowCount;
 
-    private ConfigurableRootQuery<BookTable, Book> query;
+    private JSqlClient sqlClient;
+
+    private ConfigurableRootQuery<BookTable, Book> retainedQuery;
 
     private Connection connection;
 
     @Setup
     public void setup() {
-        JSqlClient sqlClient = JSqlClient.newBuilder().build();
-        BookTable table = BookTable.$;
-        query = sqlClient
-                .createQuery(table)
-                .where(table.name().eq("GraphQL in Action"))
-                .orderBy(table.edition())
-                .select(table);
+        sqlClient = JSqlClient.newBuilder().build();
+        retainedQuery = createQuery();
         Object[][] rows = new Object[rowCount][4];
         for (int i = 0; i < rowCount; i++) {
             rows[i] = new Object[]{
@@ -52,7 +49,21 @@ public class QueryBenchmark {
     }
 
     @Benchmark
-    public List<Book> executeQuery() {
-        return query.execute(connection);
+    public List<Book> executeOneShotQuery() {
+        return createQuery().execute(connection);
+    }
+
+    @Benchmark
+    public List<Book> executeRetainedQuery() {
+        return retainedQuery.execute(connection);
+    }
+
+    private ConfigurableRootQuery<BookTable, Book> createQuery() {
+        BookTable table = BookTable.$;
+        return sqlClient
+                .createQuery(table)
+                .where(table.name().eq("GraphQL in Action"))
+                .orderBy(table.edition())
+                .select(table);
     }
 }
