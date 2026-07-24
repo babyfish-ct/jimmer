@@ -29,7 +29,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRecursiveBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.*
-import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.createPropsWeakJoinHandle
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
@@ -73,7 +73,7 @@ internal class KSqlClientImpl(
     ): KConfigurableRootQuery<B, R> {
         val query = MutableRootQueryImpl<BaseTable>(
             javaClient,
-            (symbol.baseTable as AbstractKBaseTableImpl).javaTable,
+            (symbol.baseTable as AbstractKBaseTable).javaTable,
             ExecutionPurpose.QUERY,
             FilterLevel.DEFAULT
         )
@@ -100,7 +100,7 @@ internal class KSqlClientImpl(
     ): KConfigurableBaseQuery<R> {
         val query = MutableBaseQueryImpl(
             javaClient,
-            (symbol.baseTable as AbstractKBaseTableImpl).javaTable as TableLike<*>
+            (symbol.baseTable as AbstractKBaseTable).javaTable as TableLike<*>
         )
         return KMutableBaseQueryImpl.ForBaseTableImpl<B>(query, symbol.baseTable).block()
     }
@@ -121,7 +121,7 @@ internal class KSqlClientImpl(
         }
         val query = KMutableRecursiveBaseQueryImpl<E, B>(
             javaQuery,
-            AbstractKBaseTableImpl.nonNull(javaQuery.recursive()) as B
+            AbstractKBaseTable.nonNull(javaQuery.recursive()) as B
         )
         return query.block()
     }
@@ -142,7 +142,7 @@ internal class KSqlClientImpl(
         }
         val query = KMutableRecursiveBaseQueryImpl<E, B>(
             javaQuery,
-            AbstractKBaseTableImpl.nonNull(javaQuery.recursive()) as B
+            AbstractKBaseTable.nonNull(javaQuery.recursive()) as B
         )
         return query.block()
     }

@@ -16,7 +16,7 @@ public class BaseTableProxies {
         return baseTable;
     }
 
-    public static Object wrap(BaseTable baseTable, boolean nullable) {
+    public static BaseTable wrap(BaseTable baseTable, boolean nullable) {
         BaseTableSymbol symbol = (BaseTableSymbol) unwrap(baseTable);
         BaseTableShape<?, ?> shape = symbol.getShape();
         if (shape == null) {

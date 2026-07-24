@@ -21,11 +21,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
@@ -391,11 +387,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         BaseTableSymbol symbol = asBaseTableSymbol(kotlinSelectionTypes, cte);
-        Object wrapped = baseTableShape != null ?
+        BaseTable wrapped = baseTableShape != null ?
                 baseTableShape.createNonNull(symbol) :
                 symbol;
-        this.baseTable = baseTable =
-                (T) (wrapped instanceof BaseTable ? wrapped : symbol);
+        this.baseTable = baseTable = (T) wrapped;
         return baseTable;
     }
 

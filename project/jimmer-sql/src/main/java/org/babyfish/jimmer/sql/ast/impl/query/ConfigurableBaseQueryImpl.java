@@ -181,11 +181,10 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         BaseTableSymbol symbol = asBaseTableSymbol(kotlinSelectionTypes, cte);
-        Object wrapped = baseTableShape != null ?
+        BaseTable wrapped = baseTableShape != null ?
                 baseTableShape.createNonNull(symbol) :
                 symbol;
-        this.baseTable = baseTable =
-                (T) (wrapped instanceof BaseTable ? wrapped : symbol);
+        this.baseTable = baseTable = (T) wrapped;
         return baseTable;
     }
 

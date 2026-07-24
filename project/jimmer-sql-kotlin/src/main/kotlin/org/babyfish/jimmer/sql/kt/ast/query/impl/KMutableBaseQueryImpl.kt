@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
+import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
@@ -13,20 +14,18 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableBaseTableQuery
-import org.babyfish.jimmer.sql.kt.ast.query.Where
+import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
-import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
-internal open class KMutableBaseQueryImpl<E: Any>(
+internal open class KMutableBaseQueryImpl<E : Any>(
     private val javaBaseQuery: MutableBaseQueryImpl
 ) : KMutableBaseQuery<E>, MutableStatementImplementor {
 
@@ -54,7 +53,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
     }
 
     override fun groupBy(vararg expressions: KExpression<*>) {
-        javaBaseQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
+        javaBaseQuery.groupBy(*expressions.map { it as Expression<*> }.toTypedArray())
     }
 
     override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
@@ -80,6 +79,12 @@ internal open class KMutableBaseQueryImpl<E: Any>(
     override val selections: KMutableBaseQuery.Selections
         get() = SelectionsImpl()
 
+    override fun <
+            T : KNonNullBaseTable<NT>,
+            NT : KNullableBaseTable
+            > select(projection: KBaseTableProjection<T, NT>): KConfigurableBaseQuery<T> =
+        select(javaBaseQuery, projection)
+
     private inner class SelectionsImpl : KMutableBaseQuery.Selections {
 
         @Suppress("UNCHECKED_CAST")
@@ -87,7 +92,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
             val javaTable = (table as KTableImplementor<*>).javaTable
             return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                 javaBaseQuery.addSelect(javaTable) as ConfigurableBaseQuery<BaseTable>,
-                byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_TABLE)
+                byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NON_NULL_TABLE)
             )
         }
 
@@ -96,7 +101,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
             val javaTable = (table as KTableImplementor<*>).javaTable
             return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                 javaBaseQuery.addSelect(javaTable) as ConfigurableBaseQuery<BaseTable>,
-                byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_TABLE)
+                byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NULLABLE_TABLE)
             )
         }
 
@@ -104,7 +109,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
         override fun <T : Any> add(expression: KNonNullExpression<T>): KConfigurableBaseQuery.Query1<KNonNullExpression<T>, KNullableExpression<T>> {
             return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                 javaBaseQuery.addSelect(expression as Expression<*>) as ConfigurableBaseQuery<BaseTable>,
-                byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_EXPRESSION)
+                byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NON_NULL_EXPRESSION)
             )
         }
 
@@ -112,7 +117,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
         override fun <T : Any> add(expression: KNullableExpression<T>): KConfigurableBaseQuery.Query1<KNullableExpression<T>, KNullableExpression<T>> {
             return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                 javaBaseQuery.addSelect(expression as Expression<*>) as ConfigurableBaseQuery<BaseTable>,
-                byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_EXPRESSION)
+                byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NULLABLE_EXPRESSION)
             )
         }
     }
@@ -148,7 +153,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
         }
 
         override fun groupBy(vararg expressions: KExpression<*>) {
-            javaBaseQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
+            javaBaseQuery.groupBy(*expressions.map { it as Expression<*> }.toTypedArray())
         }
 
         override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
@@ -174,6 +179,12 @@ internal open class KMutableBaseQueryImpl<E: Any>(
         override val selections: KMutableBaseQuery.Selections
             get() = SelectionsImpl()
 
+        override fun <
+                T : KNonNullBaseTable<NT>,
+                NT : KNullableBaseTable
+                > select(projection: KBaseTableProjection<T, NT>): KConfigurableBaseQuery<T> =
+            select(javaBaseQuery, projection)
+
         private inner class SelectionsImpl : KMutableBaseQuery.Selections {
 
             @Suppress("UNCHECKED_CAST")
@@ -181,7 +192,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
                 val javaTable = (table as KTableImplementor<*>).javaTable
                 return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                     javaBaseQuery.addSelect(javaTable) as ConfigurableBaseQuery<BaseTable>,
-                    byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_TABLE)
+                    byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NON_NULL_TABLE)
                 )
             }
 
@@ -190,7 +201,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
                 val javaTable = (table as KTableImplementor<*>).javaTable
                 return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                     javaBaseQuery.addSelect(javaTable) as ConfigurableBaseQuery<BaseTable>,
-                    byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_TABLE)
+                    byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NULLABLE_TABLE)
                 )
             }
 
@@ -198,7 +209,7 @@ internal open class KMutableBaseQueryImpl<E: Any>(
             override fun <T : Any> add(expression: KNonNullExpression<T>): KConfigurableBaseQuery.Query1<KNonNullExpression<T>, KNullableExpression<T>> {
                 return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                     javaBaseQuery.addSelect(expression as Expression<*>) as ConfigurableBaseQuery<BaseTable>,
-                    byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NON_NULL_EXPRESSION)
+                    byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NON_NULL_EXPRESSION)
                 )
             }
 
@@ -206,9 +217,33 @@ internal open class KMutableBaseQueryImpl<E: Any>(
             override fun <T : Any> add(expression: KNullableExpression<T>): KConfigurableBaseQuery.Query1<KNullableExpression<T>, KNullableExpression<T>> {
                 return AbstractKConfigurableBaseQueryImpl.Query1Impl(
                     javaBaseQuery.addSelect(expression as Expression<*>) as ConfigurableBaseQuery<BaseTable>,
-                    byteArrayOf(AbstractKBaseTableImpl.SELECTION_TYPE_NULLABLE_EXPRESSION)
+                    byteArrayOf(AbstractKBaseTable.SELECTION_TYPE_NULLABLE_EXPRESSION)
                 )
             }
         }
     }
 }
+
+private fun <
+        T : KNonNullBaseTable<NT>,
+        NT : KNullableBaseTable
+        > select(
+    query: MutableBaseQueryImpl,
+    projection: KBaseTableProjection<T, NT>
+): KConfigurableBaseQuery<T> =
+    AbstractKConfigurableBaseQueryImpl.ShapedImpl(
+        query.select(
+            projection.javaSelections(),
+            projection.getBaseTableShape()
+        ),
+        projection.getSelectionTypes()
+    )
+
+private fun KBaseTableProjection<*, *>.javaSelections(): List<Selection<*>> =
+    getSelections().map {
+        if (it is KTableImplementor<*>) {
+            it.javaTable
+        } else {
+            it
+        }
+    }

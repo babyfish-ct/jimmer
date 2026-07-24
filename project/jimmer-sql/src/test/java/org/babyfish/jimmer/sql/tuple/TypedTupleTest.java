@@ -1,7 +1,11 @@
 package org.babyfish.jimmer.sql.tuple;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.BookStoreFetcher;
@@ -9,7 +13,87 @@ import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.dto.BookViewForTupleTest;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 public class TypedTupleTest extends AbstractQueryTest {
+
+    @Test
+    public void testAggregateTupleWeakOuterJoin() {
+        AggregateTupleTable left = aggregateQuery(Constants.oreillyId).asBaseTable();
+        AggregateTupleTable right = aggregateQuery(Constants.manningId).asBaseTable();
+        AggregateTupleTable joined = left.weakJoin(
+                right,
+                JoinType.LEFT,
+                (source, target) -> source.getStoreId().eq(target.getStoreId())
+        );
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(left)
+                        .select(left.getStoreId(), joined.getAvgPrice()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_2_.c3 " +
+                                    "from (" +
+                                    "--->select tb_3_.STORE_ID c1 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.STORE_ID = ? " +
+                                    "--->group by tb_3_.STORE_ID" +
+                                    ") tb_1_ " +
+                                    "left join (" +
+                                    "--->select tb_4_.STORE_ID c2, avg(tb_4_.PRICE) c3 " +
+                                    "--->from BOOK tb_4_ " +
+                                    "--->where tb_4_.STORE_ID = ? " +
+                                    "--->group by tb_4_.STORE_ID" +
+                                    ") tb_2_ on tb_1_.c1 = tb_2_.c2"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testAggregateTupleUnionAll() {
+        AggregateTupleTable baseTable = TypedBaseQuery.unionAll(
+                aggregateQuery(Constants.oreillyId),
+                aggregateQuery(Constants.manningId)
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(baseTable.getStoreId(), baseTable.getBookCount()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c2 " +
+                                    "from (" +
+                                    "--->select tb_2_.STORE_ID c1, count(1) c2 " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_2_.STORE_ID = ? " +
+                                    "--->group by tb_2_.STORE_ID " +
+                                    "--->union all " +
+                                    "--->select tb_3_.STORE_ID c1, count(1) c2 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.STORE_ID = ? " +
+                                    "--->group by tb_3_.STORE_ID" +
+                                    ") tb_1_"
+                    );
+                }
+        );
+    }
+
+    private ConfigurableBaseQuery<AggregateTupleTable> aggregateQuery(UUID storeId) {
+        BookTable table = BookTable.$;
+        return getSqlClient()
+                .createBaseQuery(table)
+                .where(table.storeId().eq(storeId))
+                .groupBy(table.storeId())
+                .select(
+                        AggregateTupleMapper
+                                .storeId(table.storeId())
+                                .bookCount(Expression.rowCount())
+                                .minPrice(table.price().min())
+                                .maxPrice(table.price().max())
+                                .avgPrice(table.price().avgAsDecimal())
+                );
+    }
 
     @Test
     public void testAggregateTupleAsBaseTable() {

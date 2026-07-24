@@ -18,13 +18,12 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinPredicateWrapper
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.table.*
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-internal abstract class KTableExImpl<E: Any>(
+internal abstract class KTableExImpl<E : Any>(
     override val javaTable: TableImplementor<E>
-): Ast, KTableEx<E>, KTableImplementor<E>, TableSelection by(javaTable) {
+) : Ast, KTableEx<E>, KTableImplementor<E>, TableSelection by (javaTable) {
 
     override fun <X : Any> outerJoin(prop: String): KNullableTableEx<X> =
         KNullableTableExImpl(javaTable.join(prop, JoinType.LEFT))
@@ -85,13 +84,13 @@ internal abstract class KTableExImpl<E: Any>(
     ): TT {
         val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.INNER,
             null
         )
-        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
+        return AbstractKBaseTable.nonNull(javaJoinedTable) as TT
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -101,13 +100,13 @@ internal abstract class KTableExImpl<E: Any>(
     ): TT {
         val handle = WeakJoinHandle.of(weakJoinType.java)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.INNER,
             null
         )
-        return AbstractKBaseTableImpl.nonNull(javaJoinedTable) as TT
+        return AbstractKBaseTable.nonNull(javaJoinedTable) as TT
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -117,13 +116,13 @@ internal abstract class KTableExImpl<E: Any>(
     ): TNT {
         val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.LEFT,
             null
         )
-        return AbstractKBaseTableImpl.nullable(javaJoinedTable) as TNT
+        return AbstractKBaseTable.nullable(javaJoinedTable) as TNT
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -133,13 +132,13 @@ internal abstract class KTableExImpl<E: Any>(
     ): TNT {
         val handle = WeakJoinHandle.of(weakJoinType.java)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTableImpl).javaTable as BaseTableSymbol?,
+            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.LEFT,
             null
         )
-        return AbstractKBaseTableImpl.nullable(javaJoinedTable) as TNT
+        return AbstractKBaseTable.nullable(javaJoinedTable) as TNT
     }
 
     override fun <X : Any> exists(

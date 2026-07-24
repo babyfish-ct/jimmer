@@ -10,11 +10,11 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
-import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTableImpl
+import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTable
 import java.sql.Connection
 import java.util.function.BiFunction
 
-internal class KConfigurableRootQueryImpl<P: KPropsLike, R>(
+internal class KConfigurableRootQueryImpl<P : KPropsLike, R>(
     javaQuery: ConfigurableRootQuery<TableLike<*>, R>
 ) : KTypedRootQueryImpl<R>(javaQuery),
     KConfigurableRootQuery<P, R> {
@@ -134,17 +134,18 @@ internal class KConfigurableRootQueryImpl<P: KPropsLike, R>(
         block: KMutableRootQuery<P>.() -> KConfigurableRootQuery<P, X>
     ): KConfigurableRootQuery<P, X> {
         val javaTable = (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery.getTable<TableLike<*>>()
-        val javaBlock = BiFunction<MutableRootQuery<TableLike<*>>, TableLike<*>, ConfigurableRootQuery<TableLike<*>, X>> { query, _ ->
-            val q = if (javaTable is BaseTable) {
-                KMutableRootQueryImpl.ForBaseTableImpl(
-                    query as MutableRootQueryImpl<TableLike<*>>,
-                    AbstractKBaseTableImpl.nonNull(javaTable)
-                ) as KMutableRootQuery<P>
-            } else {
-                KMutableRootQueryImpl.ForEntityImpl<Any>(query as MutableRootQueryImpl<TableLike<*>>) as KMutableRootQuery<P>
+        val javaBlock =
+            BiFunction<MutableRootQuery<TableLike<*>>, TableLike<*>, ConfigurableRootQuery<TableLike<*>, X>> { query, _ ->
+                val q = if (javaTable is BaseTable) {
+                    KMutableRootQueryImpl.ForBaseTableImpl(
+                        query as MutableRootQueryImpl<TableLike<*>>,
+                        AbstractKBaseTable.nonNull(javaTable)
+                    ) as KMutableRootQuery<P>
+                } else {
+                    KMutableRootQueryImpl.ForEntityImpl<Any>(query as MutableRootQueryImpl<TableLike<*>>) as KMutableRootQuery<P>
+                }
+                (q.block() as KConfigurableRootQueryImpl<P, X>).javaQuery
             }
-            (q.block() as KConfigurableRootQueryImpl<P, X>).javaQuery
-        }
         return KConfigurableRootQueryImpl(javaQuery.reselect(javaBlock))
     }
 
