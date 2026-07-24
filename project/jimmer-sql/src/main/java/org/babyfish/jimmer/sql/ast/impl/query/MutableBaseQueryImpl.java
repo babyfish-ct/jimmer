@@ -9,8 +9,10 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutationQuerySupport;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
+import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -163,7 +165,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     @Override
     public MutableBaseQueryImpl orderByIf(boolean condition, List<Order> orders) {
-        return (MutableBaseQueryImpl)super.orderByIf(condition, orders);
+        return (MutableBaseQueryImpl) super.orderByIf(condition, orders);
     }
 
     @Override
@@ -188,6 +190,18 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     public void resolveVirtualPredicate(AstContext ctx) {
         bindParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
+    }
+
+    @Override
+    public <B extends BaseTable> ConfigurableBaseQuery<B> select(
+            BaseTableProjection<B> projection
+    ) {
+        return new ConfigurableBaseQueryImpl<>(
+                projection.getSelections(),
+                null,
+                this,
+                projection.getBaseTableShape()
+        );
     }
 
     @Override

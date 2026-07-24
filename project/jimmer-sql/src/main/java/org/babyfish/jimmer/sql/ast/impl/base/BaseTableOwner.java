@@ -23,6 +23,7 @@ public final class BaseTableOwner {
 
     public BaseTableOwner(BaseTable baseTable, int index) {
         Objects.requireNonNull(baseTable, "baseTable cannot be null");
+        baseTable = BaseTableProxies.unwrap(baseTable);
         if (baseTable instanceof BaseTableSymbol) {
             this.baseTable = (BaseTableSymbol) baseTable;
         } else {

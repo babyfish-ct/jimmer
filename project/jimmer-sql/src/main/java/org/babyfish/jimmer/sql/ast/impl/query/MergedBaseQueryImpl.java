@@ -16,11 +16,16 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
@@ -33,6 +38,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     private TypedBaseQueryImplementor<T>[] queries;
 
     private ConfigurableBaseQueryImpl<T>[] expandedQueries;
+
+    private final BaseTableShape<?, ?> baseTableShape;
+
+    private BaseTableSymbol baseTableSymbol;
 
     private T baseTable;
 
@@ -106,14 +115,21 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         TypedBaseQueryImplementor<T>[] queryArr = new TypedBaseQueryImplementor[queries.length];
         queryArr[0] = (TypedBaseQueryImplementor<T>) queries[0];
+        BaseTableShape<?, ?> baseTableShape = queryArr[0].getBaseTableShape();
         for (int i = 1; i < queryArr.length; i++) {
             queryArr[i] = (TypedBaseQueryImplementor<T>) queries[i];
+            if (queryArr[i].getBaseTableShape() != baseTableShape) {
+                throw new IllegalArgumentException(
+                        "Cannot merge base queries with different table shapes"
+                );
+            }
             validateSelections(
                     queryArr[0].getSelections(),
                     queryArr[i].getSelections()
             );
         }
         this.queries = queryArr;
+        this.baseTableShape = baseTableShape;
 
         List<ConfigurableBaseQueryImpl<?>> realQueries = new ArrayList<>();
         collectConfigurableQueries(realQueries);
@@ -243,9 +259,9 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public List<Selection<?>> getSelections() {
-        T baseTable = this.baseTable;
-        return baseTable != null ?
-                ((BaseTableSymbol) baseTable).getSelections() :
+        BaseTableSymbol baseTableSymbol = this.baseTableSymbol;
+        return baseTableSymbol != null ?
+                baseTableSymbol.getSelections() :
                 queries[0].getSelections();
     }
 
@@ -339,7 +355,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public void setMergedBy(MergedBaseQueryImpl<T> mergedBy) {
-        if (this.baseTable != null) {
+        if (this.baseTableSymbol != null) {
             throw new IllegalStateException(
                     "The base query cannot be merged after its `asBaseTable` is called"
             );
@@ -374,19 +390,46 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
+        BaseTableSymbol symbol = asBaseTableSymbol(kotlinSelectionTypes, cte);
+        Object wrapped = baseTableShape != null ?
+                baseTableShape.createNonNull(symbol) :
+                symbol;
         this.baseTable = baseTable =
+                (T) (wrapped instanceof BaseTable ? wrapped : symbol);
+        return baseTable;
+    }
+
+    @Override
+    public BaseTableShape<?, ?> getBaseTableShape() {
+        return baseTableShape;
+    }
+
+    @Override
+    public BaseTableSymbol asBaseTableSymbol(byte[] kotlinSelectionTypes, boolean cte) {
+        if (!cte && recursive) {
+            throw new IllegalArgumentException(
+                    "Recursive base query only be treated as cteBaseTable, not general baseTable"
+            );
+        }
+        BaseTableSymbol symbol = baseTableSymbol;
+        if (symbol != null) {
+            AbstractBaseTableSymbol.validateCte(symbol, cte);
+            return symbol;
+        }
+        baseTableSymbol = symbol =
                 mergedBy != null ?
-                        mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
-                        (T) BaseTableSymbols.of(
+                        mergedBy.asBaseTableSymbol(kotlinSelectionTypes, cte) :
+                        BaseTableSymbols.of(
                                 this,
                                 expandedQueries[0].getSelections(),
                                 kotlinSelectionTypes,
                                 recursive ?
                                         BaseTableKind.RECURSIVE_CTE :
                                         cte ? BaseTableKind.CTE :
-                                                BaseTableKind.DERIVED
+                                                BaseTableKind.DERIVED,
+                                baseTableShape
                         );
-        return baseTable;
+        return symbol;
     }
 
     public static MergedBaseQueryImpl<?> from(TypedBaseQueryImplementor<?> query) {

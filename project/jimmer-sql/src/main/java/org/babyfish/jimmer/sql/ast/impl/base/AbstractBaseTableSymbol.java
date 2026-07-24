@@ -4,11 +4,15 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
@@ -17,6 +21,8 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     protected final List<Selection<?>> selections;
 
     protected final byte[] kotlinSelectionTypes;
+
+    protected final BaseTableShape<?, ?> shape;
 
     protected final BaseTableKind kind;
 
@@ -32,11 +38,13 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
             byte[] kotlinSelectionTypes,
-            BaseTableKind kind
+            BaseTableKind kind,
+            BaseTableShape<?, ?> shape
     ) {
         this.query = query;
         this.selections = wrapSelections(selections);
         this.kotlinSelectionTypes = kotlinSelectionTypes;
+        this.shape = shape;
         this.kind = kind;
         this.parent = null;
         this.handle = null;
@@ -53,8 +61,11 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     ) {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
-        this.kotlinSelectionTypes = ((AbstractBaseTableSymbol) base).kotlinSelectionTypes;
-        this.kind = ((AbstractBaseTableSymbol) base).kind;
+        this.kotlinSelectionTypes = base.getKotlinSelectionTypes();
+        this.shape = base.getShape();
+        this.kind = base.isRecursiveCte() ?
+                BaseTableKind.RECURSIVE_CTE :
+                base.isCte() ? BaseTableKind.CTE : BaseTableKind.DERIVED;
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.handle = Objects.requireNonNull(handle, "handle cannot be null");
         this.joinType = joinType;
@@ -67,6 +78,11 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     public byte[] getKotlinSelectionTypes() {
         return kotlinSelectionTypes;
+    }
+
+    @Override
+    public BaseTableShape<?, ?> getShape() {
+        return shape;
     }
 
     public static List<Selection<?>> wrapSelections(List<Selection<?>> selections, BaseTable baseTable) {
@@ -132,7 +148,8 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     }
 
     public static <T extends BaseTable> T validateCte(T baseTable, boolean cte) {
-        if ((((AbstractBaseTableSymbol) baseTable).kind == BaseTableKind.DERIVED) == cte) {
+        BaseTableSymbol symbol = (BaseTableSymbol) BaseTableProxies.unwrap(baseTable);
+        if (symbol.isCte() != cte) {
             throw new IllegalStateException(
                     "BaseQuery does not support calling " +
                             "`asBaseTable`/`asCteBaseTable` " +

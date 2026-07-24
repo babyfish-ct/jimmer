@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.sql.base;
 
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.table.AbstractBaseTable;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
@@ -14,9 +17,89 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public class BaseQueryTest extends AbstractQueryTest {
+
+    private static final BaseTableShape<StoreStatisticsTable, StoreStatisticsTable>
+            STORE_STATISTICS_SHAPE =
+            new BaseTableShape<StoreStatisticsTable, StoreStatisticsTable>() {
+                @Override
+                public StoreStatisticsTable createNonNull(BaseTable baseTable) {
+                    return new StoreStatisticsTable(baseTable);
+                }
+
+                @Override
+                public StoreStatisticsTable createNullable(BaseTable baseTable) {
+                    return new StoreStatisticsTable(baseTable);
+                }
+            };
+
+    @Test
+    public void testNamedBaseTable() {
+        BookStoreTable store = BookStoreTable.$;
+        BookTable book = BookTable.$;
+        BaseTableProjection<StoreStatisticsTable> projection =
+                new BaseTableProjection<StoreStatisticsTable>() {
+                    @Override
+                    public List<Selection<?>> getSelections() {
+                        return List.of(
+                                store.name(),
+                                getSqlClient()
+                                        .createSubQuery(book)
+                                        .where(book.store().eq(store))
+                                        .select(Expression.rowCount())
+                        );
+                    }
+
+                    @Override
+                    public BaseTableShape<StoreStatisticsTable, StoreStatisticsTable> getBaseTableShape() {
+                        return STORE_STATISTICS_SHAPE;
+                    }
+                };
+        StoreStatisticsTable statistics = getSqlClient()
+                .createBaseQuery(store)
+                .select(projection)
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(statistics)
+                        .where(statistics.bookCount().gt(1L))
+                        .orderBy(statistics.storeName())
+                        .select(statistics.storeName(), statistics.bookCount()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c2 " +
+                                    "from (" +
+                                    "--->select tb_2_.NAME c1, " +
+                                    "--->(" +
+                                    "--->--->select count(1) from BOOK tb_3_ " +
+                                    "--->--->where tb_3_.STORE_ID = tb_2_.ID" +
+                                    "--->) c2 " +
+                                    "--->from BOOK_STORE tb_2_" +
+                                    ") tb_1_ " +
+                                    "where tb_1_.c2 > ? " +
+                                    "order by tb_1_.c1 asc"
+                    );
+                }
+        );
+    }
+
+    private static class StoreStatisticsTable extends AbstractBaseTable<StoreStatisticsTable> {
+
+        private StoreStatisticsTable(BaseTable baseTable) {
+            super(baseTable);
+        }
+
+        private StringExpression storeName() {
+            return selection(0);
+        }
+
+        private NumericExpression<Long> bookCount() {
+            return selection(1);
+        }
+    }
 
     @Test
     public void testBaseQueryWithFetch() {

@@ -3,13 +3,25 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.base.*;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable4;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable5;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable6;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable7;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable8;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable9;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +55,19 @@ public class BaseTableSymbols {
             byte[] kotlinSelectionTypes,
             BaseTableKind kind
     ) {
+        return of(query, selections, kotlinSelectionTypes, kind, null);
+    }
+
+    public static BaseTableSymbol of(
+            TypedBaseQueryImplementor<?> query,
+            List<Selection<?>> selections,
+            byte[] kotlinSelectionTypes,
+            BaseTableKind kind,
+            BaseTableShape<?, ?> shape
+    ) {
+        if (shape != null) {
+            return new Shaped(query, selections, kotlinSelectionTypes, kind, shape);
+        }
         switch (selections.size()) {
             case 1:
                 return new Table1<>(query, selections, kotlinSelectionTypes, kind);
@@ -82,7 +107,8 @@ public class BaseTableSymbols {
             WeakJoinHandle handle,
             JoinType joinType
     ) {
-        BaseTableSymbol recursive = (BaseTableSymbol) baseTableOf(recursiveRef);
+        BaseTableSymbol recursive =
+                (BaseTableSymbol) BaseTableProxies.unwrap(baseTableOf(recursiveRef));
         return of(recursive, parent, handle, joinType, recursive);
     }
 
@@ -93,6 +119,9 @@ public class BaseTableSymbols {
             JoinType joinType,
             BaseTableSymbol recursive
     ) {
+        if (base.getShape() != null) {
+            return new Shaped(base, parent, handle, joinType, recursive);
+        }
         switch (base.getSelections().size()) {
             case 1:
                 return new Table1<>(base, parent, handle, joinType, recursive);
@@ -128,6 +157,48 @@ public class BaseTableSymbols {
         return ((RecursiveRefImpl<B>)recursiveRef).baseTable;
     }
 
+    private static class Shaped extends AbstractBaseTableSymbol {
+
+        Shaped(
+                TypedBaseQueryImplementor<?> query,
+                List<Selection<?>> selections,
+                byte[] kotlinSelectionTypes,
+                BaseTableKind kind,
+                BaseTableShape<?, ?> shape
+        ) {
+            super(query, selections, kotlinSelectionTypes, kind, shape);
+        }
+
+        Shaped(
+                BaseTableSymbol base,
+                TableLike<?> parent,
+                WeakJoinHandle handle,
+                JoinType joinType,
+                BaseTableSymbol recursive
+        ) {
+            super(base, parent, handle, joinType, recursive);
+        }
+
+        @Override
+        public AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query) {
+            return new Shaped(
+                    query,
+                    selections,
+                    kotlinSelectionTypes,
+                    kind,
+                    shape
+            );
+        }
+
+        @Override
+        public String toString() {
+            return "BaseTable" + suffix() + '{' +
+                    "shape=" + shape +
+                    (parent != null ? ",parent=" + parent : "") +
+                    '}';
+        }
+    }
+
     private static class RecursiveRefImpl<B extends BaseTable> implements RecursiveRef<B> {
 
         private final B baseTable;
@@ -142,7 +213,7 @@ public class BaseTableSymbols {
             implements BaseTable1<S1> {
 
         Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table1(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -203,7 +274,7 @@ public class BaseTableSymbols {
             implements BaseTable2<S1, S2> {
 
         Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table2(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -271,7 +342,7 @@ public class BaseTableSymbols {
             implements BaseTable3<S1, S2, S3> {
 
         Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table3(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -351,7 +422,7 @@ public class BaseTableSymbols {
             implements BaseTable4<S1, S2, S3, S4> {
 
         Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table4(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -439,7 +510,7 @@ public class BaseTableSymbols {
             implements BaseTable5<S1, S2, S3, S4, S5> {
 
         Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table5(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -535,7 +606,7 @@ public class BaseTableSymbols {
             implements BaseTable6<S1, S2, S3, S4, S5, S6> {
 
         Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table6(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -639,7 +710,7 @@ public class BaseTableSymbols {
             implements BaseTable7<S1, S2, S3, S4, S5, S6, S7> {
 
         Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table7(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -751,7 +822,7 @@ public class BaseTableSymbols {
             implements BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
         Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table8(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -871,7 +942,7 @@ public class BaseTableSymbols {
             implements BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
         Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind);
+            super(query, selections, kotlinSelectionTypes, kind, null);
         }
 
         Table9(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {

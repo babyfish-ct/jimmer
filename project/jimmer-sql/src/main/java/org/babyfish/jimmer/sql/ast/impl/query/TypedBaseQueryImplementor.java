@@ -2,10 +2,12 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 
 import java.util.List;
 
@@ -30,6 +32,10 @@ public interface TypedBaseQueryImplementor<T extends BaseTable>
     MergedBaseQueryImpl<T> getMergedBy();
 
     void setMergedBy(MergedBaseQueryImpl<T> mergedBaseQuery);
+
+    BaseTableShape<?, ?> getBaseTableShape();
+
+    BaseTableSymbol asBaseTableSymbol(byte[] kotlinSelectionTypes, boolean cte);
 
     T asBaseTable(byte[] kotlinSelectionTypes, boolean cte);
 }

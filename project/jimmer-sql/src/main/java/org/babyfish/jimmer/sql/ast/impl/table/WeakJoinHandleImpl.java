@@ -6,10 +6,17 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.spi.*;
+import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.UsingWeakJoinMetadataParser;
+import org.babyfish.jimmer.sql.ast.table.spi.WeakJoinMetadata;
+import org.babyfish.jimmer.sql.ast.table.spi.WeakJoinMetadataParser;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -381,9 +388,19 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 );
             }
             return weakJoin.on(
-                    source,
-                    target
+                    wrapBaseTable(source),
+                    wrapBaseTable(target)
             );
+        }
+
+        private static TableLike<?> wrapBaseTable(TableLike<?> table) {
+            if (table instanceof BaseTable) {
+                Object wrapped = BaseTableProxies.wrap((BaseTable) table, false);
+                if (wrapped instanceof TableLike<?>) {
+                    return (TableLike<?>) wrapped;
+                }
+            }
+            return table;
         }
 
         @Override
