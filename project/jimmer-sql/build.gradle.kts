@@ -26,8 +26,8 @@ dependencies {
         exclude("com.ibm.icu", "icu4j")
     }
 
-    testImplementation(projects.jimmerSqlTestSupport)
-    testImplementation(projects.jimmerSqlTestModel)
+    testImplementation(projects.jimmerSqlTest.jimmerSqlTestSupport)
+    testImplementation(projects.jimmerSqlTest.jimmerSqlTestModel)
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.caffeine)
     testImplementation(libs.spring.jdbc)

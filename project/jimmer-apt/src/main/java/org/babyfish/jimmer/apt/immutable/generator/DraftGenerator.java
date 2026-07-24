@@ -37,6 +37,14 @@ public class DraftGenerator {
                 .addTypeVariables(type.getTypeVariableNames())
                 .addSuperinterface(type.getTypeName())
                 .addAnnotation(generatedAnnotation(type));
+        Doc doc = ctx.getDocMetadata().getDoc(type.getTypeElement());
+        if (doc != null && doc.getValue() != null && !doc.getValue().isEmpty()) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
+                            .addMember("value", "$S", doc.getValue())
+                            .build()
+            );
+        }
         if (type.getSuperTypes().isEmpty()) {
             typeBuilder.addSuperinterface(Draft.class);
         } else {
@@ -152,6 +160,13 @@ public class DraftGenerator {
         Doc doc = prop.context().getDocMetadata().getDoc(prop.toElement());
         if (doc != null) {
             builder.addJavadoc("$L", doc.getValue());
+            if (doc.getValue() != null && !doc.getValue().isEmpty()) {
+                builder.addAnnotation(
+                        AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
+                                .addMember("value", "$S", doc.getValue())
+                                .build()
+                );
+            }
         }
 
         typeBuilder.addMethod(builder.build());
@@ -167,7 +182,7 @@ public class DraftGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(
                         prop.isList() ?
-                                prop.getAdderByName():
+                                prop.getAdderByName() :
                                 prop.getApplierName()
                 )
                 .addAnnotation(OldChain.class)

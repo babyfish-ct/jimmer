@@ -3,14 +3,11 @@ package org.babyfish.jimmer.apt.client;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.client.Description;
 import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,8 +17,14 @@ public class DocMetadata {
 
     private final Map<Element, String> docMap = new HashMap<>();
 
+    private final Map<TypeElement, Map<String, String>> draftDocMap = new HashMap<>();
+
     public DocMetadata(Context ctx) {
         this.ctx = ctx;
+    }
+
+    private static String decapitalizeFirst(String value) {
+        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
     }
 
     public Doc getDoc(Element element) {
@@ -62,103 +65,80 @@ public class DocMetadata {
         }
 
         TypeElement typeElement;
+        String key;
         if (element instanceof ExecutableElement) {
             typeElement = (TypeElement) (element).getEnclosingElement();
+            ExecutableElement executableElement = (ExecutableElement) element;
+            key = propName(executableElement);
         } else if (element instanceof TypeElement) {
             typeElement = (TypeElement) element;
+            key = "";
         } else {
             typeElement = null;
+            key = null;
         }
         if (typeElement != null) {
-            Map<String, String> map = implDocStringMap(typeElement);
-            if (!map.isEmpty()) {
-                docMap.put(typeElement, map.get(""));
-                addPropDocs(typeElement, map);
+            String value = draftDocStringMap(typeElement).get(key);
+            if (value != null && !value.isEmpty()) {
+                docMap.put(element, value);
+                return value;
             }
         }
-        String value = docMap.get(element);
-        if (value == null) {
-            docMap.put(element, "");
-            return "";
-        }
-        return value;
+        docMap.put(element, "");
+        return "";
     }
 
-    private void addPropDocs(TypeElement typeElement, Map<String, String> map) {
-        for (Element element : typeElement.getEnclosedElements()) {
-            if (!(element instanceof ExecutableElement)) {
-                continue;
-            }
-            ExecutableElement executableElement = (ExecutableElement) element;
-            if (executableElement.getReturnType().getKind() != TypeKind.VOID &&
-            executableElement.getTypeParameters().isEmpty() &&
-            executableElement.getParameters().isEmpty()) {
-                docMap.put(
-                        element,
-                        map.getOrDefault(executableElement.getSimpleName().toString(), "")
-                );
-            }
+    private String propName(ExecutableElement executableElement) {
+        String methodName = executableElement.getSimpleName().toString();
+        if (!ctx.keepIsPrefix() &&
+                executableElement.getReturnType().getKind() == TypeKind.BOOLEAN &&
+                methodName.startsWith("is") &&
+                methodName.length() > 2 &&
+                Character.isUpperCase(methodName.charAt(2))) {
+            return decapitalizeFirst(methodName.substring(2));
         }
-        for (TypeMirror superType : typeElement.getInterfaces()) {
-            TypeElement superElement = (TypeElement) ctx.getTypes().asElement(superType);
-            addPropDocs(superElement, map);
+        if (methodName.startsWith("get") &&
+                methodName.length() > 3 &&
+                Character.isUpperCase(methodName.charAt(3))) {
+            return decapitalizeFirst(methodName.substring(3));
         }
+        return methodName;
     }
 
-    private Map<String, String> implDocStringMap(TypeElement typeElement) {
-        TypeElement implElement = ctx.getElements().getTypeElement(
+    private Map<String, String> draftDocStringMap(TypeElement typeElement) {
+        Map<String, String> cachedMap = draftDocMap.get(typeElement);
+        if (cachedMap != null) {
+            return cachedMap;
+        }
+        TypeElement draftElement = ctx.getElements().getTypeElement(
                 typeElement.getQualifiedName() + "Draft"
         );
-        if (implElement == null) {
-            return Collections.emptyMap();
-        }
-        implElement = (TypeElement) implElement
-                .getEnclosedElements()
-                .stream()
-                .filter(it -> it instanceof TypeElement && "Producer".equals(it.getSimpleName().toString()))
-                .findFirst()
-                .orElse(null);
-        if (implElement == null) {
-            return Collections.emptyMap();
-        }
-        implElement = (TypeElement) implElement
-                .getEnclosedElements()
-                .stream()
-                .filter(it -> it instanceof TypeElement && "Impl".equals(it.getSimpleName().toString()))
-                .findFirst()
-                .orElse(null);
-        if (implElement == null) {
-            return Collections.emptyMap();
-        }
         Map<String, String> map = new HashMap<>();
-        Description description = implElement.getAnnotation(Description.class);
-        if (description != null && !description.value().isEmpty()) {
-            map.put("", description.value());
+        if (draftElement != null) {
+            Description description = draftElement.getAnnotation(Description.class);
+            if (description != null && !description.value().isEmpty()) {
+                map.put("", description.value());
+            }
+            for (Element element : draftElement.getEnclosedElements()) {
+                if (!(element instanceof ExecutableElement)) {
+                    continue;
+                }
+                ExecutableElement executableElement = (ExecutableElement) element;
+                String methodName = executableElement.getSimpleName().toString();
+                if (!methodName.startsWith("set") ||
+                        methodName.length() == 3 ||
+                        executableElement.getParameters().size() != 1) {
+                    continue;
+                }
+                description = executableElement.getAnnotation(Description.class);
+                if (description != null && !description.value().isEmpty()) {
+                    String suffix = methodName.substring(3);
+                    map.put(suffix, description.value());
+                    map.put(decapitalizeFirst(suffix), description.value());
+                }
+            }
         }
-        for (Element element : implElement.getEnclosedElements()) {
-            if (!(element instanceof ExecutableElement)) {
-                continue;
-            }
-            ExecutableElement executableElement = (ExecutableElement) element;
-            if (executableElement.getReturnType().getKind() == TypeKind.VOID) {
-                continue;
-            }
-            if (!executableElement.getParameters().isEmpty() || !executableElement.getTypeParameters().isEmpty()) {
-                continue;
-            }
-            description = executableElement.getAnnotation(Description.class);
-            if (description == null || description.value().isEmpty()) {
-                continue;
-            }
-            String propName = StringUtil.propName(
-                    executableElement.getSimpleName().toString(),
-                    executableElement.getReturnType().getKind() == TypeKind.BOOLEAN
-            );
-            if (propName == null) {
-                propName = executableElement.getSimpleName().toString();
-            }
-            map.put(propName, description.value());
-        }
+        draftDocMap.put(typeElement, map);
         return map;
     }
 }

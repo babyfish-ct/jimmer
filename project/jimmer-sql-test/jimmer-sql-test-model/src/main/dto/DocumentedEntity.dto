@@ -1,0 +1,7 @@
+export org.babyfish.jimmer.sql.model.doc.DocumentedEntity
+    -> package org.babyfish.jimmer.sql.model.doc.dto
+
+DocumentedEntityView {
+    id
+    createdBy
+}

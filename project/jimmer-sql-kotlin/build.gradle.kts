@@ -10,8 +10,8 @@ dependencies {
     api(projects.jimmerSql)
 
     testImplementation(libs.kotlin.test)
-    testImplementation(projects.jimmerSqlTestSupport)
-    testImplementation(projects.jimmerSqlKotlinTestModel)
+    testImplementation(projects.jimmerSqlTest.jimmerSqlTestSupport)
+    testImplementation(projects.jimmerSqlTest.jimmerSqlTestModelKotlin)
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.h2)

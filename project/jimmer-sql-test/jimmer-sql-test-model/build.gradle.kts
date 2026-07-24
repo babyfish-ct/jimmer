@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     api(projects.jimmerSql)
+    api(projects.jimmerSqlTest.jimmerSqlTestModelBase)
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

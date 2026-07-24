@@ -76,6 +76,18 @@ class DraftGenerator(
                 .addSuperinterface(type.typeName)
                 .addAnnotation(generatedAnnotation(type))
                 .apply {
+                    type.classDeclaration.docString
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(DESCRIPTION_CLASS_NAME)
+                                    .addMember("value = %S", it)
+                                    .build()
+                            )
+                        }
+                }
+                .apply {
                     if (type.superTypes.isEmpty()) {
                         addSuperinterface(DRAFT_CLASS_NAME)
                     } else {
@@ -86,7 +98,7 @@ class DraftGenerator(
                 }
                 .apply {
                     val props = type.declaredProperties.values +
-                        type.redefinedProps.values.filter { it.isGenericSourceTarget }
+                            type.redefinedProps.values.filter { it.isGenericSourceTarget }
                     for (prop in props) {
                         if (prop.manyToManyViewBaseProp === null) {
                             addProp(prop)
@@ -114,6 +126,16 @@ class DraftGenerator(
                 .addModifiers(KModifier.OVERRIDE)
                 .apply {
                     mutable(!prop.isKotlinFormula && !prop.isDiscriminator && prop.manyToManyViewBaseProp === null)
+                    prop.propDeclaration.docString
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(DESCRIPTION_CLASS_NAME)
+                                    .addMember("value = %S", it)
+                                    .build()
+                            )
+                        }
                 }
                 .build()
         )

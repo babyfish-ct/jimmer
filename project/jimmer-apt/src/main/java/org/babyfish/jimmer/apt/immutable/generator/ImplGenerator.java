@@ -7,7 +7,6 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.FormulaDependency;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
-import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
@@ -127,21 +126,6 @@ public class ImplGenerator {
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);
         }
-        String comment = ctx.getElements().getDocComment(prop.toElement());
-        if (comment != null && !comment.isEmpty()) {
-            Doc doc = Doc.parse(comment);
-            if (doc != null) {
-                comment = doc.getValue();
-                if (comment != null && !comment.isEmpty()) {
-                    builder.addAnnotation(
-                            AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
-                                    .addMember("value", "$S", comment)
-                                    .build()
-                    );
-                }
-            }
-        }
-
         ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
         if (idViewBaseProp != null) {
             if (idViewBaseProp.isList()) {
@@ -155,8 +139,8 @@ public class ImplGenerator {
                 builder.addStatement("$T __target = $L()", idViewBaseProp.getElementTypeName(), idViewBaseProp.getGetterName());
                 builder.addStatement(
                         prop.isNullable() ?
-                        "return __target != null ? __target.$L() : null" :
-                        "return __target.$L()",
+                                "return __target != null ? __target.$L() : null" :
+                                "return __target.$L()",
                         idViewBaseProp.getTargetType().getIdProp().getGetterName()
                 );
             }
@@ -303,7 +287,7 @@ public class ImplGenerator {
                 "Illegal property " +
                         (argType == int.class ? "id" : "name") +
                         " for \"" + type + "\": \"",
-                        "\""
+                "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

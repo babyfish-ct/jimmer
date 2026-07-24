@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.ksp.client
 
-import com.google.devtools.ksp.*
+import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
@@ -15,6 +15,8 @@ class DocMetadata(
     private val ctx: Context
 ) {
     private val docMap = mutableMapOf<KSDeclaration, String>()
+
+    private val draftDocMap = mutableMapOf<KSClassDeclaration, Map<String, String>>()
 
     fun getDoc(declaration: KSDeclaration): Doc? =
         getString(declaration)?.let { Doc.parse(it) }
@@ -51,12 +53,11 @@ class DocMetadata(
             declaration as? KSClassDeclaration
         }
         if (typeDeclaration !== null) {
-            val map = implDocStringMap(typeDeclaration)
-            if (map.isNotEmpty()) {
-                map[""]?.let {
-                    docMap[typeDeclaration] = it
-                }
-                addPropDocs(typeDeclaration, map)
+            val key = if (declaration is KSPropertyDeclaration) declaration.name else ""
+            val value = draftDocStringMap(typeDeclaration)[key]
+            if (!value.isNullOrBlank()) {
+                docMap[declaration] = value
+                return value
             }
         }
 
@@ -65,51 +66,30 @@ class DocMetadata(
         }
     }
 
-    private fun addPropDocs(typeDeclaration: KSClassDeclaration, map: Map<String, String>) {
-        for (propDeclaration in typeDeclaration.declarations) {
-            if (propDeclaration is KSPropertyDeclaration) {
-                map[propDeclaration.name]?.let {
-                    docMap[propDeclaration] = it
-                }
-            }
+    private fun draftDocStringMap(typeDeclaration: KSClassDeclaration): Map<String, String> =
+        draftDocMap.getOrPut(typeDeclaration) {
+            createDraftDocStringMap(typeDeclaration)
         }
-        for (superType in typeDeclaration.superTypes) {
-            val superDeclaration = superType.resolve().declaration as? KSClassDeclaration
-            if (superDeclaration != null) {
-                addPropDocs(superDeclaration, map)
-            }
-        }
-    }
 
-    private fun implDocStringMap(typeDeclaration: KSClassDeclaration): Map<String, String> {
+    private fun createDraftDocStringMap(typeDeclaration: KSClassDeclaration): Map<String, String> {
         val qualifiedName = typeDeclaration.qualifiedName ?: return emptyMap()
         val draftDeclaration = ctx
             .resolver
             .getClassDeclarationByName(qualifiedName.asString() + "Draft")
             ?: return emptyMap()
-        val producerDeclaration = draftDeclaration
-            .declarations
-            .filterIsInstance<KSClassDeclaration>()
-            .firstOrNull { "$" == it.simpleName.asString() }
-            ?: return emptyMap()
-        val implDeclaration = producerDeclaration
-            .declarations
-            .filterIsInstance<KSClassDeclaration>()
-            .firstOrNull { "Impl" == it.simpleName.asString() }
-            ?: return emptyMap()
         val map = mutableMapOf<String, String>()
-        map[""] = implDeclaration
+        draftDeclaration
             .annotation(Description::class)
             ?.get(Description::value)
             ?.takeIf { it.isNotBlank() }
-            ?: ""
-        for (declaration in implDeclaration.declarations) {
-            if (declaration is KSPropertyDeclaration && declaration.isPublic() && !declaration.isInternal()) {
-                map[declaration.name] = declaration
+            ?.let { map[""] = it }
+        for (declaration in draftDeclaration.declarations) {
+            if (declaration is KSPropertyDeclaration) {
+                declaration
                     .annotation(Description::class)
                     ?.get(Description::value)
                     ?.takeIf { it.isNotBlank() }
-                    ?: ""
+                    ?.let { map[declaration.name] = it }
             }
         }
         return map
