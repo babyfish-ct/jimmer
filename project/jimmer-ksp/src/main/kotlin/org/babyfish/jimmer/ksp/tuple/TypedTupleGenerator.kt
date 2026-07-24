@@ -152,7 +152,7 @@ class TypedTupleGenerator(
                     )
                 )
                 .addStatement(
-                    "return %T.unmodifiableList(listOf(*selections as Array<%T>))",
+                    "return %T.unmodifiableList(selections.asList()) as List<%T>",
                     COLLECTIONS_CLASS_NAME,
                     SELECTION_CLASS_NAME.parameterizedBy(STAR)
                 )
