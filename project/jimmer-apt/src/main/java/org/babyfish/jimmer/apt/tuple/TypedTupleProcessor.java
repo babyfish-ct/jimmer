@@ -6,8 +6,13 @@ import org.babyfish.jimmer.sql.TypedTuple;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.*;
-import java.util.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class TypedTupleProcessor {
 
@@ -44,12 +49,13 @@ public class TypedTupleProcessor {
     }
 
     private void validate(TypeElement typeElement) {
-        if (typeElement.getKind() != ElementKind.CLASS) {
+        ElementKind kind = typeElement.getKind();
+        if (kind != ElementKind.CLASS && !kind.name().equals("RECORD")) {
             throw new MetaException(
                     typeElement,
                     "The type decorated by \"@" +
                             TypedTuple.class.getName() +
-                            "\" must be class"
+                            "\" must be class or record"
             );
         }
         if (!(typeElement.getEnclosingElement() instanceof PackageElement)) {
@@ -60,7 +66,8 @@ public class TypedTupleProcessor {
                             "\" must be top-level class"
             );
         }
-        if (!typeElement.getSuperclass().toString().equals("java.lang.Object")) {
+        if (kind == ElementKind.CLASS &&
+                !typeElement.getSuperclass().toString().equals("java.lang.Object")) {
             throw new MetaException(
                     typeElement,
                     "The type decorated by \"@" +
