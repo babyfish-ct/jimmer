@@ -237,7 +237,7 @@ public class TypedTupleGenerator {
         generateFields();
         generateConstructor();
         generateGetSelections();
-        generateGetBaseTableShape();
+        generateGetBaseTableFactory();
         generateCreateTuple();
         generateFirstMethod();
         int size = fieldElements.size();
@@ -317,23 +317,23 @@ public class TypedTupleGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void generateGetBaseTableShape() {
+    private void generateGetBaseTableFactory() {
         if (tableClassName == null) {
             return;
         }
         typeBuilder.addMethod(
                 MethodSpec
-                        .methodBuilder("getBaseTableShape")
+                        .methodBuilder("getBaseTableFactory")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
                         .returns(
                                 ParameterizedTypeName.get(
-                                        Constants.BASE_TABLE_SHAPE_CLASS_NAME,
+                                        Constants.BASE_TABLE_FACTORY_CLASS_NAME,
                                         tableClassName,
                                         tableClassName
                                 )
                         )
-                        .addStatement("return $T.SHAPE", tableClassName)
+                        .addStatement("return $T.FACTORY", tableClassName)
                         .build()
         );
     }
@@ -342,8 +342,8 @@ public class TypedTupleGenerator {
         if (tableClassName == null) {
             return;
         }
-        TypeName shapeTypeName = ParameterizedTypeName.get(
-                Constants.BASE_TABLE_SHAPE_CLASS_NAME,
+        TypeName factoryTypeName = ParameterizedTypeName.get(
+                Constants.BASE_TABLE_FACTORY_CLASS_NAME,
                 tableClassName,
                 tableClassName
         );
@@ -352,17 +352,17 @@ public class TypedTupleGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .superclass(
                         ParameterizedTypeName.get(
-                                Constants.ABSTRACT_BASE_TABLE_CLASS_NAME,
+                                Constants.ABSTRACT_TYPED_BASE_TABLE_CLASS_NAME,
                                 tableClassName
                         )
                 )
                 .addField(
                         FieldSpec
-                                .builder(shapeTypeName, "SHAPE")
+                                .builder(factoryTypeName, "FACTORY")
                                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                                 .initializer(
                                         "$T.of($T::new)",
-                                        Constants.BASE_TABLE_SHAPE_CLASS_NAME,
+                                        Constants.BASE_TABLE_FACTORY_CLASS_NAME,
                                         tableClassName
                                 )
                                 .build()

@@ -389,7 +389,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
 
         private static TableLike<?> wrapBaseTable(TableLike<?> table) {
             if (table instanceof BaseTable) {
-                return BaseTableProxies.wrap((BaseTable) table, false);
+                return BaseTableProxies.wrap((BaseTable) table);
             }
             return table;
         }

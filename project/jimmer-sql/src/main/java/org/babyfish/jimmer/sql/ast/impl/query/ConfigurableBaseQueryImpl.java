@@ -16,8 +16,8 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +33,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
         extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
-    private final BaseTableShape<?, ?> baseTableShape;
+    private final BaseTableFactory<?, ?> baseTableFactory;
 
     private BaseTableSymbol baseTableSymbol;
 
@@ -49,24 +49,24 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             List<Selection<?>> selections,
             TupleCreator<?> tupleCreator,
             MutableBaseQueryImpl mutableQuery,
-            BaseTableShape<?, ?> baseTableShape
+            BaseTableFactory<?, ?> baseTableFactory
     ) {
         super(
                 new TypedQueryData(selections, tupleCreator),
                 mutableQuery
         );
-        this.baseTableShape = baseTableShape;
+        this.baseTableFactory = baseTableFactory;
     }
 
     private ConfigurableBaseQueryImpl(
-            BaseTableShape<?, ?> baseTableShape,
+            BaseTableFactory<?, ?> baseTableFactory,
             BaseTableSymbol baseTableSymbol,
             T baseTable,
             TypedQueryData data,
             AbstractMutableQueryImpl baseQuery
     ) {
         super(data, baseQuery);
-        this.baseTableShape = baseTableShape;
+        this.baseTableFactory = baseTableFactory;
         this.baseTableSymbol = baseTableSymbol;
         this.baseTable = baseTable;
     }
@@ -109,7 +109,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             throw new IllegalArgumentException("'offset' can not be less than 0");
         }
         return new ConfigurableBaseQueryImpl<>(
-                baseTableShape,
+                baseTableFactory,
                 baseTableSymbol,
                 baseTable,
                 data.limit(limit, offset),
@@ -124,7 +124,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             return this;
         }
         return new ConfigurableBaseQueryImpl<>(
-                baseTableShape,
+                baseTableFactory,
                 baseTableSymbol,
                 baseTable,
                 data.distinct(),
@@ -136,7 +136,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     public ConfigurableBaseQuery<T> hint(@Nullable String hint) {
         TypedQueryData data = getData();
         return new ConfigurableBaseQueryImpl<>(
-                baseTableShape,
+                baseTableFactory,
                 baseTableSymbol,
                 baseTable,
                 data.hint(hint),
@@ -182,16 +182,16 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
-        BaseTable wrapped = baseTableShape != null ?
-                baseTableShape.createNonNull(symbol) :
+        BaseTable wrapped = baseTableFactory != null ?
+                baseTableFactory.createNonNull(symbol) :
                 symbol;
         this.baseTable = baseTable = (T) wrapped;
         return baseTable;
     }
 
     @Override
-    public BaseTableShape<?, ?> getBaseTableShape() {
-        return baseTableShape;
+    public BaseTableFactory<?, ?> getBaseTableFactory() {
+        return baseTableFactory;
     }
 
     @Override
@@ -209,7 +209,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
                                 getData().selections,
                                 selectionLayout,
                                 cte ? BaseTableKind.CTE : BaseTableKind.DERIVED,
-                                baseTableShape
+                                baseTableFactory
                         );
         return symbol;
     }

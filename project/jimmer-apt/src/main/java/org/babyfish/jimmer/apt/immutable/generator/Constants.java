@@ -488,10 +488,10 @@ public class Constants {
                     "BaseTableImplementor"
             );
 
-    public static final ClassName ABSTRACT_BASE_TABLE_CLASS_NAME =
+    public static final ClassName ABSTRACT_TYPED_BASE_TABLE_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.table",
-                    "AbstractBaseTable"
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "AbstractTypedBaseTable"
             );
 
     public static final ClassName BASE_TABLE_PROJECTION_CLASS_NAME =
@@ -500,10 +500,10 @@ public class Constants {
                     "BaseTableProjection"
             );
 
-    public static final ClassName BASE_TABLE_SHAPE_CLASS_NAME =
+    public static final ClassName BASE_TABLE_FACTORY_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table.spi",
-                    "BaseTableShape"
+                    "BaseTableFactory"
             );
 
     public static final ClassName TUPLE_MAPPER_CLASS_NAME =

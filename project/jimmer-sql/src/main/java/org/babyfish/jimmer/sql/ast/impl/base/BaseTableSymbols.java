@@ -13,8 +13,8 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
@@ -57,10 +57,10 @@ public class BaseTableSymbols {
             List<Selection<?>> selections,
             BaseTableSelectionLayout selectionLayout,
             BaseTableKind kind,
-            BaseTableShape<?, ?> shape
+            BaseTableFactory<?, ?> baseTableFactory
     ) {
-        if (shape != null) {
-            return new Shaped(query, selections, selectionLayout, kind, shape);
+        if (baseTableFactory != null) {
+            return new Projected(query, selections, selectionLayout, kind, baseTableFactory);
         }
         switch (selections.size()) {
             case 1:
@@ -113,8 +113,8 @@ public class BaseTableSymbols {
             JoinType joinType,
             BaseTableSymbol recursive
     ) {
-        if (base.getShape() != null) {
-            return new Shaped(base, parent, handle, joinType, recursive);
+        if (base.getBaseTableFactory() != null) {
+            return new Projected(base, parent, handle, joinType, recursive);
         }
         switch (base.getSelections().size()) {
             case 1:
@@ -151,19 +151,19 @@ public class BaseTableSymbols {
         return ((RecursiveRefImpl<B>) recursiveRef).baseTable;
     }
 
-    private static class Shaped extends AbstractBaseTableSymbol {
+    private static class Projected extends AbstractBaseTableSymbol {
 
-        Shaped(
+        Projected(
                 TypedBaseQueryImplementor<?> query,
                 List<Selection<?>> selections,
                 BaseTableSelectionLayout selectionLayout,
                 BaseTableKind kind,
-                BaseTableShape<?, ?> shape
+                BaseTableFactory<?, ?> baseTableFactory
         ) {
-            super(query, selections, selectionLayout, kind, shape);
+            super(query, selections, selectionLayout, kind, baseTableFactory);
         }
 
-        Shaped(
+        Projected(
                 BaseTableSymbol base,
                 TableLike<?> parent,
                 WeakJoinHandle handle,
@@ -175,19 +175,19 @@ public class BaseTableSymbols {
 
         @Override
         public AbstractBaseTableSymbol query(TypedBaseQueryImplementor<?> query) {
-            return new Shaped(
+            return new Projected(
                     query,
                     selections,
                     selectionLayout,
                     kind,
-                    shape
+                    baseTableFactory
             );
         }
 
         @Override
         public String toString() {
             return "BaseTable" + suffix() + '{' +
-                    "shape=" + shape +
+                    "factory=" + baseTableFactory +
                     (parent != null ? ",parent=" + parent : "") +
                     '}';
         }

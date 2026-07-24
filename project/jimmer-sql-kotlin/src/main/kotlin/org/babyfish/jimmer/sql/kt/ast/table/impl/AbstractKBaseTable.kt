@@ -121,9 +121,9 @@ abstract class AbstractKBaseTable protected constructor(
         fun nonNull(baseTable: BaseTable): AbstractKBaseTable {
             val baseTable = BaseTableProxies.unwrap(baseTable)
             val symbol = baseTable as BaseTableSymbol
-            val shaped = symbol.shape?.createNonNull(symbol)
-            if (shaped is AbstractKBaseTable) {
-                return shaped
+            val projected = symbol.baseTableFactory?.createNonNull(symbol)
+            if (projected is AbstractKBaseTable) {
+                return projected
             }
             return when (symbol.selections.size) {
                 1 -> NonNullTable1<
@@ -250,9 +250,9 @@ abstract class AbstractKBaseTable protected constructor(
         fun nullable(baseTable: BaseTable): AbstractKBaseTable {
             val baseTable = BaseTableProxies.unwrap(baseTable)
             val symbol = baseTable as BaseTableSymbol
-            val shaped = symbol.shape?.createNullable(symbol)
-            if (shaped is AbstractKBaseTable) {
-                return shaped
+            val projected = symbol.baseTableFactory?.createNullable(symbol)
+            if (projected is AbstractKBaseTable) {
+                return projected
             }
             return when (symbol.selections.size) {
                 1 -> NullableTable1<

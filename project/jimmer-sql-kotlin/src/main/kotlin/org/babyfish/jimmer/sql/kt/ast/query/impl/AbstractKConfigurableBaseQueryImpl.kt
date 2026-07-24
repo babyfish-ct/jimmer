@@ -19,7 +19,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
     internal val selectionLayout: BaseTableSelectionLayout
 ) : KConfigurableBaseQuery<T> {
 
-    internal class ShapedImpl<T : KNonNullBaseTable<*>>(
+    internal class ProjectedImpl<T : KNonNullBaseTable<*>>(
         javaQuery: ConfigurableBaseQuery<out BaseTable>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<T>(javaQuery, selectionLayout)

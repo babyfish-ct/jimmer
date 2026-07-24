@@ -6,8 +6,8 @@ import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final BaseTableSelectionLayout selectionLayout;
 
-    protected final BaseTableShape<?, ?> shape;
+    protected final BaseTableFactory<?, ?> baseTableFactory;
 
     protected final BaseTableKind kind;
 
@@ -40,12 +40,12 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
             List<Selection<?>> selections,
             BaseTableSelectionLayout selectionLayout,
             BaseTableKind kind,
-            BaseTableShape<?, ?> shape
+            BaseTableFactory<?, ?> baseTableFactory
     ) {
         this.query = query;
         this.selections = wrapSelections(selections);
         this.selectionLayout = selectionLayout;
-        this.shape = shape;
+        this.baseTableFactory = baseTableFactory;
         this.kind = kind;
         this.parent = null;
         this.handle = null;
@@ -63,7 +63,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
         this.selectionLayout = base.getSelectionLayout();
-        this.shape = base.getShape();
+        this.baseTableFactory = base.getBaseTableFactory();
         this.kind = base.isRecursiveCte() ?
                 BaseTableKind.RECURSIVE_CTE :
                 base.isCte() ? BaseTableKind.CTE : BaseTableKind.DERIVED;
@@ -82,8 +82,8 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     }
 
     @Override
-    public BaseTableShape<?, ?> getShape() {
-        return shape;
+    public BaseTableFactory<?, ?> getBaseTableFactory() {
+        return baseTableFactory;
     }
 
     public static List<Selection<?>> wrapSelections(List<Selection<?>> selections, BaseTable baseTable) {

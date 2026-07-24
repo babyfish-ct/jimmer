@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public final class BaseTableSelectionLayout {
 
-    private static final BaseTableSelectionLayout[] SINGLE_LAYOUTS = {
+    private static final BaseTableSelectionLayout[] SINGLE_ITEM_LAYOUTS = {
             new BaseTableSelectionLayout(new BaseTableSelectionKind[]{BaseTableSelectionKind.NON_NULL_TABLE}),
             new BaseTableSelectionLayout(new BaseTableSelectionKind[]{BaseTableSelectionKind.NULLABLE_TABLE}),
             new BaseTableSelectionLayout(new BaseTableSelectionKind[]{BaseTableSelectionKind.NON_NULL_EXPRESSION}),
@@ -21,7 +21,7 @@ public final class BaseTableSelectionLayout {
 
     @NotNull
     public static BaseTableSelectionLayout of(@NotNull BaseTableSelectionKind kind) {
-        return SINGLE_LAYOUTS[kind.ordinal()];
+        return SINGLE_ITEM_LAYOUTS[kind.ordinal()];
     }
 
     @NotNull

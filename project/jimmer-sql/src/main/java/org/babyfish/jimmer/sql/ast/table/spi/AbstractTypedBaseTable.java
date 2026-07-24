@@ -1,20 +1,21 @@
-package org.babyfish.jimmer.sql.ast.impl.table;
+package org.babyfish.jimmer.sql.ast.table.spi;
 
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableProxy;
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
-public abstract class AbstractBaseTable<B extends BaseTable> implements BaseTable, BaseTableProxy {
+public abstract class AbstractTypedBaseTable<B extends BaseTable> implements BaseTable, BaseTableProxy {
 
     private final BaseTable baseTable;
 
-    protected AbstractBaseTable(BaseTable baseTable) {
+    protected AbstractTypedBaseTable(BaseTable baseTable) {
         this.baseTable = BaseTableProxies.unwrap(baseTable);
     }
 
@@ -77,17 +78,17 @@ public abstract class AbstractBaseTable<B extends BaseTable> implements BaseTabl
     ) {
         BaseTable joined = BaseTableSymbols.of(
                 (BaseTableSymbol) BaseTableProxies.unwrap(targetBaseTable),
-                (TableLike<?>) baseTable,
+                baseTable,
                 handle,
                 joinType,
                 null
         );
-        return (TT) BaseTableProxies.wrap(joined, false);
+        return (TT) BaseTableProxies.wrap(joined);
     }
 
     @SuppressWarnings("unchecked")
     private static WeakJoin<TableLike<?>, TableLike<?>> cast(WeakJoin<?, ?> weakJoin) {
-        return (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoin;
+        return (WeakJoin<TableLike<?>, TableLike<?>>) weakJoin;
     }
 
     @Override

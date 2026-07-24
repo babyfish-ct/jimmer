@@ -7,8 +7,8 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public interface TypedBaseQueryImplementor<T extends BaseTable>
 
     void setMergedBy(MergedBaseQueryImpl<T> mergedBaseQuery);
 
-    BaseTableShape<?, ?> getBaseTableShape();
+    BaseTableFactory<?, ?> getBaseTableFactory();
 
     BaseTableSymbol asBaseTableSymbol(BaseTableSelectionLayout selectionLayout, boolean cte);
 

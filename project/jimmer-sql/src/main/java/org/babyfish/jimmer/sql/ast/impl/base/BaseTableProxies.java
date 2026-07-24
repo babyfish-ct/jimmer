@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableProxy;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 
 public class BaseTableProxies {
 
@@ -16,14 +16,12 @@ public class BaseTableProxies {
         return baseTable;
     }
 
-    public static BaseTable wrap(BaseTable baseTable, boolean nullable) {
+    public static BaseTable wrap(BaseTable baseTable) {
         BaseTableSymbol symbol = (BaseTableSymbol) unwrap(baseTable);
-        BaseTableShape<?, ?> shape = symbol.getShape();
-        if (shape == null) {
+        BaseTableFactory<?, ?> factory = symbol.getBaseTableFactory();
+        if (factory == null) {
             return symbol;
         }
-        return nullable ?
-                shape.createNullable(symbol) :
-                shape.createNonNull(symbol);
+        return factory.createNonNull(symbol);
     }
 }

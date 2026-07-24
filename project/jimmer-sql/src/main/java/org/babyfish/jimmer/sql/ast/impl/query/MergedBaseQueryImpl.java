@@ -16,8 +16,8 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +36,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     private ConfigurableBaseQueryImpl<T>[] expandedQueries;
 
-    private final BaseTableShape<?, ?> baseTableShape;
+    private final BaseTableFactory<?, ?> baseTableFactory;
 
     private BaseTableSymbol baseTableSymbol;
 
@@ -112,12 +112,12 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         TypedBaseQueryImplementor<T>[] queryArr = new TypedBaseQueryImplementor[queries.length];
         queryArr[0] = (TypedBaseQueryImplementor<T>) queries[0];
-        BaseTableShape<?, ?> baseTableShape = queryArr[0].getBaseTableShape();
+        BaseTableFactory<?, ?> baseTableFactory = queryArr[0].getBaseTableFactory();
         for (int i = 1; i < queryArr.length; i++) {
             queryArr[i] = (TypedBaseQueryImplementor<T>) queries[i];
-            if (queryArr[i].getBaseTableShape() != baseTableShape) {
+            if (queryArr[i].getBaseTableFactory() != baseTableFactory) {
                 throw new IllegalArgumentException(
-                        "Cannot merge base queries with different table shapes"
+                        "Cannot merge base queries with different base table factories"
                 );
             }
             validateSelections(
@@ -126,7 +126,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             );
         }
         this.queries = queryArr;
-        this.baseTableShape = baseTableShape;
+        this.baseTableFactory = baseTableFactory;
 
         List<ConfigurableBaseQueryImpl<?>> realQueries = new ArrayList<>();
         collectConfigurableQueries(realQueries);
@@ -388,16 +388,16 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
-        BaseTable wrapped = baseTableShape != null ?
-                baseTableShape.createNonNull(symbol) :
+        BaseTable wrapped = baseTableFactory != null ?
+                baseTableFactory.createNonNull(symbol) :
                 symbol;
         this.baseTable = baseTable = (T) wrapped;
         return baseTable;
     }
 
     @Override
-    public BaseTableShape<?, ?> getBaseTableShape() {
-        return baseTableShape;
+    public BaseTableFactory<?, ?> getBaseTableFactory() {
+        return baseTableFactory;
     }
 
     @Override
@@ -423,7 +423,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                                         BaseTableKind.RECURSIVE_CTE :
                                         cte ? BaseTableKind.CTE :
                                                 BaseTableKind.DERIVED,
-                                baseTableShape
+                                baseTableFactory
                         );
         return symbol;
     }

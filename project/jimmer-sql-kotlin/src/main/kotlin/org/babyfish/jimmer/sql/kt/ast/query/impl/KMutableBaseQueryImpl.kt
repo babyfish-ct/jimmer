@@ -232,10 +232,10 @@ private fun <
     query: MutableBaseQueryImpl,
     projection: KBaseTableProjection<T, NT>
 ): KConfigurableBaseQuery<T> =
-    AbstractKConfigurableBaseQueryImpl.ShapedImpl(
+    AbstractKConfigurableBaseQueryImpl.ProjectedImpl(
         query.select(
             projection.javaSelections(),
-            projection.getBaseTableShape()
+            projection.getBaseTableFactory()
         ),
         projection.getSelectionLayout()
     )

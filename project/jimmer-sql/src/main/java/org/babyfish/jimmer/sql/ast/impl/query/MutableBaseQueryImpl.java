@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -200,19 +200,19 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     ) {
         return (ConfigurableBaseQuery<B>) select(
                 projection.getSelections(),
-                projection.getBaseTableShape()
+                projection.getBaseTableFactory()
         );
     }
 
     public ConfigurableBaseQuery<BaseTable> select(
             List<Selection<?>> selections,
-            BaseTableShape<?, ?> shape
+            BaseTableFactory<?, ?> baseTableFactory
     ) {
         return new ConfigurableBaseQueryImpl<>(
                 selections,
                 null,
                 this,
-                shape
+                baseTableFactory
         );
     }
 

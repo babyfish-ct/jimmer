@@ -101,7 +101,7 @@ class TypedTupleGenerator(
         addConstructor()
         addProp()
         addGetSelections()
-        addGetBaseTableShape()
+        addGetBaseTableFactory()
         addGetSelectionLayout()
         addCreateTuple()
         for (i in 1 until props.size) {
@@ -160,21 +160,21 @@ class TypedTupleGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addGetBaseTableShape() {
+    private fun TypeSpec.Builder.addGetBaseTableFactory() {
         if (!isBaseTableProjection) {
             return
         }
         addFunction(
             FunSpec
-                .builder("getBaseTableShape")
+                .builder("getBaseTableFactory")
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(
-                    BASE_TABLE_SHAPE.parameterizedBy(
+                    BASE_TABLE_FACTORY.parameterizedBy(
                         tableClassName,
                         nullableTableClassName
                     )
                 )
-                .addStatement("return %T.SHAPE", tableClassName)
+                .addStatement("return %T.FACTORY", tableClassName)
                 .build()
         )
     }
@@ -194,7 +194,7 @@ class TypedTupleGenerator(
     }
 
     private fun baseTableType(): TypeSpec {
-        val shapeTypeName = BASE_TABLE_SHAPE.parameterizedBy(
+        val factoryTypeName = BASE_TABLE_FACTORY.parameterizedBy(
             tableClassName,
             nullableTableClassName
         )
@@ -217,9 +217,9 @@ class TypedTupleGenerator(
                         .companionObjectBuilder()
                         .addProperty(
                             PropertySpec
-                                .builder("SHAPE", shapeTypeName)
+                                .builder("FACTORY", factoryTypeName)
                                 .addModifiers(KModifier.INTERNAL)
-                                .initializer("%L", baseTableShape())
+                                .initializer("%L", baseTableFactory())
                                 .build()
                         )
                         .addProperty(
@@ -318,9 +318,9 @@ class TypedTupleGenerator(
             .addParameter("baseTable", BASE_TABLE)
             .build()
 
-    private fun baseTableShape(): CodeBlock =
+    private fun baseTableFactory(): CodeBlock =
         CodeBlock.builder()
-            .add("%T.of(\n", BASE_TABLE_SHAPE)
+            .add("%T.of(\n", BASE_TABLE_FACTORY)
             .indent()
             .add("{ %T(it) },\n", tableClassName)
             .add("{ %T(it) }\n", nullableTableClassName)
@@ -527,9 +527,9 @@ class TypedTupleGenerator(
             "BaseTable"
         )
 
-        private val BASE_TABLE_SHAPE = ClassName(
+        private val BASE_TABLE_FACTORY = ClassName(
             "org.babyfish.jimmer.sql.ast.table.spi",
-            "BaseTableShape"
+            "BaseTableFactory"
         )
 
         private val BASE_TABLE_SELECTION_KIND = ClassName(
