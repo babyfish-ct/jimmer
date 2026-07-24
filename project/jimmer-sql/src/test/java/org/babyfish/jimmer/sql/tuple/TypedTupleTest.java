@@ -12,6 +12,167 @@ import org.junit.jupiter.api.Test;
 public class TypedTupleTest extends AbstractQueryTest {
 
     @Test
+    public void testAggregateTupleAsBaseTable() {
+        BookTable table = BookTable.$;
+        AggregateTupleTable baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .groupBy(table.storeId())
+                .select(
+                        AggregateTupleMapper
+                                .storeId(table.storeId())
+                                .bookCount(Expression.rowCount())
+                                .minPrice(table.price().min())
+                                .maxPrice(table.price().max())
+                                .avgPrice(table.price().avgAsDecimal())
+                )
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.getBookCount().gt(2L))
+                        .orderBy(baseTable.getStoreId())
+                        .select(baseTable.getStoreId(), baseTable.getAvgPrice()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c3 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.STORE_ID c1, " +
+                                    "--->--->count(1) c2, " +
+                                    "--->--->avg(tb_2_.PRICE) c3 " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->group by tb_2_.STORE_ID" +
+                                    ") tb_1_ " +
+                                    "where tb_1_.c2 > ? " +
+                                    "order by tb_1_.c1 asc"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testAggregateTupleAsCteBaseTable() {
+        BookTable table = BookTable.$;
+        AggregateTupleTable baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .groupBy(table.storeId())
+                .select(
+                        AggregateTupleMapper
+                                .storeId(table.storeId())
+                                .bookCount(Expression.rowCount())
+                                .minPrice(table.price().min())
+                                .maxPrice(table.price().max())
+                                .avgPrice(table.price().avgAsDecimal())
+                )
+                .asCteBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.getBookCount().gt(2L))
+                        .select(baseTable.getStoreId(), baseTable.getAvgPrice()),
+                ctx -> {
+                    ctx.sql(
+                            "with tb_1_(c1, c2, c3) as (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.STORE_ID, " +
+                                    "--->--->count(1), " +
+                                    "--->--->avg(tb_2_.PRICE) " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->group by tb_2_.STORE_ID" +
+                                    ") " +
+                                    "select tb_1_.c1, tb_1_.c3 " +
+                                    "from tb_1_ " +
+                                    "where tb_1_.c2 > ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testEntityTupleAsBaseTable() {
+        BookTable table = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
+        EntityTupleTable baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .where(table.edition().eq(3))
+                .select(
+                        EntityTupleMapper
+                                .book(table)
+                                .authorCount(
+                                        getSqlClient()
+                                                .createSubQuery(author)
+                                                .where(author.books().id().eq(table.id()))
+                                                .selectCount()
+                                )
+                )
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.getAuthorCount().gt(1L))
+                        .select(baseTable.getBook()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.NAME c2, " +
+                                    "--->--->tb_2_.EDITION c3, " +
+                                    "--->--->tb_2_.PRICE c4, " +
+                                    "--->--->tb_2_.STORE_ID c5, " +
+                                    "--->--->(" +
+                                    "--->--->--->select count(1) " +
+                                    "--->--->--->from AUTHOR tb_3_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_4_ " +
+                                    "--->--->--->on tb_3_.ID = tb_4_.AUTHOR_ID " +
+                                    "--->--->--->where tb_4_.BOOK_ID = tb_2_.ID" +
+                                    "--->--->) c6 " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_2_.EDITION = ?" +
+                                    ") tb_1_ " +
+                                    "where tb_1_.c6 > ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testWideTupleAsBaseTable() {
+        BookTable table = BookTable.$;
+        WideTupleTable baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .select(
+                        WideTupleMapper
+                                .value1(Expression.rowCount())
+                                .value2(Expression.rowCount())
+                                .value3(Expression.rowCount())
+                                .value4(Expression.rowCount())
+                                .value5(Expression.rowCount())
+                                .value6(Expression.rowCount())
+                                .value7(Expression.rowCount())
+                                .value8(Expression.rowCount())
+                                .value9(Expression.rowCount())
+                                .value10(Expression.rowCount())
+                )
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(baseTable.getValue10()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1 " +
+                                    "from (" +
+                                    "--->select count(1) c1 " +
+                                    "--->from BOOK tb_2_" +
+                                    ") tb_1_"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testAggregateTuple() {
         BookTable table = BookTable.$;
         executeAndExpect(
