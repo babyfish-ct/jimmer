@@ -5,6 +5,7 @@ create schema if not exists D;
 
 
 drop table endorsement if exists;
+drop table documented_entity if exists;
 drop table issue1125_mp_role_perm if exists;
 drop table issue1125_sys_role if exists;
 drop table issue1125_sys_perm if exists;
@@ -134,6 +135,11 @@ drop table C.TABLE_C if exists;
 drop table B.TABLE_B if exists;
 drop table A.TABLE_A if exists;
 drop table personal if exists;
+
+create table documented_entity(
+    id bigint not null primary key,
+    created_by varchar(50) not null
+);
 
 create table A.TABLE_A(
     id bigint not null primary key,

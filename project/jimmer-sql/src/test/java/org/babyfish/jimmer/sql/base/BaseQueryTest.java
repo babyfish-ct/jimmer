@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public class BaseQueryTest extends AbstractQueryTest {
 
@@ -1075,6 +1076,53 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_2_.c1 = tb_5_.AUTHOR_ID" +
                                     ") on tb_1_.ID = tb_5_.BOOK_ID " +
                                     "where tb_2_.c5 < ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testWeakJoinConditionInPagingQuery() {
+        BookStoreTable store = BookStoreTable.$;
+        BookTable book = BookTable.$;
+        BaseTable2<BookTable, ComparableExpression<UUID>> baseBook = getSqlClient()
+                .createBaseQuery(book)
+                .where(book.edition().eq(1))
+                .addSelect(book)
+                .addSelect(book.store().id())
+                .asBaseTable();
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createQuery(store)
+                        .where(
+                                store.asTableEx().weakJoin(
+                                        baseBook,
+                                        (source, target) -> source.id().eq(target.get_2())
+                                ).get_1().id().isNotNull()
+                        )
+                        .select(store.fetch(BookStoreFetcher.$.name()))
+                        .fetchPage(0, 10, con),
+                ctx -> {
+                    ctx.sql(
+                            "select count(1) " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join (" +
+                                    "--->select tb_3_.ID c1, tb_3_.STORE_ID c2 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.EDITION = ?" +
+                                    ") tb_2_ on tb_1_.ID = tb_2_.c2 " +
+                                    "where tb_2_.c1 is not null"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join (" +
+                                    "--->select tb_3_.ID c1, tb_3_.STORE_ID c2 " +
+                                    "--->from BOOK tb_3_ " +
+                                    "--->where tb_3_.EDITION = ?" +
+                                    ") tb_2_ on tb_1_.ID = tb_2_.c2 " +
+                                    "where tb_2_.c1 is not null " +
+                                    "limit ?"
                     );
                 }
         );

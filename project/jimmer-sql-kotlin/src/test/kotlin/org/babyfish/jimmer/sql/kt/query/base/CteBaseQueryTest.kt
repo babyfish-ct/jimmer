@@ -1204,7 +1204,7 @@ class CteBaseQueryTest : AbstractQueryTest() {
                     ") " +
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                     "from BOOK tb_1_ " +
-                    "inner join (tb_2_) on tb_1_.NAME = tb_2_.c1 " +
+                    "inner join tb_2_ on tb_1_.NAME = tb_2_.c1 " +
                     "where tb_2_.c2 > ?"
             )
         }

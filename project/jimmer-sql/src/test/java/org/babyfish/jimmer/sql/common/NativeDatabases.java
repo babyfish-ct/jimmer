@@ -59,10 +59,17 @@ public class NativeDatabases {
     public static final DataSource SQLITE_DATA_SOURCE =
             new SimpleDriverDataSource(
                     new org.sqlite.JDBC(),
-                    "jdbc:sqlite:./build/sqlite.db"
+                    sqliteUrl()
             );
 
     public static final DataSource ORACLE_DATA_SOURCE;
+
+    private static String sqliteUrl() {
+        String worker = System.getProperty("org.gradle.test.worker");
+        return "jdbc:sqlite:./build/sqlite" +
+                (worker != null ? "-" + worker : "") +
+                ".db";
+    }
 
     static {
         try {

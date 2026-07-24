@@ -561,9 +561,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         AstContext ctx = builder.getAstContext();
         BaseTableImpl baseTableImpl = (BaseTableImpl) owner;
         boolean aliasOnly = !cte && ((BaseTableImplementor) owner).isCte();
+        List<RealTable> childTables = baseTableChildTablesToRender(ctx, baseTableImpl, cte);
         boolean withScope = !cte && parent != null &&
                 parent.owner instanceof TableImplementor<?> &&
-                ((BaseTableImplementor) owner).getRecursive() == null;
+                ((BaseTableImplementor) owner).getRecursive() == null &&
+                !childTables.isEmpty();
         if (withScope) {
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         }
@@ -577,23 +579,12 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 builder.sql(" ").sqlAlias(this);
             }
         }
-        for (Selection<?> selection : baseTableImpl.getSelections()) {
-            if (!(selection instanceof Table<?>)) {
-                continue;
+        if (!childTables.isEmpty()) {
+            ctx.pushRenderedBaseTable(null);
+            for (RealTable childTable : childTables) {
+                childTable.renderTo(builder, false);
             }
-            TableImplementor<?> tableImplementor = TableProxies.resolve((Table<?>) selection, ctx);
-            BaseTableOwner baseTableOwner = tableImplementor.getBaseTableOwner();
-            if (baseTableOwner == null || baseTableOwner.getBaseTable() != baseTableImpl.toSymbol()) {
-                continue;
-            }
-            RealTable realTable = tableImplementor.realTable(ctx);
-            if (!cte) {
-                ctx.pushRenderedBaseTable(null);
-                for (RealTable childTable : realTable) {
-                    childTable.renderTo(builder, false);
-                }
-                ctx.popRenderedBaseTable();
-            }
+            ctx.popRenderedBaseTable();
         }
         if (withScope) {
             builder.leave();
@@ -609,6 +600,36 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
             ((Ast) joinPredicate).renderTo(builder);
         }
         ctx.popRenderedBaseTable();
+    }
+
+    private static List<RealTable> baseTableChildTablesToRender(
+            AstContext ctx,
+            BaseTableImpl baseTable,
+            boolean cte
+    ) {
+        if (cte) {
+            return Collections.emptyList();
+        }
+        List<RealTable> childTables = null;
+        for (Selection<?> selection : baseTable.getSelections()) {
+            if (!(selection instanceof Table<?>)) {
+                continue;
+            }
+            TableImplementor<?> table = TableProxies.resolve((Table<?>) selection, ctx);
+            BaseTableOwner baseTableOwner = table.getBaseTableOwner();
+            if (baseTableOwner == null || baseTableOwner.getBaseTable() != baseTable.toSymbol()) {
+                continue;
+            }
+            for (RealTable childTable : table.realTable(ctx)) {
+                if (ctx.getTableUsedState(childTable) != TableUsedState.NONE) {
+                    if (childTables == null) {
+                        childTables = new ArrayList<>();
+                    }
+                    childTables.add(childTable);
+                }
+            }
+        }
+        return childTables != null ? childTables : Collections.emptyList();
     }
 
     private void renderJoin(SqlBuilder builder, TableImplementor.RenderMode mode) {
