@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
@@ -16,7 +17,7 @@ public interface BaseTableSymbol extends BaseTable {
 
     List<Selection<?>> getSelections();
 
-    byte[] getKotlinSelectionTypes();
+    BaseTableSelectionLayout getSelectionLayout();
 
     BaseTableShape<?, ?> getShape();
 

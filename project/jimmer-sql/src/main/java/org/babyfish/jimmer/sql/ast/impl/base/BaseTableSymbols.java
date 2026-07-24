@@ -11,16 +11,9 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable4;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable5;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable6;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable7;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable8;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable9;
+import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +22,8 @@ import java.util.List;
 
 public class BaseTableSymbols {
 
-    private BaseTableSymbols() {}
+    private BaseTableSymbols() {
+    }
 
     public static boolean contains(TableLike<?> table1, BaseTableSymbol table2) {
         return contains0(table1, table2);
@@ -52,41 +46,41 @@ public class BaseTableSymbols {
     public static BaseTableSymbol of(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
-            byte[] kotlinSelectionTypes,
+            BaseTableSelectionLayout selectionLayout,
             BaseTableKind kind
     ) {
-        return of(query, selections, kotlinSelectionTypes, kind, null);
+        return of(query, selections, selectionLayout, kind, null);
     }
 
     public static BaseTableSymbol of(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
-            byte[] kotlinSelectionTypes,
+            BaseTableSelectionLayout selectionLayout,
             BaseTableKind kind,
             BaseTableShape<?, ?> shape
     ) {
         if (shape != null) {
-            return new Shaped(query, selections, kotlinSelectionTypes, kind, shape);
+            return new Shaped(query, selections, selectionLayout, kind, shape);
         }
         switch (selections.size()) {
             case 1:
-                return new Table1<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table1<>(query, selections, selectionLayout, kind);
             case 2:
-                return new Table2<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table2<>(query, selections, selectionLayout, kind);
             case 3:
-                return new Table3<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table3<>(query, selections, selectionLayout, kind);
             case 4:
-                return new Table4<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table4<>(query, selections, selectionLayout, kind);
             case 5:
-                return new Table5<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table5<>(query, selections, selectionLayout, kind);
             case 6:
-                return new Table6<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table6<>(query, selections, selectionLayout, kind);
             case 7:
-                return new Table7<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table7<>(query, selections, selectionLayout, kind);
             case 8:
-                return new Table8<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table8<>(query, selections, selectionLayout, kind);
             case 9:
-                return new Table9<>(query, selections, kotlinSelectionTypes, kind);
+                return new Table9<>(query, selections, selectionLayout, kind);
             default:
                 throw new IllegalArgumentException("Illegal selection count: " + selections.size());
         }
@@ -154,7 +148,7 @@ public class BaseTableSymbols {
         if (!(recursiveRef instanceof RecursiveRefImpl<?>)) {
             throw new IllegalArgumentException("Unexpected " + RecursiveRef.class.getName());
         }
-        return ((RecursiveRefImpl<B>)recursiveRef).baseTable;
+        return ((RecursiveRefImpl<B>) recursiveRef).baseTable;
     }
 
     private static class Shaped extends AbstractBaseTableSymbol {
@@ -162,11 +156,11 @@ public class BaseTableSymbols {
         Shaped(
                 TypedBaseQueryImplementor<?> query,
                 List<Selection<?>> selections,
-                byte[] kotlinSelectionTypes,
+                BaseTableSelectionLayout selectionLayout,
                 BaseTableKind kind,
                 BaseTableShape<?, ?> shape
         ) {
-            super(query, selections, kotlinSelectionTypes, kind, shape);
+            super(query, selections, selectionLayout, kind, shape);
         }
 
         Shaped(
@@ -184,7 +178,7 @@ public class BaseTableSymbols {
             return new Shaped(
                     query,
                     selections,
-                    kotlinSelectionTypes,
+                    selectionLayout,
                     kind,
                     shape
             );
@@ -212,8 +206,8 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable1<S1> {
 
-        Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table1(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table1(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -229,7 +223,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table1<S1> query(TypedBaseQueryImplementor<?> query) {
-            return new Table1<>(query, wrapSelections(selections, query.asBaseTable()), kotlinSelectionTypes, kind);
+            return new Table1<>(query, wrapSelections(selections, query.asBaseTable()), selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -273,8 +267,8 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable2<S1, S2> {
 
-        Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table2(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table2(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -297,7 +291,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table2<S1, S2> query(TypedBaseQueryImplementor<?> query) {
-            return new Table2<>(query, wrapSelections(selections, query.asBaseTable()), kotlinSelectionTypes, kind);
+            return new Table2<>(query, wrapSelections(selections, query.asBaseTable()), selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -341,8 +335,8 @@ public class BaseTableSymbols {
             extends AbstractBaseTableSymbol
             implements BaseTable3<S1, S2, S3> {
 
-        Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table3(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table3(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -372,7 +366,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table3<S1, S2, S3> query(TypedBaseQueryImplementor<?> query) {
-            return new Table3<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table3<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -418,11 +412,11 @@ public class BaseTableSymbols {
             S2 extends Selection<?>,
             S3 extends Selection<?>,
             S4 extends Selection<?>
-    > extends AbstractBaseTableSymbol
+            > extends AbstractBaseTableSymbol
             implements BaseTable4<S1, S2, S3, S4> {
 
-        Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table4(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table4(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -458,7 +452,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table4<S1, S2, S3, S4> query(TypedBaseQueryImplementor<?> query) {
-            return new Table4<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table4<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -506,11 +500,11 @@ public class BaseTableSymbols {
             S3 extends Selection<?>,
             S4 extends Selection<?>,
             S5 extends Selection<?>
-    > extends AbstractBaseTableSymbol
+            > extends AbstractBaseTableSymbol
             implements BaseTable5<S1, S2, S3, S4, S5> {
 
-        Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table5(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table5(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -552,7 +546,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table5<S1, S2, S3, S4, S5> query(TypedBaseQueryImplementor<?> query) {
-            return new Table5<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table5<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -602,11 +596,11 @@ public class BaseTableSymbols {
             S4 extends Selection<?>,
             S5 extends Selection<?>,
             S6 extends Selection<?>
-    > extends AbstractBaseTableSymbol
+            > extends AbstractBaseTableSymbol
             implements BaseTable6<S1, S2, S3, S4, S5, S6> {
 
-        Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table6(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table6(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -654,7 +648,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table6<S1, S2, S3, S4, S5, S6> query(TypedBaseQueryImplementor<?> query) {
-            return new Table6<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table6<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -706,11 +700,11 @@ public class BaseTableSymbols {
             S5 extends Selection<?>,
             S6 extends Selection<?>,
             S7 extends Selection<?>
-    > extends AbstractBaseTableSymbol
+            > extends AbstractBaseTableSymbol
             implements BaseTable7<S1, S2, S3, S4, S5, S6, S7> {
 
-        Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table7(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table7(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -764,7 +758,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table7<S1, S2, S3, S4, S5, S6, S7> query(TypedBaseQueryImplementor<?> query) {
-            return new Table7<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table7<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -818,11 +812,11 @@ public class BaseTableSymbols {
             S6 extends Selection<?>,
             S7 extends Selection<?>,
             S8 extends Selection<?>
-    > extends AbstractBaseTableSymbol
+            > extends AbstractBaseTableSymbol
             implements BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8> {
 
-        Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table8(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table8(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -882,7 +876,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table8<S1, S2, S3, S4, S5, S6, S7, S8> query(TypedBaseQueryImplementor<?> query) {
-            return new Table8<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table8<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -938,11 +932,11 @@ public class BaseTableSymbols {
             S7 extends Selection<?>,
             S8 extends Selection<?>,
             S9 extends Selection<?>
-    > extends AbstractBaseTableSymbol
+            > extends AbstractBaseTableSymbol
             implements BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
 
-        Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, byte[] kotlinSelectionTypes, BaseTableKind kind) {
-            super(query, selections, kotlinSelectionTypes, kind, null);
+        Table9(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections, BaseTableSelectionLayout selectionLayout, BaseTableKind kind) {
+            super(query, selections, selectionLayout, kind, null);
         }
 
         Table9(BaseTableSymbol base, TableLike<?> parent, WeakJoinHandle handle, JoinType joinType, BaseTableSymbol recursive) {
@@ -1008,7 +1002,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table9<S1, S2, S3, S4, S5, S6, S7, S8, S9> query(TypedBaseQueryImplementor<?> query) {
-            return new Table9<>(query, selections, kotlinSelectionTypes, kind);
+            return new Table9<>(query, selections, selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")

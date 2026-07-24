@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
@@ -175,12 +176,12 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTable(byte[] kotlinSelectionTypes, boolean cte) {
+    public T asBaseTable(BaseTableSelectionLayout selectionLayout, boolean cte) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
-        BaseTableSymbol symbol = asBaseTableSymbol(kotlinSelectionTypes, cte);
+        BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
         BaseTable wrapped = baseTableShape != null ?
                 baseTableShape.createNonNull(symbol) :
                 symbol;
@@ -194,7 +195,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     }
 
     @Override
-    public BaseTableSymbol asBaseTableSymbol(byte[] kotlinSelectionTypes, boolean cte) {
+    public BaseTableSymbol asBaseTableSymbol(BaseTableSelectionLayout selectionLayout, boolean cte) {
         BaseTableSymbol symbol = baseTableSymbol;
         if (symbol != null) {
             AbstractBaseTableSymbol.validateCte(symbol, cte);
@@ -202,11 +203,11 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
         }
         baseTableSymbol = symbol =
                 mergedBy != null ?
-                        mergedBy.asBaseTableSymbol(kotlinSelectionTypes, cte) :
+                        mergedBy.asBaseTableSymbol(selectionLayout, cte) :
                         BaseTableSymbols.of(
                                 this,
                                 getData().selections,
-                                kotlinSelectionTypes,
+                                selectionLayout,
                                 cte ? BaseTableKind.CTE : BaseTableKind.DERIVED,
                                 baseTableShape
                         );

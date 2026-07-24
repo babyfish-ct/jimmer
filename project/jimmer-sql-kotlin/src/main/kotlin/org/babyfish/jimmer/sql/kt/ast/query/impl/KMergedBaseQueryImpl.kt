@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery
 import org.babyfish.jimmer.sql.ast.table.BaseTable
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
@@ -20,7 +21,7 @@ internal class KMergedBaseQueryImpl<T : KNonNullBaseTable<*>>(
     private val javaBaseQuery: MergedBaseQueryImpl<*>
 ) : KTypedBaseQuery<T>, Ast {
 
-    private val selectionTypes = selectionTypes(first)
+    private val selectionLayout = selectionLayout(first)
 
     override fun asBaseTable(): KBaseTableSymbol<T> =
         asBaseTable(false)
@@ -31,7 +32,7 @@ internal class KMergedBaseQueryImpl<T : KNonNullBaseTable<*>>(
     @Suppress("UNCHECKED_CAST")
     private fun asBaseTable(cte: Boolean): KBaseTableSymbol<T> {
         val symbol = (javaBaseQuery as TypedBaseQueryImplementor<*>)
-            .asBaseTableSymbol(selectionTypes, cte)
+            .asBaseTableSymbol(selectionLayout, cte)
         return KBaseTableSymbol(AbstractKBaseTable.nonNull(symbol) as T)
     }
 
@@ -68,11 +69,11 @@ internal class KMergedBaseQueryImpl<T : KNonNullBaseTable<*>>(
                 ((query as AbstractKConfigurableBaseQueryImpl<*>).javaBaseQuery as ConfigurableBaseQueryImpl<*>).sqlClient
             }
 
-        private fun selectionTypes(query: KTypedBaseQuery<*>): ByteArray =
+        private fun selectionLayout(query: KTypedBaseQuery<*>): BaseTableSelectionLayout =
             if (query is KMergedBaseQueryImpl<*>) {
-                query.selectionTypes
+                query.selectionLayout
             } else {
-                (query as AbstractKConfigurableBaseQueryImpl<*>).selectionTypes
+                (query as AbstractKConfigurableBaseQueryImpl<*>).selectionLayout
             }
     }
 }

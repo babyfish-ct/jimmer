@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
@@ -20,7 +21,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
 
     protected final List<Selection<?>> selections;
 
-    protected final byte[] kotlinSelectionTypes;
+    protected final BaseTableSelectionLayout selectionLayout;
 
     protected final BaseTableShape<?, ?> shape;
 
@@ -37,13 +38,13 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     protected AbstractBaseTableSymbol(
             TypedBaseQueryImplementor<?> query,
             List<Selection<?>> selections,
-            byte[] kotlinSelectionTypes,
+            BaseTableSelectionLayout selectionLayout,
             BaseTableKind kind,
             BaseTableShape<?, ?> shape
     ) {
         this.query = query;
         this.selections = wrapSelections(selections);
-        this.kotlinSelectionTypes = kotlinSelectionTypes;
+        this.selectionLayout = selectionLayout;
         this.shape = shape;
         this.kind = kind;
         this.parent = null;
@@ -61,7 +62,7 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
     ) {
         this.query = base.getQuery();
         this.selections = wrapSelections(base.getSelections());
-        this.kotlinSelectionTypes = base.getKotlinSelectionTypes();
+        this.selectionLayout = base.getSelectionLayout();
         this.shape = base.getShape();
         this.kind = base.isRecursiveCte() ?
                 BaseTableKind.RECURSIVE_CTE :
@@ -76,8 +77,8 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
         return wrapSelections(selections, this);
     }
 
-    public byte[] getKotlinSelectionTypes() {
-        return kotlinSelectionTypes;
+    public BaseTableSelectionLayout getSelectionLayout() {
+        return selectionLayout;
     }
 
     @Override

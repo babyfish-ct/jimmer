@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.base.*
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableProxy
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionKind
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.*
@@ -46,7 +47,7 @@ abstract class AbstractKBaseTable protected constructor(
         val symbol = javaTable as BaseTableSymbol
         return kotlinSelection(
             symbol.selections[index],
-            symbol.kotlinSelectionTypes[index],
+            symbol.selectionLayout[index],
             nullable
         )
     }
@@ -116,11 +117,6 @@ abstract class AbstractKBaseTable protected constructor(
     }
 
     companion object {
-
-        val SELECTION_TYPE_NON_NULL_TABLE: Byte = (0 or 0).toByte()
-        val SELECTION_TYPE_NULLABLE_TABLE: Byte = (2 or 0).toByte()
-        val SELECTION_TYPE_NON_NULL_EXPRESSION: Byte = (0 or 1).toByte()
-        val SELECTION_TYPE_NULLABLE_EXPRESSION: Byte = (2 or 1).toByte()
 
         fun nonNull(baseTable: BaseTable): AbstractKBaseTable {
             val baseTable = BaseTableProxies.unwrap(baseTable)
@@ -335,42 +331,25 @@ abstract class AbstractKBaseTable protected constructor(
             }
         }
 
-        fun selectionTypes(prev: ByteArray?, value: Byte): ByteArray =
-            if (prev !== null) {
-                prev + value
-            } else {
-                byteArrayOf(value)
-            }
-
         @Suppress("UNCHECKED_CAST")
         fun <T : Selection<*>> kotlinSelection(
             javaSelection: Selection<*>,
-            selectionType: Byte,
+            kind: BaseTableSelectionKind,
             nullable: Boolean
-        ): T {
-            val mask =
-                if (nullable) {
-                    (selectionType.toInt() or 2).toByte()
-                } else {
-                    selectionType
-                }
-            return when (mask) {
-                SELECTION_TYPE_NON_NULL_TABLE ->
-                    KNonNullTableExImpl(javaSelection as TableImplementor) as T
-
-                SELECTION_TYPE_NULLABLE_TABLE ->
+        ): T =
+            if (kind.isTable) {
+                if (nullable || kind.isNullable) {
                     KNullableTableExImpl(javaSelection as TableImplementor) as T
-
-                SELECTION_TYPE_NON_NULL_EXPRESSION ->
-                    JavaToKotlinNonNullExpression(javaSelection as ExpressionImplementor<T>) as T
-
-                SELECTION_TYPE_NULLABLE_EXPRESSION ->
+                } else {
+                    KNonNullTableExImpl(javaSelection as TableImplementor) as T
+                }
+            } else {
+                if (nullable || kind.isNullable) {
                     JavaToKotlinNullableExpression(javaSelection as ExpressionImplementor<T>) as T
-
-                else ->
-                    throw IllegalArgumentException("Illegal mask $mask")
+                } else {
+                    JavaToKotlinNonNullExpression(javaSelection as ExpressionImplementor<T>) as T
+                }
             }
-        }
     }
 
     private class NonNullTable1<T1 : Selection<*>, T1Nullable : Selection<*>>(
@@ -381,7 +360,7 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable1<T1>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
@@ -418,7 +397,7 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable1<T1>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
@@ -464,14 +443,14 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
@@ -513,14 +492,14 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable2<*, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
@@ -570,21 +549,21 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
@@ -628,21 +607,21 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable3<*, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
@@ -696,28 +675,28 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 false
             )
 
@@ -763,28 +742,28 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable4<*, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 true
             )
 
@@ -842,35 +821,35 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 false
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 false
             )
 
@@ -918,35 +897,35 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 true
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable5<*, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 true
             )
 
@@ -1008,42 +987,42 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 false
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 false
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 false
             )
 
@@ -1093,42 +1072,42 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 true
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 true
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable6<*, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 true
             )
 
@@ -1194,49 +1173,49 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 false
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 false
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 false
             )
 
         override val _7: T7
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._7,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[6],
                 false
             )
 
@@ -1288,49 +1267,49 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 true
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 true
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 true
             )
 
         override val _7: T7
             get() = kotlinSelection(
                 (javaTable as BaseTable7<*, *, *, *, *, *, *>)._7,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[6],
                 true
             )
 
@@ -1400,56 +1379,56 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 false
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 false
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 false
             )
 
         override val _7: T7
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._7,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[6],
                 false
             )
 
         override val _8: T8
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._8,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[7],
                 false
             )
 
@@ -1503,56 +1482,56 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 true
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 true
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 true
             )
 
         override val _7: T7
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._7,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[6],
                 true
             )
 
         override val _8: T8
             get() = kotlinSelection(
                 (javaTable as BaseTable8<*, *, *, *, *, *, *, *>)._8,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[7],
                 true
             )
 
@@ -1626,63 +1605,63 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 false
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 false
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 false
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 false
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 false
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 false
             )
 
         override val _7: T7
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._7,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[6],
                 false
             )
 
         override val _8: T8
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._8,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[7],
                 false
             )
 
         override val _9: T9
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._9,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[8],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[8],
                 false
             )
 
@@ -1739,63 +1718,63 @@ abstract class AbstractKBaseTable protected constructor(
         override val _1: T1
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._1,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[0],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[0],
                 true
             )
 
         override val _2: T2
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._2,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[1],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[1],
                 true
             )
 
         override val _3: T3
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._3,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[2],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[2],
                 true
             )
 
         override val _4: T4
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._4,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[3],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[3],
                 true
             )
 
         override val _5: T5
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._5,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[4],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[4],
                 true
             )
 
         override val _6: T6
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._6,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[5],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[5],
                 true
             )
 
         override val _7: T7
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._7,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[6],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[6],
                 true
             )
 
         override val _8: T8
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._8,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[7],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[7],
                 true
             )
 
         override val _9: T9
             get() = kotlinSelection(
                 (javaTable as BaseTable9<*, *, *, *, *, *, *, *, *>)._9,
-                (javaTable as AbstractBaseTableSymbol).kotlinSelectionTypes[8],
+                (javaTable as AbstractBaseTableSymbol).selectionLayout[8],
                 true
             )
 

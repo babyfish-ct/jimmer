@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableShape;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -376,7 +377,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTable(byte[] kotlinSelectionTypes, boolean cte) {
+    public T asBaseTable(BaseTableSelectionLayout selectionLayout, boolean cte) {
         if (!cte && recursive) {
             throw new IllegalArgumentException(
                     "Recursive base query only be treated as cteBaseTable, not general baseTable"
@@ -386,7 +387,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
-        BaseTableSymbol symbol = asBaseTableSymbol(kotlinSelectionTypes, cte);
+        BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
         BaseTable wrapped = baseTableShape != null ?
                 baseTableShape.createNonNull(symbol) :
                 symbol;
@@ -400,7 +401,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @Override
-    public BaseTableSymbol asBaseTableSymbol(byte[] kotlinSelectionTypes, boolean cte) {
+    public BaseTableSymbol asBaseTableSymbol(BaseTableSelectionLayout selectionLayout, boolean cte) {
         if (!cte && recursive) {
             throw new IllegalArgumentException(
                     "Recursive base query only be treated as cteBaseTable, not general baseTable"
@@ -413,11 +414,11 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         baseTableSymbol = symbol =
                 mergedBy != null ?
-                        mergedBy.asBaseTableSymbol(kotlinSelectionTypes, cte) :
+                        mergedBy.asBaseTableSymbol(selectionLayout, cte) :
                         BaseTableSymbols.of(
                                 this,
                                 expandedQueries[0].getSelections(),
-                                kotlinSelectionTypes,
+                                selectionLayout,
                                 recursive ?
                                         BaseTableKind.RECURSIVE_CTE :
                                         cte ? BaseTableKind.CTE :

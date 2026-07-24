@@ -347,30 +347,6 @@ public class TypedTupleGenerator {
                 tableClassName,
                 tableClassName
         );
-        TypeSpec shapeType = TypeSpec
-                .anonymousClassBuilder("")
-                .addSuperinterface(shapeTypeName)
-                .addMethod(
-                        MethodSpec
-                                .methodBuilder("createNonNull")
-                                .addModifiers(Modifier.PUBLIC)
-                                .addAnnotation(Override.class)
-                                .addParameter(Constants.BASE_TABLE_CLASS_NAME, "baseTable")
-                                .returns(tableClassName)
-                                .addStatement("return new $T(baseTable)", tableClassName)
-                                .build()
-                )
-                .addMethod(
-                        MethodSpec
-                                .methodBuilder("createNullable")
-                                .addModifiers(Modifier.PUBLIC)
-                                .addAnnotation(Override.class)
-                                .addParameter(Constants.BASE_TABLE_CLASS_NAME, "baseTable")
-                                .returns(tableClassName)
-                                .addStatement("return new $T(baseTable)", tableClassName)
-                                .build()
-                )
-                .build();
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(tableClassName.simpleName())
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -384,7 +360,11 @@ public class TypedTupleGenerator {
                         FieldSpec
                                 .builder(shapeTypeName, "SHAPE")
                                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
-                                .initializer("$L", shapeType)
+                                .initializer(
+                                        "$T.of($T::new)",
+                                        Constants.BASE_TABLE_SHAPE_CLASS_NAME,
+                                        tableClassName
+                                )
                                 .build()
                 )
                 .addMethod(

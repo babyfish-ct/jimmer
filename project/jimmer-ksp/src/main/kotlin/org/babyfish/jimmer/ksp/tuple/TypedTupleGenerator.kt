@@ -102,7 +102,7 @@ class TypedTupleGenerator(
         addProp()
         addGetSelections()
         addGetBaseTableShape()
-        addGetSelectionTypes()
+        addGetSelectionLayout()
         addCreateTuple()
         for (i in 1 until props.size) {
             addBuilderClass(i)
@@ -179,33 +179,16 @@ class TypedTupleGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addGetSelectionTypes() {
+    private fun TypeSpec.Builder.addGetSelectionLayout() {
         if (!isBaseTableProjection) {
             return
         }
         addFunction(
             FunSpec
-                .builder("getSelectionTypes")
+                .builder("getSelectionLayout")
                 .addModifiers(KModifier.OVERRIDE)
-                .returns(BYTE_ARRAY)
-                .addCode(
-                    CodeBlock.builder().apply {
-                        add("return byteArrayOf(\n")
-                        indent()
-                        props.forEachIndexed { index, prop ->
-                            if (index != 0) {
-                                add(",\n")
-                            }
-                            add(
-                                "%T.%L",
-                                ABSTRACT_K_BASE_TABLE,
-                                selectionTypeConstant(prop)
-                            )
-                        }
-                        unindent()
-                        add("\n)\n")
-                    }.build()
-                )
+                .returns(BASE_TABLE_SELECTION_LAYOUT)
+                .addStatement("return %T.SELECTION_LAYOUT", tableClassName)
                 .build()
         )
     }
@@ -236,7 +219,14 @@ class TypedTupleGenerator(
                             PropertySpec
                                 .builder("SHAPE", shapeTypeName)
                                 .addModifiers(KModifier.INTERNAL)
-                                .initializer("%L", baseTableShapeType(shapeTypeName))
+                                .initializer("%L", baseTableShape())
+                                .build()
+                        )
+                        .addProperty(
+                            PropertySpec
+                                .builder("SELECTION_LAYOUT", BASE_TABLE_SELECTION_LAYOUT)
+                                .addModifiers(KModifier.INTERNAL)
+                                .initializer("%L", baseTableSelectionLayout())
                                 .build()
                         )
                         .build()
@@ -328,29 +318,33 @@ class TypedTupleGenerator(
             .addParameter("baseTable", BASE_TABLE)
             .build()
 
-    private fun baseTableShapeType(shapeTypeName: TypeName): TypeSpec =
-        TypeSpec
-            .anonymousClassBuilder()
-            .addSuperinterface(shapeTypeName)
-            .addFunction(
-                FunSpec
-                    .builder("createNonNull")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter("baseTable", BASE_TABLE)
-                    .returns(tableClassName)
-                    .addStatement("return %T(baseTable)", tableClassName)
-                    .build()
-            )
-            .addFunction(
-                FunSpec
-                    .builder("createNullable")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter("baseTable", BASE_TABLE)
-                    .returns(nullableTableClassName)
-                    .addStatement("return %T(baseTable)", nullableTableClassName)
-                    .build()
-            )
+    private fun baseTableShape(): CodeBlock =
+        CodeBlock.builder()
+            .add("%T.of(\n", BASE_TABLE_SHAPE)
+            .indent()
+            .add("{ %T(it) },\n", tableClassName)
+            .add("{ %T(it) }\n", nullableTableClassName)
+            .unindent()
+            .add(")")
             .build()
+
+    private fun baseTableSelectionLayout(): CodeBlock =
+        CodeBlock.builder().apply {
+            add("%T.of(\n", BASE_TABLE_SELECTION_LAYOUT)
+            indent()
+            props.forEachIndexed { index, prop ->
+                if (index != 0) {
+                    add(",\n")
+                }
+                add(
+                    "%T.%L",
+                    BASE_TABLE_SELECTION_KIND,
+                    selectionKindConstant(prop)
+                )
+            }
+            unindent()
+            add("\n)")
+        }.build()
 
     private fun baseTableProperty(
         prop: KSPropertyDeclaration,
@@ -383,20 +377,20 @@ class TypedTupleGenerator(
         }
     }
 
-    private fun selectionTypeConstant(prop: KSPropertyDeclaration): String {
+    private fun selectionKindConstant(prop: KSPropertyDeclaration): String {
         val type = prop.type.resolve()
         return when {
             isEntity(type) && type.isMarkedNullable ->
-                "SELECTION_TYPE_NULLABLE_TABLE"
+                "NULLABLE_TABLE"
 
             isEntity(type) ->
-                "SELECTION_TYPE_NON_NULL_TABLE"
+                "NON_NULL_TABLE"
 
             type.isMarkedNullable ->
-                "SELECTION_TYPE_NULLABLE_EXPRESSION"
+                "NULLABLE_EXPRESSION"
 
             else ->
-                "SELECTION_TYPE_NON_NULL_EXPRESSION"
+                "NON_NULL_EXPRESSION"
         }
     }
 
@@ -536,6 +530,16 @@ class TypedTupleGenerator(
         private val BASE_TABLE_SHAPE = ClassName(
             "org.babyfish.jimmer.sql.ast.table.spi",
             "BaseTableShape"
+        )
+
+        private val BASE_TABLE_SELECTION_KIND = ClassName(
+            "org.babyfish.jimmer.sql.ast.table.spi",
+            "BaseTableSelectionKind"
+        )
+
+        private val BASE_TABLE_SELECTION_LAYOUT = ClassName(
+            "org.babyfish.jimmer.sql.ast.table.spi",
+            "BaseTableSelectionLayout"
         )
 
         private val K_BASE_TABLE_PROJECTION = ClassName(
