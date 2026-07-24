@@ -62,8 +62,10 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.*;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
@@ -964,10 +966,12 @@ public class SpringJavaTest extends AbstractTest {
     @Test
     public void testOpenApi() throws Exception {
         MvcResult result = mvc.perform(get("/my-openapi.yml"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        result = mvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/yml"))
                 .andReturn();
-        Thread.sleep(100);
         Assertions.assertTrue(
                 result.getResponse().getContentAsString().startsWith(
                         "openapi: 3.0.1\n" +
@@ -982,10 +986,12 @@ public class SpringJavaTest extends AbstractTest {
     @Test
     public void testOpenApiUi() throws Exception {
         MvcResult result = mvc.perform(get("/my-openapi.html"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        result = mvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/html"))
                 .andReturn();
-        Thread.sleep(200);
         Assertions.assertEquals(
                 "<!-- HTML for static distribution bundle build -->\n" +
                         "<!DOCTYPE html>\n" +
