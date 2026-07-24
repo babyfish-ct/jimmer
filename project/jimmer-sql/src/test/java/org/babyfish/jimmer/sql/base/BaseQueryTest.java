@@ -1,5 +1,10 @@
 package org.babyfish.jimmer.sql.base;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -18,10 +23,6 @@ import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-
 public class BaseQueryTest extends AbstractQueryTest {
 
     private static final BaseTableFactory<StoreStatisticsTable, StoreStatisticsTable>
@@ -36,7 +37,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                 new BaseTableProjection<StoreStatisticsTable>() {
                     @Override
                     public List<Selection<?>> getSelections() {
-                        return List.of(
+                        return Arrays.asList(
                                 store.name(),
                                 getSqlClient()
                                         .createSubQuery(book)
