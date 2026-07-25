@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -15,6 +16,8 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
@@ -30,19 +33,41 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
         extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
+    private final BaseTableFactory<?, ?> baseTableFactory;
+
+    private BaseTableSymbol baseTableSymbol;
+
     private T baseTable;
 
     private MergedBaseQueryImpl<T> mergedBy;
 
     ConfigurableBaseQueryImpl(List<Selection<?>> selections, TupleCreator<?> tupleCreator, MutableBaseQueryImpl mutableQuery) {
+        this(selections, tupleCreator, mutableQuery, null);
+    }
+
+    ConfigurableBaseQueryImpl(
+            List<Selection<?>> selections,
+            TupleCreator<?> tupleCreator,
+            MutableBaseQueryImpl mutableQuery,
+            BaseTableFactory<?, ?> baseTableFactory
+    ) {
         super(
                 new TypedQueryData(selections, tupleCreator),
                 mutableQuery
         );
+        this.baseTableFactory = baseTableFactory;
     }
 
-    private ConfigurableBaseQueryImpl(T baseTable, TypedQueryData data, AbstractMutableQueryImpl baseQuery) {
+    private ConfigurableBaseQueryImpl(
+            BaseTableFactory<?, ?> baseTableFactory,
+            BaseTableSymbol baseTableSymbol,
+            T baseTable,
+            TypedQueryData data,
+            AbstractMutableQueryImpl baseQuery
+    ) {
         super(data, baseQuery);
+        this.baseTableFactory = baseTableFactory;
+        this.baseTableSymbol = baseTableSymbol;
         this.baseTable = baseTable;
     }
 
@@ -84,6 +109,8 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             throw new IllegalArgumentException("'offset' can not be less than 0");
         }
         return new ConfigurableBaseQueryImpl<>(
+                baseTableFactory,
+                baseTableSymbol,
                 baseTable,
                 data.limit(limit, offset),
                 getMutableQuery()
@@ -97,6 +124,8 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             return this;
         }
         return new ConfigurableBaseQueryImpl<>(
+                baseTableFactory,
+                baseTableSymbol,
                 baseTable,
                 data.distinct(),
                 getMutableQuery()
@@ -107,6 +136,8 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     public ConfigurableBaseQuery<T> hint(@Nullable String hint) {
         TypedQueryData data = getData();
         return new ConfigurableBaseQueryImpl<>(
+                baseTableFactory,
+                baseTableSymbol,
                 baseTable,
                 data.hint(hint),
                 getMutableQuery()
@@ -145,16 +176,42 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
 
     @SuppressWarnings("unchecked")
     @Override
-    public T asBaseTable(byte[] kotlinSelectionTypes, boolean cte) {
+    public T asBaseTable(BaseTableSelectionLayout selectionLayout, boolean cte) {
         T baseTable = this.baseTable;
         if (baseTable != null) {
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
-        this.baseTable = baseTable =
-                mergedBy != null ?
-                        mergedBy.asBaseTable(kotlinSelectionTypes, cte) :
-                        (T) BaseTableSymbols.of(this, getData().selections, kotlinSelectionTypes, cte ? BaseTableKind.CTE : BaseTableKind.DERIVED);
+        BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
+        BaseTable wrapped = baseTableFactory != null ?
+                baseTableFactory.createNonNull(symbol) :
+                symbol;
+        this.baseTable = baseTable = (T) wrapped;
         return baseTable;
+    }
+
+    @Override
+    public BaseTableFactory<?, ?> getBaseTableFactory() {
+        return baseTableFactory;
+    }
+
+    @Override
+    public BaseTableSymbol asBaseTableSymbol(BaseTableSelectionLayout selectionLayout, boolean cte) {
+        BaseTableSymbol symbol = baseTableSymbol;
+        if (symbol != null) {
+            AbstractBaseTableSymbol.validateCte(symbol, cte);
+            return symbol;
+        }
+        baseTableSymbol = symbol =
+                mergedBy != null ?
+                        mergedBy.asBaseTableSymbol(selectionLayout, cte) :
+                        BaseTableSymbols.of(
+                                this,
+                                getData().selections,
+                                selectionLayout,
+                                cte ? BaseTableKind.CTE : BaseTableKind.DERIVED,
+                                baseTableFactory
+                        );
+        return symbol;
     }
 
     @Override
@@ -222,7 +279,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
 
     @Override
     public void setMergedBy(MergedBaseQueryImpl<T> mergedBy) {
-        if (this.baseTable != null) {
+        if (this.baseTableSymbol != null) {
             throw new IllegalStateException(
                     "The base query cannot be merged after its `asBaseTable()` is called"
             );

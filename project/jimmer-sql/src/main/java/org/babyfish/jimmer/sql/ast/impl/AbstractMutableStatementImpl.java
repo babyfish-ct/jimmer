@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
@@ -132,7 +133,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             this.type = tableProxy.getImmutableType();
         } else if (table instanceof BaseTable) {
             this.table = table;
-            this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null, null);
+            BaseTable rawBaseTable = BaseTableProxies.unwrap((BaseTable) table);
+            this.tableLikeImplementor =
+                    BaseTableImpl.of((BaseTableSymbol) rawBaseTable, null, null);
             this.type = null;
         } else {
             throw new IllegalArgumentException(
@@ -158,7 +161,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         TableLikeImplementor<?> tableLikeImplementor = this.tableLikeImplementor;
         if (tableLikeImplementor == null) {
             if (table instanceof BaseTable) {
-                this.tableLikeImplementor = BaseTableImpl.of((BaseTableSymbol) table, null, null);
+                BaseTable rawBaseTable = BaseTableProxies.unwrap((BaseTable) table);
+                this.tableLikeImplementor =
+                        BaseTableImpl.of((BaseTableSymbol) rawBaseTable, null, null);
             } else {
                 this.tableLikeImplementor = tableLikeImplementor =
                         TableImplementor.create(this, type);

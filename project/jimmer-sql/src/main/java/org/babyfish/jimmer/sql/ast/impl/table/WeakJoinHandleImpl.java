@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -89,7 +90,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
         }
         Type sourceType = Generics.getTypeArguments(sourceTableType, TableLike.class)[0];
         Type targetType = Generics.getTypeArguments(targetTableType, TableLike.class)[0];
-        if (!(sourceType instanceof Class<?>) || !((Class<?>)sourceType).isAnnotationPresent(Entity.class)) {
+        if (!(sourceType instanceof Class<?>) || !((Class<?>) sourceType).isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException(
                     "Illegal class \"" +
                             weakJoinType.getName() +
@@ -98,7 +99,7 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                             "\" is not entity"
             );
         }
-        if (!(targetType instanceof Class<?>) || !((Class<?>)targetType).isAnnotationPresent(Entity.class)) {
+        if (!(targetType instanceof Class<?>) || !((Class<?>) targetType).isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException(
                     "Illegal class \"" +
                             weakJoinType.getName() +
@@ -107,8 +108,8 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                             "\" is not entity"
             );
         }
-        boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>)sourceType) != null;
-        boolean hasTargetWrapper = TableProxies.tableWrapperClass((Class<?>)targetType) != null;
+        boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>) sourceType) != null;
+        boolean hasTargetWrapper = TableProxies.tableWrapperClass((Class<?>) targetType) != null;
         return new EntityTableHandleImpl(
                 ImmutableType.get((Class<?>) sourceType),
                 ImmutableType.get((Class<?>) targetType),
@@ -271,20 +272,20 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                         (KWeakJoinImplementor<Object, Object>) weakJoin;
                 return implementor.on(
                         source instanceof TableProxy<?> ?
-                                (Table<Object>)((TableProxy<?>)source).__unwrap() :
-                                (Table<Object>)source,
+                                (Table<Object>) ((TableProxy<?>) source).__unwrap() :
+                                (Table<Object>) source,
                         target instanceof TableProxy<?> ?
-                                (Table<Object>)((TableProxy<?>)target).__unwrap() :
-                                (Table<Object>)target,
+                                (Table<Object>) ((TableProxy<?>) target).__unwrap() :
+                                (Table<Object>) target,
                         statement
                 );
             }
             return weakJoin.on(
                     hasSourceWrapper ?
-                            ((TableProxy<?>)TableProxies.wrap((Table<?>) source)).__disableJoin(JOIN_ERROR_REASON) :
+                            ((TableProxy<?>) TableProxies.wrap((Table<?>) source)).__disableJoin(JOIN_ERROR_REASON) :
                             new UntypedJoinDisabledTableProxy<>((TableImplementor<?>) source, JOIN_ERROR_REASON),
                     hasTargetWrapper ?
-                            ((TableProxy<?>)TableProxies.wrap((Table<?>) target)).__disableJoin(JOIN_ERROR_REASON) :
+                            ((TableProxy<?>) TableProxies.wrap((Table<?>) target)).__disableJoin(JOIN_ERROR_REASON) :
                             new UntypedJoinDisabledTableProxy<>((TableImplementor<?>) target, JOIN_ERROR_REASON)
             );
         }
@@ -301,22 +302,22 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
             Type targetTableType = typeArguments[1];
             Type sourceType = Generics.getTypeArguments(sourceTableType, Table.class)[0];
             Type targetType = Generics.getTypeArguments(targetTableType, Table.class)[0];
-            if (!(sourceType instanceof Class<?>) || !((Class<?>)sourceType).isAnnotationPresent(Entity.class)) {
+            if (!(sourceType instanceof Class<?>) || !((Class<?>) sourceType).isAnnotationPresent(Entity.class)) {
                 throw new IllegalArgumentException(
                         "Illegal class \"" +
                                 weakJoinType.getName() +
                                 "\", the source type is not entity"
                 );
             }
-            if (!(targetType instanceof Class<?>) || !((Class<?>)targetType).isAnnotationPresent(Entity.class)) {
+            if (!(targetType instanceof Class<?>) || !((Class<?>) targetType).isAnnotationPresent(Entity.class)) {
                 throw new IllegalArgumentException(
                         "Illegal class \"" +
                                 weakJoinType.getName() +
                                 "\", the target type is not entity"
                 );
             }
-            boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>)sourceType) != null;
-            boolean hasTargetWrapper = TableProxies.tableWrapperClass((Class<?>)targetType) != null;
+            boolean hasSourceWrapper = TableProxies.tableWrapperClass((Class<?>) sourceType) != null;
+            boolean hasTargetWrapper = TableProxies.tableWrapperClass((Class<?>) targetType) != null;
             Constructor<WeakJoin<TableLike<?>, TableLike<?>>> constructor;
             try {
                 constructor = (Constructor<WeakJoin<TableLike<?>, TableLike<?>>>) weakJoinType.getDeclaredConstructor();
@@ -381,9 +382,16 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 );
             }
             return weakJoin.on(
-                    source,
-                    target
+                    wrapBaseTable(source),
+                    wrapBaseTable(target)
             );
+        }
+
+        private static TableLike<?> wrapBaseTable(TableLike<?> table) {
+            if (table instanceof BaseTable) {
+                return BaseTableProxies.wrap((BaseTable) table);
+            }
+            return table;
         }
 
         @Override

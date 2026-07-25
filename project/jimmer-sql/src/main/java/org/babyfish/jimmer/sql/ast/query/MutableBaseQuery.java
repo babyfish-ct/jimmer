@@ -143,6 +143,8 @@ public interface MutableBaseQuery extends MutableQuery {
     @Override
     MutableBaseQuery having(Predicate... predicates);
 
+    <B extends BaseTable> ConfigurableBaseQuery<B> select(BaseTableProjection<B> projection);
+
     <T extends Table<?>> ConfigurableBaseQuery.Query1<T> addSelect(T table);
 
     @SuppressWarnings("unchecked")

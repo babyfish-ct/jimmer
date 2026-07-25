@@ -8,10 +8,13 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutationQuerySupport;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
+import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -95,7 +98,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
      *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
      *     </li>
      * </ul>
-     *
+     * <p>
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
      * <pre>{@code
@@ -132,7 +135,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     }
 
     @Override
-    public MutableBaseQueryImpl orderBy(Expression<?> ... expressions) {
+    public MutableBaseQueryImpl orderBy(Expression<?>... expressions) {
         return (MutableBaseQueryImpl) super.orderBy(expressions);
     }
 
@@ -163,7 +166,7 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     @Override
     public MutableBaseQueryImpl orderByIf(boolean condition, List<Order> orders) {
-        return (MutableBaseQueryImpl)super.orderByIf(condition, orders);
+        return (MutableBaseQueryImpl) super.orderByIf(condition, orders);
     }
 
     @Override
@@ -188,6 +191,29 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     public void resolveVirtualPredicate(AstContext ctx) {
         bindParent(ctx.getStatement());
         super.resolveVirtualPredicate(ctx);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <B extends BaseTable> ConfigurableBaseQuery<B> select(
+            BaseTableProjection<B> projection
+    ) {
+        return (ConfigurableBaseQuery<B>) select(
+                projection.getSelections(),
+                projection.getBaseTableFactory()
+        );
+    }
+
+    public ConfigurableBaseQuery<BaseTable> select(
+            List<Selection<?>> selections,
+            BaseTableFactory<?, ?> baseTableFactory
+    ) {
+        return new ConfigurableBaseQueryImpl<>(
+                selections,
+                null,
+                this,
+                baseTableFactory
+        );
     }
 
     @Override

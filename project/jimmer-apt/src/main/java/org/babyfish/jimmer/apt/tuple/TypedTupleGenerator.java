@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.TypedTuple;
 import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.*;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +34,9 @@ public class TypedTupleGenerator {
     private final List<VariableElement> fieldElements;
 
     private final ClassName className;
+
+    @Nullable
+    private final ClassName tableClassName;
 
     private final int[] ctorPropIndices;
 
@@ -62,7 +67,22 @@ public class TypedTupleGenerator {
                 ((PackageElement) typeElement.getEnclosingElement()).getQualifiedName().toString(),
                 typeElement.getSimpleName().toString() + "Mapper"
         );
+        this.tableClassName = isBaseTableProjection() ?
+                ClassName.get(
+                        this.className.packageName(),
+                        typeElement.getSimpleName().toString() + "Table"
+                ) :
+                null;
         this.ctorPropIndices = determineCtorPropIndices();
+    }
+
+    private boolean isBaseTableProjection() {
+        for (VariableElement fieldElement : fieldElements) {
+            if (context.isDto(fieldElement.asType())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private int[] determineCtorPropIndices() {
@@ -206,9 +226,18 @@ public class TypedTupleGenerator {
                         )
                 )
                 .addModifiers(Modifier.PUBLIC);
+        if (tableClassName != null) {
+            typeBuilder.addSuperinterface(
+                    ParameterizedTypeName.get(
+                            Constants.BASE_TABLE_PROJECTION_CLASS_NAME,
+                            tableClassName
+                    )
+            );
+        }
         generateFields();
         generateConstructor();
         generateGetSelections();
+        generateGetBaseTableFactory();
         generateCreateTuple();
         generateFirstMethod();
         int size = fieldElements.size();
@@ -238,6 +267,7 @@ public class TypedTupleGenerator {
                     ex
             );
         }
+        generateTable();
     }
 
     private void generateFields() {
@@ -285,6 +315,140 @@ public class TypedTupleGenerator {
                         Constants.ARRAYS_CLASS_NAME
                 );
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void generateGetBaseTableFactory() {
+        if (tableClassName == null) {
+            return;
+        }
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("getBaseTableFactory")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .returns(
+                                ParameterizedTypeName.get(
+                                        Constants.BASE_TABLE_FACTORY_CLASS_NAME,
+                                        tableClassName,
+                                        tableClassName
+                                )
+                        )
+                        .addStatement("return $T.FACTORY", tableClassName)
+                        .build()
+        );
+    }
+
+    private void generateTable() {
+        if (tableClassName == null) {
+            return;
+        }
+        TypeName factoryTypeName = ParameterizedTypeName.get(
+                Constants.BASE_TABLE_FACTORY_CLASS_NAME,
+                tableClassName,
+                tableClassName
+        );
+        TypeSpec.Builder builder = TypeSpec
+                .classBuilder(tableClassName.simpleName())
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .superclass(
+                        ParameterizedTypeName.get(
+                                Constants.ABSTRACT_TYPED_BASE_TABLE_CLASS_NAME,
+                                tableClassName
+                        )
+                )
+                .addField(
+                        FieldSpec
+                                .builder(factoryTypeName, "FACTORY")
+                                .addModifiers(Modifier.STATIC, Modifier.FINAL)
+                                .initializer(
+                                        "$T.of($T::new)",
+                                        Constants.BASE_TABLE_FACTORY_CLASS_NAME,
+                                        tableClassName
+                                )
+                                .build()
+                )
+                .addMethod(
+                        MethodSpec
+                                .constructorBuilder()
+                                .addParameter(Constants.BASE_TABLE_CLASS_NAME, "baseTable")
+                                .addStatement("super(baseTable)")
+                                .build()
+                );
+        for (int index = 0; index < fieldElements.size(); index++) {
+            VariableElement fieldElement = fieldElements.get(index);
+            builder.addMethod(
+                    MethodSpec
+                            .methodBuilder(
+                                    StringUtil.identifier(
+                                            "get",
+                                            fieldElement.getSimpleName().toString()
+                                    )
+                            )
+                            .addModifiers(Modifier.PUBLIC)
+                            .returns(baseTableSelectionTypeName(fieldElement))
+                            .addStatement("return selection($L)", index)
+                            .build()
+            );
+        }
+        try {
+            JavaFile
+                    .builder(tableClassName.packageName(), builder.build())
+                    .indent("    ")
+                    .build()
+                    .writeTo(context.getFiler());
+        } catch (IOException ex) {
+            throw new GeneratorException(
+                    String.format(
+                            "Cannot generate base table for '%s'",
+                            typeElement.getQualifiedName()
+                    ),
+                    ex
+            );
+        }
+    }
+
+    private TypeName baseTableSelectionTypeName(VariableElement fieldElement) {
+        TypeMirror type = fieldElement.asType();
+        if (type.getKind().isPrimitive()) {
+            type = context.getTypes()
+                    .boxedClass((PrimitiveType) type)
+                    .asType();
+        }
+        TypeName typeName = TypeName.get(type);
+        if (context.isEntity(type)) {
+            return context.getImmutableType(type).getTableClassName();
+        }
+        if (type.toString().equals(String.class.getName())) {
+            return Constants.STRING_EXPRESSION_CLASS_NAME;
+        }
+        if (context.isNumber(type) && context.isComparable(type)) {
+            return ParameterizedTypeName.get(
+                    Constants.NUMERIC_EXPRESSION_CLASS_NAME,
+                    typeName
+            );
+        }
+        if (context.isDate(type) && context.isComparable(type)) {
+            return ParameterizedTypeName.get(
+                    Constants.DATE_EXPRESSION_CLASS_NAME,
+                    typeName
+            );
+        }
+        if (context.isTemporal(type) && context.isComparable(type)) {
+            return ParameterizedTypeName.get(
+                    Constants.TEMPORAL_EXPRESSION_CLASS_NAME,
+                    typeName
+            );
+        }
+        if (context.isComparable(type)) {
+            return ParameterizedTypeName.get(
+                    Constants.COMPARABLE_EXPRESSION_CLASS_NAME,
+                    typeName
+            );
+        }
+        return ParameterizedTypeName.get(
+                Constants.EXPRESSION_CLASS_NAME,
+                typeName
+        );
     }
 
     private void generateCreateTuple() {

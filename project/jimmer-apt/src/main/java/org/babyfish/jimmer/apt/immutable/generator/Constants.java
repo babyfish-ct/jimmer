@@ -6,7 +6,7 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.client.Description;
 import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.impl.util.DtoPropAccessor;
-import org.babyfish.jimmer.ClientException;
+import org.babyfish.jimmer.impl.validation.Validator;
 import org.babyfish.jimmer.internal.FixedInputField;
 import org.babyfish.jimmer.internal.GeneratedBy;
 import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch;
@@ -15,7 +15,6 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.Visibility;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.impl.validation.Validator;
 import org.babyfish.jimmer.sql.collection.IdViewList;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
 import org.babyfish.jimmer.sql.collection.MutableIdViewList;
@@ -489,10 +488,22 @@ public class Constants {
                     "BaseTableImplementor"
             );
 
-    public static final ClassName ABSTRACT_BASE_TABLE_CLASS_NAME =
+    public static final ClassName ABSTRACT_TYPED_BASE_TABLE_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.table",
-                    "AbstractBaseTable"
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "AbstractTypedBaseTable"
+            );
+
+    public static final ClassName BASE_TABLE_PROJECTION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query",
+                    "BaseTableProjection"
+            );
+
+    public static final ClassName BASE_TABLE_FACTORY_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "BaseTableFactory"
             );
 
     public static final ClassName TUPLE_MAPPER_CLASS_NAME =
