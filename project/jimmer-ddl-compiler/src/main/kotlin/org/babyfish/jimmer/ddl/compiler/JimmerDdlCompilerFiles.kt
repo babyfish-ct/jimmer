@@ -4,21 +4,27 @@ import java.io.File
 
 object JimmerDdlCompilerFiles {
     private const val SNAPSHOT_DIR_NAME = ".jimmer-ddl"
-    private const val SNAPSHOT_FILE_NAME = "entity-table-snapshot.properties"
+    private const val SNAPSHOT_DIRECTORY_NAME = "entity-table-snapshot"
+    private const val SOURCE_FINGERPRINT_FILE_NAME = "source-fingerprint.properties"
 
     fun resolveOutputFile(settings: JimmerDdlCompilerSettings): File {
         val outputDir = File(settings.outputDir)
         return File(outputDir, settings.outputFileName)
     }
 
-    fun resolveSnapshotFile(settings: JimmerDdlCompilerSettings): File? {
+    fun resolveSnapshotDirectory(settings: JimmerDdlCompilerSettings): File? {
         val projectDir = settings.outputDir.toProjectDir() ?: return null
-        return projectDir.resolve(SNAPSHOT_DIR_NAME).resolve(SNAPSHOT_FILE_NAME)
+        return projectDir.resolve(SNAPSHOT_DIR_NAME).resolve(SNAPSHOT_DIRECTORY_NAME)
     }
 
-    fun resolveGeneratedSnapshotFile(settings: JimmerDdlCompilerSettings): File {
+    fun resolveGeneratedSnapshotDirectory(settings: JimmerDdlCompilerSettings): File {
         val resourcesDir = settings.outputDir.toGeneratedResourcesDir()
-        return resourcesDir.resolve(SNAPSHOT_DIR_NAME).resolve(SNAPSHOT_FILE_NAME)
+        return resourcesDir.resolve(SNAPSHOT_DIR_NAME).resolve(SNAPSHOT_DIRECTORY_NAME)
+    }
+
+    fun resolveBuildSourceFingerprintFile(settings: JimmerDdlCompilerSettings): File? {
+        val projectDir = settings.outputDir.toProjectDir() ?: return null
+        return projectDir.resolve("build/jimmer-ddl").resolve(SOURCE_FINGERPRINT_FILE_NAME)
     }
 
     fun writeOutputFile(
