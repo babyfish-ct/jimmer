@@ -9,30 +9,38 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 class SaveShapeMatcher {
 
     private final SaveOptions options;
 
-    private final boolean checkUpsertMask;
+    private final DraftState draftState;
 
-    private final Map<Fetcher<?>, Boolean> upsertMaskCoverageMap = new HashMap<>();
+    private final Map<Fetcher<?>, Boolean> upsertMaskCoverageMap;
 
-    private SaveShapeMatcher(SaveOptions options, boolean checkUpsertMask) {
+    private SaveShapeMatcher(SaveOptions options, DraftState draftState) {
         this.options = options;
-        this.checkUpsertMask = checkUpsertMask;
+        this.draftState = draftState;
+        this.upsertMaskCoverageMap = draftState == DraftState.SAVE_INPUT ? new HashMap<>() : emptyMap();
     }
 
     static SaveShapeMatcher forSaveInput(SaveOptions options) {
-        return new SaveShapeMatcher(options, true);
+        return new SaveShapeMatcher(options, DraftState.SAVE_INPUT);
     }
 
-    static SaveShapeMatcher forMaterializedResult(SaveOptions options) {
-        return new SaveShapeMatcher(options, false);
+    static SaveShapeMatcher forReturningApplied(SaveOptions options) {
+        return new SaveShapeMatcher(options, DraftState.RETURNING_APPLIED);
+    }
+
+    static SaveShapeMatcher forFetchedResult(SaveOptions options) {
+        return new SaveShapeMatcher(options, DraftState.FETCHED);
     }
 
     boolean matches(DraftSpi draft, @Nullable Fetcher<?> fetcher, boolean trim) {
@@ -57,7 +65,8 @@ class SaveShapeMatcher {
                 trim(draft, fetcher);
             }
         } else {
-            if (!checkUpsertMask || options.getUpsertMask(draft.__type()) == null) {
+            if (draftState != DraftState.SAVE_INPUT ||
+                    options.getUpsertMask(draft.__type()) == null) {
                 return false;
             }
             for (ImmutableProp prop : draft.__type().getProps().values()) {
@@ -180,7 +189,7 @@ class SaveShapeMatcher {
     }
 
     private boolean isFetcherCoveredByUpsertMask(Fetcher<?> fetcher) {
-        if (!checkUpsertMask) {
+        if (draftState != DraftState.SAVE_INPUT) {
             return true;
         }
         return upsertMaskCoverageMap.computeIfAbsent(fetcher, this::calculateUpsertMaskCoverage);
@@ -223,7 +232,8 @@ class SaveShapeMatcher {
     }
 
     private boolean isAssociationComplete(ImmutableProp prop) {
-        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (draftState == DraftState.FETCHED ||
+                !prop.isReferenceList(TargetLevel.ENTITY)) {
             return true;
         }
         // Additive modes describe only the list items supplied by the user,
@@ -231,5 +241,11 @@ class SaveShapeMatcher {
         AssociatedSaveMode mode = options.getAssociatedMode(prop);
         return mode == AssociatedSaveMode.REPLACE ||
                 mode == AssociatedSaveMode.VIOLENTLY_REPLACE;
+    }
+
+    private enum DraftState {
+        SAVE_INPUT,
+        RETURNING_APPLIED,
+        FETCHED
     }
 }

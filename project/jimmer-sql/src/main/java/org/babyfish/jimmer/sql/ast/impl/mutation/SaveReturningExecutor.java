@@ -84,7 +84,7 @@ class SaveReturningExecutor {
     ) throws SQLException {
         int[] rowCounts = new int[entities.size()];
         Reader.Context readerContext = new Reader.Context(null, returning.ctx.options.getSqlClient());
-        SaveShapeMatcher shapeMatcher = SaveShapeMatcher.forMaterializedResult(returning.ctx.options);
+        SaveShapeMatcher shapeMatcher = SaveShapeMatcher.forReturningApplied(returning.ctx.options);
         switch (returning.matchMode) {
             case ORDER:
                 readByOrder(returning, rs, entities, rowCounts, readerContext, shapeMatcher);

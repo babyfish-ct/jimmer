@@ -79,7 +79,7 @@ class SaveResultMaterializer {
         }
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         SaveShapeMatcher inputShapeMatcher = SaveShapeMatcher.forSaveInput(ctx.options);
-        SaveShapeMatcher materializedShapeMatcher = SaveShapeMatcher.forMaterializedResult(ctx.options);
+        SaveShapeMatcher returningShapeMatcher = SaveShapeMatcher.forReturningApplied(ctx.options);
         for (DraftSpi draft : drafts) {
             if (ctx.isSaveReturningNotAccepted(draft)) {
                 // Returning row-count 0 rows must remain unmaterialized.
@@ -92,7 +92,7 @@ class SaveResultMaterializer {
                     fetcher,
                     true,
                     inputShapeMatcher,
-                    materializedShapeMatcher
+                    returningShapeMatcher
             )) {
                 Object id = draft.__get(idPropId);
                 if (canFetchDatabaseDefaults &&
@@ -134,7 +134,14 @@ class SaveResultMaterializer {
             }
         }
         if (residualGroup != null && !residualGroup.ids.isEmpty()) {
-            fetchResidual(residualGroup, arr, unmatchedIds, materializedShapeMatcher, fetcher, idPropId);
+            fetchResidual(
+                    residualGroup,
+                    arr,
+                    unmatchedIds,
+                    SaveShapeMatcher.forFetchedResult(ctx.options),
+                    fetcher,
+                    idPropId
+            );
         }
         if (!unmatchedIds.isEmpty()) {
             JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
@@ -251,10 +258,10 @@ class SaveResultMaterializer {
             Fetcher<?> fetcher,
             boolean trim,
             SaveShapeMatcher inputShapeMatcher,
-            SaveShapeMatcher materializedShapeMatcher
+            SaveShapeMatcher returningShapeMatcher
     ) {
         SaveShapeMatcher shapeMatcher = ctx.isSaveReturningApplied(draft) ?
-                materializedShapeMatcher :
+                returningShapeMatcher :
                 inputShapeMatcher;
         return shapeMatcher.matches(draft, fetcher, trim);
     }
@@ -291,7 +298,6 @@ class SaveResultMaterializer {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static Fetcher<Object> residualFetcher(Fetcher<?> fetcher) {
         return residualFetcher(fetcher, Collections.emptySet());
     }
@@ -365,7 +371,6 @@ class SaveResultMaterializer {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static DraftSpi replaceDraft(DraftSpi draft, Object fetched) {
         if (fetched instanceof DraftSpi) {
             return (DraftSpi) fetched;
