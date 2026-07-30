@@ -64,7 +64,7 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         );
                         it.variables(1L, "Sam", "M", 1L, 0L);
                     });
-                    expectDepartmentEmployeeFetch(ctx);
+                    expectEmployeeFetch(ctx);
                 }
         );
     }
@@ -162,15 +162,6 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         it.variables(1L, "Sam", "M", 1L, 0L);
                     });
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.FETCHER);
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
-                        );
-                        it.variables(1L, 0L);
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from EMPLOYEE tb_1_ " +
@@ -218,7 +209,7 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         );
                         it.variables("Sam", "M", 1L, 1L);
                     });
-                    expectDepartmentEmployeeFetch(ctx);
+                    expectEmployeeFetch(ctx);
                 }
         );
     }
@@ -252,7 +243,7 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         );
                         it.variables("Linda", "M", 0L, 1L);
                     });
-                    expectDepartmentEmployeeFetch(ctx);
+                    expectEmployeeFetch(ctx);
                 }
         );
     }
@@ -294,7 +285,7 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         );
                         it.variables("Linda", "M", 1L, 0L);
                     });
-                    expectDepartmentEmployeeFetch(ctx);
+                    expectEmployeeFetch(ctx);
                 }
         );
     }
@@ -413,15 +404,6 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         it.variables(Constants.learningGraphQLId3, Constants.danId);
                     });
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.FETCHER);
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.ID = ?"
-                        );
-                        it.variables(Constants.learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.GENDER, " +
                                         "tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
@@ -510,18 +492,6 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                         );
                     });
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.FETCHER);
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.ID = any(?)"
-                        );
-                        it.variables((Object) new Object[]{
-                                Constants.learningGraphQLId1,
-                                Constants.learningGraphQLId2
-                        });
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_2_.BOOK_ID, tb_1_.ID, " +
                                         "tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
@@ -531,8 +501,8 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                                         "where tb_2_.BOOK_ID = any(?)"
                         );
                         it.variables((Object) new Object[]{
-                                Constants.learningGraphQLId2,
-                                Constants.learningGraphQLId1
+                                Constants.learningGraphQLId1,
+                                Constants.learningGraphQLId2
                         });
                     });
                     ctx.value(books -> {
@@ -595,19 +565,6 @@ public class ModifiedAssociationFetcherTest extends AbstractMutationTest {
                     });
                 }
         );
-    }
-
-    private static void expectDepartmentEmployeeFetch(ExpectDSL ctx) {
-        ctx.statement(it -> {
-            it.queryReason(QueryReason.FETCHER);
-            it.sql(
-                    "select tb_1_.ID " +
-                            "from DEPARTMENT tb_1_ " +
-                            "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
-            );
-            it.variables(1L, 0L);
-        });
-        expectEmployeeFetch(ctx);
     }
 
     private static void expectEmployeeFetch(ExpectDSL ctx) {

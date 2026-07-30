@@ -70,13 +70,6 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID " +
-                                        "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER " +
                                         "from EMPLOYEE tb_1_ " +
                                         "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
@@ -739,13 +732,6 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID " +
-                                        "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from EMPLOYEE tb_1_ " +
                                         "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
@@ -853,14 +839,6 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "--->when not matched then insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)" +
                                         ")"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.queryReason(QueryReason.FETCHER);
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.ID = any(?) and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.statement(it -> {

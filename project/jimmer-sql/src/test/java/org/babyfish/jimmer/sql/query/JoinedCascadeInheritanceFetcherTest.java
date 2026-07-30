@@ -88,17 +88,11 @@ public class JoinedCascadeInheritanceFetcherTest extends AbstractQueryTest {
                             501L, "Cascade Alice+", 0, "Person"
                     );
                     ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.CLIENT_TYPE " +
-                                    "from JOINED_CASCADE_CLIENT tb_1_ " +
-                                    "where tb_1_.ID = any(?)"
-                    );
-                    ctx.statement(1).variables((Object) new Object[]{500L, 501L});
-                    ctx.statement(2).sql(
                             "select tb_1_.CLIENT_ID, tb_1_.ID, tb_1_.NAME " +
                                     "from JOINED_CASCADE_PROJECT tb_1_ " +
                                     "where tb_1_.CLIENT_ID = any(?)"
                     );
-                    ctx.statement(2).variables((Object) new Object[]{500L, 501L});
+                    ctx.statement(1).variables((Object) new Object[]{500L, 501L});
                     ctx.row(0, result -> {
                         assertEquals(2, result.getItems().size());
                         assertEquals(1, result.getItems().get(0).getModifiedEntity().projects().size());
