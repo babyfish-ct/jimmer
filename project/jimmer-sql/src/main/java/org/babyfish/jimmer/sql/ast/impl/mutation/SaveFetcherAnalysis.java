@@ -152,15 +152,6 @@ class SaveFetcherAnalysis {
         return true;
     }
 
-    boolean areReturningPropsLoaded(DraftSpi draft) {
-        for (ImmutableProp prop : returningProps) {
-            if (!draft.__isLoaded(prop.getId())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     static boolean isScalarColumnProp(ImmutableProp prop) {
         return prop.isColumnDefinition() &&
                 !prop.isAssociation(TargetLevel.ENTITY) &&

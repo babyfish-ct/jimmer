@@ -70,17 +70,14 @@ class SaveResultMaterializer {
                         fetcherAnalysis.getDatabaseDefaultProps() :
                         Collections.emptyList();
         boolean canFetchDatabaseDefaults = fetcherAnalysis != null && !databaseDefaultProps.isEmpty();
-        Fetcher<Object> residualFetcher = fetcher != null &&
+        if (fetcher != null &&
                 fetcherAnalysis != null &&
-                !fillIdIfNecessary ?
-                residualFetcher(fetcher) :
-                null;
-        if (residualFetcher != null) {
-            residualGroup = new ResidualFetchGroup(residualFetcher);
+                !fillIdIfNecessary &&
+                !isIdOnlyFetcher(fetcher)) {
+            residualGroup = new ResidualFetchGroup((Fetcher<Object>) fetcher);
         }
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         SaveShapeMatcher inputShapeMatcher = SaveShapeMatcher.forSaveInput(ctx.options);
-        SaveShapeMatcher returningShapeMatcher = SaveShapeMatcher.forReturningApplied(ctx.options);
         for (DraftSpi draft : drafts) {
             if (ctx.isSaveReturningNotAccepted(draft)) {
                 // Returning row-count 0 rows must remain unmaterialized.
@@ -92,17 +89,14 @@ class SaveResultMaterializer {
                     draft,
                     fetcher,
                     true,
-                    inputShapeMatcher,
-                    returningShapeMatcher
+                    inputShapeMatcher
             )) {
                 Object id = draft.__get(idPropId);
                 if (canFetchDatabaseDefaults &&
                         fetcherAnalysis.isUnmatchedOnlyByDatabaseDefaultProps(draft)) {
                     databaseDefaultArr[index] = draft;
                     databaseDefaultIds.add(id);
-                } else if (residualFetcher != null &&
-                        isRootVisibilityKnown(draft) &&
-                        fetcherAnalysis.areReturningPropsLoaded(draft)) {
+                } else if (residualGroup != null && isRootVisibilityKnown(draft)) {
                     residualGroup.add(index, draft, id);
                 } else {
                     arr[index] = draft;
@@ -139,6 +133,7 @@ class SaveResultMaterializer {
                     residualGroup,
                     arr,
                     unmatchedIds,
+                    inputShapeMatcher,
                     SaveShapeMatcher.forFetchedResult(ctx.options),
                     fetcher,
                     idPropId
@@ -256,7 +251,7 @@ class SaveResultMaterializer {
 
     private boolean isRootVisibilityKnown(DraftSpi draft) {
         ImmutableType type = draft.__type();
-        return ctx.isSaveReturningApplied(draft) ||
+        return ctx.hasSaveResultCoverage(draft) ||
                 type.getLogicalDeletedInfo() == null ||
                 ctx.options.getSqlClient().getFilters().getBehavior(type) == LogicalDeletedBehavior.IGNORED;
     }
@@ -265,25 +260,29 @@ class SaveResultMaterializer {
             DraftSpi draft,
             Fetcher<?> fetcher,
             boolean trim,
-            SaveShapeMatcher inputShapeMatcher,
-            SaveShapeMatcher returningShapeMatcher
+            SaveShapeMatcher inputShapeMatcher
     ) {
-        SaveShapeMatcher shapeMatcher = ctx.isSaveReturningApplied(draft) ?
-                returningShapeMatcher :
-                inputShapeMatcher;
-        return shapeMatcher.matches(draft, fetcher, trim);
+        Fetcher<?> uncoveredFetcher = uncoveredFetcher(draft, fetcher);
+        if (!inputShapeMatcher.matches(draft, uncoveredFetcher, false)) {
+            return false;
+        }
+        if (trim) {
+            inputShapeMatcher.trim(draft, fetcher);
+        }
+        return true;
     }
 
     private void fetchResidual(
             ResidualFetchGroup group,
             DraftSpi[] arr,
             List<Object> unmatchedIds,
+            SaveShapeMatcher inputShapeMatcher,
             SaveShapeMatcher shapeMatcher,
             Fetcher<?> fetcher,
             PropId idPropId
     ) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
-        Fetcher<Object> residualFetcher = residualFetcher(group.fetcher, group.types);
+        Fetcher<Object> residualFetcher = residualFetcher(group, inputShapeMatcher);
         if (residualFetcher == null) {
             return;
         }
@@ -325,23 +324,38 @@ class SaveResultMaterializer {
         return entities;
     }
 
-    private static Fetcher<Object> residualFetcher(Fetcher<?> fetcher) {
-        return residualFetcher(fetcher, Collections.emptySet());
+    @SuppressWarnings("unchecked")
+    private Fetcher<?> uncoveredFetcher(DraftSpi draft, Fetcher<?> fetcher) {
+        if (!ctx.hasSaveResultCoverage(draft)) {
+            return fetcher;
+        }
+        return FetcherFactory.filterByTypedProp(
+                (Fetcher<Object>) fetcher,
+                null,
+                (type, prop, path) ->
+                        !path.isEmpty() ||
+                                !SaveFetcherAnalysis.isScalarColumnProp(prop) ||
+                                !ctx.isSaveResultCovered(draft, prop)
+        );
     }
 
-    @SuppressWarnings("unchecked")
-    private static Fetcher<Object> residualFetcher(Fetcher<?> fetcher, Collection<ImmutableType> types) {
-        boolean hasTypeBranches = !((FetcherImplementor<?>) fetcher).__getTypeBranchFetcherMap().isEmpty();
-        ImmutableType rootType = fetcher.getImmutableType();
-        FetcherFactory.PropFilter propFilter = hasTypeBranches ?
-                SaveResultMaterializer::isPolymorphicResidualField :
-                (type, prop, path) -> !path.isEmpty() || !SaveFetcherAnalysis.isScalarColumnProp(prop);
+    private Fetcher<Object> residualFetcher(
+            ResidualFetchGroup group,
+            SaveShapeMatcher inputShapeMatcher
+    ) {
+        ImmutableType rootType = group.fetcher.getImmutableType();
         Fetcher<Object> residualFetcher = FetcherFactory.filterByTypedProp(
-                (Fetcher<Object>) fetcher,
-                hasTypeBranches && !types.isEmpty() ?
-                        (type, path) -> type == rootType || containsAssignableType(types, type) :
+                group.fetcher,
+                !group.types.isEmpty() ?
+                        (type, path) ->
+                                !path.isEmpty() ||
+                                        type == rootType ||
+                                        containsAssignableType(group.types, type) :
                         null,
-                propFilter
+                (type, prop, path) ->
+                        !path.isEmpty() ||
+                                !SaveFetcherAnalysis.isScalarColumnProp(prop) ||
+                                requiresScalarFetch(group, type, prop, inputShapeMatcher)
         );
         return isIdOnlyFetcher(residualFetcher) ? null : residualFetcher;
     }
@@ -355,16 +369,20 @@ class SaveResultMaterializer {
         return false;
     }
 
-    private static boolean isPolymorphicResidualField(
+    private boolean requiresScalarFetch(
+            ResidualFetchGroup group,
             ImmutableType type,
             ImmutableProp prop,
-            List<ImmutableProp> path
+            SaveShapeMatcher inputShapeMatcher
     ) {
-        if (!path.isEmpty() || !SaveFetcherAnalysis.isScalarColumnProp(prop)) {
-            return true;
+        for (DraftSpi draft : group.drafts) {
+            if (type.isAssignableFrom(draft.__type()) &&
+                    !ctx.isSaveResultCovered(draft, prop) &&
+                    !inputShapeMatcher.isScalarPropSatisfiedByInput(draft, type, prop)) {
+                return true;
+            }
         }
-        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
-        return inheritanceInfo != null && !inheritanceInfo.isPropAvailableInTable(prop, inheritanceInfo.getRootType());
+        return false;
     }
 
     private static boolean isIdOnlyFetcher(Fetcher<?> fetcher) {

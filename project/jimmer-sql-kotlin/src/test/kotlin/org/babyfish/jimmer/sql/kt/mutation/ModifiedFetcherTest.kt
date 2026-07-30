@@ -63,7 +63,7 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                 sql("update BOOK set NAME = ? where ID = ?")
             }
             statement {
-                sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.ID = ?")
+                sql("select tb_1_.ID, tb_1_.EDITION from BOOK tb_1_ where tb_1_.ID = ?")
             }
             value("""{"id":1,"name":"Learning GraphQL protocol","edition":1}""")
         }
@@ -168,7 +168,7 @@ class ModifiedFetcherTest : AbstractMutationTest() {
     @Test
     fun testInsertIfAbsentByKeyAndReturnNothing() {
         resetIdentity(null, "book")
-        connectAndExpect({con ->
+        connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
                 setIdGenerator(IdentityIdGenerator.INSTANCE)
@@ -209,7 +209,7 @@ class ModifiedFetcherTest : AbstractMutationTest() {
     @Test
     fun testBatchInsertIfAbsentByKeyAndReturnNothing() {
         resetIdentity(null, "book")
-        connectAndExpect({con ->
+        connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())
                 setIdGenerator(IdentityIdGenerator.INSTANCE)

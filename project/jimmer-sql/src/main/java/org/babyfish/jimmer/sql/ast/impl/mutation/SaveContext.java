@@ -38,7 +38,7 @@ class SaveContext extends MutationContext {
 
     final boolean backReferenceFrozen;
 
-    private final Set<DraftSpi> saveReturningAppliedDrafts;
+    private final SaveResultCoverage saveResultCoverage;
 
     private final Set<DraftSpi> saveReturningNotAcceptedDrafts;
 
@@ -74,7 +74,7 @@ class SaveContext extends MutationContext {
         this.backReferenceProp = null;
         this.backReferenceFrozen = false;
         this.affectedRowCountMap = affectedRowCountMap;
-        this.saveReturningAppliedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.saveResultCoverage = new SaveResultCoverage();
         this.saveReturningNotAcceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
     }
 
@@ -130,7 +130,7 @@ class SaveContext extends MutationContext {
             this.backReferenceFrozen = false;
         }
         this.affectedRowCountMap = parent.affectedRowCountMap;
-        this.saveReturningAppliedDrafts = parent.saveReturningAppliedDrafts;
+        this.saveResultCoverage = parent.saveResultCoverage;
         this.saveReturningNotAcceptedDrafts = parent.saveReturningNotAcceptedDrafts;
     }
 
@@ -143,7 +143,7 @@ class SaveContext extends MutationContext {
         this.affectedRowCountMap = base.affectedRowCountMap;
         this.backReferenceProp = base.backReferenceProp;
         this.backReferenceFrozen = base.backReferenceFrozen;
-        this.saveReturningAppliedDrafts = base.saveReturningAppliedDrafts;
+        this.saveResultCoverage = base.saveResultCoverage;
         this.saveReturningNotAcceptedDrafts = base.saveReturningNotAcceptedDrafts;
     }
 
@@ -163,7 +163,7 @@ class SaveContext extends MutationContext {
         JSqlClientImplementor sqlClient = options.getSqlClient();
         if (idGenerator instanceof SequenceIdGenerator) {
             String sql = sqlClient.getDialect().getSelectIdFromSequenceSql(
-                    ((SequenceIdGenerator)idGenerator).getSequenceName()
+                    ((SequenceIdGenerator) idGenerator).getSequenceName()
             );
             return sqlClient.getExecutor().execute(
                     new Executor.Args<>(
@@ -185,7 +185,7 @@ class SaveContext extends MutationContext {
             );
         }
         if (idGenerator instanceof UserIdGenerator<?>) {
-            return ((UserIdGenerator<?>)idGenerator).generate(path.getType().getJavaClass());
+            return ((UserIdGenerator<?>) idGenerator).generate(path.getType().getJavaClass());
         }
         if (idGenerator instanceof IdentityIdGenerator) {
             return null;
@@ -235,12 +235,16 @@ class SaveContext extends MutationContext {
         return backProp == null || !backProp.isColumnDefinition();
     }
 
-    public void markSaveReturningApplied(DraftSpi draft) {
-        saveReturningAppliedDrafts.add(draft);
+    public void addSaveResultCoverage(DraftSpi draft, Collection<ImmutableProp> props) {
+        saveResultCoverage.add(draft, props);
     }
 
-    public boolean isSaveReturningApplied(DraftSpi draft) {
-        return saveReturningAppliedDrafts.contains(draft);
+    public boolean isSaveResultCovered(DraftSpi draft, ImmutableProp prop) {
+        return saveResultCoverage.contains(draft, prop);
+    }
+
+    public boolean hasSaveResultCoverage(DraftSpi draft) {
+        return saveResultCoverage.containsAny(draft);
     }
 
     public void markSaveReturningNotAccepted(DraftSpi draft) {

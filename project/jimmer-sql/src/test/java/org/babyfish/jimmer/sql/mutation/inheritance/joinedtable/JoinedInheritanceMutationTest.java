@@ -871,7 +871,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testBatchUpsertMixedDerivedTypesWithJoinedStageFieldsUsesReturning() {
+    public void testBatchUpsertMixedDerivedTypesWithJoinedStageFieldsUsesReturningAndDirectAssociationFetch() {
         connectAndExpect(
                 con -> {
                     Organization globex = OrganizationDraft.$.produce(draft -> {
@@ -896,7 +896,11 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     con,
                                     ClientFetcher.$
                                             .allScalarFields()
-                                            .forType(OrganizationFetcher.$.allScalarFields())
+                                            .forType(
+                                                    OrganizationFetcher.$
+                                                            .allScalarFields()
+                                                            .projects(OrganizationProjectFetcher.$.name())
+                                            )
                                             .forType(PersonFetcher.$.allScalarFields())
                             )
                             .getItems()
@@ -948,20 +952,34 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                         );
                         it.variables(201L, "Alicia");
                     });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ORGANIZATION_ID, tb_1_.ID, tb_1_.NAME " +
+                                        "from JOINED_ORG_PROJECT tb_1_ " +
+                                        "where tb_1_.ORGANIZATION_ID = any(?)"
+                        );
+                        it.variables((Object) new Object[]{200L, 202L});
+                    });
                     ctx.value(clients -> {
                         assertEquals(3, clients.size());
                         assertEquals(
-                                "{\"type\":\"ORG\",\"id\":200,\"name\":\"new globex name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-BRANCH-200\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}",
+                                "{\"type\":\"ORG\",\"id\":200,\"name\":\"new globex name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"GLOBEX-BRANCH-200\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\",\"projects\":[{\"id\":2001,\"name\":\"Joined organization project\"}]}",
                                 clients.get(0).toString()
                         );
                         assertEquals(
-                                "{\"type\":\"ORG\",\"id\":202,\"name\":\"new initech name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"INI-BRANCH-202\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\"}",
+                                "{\"type\":\"ORG\",\"id\":202,\"name\":\"new initech name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"taxCode\":\"INI-BRANCH-202\",\"status\":\"DEFAULT_ORGANIZATION_STATUS\",\"projects\":[]}",
                                 clients.get(1).toString()
                         );
                         assertEquals(
                                 "{\"type\":\"Person\",\"id\":201,\"name\":\"new person branch name\",\"description\":\"DEFAULT_CLIENT_DESCRIPTION\",\"firstName\":\"Alicia\",\"lastName\":\"Smith\"}",
                                 clients.get(2).toString()
                         );
+                        assertEquals(1, ((Organization) clients.get(0)).projects().size());
+                        assertEquals(
+                                "Joined organization project",
+                                ((Organization) clients.get(0)).projects().get(0).name()
+                        );
+                        assertEquals(0, ((Organization) clients.get(1)).projects().size());
                     });
                 }
         );

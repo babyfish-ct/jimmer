@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,10 +32,6 @@ class SaveShapeMatcher {
 
     static SaveShapeMatcher forSaveInput(SaveOptions options) {
         return new SaveShapeMatcher(options, DraftState.SAVE_INPUT);
-    }
-
-    static SaveShapeMatcher forReturningApplied(SaveOptions options) {
-        return new SaveShapeMatcher(options, DraftState.RETURNING_APPLIED);
     }
 
     static SaveShapeMatcher forFetchedResult(SaveOptions options) {
@@ -116,6 +111,23 @@ class SaveShapeMatcher {
                 draft.__show(propId, true);
             }
         }
+    }
+
+    boolean isScalarPropSatisfiedByInput(
+            DraftSpi draft,
+            ImmutableType fetcherType,
+            ImmutableProp prop
+    ) {
+        if (!draft.__isLoaded(prop.getId())) {
+            return false;
+        }
+        if (prop.isId()) {
+            return true;
+        }
+        UpsertMask<?> mask = options.getUpsertMask(fetcherType);
+        return mask == null ||
+                isPropCovered(prop, mask.getInsertablePaths()) &&
+                        isPropCovered(prop, mask.getUpdatablePaths());
     }
 
     @SuppressWarnings("unchecked")
@@ -217,18 +229,26 @@ class SaveShapeMatcher {
             return true;
         }
         for (Field field : fetcher.getFieldMap().values()) {
-            boolean covered = false;
-            for (List<ImmutableProp> path : paths) {
-                if (path.get(0) == field.getProp()) {
-                    covered = true;
-                    break;
-                }
-            }
-            if (!covered) {
+            if (!isPropCovered(field.getProp(), paths)) {
                 return false;
             }
         }
         return true;
+    }
+
+    private static boolean isPropCovered(
+            ImmutableProp prop,
+            @Nullable List<List<ImmutableProp>> paths
+    ) {
+        if (paths == null) {
+            return true;
+        }
+        for (List<ImmutableProp> path : paths) {
+            if (path.get(0) == prop) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isAssociationComplete(ImmutableProp prop) {
@@ -245,7 +265,6 @@ class SaveShapeMatcher {
 
     private enum DraftState {
         SAVE_INPUT,
-        RETURNING_APPLIED,
         FETCHED
     }
 }

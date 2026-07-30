@@ -292,7 +292,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.queryReason(QueryReason.FETCHER);
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER " +
+                                "select tb_1_.ID, tb_1_.GENDER " +
                                         "from EMPLOYEE tb_1_ " +
                                         "where tb_1_.ID = ?"
                         );
@@ -371,7 +371,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.queryReason(QueryReason.FETCHER);
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                "select tb_1_.ID, tb_1_.EDITION " +
                                         "from BOOK tb_1_ " +
                                         "where tb_1_.ID = ?"
                         );
