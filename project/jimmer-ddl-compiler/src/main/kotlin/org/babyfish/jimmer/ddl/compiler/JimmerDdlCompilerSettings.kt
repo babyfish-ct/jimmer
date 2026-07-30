@@ -49,6 +49,7 @@ data class JimmerDdlCompilerSettings(
     val nullabilityRepairOnly: Boolean = false,
     val sourceFingerprint: String? = null,
     val jdbc: JimmerDdlJdbcSettings = JimmerDdlJdbcSettings(),
+    val allowDestructiveChanges: Boolean = false,
 ) {
     fun includesClass(qualifiedName: String?): Boolean {
         if (qualifiedName.isNullOrBlank()) {
@@ -114,6 +115,7 @@ data class JimmerDdlCompilerSettings(
                 ),
                 includeManyToManyTables = options.option("jimmerDdl.includeManyToManyTables", defaultValue = "true").toBooleanStrictOrNull() ?: true,
                 compareDatabase = options.option("jimmerDdl.compareDatabase", defaultValue = "true").toBooleanStrictOrNull() ?: true,
+                allowDestructiveChanges = options.option("jimmerDdl.allowDestructiveChanges", defaultValue = "false").toBooleanStrictOrNull() ?: false,
                 nullabilityRepairOnly = options.option("jimmerDdl.nullabilityRepairOnly", defaultValue = "false").toBooleanStrictOrNull() ?: false,
                 sourceFingerprint = options.option("jimmerDdl.sourceFingerprint", defaultValue = "").takeIf { it.isNotBlank() },
                 jdbc = jdbc,
@@ -148,6 +150,7 @@ data class JimmerDdlCompilerSettings(
                 ),
                 includeManyToManyTables = options.profileOption(profileName, "includeManyToManyTables", defaultValue = "true").toBooleanStrictOrNull() ?: true,
                 compareDatabase = options.profileOption(profileName, "compareDatabase", defaultValue = "true").toBooleanStrictOrNull() ?: true,
+                allowDestructiveChanges = options.profileOption(profileName, "allowDestructiveChanges", defaultValue = "false").toBooleanStrictOrNull() ?: false,
                 nullabilityRepairOnly = options.profileOption(profileName, "nullabilityRepairOnly", defaultValue = "false").toBooleanStrictOrNull() ?: false,
                 sourceFingerprint = options.profileOption(profileName, "sourceFingerprint", defaultValue = "").takeIf { it.isNotBlank() }
                     ?: options.option("jimmerDdl.sourceFingerprint", defaultValue = "").takeIf { it.isNotBlank() },

@@ -15,11 +15,13 @@ import java.util.Base64
 import java.util.Properties
 
 private const val SOURCE_FINGERPRINT_KEY = "__sourceFingerprint"
-private const val TABLE_HASH_PREFIX = "__tableHash."
-private const val TABLE_SCHEMA_PREFIX = "__tableSchema."
+private const val TABLE_NAME_KEY = "tableName"
+private const val TABLE_HASH_KEY = "tableHash"
+private const val TABLE_SCHEMA_KEY = "tableSchema"
+private const val ENTITY_TABLE_PREFIX = "entity."
+private val SAFE_SNAPSHOT_FILE_NAME = Regex("[a-z0-9][a-z0-9._-]*")
 
 data class JimmerDdlSnapshot(
-    val sourceFingerprint: String? = null,
     val entityTables: Map<String, String> = emptyMap(),
     val tableHashes: Map<String, String> = emptyMap(),
     val tableSchemas: Map<String, AutoDdlTable> = emptyMap(),
@@ -85,8 +87,8 @@ object JimmerDdlEntityTableSnapshot {
     }
 
     fun readSnapshot(settings: JimmerDdlCompilerSettings): JimmerDdlSnapshot {
-        val snapshotFile = JimmerDdlCompilerFiles.resolveSnapshotFile(settings) ?: return JimmerDdlSnapshot()
-        return snapshotFile.readSnapshot()
+        val snapshotDirectory = JimmerDdlCompilerFiles.resolveSnapshotDirectory(settings) ?: return JimmerDdlSnapshot()
+        return snapshotDirectory.readSnapshot()
     }
 
     private fun planRenameTables(
@@ -122,12 +124,11 @@ object JimmerDdlEntityTableSnapshot {
         schema: AutoDdlSchema,
         settings: JimmerDdlCompilerSettings,
     ) {
-        val snapshotFile = JimmerDdlCompilerFiles.resolveSnapshotFile(settings) ?: return
+        val snapshotDirectory = JimmerDdlCompilerFiles.resolveSnapshotDirectory(settings) ?: return
         writeSnapshot(
-            snapshotFile = snapshotFile,
+            snapshotDirectory = snapshotDirectory,
             entities = entities,
             schema = schema,
-            settings = settings,
         )
     }
 
@@ -136,42 +137,72 @@ object JimmerDdlEntityTableSnapshot {
         schema: AutoDdlSchema,
         settings: JimmerDdlCompilerSettings,
     ) {
-        val snapshotFile = JimmerDdlCompilerFiles.resolveGeneratedSnapshotFile(settings)
+        val snapshotDirectory = JimmerDdlCompilerFiles.resolveGeneratedSnapshotDirectory(settings)
         writeSnapshot(
-            snapshotFile = snapshotFile,
+            snapshotDirectory = snapshotDirectory,
             entities = entities,
             schema = schema,
-            settings = settings,
         )
+        writeGeneratedSourceFingerprint(settings)
     }
 
     private fun writeSnapshot(
-        snapshotFile: File,
+        snapshotDirectory: File,
         entities: List<LsiClass>,
         schema: AutoDdlSchema,
-        settings: JimmerDdlCompilerSettings,
     ) {
-        val previous = snapshotFile.readSnapshot()
-        val current = entities.toSnapshot()
-        val tableHashes = schema.toTableHashes()
-        snapshotFile.parentFile.mkdirs()
-        val sourceFingerprint = settings.sourceFingerprint ?: previous.sourceFingerprint
-        val content = buildString {
-            appendLine("# Jimmer DDL entity-to-table snapshot. Do not edit manually.")
-            sourceFingerprint?.takeIf { it.isNotBlank() }?.let {
-                appendLine("$SOURCE_FINGERPRINT_KEY=${sourceFingerprint.escapeProperty()}")
-            }
-            current.toSortedMap().forEach { (qualifiedName, tableName) ->
-                appendLine("${qualifiedName.escapeProperty()}=${tableName.escapeProperty()}")
-            }
-            tableHashes.toSortedMap().forEach { (tableName, hash) ->
-                appendLine("$TABLE_HASH_PREFIX${tableName.escapeProperty()}=${hash.escapeProperty()}")
-            }
-            schema.tables.sortedBy { table -> table.name.lowercase() }.forEach { table ->
-                appendLine("$TABLE_SCHEMA_PREFIX${table.name.lowercase().escapeProperty()}=${table.toCanonicalText().encodeBase64().escapeProperty()}")
-            }
+        val entityNamesByTable = entities.toSnapshot()
+            .entries
+            .groupBy(
+                keySelector = { entry -> entry.value.lowercase() },
+                valueTransform = { entry -> entry.key },
+            )
+        snapshotDirectory.mkdirs()
+        val snapshotFiles = schema.tables.associateWith { table ->
+            snapshotDirectory.resolve(table.name.toSnapshotFileName())
         }
-        snapshotFile.writeText(content)
+        val expectedFileNames = snapshotFiles.values.mapTo(mutableSetOf()) { file -> file.name }
+        snapshotDirectory.listFiles { file -> file.isFile && file.extension == "properties" }
+            .orEmpty()
+            .filterNot { file -> file.name in expectedFileNames }
+            .forEach { file ->
+                check(file.delete()) { "Cannot delete stale Jimmer DDL snapshot lockfile: ${file.absolutePath}" }
+            }
+        snapshotFiles.entries
+            .sortedBy { (table) -> table.name.lowercase() }
+            .forEach { (table, snapshotFile) ->
+                val tableName = table.name.lowercase()
+                val canonicalSchema = table.toCanonicalText()
+                val content = buildString {
+                    appendLine("# Jimmer DDL structural snapshot. Do not edit manually.")
+                    appendLine("$TABLE_NAME_KEY=${table.name.escapeProperty()}")
+                    appendLine("$TABLE_HASH_KEY=${canonicalSchema.sha256()}")
+                    appendLine("$TABLE_SCHEMA_KEY=${canonicalSchema.encodeBase64().escapeProperty()}")
+                    entityNamesByTable[tableName]
+                        .orEmpty()
+                        .sorted()
+                        .forEach { qualifiedName ->
+                            appendLine("$ENTITY_TABLE_PREFIX${qualifiedName.escapeProperty()}=${table.name.escapeProperty()}")
+                        }
+                }
+                snapshotFile.writeTextIfChanged(content)
+            }
+    }
+
+    private fun writeGeneratedSourceFingerprint(settings: JimmerDdlCompilerSettings) {
+        val fingerprintFile = JimmerDdlCompilerFiles.resolveBuildSourceFingerprintFile(settings) ?: return
+        val sourceFingerprint = settings.sourceFingerprint?.takeIf { it.isNotBlank() }
+        if (sourceFingerprint == null) {
+            if (fingerprintFile.exists()) {
+                check(fingerprintFile.delete()) { "Cannot delete stale Jimmer DDL source fingerprint: ${fingerprintFile.absolutePath}" }
+            }
+            return
+        }
+        val content = buildString {
+            appendLine("# Build-local Jimmer DDL source fingerprint. Do not commit this file.")
+            appendLine("$SOURCE_FINGERPRINT_KEY=${sourceFingerprint.escapeProperty()}")
+        }
+        fingerprintFile.writeTextIfChanged(content)
     }
 
     private fun List<LsiClass>.toSnapshot(): Map<String, String> {
@@ -183,41 +214,62 @@ object JimmerDdlEntityTableSnapshot {
     }
 
     private fun File.readSnapshot(): JimmerDdlSnapshot {
-        if (!isFile) {
+        if (!isDirectory) {
             return JimmerDdlSnapshot()
-        }
-        val props = inputStream().use { input ->
-            Properties().apply { load(input) }
         }
         val entityTables = linkedMapOf<String, String>()
         val tableHashes = linkedMapOf<String, String>()
         val tableSchemas = linkedMapOf<String, AutoDdlTable>()
-        props.entries.forEach { (key, value) ->
-            val name = key.toString()
-            val text = value.toString()
-            when {
-                name == SOURCE_FINGERPRINT_KEY -> Unit
-                name.startsWith(TABLE_HASH_PREFIX) -> {
-                    val tableName = name.removePrefix(TABLE_HASH_PREFIX).lowercase()
-                    tableHashes[tableName] = text
+        listFiles { file -> file.isFile && file.extension == "properties" }
+            .orEmpty()
+            .sortedBy { file -> file.name }
+            .forEach { snapshotFile ->
+                val props = snapshotFile.reader(Charsets.UTF_8).use { input ->
+                    Properties().apply { load(input) }
                 }
-                name.startsWith(TABLE_SCHEMA_PREFIX) -> {
-                    val tableName = name.removePrefix(TABLE_SCHEMA_PREFIX).lowercase()
-                    text.decodeTableSchema(tableName)?.let { table ->
-                        tableSchemas[tableName] = table
+                val tableName = props.getProperty(TABLE_NAME_KEY)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.lowercase()
+                    ?: return@forEach
+                props.getProperty(TABLE_HASH_KEY)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { hash -> tableHashes[tableName] = hash }
+                props.getProperty(TABLE_SCHEMA_KEY)
+                    ?.decodeTableSchema(tableName)
+                    ?.let { table -> tableSchemas[tableName] = table }
+                props.entries.forEach { (key, value) ->
+                    val name = key.toString()
+                    if (name.startsWith(ENTITY_TABLE_PREFIX)) {
+                        val qualifiedName = name.removePrefix(ENTITY_TABLE_PREFIX)
+                        value.toString().takeIf { it.isNotBlank() }?.let { mappedTableName ->
+                            entityTables[qualifiedName] = mappedTableName
+                        }
                     }
                 }
-                !name.startsWith("__") -> {
-                    entityTables[name] = text
-                }
             }
-        }
         return JimmerDdlSnapshot(
-            sourceFingerprint = props.getProperty(SOURCE_FINGERPRINT_KEY),
             entityTables = entityTables,
             tableHashes = tableHashes,
             tableSchemas = tableSchemas,
         )
+    }
+
+    private fun String.toSnapshotFileName(): String {
+        val normalized = lowercase()
+        val baseName = if (normalized.length <= 180 && SAFE_SNAPSHOT_FILE_NAME.matches(normalized)) {
+            normalized
+        } else {
+            normalized.sha256()
+        }
+        return "$baseName.properties"
+    }
+
+    private fun File.writeTextIfChanged(content: String) {
+        if (isFile && readText() == content) {
+            return
+        }
+        parentFile.mkdirs()
+        writeText(content)
     }
 
     private fun AutoDdlSchema.toTableHashes(): Map<String, String> {

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ddl.compiler
 
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.sql.DriverManager
 import javax.tools.DiagnosticCollector
 import javax.tools.JavaFileObject
 import javax.tools.StandardLocation
@@ -25,6 +26,27 @@ import site.addzero.util.db.DatabaseType
 import kotlin.io.path.createTempDirectory
 
 class JimmerDdlCompilerTest {
+
+    @Test
+    fun `destructive changes are disabled by default and configurable per profile`() {
+        assertFalse(JimmerDdlCompilerSettings.fromOptions(emptyMap()).allowDestructiveChanges)
+        assertTrue(
+            JimmerDdlCompilerSettings.fromOptions(
+                mapOf("jimmerDdl.allowDestructiveChanges" to "true")
+            ).allowDestructiveChanges
+        )
+
+        val profiles = JimmerDdlCompilerSettings.allFromOptions(
+            mapOf(
+                "jimmerDdl.profiles" to "safe,explicit",
+                "jimmerDdl.allowDestructiveChanges" to "true",
+                "jimmerDdl.profile.safe.allowDestructiveChanges" to "false",
+            )
+        )
+        assertFalse(profiles[0].allowDestructiveChanges)
+        assertTrue(profiles[1].allowDestructiveChanges)
+        assertContains(JimmerDdlCompilerAptProcessor().supportedOptions, "jimmerDdl.allowDestructiveChanges")
+    }
 
     @Test
     fun `apt processor generates ddl file from java jimmer entity`() {
@@ -163,14 +185,16 @@ class JimmerDdlCompilerTest {
         val sql = sqlFile.readText()
         assertContains(sql, """CREATE TABLE IF NOT EXISTS "apt_book"""")
         assertContains(sql, """"id" BIGINT NOT NULL""")
-        assertContains(sql, """"title" VARCHAR(255)""")
-        assertContains(sql, """"subtitle" VARCHAR(255)""")
+        assertContains(sql, """"title" TEXT""")
+        assertContains(sql, """"subtitle" TEXT""")
         assertContains(sql, """ALTER TABLE "apt_book" ALTER COLUMN "title" DROP NOT NULL;""")
         assertContains(sql, """ALTER TABLE "apt_book" ALTER COLUMN "subtitle" DROP NOT NULL;""")
 
-        val snapshotFile = projectDir.resolve("build/generated/jimmer-ddl/main/resources/.jimmer-ddl/entity-table-snapshot.properties")
-        assertTrue(snapshotFile.isFile, "APT should generate snapshot file: ${snapshotFile.absolutePath}")
-        assertContains(snapshotFile.readText(), "demo.AptBook=apt_book")
+        val snapshotDirectory = projectDir.resolve("build/generated/jimmer-ddl/main/resources/.jimmer-ddl/entity-table-snapshot")
+        val snapshotFile = snapshotDirectory.listFiles { file -> file.extension == "properties" }
+            ?.singleOrNull()
+        assertTrue(snapshotFile?.isFile == true, "APT should generate one table snapshot under: ${snapshotDirectory.absolutePath}")
+        assertContains(snapshotFile.readText(), "entity.demo.AptBook=apt_book")
     }
 
     @Test
@@ -232,6 +256,183 @@ class JimmerDdlCompilerTest {
     }
 
     @Test
+    fun `table rename preserves the old table by default`() {
+        val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
+            .toFile()
+            .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = outputDir.absolutePath,
+            compareDatabase = false,
+        )
+        val original = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(tableName = "biz_user")),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = original.entities,
+            schema = original.snapshotSchema,
+            settings = settings,
+        )
+
+        val renamed = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(tableName = "biz_user_ext")),
+            settings = settings,
+        )
+
+        assertContains(renamed.sql, "CREATE TABLE IF NOT EXISTS \"biz_user_ext\"")
+        assertFalse(" RENAME TO " in renamed.sql)
+        assertTrue(renamed.warnings.any { warning -> "allowDestructiveChanges is false" in warning })
+    }
+
+    @Test
+    fun `table rename emits rename ddl when destructive changes are enabled`() {
+        val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
+            .toFile()
+            .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = outputDir.absolutePath,
+            compareDatabase = false,
+            allowDestructiveChanges = true,
+        )
+        val original = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(tableName = "biz_user")),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = original.entities,
+            schema = original.snapshotSchema,
+            settings = settings,
+        )
+
+        val renamed = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(tableName = "biz_user_ext")),
+            settings = settings,
+        )
+
+        assertContains(renamed.sql, "ALTER TABLE \"biz_user\" RENAME TO \"biz_user_ext\";")
+        assertFalse("CREATE TABLE IF NOT EXISTS \"biz_user_ext\"" in renamed.sql)
+    }
+
+    @Test
+    fun `snapshot stores each table in an independent structural lockfile`() {
+        val projectDir = createTempDirectory(prefix = "jimmer-ddl-test").toFile()
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = projectDir.resolve("build/generated/jimmer-ddl/main/resources/db/migration").absolutePath,
+            compareDatabase = false,
+            sourceFingerprint = "first-source-fingerprint",
+        )
+        val entities = listOf(
+            bookEntity(),
+            bookEntity(
+                simpleName = "Author",
+                qualifiedName = "demo.Author",
+                tableName = "author",
+            ),
+        )
+        val result = JimmerDdlCompiler.compile(
+            classes = entities,
+            settings = settings,
+        )
+
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = result.entities,
+            schema = result.snapshotSchema,
+            settings = settings,
+        )
+
+        val snapshotDirectory = projectDir.resolve(".jimmer-ddl/entity-table-snapshot")
+        val initialFiles = snapshotDirectory.listFiles { file -> file.extension == "properties" }
+            ?.sortedBy { file -> file.name }
+            .orEmpty()
+        assertEquals(2, initialFiles.size)
+        assertTrue(initialFiles.all { file -> "__sourceFingerprint" !in file.readText() })
+        val initialContents = initialFiles.associate { file -> file.name to file.readBytes() }
+
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = result.entities,
+            schema = result.snapshotSchema,
+            settings = settings.copy(sourceFingerprint = "second-source-fingerprint"),
+        )
+
+        val rewrittenFiles = snapshotDirectory.listFiles { file -> file.extension == "properties" }
+            ?.associate { file -> file.name to file.readBytes() }
+            .orEmpty()
+        assertEquals(initialContents.keys, rewrittenFiles.keys)
+        initialContents.forEach { (name, content) ->
+            assertTrue(content.contentEquals(rewrittenFiles.getValue(name)))
+        }
+
+        val changed = JimmerDdlCompiler.compile(
+            classes = listOf(
+                bookEntity(extraField = true),
+                entities.last(),
+            ),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = changed.entities,
+            schema = changed.snapshotSchema,
+            settings = settings,
+        )
+
+        val finalContents = snapshotDirectory.listFiles { file -> file.extension == "properties" }
+            .orEmpty()
+            .associate { file -> file.name to file.readBytes() }
+        val authorFileName = initialFiles.single { file -> "tableName=author" in file.readText() }.name
+        val bookFileName = initialFiles.single { file -> "tableName=book" in file.readText() }.name
+        assertTrue(initialContents.getValue(authorFileName).contentEquals(finalContents.getValue(authorFileName)))
+        assertFalse(initialContents.getValue(bookFileName).contentEquals(finalContents.getValue(bookFileName)))
+    }
+
+    @Test
+    fun `rewriting snapshot removes lockfiles for deleted tables`() {
+        val projectDir = createTempDirectory(prefix = "jimmer-ddl-test").toFile()
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = projectDir.resolve("build/generated/jimmer-ddl/main/resources/db/migration").absolutePath,
+            compareDatabase = false,
+        )
+        val book = bookEntity()
+        val author = bookEntity(
+            simpleName = "Author",
+            qualifiedName = "demo.Author",
+            tableName = "author",
+        )
+        val initial = JimmerDdlCompiler.compile(
+            classes = listOf(book, author),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = initial.entities,
+            schema = initial.snapshotSchema,
+            settings = settings,
+        )
+
+        val remaining = JimmerDdlCompiler.compile(
+            classes = listOf(book),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = remaining.entities,
+            schema = remaining.snapshotSchema,
+            settings = settings,
+        )
+
+        val snapshot = JimmerDdlEntityTableSnapshot.readSnapshot(settings)
+        assertEquals(setOf("book"), snapshot.tableHashes.keys)
+        assertEquals(mapOf("demo.Book" to "book"), snapshot.entityTables)
+        val snapshotDirectory = projectDir.resolve(".jimmer-ddl/entity-table-snapshot")
+        assertEquals(1, snapshotDirectory.listFiles { file -> file.extension == "properties" }.orEmpty().size)
+    }
+
+    @Test
     fun `postgresql ddl contains idempotent table column and nullable repair statements`() {
         val entity = bookEntity()
         val result = JimmerDdlCompiler.compile(
@@ -243,8 +444,83 @@ class JimmerDdlCompilerTest {
         )
 
         assertContains(result.sql, "CREATE TABLE IF NOT EXISTS \"book\"")
-        assertContains(result.sql, """"title" VARCHAR(255) NOT NULL""")
+        assertContains(result.sql, """"title" TEXT NOT NULL""")
         assertContains(result.sql, """ALTER TABLE "book" ALTER COLUMN "subtitle" DROP NOT NULL;""")
+    }
+
+    @Test
+    fun `nested jimmer embeddable properties are expanded into leaf columns`() {
+        val coordinates = TestClass(
+            simpleName = "Coordinates",
+            qualifiedName = "demo.Coordinates",
+            annotations = listOf(embeddable()),
+            fields = listOf(
+                TestField(
+                    name = "latitude",
+                    type = TestType("Long"),
+                    typeName = "Long",
+                )
+            ),
+        )
+        val address = TestClass(
+            simpleName = "Address",
+            qualifiedName = "demo.Address",
+            annotations = listOf(embeddable()),
+            fields = listOf(
+                TestField(
+                    name = "street",
+                    type = TestType("String"),
+                    typeName = "String",
+                ),
+                TestField(
+                    name = "coordinates",
+                    type = TestType(
+                        simpleName = "Coordinates",
+                        qualifiedName = "demo.Coordinates",
+                        lsiClass = coordinates,
+                    ),
+                    typeName = "demo.Coordinates",
+                    fieldTypeClass = coordinates,
+                ),
+            ),
+        )
+        val warehouse = TestClass(
+            simpleName = "Warehouse",
+            qualifiedName = "demo.Warehouse",
+            annotations = listOf(entity(), table("warehouse")),
+            fields = listOf(
+                TestField(
+                    name = "id",
+                    type = TestType("Long"),
+                    typeName = "Long",
+                    annotations = listOf(id()),
+                ),
+                TestField(
+                    name = "address",
+                    type = TestType(
+                        simpleName = "Address",
+                        qualifiedName = "demo.Address",
+                        lsiClass = address,
+                    ),
+                    typeName = "demo.Address",
+                    fieldTypeClass = address,
+                ),
+            ),
+        )
+
+        val result = JimmerDdlCompiler.compile(
+            classes = listOf(warehouse),
+            settings = JimmerDdlCompilerSettings(
+                databaseType = DatabaseType.POSTGRESQL,
+                outputFormat = JimmerDdlOutputFormat.PLAIN,
+                compareDatabase = false,
+            ),
+        )
+
+        assertContains(result.sql, """"street" TEXT NOT NULL""")
+        assertContains(result.sql, """"latitude" BIGINT NOT NULL""")
+        assertFalse("\"address\"" in result.sql)
+        assertFalse("\"coordinates\"" in result.sql)
     }
 
     @Test
@@ -304,12 +580,12 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
-        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "summary" VARCHAR(255);""")
+        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "summary" TEXT;""")
         assertFalse("CREATE TABLE" in changed.sql)
     }
 
     @Test
-    fun `removed property emits drop column ddl`() {
+    fun `removed property preserves the old column by default`() {
         val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
             .toFile()
             .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
@@ -334,7 +610,176 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
+        assertFalse("""DROP COLUMN IF EXISTS "summary""" in changed.sql)
+    }
+
+    @Test
+    fun `removed property emits drop column when destructive changes are enabled`() {
+        val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
+            .toFile()
+            .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = outputDir.absolutePath,
+            compareDatabase = false,
+            allowDestructiveChanges = true,
+        )
+        val original = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(extraField = true)),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = original.entities,
+            schema = original.snapshotSchema,
+            settings = settings,
+        )
+
+        val changed = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(extraField = false)),
+            settings = settings,
+        )
+
         assertContains(changed.sql, """ALTER TABLE "book" DROP COLUMN IF EXISTS "summary";""")
+    }
+
+    @Test
+    fun `skipped column drop remains pending after snapshot advancement`() {
+        val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
+            .toFile()
+            .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = outputDir.absolutePath,
+            compareDatabase = false,
+        )
+        val original = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(extraField = true)),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = original.entities,
+            schema = original.snapshotSchema,
+            settings = settings,
+        )
+
+        val safeResult = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(extraField = false)),
+            settings = settings,
+        )
+        assertFalse("""DROP COLUMN IF EXISTS "summary""" in safeResult.sql)
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = safeResult.entities,
+            schema = safeResult.snapshotSchema,
+            settings = settings,
+        )
+
+        val destructiveResult = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(extraField = false)),
+            settings = settings.copy(allowDestructiveChanges = true),
+        )
+
+        assertContains(destructiveResult.sql, """ALTER TABLE "book" DROP COLUMN IF EXISTS "summary";""")
+    }
+
+    @Test
+    fun `database comparison only drops unknown columns when destructive changes are enabled`() {
+        val databaseName = "jimmer_ddl_${System.nanoTime()}"
+        val jdbcUrl = "jdbc:h2:mem:$databaseName;DB_CLOSE_DELAY=-1"
+        DriverManager.getConnection(jdbcUrl).use { connection ->
+            connection.createStatement().use { statement ->
+                statement.execute(
+                    """
+                        CREATE TABLE book (
+                            id BIGINT NOT NULL PRIMARY KEY,
+                            title VARCHAR NOT NULL,
+                            subtitle VARCHAR,
+                            summary VARCHAR
+                        )
+                    """.trimIndent()
+                )
+            }
+        }
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.H2,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            compareDatabase = true,
+            jdbc = JimmerDdlJdbcSettings(url = jdbcUrl),
+        )
+
+        val safeResult = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity()),
+            settings = settings,
+        )
+        val destructiveResult = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity()),
+            settings = settings.copy(allowDestructiveChanges = true),
+        )
+
+        assertFalse("""DROP COLUMN IF EXISTS "SUMMARY""" in safeResult.sql)
+        assertContains(destructiveResult.sql, """ALTER TABLE "book" DROP COLUMN IF EXISTS "SUMMARY";""")
+    }
+
+    @Test
+    fun `renamed property column preserves the old column by default`() {
+        val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
+            .toFile()
+            .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = outputDir.absolutePath,
+            compareDatabase = false,
+        )
+        val original = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(titleColumnName = "book_title")),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = original.entities,
+            schema = original.snapshotSchema,
+            settings = settings,
+        )
+
+        val renamed = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(titleColumnName = "title")),
+            settings = settings,
+        )
+
+        assertContains(renamed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "title"""")
+        assertFalse("""DROP COLUMN IF EXISTS "book_title""" in renamed.sql)
+    }
+
+    @Test
+    fun `renamed property column drops the old column when destructive changes are enabled`() {
+        val outputDir = createTempDirectory(prefix = "jimmer-ddl-test")
+            .toFile()
+            .resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = outputDir.absolutePath,
+            compareDatabase = false,
+            allowDestructiveChanges = true,
+        )
+        val original = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(titleColumnName = "book_title")),
+            settings = settings,
+        )
+        JimmerDdlEntityTableSnapshot.writeSnapshot(
+            entities = original.entities,
+            schema = original.snapshotSchema,
+            settings = settings,
+        )
+
+        val renamed = JimmerDdlCompiler.compile(
+            classes = listOf(bookEntity(titleColumnName = "title")),
+            settings = settings,
+        )
+
+        assertContains(renamed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "title"""")
+        assertContains(renamed.sql, """ALTER TABLE "book" DROP COLUMN IF EXISTS "book_title";""")
     }
 
     @Test
@@ -364,7 +809,7 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
-        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "summary" VARCHAR(255);""")
+        assertContains(changed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "summary" TEXT;""")
         assertContains(changed.sql, """ALTER COLUMN "title" TYPE INTEGER""")
         assertContains(changed.sql, """USING CASE""")
         assertTrue(changed.warnings.none { warning -> "skipped column structure changes" in warning })
@@ -380,6 +825,7 @@ class JimmerDdlCompilerTest {
             outputFormat = JimmerDdlOutputFormat.PLAIN,
             outputDir = outputDir.absolutePath,
             compareDatabase = false,
+            sourceFingerprint = "generated-source-fingerprint",
         )
         val first = JimmerDdlCompiler.compile(
             classes = listOf(bookEntity()),
@@ -390,9 +836,9 @@ class JimmerDdlCompilerTest {
             schema = first.schema,
             settings = settings,
         )
-        val sourceSnapshot = JimmerDdlCompilerFiles.resolveSnapshotFile(settings)
+        val sourceSnapshot = JimmerDdlCompilerFiles.resolveSnapshotDirectory(settings)
         requireNotNull(sourceSnapshot)
-        val sourceContent = sourceSnapshot.readText()
+        val sourceContent = sourceSnapshot.readSnapshotContents()
         val changed = JimmerDdlCompiler.compile(
             classes = listOf(bookEntity(extraField = true)),
             settings = settings,
@@ -404,10 +850,14 @@ class JimmerDdlCompilerTest {
             settings = settings,
         )
 
-        val generatedSnapshot = JimmerDdlCompilerFiles.resolveGeneratedSnapshotFile(settings)
-        assertTrue(generatedSnapshot.isFile)
-        assertEquals(sourceContent, sourceSnapshot.readText())
-        assertFalse(sourceContent == generatedSnapshot.readText())
+        val generatedSnapshot = JimmerDdlCompilerFiles.resolveGeneratedSnapshotDirectory(settings)
+        assertTrue(generatedSnapshot.isDirectory)
+        assertEquals(sourceContent, sourceSnapshot.readSnapshotContents())
+        assertFalse(sourceContent == generatedSnapshot.readSnapshotContents())
+        val sourceFingerprint = JimmerDdlCompilerFiles.resolveBuildSourceFingerprintFile(settings)
+        requireNotNull(sourceFingerprint)
+        assertTrue(sourceFingerprint.isFile)
+        assertContains(sourceFingerprint.readText(), "__sourceFingerprint=generated-source-fingerprint")
     }
 
     @Test
@@ -482,13 +932,16 @@ class JimmerDdlCompilerTest {
     }
 
     private fun bookEntity(
+        simpleName: String = "Book",
+        qualifiedName: String = "demo.Book",
         tableName: String = "book",
         extraField: Boolean = false,
         titleTypeName: String = "String",
+        titleColumnName: String = "title",
     ): TestClass {
         return TestClass(
-            simpleName = "Book",
-            qualifiedName = "demo.Book",
+            simpleName = simpleName,
+            qualifiedName = qualifiedName,
             annotations = listOf(entity(), table(tableName)),
             fields = listOf(
                 TestField(
@@ -501,7 +954,8 @@ class JimmerDdlCompilerTest {
                     name = "title",
                     type = TestType(titleTypeName),
                     typeName = titleTypeName,
-                    annotations = listOf(column("title")),
+                    annotations = listOf(column(titleColumnName)),
+                    columnName = titleColumnName,
                 ),
                 TestField(
                     name = "subtitle",
@@ -534,6 +988,10 @@ class JimmerDdlCompilerTest {
         return TestAnnotation("org.babyfish.jimmer.sql.MappedSuperclass", "MappedSuperclass")
     }
 
+    private fun embeddable(): TestAnnotation {
+        return TestAnnotation("org.babyfish.jimmer.sql.Embeddable", "Embeddable")
+    }
+
     private fun table(name: String): TestAnnotation {
         return TestAnnotation("org.babyfish.jimmer.sql.Table", "Table", mapOf("name" to name))
     }
@@ -558,6 +1016,12 @@ class JimmerDdlCompilerTest {
         val file = sourceDir.resolve(path)
         file.parentFile.mkdirs()
         file.writeText(content)
+    }
+
+    private fun File.readSnapshotContents(): Map<String, String> {
+        return listFiles { file -> file.isFile && file.extension == "properties" }
+            .orEmpty()
+            .associate { file -> file.name to file.readText() }
     }
 
     private fun DiagnosticCollector<JavaFileObject>.toErrorMessage(): String {
