@@ -78,8 +78,8 @@ class SaveResultMaterializer {
             residualGroup = new ResidualFetchGroup(residualFetcher);
         }
         PropId idPropId = ctx.path.getType().getIdProp().getId();
-        SaveShapeMatcher sourceShapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
-        SaveShapeMatcher materializedShapeMatcher = new SaveShapeMatcher(type -> null);
+        SaveShapeMatcher inputShapeMatcher = SaveShapeMatcher.forSaveInput(ctx.options);
+        SaveShapeMatcher materializedShapeMatcher = SaveShapeMatcher.forMaterializedResult(ctx.options);
         for (DraftSpi draft : drafts) {
             if (ctx.isSaveReturningNotAccepted(draft)) {
                 // Returning row-count 0 rows must remain unmaterialized.
@@ -87,11 +87,11 @@ class SaveResultMaterializer {
                 continue;
             } else if (!draft.__isLoaded(idPropId)) {
                 nonIdObjects.add(draft);
-            } else if (fetcher != null && !isMatched(
+            } else if (fetcher != null && !matches(
                     draft,
                     fetcher,
                     true,
-                    sourceShapeMatcher,
+                    inputShapeMatcher,
                     materializedShapeMatcher
             )) {
                 Object id = draft.__get(idPropId);
@@ -246,17 +246,17 @@ class SaveResultMaterializer {
         }
     }
 
-    private boolean isMatched(
+    private boolean matches(
             DraftSpi draft,
             Fetcher<?> fetcher,
             boolean trim,
-            SaveShapeMatcher sourceShapeMatcher,
+            SaveShapeMatcher inputShapeMatcher,
             SaveShapeMatcher materializedShapeMatcher
     ) {
         SaveShapeMatcher shapeMatcher = ctx.isSaveReturningApplied(draft) ?
                 materializedShapeMatcher :
-                sourceShapeMatcher;
-        return shapeMatcher.isMatched(draft, fetcher, trim);
+                inputShapeMatcher;
+        return shapeMatcher.matches(draft, fetcher, trim);
     }
 
     @SuppressWarnings("unchecked")
@@ -282,7 +282,7 @@ class SaveResultMaterializer {
             Object id = draft.__get(idPropId);
             Object fetched = map.get(id);
             if (mergeDraft(draft, fetched) &&
-                    shapeMatcher.isMatched(draft, fetcher, false)) {
+                    shapeMatcher.matches(draft, fetcher, false)) {
                 shapeMatcher.trim(draft, fetcher);
             } else {
                 arr[group.indexes.get(i)] = draft;

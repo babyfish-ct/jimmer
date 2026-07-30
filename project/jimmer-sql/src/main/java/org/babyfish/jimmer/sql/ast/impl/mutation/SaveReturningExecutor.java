@@ -17,7 +17,8 @@ import java.util.*;
 
 class SaveReturningExecutor {
 
-    private SaveReturningExecutor() {}
+    private SaveReturningExecutor() {
+    }
 
     static int[] executeInsert(SaveReturning returning, EntityCollection<DraftSpi> entities) {
         if (entities.isEmpty()) {
@@ -83,7 +84,7 @@ class SaveReturningExecutor {
     ) throws SQLException {
         int[] rowCounts = new int[entities.size()];
         Reader.Context readerContext = new Reader.Context(null, returning.ctx.options.getSqlClient());
-        SaveShapeMatcher shapeMatcher = new SaveShapeMatcher(returning.ctx.options::getUpsertMask);
+        SaveShapeMatcher shapeMatcher = SaveShapeMatcher.forMaterializedResult(returning.ctx.options);
         switch (returning.matchMode) {
             case ORDER:
                 readByOrder(returning, rs, entities, rowCounts, readerContext, shapeMatcher);
@@ -248,7 +249,7 @@ class SaveReturningExecutor {
             draft.__show(propId, true);
         }
         returning.ctx.markSaveReturningApplied(draft);
-        shapeMatcher.isMatched(draft, returning.ctx.fetcher, true);
+        shapeMatcher.matches(draft, returning.ctx.fetcher, true);
     }
 
     private static void unloadAssociationsOfNotAcceptedRows(
