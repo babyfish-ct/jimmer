@@ -58,14 +58,18 @@ tasks.withType<JavaCompile>().configureEach {
 | `jimmerDdl.includeManyToManyTables` | `true` | Generates Jimmer many-to-many junction tables. |
 | `jimmerDdl.compareDatabase` | `true` | Reads the configured database and emits diff SQL. If the database cannot be read, it falls back to offline DDL. |
 | `jimmerDdl.nullabilityRepairOnly` | `false` | Limits risky offline alteration planning to nullability repair. |
-| `jimmerDdl.sourceFingerprint` | empty | Optional source fingerprint stored in the snapshot. |
+| `jimmerDdl.sourceFingerprint` | empty | Optional source fingerprint stored as build-local state outside the structural snapshot. |
 | `jimmerDdl.jdbcUrl` / `jdbcUsername` / `jdbcPassword` / `jdbcSchema` / `jdbcDriver` | empty | Explicit JDBC settings used by database comparison. |
 | `jimmerDdl.springResourcePath` | empty | Optional Spring resource path used to discover datasource settings. |
 | `jimmerDdl.springProfile` | `local` | Spring profile used when reading YAML datasource settings. |
 
 ## Snapshot model
 
-The compiler writes a generated snapshot to `build/generated/jimmer-ddl/main/resources/.jimmer-ddl/entity-table-snapshot.properties`. The snapshot records entity-to-table mappings and table hashes so subsequent builds can emit incremental SQL, including table renames caused by `@Table(name = ...)` changes.
+The durable schema baseline is a directory of per-table lockfiles under `.jimmer-ddl/entity-table-snapshot/`. Each lockfile records one table schema hash, its encoded structural model, and the Jimmer entities mapped to that table. Keeping tables in independent files prevents unrelated entity changes on separate branches from rewriting the same Git-tracked snapshot.
+
+The compiler stages the next baseline under `build/generated/jimmer-ddl/main/resources/.jimmer-ddl/entity-table-snapshot/`. After accepting the generated migration, the consumer build must mirror that whole directory to the durable `.jimmer-ddl/entity-table-snapshot/` directory, including deletion of lockfiles for removed tables. The former aggregate `entity-table-snapshot.properties` file is not read.
+
+When `jimmerDdl.sourceFingerprint` is supplied, it is written to `build/jimmer-ddl/source-fingerprint.properties`. It is disposable build state and must not be committed or copied into the structural snapshot.
 
 ## Tests
 
