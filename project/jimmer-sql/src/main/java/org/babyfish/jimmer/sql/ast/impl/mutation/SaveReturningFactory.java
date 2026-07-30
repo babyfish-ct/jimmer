@@ -798,9 +798,9 @@ class SaveReturningFactory {
             EntityCollection<DraftSpi> entities,
             boolean idWillBeLoadedByDml
     ) {
-        SaveShapeMatcher shapeMatcher = new SaveShapeMatcher(ctx.options::getUpsertMask);
+        SaveShapeMatcher shapeMatcher = SaveShapeMatcher.forSaveInput(ctx.options);
         for (DraftSpi draft : entities) {
-            if (!shapeMatcher.isMatched(draft, fetcher, false, idWillBeLoadedByDml)) {
+            if (!shapeMatcher.matches(draft, fetcher, false, idWillBeLoadedByDml)) {
                 return true;
             }
         }
