@@ -70,25 +70,34 @@ object JimmerDdlDatabaseSchemaReader {
         metaData.findColumns(connection.catalog, schemaName, tableName).use { resultSet ->
             while (resultSet.next()) {
                 val columnName = resultSet.getString("COLUMN_NAME") ?: continue
-                val desiredColumn = desiredColumns[columnName.lowercase()] ?: continue
                 val jdbcType = resultSet.getInt("DATA_TYPE")
                 val length = resultSet.getIntOrNull("COLUMN_SIZE")
                 val scale = resultSet.getIntOrNull("DECIMAL_DIGITS")
                 val nullable = resultSet.getInt("NULLABLE") == DatabaseMetaData.columnNullable
-                columns += desiredColumn.copy(
-                    columnName,
-                    jdbcType.toLogicalType(),
-                    nullable,
-                    length,
-                    desiredColumn.precision,
-                    scale,
-                    resultSet.getStringOrNull("COLUMN_DEF"),
-                    desiredColumn.comment,
-                    primaryKeys.any { key -> key.equals(columnName, ignoreCase = true) },
-                    desiredColumn.autoIncrement,
-                    desiredColumn.sequenceName,
-                    resultSet.getStringOrNull("TYPE_NAME"),
-                )
+                val desiredColumn = desiredColumns[columnName.lowercase()]
+                columns += if (desiredColumn != null) {
+                    desiredColumn.copy(
+                        columnName,
+                        jdbcType.toLogicalType(),
+                        nullable,
+                        length,
+                        desiredColumn.precision,
+                        scale,
+                        resultSet.getStringOrNull("COLUMN_DEF"),
+                        desiredColumn.comment,
+                        primaryKeys.any { key -> key.equals(columnName, ignoreCase = true) },
+                        desiredColumn.autoIncrement,
+                        desiredColumn.sequenceName,
+                        resultSet.getStringOrNull("TYPE_NAME"),
+                    )
+                } else {
+                    AutoDdlColumn(
+                        name = columnName,
+                        logicalType = jdbcType.toLogicalType(),
+                        nullable = nullable,
+                        primaryKey = primaryKeys.any { key -> key.equals(columnName, ignoreCase = true) },
+                    )
+                }
             }
         }
         return AutoDdlTable(

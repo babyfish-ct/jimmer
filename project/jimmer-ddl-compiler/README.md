@@ -57,11 +57,17 @@ tasks.withType<JavaCompile>().configureEach {
 | `jimmerDdl.includeSequences` | `true` | Generates sequences. |
 | `jimmerDdl.includeManyToManyTables` | `true` | Generates Jimmer many-to-many junction tables. |
 | `jimmerDdl.compareDatabase` | `true` | Reads the configured database and emits diff SQL. If the database cannot be read, it falls back to offline DDL. |
+| `jimmerDdl.allowDestructiveChanges` | `false` | Allows destructive diff operations and inferred table renames. A column rename is emitted as an added new column plus a dropped old column. |
 | `jimmerDdl.nullabilityRepairOnly` | `false` | Limits risky offline alteration planning to nullability repair. |
 | `jimmerDdl.sourceFingerprint` | empty | Optional source fingerprint stored as build-local state outside the structural snapshot. |
 | `jimmerDdl.jdbcUrl` / `jdbcUsername` / `jdbcPassword` / `jdbcSchema` / `jdbcDriver` | empty | Explicit JDBC settings used by database comparison. |
 | `jimmerDdl.springResourcePath` | empty | Optional Spring resource path used to discover datasource settings. |
 | `jimmerDdl.springProfile` | `local` | Spring profile used when reading YAML datasource settings. |
+
+> [!WARNING]
+> Setting `jimmerDdl.allowDestructiveChanges=true` permits generated migrations to drop schema objects and rename tables, which can cause irreversible data loss. Review the generated SQL and back up the database before applying it. Once enabled, the consuming project is responsible for these migrations; Jimmer does not guarantee data preservation for destructive statements.
+
+With the default `false`, removed columns remain in the staged structural snapshot so they can still be dropped by a later explicitly enabled run. An inferred table rename instead creates the desired table, preserves the old database table, and emits a warning.
 
 ## Snapshot model
 

@@ -40,6 +40,7 @@ private const val JIMMER_ENTITY = "org.babyfish.jimmer.sql.Entity"
     "jimmerDdl.includeSequences",
     "jimmerDdl.includeManyToManyTables",
     "jimmerDdl.compareDatabase",
+    "jimmerDdl.allowDestructiveChanges",
     "jimmerDdl.nullabilityRepairOnly",
     "jimmerDdl.sourceFingerprint",
 )
@@ -70,6 +71,7 @@ class JimmerDdlCompilerAptProcessor : AbstractProcessor() {
                 "jimmerDdl.includeSequences",
                 "jimmerDdl.includeManyToManyTables",
                 "jimmerDdl.compareDatabase",
+                "jimmerDdl.allowDestructiveChanges",
                 "jimmerDdl.nullabilityRepairOnly",
                 "jimmerDdl.sourceFingerprint",
             )

@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.ksp.symbolProcessing.api)
 
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.h2)
 }
 
 tasks.test {

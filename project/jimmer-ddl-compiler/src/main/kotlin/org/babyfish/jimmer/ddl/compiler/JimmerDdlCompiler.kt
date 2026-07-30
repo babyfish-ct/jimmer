@@ -93,6 +93,9 @@ object JimmerDdlCompiler {
         settings: JimmerDdlCompilerSettings,
     ): JimmerDdlCompilePlan {
         val renameOperations = changePlan.renameOperations
+            .takeIf { settings.allowDestructiveChanges }
+            .orEmpty()
+        val effectiveChangePlan = changePlan.copy(renameOperations = renameOperations)
         val operationPlan = if (settings.compareDatabase && settings.jdbc.url.isNotBlank()) {
             generateComparedOperations(
                 schema = schema,
@@ -104,7 +107,7 @@ object JimmerDdlCompiler {
         } else {
             buildOfflineIncrementalOperationPlan(
                 schema = schema,
-                changePlan = changePlan,
+                changePlan = effectiveChangePlan,
                 settings = settings,
             )
         }
@@ -118,7 +121,7 @@ object JimmerDdlCompiler {
         return JimmerDdlCompilePlan(
             statements = statements,
             snapshotSchema = operationPlan.snapshotSchema ?: schema,
-            warnings = operationPlan.warnings,
+            warnings = operationPlan.warnings + buildSkippedRenameWarnings(changePlan, settings),
         )
     }
 
@@ -135,7 +138,15 @@ object JimmerDdlCompiler {
         )
         return JimmerDdlOperationPlan(
             operations = operations,
-            snapshotSchema = schema,
+            snapshotSchema = if (settings.allowDestructiveChanges) {
+                schema
+            } else {
+                val previousSchema = changePlan.previous.toSchemaFor(
+                    schema = schema,
+                    renameOperations = changePlan.renameOperations,
+                )
+                schema.preserveSkippedDestructiveChanges(previousSchema, settings)
+            },
         )
     }
 
@@ -153,7 +164,7 @@ object JimmerDdlCompiler {
             val operations = SchemaDiffPlanner.plan(
                 schema,
                 actualSchema,
-                AutoDdlDiffOptions(settings.options, true, emptyList(), emptyList())
+                settings.toDiffOptions(),
             )
             JimmerDdlOperationPlan(operations = operations)
         }.getOrElse { cause ->
@@ -343,7 +354,27 @@ object JimmerDdlCompiler {
         return SchemaDiffPlanner.plan(
             schema,
             previousSchema,
-            AutoDdlDiffOptions(settings.options, true, emptyList(), emptyList())
+            settings.toDiffOptions(),
+        )
+    }
+
+    private fun JimmerDdlCompilerSettings.toDiffOptions(): AutoDdlDiffOptions {
+        return AutoDdlDiffOptions(
+            ddlOptions = options,
+            allowDestructiveChanges = allowDestructiveChanges,
+        )
+    }
+
+    private fun buildSkippedRenameWarnings(
+        changePlan: JimmerDdlSchemaChangePlan,
+        settings: JimmerDdlCompilerSettings,
+    ): List<String> {
+        if (settings.allowDestructiveChanges || changePlan.renameOperations.isEmpty()) {
+            return emptyList()
+        }
+        return listOf(
+            "Jimmer DDL skipped ${changePlan.renameOperations.size} table rename operation(s) because " +
+                "jimmerDdl.allowDestructiveChanges is false; new tables are created and old tables are preserved."
         )
     }
 
@@ -396,6 +427,76 @@ object JimmerDdlCompiler {
             tables.filter { table -> table.name.lowercase() in normalizedTableNames },
             sequences,
         )
+    }
+
+    private fun AutoDdlSchema.preserveSkippedDestructiveChanges(
+        previousSchema: AutoDdlSchema,
+        settings: JimmerDdlCompilerSettings,
+    ): AutoDdlSchema {
+        val previousTables = previousSchema.tables.associateBy { table -> table.name.lowercase() }
+        return copy(
+            tables = tables.map { desiredTable ->
+                val previousTable = previousTables[desiredTable.name.lowercase()]
+                    ?: return@map desiredTable
+                val desiredColumnNames = desiredTable.columns.map { column -> column.name.lowercase() }.toSet()
+                val previousPrimaryKey = previousTable.primaryKeyColumnNames.map { name -> name.lowercase() }.toSet()
+                val desiredPrimaryKey = desiredTable.primaryKeyColumnNames.map { name -> name.lowercase() }.toSet()
+                val effectivePrimaryKey = if (previousPrimaryKey.isNotEmpty() && previousPrimaryKey != desiredPrimaryKey) {
+                    previousPrimaryKey
+                } else {
+                    desiredPrimaryKey
+                }
+                val retainedColumns = desiredTable.columns + previousTable.columns.filter { column ->
+                    column.name.lowercase() !in desiredColumnNames
+                }
+                desiredTable.copy(
+                    columns = retainedColumns.map { column ->
+                        val previousColumn = previousTable.column(column.name)
+                        column.copy(
+                            comment = when {
+                                !settings.options.includeComments -> previousColumn?.comment
+                                !column.comment.isNullOrBlank() -> column.comment
+                                else -> previousColumn?.comment
+                            },
+                            primaryKey = column.name.lowercase() in effectivePrimaryKey,
+                        )
+                    },
+                    foreignKeys = if (settings.options.includeForeignKeys) {
+                        previousTable.foreignKeys + desiredTable.foreignKeys.filter { desiredForeignKey ->
+                            previousTable.foreignKeys.none { previousForeignKey ->
+                                previousForeignKey.columnNames.normalizedNames() == desiredForeignKey.columnNames.normalizedNames() &&
+                                    previousForeignKey.referencedTableName.equals(desiredForeignKey.referencedTableName, ignoreCase = true) &&
+                                    previousForeignKey.referencedColumnNames.normalizedNames() == desiredForeignKey.referencedColumnNames.normalizedNames() &&
+                                    previousForeignKey.onDelete.orEmpty().equals(desiredForeignKey.onDelete.orEmpty(), ignoreCase = true) &&
+                                    previousForeignKey.onUpdate.orEmpty().equals(desiredForeignKey.onUpdate.orEmpty(), ignoreCase = true)
+                            }
+                        }
+                    } else {
+                        previousTable.foreignKeys
+                    },
+                    indexes = if (settings.options.includeIndexes) {
+                        previousTable.indexes + desiredTable.indexes.filter { desiredIndex ->
+                            previousTable.indexes.none { previousIndex ->
+                                val sameDefinition = previousIndex.type == desiredIndex.type &&
+                                    previousIndex.columnNames.normalizedNames() == desiredIndex.columnNames.normalizedNames()
+                                previousIndex.name.equals(desiredIndex.name, ignoreCase = true) || sameDefinition
+                            }
+                        }
+                    } else {
+                        previousTable.indexes
+                    },
+                    comment = when {
+                        !settings.options.includeComments -> previousTable.comment
+                        !desiredTable.comment.isNullOrBlank() -> desiredTable.comment
+                        else -> previousTable.comment
+                    },
+                )
+            },
+        )
+    }
+
+    private fun List<String>.normalizedNames(): List<String> {
+        return map { name -> name.lowercase() }
     }
 
     private fun JimmerDdlSnapshot.toSchemaFor(
