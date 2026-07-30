@@ -1856,7 +1856,7 @@ class Operator {
 
         List<PropertyGetter> updatedGetters = new ArrayList<>();
         if (!ignoreUpdate) {
-            for (PropertyGetter getter : batch.shape().getGetters()) {
+            for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
                 if (getter.isUpdatable(conflictProps, upsertMask)) {
                     updatedGetters.add(getter);
                 }
