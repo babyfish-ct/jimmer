@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.classic.store
 
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.kt.model.calc.BookStoreAvgPriceResolver
 import org.babyfish.jimmer.sql.kt.model.calc.BookStoreNameWithVersionResolver
@@ -40,6 +41,10 @@ interface BookStore {
      */
     @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
+
+    @Formula(dependencies = ["avgPrice"])
+    val avgPriceText: String
+        get() = avgPrice.toPlainString()
 
     @Transient(BookStoreNameWithVersionResolver::class)
     val nameWithVersion: String

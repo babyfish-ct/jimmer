@@ -7,6 +7,41 @@ import org.junit.jupiter.api.Test;
 public class FormulaTest extends AbstractQueryTest {
 
     @Test
+    public void testFormulaBasedOnTransientResolver() {
+        BookStoreTable table = BookStoreTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .orderBy(table.name().asc())
+                        .select(
+                                table.fetch(
+                                        BookStoreFetcher.$.avgPriceText()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "order by tb_1_.NAME asc"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, coalesce(round(avg(tb_2_.PRICE), 2), ?) " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "where tb_1_.ID in (?, ?) " +
+                                    "group by tb_1_.ID"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"avgPriceText\":\"80.33\"}," +
+                                    "--->{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"avgPriceText\":\"58.50\"}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testHasStore() {
         BookTable table = BookTable.$;
         executeAndExpect(

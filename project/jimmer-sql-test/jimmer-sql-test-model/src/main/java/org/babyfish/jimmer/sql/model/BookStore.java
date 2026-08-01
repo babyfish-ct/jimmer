@@ -41,6 +41,11 @@ public interface BookStore {
     @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
+    @Formula(dependencies = "avgPrice")
+    default String avgPriceText() {
+        return avgPrice().toPlainString();
+    }
+
     @Transient(BookStoreNameWithVersionResolver.class)
     String nameWithVersion();
 

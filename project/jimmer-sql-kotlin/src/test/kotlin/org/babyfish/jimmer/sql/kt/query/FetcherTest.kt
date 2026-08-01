@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.fetchBy
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.fetchBy
+import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.DependencyView
 import org.babyfish.jimmer.sql.kt.model.fetcher.Issue1434Message
@@ -619,6 +620,32 @@ class FetcherTest : AbstractQueryTest() {
                     |--->--->"avgPrice":80.333333333333,
                     |--->--->"website":null
                     |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFormulaBasedOnTransientResolver() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                orderBy(table.id)
+                select(table.fetchBy {
+                    avgPriceText()
+                })
+            }
+        ) {
+            sql("select tb_1_.ID from BOOK_STORE tb_1_ order by tb_1_.ID asc")
+            statement(1).sql(
+                "select tb_1_.STORE_ID, coalesce(avg(tb_1_.PRICE), ?) " +
+                    "from BOOK tb_1_ " +
+                    "where tb_1_.STORE_ID in (?, ?) " +
+                    "group by tb_1_.STORE_ID"
+            )
+            rows(
+                """[
+                    |--->{"id":1,"avgPriceText":"58.500000000000"},
+                    |--->{"id":2,"avgPriceText":"80.333333333333"}
                     |]""".trimMargin()
             )
         }

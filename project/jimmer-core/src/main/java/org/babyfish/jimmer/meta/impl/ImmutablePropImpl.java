@@ -1717,6 +1717,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             ImmutableType targetType = prop.getTargetType();
             if (i + 1 == len) {
                 boolean isValid = prop.isFormula() ||
+                        prop.hasTransientResolver() ||
                         len > 1 ||
                         prop.hasStorage() ||
                         prop.isReferenceList(TargetLevel.PERSISTENT);
@@ -1726,7 +1727,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     formulaProp +
                                     "\", its dependency property \"" +
                                     prop +
-                                    "\" must be column-mapped property or another formula property"
+                                    "\" must be column-mapped property, another formula property " +
+                                    "or transient property with resolver"
                     );
                 }
             } else if (targetType == null) {
