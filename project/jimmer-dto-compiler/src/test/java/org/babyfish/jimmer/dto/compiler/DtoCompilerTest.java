@@ -1095,6 +1095,31 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testImportedAliasCannotConflictWithBuiltInType() {
+        DtoAstException simpleNameEx = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book(
+                        "import com.example.Int\n" +
+                                "BookView { value: Int }"
+                )
+        );
+        Assertions.assertTrue(simpleNameEx.getMessage().contains(
+                "\"Int\" cannot be used as imported alias because it is built-in type"
+        ));
+
+        DtoAstException renamedEx = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book(
+                        "import com.example.CustomType as Int\n" +
+                                "BookView { value: Int }"
+                )
+        );
+        Assertions.assertTrue(renamedEx.getMessage().contains(
+                "\"Int\" cannot be used as imported alias because it is built-in type"
+        ));
+    }
+
+    @Test
     public void testAnnotation() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import org.framework.annotations.{A, B, C, D}\n" +
