@@ -218,6 +218,11 @@ public class SqlServerDialect extends DefaultDialect {
     }
 
     @Override
+    public ForUpdateRenderPosition getForUpdateRenderPosition() {
+        return ForUpdateRenderPosition.TABLE_ALIAS_SUFFIX;
+    }
+
+    @Override
     public void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate) {
         if (forUpdate.getLockMode() != LockMode.UPDATE) {
             throw new IllegalArgumentException("SqlServer only supports LockMode.UPDATE");

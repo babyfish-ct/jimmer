@@ -17,12 +17,15 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryRead;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryReadSupport;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.query.TableUsageVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.dialect.ForUpdateRenderPosition;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -323,6 +326,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                         .sql(tableImplementor.getImmutableType().getTableName(builder.getAstContext().getSqlClient().getMetadataStrategy()))
                         .sql(" ")
                         .sqlAlias(this);
+                renderForUpdate(builder);
                 filterPredicate = null;
             }
             if (filterPredicate != null) {
@@ -365,6 +369,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                     .sql(rootType.getTableName(strategy))
                     .sql(" ")
                     .sql(rootAlias);
+            renderForUpdate(builder);
         } else {
             builder
                     .sql(rootType.getTableName(strategy))
@@ -387,6 +392,21 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
                 TableImplementor.RenderMode.NORMAL
         );
         renderJoinedTypeStageJoins(builder, tableImplementor, rootType, rootAlias, strategy);
+    }
+
+    private void renderForUpdate(SqlBuilder builder) {
+        if (parent != null) {
+            return;
+        }
+        AstContext astContext = builder.getAstContext();
+        ForUpdate forUpdate = astContext.getForUpdate();
+        if (forUpdate == null) {
+            return;
+        }
+        Dialect dialect = astContext.getSqlClient().getDialect();
+        if (dialect.getForUpdateRenderPosition() == ForUpdateRenderPosition.TABLE_ALIAS_SUFFIX) {
+            dialect.renderForUpdate(builder, forUpdate);
+        }
     }
 
     private void renderJoinedTypeQueryStageJoins(

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.dialect.ForUpdateRenderPosition;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -221,6 +222,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
+        astContext.pushForUpdate(data.forUpdate);
         try {
             if (data.withoutSortingAndPaging || astContext.isQueryWithoutSortingAndPaging() ||
                     (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
@@ -247,10 +249,13 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     });
                 }
             }
-            if (data.forUpdate != null) {
+            if (data.forUpdate != null &&
+                    getSqlClient().getDialect().getForUpdateRenderPosition() ==
+                            ForUpdateRenderPosition.QUERY_SUFFIX) {
                 getSqlClient().getDialect().renderForUpdate(builder, data.forUpdate);
             }
         } finally {
+            astContext.popForUpdate();
             astContext.popStatement();
         }
     }

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
+import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderMode;
@@ -29,6 +30,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     private final JSqlClientImplementor sqlClient;
 
     private StatementFrame statementFrame;
+
+    private ForUpdateFrame forUpdateFrame;
 
     private JoinTypeMergeFrame joinTypeMergeFrame;
 
@@ -95,6 +98,20 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public void popStatement() {
         this.statementFrame = this.statementFrame.parent;
+    }
+
+    public void pushForUpdate(@Nullable ForUpdate forUpdate) {
+        this.forUpdateFrame = new ForUpdateFrame(this.forUpdateFrame, forUpdate);
+    }
+
+    public void popForUpdate() {
+        this.forUpdateFrame = this.forUpdateFrame.parent;
+    }
+
+    @Nullable
+    public ForUpdate getForUpdate() {
+        ForUpdateFrame frame = this.forUpdateFrame;
+        return frame != null ? frame.forUpdate : null;
     }
 
     public void pushRenderedBaseTable(RealTable realBaseTable) {
@@ -596,6 +613,19 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             builder.append(frame.statement);
         }
         return builder.toString();
+    }
+
+    private static class ForUpdateFrame {
+
+        final ForUpdateFrame parent;
+
+        @Nullable
+        final ForUpdate forUpdate;
+
+        private ForUpdateFrame(ForUpdateFrame parent, @Nullable ForUpdate forUpdate) {
+            this.parent = parent;
+            this.forUpdate = forUpdate;
+        }
     }
 
     private static class BaseTableRenderFrame {

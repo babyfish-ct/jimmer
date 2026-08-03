@@ -600,5 +600,9 @@ public interface Dialect extends SqlTypeStrategy {
         return rs.getTimestamp(col);
     }
 
+    default ForUpdateRenderPosition getForUpdateRenderPosition() {
+        return ForUpdateRenderPosition.QUERY_SUFFIX;
+    }
+
     void renderForUpdate(AbstractSqlBuilder<?> builder, ForUpdate forUpdate);
 }
