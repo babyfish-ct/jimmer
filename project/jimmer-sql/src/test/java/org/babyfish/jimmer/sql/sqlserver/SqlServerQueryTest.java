@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.query.LockMode;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.dialect.SqlServerDialect;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
@@ -12,6 +13,7 @@ import org.babyfish.jimmer.sql.model.inheritance.joinedtable.OrganizationTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -130,6 +132,52 @@ public class SqlServerQueryTest extends AbstractQueryTest {
                     );
                     ctx.variables(200L, "ORG");
                 }
+        );
+    }
+
+    @Test
+    public void testForUpdateWithCteRoot() {
+        JSqlClient sqlClient = sqlOnlyClient();
+        BookTable book = BookTable.$;
+        BaseTable1<BookTable> cte = sqlClient
+                .createBaseQuery(book)
+                .addSelect(book)
+                .asCteBaseTable();
+        executeAndExpect(
+                sqlClient
+                        .createQuery(cte)
+                        .select(cte.get_1().id())
+                        .forUpdate(),
+                ctx -> ctx.sql(
+                        "with tb_1_(c1) as (" +
+                                "select tb_2_.ID from BOOK tb_2_" +
+                                ") " +
+                                "select tb_1_.c1 from tb_1_ with(updlock, rowlock)"
+                )
+        );
+    }
+
+    @Test
+    public void testForUpdateWithDerivedTableRootIsRejected() {
+        JSqlClient sqlClient = sqlOnlyClient();
+        BookTable book = BookTable.$;
+        BaseTable1<BookTable> derivedTable = sqlClient
+                .createBaseQuery(book)
+                .addSelect(book)
+                .asBaseTable();
+        IllegalArgumentException ex = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> jdbc(con ->
+                        sqlClient
+                                .createQuery(derivedTable)
+                                .select(derivedTable.get_1().id())
+                                .forUpdate()
+                                .execute(con)
+                )
+        );
+        Assertions.assertEquals(
+                "For update at table alias suffix is not supported for derived tables",
+                ex.getMessage()
         );
     }
 

@@ -395,6 +395,10 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     private void renderForUpdate(SqlBuilder builder) {
+        renderForUpdate(builder, false);
+    }
+
+    private void renderForUpdate(SqlBuilder builder, boolean derivedTable) {
         if (parent != null) {
             return;
         }
@@ -405,6 +409,11 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
         Dialect dialect = astContext.getSqlClient().getDialect();
         if (dialect.getForUpdateRenderPosition() == ForUpdateRenderPosition.TABLE_ALIAS_SUFFIX) {
+            if (derivedTable) {
+                throw new IllegalArgumentException(
+                        "For update at table alias suffix is not supported for derived tables"
+                );
+            }
             dialect.renderForUpdate(builder, forUpdate);
         }
     }
@@ -591,12 +600,14 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         }
         if (aliasOnly) {
             builder.sqlAlias(this);
+            renderForUpdate(builder, false);
         } else {
             builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             baseTableImpl.renderBaseQueryCore(builder);
             builder.leave();
             if (!baseTableImpl.isCte()) {
                 builder.sql(" ").sqlAlias(this);
+                renderForUpdate(builder, true);
             }
         }
         if (!childTables.isEmpty()) {
