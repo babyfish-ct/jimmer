@@ -1468,6 +1468,44 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testWhereBooleanLiteralOnStringOperandReportsBooleanDiagnostic() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.treeNode(
+                    "TreeNodeView {\n" +
+                            "    name\n" +
+                            "    !where(name = true)\n" +
+                            "    childNodes*\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "file:/User/test/TreeNode.dto:3 : Illegal boolean literal, the left operand is not boolean\n" +
+                        "    !where(name = true)\n" +
+                        "                  ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testWhereIntegerLiteralOnStringOperandReportsIntegerDiagnostic() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.treeNode(
+                    "TreeNodeView {\n" +
+                            "    name\n" +
+                            "    !where(name = 10)\n" +
+                            "    childNodes*\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "file:/User/test/TreeNode.dto:3 : Illegal integer literal, the left operand is not integer\n" +
+                        "    !where(name = 10)\n" +
+                        "                  ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
     public void testIssue1036() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "TreeNodeView {\n" +
