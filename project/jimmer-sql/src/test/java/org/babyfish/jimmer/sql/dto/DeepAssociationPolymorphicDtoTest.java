@@ -1,13 +1,21 @@
 package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.model.inheritance.joined.organization.Company;
+import org.babyfish.jimmer.sql.model.inheritance.joined.organization.Department;
+import org.babyfish.jimmer.sql.model.inheritance.joined.organization.Director;
 import org.babyfish.jimmer.sql.model.inheritance.joined.organization.OrganizationTable;
+import org.babyfish.jimmer.sql.model.inheritance.joined.organization.dto.OrganizationInput;
 import org.babyfish.jimmer.sql.model.inheritance.joined.organization.dto.OrganizationOverview;
+import org.babyfish.jimmer.sql.model.inheritance.single.employee.Employee;
 import org.babyfish.jimmer.sql.model.inheritance.single.employee.EmployeeTable;
+import org.babyfish.jimmer.sql.model.inheritance.single.employee.FullTimeEmployee;
+import org.babyfish.jimmer.sql.model.inheritance.single.employee.dto.EmployeeInput;
 import org.babyfish.jimmer.sql.model.inheritance.single.employee.dto.EmployeeOverview;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -504,5 +512,91 @@ public class DeepAssociationPolymorphicDtoTest extends AbstractQueryTest {
         // TargetOf_project 嵌套在每个 branch 的 TargetOf_responsibilities 内
         // (FullTimeEmployee. vs PartTimeEmployee.),所以用 Object 接收保持 branch 无关。
         assertNotNull(project);
+    }
+
+    /*
+     * Polymorphic Input DTO 转换测试:
+     * 验证 trimmed 修复对 polymorphic Input DTO 也生效
+     * (View / Input 都走 DtoGenerator.generatePolymorphic() 同一份代码)。
+     *
+     * 构造嵌套关联的 Input DTO,调 toEntity() 转成 entity,
+     * 验证 entity 的关联 prop 跟 Input 的嵌套 DTO 一致。
+     */
+    @Test
+    public void testOrganizationInputToEntity() {
+        OrganizationInput.Company input = new OrganizationInput.Company();
+        input.setId(5000L);
+        input.setName("Acme Corp");
+        input.setShareCount(10000);
+
+        // 嵌套 director (1-level 关联)
+        OrganizationInput.Company.TargetOf_director director =
+                new OrganizationInput.Company.TargetOf_director();
+        director.setId(5900L);
+        director.setFullName("Alice Anderson");
+        input.setDirector(director);
+
+        // 嵌套 departments (1-level 关联,每个 department 有 manager 2-level 关联)
+        OrganizationInput.Company.TargetOf_departments department =
+                new OrganizationInput.Company.TargetOf_departments();
+        department.setId(5100L);
+        department.setName("Engineering");
+        input.setDepartments(Collections.singletonList(department));
+
+        // toEntity() 递归把嵌套 DTO 转成 entity
+        Company entity = input.toEntity();
+        assertEquals(5000L, entity.id());
+        assertEquals("Acme Corp", entity.name());
+        assertEquals(10000, entity.shareCount());
+
+        Director entityDirector = entity.director();
+        assertNotNull(entityDirector);
+        assertEquals(5900L, entityDirector.id());
+        assertEquals("Alice Anderson", entityDirector.fullName());
+
+        List<Department> entityDepartments = entity.departments();
+        assertNotNull(entityDepartments);
+        assertEquals(1, entityDepartments.size());
+        assertEquals(5100L, entityDepartments.get(0).id());
+        assertEquals("Engineering", entityDepartments.get(0).name());
+        // manager 没设,应为 null
+        assertNull(entityDepartments.get(0).manager());
+    }
+
+    @Test
+    public void testEmployeeInputToEntity() {
+        // FullTimeEmployee 分支的 Input (有 supervisor 投影 department 2-level)
+        EmployeeInput.FullTimeEmployee ftInput = new EmployeeInput.FullTimeEmployee();
+        ftInput.setId(6001L);
+        ftInput.setFullName("Bob Bell");
+        ftInput.setType("FULL_TIME");
+        ftInput.setAnnualSalary(95000L);
+
+        EmployeeInput.FullTimeEmployee.TargetOf_supervisor supervisor =
+                new EmployeeInput.FullTimeEmployee.TargetOf_supervisor();
+        supervisor.setId(6000L);
+        supervisor.setFullName("Alice Allen");
+        // FT 的 TargetOf_supervisor 投影 department,所以这里设它
+        EmployeeInput.FullTimeEmployee.TargetOf_supervisor.TargetOf_department department =
+                new EmployeeInput.FullTimeEmployee.TargetOf_supervisor.TargetOf_department();
+        department.setId(6900L);
+        department.setName("Engineering");
+        department.setLocation("Beijing");
+        supervisor.setDepartment(department);
+        ftInput.setSupervisor(supervisor);
+
+        FullTimeEmployee entity = ftInput.toEntity();
+        assertEquals(6001L, entity.id());
+        assertEquals("Bob Bell", entity.fullName());
+        assertEquals(95000L, entity.annualSalary());
+
+        Employee entitySupervisor = entity.supervisor();
+        assertNotNull(entitySupervisor);
+        assertEquals(6000L, entitySupervisor.id());
+        assertEquals("Alice Allen", entitySupervisor.fullName());
+        assertNotNull(entitySupervisor.department());
+        assertEquals(6900L, entitySupervisor.department().id());
+        assertEquals("Engineering", entitySupervisor.department().name());
+        assertEquals("Beijing", entitySupervisor.department().location());
     }
 }

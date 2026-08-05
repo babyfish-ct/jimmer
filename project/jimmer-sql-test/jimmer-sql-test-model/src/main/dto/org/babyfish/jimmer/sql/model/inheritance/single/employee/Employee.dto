@@ -70,3 +70,49 @@ EmployeeOverview {
         }
     }
 }
+
+input EmployeeInput {
+    id
+    fullName
+    type
+    #types {
+        #exhaustive
+        FullTimeEmployee {
+            annualSalary
+            supervisor {
+                id
+                fullName
+                department {
+                    id
+                    name
+                    location
+                }
+            }
+            responsibilities {
+                id
+                title
+                project {
+                    id
+                    name
+                    client
+                }
+            }
+        }
+        PartTimeEmployee {
+            hourlyRate
+            supervisor {
+                id
+                fullName
+            }
+            responsibilities {
+                id
+                title
+                project {
+                    id
+                    name
+                    client
+                }
+            }
+        }
+    }
+}

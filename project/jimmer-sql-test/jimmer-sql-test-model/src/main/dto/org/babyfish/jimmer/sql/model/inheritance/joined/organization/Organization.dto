@@ -1,23 +1,16 @@
 /*
- * Organization 的 polymorphic DTO(joined 继承)。
+ * Organization 的 polymorphic DTO (joined 继承)。
  *
- * 根属性(每个子类型共享):
- *   - id, name (标量)
- *   - `director` (1-level) 及其嵌套的 `officeAddress` (2-level)
- *     -> `TargetOf_director` 和 `TargetOf_address` 嵌套在外部
- *        `OrganizationOverview` DTO 中
- *
- * 分支专属属性(在 `#types` 内声明):
- *   - shareCount (Company) / budget (GovernmentAgency) — 分支标量
- *   - `departments` (1-level, OneToMany) 及其嵌套的
- *     `departments.manager` (2-level)
- *     -> `TargetOf_departments` 和 `TargetOf_manager` 嵌套在
- *        每个 branch 类中
- *
- * 验证 joined 继承的 per-layer inner DTO 布局:
- *   - 根级 inner DTO 嵌套在外部 DTO
+ * 3 个变种共用同一种 per-layer inner DTO 布局:
+ *   - 根级 inner DTO 嵌套在 outer (TargetOf_director / TargetOf_address)
  *   - 分支专属 inner DTO 嵌套在每个 branch 类
- *   - 2-level 路径: director -> officeAddress 和 departments -> manager
+ *     (TargetOf_departments / TargetOf_manager)
+ *   - 2-level 路径: director -> officeAddress (根级)
+ *                   departments -> manager (per-branch)
+ *
+ * 三个变种走的是 DtoGenerator.generatePolymorphic() 同一份代码,所以
+ * trimmed 修复对三者同时生效 — View 用来投影,Input 用来 toEntity 转换,
+ * Spec 用来拼查询条件。
  */
 OrganizationOverview {
     id
@@ -68,3 +61,54 @@ OrganizationOverview {
         }
     }
 }
+
+input OrganizationInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Company {
+            shareCount
+            director {
+                id
+                fullName
+                officeAddress {
+                    id
+                    street
+                    city
+                }
+            }
+            departments {
+                id
+                name
+                manager {
+                    id
+                    fullName
+                    level
+                }
+            }
+        }
+        GovernmentAgency {
+            budget
+            director {
+                id
+                fullName
+                officeAddress {
+                    id
+                    street
+                    city
+                }
+            }
+            departments {
+                id
+                name
+                manager {
+                    id
+                    fullName
+                    level
+                }
+            }
+        }
+    }
+}
+
