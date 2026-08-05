@@ -301,7 +301,7 @@ public class DtoGenerator {
         ClassName superInterfaceName = getDtoClassName();
         DtoPolymorphicBranch<ImmutableType, ImmutableProp> defaultBranch = polymorphism.getDefaultBranch();
 
-        Map<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator> branchGenerators = new HashMap<>();
+        Map<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator> branchGenerators = new LinkedHashMap<>();
         if (defaultBranch != null) {
             branchGenerators.put(defaultBranch, createPolymorphicBranch(defaultBranch, superInterfaceName));
         }
