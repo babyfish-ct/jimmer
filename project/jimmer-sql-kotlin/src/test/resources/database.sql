@@ -1368,30 +1368,30 @@ create table staff_responsibility(
         foreign key(project_id) references staff_project(id)
 );
 
-/* -- Organization (joined-inheritance) 琛屾暟鎹?----------------------------- */
+/* -- Organization (joined-inheritance) 行数据 ----------------------------- */
 
 insert into org_address(id, street, city) values
     (5800, '100 Main St',    'Beijing'),
     (5801, '200 Oak Ave',    'Shanghai'),
     (5802, '300 Pine Rd',    'Guangzhou');
--- 5803 鏁呮剰鐪佺暐: director 5903 娌℃湁 office_address
--- (鐢ㄤ簬楠岃瘉 LEFT JOIN 鐨?nullable 琛屼负)
+-- 5803 故意省略: director 5903 没有 office_address
+-- (用于验证 LEFT JOIN 的 nullable 行为)
 
-/* 娉曚汉浠ｈ〃: Alice/Bob/Carol 鏈夊姙鍏湴鍧€, Dave 娌℃湁 */
+/* 法人代表: Alice/Bob/Carol 有办公地址, Dave 没有 */
 insert into org_director(id, full_name, office_address_id) values
     (5900, 'Alice Anderson', 5800),
     (5901, 'Bob Brown',      5801),
     (5902, 'Carol Carter',   5802),
     (5903, 'Dave Davis',     null);
 
-/* 閮ㄩ棬缁忕悊(3 涓亴绾? */
+/* 部门经理(3 个职级) */
 insert into org_manager(id, full_name, level) values
     (5700, 'Eve Edwards',   3),
     (5701, 'Frank Foster',  2),
     (5702, 'Grace Green',   3),
     (5703, 'Henry Howard',  2);
 
-/* 2 瀹跺叕鍙?+ 2 涓斂搴滄満鏋?*/
+/* 2 家公司 + 2 个政府机构 */
 insert into org_organization(id, org_type, name, director_id) values
     (5000, 'COMPANY',     'Acme Corp',    5900),
     (5001, 'COMPANY',     'Globex Inc',   5901),
@@ -1406,7 +1406,7 @@ insert into org_government_agency(id, budget) values
     (5002, 1000000),
     (5003, 5000000);
 
-/* 閮ㄩ棬: Acme 2 涓? Globex 1 涓? FDA 1 涓? NASA 1 涓?鏃?manager) */
+/* 部门: Acme 2 个, Globex 1 个, FDA 1 个, NASA 1 个(无 manager) */
 insert into org_department(id, name, organization_id, manager_id) values
     (5100, 'Engineering',   5000, 5700),
     (5101, 'Sales',         5000, 5701),
@@ -1414,7 +1414,7 @@ insert into org_department(id, name, organization_id, manager_id) values
     (5103, 'Public Safety', 5002, 5703),
     (5104, 'Mission Ops',   5003, null);  -- nullable manager
 
-/* -- Employee (single-inheritance) 琛屾暟鎹?-------------------------------- */
+/* -- Employee (single-inheritance) 行数据 -------------------------------- */
 
 insert into staff_department(id, name, location) values
     (6900, 'Engineering', 'Beijing'),
@@ -1426,14 +1426,14 @@ insert into staff_project(id, name, client) values
     (6301, 'Apollo',  'NASA'),
     (6302, 'Helios',  'Acme');
 
-/* 2 涓寮?+ 2 涓吋鑱屻€侫lice 娌℃湁 supervisor(缁勭粐閾剧殑鏍? */
+/* 2 个正式 + 2 个兼职。Alice 没有 supervisor(组织链的根) */
 insert into staff_employee(id, full_name, emp_type, annual_salary, hourly_rate, supervisor_id, department_id) values
     (6000, 'Alice Allen',  'FULL_TIME', 120000, null, null, 6900),
     (6001, 'Bob Bell',     'FULL_TIME',  95000, null, 6000, 6900),
     (6002, 'Carol Cooper', 'PART_TIME',  null,    50, 6000, 6901),
     (6003, 'Dave Diaz',    'PART_TIME',  null,    35, 6001, 6902);
 
-/* 鑱岃矗: Alice 2 涓? Bob 1 涓? Carol 1 涓? Dave 1 涓?*/
+/* 职责: Alice 2 个, Bob 1 个, Carol 1 个, Dave 1 个 */
 insert into staff_responsibility(id, title, owner_id, project_id) values
     (6100, 'API Design',        6000, 6300),
     (6101, 'Code Review',       6000, 6301),
