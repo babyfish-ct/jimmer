@@ -1,0 +1,72 @@
+/*
+ * Employee 的 polymorphic DTO(single-table 继承)。
+ *
+ * 这个 DTO 专门测试 **"同名 prop 不同投影"** 场景:
+ * `supervisor` 不在根级声明,而是在每个 branch 内各自声明,
+ * 且两个 branch 投影的 supervisor 字段集不同:
+ *
+ *   - FullTimeEmployee.supervisor 投影 { id, fullName, department { id, name, location } }
+ *   - PartTimeEmployee.supervisor 投影 { id, fullName }  (不投影 department)
+ *
+ * jimmer-ksp 会为两个 branch 生成**字段集不同**的 `TargetOf_supervisor`
+ * inner DTO 类,运行时各自发独立 batch fetch SQL。
+ * 这是 polymorphic DTO 的 per-branch 灵活投影能力的核心验证。
+ *
+ * 标量属性(每个子类型共享):
+ *   - id, fullName, type
+ *
+ * FullTimeEmployee 分支专属:
+ *   - annualSalary (分支标量)
+ *   - supervisor (1-level, ManyToOne) -> department (2-level)
+ *   - responsibilities (1-level, OneToMany) -> project (2-level)
+ *
+ * PartTimeEmployee 分支专属:
+ *   - hourlyRate (分支标量)
+ *   - supervisor (1-level, 不投影 department)
+ *   - responsibilities (1-level, OneToMany) -> project (2-level)
+ */
+EmployeeOverview {
+    id
+    fullName
+    type
+    #types {
+        #exhaustive
+        FullTimeEmployee {
+            annualSalary
+            supervisor {
+                id
+                fullName
+                department {
+                    id
+                    name
+                    location
+                }
+            }
+            responsibilities {
+                id
+                title
+                project {
+                    id
+                    name
+                    client
+                }
+            }
+        }
+        PartTimeEmployee {
+            hourlyRate
+            supervisor {
+                id
+                fullName
+            }
+            responsibilities {
+                id
+                title
+                project {
+                    id
+                    name
+                    client
+                }
+            }
+        }
+    }
+}
