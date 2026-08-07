@@ -1355,6 +1355,24 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testBatchConfigOnScalarProperty() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book(
+                    "BookView {\n" +
+                            "    !batch(10)\n" +
+                            "    name\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "file:/User/test/Book.dto:2 : Cannot be specify \"!batch\" when the property is not associated list\n" + 
+                "    !batch(10)\n" + 
+                "    ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
     public void testZeroOffsetConfig() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "BookView {\n" +
