@@ -273,7 +273,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     depth.start.getLine(),
                     depth.start.getCharPositionInLine(),
-                    "The offset cannot be less than 0"
+                    "The depth cannot be less than 0"
             );
         }
         this.depth = value;
