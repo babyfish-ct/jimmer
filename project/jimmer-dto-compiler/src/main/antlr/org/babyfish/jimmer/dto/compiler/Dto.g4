@@ -12,6 +12,7 @@ dto
     exportStatement?
     (importStatements += importStatement)*
     (dtoTypes += dtoType | fragments += dtoFragment)*
+    (trailingDoc = DocComment)?
     EOF
     ;
 
@@ -71,6 +72,7 @@ dtoBody
         )
         (',' | ';')?
     )*
+    (trailingDoc = DocComment)?
     '}'
     ;
 
@@ -86,7 +88,7 @@ explicitProp
 
 typesBlock
     :
-    '#types' '{' (typesElements += typesElement)* '}'
+    '#types' '{' (typesElements += typesElement)* (trailingDoc = DocComment)? '}'
     ;
 
 typesElement
@@ -140,7 +142,7 @@ macro
 
 aliasGroup
     :
-    pattern = aliasPattern '{' (macros += macro)* (props += positiveProp)* '}'
+    pattern = aliasPattern '{' (macros += macro)* (props += positiveProp)* (trailingDoc = DocComment)? '}'
     ;
 
 aliasPattern
