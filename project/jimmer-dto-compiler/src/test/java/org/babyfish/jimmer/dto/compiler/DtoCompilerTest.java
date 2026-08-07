@@ -1234,6 +1234,74 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testTrailingDocComment() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    name\n" +
+                        "\n" +
+                        "    /**\n" +
+                        "     * some documentation\n" +
+                        "     */\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[BookView {--->name}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testTrailingDocCommentAtEndOfFile() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    name\n" +
+                        "}\n" +
+                        "/**\n" +
+                        " * some documentation\n" +
+                        " */\n"
+        );
+        assertContentEquals(
+                "[BookView {--->name}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testTrailingDocCommentInTypesBlock() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.client(
+                "ClientView {\n" +
+                        "    id\n" +
+                        "    #types {\n" +
+                        "        Person {\n" +
+                        "            firstName\n" +
+                        "        }\n" +
+                        "        /**\n" +
+                        "         * some documentation\n" +
+                        "         */\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        Assertions.assertNotNull(dtoType.getPolymorphism());
+    }
+
+    @Test
+    public void testTrailingDocCommentInAliasGroup() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.treeNode(
+                "TreeFlatView {\n" +
+                        "    flat(parent) {\n" +
+                        "        as(^ -> parent) {\n" +
+                        "            name\n" +
+                        "            /**\n" +
+                        "             * some documentation\n" +
+                        "             */\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        Assertions.assertNotNull(dtoType);
+    }
+
+    @Test
     public void testInterfaceImplementation() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import com.company.project.model.common.Named\n" +
