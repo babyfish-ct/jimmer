@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -1468,6 +1469,29 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFloatingPointWhereLiteralsKeepPrecision() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.floatingPoint(
+                "FloatingPointView for FloatingPointParent {\n" +
+                        "    !where(doubleVal = 1.5) children1 { id }\n" +
+                        "    !where(doubleVal = 3.4) children2 { id }\n" +
+                        "    !where(floatVal = 3.5) children3 { id }\n" +
+                        "}"
+        );
+        Assertions.assertEquals(
+                new BigDecimal("1.5"),
+                ((PropConfig.Predicate.Cmp<BaseProp>) dtoTypes.get(0).getDtoProps().get(0).getConfig().getPredicate()).getValue()
+        );
+        Assertions.assertEquals(
+                new BigDecimal("3.4"),
+                ((PropConfig.Predicate.Cmp<BaseProp>) dtoTypes.get(0).getDtoProps().get(1).getConfig().getPredicate()).getValue()
+        );
+        Assertions.assertEquals(
+                new BigDecimal("3.5"),
+                ((PropConfig.Predicate.Cmp<BaseProp>) dtoTypes.get(0).getDtoProps().get(2).getConfig().getPredicate()).getValue()
+        );
+    }
+
+    @Test
     public void testIssue1036() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "TreeNodeView {\n" +
@@ -2616,21 +2640,40 @@ public class DtoCompilerTest {
 
         private final String name;
 
+        @Nullable
         private final Supplier<BaseType> targetTypeSupplier;
 
         private final boolean isNullable;
 
         private final boolean isList;
 
+        @Nullable
+        private final SimplePropType simplePropType;
+
         BasePropImpl(String name) {
-            this(name, null, false, false);
+            this(name, null, false, false, null);
+        }
+
+        BasePropImpl(String name, SimplePropType simplePropType) {
+            this(name, null, false, false, simplePropType);
         }
 
         BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isNullable, boolean isList) {
+            this(name, targetTypeSupplier, isNullable, isList, null);
+        }
+
+        private BasePropImpl(
+                String name,
+                @Nullable Supplier<BaseType> targetTypeSupplier,
+                boolean isNullable,
+                boolean isList,
+                @Nullable SimplePropType simplePropType
+        ) {
             this.name = name;
             this.targetTypeSupplier = targetTypeSupplier;
             this.isNullable = isNullable;
             this.isList = isList;
+            this.simplePropType = simplePropType;
         }
 
         @Override
@@ -2643,6 +2686,7 @@ public class DtoCompilerTest {
             return isNullable;
         }
 
+        @Nullable
         public BaseType getTargetType() {
             if (targetTypeSupplier == null) {
                 return null;
@@ -2827,6 +2871,21 @@ public class DtoCompilerTest {
                 new BasePropImpl("swiftCode")
         );
 
+        private static final BaseTypeImpl FLOATING_POINT_CHILD_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.FloatingPointChild",
+                new BasePropImpl("id"),
+                new BasePropImpl("floatVal", SimplePropType.FLOAT),
+                new BasePropImpl("doubleVal", SimplePropType.DOUBLE)
+        );
+
+        private static final BaseTypeImpl FLOATING_POINT_PARENT_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.FloatingPointParent",
+                new BasePropImpl("id"),
+                new BasePropImpl("children1", () -> TYPE_MAP.get("FloatingPointChild"), false, true),
+                new BasePropImpl("children2", () -> TYPE_MAP.get("FloatingPointChild"), false, true),
+                new BasePropImpl("children3", () -> TYPE_MAP.get("FloatingPointChild"), false, true)
+        );
+
         private final boolean externalTypesVisible;
 
         private int immutableTypeLookupCount;
@@ -2987,6 +3046,26 @@ public class DtoCompilerTest {
             }
         }
 
+        static List<DtoType<BaseType, BaseProp>> floatingPoint(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                mockedSource(
+                                        "file:/User/test/FloatingPoint.dto",
+                                        code
+                                ),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "FloatingPoint.dto"
+                        )
+                ).compile(FLOATING_POINT_PARENT_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
+        }
+
         @Override
         protected Collection<BaseType> getSuperTypes(BaseType baseType) {
             return ((BaseTypeImpl) baseType).superTypes;
@@ -3067,6 +3146,12 @@ public class DtoCompilerTest {
 
         @Override
         protected SimplePropType getSimplePropType(BaseProp baseProp) {
+            if (baseProp instanceof BasePropImpl) {
+                SimplePropType simplePropType = ((BasePropImpl) baseProp).simplePropType;
+                if (simplePropType != null) {
+                    return simplePropType;
+                }
+            }
             if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
                 return SimplePropType.STRING;
             }
@@ -3076,6 +3161,12 @@ public class DtoCompilerTest {
         @Override
         protected SimplePropType getSimplePropType(PropConfig.PathNode<BaseProp> pathNode) {
             BaseProp baseProp = pathNode.getProp();
+            if (baseProp instanceof BasePropImpl) {
+                SimplePropType simplePropType = ((BasePropImpl) baseProp).simplePropType;
+                if (simplePropType != null) {
+                    return simplePropType;
+                }
+            }
             if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
                 return SimplePropType.STRING;
             }
@@ -3112,6 +3203,8 @@ public class DtoCompilerTest {
             TYPE_MAP.put("Person", PERSON_TYPE);
             TYPE_MAP.put("Payment", PAYMENT_TYPE);
             TYPE_MAP.put("WirePayment", WIRE_PAYMENT_TYPE);
+            TYPE_MAP.put("FloatingPointChild", FLOATING_POINT_CHILD_TYPE);
+            TYPE_MAP.put("FloatingPointParent", FLOATING_POINT_PARENT_TYPE);
 
             inherit(ORGANIZATION_TYPE, CLIENT_TYPE);
             inherit(PERSON_TYPE, CLIENT_TYPE);
