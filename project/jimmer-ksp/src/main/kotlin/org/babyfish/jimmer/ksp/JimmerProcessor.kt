@@ -135,34 +135,25 @@ class JimmerProcessor(
         }
     }
 
-    private fun dtoDir(configurationName: String, prefix: String) : Collection<String>? =
+    private fun dtoDir(configurationName: String, prefix: String): Collection<String>? =
         environment.options[configurationName]
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?.let { text ->
-                text.split("\\s*[,:;]\\s*")
-                    .map {
-                        when {
-                            it == "" || it == "/" -> null
-                            it.startsWith("/") -> it.substring(1)
-                            it.endsWith("/") -> it.substring(0, it.length - 1)
-                            else -> it.takeIf { it.isNotEmpty() }
-                        }?.also { dir ->
-                            if (!dir.startsWith(prefix)) {
-                                throw GeneratorException(
-                                    "Illegal KSP configuration \"" +
+                DtoUtils.splitDtoDirs(text)
+                    .onEach { dir ->
+                        if (!dir.startsWith(prefix)) {
+                            throw GeneratorException(
+                                "Illegal KSP configuration \"" +
                                         configurationName +
                                         "\", it contains an illegal path \"" +
                                         dir +
                                         "\" which does not start with \"" +
                                         prefix +
                                         "\""
-                                )
-                            }
+                            )
                         }
                     }
-                    .filterNotNull()
-                    .toSet()
             }
             ?.let { DtoUtils.standardDtoDirs(it) }
 

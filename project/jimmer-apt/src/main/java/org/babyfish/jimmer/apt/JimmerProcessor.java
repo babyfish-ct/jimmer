@@ -288,21 +288,7 @@ public class JimmerProcessor extends AbstractProcessor {
             Collection<String> defaultDirs) {
         String dtoDirs = env.getOptions().get(configurationName);
         if (dtoDirs != null && !dtoDirs.isEmpty()) {
-            Set<String> dirs = new LinkedHashSet<>();
-            for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
-                if (path.isEmpty() || path.equals("/")) {
-                    continue;
-                }
-                if (path.startsWith("/")) {
-                    path = path.substring(1);
-                }
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-                if (!path.isEmpty()) {
-                    dirs.add(path);
-                }
-            }
+            Set<String> dirs = DtoUtils.splitDtoDirs(dtoDirs.trim());
             for (String dir : dirs) {
                 if (!dir.startsWith(prefix)) {
                     throw new GeneratorException(
