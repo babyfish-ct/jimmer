@@ -1,7 +1,11 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.joinedtable;
 
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.model.inheritance.logical.joinedtable.Client;
 import org.babyfish.jimmer.sql.model.inheritance.logical.joinedtable.Organization;
+import org.babyfish.jimmer.sql.model.inheritance.logical.joinedtable.OrganizationDraft;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -10,6 +14,47 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class JoinedInheritanceLogicalDeleteTest extends AbstractMutationTest {
+
+    @Test
+    public void testInsertDerivedType() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(502L);
+                                    organization.setName("Logical New Org");
+                                    organization.setTaxCode("L-NEW-001");
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into LOGICAL_JOINED_CLIENT(ID, CLIENT_TYPE, NAME, DELETED) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(502L, "ORG", "Logical New Org", false);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into LOGICAL_JOINED_ORGANIZATION(ID, TAX_CODE) " +
+                                        "values(?, ?)"
+                        );
+                        it.variables(502L, "L-NEW-001");
+                    });
+                    ctx.rowCount(AffectedTable.of(Client.class), 1);
+                    ctx.rowCount(AffectedTable.of(Organization.class), 1);
+                    ctx.entity(it -> {
+                        it.original("{\"id\":502,\"name\":\"Logical New Org\",\"taxCode\":\"L-NEW-001\"}");
+                        it.modified(
+                                "{\"id\":502,\"name\":\"Logical New Org\"," +
+                                        "\"deleted\":false,\"taxCode\":\"L-NEW-001\"}"
+                        );
+                    });
+                }
+        );
+    }
 
     @Test
     public void testLogicalDeleteDerivedType() {

@@ -261,9 +261,12 @@ class Operator {
         PropertyGetter discriminatorGetter = discriminatorProp != null ?
                 PropertyGetter.propertyGetters(sqlClient, discriminatorProp).get(0) :
                 null;
+        InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
         List<PropertyGetter> defaultGetters = new ArrayList<>();
         for (PropertyGetter getter : Shape.fullOf(sqlClient, tableType.getJavaClass()).getGetters()) {
-            if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
+            if ((inheritanceInfo == null || inheritanceInfo.isPropAvailableInTable(getter.prop(), tableType)) &&
+                    getter.metadata().hasDefaultValue() &&
+                    !batch.shape().contains(getter)) {
                 defaultGetters.add(getter);
             }
         }
@@ -1797,9 +1800,12 @@ class Operator {
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         Shape fullShape = Shape.fullOf(sqlClient, tableType.getJavaClass());
+        InheritanceInfo inheritanceInfo = tableType.getInheritanceInfo();
         List<PropertyGetter> defaultGetters = new ArrayList<>();
         for (PropertyGetter getter : fullShape.getColumnDefinitionGetters()) {
-            if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
+            if ((inheritanceInfo == null || inheritanceInfo.isPropAvailableInTable(getter.prop(), tableType)) &&
+                    getter.metadata().hasDefaultValue() &&
+                    !batch.shape().contains(getter)) {
                 defaultGetters.add(getter);
             }
         }
