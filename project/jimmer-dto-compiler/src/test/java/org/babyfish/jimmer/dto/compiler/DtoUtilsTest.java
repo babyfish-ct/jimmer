@@ -73,5 +73,65 @@ public class DtoUtilsTest {
                         )
                 ).toString()
         );
+
+        Assertions.assertEquals(
+                "[src/main/dto, src/main/dto2]",
+                DtoUtils.splitDtoDirs("src/main/dto,src/main/dto2").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto, src/main/dto2]",
+                DtoUtils.splitDtoDirs("src/main/dto,,src/main/dto2").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto, src/main/dto2]",
+                DtoUtils.splitDtoDirs("src/main/dto   ,  src/main/dto2").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto, src/main/dto2]",
+                DtoUtils.splitDtoDirs("src/main/dto   ;,  src/main/dto2").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto, src/main/dto2]",
+                DtoUtils.splitDtoDirs("src/main/dto   ;   :  src/main/dto2").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto, src/main/dto2, src/main/dto3]",
+                DtoUtils.splitDtoDirs("src/main/dto:src/main/dto2;src/main/dto3").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto]",
+                DtoUtils.splitDtoDirs("src/main/dto,src/main/dto").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto2, src/main/dto]",
+                DtoUtils.splitDtoDirs("src/main/dto2,src/main/dto").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto]",
+                DtoUtils.splitDtoDirs("src/main/dto").toString()
+        );
+
+        Assertions.assertEquals(
+                "[src/main/dto]",
+                DtoUtils.splitDtoDirs("/src/main/dto/").toString()
+        );
+
+        Assertions.assertEquals(
+                "[]",
+                DtoUtils.splitDtoDirs("/").toString()
+        );
+
+        Assertions.assertEquals(
+                "[]",
+                DtoUtils.splitDtoDirs("").toString()
+        );
     }
 }
