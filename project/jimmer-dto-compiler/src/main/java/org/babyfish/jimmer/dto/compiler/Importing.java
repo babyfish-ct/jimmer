@@ -62,12 +62,22 @@ class Importing {
                             "\" cannot be imported because it is built-in type"
             );
         }
-        if (typeMap.put(alias.getText(), qualifiedName) != null) {
+        String aliasText = alias.getText();
+        if (STANDARD_TYPES.containsKey(aliasText)) {
+            throw ctx.exception(
+                    alias.getLine(),
+                    alias.getCharPositionInLine(),
+                    "\"" +
+                            aliasText +
+                            "\" cannot be used as imported alias because it is built-in type"
+            );
+        }
+        if (typeMap.put(aliasText, qualifiedName) != null) {
             throw ctx.exception(
                     alias.getLine(),
                     alias.getCharPositionInLine(),
                     "Duplicated imported alias \"" +
-                            alias.getText() +
+                            aliasText +
                             "\""
             );
         }

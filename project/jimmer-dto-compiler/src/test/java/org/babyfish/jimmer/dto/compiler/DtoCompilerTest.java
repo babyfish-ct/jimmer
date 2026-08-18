@@ -1095,6 +1095,31 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testImportedAliasCannotConflictWithBuiltInType() {
+        DtoAstException simpleNameEx = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book(
+                        "import com.example.Int\n" +
+                                "BookView { value: Int }"
+                )
+        );
+        Assertions.assertTrue(simpleNameEx.getMessage().contains(
+                "\"Int\" cannot be used as imported alias because it is built-in type"
+        ));
+
+        DtoAstException renamedEx = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book(
+                        "import com.example.CustomType as Int\n" +
+                                "BookView { value: Int }"
+                )
+        );
+        Assertions.assertTrue(renamedEx.getMessage().contains(
+                "\"Int\" cannot be used as imported alias because it is built-in type"
+        ));
+    }
+
+    @Test
     public void testAnnotation() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import org.framework.annotations.{A, B, C, D}\n" +
@@ -1464,6 +1489,44 @@ public class DtoCompilerTest {
                         "--->}" +
                         "}]",
                 dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testWhereBooleanLiteralOnStringOperandReportsBooleanDiagnostic() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.treeNode(
+                    "TreeNodeView {\n" +
+                            "    name\n" +
+                            "    !where(name = true)\n" +
+                            "    childNodes*\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "file:/User/test/TreeNode.dto:3 : Illegal boolean literal, the left operand is not boolean\n" +
+                        "    !where(name = true)\n" +
+                        "                  ^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testWhereIntegerLiteralOnStringOperandReportsIntegerDiagnostic() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.treeNode(
+                    "TreeNodeView {\n" +
+                            "    name\n" +
+                            "    !where(name = 10)\n" +
+                            "    childNodes*\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "file:/User/test/TreeNode.dto:3 : Illegal integer literal, the left operand is not integer\n" +
+                        "    !where(name = 10)\n" +
+                        "                  ^",
+                ex.getMessage()
         );
     }
 
