@@ -1029,8 +1029,8 @@ class DtoGenerator private constructor(
                     val prop = predicate.path[predicate.path.size - 1].prop as ImmutableProp
                     when (prop.typeName(overrideNullable = false)) {
                         LONG -> add(" %M %LL", ktOp, predicate.value)
-                        FLOAT -> add(" %M %LF", ktOp, predicate.value)
-                        DOUBLE -> add(" %M %LD", ktOp, predicate.value)
+                        FLOAT -> add(" %M %LF", ktOp, predicate.value.toString())
+                        DOUBLE -> add(" %M %L", ktOp, predicate.value.toString())
                         BIG_INTEGER_CLASS_NAME -> add(
                             " %M %T(%S)",
                             ktOp,
