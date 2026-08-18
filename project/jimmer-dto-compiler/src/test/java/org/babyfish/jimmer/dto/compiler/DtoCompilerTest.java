@@ -1227,6 +1227,44 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testReferenceTwiceInSpecification() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book(
+                "specification BookSpecification {\n" +
+                        "    name\n" +
+                        "    like(name) as nameLike\n" +
+                        "}"
+        ).get(0);
+        assertContentEquals(
+                "specification BookSpecification {" +
+                        "--->@optional name, " +
+                        "--->@optional like(name) as nameLike" +
+                        "}",
+                dtoType.toString()
+        );
+    }
+
+    @Test
+    public void testReferenceManyTimesInSpecification() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book(
+                "specification BookSpecification {\n" +
+                        "    ge(price)\n" +
+                        "    gt(price)\n" +
+                        "    lt(price)\n" +
+                        "    le(price)\n" +
+                        "}"
+        ).get(0);
+        assertContentEquals(
+                "specification BookSpecification {" +
+                        "--->@optional ge(price) as minPrice, " +
+                        "--->@optional gt(price) as minPriceExclusive, " +
+                        "--->@optional lt(price) as maxPriceExclusive, " +
+                        "--->@optional le(price) as maxPrice" +
+                        "}",
+                dtoType.toString()
+        );
+    }
+
+    @Test
     public void testDoc() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "/**\n" +
