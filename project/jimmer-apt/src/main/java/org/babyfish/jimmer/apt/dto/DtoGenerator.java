@@ -298,14 +298,21 @@ public class DtoGenerator {
             addAccessorDeclaration(prop);
         }
 
-        addPolymorphicMetadata(polymorphism);
         ClassName superInterfaceName = getDtoClassName();
         DtoPolymorphicBranch<ImmutableType, ImmutableProp> defaultBranch = polymorphism.getDefaultBranch();
+
+        Map<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator> branchGenerators = new LinkedHashMap<>();
         if (defaultBranch != null) {
-            generatePolymorphicBranch(defaultBranch, superInterfaceName);
+            branchGenerators.put(defaultBranch, createPolymorphicBranch(defaultBranch, superInterfaceName));
         }
         for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getTypeBranches()) {
-            generatePolymorphicBranch(branch, superInterfaceName);
+            branchGenerators.put(branch, createPolymorphicBranch(branch, superInterfaceName));
+        }
+
+        addPolymorphicMetadata(polymorphism, branchGenerators);
+
+        for (DtoGenerator branchGen : branchGenerators.values()) {
+            branchGen.generate();
         }
 
         if (innerClassName != null) {
@@ -334,11 +341,11 @@ public class DtoGenerator {
         }
     }
 
-    private void generatePolymorphicBranch(
+    private DtoGenerator createPolymorphicBranch(
             DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch,
             TypeName superInterfaceName
     ) {
-        new DtoGenerator(
+        return new DtoGenerator(
                 ctx,
                 docMetadata,
                 dtoType.mergedWith(branch.getDtoType()),
@@ -347,7 +354,7 @@ public class DtoGenerator {
                 superInterfaceName,
                 true,
                 branch.getKind()
-        ).generate();
+        );
     }
 
     private void addJacksonPolymorphicInputRootAnnotationsIfNecessary(
@@ -672,7 +679,10 @@ public class DtoGenerator {
         typeBuilder.addField(builder.build());
     }
 
-    private void addPolymorphicMetadata(DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism) {
+    private void addPolymorphicMetadata(
+            DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism,
+            Map<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator> branchGenerators
+    ) {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
@@ -699,7 +709,9 @@ public class DtoGenerator {
                 .indent();
         addFetcherFields(dtoType, cb);
         for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getTypeBranches()) {
-            addPolymorphicTypeFetcherBranch(branch, cb);
+            // 必须用 branch 实例(this=branch 时 collectNames 走 parent=outer 递归
+            // 拼出 "Outer.Branch.TargetOf_xxx",用 this=outer 会漏 branch 名)
+            addPolymorphicTypeFetcherBranch(branch, branchGenerators.get(branch), cb);
         }
         cb.add(",\n");
         addPolymorphicConverter(polymorphism, cb);
@@ -713,16 +725,17 @@ public class DtoGenerator {
 
     private void addPolymorphicTypeFetcherBranch(
             DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch,
+            DtoGenerator branchDtoGen,
             CodeBlock.Builder cb
     ) {
         ImmutableType targetType = branch.getTargetType();
         assert targetType != null;
         if (targetType.equals(dtoType.getBaseType())) {
-            addFetcherFields(branch.getDtoType(), cb);
+            branchDtoGen.addFetcherFields(branch.getDtoType(), cb);
             return;
         }
         cb.add("\n.forType($T.$L", targetType.getFetcherClassName(), "$").indent();
-        addFetcherFields(branch.getDtoType(), cb);
+        branchDtoGen.addFetcherFields(branch.getDtoType(), cb);
         cb.unindent().add("\n)");
     }
 

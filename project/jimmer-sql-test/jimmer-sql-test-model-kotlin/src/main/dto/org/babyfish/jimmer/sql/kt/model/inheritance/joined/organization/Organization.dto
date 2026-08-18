@@ -1,0 +1,68 @@
+/*
+ * Organization 的 polymorphic DTO(joined 继承)。
+ *
+ * 根属性(每个子类型共享):
+ *   - id, name (标量)
+ *   - `director` (1-level) + `director.officeAddress` (2-level)
+ *     -> `TargetOf_director` / `TargetOf_address` 嵌套在外部
+ *        `OrganizationOverview` DTO 中
+ *
+ * 分支专属属性(在 `#types` 内声明):
+ *   - shareCount (Company) / budget (GovernmentAgency) — 分支标量
+ *   - `departments` (1-level, OneToMany) + `departments.manager` (2-level)
+ *     -> `TargetOf_departments` / `TargetOf_manager` 嵌套在每个 branch 类中
+ *
+ * 验证 joined 继承的 per-layer inner DTO 布局:
+ *   - 根级 inner DTO 嵌套在外部 DTO
+ *   - 分支专属 inner DTO 嵌套在每个 branch 类
+ *   - 2-level 路径: director -> officeAddress 和 departments -> manager
+ */
+OrganizationOverview {
+    id
+    name
+    #types {
+        #exhaustive
+        Company {
+            shareCount
+            director {
+                id
+                fullName
+                officeAddress {
+                    id
+                    street
+                    city
+                }
+            }
+            departments {
+                id
+                name
+                manager {
+                    id
+                    fullName
+                    level
+                }
+            }
+        }
+        GovernmentAgency {
+            budget
+            director {
+                id
+                fullName
+                officeAddress {
+                    id
+                    street
+                    city
+                }
+            }
+            departments {
+                id
+                name
+                manager {
+                    id
+                    fullName
+                    level
+                }
+            }
+        }
+    }
+}
