@@ -378,26 +378,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (builders == null) {
             builders = new ArrayList<>();
             positivePropMap.put(baseProp, builders);
-        } else {
-            boolean valid = false;
-            if (builders.size() < 2) {
-                String oldFuncName = builders.get(0).getFuncName();
-                String newFuncName = propBuilder.getFuncName();
-                if (!Objects.equals(oldFuncName, newFuncName) &&
-                        ("flat".equals(oldFuncName) || Constants.QBE_FUNC_NAMES.contains(oldFuncName)) &&
-                        ("flat".equals(newFuncName) || Constants.QBE_FUNC_NAMES.contains(newFuncName))) {
-                    valid = true;
-                }
-            }
-            if (!valid) {
-                throw ctx.exception(
-                        propBuilder.getBaseLine(),
-                        propBuilder.getBaseColumn(),
-                        "Base property \"" +
-                                baseProp +
-                                "\" cannot be referenced too many times"
-                );
-            }
+        } else if (!isValidMultipleReference(builders, propBuilder)) {
+            throw ctx.exception(
+                    propBuilder.getBaseLine(),
+                    propBuilder.getBaseColumn(),
+                    "Base property \"" +
+                            baseProp +
+                            "\" cannot be referenced too many times"
+            );
         }
         builders.add(propBuilder);
         if (propBuilder.getAlias() != null) {
@@ -414,6 +402,23 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         } else {
             flatPositiveProps.add(propBuilder);
         }
+    }
+
+    private boolean isValidMultipleReference(
+            List<DtoPropBuilder<T, P>> builders,
+            DtoPropBuilder<T, P> propBuilder
+    ) {
+        if (modifiers.contains(DtoModifier.SPECIFICATION)) {
+            return true;
+        }
+        if (builders.size() < 2) {
+            String oldFuncName = builders.get(0).getFuncName();
+            String newFuncName = propBuilder.getFuncName();
+            return !Objects.equals(oldFuncName, newFuncName) &&
+                    ("flat".equals(oldFuncName) || Constants.QBE_FUNC_NAMES.contains(oldFuncName)) &&
+                    ("flat".equals(newFuncName) || Constants.QBE_FUNC_NAMES.contains(newFuncName));
+        }
+        return false;
     }
 
     private void handleNegativeProp(DtoParser.NegativePropContext prop) {
