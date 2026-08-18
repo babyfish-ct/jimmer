@@ -492,7 +492,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 throw ctx.exception(
                         value.start.getLine(),
                         value.start.getCharPositionInLine(),
-                        "Illegal string literal, the left operand is not boolean"
+                        "Illegal boolean literal, the left operand is not boolean"
                 );
             }
             return "true".equals(value.booleanToken.getText());
@@ -526,13 +526,11 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     }
                     return bi;
                 default:
-                    if (simplePropType != SimplePropType.STRING) {
-                        throw ctx.exception(
-                                value.start.getLine(),
-                                value.start.getCharPositionInLine(),
-                                "Illegal integer literal, the left operand is not integer"
-                        );
-                    }
+                    throw ctx.exception(
+                            value.start.getLine(),
+                            value.start.getCharPositionInLine(),
+                            "Illegal integer literal, the left operand is not integer"
+                    );
             }
         }
         switch (simplePropType) {
