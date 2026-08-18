@@ -591,27 +591,36 @@ class DtoGenerator private constructor(
             typeBuilder.addAccessorDeclaration(prop)
         }
         val polymorphism = dtoType.polymorphism ?: error("Internal bug: no DTO polymorphism")
+        // 先把所有 branch DtoGenerator 构造出来(只 new, 不 generate()),
+        // 让 addPolymorphicMetadata 能用 branch 实例算 inner DTO 路径 —
+        // 关键是 this=branch 时 collectNames 走 parent=outer 递归拼出
+        // "Outer.Branch.TargetOf_xxx" 物理正确路径,而不是 outer context 漏 branch。
+        val superInterfaceName = getDtoClassName()
+        val branchGenerators = LinkedHashMap<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator>()
+        polymorphism.defaultBranch?.let {
+            branchGenerators[it] = createPolymorphicBranch(it, superInterfaceName)
+        }
+        for (branch in polymorphism.typeBranches) {
+            branchGenerators[branch] = createPolymorphicBranch(branch, superInterfaceName)
+        }
         typeBuilder.addType(
             TypeSpec
                 .companionObjectBuilder()
                 .addAnnotation(generatedAnnotation())
                 .apply {
-                    addPolymorphicMetadata(polymorphism)
+                    addPolymorphicMetadata(polymorphism, branchGenerators)
                 }
                 .build()
         )
-        polymorphism.defaultBranch?.let {
-            generatePolymorphicBranch(it, getDtoClassName())
-        }
-        for (branch in polymorphism.typeBranches) {
-            generatePolymorphicBranch(branch, getDtoClassName())
+        for (branchGen in branchGenerators.values) {
+            branchGen.generate(emptyList())
         }
     }
 
-    private fun generatePolymorphicBranch(
+    private fun createPolymorphicBranch(
         branch: DtoPolymorphicBranch<ImmutableType, ImmutableProp>,
         superInterfaceName: TypeName,
-    ) {
+    ): DtoGenerator =
         DtoGenerator(
             ctx,
             docMetadata,
@@ -623,8 +632,7 @@ class DtoGenerator private constructor(
             superInterfaceName,
             true,
             branch.kind
-        ).generate(emptyList())
-    }
+        )
 
     private fun FileSpec.Builder.addExtensions(includeBlockConverter: Boolean = true) {
         if (!dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
@@ -672,7 +680,8 @@ class DtoGenerator private constructor(
     }
 
     private fun TypeSpec.Builder.addPolymorphicMetadata(
-        polymorphism: DtoPolymorphism<ImmutableType, ImmutableProp>
+        polymorphism: DtoPolymorphism<ImmutableType, ImmutableProp>,
+        branchGenerators: Map<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator>,
     ) {
         addProperty(
             PropertySpec
@@ -698,7 +707,7 @@ class DtoGenerator private constructor(
                             )
                             indent()
                             add("%T::class.java,\n", getDtoClassName())
-                            metadataFetcherExpr()
+                            metadataFetcherExpr(branchGenerators)
                             add(",\n")
                             polymorphicConverterExpr(polymorphism)
                             add("\n")
@@ -713,6 +722,7 @@ class DtoGenerator private constructor(
     }
 
     private fun CodeBlock.Builder.metadataFetcherExpr(
+        branchGenerators: Map<DtoPolymorphicBranch<ImmutableType, ImmutableProp>, DtoGenerator> = emptyMap(),
         sourceDtoType: DtoType<ImmutableType, ImmutableProp> = dtoType,
     ) {
         add(
@@ -725,7 +735,7 @@ class DtoGenerator private constructor(
         if (sourceDtoType === dtoType) {
             dtoType.polymorphism?.let { polymorphism ->
                 for (branch in polymorphism.typeBranches) {
-                    addPolymorphicTypeFetcherBranch(branch)
+                    addPolymorphicTypeFetcherBranch(branch, branchGenerators.getValue(branch))
                 }
             }
         }
@@ -735,33 +745,35 @@ class DtoGenerator private constructor(
 
     private fun CodeBlock.Builder.addFetcherFields(
         sourceDtoType: DtoType<ImmutableType, ImmutableProp>,
+        owner: DtoGenerator = this@DtoGenerator,
     ) {
         for (prop in sourceDtoType.dtoProps) {
             if (prop.nextProp === null) {
-                addFetcherField(prop)
+                addFetcherField(prop, owner)
             }
         }
         for (hiddenFlatProp in sourceDtoType.hiddenFlatProps) {
             if (!hiddenFlatProp.baseProp.isId) {
-                addHiddenFetcherField(hiddenFlatProp)
+                addHiddenFetcherField(hiddenFlatProp, owner)
             }
         }
         for (foldProp in sourceDtoType.foldProps) {
-            addFoldFetcherFields(foldProp.targetType)
+            addFoldFetcherFields(foldProp.targetType, owner)
         }
     }
 
     private fun CodeBlock.Builder.addPolymorphicTypeFetcherBranch(
         branch: DtoPolymorphicBranch<ImmutableType, ImmutableProp>,
+        branchGen: DtoGenerator,
     ) {
         val targetType = branch.targetType ?: error("Internal bug: default branch cannot be rendered as type branch")
         if (targetType == dtoType.baseType) {
-            addFetcherFields(branch.dtoType)
+            addFetcherFields(branch.dtoType, branchGen)
             return
         }
         add("forType(%T::class) {\n", targetType.className)
         indent()
-        addFetcherFields(branch.dtoType)
+        addFetcherFields(branch.dtoType, branchGen)
         unindent()
         add("}\n")
     }
@@ -801,10 +813,13 @@ class DtoGenerator private constructor(
         add("}")
     }
 
-    private fun CodeBlock.Builder.addFoldFetcherFields(dtoType: DtoType<ImmutableType, ImmutableProp>) {
+    private fun CodeBlock.Builder.addFoldFetcherFields(
+        dtoType: DtoType<ImmutableType, ImmutableProp>,
+        owner: DtoGenerator = this@DtoGenerator,
+    ) {
         for (prop in dtoType.dtoProps) {
             if (prop.nextProp === null) {
-                addFetcherField(prop)
+                addFetcherField(prop, owner)
             }
         }
         for (hiddenFlatProp in dtoType.hiddenFlatProps) {
@@ -817,7 +832,10 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
+    private fun CodeBlock.Builder.addFetcherField(
+        prop: DtoProp<ImmutableType, ImmutableProp>,
+        owner: DtoGenerator = this@DtoGenerator,
+    ) {
         if (!prop.baseProp.isId) {
             if (prop.target !== null) {
                 if (prop.isRecursive) {
@@ -829,7 +847,7 @@ class DtoGenerator private constructor(
                     add(
                         "%L(%T.METADATA.fetcher)",
                         prop.baseProp.name,
-                        propElementName(prop)
+                        owner.propElementName(prop)
                     )
                 }
             } else {
@@ -1059,9 +1077,12 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun CodeBlock.Builder.addHiddenFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
+    private fun CodeBlock.Builder.addHiddenFetcherField(
+        prop: DtoProp<ImmutableType, ImmutableProp>,
+        owner: DtoGenerator = this@DtoGenerator,
+    ) {
         if ("flat" != prop.getFuncName()) {
-            addFetcherField(prop)
+            addFetcherField(prop, owner)
             return
         }
         val targetDtoType = prop.getTargetType()!!
