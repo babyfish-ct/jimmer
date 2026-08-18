@@ -1,8 +1,30 @@
 package org.babyfish.jimmer.dto.compiler;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 public class DtoUtils {
+    public static @NotNull Set<@NotNull String> splitDtoDirs(@NotNull String option) {
+        Set<String> dirs = new LinkedHashSet<>();
+
+        for (String path : option.split("\\s*[,:;](\\s*[,:;])*\\s*")) {
+            if (path.isEmpty() || path.equals("/")) {
+                continue;
+            }
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            if (!path.isEmpty()) {
+                dirs.add(path);
+            }
+        }
+
+        return dirs;
+    }
 
     public static Collection<String> standardDtoDirs(Collection<String> dtoDirs) {
         List<String> list = new ArrayList<>();
