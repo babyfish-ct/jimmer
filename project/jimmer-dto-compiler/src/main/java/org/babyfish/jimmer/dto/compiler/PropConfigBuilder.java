@@ -241,6 +241,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setBatch(DtoParser.BatchContext batch) {
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    batch.start.getLine(),
+                    batch.start.getCharPositionInLine(),
+                    "Cannot be specify \"!batch\" when the property is not associated list"
+            );
+        }
         int value = Integer.parseInt(batch.IntegerLiteral().getText());
         if (value < 1) {
             throw ctx.exception(
