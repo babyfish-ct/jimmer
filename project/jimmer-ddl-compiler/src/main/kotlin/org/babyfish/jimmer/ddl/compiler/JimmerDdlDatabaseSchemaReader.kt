@@ -31,7 +31,7 @@ object JimmerDdlDatabaseSchemaReader {
             if (jdbc.password.isNotBlank()) {
                 setProperty("password", jdbc.password)
             }
-            setProperty("connectTimeout", "5")
+            setProperty("connectTimeout", "5000")
             setProperty("loginTimeout", "5")
         }
         DriverManager.getConnection(jdbc.url, properties).use { connection ->
