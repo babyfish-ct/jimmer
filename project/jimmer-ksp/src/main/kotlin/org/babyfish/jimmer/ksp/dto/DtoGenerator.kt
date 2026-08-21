@@ -1182,11 +1182,14 @@ class DtoGenerator private constructor(
                         if (isBuilderRequired && anno.qualifiedName == ctx.jacksonTypes.jsonDeserialize.reflectionName()) {
                             continue
                         }
+
+                        val targets = allowedTargets(anno.qualifiedName)
                         val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
-                            AnnotationSpec.UseSiteTarget.GET
+                            targets.firstOrNull { it == AnnotationSpec.UseSiteTarget.GET } ?: targets.firstOrNull()
                         } else {
-                            allowedTargets(anno.qualifiedName).firstOrNull() ?: continue
-                        }
+                            targets.firstOrNull()
+                        } ?: continue
+
                         addAnnotation(
                             standardSpec(
                                 annotationOf(anno, ctx.resolver, target)
