@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.addzero.tool.database.model)
     implementation(libs.ksp.symbolProcessing.api)
 
+    testImplementation(projects.jimmerCore)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.h2)
 }
