@@ -12,6 +12,28 @@ import java.sql.ResultSet
 import java.sql.Types
 import java.util.Properties
 
+internal fun JimmerDdlCompilerSettings.jdbcConnectionProperties(): Properties {
+    return Properties().apply {
+        if (jdbc.username.isNotBlank()) {
+            setProperty("user", jdbc.username)
+        }
+        if (jdbc.password.isNotBlank()) {
+            setProperty("password", jdbc.password)
+        }
+        setProperty(
+            "connectTimeout",
+            when (databaseType) {
+                DatabaseType.MYSQL,
+                DatabaseType.OCEANBASE,
+                DatabaseType.POLARDB,
+                DatabaseType.TIDB -> "5000"
+                else -> "5"
+            }
+        )
+        setProperty("loginTimeout", "5")
+    }
+}
+
 object JimmerDdlDatabaseSchemaReader {
     fun read(
         settings: JimmerDdlCompilerSettings,
@@ -24,17 +46,7 @@ object JimmerDdlDatabaseSchemaReader {
             Class.forName(driverClassName)
         }
 
-        val properties = Properties().apply {
-            if (jdbc.username.isNotBlank()) {
-                setProperty("user", jdbc.username)
-            }
-            if (jdbc.password.isNotBlank()) {
-                setProperty("password", jdbc.password)
-            }
-            setProperty("connectTimeout", "5")
-            setProperty("loginTimeout", "5")
-        }
-        DriverManager.getConnection(jdbc.url, properties).use { connection ->
+        DriverManager.getConnection(jdbc.url, settings.jdbcConnectionProperties()).use { connection ->
             val schemaName = jdbc.schema ?: runCatching { connection.schema }.getOrNull()
             return readSchema(connection, schemaName, desiredSchema, renamedTables)
         }
