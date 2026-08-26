@@ -13,8 +13,10 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KOrganization
 import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.KPerson
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class InheritanceMetadataTest {
 
@@ -23,7 +25,6 @@ class InheritanceMetadataTest {
         val cable = KCable {
             id = 1L
             name = "Main cable"
-            voltage = 10
             length = 100
         }
         val baseNodeType = ImmutableType.get(KBaseNode::class.java)
@@ -33,10 +34,12 @@ class InheritanceMetadataTest {
 
         assertEquals(1L, cable.id)
         assertEquals("Main cable", cable.name)
-        assertEquals(10, cable.voltage)
         assertEquals(100, cable.length)
         assertSame(powerDeviceType, cableType.primarySuperType)
         assertSame(baseNodeType, cableType.inheritanceRoot)
+        assertEquals(emptySet(), powerDeviceType.entityProps.keys)
+        assertFalse(baseNodeType.inheritanceInfo!!.hasJoinedTable(powerDeviceType))
+        assertTrue(baseNodeType.inheritanceInfo!!.hasJoinedTable(cableType))
         assertEquals(
             setOf(cableType, powerDeviceType, baseNodeType),
             cableType.allTypes

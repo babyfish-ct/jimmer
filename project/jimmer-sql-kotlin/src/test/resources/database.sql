@@ -315,20 +315,12 @@ create table device(
         foreign key(id) references base_node(id)
 );
 
-create table power_device(
-    id bigint not null,
-    voltage int not null,
-    constraint pk_power_device primary key(id),
-    constraint fk_power_device__base_node
-        foreign key(id) references base_node(id)
-);
-
 create table cable(
     id bigint not null,
     length int not null,
     constraint pk_cable primary key(id),
-    constraint fk_cable__power_device
-        foreign key(id) references power_device(id)
+    constraint fk_cable__base_node
+        foreign key(id) references base_node(id)
 );
 
 insert into client(id, client_type, name, tax_code)

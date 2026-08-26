@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.JoinedTableDissociateAction;
+import org.babyfish.jimmer.sql.Table;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -103,6 +104,26 @@ public final class InheritanceInfo {
         return isDeclaringTypeAvailableInTable(prop.toOriginal().getDeclaringType(), tableType);
     }
 
+    public boolean hasJoinedTable(@NotNull ImmutableType type) {
+        if (!rootType.isAssignableFrom(type)) {
+            throw new IllegalArgumentException(
+                    "The type \"" + type + "\" does not belong to the inheritance hierarchy of \"" +
+                            rootType +
+                            "\""
+            );
+        }
+        if (strategy != InheritanceType.JOINED) {
+            return false;
+        }
+        if (type == rootType) {
+            return true;
+        }
+        if (type.getJavaClass().isAnnotationPresent(Table.class)) {
+            return true;
+        }
+        return !type.getEntityProps().isEmpty();
+    }
+
     @Nullable
     public ImmutableType getTableTypeForProp(@NotNull ImmutableProp prop, @NotNull ImmutableType type) {
         if (strategy != InheritanceType.JOINED) {
@@ -112,7 +133,7 @@ public final class InheritanceInfo {
             return type;
         }
         for (ImmutableType tableType = type; tableType != null; tableType = tableType.getPrimarySuperType()) {
-            if (tableType.isEntity() && isPropAvailableInTable(prop, tableType)) {
+            if (tableType.isEntity() && hasJoinedTable(tableType) && isPropAvailableInTable(prop, tableType)) {
                 return tableType;
             }
         }

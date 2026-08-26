@@ -56,8 +56,9 @@ final class InheritanceMutationUtils {
 
     static List<ImmutableType> joinedTableTypes(ImmutableType rootType, ImmutableType type) {
         List<ImmutableType> tableTypes = new ArrayList<>();
+        InheritanceInfo inheritanceInfo = rootType.getInheritanceInfo();
         for (ImmutableType t = type; t != rootType; t = t.getPrimarySuperType()) {
-            if (t.isEntity()) {
+            if (t.isEntity() && inheritanceInfo.hasJoinedTable(t)) {
                 tableTypes.add(t);
             }
         }

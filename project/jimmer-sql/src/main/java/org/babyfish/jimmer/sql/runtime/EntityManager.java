@@ -713,17 +713,23 @@ public class EntityManager {
                 if (!type.isEntity()) {
                     continue;
                 }
-                String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
                 String microServiceName = type.getMicroServiceName();
-                Key key = new Key(microServiceName, tableName);
-                Map<List<Object>, ImmutableType> subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
-                ImmutableType conflictType = subTypeMap.put(null, type);
-                if (conflictType != null) {
-                    ImmutableType rootType = sharedSingleTableRoot(conflictType, type);
-                    if (rootType == null) {
-                        tableSharedBy(key, conflictType, type, null);
-                    } else {
-                        subTypeMap.put(null, rootType);
+                InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+                if (inheritanceInfo == null ||
+                        inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                        inheritanceInfo.hasJoinedTable(type)) {
+                    String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
+                    Key key = new Key(microServiceName, tableName);
+                    Map<List<Object>, ImmutableType> subTypeMap =
+                            typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
+                    ImmutableType conflictType = subTypeMap.put(null, type);
+                    if (conflictType != null) {
+                        ImmutableType rootType = sharedSingleTableRoot(conflictType, type);
+                        if (rootType == null) {
+                            tableSharedBy(key, conflictType, type, null);
+                        } else {
+                            subTypeMap.put(null, rootType);
+                        }
                     }
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
@@ -734,15 +740,16 @@ public class EntityManager {
                                 middleTable.getFilterInfo().getValues() :
                                 null;
                         String middleTableName = DatabaseIdentifiers.comparableIdentifier(middleTable.getTableName());
-                        key = new Key(microServiceName, middleTableName);
-                        subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
+                        Key key = new Key(microServiceName, middleTableName);
+                        Map<List<Object>, ImmutableType> subTypeMap =
+                                typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
                         if (filteredValues != null) {
-                            conflictType = subTypeMap.get(null);
+                            ImmutableType conflictType = subTypeMap.get(null);
                             if (conflictType != null && !(conflictType instanceof AssociationType)) {
                                 tableSharedBy(key, conflictType, associationType, null);
                             }
                         }
-                        conflictType = subTypeMap.get(filteredValues);
+                        ImmutableType conflictType = subTypeMap.get(filteredValues);
                         if (conflictType != null) {
                             tableSharedBy(key, conflictType, associationType, filteredValues);
                         }

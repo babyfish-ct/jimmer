@@ -81,12 +81,12 @@ public class DatabaseValidators {
 
     private DatabaseValidationException validate() throws SQLException {
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
-            if (type.isEntity() && !(type instanceof AssociationType) && predicate.test(type)) {
+            if (isTableType(type) && predicate.test(type)) {
                 validateSelf(type);
             }
         }
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
-            if (type.isEntity() && !(type instanceof AssociationType) && predicate.test(type)) {
+            if (isTableType(type) && predicate.test(type)) {
                 validateForeignKey(type);
             }
         }
@@ -94,6 +94,16 @@ public class DatabaseValidators {
             return new DatabaseValidationException(items);
         }
         return null;
+    }
+
+    private static boolean isTableType(ImmutableType type) {
+        if (!type.isEntity() || type instanceof AssociationType) {
+            return false;
+        }
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo == null ||
+                inheritanceInfo.getStrategy() != InheritanceType.JOINED ||
+                inheritanceInfo.hasJoinedTable(type);
     }
 
     private void validateSelf(ImmutableType type) throws SQLException {
