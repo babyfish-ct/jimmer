@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joined.organization.Organiza
 import org.babyfish.jimmer.sql.kt.model.inheritance.joined.organization.dto.OrganizationOverview
 import org.babyfish.jimmer.sql.kt.model.inheritance.joined.organization.id
 import org.babyfish.jimmer.sql.kt.model.inheritance.single.employee.Employee
+import org.babyfish.jimmer.sql.kt.model.inheritance.single.employee.dto.EmployeeFlatPolymorphicView
 import org.babyfish.jimmer.sql.kt.model.inheritance.single.employee.dto.EmployeeOverview
 import org.babyfish.jimmer.sql.kt.model.inheritance.single.employee.id
 import kotlin.test.Test
@@ -24,6 +25,13 @@ import kotlin.test.assertTrue
  * 跟 APT 端 entity (org.babyfish.jimmer.sql.model.inheritance.*) 共享。
  */
 class DeepAssociationPolymorphicDtoTest : AbstractQueryTest() {
+
+    @Test
+    fun testBranchScopedTargetInsideFlat() {
+        val fetcherText = EmployeeFlatPolymorphicView.METADATA.fetcher.toString()
+        assertTrue(fetcherText.contains("supervisor"))
+        assertTrue(fetcherText.contains("department"))
+    }
 
     /*
      * Joined-inheritance DTO (per-branch director 设计):

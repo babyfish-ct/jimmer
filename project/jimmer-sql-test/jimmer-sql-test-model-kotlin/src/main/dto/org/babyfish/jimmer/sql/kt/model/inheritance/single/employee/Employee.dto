@@ -70,3 +70,25 @@ EmployeeOverview {
         }
     }
 }
+
+/*
+ * Regression coverage for branch-scoped inner DTO names hidden by `flat`.
+ * `TargetOf_department` must be resolved under the FullTimeEmployee branch.
+ */
+EmployeeFlatPolymorphicView {
+    id
+    #types {
+        #exhaustive
+        FullTimeEmployee {
+            flat(supervisor) {
+                department {
+                    id
+                    name
+                }
+            }
+        }
+        PartTimeEmployee {
+            hourlyRate
+        }
+    }
+}

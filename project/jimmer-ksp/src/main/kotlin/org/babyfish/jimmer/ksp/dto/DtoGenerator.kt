@@ -824,11 +824,11 @@ class DtoGenerator private constructor(
         }
         for (hiddenFlatProp in dtoType.hiddenFlatProps) {
             if (!hiddenFlatProp.baseProp.isId) {
-                addHiddenFetcherField(hiddenFlatProp)
+                addHiddenFetcherField(hiddenFlatProp, owner)
             }
         }
         for (foldProp in dtoType.foldProps) {
-            addFoldFetcherFields(foldProp.targetType)
+            addFoldFetcherFields(foldProp.targetType, owner)
         }
     }
 
@@ -1089,15 +1089,15 @@ class DtoGenerator private constructor(
         add("%L {\n", prop.baseProp.name)
         indent()
         for (childProp in targetDtoType.dtoProps) {
-            addHiddenFetcherField(childProp)
+            addHiddenFetcherField(childProp, owner)
         }
         for (hiddenFlatProp in targetDtoType.hiddenFlatProps) {
             if (!hiddenFlatProp.baseProp.isId) {
-                addHiddenFetcherField(hiddenFlatProp)
+                addHiddenFetcherField(hiddenFlatProp, owner)
             }
         }
         for (foldProp in targetDtoType.foldProps) {
-            addFoldFetcherFields(foldProp.targetType)
+            addFoldFetcherFields(foldProp.targetType, owner)
         }
         unindent()
         add("\n}\n")
