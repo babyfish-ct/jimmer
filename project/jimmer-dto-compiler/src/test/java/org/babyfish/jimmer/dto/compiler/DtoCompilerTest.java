@@ -1487,6 +1487,19 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testBatchConfigOnReferenceProperty() {
+        DtoProp<BaseType, BaseProp> storeProp = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    !batch(10)\n" +
+                        "    store { id }\n" +
+                        "}\n"
+        ).get(0).getDtoProps().get(0);
+        Assertions.assertTrue(storeProp.getBaseProp().isAssociation(true));
+        Assertions.assertFalse(storeProp.getBaseProp().isList());
+        Assertions.assertEquals(10, storeProp.getConfig().getBatch());
+    }
+
+    @Test
     public void testBatchConfigOnScalarProperty() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(
@@ -1497,8 +1510,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "file:/User/test/Book.dto:2 : Cannot be specify \"!batch\" when the property is not associated list\n" + 
-                "    !batch(10)\n" + 
+                "file:/User/test/Book.dto:2 : Cannot be specify \"!batch\" when the property is not association\n" +
+                "    !batch(10)\n" +
                 "    ^",
                 ex.getMessage()
         );
