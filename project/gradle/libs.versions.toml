@@ -20,6 +20,7 @@ jspecify = "1.0.0"
 kafka = "0.10.0.0"
 kotlinpoet = "2.2.0"
 ksp = "2.1.20-2.0.0"
+kspTest = "0.7.1"
 lombok = "1.18.38"
 mapstruct = "1.5.3.Final"
 mysql = "8.0.29"
@@ -93,6 +94,7 @@ kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotli
 kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
 ksp-symbolProcessing-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
+dev-zacsweers-kctfork-ksp = { group = "dev.zacsweers.kctfork", name = "ksp", version.ref = "kspTest" }
 
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
 

@@ -12,4 +12,16 @@ dependencies {
     implementation(libs.kotlinpoet)
     implementation(libs.kotlinpoet.ksp)
     implementation(libs.jackson2.databind)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.dev.zacsweers.kctfork.ksp) {
+        exclude(module = "symbol-processing-api")
+    }
+
+    testImplementation(projects.jimmerSqlKotlin)
+    testImplementation(libs.javax.validation.api)
+}
+
+tasks.test {
+    useJUnit()
 }
