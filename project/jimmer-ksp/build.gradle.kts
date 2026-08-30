@@ -24,4 +24,12 @@ dependencies {
 
 tasks.test {
     useJUnit()
+
+    // The intellij-core bundled in KSP2 hard-codes a feature version ceiling in
+    // JavaVersion.parse; anything above it throws IllegalArgumentException while
+    // CoreJrtFileSystem initializes. The ceiling moves up with intellij-core, so
+    // this pins a version that stays inside the current window.
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
