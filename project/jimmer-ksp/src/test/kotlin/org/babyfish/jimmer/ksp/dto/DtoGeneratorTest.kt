@@ -5,7 +5,7 @@ import org.babyfish.jimmer.ksp.JimmerProcessorProvider
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.*
 
-class DtoGeneratorTest {
+class DtoGeneratorTest : AbstractTest() {
     @Test
     @OptIn(ExperimentalCompilerApi::class)
     fun `dto file generates a view class`() {
