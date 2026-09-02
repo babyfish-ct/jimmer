@@ -24,6 +24,10 @@ public interface SimpleEntitySaveCommand<E>
 
     @NewChain
     @Override
+    SimpleEntitySaveCommand<E> setVersionMode(VersionMode mode);
+
+    @NewChain
+    @Override
     SimpleEntitySaveCommand<E> setAssociatedModeAll(AssociatedSaveMode mode);
 
     @NewChain
@@ -63,9 +67,13 @@ public interface SimpleEntitySaveCommand<E>
 
     @NewChain
     @Override
+    SimpleEntitySaveCommand<E> forbidUpdate();
+
+    @NewChain
+    @Override
     default SimpleEntitySaveCommand<E> setUpsertMask(ImmutableProp... props) {
         if (props.length == 0) {
-            throw new IllegalArgumentException("props cannot be empty");
+            return forbidUpdate();
         }
         UpsertMask<?> mask = UpsertMask.of(props[0].getDeclaringType().getJavaClass());
         for (ImmutableProp prop : props) {
@@ -78,7 +86,7 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     default SimpleEntitySaveCommand<E> setUpsertMask(TypedProp.Single<?, ?>... props) {
         if (props.length == 0) {
-            throw new IllegalArgumentException("props cannot be empty");
+            return forbidUpdate();
         }
         UpsertMask<?> mask = UpsertMask.of(props[0].unwrap().getDeclaringType().getJavaClass());
         for (TypedProp.Single<?, ?> prop : props) {
@@ -97,6 +105,13 @@ public interface SimpleEntitySaveCommand<E>
             Class<T> tableType,
             TypedProp.Scalar<X, V> prop,
             SaveAssignmentExpression<X, T, V> expression
+    );
+
+    @NewChain
+    @Override
+    <X, T extends Table<X>> SimpleEntitySaveCommand<E> setUpdateWhere(
+            Class<T> tableType,
+            UpdateCondition<X, T> condition
     );
 
     @NewChain
@@ -308,9 +323,9 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     default <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            UserOptimisticLock<E, T> block
+            UpdateCondition<E, T> condition
     ) {
-        return setOptimisticLock(tableType, UnloadedVersionBehavior.IGNORE, block);
+        return setOptimisticLock(tableType, UnloadedVersionBehavior.IGNORE, condition);
     }
 
     /**
@@ -331,7 +346,7 @@ public interface SimpleEntitySaveCommand<E>
     <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
             UnloadedVersionBehavior behavior,
-            UserOptimisticLock<E, T> block
+            UpdateCondition<E, T> condition
     );
 
     @NewChain

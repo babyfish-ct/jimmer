@@ -47,3 +47,11 @@ interface KMutableBaseQuery<E : Any> : KMutableQuery<KNonNullTable<E>> {
                 >
     }
 }
+
+interface KMutableStaticBaseQuery {
+
+    fun <
+            T : KNonNullBaseTable<NT>,
+            NT : KNullableBaseTable
+            > select(projection: KBaseTableProjection<T, NT>): KConfigurableBaseQuery<T>
+}

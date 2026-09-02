@@ -505,7 +505,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testSaveReturningByUserOptimisticLock() {
+    public void testSaveReturningByOptimisticLockCondition() {
         connectAndExpect(
                 con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
                         .saveCommand(Immutables.createBook(draft -> {
@@ -629,7 +629,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testSaveReturningByUserOptimisticLockFailed() {
+    public void testSaveReturningByOptimisticLockConditionFailed() {
         connectAndExpect(
                 con -> getSqlClient(it -> it.setDialect(new H2Dialect()))
                         .saveCommand(Immutables.createBook(draft -> {
@@ -1465,7 +1465,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertReturnDraftByUserOptimisticLockByPostgres() {
+    public void testUpsertReturnDraftByOptimisticLockConditionByPostgres() {
         NativeDatabases.assumeNativeDatabase();
 
         connectAndExpect(
@@ -1513,7 +1513,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertByUserOptimisticLockWithoutReturningByPostgres() {
+    public void testUpsertByOptimisticLockConditionWithoutReturningByPostgres() {
         NativeDatabases.assumeNativeDatabase();
 
         connectAndExpect(
@@ -1801,17 +1801,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
-                    ctx.statement(it -> {
-                        it.queryReason(QueryReason.FETCHER);
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
-                        );
-                    });
                     ctx.value(
                             "{" +
-                                    "--->\"id\":\"1\",\"name\":\"Market\"" +
+                                    "--->\"name\":\"Market\"" +
                                     "}");
                 }
         );
@@ -1852,17 +1844,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
-                    ctx.statement(it -> {
-                        it.queryReason(QueryReason.FETCHER);
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
-                        );
-                    });
                     ctx.value(
                             "[" +
-                                    "--->{\"id\":\"1\",\"name\":\"Market\"}, " +
+                                    "--->{\"name\":\"Market\"}, " +
                                     "--->{\"id\":\"100\",\"name\":\"Sales\"}" +
                                     "]");
                 }

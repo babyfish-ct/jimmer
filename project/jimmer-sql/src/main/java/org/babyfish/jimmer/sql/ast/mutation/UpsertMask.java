@@ -8,7 +8,10 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class UpsertMask<E> {
 
@@ -54,6 +57,12 @@ public class UpsertMask<E> {
         return new UpsertMask<>(immutableType);
     }
 
+    /**
+     * Start with no entity properties selected for insertion. Conflict columns
+     * and framework-required columns are still rendered independently of this
+     * mask. Add the insertable properties explicitly after this call. If an
+     * omitted database column is mandatory and has no default, insertion fails.
+     */
     @NewChain
     public UpsertMask<E> forbidInsert() {
         if (insertablePaths != null && insertablePaths.isEmpty()) {
@@ -62,6 +71,10 @@ public class UpsertMask<E> {
         return new UpsertMask<>(type, Collections.emptyList(), updatablePaths);
     }
 
+    /**
+     * Select no entity properties for the update branch. A fake update can still
+     * be rendered when required by id fetching, returning, or other save semantics.
+     */
     @NewChain
     public UpsertMask<E> forbidUpdate() {
         if (updatablePaths != null && updatablePaths.isEmpty()) {
@@ -82,22 +95,24 @@ public class UpsertMask<E> {
 
     /**
      * Add insertable path, the type of first property must be embeddable
+     *
      * @param props The properties of embeddable properties path
      * @return Another UpsertMask object which is not current object
      */
     @NewChain
-    public UpsertMask<E> addInsertablePath(ImmutableProp ... props) {
+    public UpsertMask<E> addInsertablePath(ImmutableProp... props) {
         return addInsertablePath0(new ArrayList<>(Arrays.asList(props)));
     }
 
     /**
      * Add insertable path, the first property must be embeddable
-     * @param prop The entity property whose type is embeddable
+     *
+     * @param prop          The entity property whose type is embeddable
      * @param embeddedProps Deeper properties of embeddable path
      * @return Another UpsertMask object which is not current object
      */
     @NewChain
-    public UpsertMask<E> addInsertablePath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?> ... embeddedProps) {
+    public UpsertMask<E> addInsertablePath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?>... embeddedProps) {
         return addInsertablePath0(toList(prop, embeddedProps));
     }
 
@@ -113,22 +128,24 @@ public class UpsertMask<E> {
 
     /**
      * Add updatable path, the type of first property must be embeddable
+     *
      * @param props The properties of embeddable properties path
      * @return Another UpsertMask object which is not current object
      */
     @NewChain
-    public UpsertMask<E> addUpdatablePath(ImmutableProp ... props) {
+    public UpsertMask<E> addUpdatablePath(ImmutableProp... props) {
         return addUpdatablePath0(new ArrayList<>(Arrays.asList(props)));
     }
 
     /**
      * Add updatable path, the first property must be embeddable
-     * @param prop The entity property whose type is embeddable
+     *
+     * @param prop          The entity property whose type is embeddable
      * @param embeddedProps Deeper properties of embeddable path
      * @return Another UpsertMask object which is not current object
      */
     @NewChain
-    public UpsertMask<E> addUpdatablePath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?> ... embeddedProps) {
+    public UpsertMask<E> addUpdatablePath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?>... embeddedProps) {
         return addUpdatablePath0(toList(prop, embeddedProps));
     }
 

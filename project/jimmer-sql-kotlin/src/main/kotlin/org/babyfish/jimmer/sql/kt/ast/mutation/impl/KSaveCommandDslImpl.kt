@@ -37,6 +37,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setMode(mode)
     }
 
+    override fun setVersionMode(mode: VersionMode) {
+        javaCommand = javaCommand.setVersionMode(mode)
+    }
+
     override fun setAssociatedModeAll(mode: AssociatedSaveMode) {
         javaCommand = javaCommand.setAssociatedModeAll(mode)
     }
@@ -72,6 +76,10 @@ internal class KSaveCommandDslImpl(
 
     override fun <E : Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>) {
         javaCommand = javaCommand.setKeyProps(group, *keyProps)
+    }
+
+    override fun forbidUpdate() {
+        javaCommand = javaCommand.forbidUpdate()
     }
 
     override fun <E : Any> setUpsertMask(vararg props: ImmutableProp) {
@@ -148,14 +156,33 @@ internal class KSaveCommandDslImpl(
     override fun <E : Any> setOptimisticLock(
         type: KClass<E>,
         behavior: UnloadedVersionBehavior,
-        block: KSaveCommandPartialDsl.OptimisticLockContext<E>.() -> KNonNullExpression<Boolean>?
+        block: KSaveCommandPartialDsl.UpdateConditionContext<E>.() -> KNonNullExpression<Boolean>?
     ) {
         javaCommand = (javaCommand as SaveCommandImplementor).setEntityOptimisticLock(
             ImmutableType.get(type.java),
-            behavior
-        ) { table, factory ->
+            behavior,
+            updateCondition("The table provided by optimistic lock does not support join", block)
+        )
+    }
+
+    override fun <E : Any> setUpdateWhere(
+        type: KClass<E>,
+        block: KSaveCommandPartialDsl.UpdateConditionContext<E>.() -> KNonNullExpression<Boolean>?
+    ) {
+        javaCommand = (javaCommand as SaveCommandImplementor).setEntityUpdateWhere(
+            ImmutableType.get(type.java),
+            updateCondition("The table provided by save update where does not support join", block)
+        )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <E : Any> updateCondition(
+        disabledJoinReason: String,
+        block: KSaveCommandPartialDsl.UpdateConditionContext<E>.() -> KNonNullExpression<Boolean>?
+    ): UpdateCondition<Any, Table<Any>> =
+        UpdateCondition { table, factory ->
             block(
-                object : KSaveCommandPartialDsl.OptimisticLockContext<E> {
+                object : KSaveCommandPartialDsl.UpdateConditionContext<E> {
                     override val table: KNonNullTable<E> =
                         KNonNullTableExImpl(
                             if (table is TableProxy<*>) {
@@ -163,7 +190,7 @@ internal class KSaveCommandDslImpl(
                             } else {
                                 table as TableImplementor<E>
                             },
-                            "The table provider by optimistic lock does not support join"
+                            disabledJoinReason
                         )
 
                     override fun <V : Any> newNonNull(prop: KProperty1<E, V>): KNonNullExpression<V> =
@@ -178,7 +205,6 @@ internal class KSaveCommandDslImpl(
                 }
             )?.toJavaPredicate()
         }
-    }
 
     override fun <E : Any> setPessimisticLock(entityType: KClass<E>, lock: Boolean) {
         javaCommand = javaCommand.setPessimisticLock(entityType.java, lock)

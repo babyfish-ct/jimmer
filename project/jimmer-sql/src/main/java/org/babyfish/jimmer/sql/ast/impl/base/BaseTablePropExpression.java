@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -21,62 +20,67 @@ import org.jetbrains.annotations.Nullable;
 import java.time.temporal.Temporal;
 import java.util.Date;
 
-class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
-
-    private final PropExpressionImplementor<T> raw;
-
-    private final BaseTableOwner baseTableOwner;
+class BaseTablePropExpression<T>
+        extends AbstractBaseTableExpression<T, PropExpressionImplementor<T>>
+        implements PropExpressionImplementor<T> {
 
     BaseTablePropExpression(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
-        if (raw instanceof BaseTablePropExpression<?>) {
-            raw = ((BaseTablePropExpression<T>) raw).raw;
-        }
-        this.raw = raw;
-        this.baseTableOwner = baseTableOwner;
+        super(unwrap(raw), baseTableOwner);
     }
 
-    BaseTableOwner getBaseTableOwner() {
-        return baseTableOwner;
+    private static <T> PropExpressionImplementor<T> unwrap(PropExpressionImplementor<T> raw) {
+        if (raw instanceof BaseTablePropExpression<?>) {
+            return ((BaseTablePropExpression<T>) raw).raw();
+        }
+        return raw;
+    }
+
+    @Override
+    protected Ast rawAst() {
+        return (Ast) raw().unwrap();
     }
 
     @Override
     public Table<?> getTable() {
-        return raw.getTable();
+        return raw().getTable();
     }
 
     @Override
     public ImmutableProp getProp() {
-        return raw.getProp();
+        return raw().getProp();
     }
 
     @Override
     public ImmutableProp getDeepestProp() {
-        return raw.getDeepestProp();
+        return raw().getDeepestProp();
     }
 
     @Override
     public PropExpressionImpl.@Nullable EmbeddedImpl<?> getBase() {
-        return raw.getBase();
+        return raw().getBase();
     }
 
     @Override
     public @Nullable String getPath() {
-        return raw.getPath();
+        return raw().getPath();
     }
 
     @Override
     public boolean isRawId() {
-        return raw.isRawId();
+        return raw().isRawId();
     }
 
     @Override
     public EmbeddedColumns.@Nullable Partial getPartial(MetadataStrategy strategy) {
-        return raw.getPartial(strategy);
+        return raw().getPartial(strategy);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
-        renderTo(builder, ignoreBrackets, false);
+        renderWithMutationReplacement(
+                builder,
+                () -> renderWithoutReplacement(builder, ignoreBrackets, false)
+        );
     }
 
     @Override
@@ -85,37 +89,24 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
     }
 
     @Override
-    public Class<T> getType() {
-        return raw.getType();
+    protected void renderWithoutReplacement(AbstractSqlBuilder<?> builder) {
+        renderWithoutReplacement(builder, false, true);
     }
 
-    @Override
-    public int precedence() {
-        return raw.precedence();
-    }
-
-    @Override
-    public void accept(@NotNull AstVisitor visitor) {
-        AstContext ctx = visitor.getAstContext();
-        visitor.visitBaseTableExpression(baseTableOwner);
-        baseTableOwner.visitOwnerStatementChain(ctx, () -> ((Ast) raw.unwrap()).accept(visitor));
-    }
-
-    @Override
-    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        renderTo(builder, false, true);
-    }
-
-    private void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets, boolean simpleCall) {
+    private void renderWithoutReplacement(
+            AbstractSqlBuilder<?> builder,
+            boolean ignoreBrackets,
+            boolean simpleCall
+    ) {
         AstContext ctx = builder.assertSimple().getAstContext();
         QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
-        ctx.pushStatement(baseTableOwner.getBaseTable().getQuery().getMutableQuery());
+        ctx.pushStatement(getBaseTableOwner().getBaseTable().getQuery().getMutableQuery());
         try {
-            RealTable realTable = TableProxies.resolve(raw.getTable(), ctx).realTable(renderContext);
+            RealTable realTable = TableProxies.resolve(raw().getTable(), ctx).realTable(renderContext);
             BaseQueryReadSupport readSupport = renderContext.getBaseQueryReadSupport();
             BaseQueryRead read = readSupport.propExpression(
-                    baseTableOwner,
-                    raw,
+                    getBaseTableOwner(),
+                    raw(),
                     realTable,
                     builder.sqlClient().getMetadataStrategy()
             );
@@ -123,14 +114,14 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
                 renderExportedRead(builder, read, ignoreBrackets);
                 return;
             }
-            readSupport.requireSelection(baseTableOwner);
+            readSupport.requireSelection(getBaseTableOwner());
         } finally {
             ctx.popStatement();
         }
         if (simpleCall) {
-            ((Ast) raw.unwrap()).renderTo(builder);
+            rawAst().renderTo(builder);
         } else {
-            raw.renderTo(builder, ignoreBrackets);
+            raw().renderTo(builder, ignoreBrackets);
         }
     }
 
@@ -159,16 +150,6 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T>, Ast {
                 .sql(builder.assertSimple().alias(read.getRealBaseTable()))
                 .sql(".c")
                 .sql(Integer.toString(read.index(index)));
-    }
-
-    @Override
-    public boolean hasVirtualPredicate() {
-        return ((Ast) raw.unwrap()).hasVirtualPredicate();
-    }
-
-    @Override
-    public Ast resolveVirtualPredicate(AstContext ctx) {
-        return ((Ast) raw.unwrap()).resolveVirtualPredicate(ctx);
     }
 
     static class Cmp<T extends Comparable<?>>

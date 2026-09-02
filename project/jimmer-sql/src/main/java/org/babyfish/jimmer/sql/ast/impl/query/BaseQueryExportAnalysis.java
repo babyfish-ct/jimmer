@@ -4,28 +4,24 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryExportCollectorSelection;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.meta.JoinTemplate;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.Nullable;
 
 final class BaseQueryExportAnalysis {
 
-    private BaseQueryExportAnalysis() {}
+    private BaseQueryExportAnalysis() {
+    }
 
     static void analyze(AbstractMutableStatementImpl statement, QueryAnalyzer analysis) {
-        if (!TableUtils.hasBaseTable(statement.getTableLikeImplementor())) {
+        if (statement.getTableLikeImplementor() == null ||
+                !TableUtils.hasBaseTable(statement.getTableLikeImplementor())) {
             return;
         }
         analyze(statement.getTableLikeImplementor(), analysis);

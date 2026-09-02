@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.UUID;
+
+import static java.util.Collections.singletonList;
 
 public class UpsertMaskTest extends AbstractMutationTest {
 
@@ -223,7 +226,37 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                     draft.setEdition(3);
                                 })
                         )
-                        .setUpsertMask(UpsertMask.of(Book.class).forbidUpdate()),
+                        .forbidUpdate(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, NAME, EDITION) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when not matched then insert(ID, NAME, EDITION) " +
+                                        "values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION)"
+                        );
+                    });
+                    ctx.entity(it -> {
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testExplicitEmptyUpdateMaskArrayByBatch() {
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveEntitiesCommand(
+                                singletonList(
+                                        Immutables.createBook(draft -> {
+                                            draft.setId(Constants.graphQLInActionId3);
+                                            draft.setName("GraphQL in Action");
+                                            draft.setEdition(3);
+                                        })
+                                )
+                        )
+                        .setUpsertMask(new ImmutableProp[0]),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

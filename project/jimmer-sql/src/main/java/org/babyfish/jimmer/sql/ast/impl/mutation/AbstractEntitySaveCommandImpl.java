@@ -1,13 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.KeyMatcher;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.OneToMany;
-import org.babyfish.jimmer.sql.OneToOne;
-import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -101,7 +95,8 @@ abstract class AbstractEntitySaveCommandImpl
                         );
                     } else if (!prop.isColumnDefinition()) {
                         throw new IllegalArgumentException(
-                                "'" + prop  + "' of key group \"" + group + "\" cannot be key property because it is not property with column definition"
+                                "'" + prop + "' of key group \"" + group +
+                                        "\" cannot be key property because it is not property with column definition"
                         );
                     }
                     if (type == null) {
@@ -132,6 +127,57 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
+    static class VersionModeCfg extends Cfg {
+
+        final VersionMode mode;
+
+        VersionModeCfg(Cfg prev, VersionMode mode) {
+            super(prev);
+            this.mode = Objects.requireNonNull(mode, "mode cannot be null");
+        }
+    }
+
+    static class ForceMatchedUpdateCfg extends Cfg {
+
+        ForceMatchedUpdateCfg(Cfg prev) {
+            super(prev);
+        }
+    }
+
+    static class ExactConflictTargetRequiredCfg extends Cfg {
+
+        ExactConflictTargetRequiredCfg(Cfg prev) {
+            super(prev);
+        }
+    }
+
+    static Cfg addForbiddenUpdateMask(Cfg cfg, ImmutableType type) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null && inheritanceInfo.getStrategy() == InheritanceType.JOINED) {
+            cfg = new UpsertMaskCfg(
+                    cfg,
+                    forbiddenUpdateMask(cfg, inheritanceInfo.getRootType())
+            );
+            for (ImmutableType tableType : Operator.joinedTableTypes(inheritanceInfo.getRootType(), type)) {
+                cfg = new UpsertMaskCfg(
+                        cfg,
+                        forbiddenUpdateMask(cfg, tableType)
+                );
+            }
+            return cfg;
+        }
+        return new UpsertMaskCfg(cfg, forbiddenUpdateMask(cfg, type));
+    }
+
+    private static UpsertMask<?> forbiddenUpdateMask(Cfg cfg, ImmutableType type) {
+        UpsertMaskCfg maskCfg = cfg.as(UpsertMaskCfg.class);
+        UpsertMask<?> mask = MapNode.toMap(maskCfg, it -> it.mapNode).get(type);
+        if (mask == null) {
+            mask = UpsertMask.of(type.getJavaClass());
+        }
+        return mask.forbidUpdate();
+    }
+
     static class AssignmentCfg extends Cfg {
 
         final MapNode<ImmutableProp, SaveAssignmentLambda> mapNode;
@@ -152,7 +198,6 @@ abstract class AbstractEntitySaveCommandImpl
             }
             if (!prop.isColumnDefinition() ||
                     prop.isId() ||
-                    prop.isVersion() ||
                     prop.isLogicalDeleted() ||
                     prop.isDiscriminator()) {
                 throw new IllegalArgumentException(
@@ -169,6 +214,33 @@ abstract class AbstractEntitySaveCommandImpl
                     p != null ? p.mapNode : null,
                     prop,
                     new SaveAssignmentLambda(type, expression)
+            );
+        }
+    }
+
+    static class UpdateWhereCfg extends Cfg {
+
+        final MapNode<ImmutableType, TypedUpdateCondition> mapNode;
+
+        UpdateWhereCfg(
+                Cfg prev,
+                ImmutableType type,
+                UpdateCondition<?, ?> condition
+        ) {
+            super(prev);
+            if (!type.isEntity()) {
+                throw new IllegalArgumentException(
+                        "Cannot set update where for the type \"" +
+                                type +
+                                "\" because it is not an entity"
+                );
+            }
+            Objects.requireNonNull(condition, "condition cannot be null");
+            UpdateWhereCfg p = prev.as(UpdateWhereCfg.class);
+            this.mapNode = new MapNode<>(
+                    p != null ? p.mapNode : null,
+                    type,
+                    new TypedUpdateCondition(type, condition)
             );
         }
     }
@@ -401,11 +473,11 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
-     static class PessimisticLockCfg extends Cfg {
+    static class PessimisticLockCfg extends Cfg {
 
-         final MapNode<ImmutableType, Boolean> mapNode;
+        final MapNode<ImmutableType, Boolean> mapNode;
 
-         final Boolean defaultValue;
+        final Boolean defaultValue;
 
         public PessimisticLockCfg(Cfg prev, boolean defaultValue) {
             super(prev);
@@ -414,38 +486,39 @@ abstract class AbstractEntitySaveCommandImpl
             this.defaultValue = defaultValue;
         }
 
-         public PessimisticLockCfg(Cfg prev, Class<?> entityType, boolean checking) {
-             super(prev);
-             ImmutableType type = ImmutableType.get(entityType);
-             PessimisticLockCfg p = prev.as(PessimisticLockCfg.class);
-             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, checking);
-             this.defaultValue = p != null && p.defaultValue;
-         }
+        public PessimisticLockCfg(Cfg prev, Class<?> entityType, boolean checking) {
+            super(prev);
+            ImmutableType type = ImmutableType.get(entityType);
+            PessimisticLockCfg p = prev.as(PessimisticLockCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, checking);
+            this.defaultValue = p != null && p.defaultValue;
+        }
     }
 
-    static class OptimisticLockLambdaCfg extends Cfg {
+    static class OptimisticLockConditionCfg extends Cfg {
 
         final MapNode<ImmutableType, UnloadedVersionBehavior> behaviorMapNode;
 
-        final MapNode<ImmutableType, UserOptimisticLock<Object, Table<Object>>> lamdadaMapNode;
+        final MapNode<ImmutableType, UpdateCondition<Object, Table<Object>>> conditionMapNode;
 
-        public OptimisticLockLambdaCfg(
+        public OptimisticLockConditionCfg(
                 Cfg prev,
                 ImmutableType type,
                 UnloadedVersionBehavior behavior,
-                UserOptimisticLock<Object, Table<Object>> block
+                UpdateCondition<Object, Table<Object>> condition
         ) {
             super(prev);
             if (!type.isEntity()) {
                 throw new IllegalArgumentException(
-                        "Cannot set the optimistic lock lambda for the type \"" +
+                        "Cannot set the optimistic lock condition for the type \"" +
                                 type +
                                 "\" because it is not entity"
                 );
             }
-            OptimisticLockLambdaCfg p = prev.as(OptimisticLockLambdaCfg.class);
+            Objects.requireNonNull(condition, "condition cannot be null");
+            OptimisticLockConditionCfg p = prev.as(OptimisticLockConditionCfg.class);
             this.behaviorMapNode = new MapNode<>(p != null ? p.behaviorMapNode : null, type, behavior);
-            this.lamdadaMapNode = new MapNode<>(p != null ? p.lamdadaMapNode : null, type, block);
+            this.conditionMapNode = new MapNode<>(p != null ? p.conditionMapNode : null, type, condition);
         }
     }
 
@@ -483,6 +556,14 @@ abstract class AbstractEntitySaveCommandImpl
         private final Map<ImmutableType, UpsertMask<?>> upsertMaskMap;
 
         private final Map<ImmutableProp, SaveAssignmentLambda> assignmentMap;
+
+        private final Map<ImmutableType, TypedUpdateCondition> updateWhereMap;
+
+        private final VersionMode versionMode;
+
+        private final boolean forceMatchedUpdate;
+
+        private final boolean exactConflictTargetRequired;
 
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
@@ -524,7 +605,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, UnloadedVersionBehavior> optimisticLockBehaviorMap;
 
-        private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
+        private final Map<ImmutableType, UpdateCondition<Object, Table<Object>>> optimisticLockConditionMap;
 
         private final boolean dumbBatchAcceptable;
 
@@ -550,6 +631,10 @@ abstract class AbstractEntitySaveCommandImpl
             KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
             UpsertMaskCfg upsertMaskCfg = cfg.as(UpsertMaskCfg.class);
             AssignmentCfg assignmentCfg = cfg.as(AssignmentCfg.class);
+            UpdateWhereCfg updateWhereCfg = cfg.as(UpdateWhereCfg.class);
+            VersionModeCfg versionModeCfg = cfg.as(VersionModeCfg.class);
+            ForceMatchedUpdateCfg forceMatchedUpdateCfg = cfg.as(ForceMatchedUpdateCfg.class);
+            ExactConflictTargetRequiredCfg exactConflictTargetRequiredCfg = cfg.as(ExactConflictTargetRequiredCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
             IdOnlyAsReferenceCfg idOnlyAsReferenceCfg = cfg.as(IdOnlyAsReferenceCfg.class);
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
@@ -561,7 +646,7 @@ abstract class AbstractEntitySaveCommandImpl
             AssociatedTypeChangeAllowedCfg associatedTypeChangeAllowedCfg =
                     cfg.as(AssociatedTypeChangeAllowedCfg.class);
             PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
-            OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
+            OptimisticLockConditionCfg optimisticLockConditionCfg = cfg.as(OptimisticLockConditionCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
             SaveReturningEnabledCfg saveReturningEnabledCfg = cfg.as(SaveReturningEnabledCfg.class);
             SaveResultReadsAllPropertiesCfg saveResultReadsAllPropertiesCfg = cfg.as(SaveResultReadsAllPropertiesCfg.class);
@@ -590,11 +675,25 @@ abstract class AbstractEntitySaveCommandImpl
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
             this.upsertMaskMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
             this.assignmentMap = MapNode.toMap(assignmentCfg, it -> it.mapNode);
+            this.versionMode = versionModeCfg != null ? versionModeCfg.mode : VersionMode.OPTIMISTIC_LOCK;
+            if (this.versionMode != VersionMode.ASSIGNMENT) {
+                for (ImmutableProp prop : this.assignmentMap.keySet()) {
+                    if (prop.isVersion()) {
+                        throw new IllegalArgumentException(
+                                "The version property \"" + prop +
+                                        "\" can only be a save assignment target in ASSIGNMENT version mode"
+                        );
+                    }
+                }
+            }
             if (this.mode == SaveMode.INSERT_ONLY && !this.assignmentMap.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Save assignment expressions cannot be used with INSERT_ONLY mode"
                 );
             }
+            this.updateWhereMap = MapNode.toMap(updateWhereCfg, it -> it.mapNode);
+            this.forceMatchedUpdate = forceMatchedUpdateCfg != null;
+            this.exactConflictTargetRequired = exactConflictTargetRequiredCfg != null;
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.idOnlyAsReferenceMap = MapNode.toMap(idOnlyAsReferenceCfg, it -> it.mapNode);
@@ -629,8 +728,8 @@ abstract class AbstractEntitySaveCommandImpl
             this.pessimisticLockAll = pessimisticLockCfg != null ?
                     pessimisticLockCfg.defaultValue :
                     false;
-            this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
-            this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
+            this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockConditionCfg, it -> it.behaviorMapNode);
+            this.optimisticLockConditionMap = MapNode.toMap(optimisticLockConditionCfg, it -> it.conditionMapNode);
             this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
             this.saveReturningEnabled = saveReturningEnabledCfg != null ?
                     saveReturningEnabledCfg.enabled :
@@ -670,7 +769,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         @SuppressWarnings("unchecked")
         public <T> T getArument() {
-            return (T)argument;
+            return (T) argument;
         }
 
         @Override
@@ -727,6 +826,31 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public Map<ImmutableProp, SaveAssignmentLambda> getAssignments() {
             return assignmentMap;
+        }
+
+        @Override
+        public TypedUpdateCondition getUpdateWhere(ImmutableType type) {
+            return updateWhereMap.get(type);
+        }
+
+        @Override
+        public Map<ImmutableType, TypedUpdateCondition> getUpdateWheres() {
+            return updateWhereMap;
+        }
+
+        @Override
+        public VersionMode getVersionMode() {
+            return versionMode;
+        }
+
+        @Override
+        public boolean isForceMatchedUpdate() {
+            return forceMatchedUpdate;
+        }
+
+        @Override
+        public boolean isExactConflictTargetRequired() {
+            return exactConflictTargetRequired;
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -841,8 +965,8 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
-        public UserOptimisticLock<Object, Table<Object>> getUserOptimisticLock(ImmutableType type) {
-            return optimisticLockLambdaMap.get(type);
+        public UpdateCondition<Object, Table<Object>> getOptimisticLockCondition(ImmutableType type) {
+            return optimisticLockConditionMap.get(type);
         }
 
         @Override
@@ -889,6 +1013,10 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedMode,
                     associatedModeMap,
                     assignmentMap,
+                    updateWhereMap,
+                    versionMode,
+                    forceMatchedUpdate,
+                    exactConflictTargetRequired,
                     targetTransferModeMap,
                     targetTransferModeAll,
                     typeMatchMode,
@@ -926,6 +1054,9 @@ abstract class AbstractEntitySaveCommandImpl
                     pessimisticLockAll == other.pessimisticLockAll &&
                     saveReturningEnabled == other.saveReturningEnabled &&
                     saveResultReadsAllProperties == other.saveResultReadsAllProperties &&
+                    versionMode == other.versionMode &&
+                    forceMatchedUpdate == other.forceMatchedUpdate &&
+                    exactConflictTargetRequired == other.exactConflictTargetRequired &&
                     mode == other.mode &&
                     deleteMode == other.deleteMode &&
                     Objects.equals(argument, other.argument) &&
@@ -937,6 +1068,7 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedTypeChangeAllowedTypeMap.equals(other.associatedTypeChangeAllowedTypeMap) &&
                     associatedModeMap.equals(other.associatedModeMap) &&
                     assignmentMap.equals(other.assignmentMap) &&
+                    updateWhereMap.equals(other.updateWhereMap) &&
                     keyMatcherMap.equals(other.keyMatcherMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
                     dissociateActionMap.equals(other.dissociateActionMap) &&
@@ -951,6 +1083,10 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
                     ", assignmentMap=" + assignmentMap +
+                    ", updateWhereMap=" + updateWhereMap +
+                    ", versionMode=" + versionMode +
+                    ", forceMatchedUpdate=" + forceMatchedUpdate +
+                    ", exactConflictTargetRequired=" + exactConflictTargetRequired +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", targetTransferModeAll=" + targetTransferModeAll +
                     ", typeMatchMode=" + typeMatchMode +
@@ -970,7 +1106,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", autoCheckingMap=" + autoCheckingMap +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", dissociateActionMap=" + dissociateActionMap +
-                    ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +
+                    ", optimisticLockConditionMap=" + optimisticLockConditionMap +
                     '}';
         }
 

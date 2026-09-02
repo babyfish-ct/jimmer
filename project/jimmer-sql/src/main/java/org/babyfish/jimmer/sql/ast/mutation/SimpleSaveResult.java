@@ -11,14 +11,26 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
 
     final E modifiedEntity;
 
+    final boolean accepted;
+
     public SimpleSaveResult(
             Map<AffectedTable, Integer> affectedRowCountMap,
             E originalEntity,
             E modifiedEntity
     ) {
+        this(affectedRowCountMap, originalEntity, modifiedEntity, true);
+    }
+
+    public SimpleSaveResult(
+            Map<AffectedTable, Integer> affectedRowCountMap,
+            E originalEntity,
+            E modifiedEntity,
+            boolean accepted
+    ) {
         super(affectedRowCountMap);
         this.originalEntity = originalEntity;
         this.modifiedEntity = modifiedEntity;
+        this.accepted = accepted;
     }
 
     @NotNull
@@ -34,10 +46,16 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
     }
 
     @Override
+    public boolean isAccepted() {
+        return accepted;
+    }
+
+    @Override
     public int hashCode() {
         int hash = affectedRowCountMap.hashCode();
         hash = hash * 31 + System.identityHashCode(originalEntity);
         hash = hash * 31 + System.identityHashCode(modifiedEntity);
+        hash = hash * 31 + Boolean.hashCode(accepted);
         return hash;
     }
 
@@ -48,7 +66,8 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
         SimpleSaveResult<?> that = (SimpleSaveResult<?>) o;
         return affectedRowCountMap.equals(that.affectedRowCountMap) &&
                 originalEntity == that.originalEntity &&
-                modifiedEntity == that.modifiedEntity;
+                modifiedEntity == that.modifiedEntity &&
+                accepted == that.accepted;
     }
 
     @Override
@@ -58,6 +77,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
                 ", affectedRowCountMap=" + affectedRowCountMap +
                 ", originalEntity=" + originalEntity +
                 ", modifiedEntity=" + modifiedEntity +
+                ", accepted=" + accepted +
                 '}';
     }
 
@@ -68,6 +88,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
                 affectedRowCountMap,
                 originalEntity,
                 modifiedEntity,
+                accepted,
                 converter.apply(modifiedEntity)
         );
     }
@@ -80,9 +101,10 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
                 Map<AffectedTable, Integer> affectedRowCountMap,
                 E originalEntity,
                 E modifiedEntity,
+                boolean accepted,
                 V modifiedView
         ) {
-            super(affectedRowCountMap, originalEntity, modifiedEntity);
+            super(affectedRowCountMap, originalEntity, modifiedEntity, accepted);
             this.modifiedView = modifiedView;
         }
 

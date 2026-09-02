@@ -46,6 +46,8 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     private Set<MergedBaseQueryImpl<?>> visitingRecursiveMergedQueries;
 
+    private MutationExpressionFrame mutationExpressionFrame;
+
     public AstContext(JSqlClientImplementor sqlClient) {
         this(sqlClient, QueryRenderMode.NORMAL);
     }
@@ -95,6 +97,25 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
     public void popStatement() {
         this.statementFrame = this.statementFrame.parent;
+    }
+
+    public void pushMutationExpressionMap(Map<?, ?> map) {
+        mutationExpressionFrame = new MutationExpressionFrame(map, mutationExpressionFrame);
+    }
+
+    public void popMutationExpressionMap() {
+        mutationExpressionFrame = mutationExpressionFrame.parent;
+    }
+
+    @Nullable
+    public Object getMutationExpressionReplacement(Object expression) {
+        for (MutationExpressionFrame frame = mutationExpressionFrame; frame != null; frame = frame.parent) {
+            Object replacement = frame.map.get(expression);
+            if (replacement != null) {
+                return replacement;
+            }
+        }
+        return null;
     }
 
     public void pushRenderedBaseTable(RealTable realBaseTable) {
@@ -216,7 +237,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         if (table instanceof TableImplementor<?>) {
             return (TableImplementor<E>) table;
         }
-        TableImplementor<E> tableImplementor = ((TableProxy<E>)table).__unwrap();
+        TableImplementor<E> tableImplementor = ((TableProxy<E>) table).__unwrap();
         if (tableImplementor != null) {
             return tableImplementor;
         }
@@ -380,11 +401,11 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             T resolved = (T) statementFrame.peekVpf().add((VirtualPredicate) unwrapped.value);
             return unwrapped.wrapAgain(resolved);
         }
-        if (expression instanceof Ast && ((Ast)expression).hasVirtualPredicate()) {
-            return (T) ((Ast)expression).resolveVirtualPredicate(AstContext.this);
+        if (expression instanceof Ast && ((Ast) expression).hasVirtualPredicate()) {
+            return (T) ((Ast) expression).resolveVirtualPredicate(AstContext.this);
         }
-        if (expression instanceof MutableStatementImplementor && ((MutableStatementImplementor)expression).hasVirtualPredicate()) {
-            ((MutableStatementImplementor)expression).resolveVirtualPredicate(AstContext.this);
+        if (expression instanceof MutableStatementImplementor && ((MutableStatementImplementor) expression).hasVirtualPredicate()) {
+            ((MutableStatementImplementor) expression).resolveVirtualPredicate(AstContext.this);
             return expression;
         }
         return expression;
@@ -393,7 +414,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     public <T> List<T> resolveVirtualPredicates(List<T> expressions) {
         boolean changed = false;
         for (T expression : expressions) {
-            if (expression instanceof Ast && ((Ast)expression).hasVirtualPredicate()) {
+            if (expression instanceof Ast && ((Ast) expression).hasVirtualPredicate()) {
                 changed = true;
                 break;
             }
@@ -415,7 +436,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
     public Predicate[] resolveVirtualPredicates(Predicate[] predicates) {
         boolean changed = false;
         for (Predicate predicate : predicates) {
-            if (((Ast)predicate).hasVirtualPredicate()) {
+            if (((Ast) predicate).hasVirtualPredicate()) {
                 changed = true;
                 break;
             }
@@ -481,7 +502,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 return new Unwrapped<>(value, null);
             }
             PredicateWrapper wrapper = (PredicateWrapper) value;
-            return new Unwrapped<>((T)wrapper.unwrap(), wrapper);
+            return new Unwrapped<>((T) wrapper.unwrap(), wrapper);
         }
 
         @SuppressWarnings("unchecked")
@@ -512,7 +533,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 usingBaseQuery = true;
             } else {
                 TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
-                usingBaseQuery = TableUtils.hasBaseTable(tableLikeImplementor);
+                usingBaseQuery = tableLikeImplementor != null && TableUtils.hasBaseTable(tableLikeImplementor);
             }
             this.usingBaseQuery = usingBaseQuery;
         }
@@ -643,6 +664,18 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
             this.stageType = stageType;
             this.rootAlias = rootAlias;
             this.stageAliasMap = stageAliasMap;
+        }
+    }
+
+    private static class MutationExpressionFrame {
+
+        final Map<?, ?> map;
+
+        final MutationExpressionFrame parent;
+
+        MutationExpressionFrame(Map<?, ?> map, MutationExpressionFrame parent) {
+            this.map = map;
+            this.parent = parent;
         }
     }
 

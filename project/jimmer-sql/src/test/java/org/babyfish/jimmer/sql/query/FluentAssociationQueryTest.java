@@ -21,7 +21,7 @@ public class FluentAssociationQueryTest extends AbstractQueryTest {
         AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
                 AssociationTable.of(BookTableEx.class, BookTableEx::authors);
         executeAndExpect(
-                getSqlClient().createAssociationQuery(association)
+                getSqlClient().createQuery(association)
                         .where(association.source().name().eq("Learning GraphQL"))
                         .where(association.target().firstName().eq("Alex"))
                         .select(association),

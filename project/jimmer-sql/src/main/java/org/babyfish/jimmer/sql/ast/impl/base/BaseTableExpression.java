@@ -3,74 +3,43 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.Objects;
 
-class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
-
-    private final ExpressionImplementor<T> raw;
-
-    private final BaseTableOwner baseTableOwner;
+class BaseTableExpression<T>
+        extends AbstractBaseTableExpression<T, ExpressionImplementor<T>> {
 
     BaseTableExpression(ExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+        super(unwrap(raw), baseTableOwner);
+    }
+
+    private static <T> ExpressionImplementor<T> unwrap(ExpressionImplementor<T> raw) {
         if (raw instanceof BaseTableExpression<?>) {
-            raw = ((BaseTableExpression<T>)raw).raw;
+            return ((BaseTableExpression<T>) raw).raw();
         }
-        this.raw = raw;
-        this.baseTableOwner = baseTableOwner;
-    }
-
-    BaseTableOwner getBaseTableOwner() {
-        return baseTableOwner;
+        return raw;
     }
 
     @Override
-    public Class<T> getType() {
-        return raw.getType();
-    }
-
-    @Override
-    public int precedence() {
-        return raw.precedence();
-    }
-
-    @Override
-    public void accept(@NotNull AstVisitor visitor) {
-        AstContext ctx = visitor.getAstContext();
-        visitor.visitBaseTableExpression(baseTableOwner);
-        baseTableOwner.visitOwnerStatementChain(ctx, () -> ((Ast) this.raw).accept(visitor));
-    }
-
-    @Override
-    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        AstContext ctx = builder.assertSimple().getAstContext();
-        ctx.pushStatement((baseTableOwner.baseTable.getQuery()).getMutableQuery());
+    protected void renderWithoutReplacement(AbstractSqlBuilder<?> builder) {
+        builder.assertSimple().getAstContext().pushStatement(
+                getBaseTableOwner().getBaseTable().getQuery().getMutableQuery()
+        );
         try {
             QueryRenderContext renderContext = builder.assertSimple().getQueryRenderContext();
             BaseQueryRead read = Objects.requireNonNull(
-                    renderContext.getBaseQueryReadSupport().expression(baseTableOwner),
-                    "No base-query export selection is available for " + baseTableOwner
+                    renderContext.getBaseQueryReadSupport().expression(getBaseTableOwner()),
+                    "No base-query export selection is available for " + getBaseTableOwner()
             );
             builder
                     .sql(builder.assertSimple().alias(read.getRealBaseTable()))
                     .sql(".c")
                     .sql(Integer.toString(read.index(0)));
         } finally {
-            ctx.popStatement();
+            builder.assertSimple().getAstContext().popStatement();
         }
-    }
-
-    @Override
-    public boolean hasVirtualPredicate() {
-        return ((Ast)this.raw).hasVirtualPredicate();
-    }
-
-    @Override
-    public Ast resolveVirtualPredicate(AstContext ctx) {
-        return ((Ast)this.raw).resolveVirtualPredicate(ctx);
     }
 
     static class Cmp<T extends Comparable<?>>

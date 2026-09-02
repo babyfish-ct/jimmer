@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -14,11 +13,12 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 public class TableUtils {
 
-    private TableUtils() {}
+    private TableUtils() {
+    }
 
     public static TableLike<?> parent(TableLike<?> tableLike) {
         if (tableLike instanceof BaseTableSymbol) {
-            return ((BaseTableSymbol)tableLike).getParent();
+            return ((BaseTableSymbol) tableLike).getParent();
         }
         return parent((Table<?>) tableLike);
     }
@@ -31,6 +31,9 @@ public class TableUtils {
     }
 
     public static boolean hasBaseTable(TableLikeImplementor<?> tableLike) {
+        if (tableLike == null) {
+            return false;
+        }
         if (tableLike instanceof BaseTableImplementor) {
             return true;
         }

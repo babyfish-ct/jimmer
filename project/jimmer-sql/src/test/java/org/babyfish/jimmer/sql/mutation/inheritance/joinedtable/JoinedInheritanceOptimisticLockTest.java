@@ -18,7 +18,7 @@ import java.sql.SQLException;
 public class JoinedInheritanceOptimisticLockTest extends AbstractMutationTest {
 
     @Test
-    public void testUserOptimisticLockUsesFakeRootGate() {
+    public void testOptimisticLockConditionUsesFakeRootGate() {
         connectAndExpect(
                 con -> {
                     getSqlClient()
@@ -62,7 +62,7 @@ public class JoinedInheritanceOptimisticLockTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUserOptimisticLockFailureSkipsJoinedChildUpdate() {
+    public void testOptimisticLockConditionFailureSkipsJoinedChildUpdate() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -98,7 +98,7 @@ public class JoinedInheritanceOptimisticLockTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUserOptimisticLockRejectsDerivedTypeProp() {
+    public void testOptimisticLockConditionRejectsDerivedTypeProp() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()

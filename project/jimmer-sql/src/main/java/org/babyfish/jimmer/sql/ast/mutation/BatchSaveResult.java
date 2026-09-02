@@ -52,6 +52,7 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
             View.ViewItem<E, V> viewItem = new View.ViewItem<>(
                     item.originalEntity,
                     item.modifiedEntity,
+                    item.accepted,
                     converter.apply(item.modifiedEntity)
             );
             viewItems.add(viewItem);
@@ -65,9 +66,16 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
 
         final E modifiedEntity;
 
+        final boolean accepted;
+
         public Item(E originalEntity, E modifiedEntity) {
+            this(originalEntity, modifiedEntity, true);
+        }
+
+        public Item(E originalEntity, E modifiedEntity, boolean accepted) {
             this.originalEntity = originalEntity;
             this.modifiedEntity = modifiedEntity;
+            this.accepted = accepted;
         }
 
         @NotNull
@@ -83,10 +91,16 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
         }
 
         @Override
+        public boolean isAccepted() {
+            return accepted;
+        }
+
+        @Override
         public String toString() {
             return "Item{" +
                     "originalEntity=" + originalEntity +
                     ", modifiedEntity=" + modifiedEntity +
+                    ", accepted=" + accepted +
                     '}';
         }
     }
@@ -100,7 +114,7 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
 
         @SuppressWarnings("unchecked")
         public List<ViewItem<E, V>> getViewItems() {
-            return (List<ViewItem<E, V>>)(List<?>) items;
+            return (List<ViewItem<E, V>>) (List<?>) items;
         }
 
         @Override
@@ -117,7 +131,11 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
             private final V modifiedView;
 
             public ViewItem(E originalEntity, E modifiedEntity, V modifiedView) {
-                super(originalEntity, modifiedEntity);
+                this(originalEntity, modifiedEntity, true, modifiedView);
+            }
+
+            public ViewItem(E originalEntity, E modifiedEntity, boolean accepted, V modifiedView) {
+                super(originalEntity, modifiedEntity, accepted);
                 this.modifiedView = modifiedView;
             }
 

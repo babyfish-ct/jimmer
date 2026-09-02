@@ -4,7 +4,7 @@ import org.babyfish.jimmer.View
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 
-internal open class KSimpleSaveResultImpl<E: Any>(
+internal open class KSimpleSaveResultImpl<E : Any>(
     javaResult: SimpleSaveResult<E>
 ) : KMutationResultImpl(javaResult), KSimpleSaveResult<E> {
 
@@ -20,7 +20,11 @@ internal open class KSimpleSaveResultImpl<E: Any>(
     override val isModified: Boolean
         get() = (javaResult as SimpleSaveResult<E>).isModified
 
-    internal class ViewImpl<E: Any, V: View<E>>(
+    @Suppress("UNCHECKED_CAST")
+    override val isAccepted: Boolean
+        get() = (javaResult as SimpleSaveResult<E>).isAccepted
+
+    internal class ViewImpl<E : Any, V : View<E>>(
         javaResult: SimpleSaveResult.View<E, V>
     ) : KSimpleSaveResultImpl<E>(javaResult), KSimpleSaveResult.View<E, V> {
 

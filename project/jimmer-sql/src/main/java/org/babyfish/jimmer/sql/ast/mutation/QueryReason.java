@@ -202,6 +202,13 @@ public enum QueryReason {
     OPTIMISTIC_LOCK,
 
     /**
+     * The update arm of an upsert has a selective predicate. The existing
+     * row is locked before mutation so a predicate rejection performs no
+     * update at all and cannot fire an update trigger.
+     */
+    UPDATE_WHERE,
+
+    /**
      * The current entity type being operated on is annotated with
      * {@link org.babyfish.jimmer.sql.KeyUniqueConstraint}.
      *

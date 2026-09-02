@@ -4,7 +4,9 @@ import org.babyfish.jimmer.EmbeddableDto;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
@@ -186,7 +188,10 @@ public class PropExpressionImpl<T>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        TableImplementor<?> tableImplementor = TableProxies.resolve(table, visitor.getAstContext());
+        AstContext ctx = visitor.getAstContext();
+        Object replacement = ctx.getMutationExpressionReplacement(table);
+        Table<?> actualTable = replacement instanceof Table<?> ? (Table<?>) replacement : table;
+        TableImplementor<?> tableImplementor = TableProxies.resolve(actualTable, ctx);
         visitor.visitTableReference(
                 visitor.realTableForAnalysis(tableImplementor),
                 prop,
@@ -218,8 +223,11 @@ public class PropExpressionImpl<T>
         if (abstractBuilder.renderValueGetter(this)) {
             return;
         }
+        Object replacement = abstractBuilder.getMutationExpressionReplacement(table);
+        Table<?> actualTable = replacement instanceof Table<?> ? (Table<?>) replacement : table;
         SqlBuilder builder = abstractBuilder.assertSimple();
-        TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
+        AstContext ctx = builder.getAstContext();
+        TableImplementor<?> tableImplementor = TableProxies.resolve(actualTable, ctx);
         EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         if (partial != null) {
             if (ignoreBrackets || partial.size() == 1) {
@@ -372,7 +380,7 @@ public class PropExpressionImpl<T>
         @Override
         public <XE extends Expression<?>> XE get(String prop) {
             ImmutableProp deeperProp = this.deepestProp.getTargetType().getProp(prop);
-            return (XE)PropExpressionImpl.of(this, deeperProp);
+            return (XE) PropExpressionImpl.of(this, deeperProp);
         }
 
         @SuppressWarnings("unchecked")
@@ -387,7 +395,7 @@ public class PropExpressionImpl<T>
                                 "\""
                 );
             }
-            return (XE)PropExpressionImpl.of(this, prop);
+            return (XE) PropExpressionImpl.of(this, prop);
         }
 
         @Override

@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.sql.mutation.inheritance.singletable;
 
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganization;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumOrganizationDraft;
@@ -555,16 +557,16 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                                 })
                         ),
                 ctx -> {
-	                    ctx.statement(it -> {
-	                        it.sql(
-	                                "merge into CLIENT tb_1_ " +
-	                                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
-	                                        "on tb_1_.ID = tb_2_.ID " +
-	                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
-	                                        "then update set NAME = tb_2_.NAME, TAX_CODE = tb_2_.TAX_CODE " +
-	                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
-	                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
-	                        );
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into CLIENT tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched and tb_1_.CLIENT_TYPE = tb_2_.CLIENT_TYPE " +
+                                        "then update set NAME = tb_2_.NAME, TAX_CODE = tb_2_.TAX_CODE " +
+                                        "when not matched then insert(ID, CLIENT_TYPE, NAME, TAX_CODE) " +
+                                        "values(tb_2_.ID, tb_2_.CLIENT_TYPE, tb_2_.NAME, tb_2_.TAX_CODE)"
+                        );
                         it.variables(300L, "ORG", "New Org", "NEW-001");
                     });
                     ctx.rowCount(AffectedTable.of(Organization.class), 1);
@@ -668,6 +670,38 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables(101L, "ORG", "Should not update", "SHOULD-NOT-WRITE");
                     });
                     ctx.value("[Person, Bob, null, Bob, Brown]");
+                }
+        );
+    }
+
+    @Test
+    public void testMySqlUpsertDerivedTypeWithMismatchedDiscriminatorDoesNotExecuteUpdate() {
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new MySqlDialect()));
+        connectAndExpect(
+                con -> sqlClient
+                        .getEntities()
+                        .saveCommand(
+                                OrganizationDraft.$.produce(organization -> {
+                                    organization.setId(101L);
+                                    organization.setName("Should not update");
+                                    organization.setTaxCode("SHOULD-NOT-WRITE");
+                                })
+                        )
+                        .execute(con)
+                        .isAccepted() + "; " + clientRow(con, 101L),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from CLIENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.CLIENT_TYPE = ?"
+                        );
+                        it.variables(101L, "ORG");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.CLIENT_TYPE from CLIENT tb_1_ where tb_1_.ID = ?");
+                        it.variables(101L);
+                    });
+                    ctx.value("false; [Person, Bob, null, Bob, Brown]");
                 }
         );
     }
@@ -1063,7 +1097,8 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables("Single root project+", 101L, 1000L);
                     });
                     ctx.rowCount(AffectedTable.of(ClientProject.class), 1);
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -1188,7 +1223,8 @@ public class SingleTableInheritanceMutationTest extends AbstractMutationTest {
                         it.variables("Single organization project+", 102L, 1001L);
                     });
                     ctx.rowCount(AffectedTable.of(OrganizationProject.class), 1);
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
