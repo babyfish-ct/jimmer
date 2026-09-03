@@ -96,7 +96,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setPrice(new BigDecimal("49.9"));
         });
         execute(
-                new Book[] { book1, book2 },
+                new Book[]{book1, book2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Book.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_MATCHER);
@@ -141,7 +141,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setName("Wheel");
         });
         execute(
-                new Department[] {department1, department2},
+                new Department[]{department1, department2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Department.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, DEPARTMENT_KEY_MATCHER);
@@ -176,14 +176,14 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setName("MotoBike");
         });
         execute(
-                new TreeNode[] { treeNode1, treeNode2 },
+                new TreeNode[]{treeNode1, treeNode2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, TreeNode.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, TREE_NODE_KEY_MATCHER);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                   operator.insert(shapedEntityMap.iterator().next());
+                    operator.insert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(100L, drafts.get(0).__get(DepartmentProps.ID.unwrap().getId()));
                     Assertions.assertEquals(101L, drafts.get(1).__get(DepartmentProps.ID.unwrap().getId()));
                     return operator.ctx.affectedRowCountMap;
@@ -219,7 +219,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setModifiedTime(time);
         });
         execute(
-                new Administrator[] { administrator1, administrator2 },
+                new Administrator[]{administrator1, administrator2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Administrator.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, ADMINISTRATOR_KEY_MATCHER);
@@ -274,7 +274,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setEdition(5);
         });
         execute(
-                new Book[] { book1, book2 },
+                new Book[]{book1, book2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Book.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_MATCHER);
@@ -314,7 +314,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setVersion(0);
         });
         execute(
-                new BookStore[] { store1, store2 },
+                new BookStore[]{store1, store2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_MATCHER);
@@ -356,7 +356,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setVersion(1);
         });
         execute(
-                new BookStore[] { store1, store2 },
+                new BookStore[]{store1, store2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_MATCHER);
@@ -392,7 +392,7 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testByUserOptimisticLock() {
+    public void testByOptimisticLockCondition() {
         BookStore store1 = BookStoreDraft.$.produce(draft -> {
             draft.setId(oreillyId);
             draft.setWebsite("https://www.oreilly.com");
@@ -404,10 +404,10 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setVersion(0);
         });
         execute(
-                new BookStore[] { store1, store2 },
+                new BookStore[]{store1, store2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
-        options.userOptimisticLock = (BookStoreTable table, ValueExpressionFactory<BookStore> f) -> {
+                        options.optimisticLockCondition = (BookStoreTable table, ValueExpressionFactory<BookStore> f) -> {
                             return Predicate.sql(
                                     "coalesce(length(%e), 0) <= length(%e)",
                                     new Expression<?>[]{
@@ -447,7 +447,7 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testByUserOptimisticLockFailed() {
+    public void testByOptimisticLockConditionFailed() {
         BookStore store1 = BookStoreDraft.$.produce(draft -> {
             draft.setId(oreillyId);
             draft.setWebsite("https://www.oreilly.com");
@@ -459,10 +459,10 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setVersion(1);
         });
         execute(
-                new BookStore[] { store1, store2 },
+                new BookStore[]{store1, store2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
-        options.userOptimisticLock = (BookStoreTable table, ValueExpressionFactory<BookStore> f) -> {
+                        options.optimisticLockCondition = (BookStoreTable table, ValueExpressionFactory<BookStore> f) -> {
                             return Predicate.sql(
                                     "coalesce(length(%e), 0) <= length(%e)",
                                     new Expression<?>[]{
@@ -521,7 +521,7 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setPrice(new BigDecimal("49.9"));
         });
         execute(
-                new Book[] { book1, book2 },
+                new Book[]{book1, book2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Book.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_MATCHER);
@@ -576,7 +576,7 @@ public class OperatorTest extends AbstractMutationTest {
         });
         execute(
                 NativeDatabases.MYSQL_DATA_SOURCE,
-                new Book[] { book1, book2 },
+                new Book[]{book1, book2},
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
@@ -657,7 +657,7 @@ public class OperatorTest extends AbstractMutationTest {
         });
         execute(
                 NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
-                new Book[] { book1, book2 },
+                new Book[]{book1, book2},
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
@@ -734,7 +734,7 @@ public class OperatorTest extends AbstractMutationTest {
             });
         });
         execute(
-                new Machine[] { machine1, machine2 },
+                new Machine[]{machine1, machine2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Machine.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_MATCHER);
@@ -829,7 +829,7 @@ public class OperatorTest extends AbstractMutationTest {
         });
         execute(
                 NativeDatabases.MYSQL_DATA_SOURCE,
-                new Machine[] { machine1, machine2 },
+                new Machine[]{machine1, machine2},
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
@@ -948,7 +948,7 @@ public class OperatorTest extends AbstractMutationTest {
         });
         execute(
                 NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
-                new Machine[] { machine1, machine2 },
+                new Machine[]{machine1, machine2},
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
@@ -1042,7 +1042,7 @@ public class OperatorTest extends AbstractMutationTest {
         });
         execute(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
-                new Book[] { book1, book2 },
+                new Book[]{book1, book2},
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
@@ -1121,7 +1121,7 @@ public class OperatorTest extends AbstractMutationTest {
         });
         execute(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
-                new Machine[] { machine1, machine2 },
+                new Machine[]{machine1, machine2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(it -> it.setDialect(new PostgresDialect())), con, Machine.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_MATCHER);

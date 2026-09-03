@@ -57,7 +57,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -68,8 +68,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -82,23 +82,23 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.entity(it -> {
                         it.original("{" +
-                                    "\"name\":\"Kotlin in Action\"," +
-                                    "\"edition\":1," +
-                                    "\"price\":40," +
-                                    "\"store\":{\"name\":\"TURING\",\"website\":\"http://www.turing.com\"}" +
-                                    "}");
+                                "\"name\":\"Kotlin in Action\"," +
+                                "\"edition\":1," +
+                                "\"price\":40," +
+                                "\"store\":{\"name\":\"TURING\",\"website\":\"http://www.turing.com\"}" +
+                                "}");
                         it.modified("{" +
-                                    "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
-                                    "\"name\":\"Kotlin in Action\"," +
-                                    "\"edition\":1," +
-                                    "\"price\":40," +
-                                    "\"store\":{" +
-                                    "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
-                                    "\"name\":\"TURING\"," +
-                                    "\"website\":\"http://www.turing.com\"," +
-                                    "\"version\":0" +
-                                    "}" +
-                                    "}");
+                                "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                "\"name\":\"Kotlin in Action\"," +
+                                "\"edition\":1," +
+                                "\"price\":40," +
+                                "\"store\":{" +
+                                "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                "\"name\":\"TURING\"," +
+                                "\"website\":\"http://www.turing.com\"," +
+                                "\"version\":0" +
+                                "}" +
+                                "}");
                     });
                     ctx.totalRowCount(2);
                     ctx.rowCount(AffectedTable.of(Book.class), 1);
@@ -122,8 +122,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ " +
-                                "where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
                         it.queryReason(QueryReason.OPTIMISTIC_LOCK);
@@ -131,8 +131,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK_STORE " +
-                                "set WEBSITE = ?, VERSION = VERSION + 1 " +
-                                "where ID = ? and VERSION = ?"
+                                        "set WEBSITE = ?, VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
                         );
                         it.variables("http://www.oreilly.com", oreillyId, 0);
                     });
@@ -143,21 +143,21 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
-                                "\"price\":40," +
-                                "\"store\":{" +
-                                "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "\"website\":\"http://www.oreilly.com\"," +
-                                "\"version\":0}" +
-                                "}"
+                                        "\"price\":40," +
+                                        "\"store\":{" +
+                                        "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "\"website\":\"http://www.oreilly.com\"," +
+                                        "\"version\":0}" +
+                                        "}"
                         );
                         it.modified(
                                 "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
-                                "\"price\":40," +
-                                "\"store\":{" +
-                                "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "\"website\":\"http://www.oreilly.com\"," +
-                                "\"version\":1}" +
-                                "}"
+                                        "\"price\":40," +
+                                        "\"store\":{" +
+                                        "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "\"website\":\"http://www.oreilly.com\"," +
+                                        "\"version\":1}" +
+                                        "}"
                         );
                         ctx.totalRowCount(2);
                         ctx.rowCount(AffectedTable.of(Book.class), 1);
@@ -190,8 +190,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ " +
-                                "where tb_1_.NAME = ?"
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -203,8 +203,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                         it.variables("SQL Cookbook", 1, "Learning SQL", 1);
                         it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
@@ -217,34 +217,34 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"name\":\"TURING\"," +
-                                "\"books\":[" +
-                                "{\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":50}," +
-                                "{\"name\":\"Learning SQL\",\"edition\":1,\"price\":40}" +
-                                "]" +
-                                "}"
+                                        "\"name\":\"TURING\"," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":50}," +
+                                        "{\"name\":\"Learning SQL\",\"edition\":1,\"price\":40}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
-                                "\"name\":\"TURING\"," +
-                                "\"version\":0," +
-                                "\"books\":[" +
-                                "{" +
-                                "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
-                                "\"name\":\"SQL Cookbook\"," +
-                                "\"edition\":1," +
-                                "\"price\":50," +
-                                "\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
-                                "},{" +
-                                "\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
-                                "\"name\":\"Learning SQL\"," +
-                                "\"edition\":1," +
-                                "\"price\":40," +
-                                "\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
-                                "}" +
-                                "]" +
-                                "}"
+                                        "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "\"name\":\"TURING\"," +
+                                        "\"version\":0," +
+                                        "\"books\":[" +
+                                        "{" +
+                                        "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                        "\"name\":\"SQL Cookbook\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":50," +
+                                        "\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                        "},{" +
+                                        "\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
+                                        "\"name\":\"Learning SQL\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":40," +
+                                        "\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                        "}" +
+                                        "]" +
+                                        "}"
                         );
                     });
                     ctx.totalRowCount(3);
@@ -277,8 +277,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ " +
-                                "where tb_1_.NAME = ?"
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -290,8 +290,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                         it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -311,34 +311,34 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":0," +
-                                "\"books\":[" +
-                                "{\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":45}," +
-                                "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":42}" +
-                                "]" +
-                                "}"
+                                        "\"name\":\"O'REILLY\"," +
+                                        "\"version\":0," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":45}," +
+                                        "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":42}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":1," +
-                                "\"books\":[" +
-                                "{" +
-                                "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
-                                "\"name\":\"Learning GraphQL\"," +
-                                "\"edition\":3," +
-                                "\"price\":45," +
-                                "\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                                "},{" +
-                                "\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
-                                "\"name\":\"GraphQL in Action\"," +
-                                "\"edition\":3," +
-                                "\"price\":42," +
-                                "\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                                "}" +
-                                "]" +
-                                "}");
+                                        "\"name\":\"O'REILLY\"," +
+                                        "\"version\":1," +
+                                        "\"books\":[" +
+                                        "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"name\":\"Learning GraphQL\"," +
+                                        "\"edition\":3," +
+                                        "\"price\":45," +
+                                        "\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "},{" +
+                                        "\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "\"name\":\"GraphQL in Action\"," +
+                                        "\"edition\":3," +
+                                        "\"price\":42," +
+                                        "\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "}" +
+                                        "]" +
+                                        "}");
                     });
                     ctx.totalRowCount(11);
                     ctx.rowCount(AffectedTable.of(Book.class), 10);
@@ -363,7 +363,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                         );
                         it.variables("MANNING");
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -371,15 +371,15 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK_STORE " +
-                                "set VERSION = VERSION + 1 " +
-                                "where ID = ? and VERSION = ?"
+                                        "set VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
                         );
                         it.variables(manningId, 0);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK set STORE_ID = null " +
-                                "where STORE_ID = ?"
+                                        "where STORE_ID = ?"
                         );
                         it.variables(manningId);
                     });
@@ -470,8 +470,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -483,8 +483,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR tb_1_ " +
-                                "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
+                                        "from AUTHOR tb_1_ " +
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
                         );
                         it.variables("Andrey", "Breslav", "Pierre-Yves", "Saumont");
                     });
@@ -503,28 +503,28 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"name\":\"Kotlin in Action\"," +
-                                "\"edition\":1," +
-                                "\"price\":49," +
-                                "\"authors\":[" +
-                                "{\"firstName\":\"Andrey\",\"lastName\":\"Breslav\",\"gender\":\"MALE\"}," +
-                                "{\"firstName\":\"Pierre-Yves\",\"lastName\":\"Saumont\",\"gender\":\"MALE\"}" +
-                                "]" +
-                                "}"
+                                        "\"name\":\"Kotlin in Action\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"firstName\":\"Andrey\",\"lastName\":\"Breslav\",\"gender\":\"MALE\"}," +
+                                        "{\"firstName\":\"Pierre-Yves\",\"lastName\":\"Saumont\",\"gender\":\"MALE\"}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
-                                "\"name\":\"Kotlin in Action\"," +
-                                "\"edition\":1," +
-                                "\"price\":49," +
-                                "\"authors\":[" +
-                                "{\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
-                                "\"firstName\":\"Andrey\",\"lastName\":\"Breslav\",\"gender\":\"MALE\"}," +
-                                "{\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
-                                "\"firstName\":\"Pierre-Yves\",\"lastName\":\"Saumont\",\"gender\":\"MALE\"}" +
-                                "]" +
-                                "}"
+                                        "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "\"name\":\"Kotlin in Action\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                        "\"firstName\":\"Andrey\",\"lastName\":\"Breslav\",\"gender\":\"MALE\"}," +
+                                        "{\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
+                                        "\"firstName\":\"Pierre-Yves\",\"lastName\":\"Saumont\",\"gender\":\"MALE\"}" +
+                                        "]" +
+                                        "}"
                         );
                         ctx.totalRowCount(5);
                         ctx.rowCount(AffectedTable.of(Book.class), 1);
@@ -553,8 +553,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -566,8 +566,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR tb_1_ " +
-                                "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
+                                        "from AUTHOR tb_1_ " +
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
                         );
                         it.variables("Dan", "Vanderkam", "Boris", "Cherny");
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -593,24 +593,24 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":49," +
-                                "\"authors\":[" +
-                                "{\"firstName\":\"Dan\",\"lastName\":\"Vanderkam\",\"gender\":\"FEMALE\"}," +
-                                "{\"firstName\":\"Boris\",\"lastName\":\"Cherny\",\"gender\":\"FEMALE\"}" +
-                                "]" +
-                                "}"
+                                        "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"firstName\":\"Dan\",\"lastName\":\"Vanderkam\",\"gender\":\"FEMALE\"}," +
+                                        "{\"firstName\":\"Boris\",\"lastName\":\"Cherny\",\"gender\":\"FEMALE\"}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
-                                "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":49," +
-                                "\"authors\":[" +
-                                "{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"," +
-                                "\"firstName\":\"Dan\",\"lastName\":\"Vanderkam\",\"gender\":\"FEMALE\"}," +
-                                "{\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
-                                "\"firstName\":\"Boris\",\"lastName\":\"Cherny\",\"gender\":\"FEMALE\"}" +
-                                "]" +
-                                "}"
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"," +
+                                        "\"firstName\":\"Dan\",\"lastName\":\"Vanderkam\",\"gender\":\"FEMALE\"}," +
+                                        "{\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                                        "\"firstName\":\"Boris\",\"lastName\":\"Cherny\",\"gender\":\"FEMALE\"}" +
+                                        "]" +
+                                        "}"
                         );
                     });
                     ctx.totalRowCount(7);
@@ -634,8 +634,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -684,8 +684,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR tb_1_ " +
-                                "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
+                                        "from AUTHOR tb_1_ " +
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Jim", "Green");
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -697,8 +697,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                         it.variables("Learning SQL", 1, "SQL Cookbook", 1);
                     });
@@ -717,24 +717,24 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\"," +
-                                "\"books\":[" +
-                                "{\"name\":\"Learning SQL\",\"edition\":1,\"price\":30}," +
-                                "{\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":40}" +
-                                "]" +
-                                "}"
+                                        "\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\"," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"Learning SQL\",\"edition\":1,\"price\":30}," +
+                                        "{\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":40}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
-                                "\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\"," +
-                                "\"books\":[" +
-                                "{\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
-                                "\"name\":\"Learning SQL\",\"edition\":1,\"price\":30}," +
-                                "{\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
-                                "\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":40}" +
-                                "]" +
-                                "}"
+                                        "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\"," +
+                                        "\"books\":[" +
+                                        "{\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                        "\"name\":\"Learning SQL\",\"edition\":1,\"price\":30}," +
+                                        "{\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
+                                        "\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":40}" +
+                                        "]" +
+                                        "}"
                         );
                         ctx.totalRowCount(5);
                         ctx.rowCount(AffectedTable.of(Book.class), 2);
@@ -763,8 +763,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR tb_1_ " +
-                                "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
+                                        "from AUTHOR tb_1_ " +
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Eve", "Procello");
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -778,8 +778,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                         it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
                         it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
@@ -807,28 +807,28 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "\"firstName\":\"Eve\",\"lastName\":\"Procello\",\"gender\":\"FEMALE\"," +
-                                "\"books\":[" +
-                                "{\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":35}," +
-                                "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":28}" +
-                                "]" +
-                                "}"
+                                        "\"firstName\":\"Eve\",\"lastName\":\"Procello\",\"gender\":\"FEMALE\"," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":35}," +
+                                        "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":28}" +
+                                        "]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
-                                "\"firstName\":\"Eve\",\"lastName\":\"Procello\",\"gender\":\"FEMALE\"," +
-                                "\"books\":[" +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
-                                "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":35" +
-                                "},{" +
-                                "\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
-                                "\"name\":\"GraphQL in Action\"," +
-                                "\"edition\":3," +
-                                "\"price\":28" +
-                                "}" +
-                                "]" +
-                                "}"
+                                        "\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                        "\"firstName\":\"Eve\",\"lastName\":\"Procello\",\"gender\":\"FEMALE\"," +
+                                        "\"books\":[" +
+                                        "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":35" +
+                                        "},{" +
+                                        "\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "\"name\":\"GraphQL in Action\"," +
+                                        "\"edition\":3," +
+                                        "\"price\":28" +
+                                        "}" +
+                                        "]" +
+                                        "}"
                         );
                     });
                     ctx.totalRowCount(6);
@@ -840,7 +840,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAssociationOnlyUpdateUsesUserOptimisticLockAsOwnerGate() {
+    public void testAssociationOnlyUpdateUsesOptimisticLockConditionAsOwnerGate() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -875,7 +875,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAssociationOnlyUpdateContinuesAfterUserOptimisticLockOwnerGate() {
+    public void testAssociationOnlyUpdateContinuesAfterOptimisticLockConditionOwnerGate() {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
@@ -944,8 +944,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME from " +
-                                "ADMINISTRATOR tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                                        "ADMINISTRATOR tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                         it.variables("a_5", true);
                         it.queryReason(QueryReason.INTERCEPTOR);
@@ -953,7 +953,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into ADMINISTRATOR(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
-                                "values(?, ?, ?, ?, ?)"
+                                        "values(?, ?, ?, ?, ?)"
                         );
                         it.variables(
                                 5L,
@@ -966,17 +966,17 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from ADMINISTRATOR_METADATA tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                         it.variables("am_5", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into ADMINISTRATOR_METADATA(" +
-                                "--->ID, " +
-                                "--->NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID" +
-                                ") values(?, ?, ?, ?, ?, ?, ?, ?)"
+                                        "--->ID, " +
+                                        "--->NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID" +
+                                        ") values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
                         it.variables(
                                 50L,
@@ -995,32 +995,32 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "--->\"name\":\"a_5\"," +
-                                "--->\"metadata\":{" +
-                                "--->--->\"name\":\"am_5\"," +
-                                "--->--->\"email\":\"email_5\"," +
-                                "--->--->\"website\":\"website_5\"" +
-                                "--->}" +
-                                "}"
+                                        "--->\"name\":\"a_5\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_5\"," +
+                                        "--->--->\"email\":\"email_5\"," +
+                                        "--->--->\"website\":\"website_5\"" +
+                                        "--->}" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "--->\"name\":\"a_5\"," +
-                                "--->\"deleted\":false," +
-                                "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
-                                "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
-                                "--->\"metadata\":{" +
-                                "--->--->\"name\":\"am_5\"," +
-                                "--->--->\"deleted\":false," +
-                                "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
-                                "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
-                                "--->--->\"email\":\"email_5\"," +
-                                "--->--->\"website\":\"website_5\"," +
-                                "--->--->\"administrator\":{\"id\":5}," +
-                                "--->--->\"id\":50" +
-                                "--->}," +
-                                "--->\"id\":5" +
-                                "}"
+                                        "--->\"name\":\"a_5\"," +
+                                        "--->\"deleted\":false," +
+                                        "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_5\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"email\":\"email_5\"," +
+                                        "--->--->\"website\":\"website_5\"," +
+                                        "--->--->\"administrator\":{\"id\":5}," +
+                                        "--->--->\"id\":50" +
+                                        "--->}," +
+                                        "--->\"id\":5" +
+                                        "}"
                         );
                     });
                 }
@@ -1050,8 +1050,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from ADMINISTRATOR tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                                        "from ADMINISTRATOR tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                         it.variables("a_4", true);
                         it.queryReason(QueryReason.INTERCEPTOR);
@@ -1059,7 +1059,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into ADMINISTRATOR(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
-                                "values(?, ?, ?, ?, ?)"
+                                        "values(?, ?, ?, ?, ?)"
                         );
                         it.variables(
                                 10001L,
@@ -1072,17 +1072,17 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from ADMINISTRATOR_METADATA tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                         it.variables("am_4", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into ADMINISTRATOR_METADATA(" +
-                                "--->ID, " +
-                                "--->NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID" +
-                                ") values(?, ?, ?, ?, ?, ?, ?, ?)"
+                                        "--->ID, " +
+                                        "--->NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID" +
+                                        ") values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
                         it.variables(
                                 10010L,
@@ -1098,35 +1098,35 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "--->\"name\":\"a_4\"," +
-                                "--->\"metadata\":{" +
-                                "--->--->\"name\":\"am_4\"," +
-                                "--->--->\"email\":\"email_4+\"," +
-                                "--->--->\"website\":\"website_4+\"" +
-                                "--->}" +
-                                "}"
+                                        "--->\"name\":\"a_4\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_4\"," +
+                                        "--->--->\"email\":\"email_4+\"," +
+                                        "--->--->\"website\":\"website_4+\"" +
+                                        "--->}" +
+                                        "}"
                         );
                         ctx.totalRowCount(2);
                         ctx.rowCount(AffectedTable.of(Administrator.class), 1);
                         ctx.rowCount(AffectedTable.of(AdministratorMetadata.class), 1);
                         it.modified(
                                 "{" +
-                                "--->\"name\":\"a_4\"," +
-                                "--->\"deleted\":false," +
-                                "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
-                                "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
-                                "--->\"metadata\":{" +
-                                "--->--->\"name\":\"am_4\"," +
-                                "--->--->\"deleted\":false," +
-                                "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
-                                "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
-                                "--->--->\"email\":\"email_4+\"," +
-                                "--->--->\"website\":\"website_4+\"," +
-                                "--->--->\"administrator\":{\"id\":10001}," +
-                                "--->--->\"id\":10010" +
-                                "--->}," +
-                                "--->\"id\":10001" +
-                                "}"
+                                        "--->\"name\":\"a_4\"," +
+                                        "--->\"deleted\":false," +
+                                        "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_4\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"email\":\"email_4+\"," +
+                                        "--->--->\"website\":\"website_4+\"," +
+                                        "--->--->\"administrator\":{\"id\":10001}," +
+                                        "--->--->\"id\":10010" +
+                                        "--->}," +
+                                        "--->\"id\":10001" +
+                                        "}"
                         );
                     });
                 }
@@ -1154,8 +1154,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                "from TREE_NODE tb_1_ " +
-                                "where tb_1_.PARENT_ID is null and tb_1_.NAME = ?"
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID is null and tb_1_.NAME = ?"
                         );
                         it.variables("Parent");
                     });
@@ -1166,8 +1166,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                "from TREE_NODE tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.PARENT_ID) in ((?, ?), (?, ?))"
+                                        "from TREE_NODE tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.PARENT_ID) in ((?, ?), (?, ?))"
                         );
                         it.variables("Child-1", 100L, "Child-2", 100L);
                     });
@@ -1180,31 +1180,31 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "--->\"name\":\"Parent\"," +
-                                "--->\"parent\":null," +
-                                "--->\"childNodes\":[" +
-                                "--->--->{\"name\":\"Child-1\"}," +
-                                "--->--->{\"name\":\"Child-2\"}" +
-                                "--->]" +
-                                "}"
+                                        "--->\"name\":\"Parent\"," +
+                                        "--->\"parent\":null," +
+                                        "--->\"childNodes\":[" +
+                                        "--->--->{\"name\":\"Child-1\"}," +
+                                        "--->--->{\"name\":\"Child-2\"}" +
+                                        "--->]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "--->\"id\":100,\"name\":" +
-                                "--->\"Parent\",\"" +
-                                "--->parent\":null," +
-                                "--->\"childNodes\":[" +
-                                "--->--->{" +
-                                "--->--->--->\"id\":101," +
-                                "--->--->--->\"name\":\"Child-1\"," +
-                                "--->--->--->\"parent\":{\"id\":100}" +
-                                "--->--->},{" +
-                                "--->--->--->\"id\":102," +
-                                "--->--->--->\"name\":\"Child-2\"," +
-                                "--->--->--->\"parent\":{\"id\":100}" +
-                                "--->--->}" +
-                                "--->]" +
-                                "}"
+                                        "--->\"id\":100,\"name\":" +
+                                        "--->\"Parent\",\"" +
+                                        "--->parent\":null," +
+                                        "--->\"childNodes\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":101," +
+                                        "--->--->--->\"name\":\"Child-1\"," +
+                                        "--->--->--->\"parent\":{\"id\":100}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":102," +
+                                        "--->--->--->\"name\":\"Child-2\"," +
+                                        "--->--->--->\"parent\":{\"id\":100}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
                         );
                     });
                 }
@@ -1243,7 +1243,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -1254,14 +1254,14 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
-                                "values(?, ?, ?, ?, ?)"
+                                        "values(?, ?, ?, ?, ?)"
                         );
                         it.batches(2);
                     });
@@ -1326,18 +1326,18 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         );
                         it.modified(
                                 "{" +
-                                "--->\"id\":\"1\"," +
-                                "--->\"name\":\"Develop\"," +
-                                "--->\"employees\":[" +
-                                "--->--->{" +
-                                "--->--->--->\"id\":\"100\"," +
-                                "--->--->--->\"name\":\"Tim\"," +
-                                "--->--->--->\"gender\":\"MALE\"," +
-                                "--->--->--->\"deletedMillis\":0," +
-                                "--->--->--->\"department\":{\"id\":\"1\"}" +
-                                "--->--->}" +
-                                "--->]" +
-                                "}");
+                                        "--->\"id\":\"1\"," +
+                                        "--->\"name\":\"Develop\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"100\"," +
+                                        "--->--->--->\"name\":\"Tim\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}");
                     });
                 }
         );
@@ -1375,19 +1375,19 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         );
                         it.modified(
                                 "{" +
-                                "--->\"id\":\"10\"," +
-                                "--->\"name\":\"Develop\"," +
-                                "--->\"deletedMillis\":0," +
-                                "--->\"employees\":[" +
-                                "--->--->{" +
-                                "--->--->--->\"id\":\"100\"," +
-                                "--->--->--->\"name\":\"Tim\"," +
-                                "--->--->--->\"gender\":\"MALE\"," +
-                                "--->--->--->\"deletedMillis\":0," +
-                                "--->--->--->\"department\":{\"id\":\"10\"}" +
-                                "--->--->}" +
-                                "--->]" +
-                                "}");
+                                        "--->\"id\":\"10\"," +
+                                        "--->\"name\":\"Develop\"," +
+                                        "--->\"deletedMillis\":0," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"100\"," +
+                                        "--->--->--->\"name\":\"Tim\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"10\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}");
                     });
                 }
         );
@@ -1397,14 +1397,14 @@ public class CascadeSaveTest extends AbstractMutationTest {
     public void testUpdateOnlyChild() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
-                        DepartmentDraft.$.produce(draft -> {
-                            draft.setId(1L);
-                            draft.addIntoEmployees(employee -> employee.setId(1).setName("Tim"));
-                        })
-                )
-                .setMode(SaveMode.UPDATE_ONLY)
-                .setAssociatedModeAll(AssociatedSaveMode.UPDATE)
-                .setTargetTransferModeAll(TargetTransferMode.ALLOWED),
+                                DepartmentDraft.$.produce(draft -> {
+                                    draft.setId(1L);
+                                    draft.addIntoEmployees(employee -> employee.setId(1).setName("Tim"));
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.UPDATE)
+                        .setTargetTransferModeAll(TargetTransferMode.ALLOWED),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("update EMPLOYEE set NAME = ?, DEPARTMENT_ID = ? where ID = ?");
@@ -1416,15 +1416,15 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         );
                         it.modified(
                                 "{" +
-                                "--->\"id\":\"1\"," +
-                                "--->\"employees\":[" +
-                                "--->--->{" +
-                                "--->--->--->\"id\":\"1\"," +
-                                "--->--->--->\"name\":\"Tim\"," +
-                                "--->--->--->\"department\":{\"id\":\"1\"}" +
-                                "--->--->}" +
-                                "--->]" +
-                                "}");
+                                        "--->\"id\":\"1\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"1\"," +
+                                        "--->--->--->\"name\":\"Tim\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}");
                     });
                 }
         );
@@ -1471,43 +1471,43 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
-                                "--->\"name\":\"TURING\"," +
-                                "--->\"website\":\"https://www.turing.org\"," +
-                                "--->\"books\":[" +
-                                "--->--->{" +
-                                "--->--->--->\"name\":\"SQL Optimization\"," +
-                                "--->--->--->\"edition\":1," +
-                                "--->--->--->\"price\":59.99" +
-                                "--->--->},{" +
-                                "--->--->--->\"name\":\"Jimmer, a new ORM\"," +
-                                "--->--->--->\"edition\":1," +
-                                "--->--->--->\"price\":59.99" +
-                                "--->--->}" +
-                                "--->]" +
-                                "}"
+                                        "--->\"name\":\"TURING\"," +
+                                        "--->\"website\":\"https://www.turing.org\"," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"name\":\"SQL Optimization\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"name\":\"Jimmer, a new ORM\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
                         );
                         it.modified(
                                 "{" +
-                                "--->\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"," +
-                                "--->\"name\":\"TURING\"," +
-                                "--->\"website\":\"https://www.turing.org\"," +
-                                "--->\"version\":0," +
-                                "--->\"books\":[" +
-                                "--->--->{" +
-                                "--->--->--->\"id\":\"8b16a8cf-cb8a-4781-87b8-652dc7a1d04f\"," +
-                                "--->--->--->\"name\":\"SQL Optimization\"," +
-                                "--->--->--->\"edition\":1," +
-                                "--->--->--->\"price\":59.99," +
-                                "--->--->--->\"store\":{\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"}" +
-                                "--->--->},{" +
-                                "--->--->--->\"id\":\"003b0ef9-f63f-480f-b752-348a23c00997\"," +
-                                "--->--->--->\"name\":\"Jimmer, a new ORM\"," +
-                                "--->--->--->\"edition\":1," +
-                                "--->--->--->\"price\":59.99," +
-                                "--->--->--->\"store\":{\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"}" +
-                                "--->--->}" +
-                                "--->]" +
-                                "}"
+                                        "--->\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"," +
+                                        "--->\"name\":\"TURING\"," +
+                                        "--->\"website\":\"https://www.turing.org\"," +
+                                        "--->\"version\":0," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"8b16a8cf-cb8a-4781-87b8-652dc7a1d04f\"," +
+                                        "--->--->--->\"name\":\"SQL Optimization\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99," +
+                                        "--->--->--->\"store\":{\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"003b0ef9-f63f-480f-b752-348a23c00997\"," +
+                                        "--->--->--->\"name\":\"Jimmer, a new ORM\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99," +
+                                        "--->--->--->\"store\":{\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
                         );
                     });
                 }
@@ -1611,7 +1611,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.batchVariables(1, "Task-2", 2L);
                         it.batchVariables(2, "Task-3", 2L);
                     });
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                     ctx.totalRowCount(4);
                     ctx.rowCount(AffectedTable.of(Task.class), 4);
                 }
@@ -1641,23 +1642,23 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
-                                "values(?, ?, ?, ?)"
+                                        "values(?, ?, ?, ?)"
                         );
                         it.variables("Daisy", false, UNKNOWN_VARIABLE, UNKNOWN_VARIABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "merge into ADMINISTRATOR_METADATA tb_1_ " +
-                                "using(values(?, ?, ?, ?, ?, ?, ?)) " +
-                                "tb_2_(NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED) " +
-                                "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED = false " +
-                                "when matched then " +
-                                "--->update set CREATED_TIME = tb_2_.CREATED_TIME, MODIFIED_TIME = tb_2_.MODIFIED_TIME, " +
-                                "EMAIL = tb_2_.EMAIL, WEBSITE = tb_2_.WEBSITE, ADMINISTRATOR_ID = tb_2_.ADMINISTRATOR_ID " +
-                                "when not matched then " +
-                                "--->insert(NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED) " +
-                                "--->values(tb_2_.NAME, tb_2_.CREATED_TIME, tb_2_.MODIFIED_TIME, tb_2_.EMAIL, " +
-                                "tb_2_.WEBSITE, tb_2_.ADMINISTRATOR_ID, tb_2_.DELETED)"
+                                        "using(values(?, ?, ?, ?, ?, ?, ?)) " +
+                                        "tb_2_(NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED) " +
+                                        "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED = false " +
+                                        "when matched then " +
+                                        "--->update set CREATED_TIME = tb_2_.CREATED_TIME, MODIFIED_TIME = tb_2_.MODIFIED_TIME, " +
+                                        "EMAIL = tb_2_.EMAIL, WEBSITE = tb_2_.WEBSITE, ADMINISTRATOR_ID = tb_2_.ADMINISTRATOR_ID " +
+                                        "when not matched then " +
+                                        "--->insert(NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED) " +
+                                        "--->values(tb_2_.NAME, tb_2_.CREATED_TIME, tb_2_.MODIFIED_TIME, tb_2_.EMAIL, " +
+                                        "tb_2_.WEBSITE, tb_2_.ADMINISTRATOR_ID, tb_2_.DELETED)"
                         );
                         it.variables(
                                 "Daisy-Metadata",
@@ -1669,7 +1670,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 false
                         );
                     });
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -1688,11 +1690,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ADMINISTRATOR_METADATA " +
-                                "where ADMINISTRATOR_ID = ?"
+                                        "where ADMINISTRATOR_ID = ?"
                         );
                         it.variables(1L);
                     });
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -1716,7 +1719,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         );
                         it.variables(true, 1L, true);
                     });
-                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                    });
                 }
         );
     }
@@ -1844,16 +1848,16 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
                     ctx.entity(it -> {
                         it.modified("{" +
-                                    "\"id\":\"" + authorId + "\"," +
-                                    "\"books\":[{" +
-                                    "\"id\":\"" + bookId + "\"," +
-                                    "\"name\":\"Clean Code\"," +
-                                    "\"edition\":1," +
-                                    "\"price\":100," +
-                                    "\"store\":{" +
-                                    "\"id\":\"" + storeId + "\"}" +
-                                    "}]" +
-                                    "}");
+                                "\"id\":\"" + authorId + "\"," +
+                                "\"books\":[{" +
+                                "\"id\":\"" + bookId + "\"," +
+                                "\"name\":\"Clean Code\"," +
+                                "\"edition\":1," +
+                                "\"price\":100," +
+                                "\"store\":{" +
+                                "\"id\":\"" + storeId + "\"}" +
+                                "}]" +
+                                "}");
                     });
                 }
         );

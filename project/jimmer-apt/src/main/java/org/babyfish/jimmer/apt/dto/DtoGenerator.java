@@ -869,11 +869,32 @@ public class DtoGenerator {
                         "There is no filter class: " + filterClassName
                 );
             }
-            new GenericParser(
+            TypeName filterTableTypeName = new GenericParser(
                     "filter",
                     filterTypeElement,
                     "org.babyfish.jimmer.sql.fetcher.FieldFilter"
-            ).parse();
+            ).parse().argumentTypeNames.get(0);
+            ClassName associatedTableTypeName = prop
+                    .toTailProp()
+                    .getBaseProp()
+                    .getTargetType()
+                    .getTableClassName();
+            // Generated table classes are not resolved until a later javac round,
+            // so the parsed filter table may only carry its simple name.
+            if (!associatedTableTypeName.equals(filterTableTypeName) &&
+                    !associatedTableTypeName.simpleName().equals(filterTableTypeName.toString())) {
+                throw new DtoException(
+                        "The filter class \"" +
+                                filterClassName +
+                                "\" is illegal, it specify the generic type argument of \"" +
+                                "org.babyfish.jimmer.sql.fetcher.FieldFilter" +
+                                "\" as \"" +
+                                filterTableTypeName +
+                                "\", which is not associated table type \"" +
+                                associatedTableTypeName +
+                                "\""
+                );
+            }
             cb.add("\n.filter(new $T())", filterTypeElement);
         }
         if (cfg.getRecursionClassName() != null) {

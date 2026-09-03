@@ -84,6 +84,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setVersionMode(VersionMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new VersionModeCfg(cfg, mode));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setAssociatedModeAll(AssociatedSaveMode mode) {
         return new BatchEntitySaveCommandImpl<>(new AssociatedModeCfg(cfg, mode));
     }
@@ -99,8 +104,33 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> forbidUpdate() {
+        RootCfg rootCfg = cfg.as(RootCfg.class);
+        assert rootCfg != null;
+        Cfg newCfg = cfg;
+        Set<ImmutableType> types = new LinkedHashSet<>();
+        for (Object entity : (Iterable<?>) rootCfg.argument) {
+            types.add(((ImmutableSpi) entity).__type());
+        }
+        for (ImmutableType type : types) {
+            newCfg = addForbiddenUpdateMask(newCfg, type);
+        }
+        return new BatchEntitySaveCommandImpl<>(newCfg);
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask) {
         return new BatchEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, mask));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setForceMatchedUpdate() {
+        return new BatchEntitySaveCommandImpl<>(new ForceMatchedUpdateCfg(cfg));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setExactConflictTargetRequired() {
+        return new BatchEntitySaveCommandImpl<>(new ExactConflictTargetRequiredCfg(cfg));
     }
 
     @Override
@@ -122,6 +152,24 @@ public class BatchEntitySaveCommandImpl<E>
         return new BatchEntitySaveCommandImpl<>(
                 new AssignmentCfg(cfg, prop, prop.getDeclaringType(), expression)
         );
+    }
+
+    @Override
+    public <X, T extends Table<X>> BatchEntitySaveCommand<E> setUpdateWhere(
+            Class<T> tableType,
+            UpdateCondition<X, T> condition
+    ) {
+        return new BatchEntitySaveCommandImpl<>(
+                new UpdateWhereCfg(cfg, ImmutableType.get(tableType), condition)
+        );
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setEntityUpdateWhere(
+            ImmutableType type,
+            UpdateCondition<?, ?> condition
+    ) {
+        return new BatchEntitySaveCommandImpl<>(new UpdateWhereCfg(cfg, type, condition));
     }
 
     @Override
@@ -151,7 +199,7 @@ public class BatchEntitySaveCommandImpl<E>
 
     @Override
     public BatchEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop, boolean asReference) {
-        return new BatchEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, prop,asReference));
+        return new BatchEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, prop, asReference));
     }
 
     @Override
@@ -184,14 +232,14 @@ public class BatchEntitySaveCommandImpl<E>
     public <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
             UnloadedVersionBehavior behavior,
-            UserOptimisticLock<E, T> block
+            UpdateCondition<E, T> condition
     ) {
         return new BatchEntitySaveCommandImpl<>(
-                new OptimisticLockLambdaCfg(
+                new OptimisticLockConditionCfg(
                         cfg,
                         ImmutableType.get(tableType),
                         behavior,
-                        (UserOptimisticLock<Object, Table<Object>>) block
+                        (UpdateCondition<Object, Table<Object>>) condition
                 )
         );
     }
@@ -200,14 +248,14 @@ public class BatchEntitySaveCommandImpl<E>
     public BatchEntitySaveCommand<E> setEntityOptimisticLock(
             ImmutableType type,
             UnloadedVersionBehavior behavior,
-            UserOptimisticLock<Object, Table<Object>> block
+            UpdateCondition<Object, Table<Object>> condition
     ) {
         return new BatchEntitySaveCommandImpl<>(
-                new OptimisticLockLambdaCfg(
+                new OptimisticLockConditionCfg(
                         cfg,
                         type,
                         behavior,
-                        block
+                        condition
                 )
         );
     }

@@ -14,6 +14,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class SQLiteDialect extends DefaultDialect {
+
+    @Override
+    public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+        return InsertFromSelectRenderers.SQLITE;
+    }
+
     @Override
     public boolean isDeleteNeedsAsKeyword() {
         return true;
@@ -31,6 +37,11 @@ public class SQLiteDialect extends DefaultDialect {
 
     @Override
     public boolean isUpsertSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isUpsertWithUpdateWhereSupported() {
         return true;
     }
 
@@ -69,6 +80,9 @@ public class SQLiteDialect extends DefaultDialect {
             }
         } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
             ctx.sql(" do update set ").appendFakeUpdateAssignment("", "");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" where ").appendUpdateCondition("", "", "excluded.", "");
+            }
         } else {
             ctx.sql(" do nothing");
         }

@@ -14,10 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
-import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -188,7 +185,8 @@ abstract class AbstractPreHandler implements PreHandler {
             ctx.throwLongRemoteAssociation();
         }
         if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
-            if (ctx.options.isIdOnlyAsReference(prop) &&
+            if (!ctx.options.isForceMatchedUpdate() &&
+                    ctx.options.isIdOnlyAsReference(prop) &&
                     !ctx.options.hasAssignment(draft.__type()) &&
                     ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
                     !hasNonIdValues.get()
@@ -326,9 +324,13 @@ abstract class AbstractPreHandler implements PreHandler {
         if (oldFetcher == null) {
             ImmutableType type = ctx.path.getType();
             FetcherImplementor<ImmutableSpi> fetcherImplementor =
-                    new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
+                    new FetcherImpl<>((Class<ImmutableSpi>) ctx.path.getType().getJavaClass());
             for (ImmutableProp keyProp : keyMatcher.getAllProps()) {
                 fetcherImplementor = fetcherImplementor.add(keyProp.getName(), IdOnlyFetchType.RAW);
+            }
+            ImmutableProp versionProp = type.getVersionProp();
+            if (versionProp != null && ctx.options.getVersionMode() == VersionMode.ASSIGNMENT) {
+                fetcherImplementor = fetcherImplementor.add(versionProp.getName(), IdOnlyFetchType.RAW);
             }
             DraftInterceptor<?, ?> interceptor = ctx.options.getSqlClient().getDraftInterceptor(type);
             if (interceptor != null) {
@@ -360,6 +362,39 @@ abstract class AbstractPreHandler implements PreHandler {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         SaveMode saveMode = ctx.options.getMode();
         boolean clearMode = saveMode == SaveMode.INSERT_ONLY || saveMode == SaveMode.UPDATE_ONLY;
+        if (!clearMode &&
+                ctx.options.isExactConflictTargetRequired() &&
+                !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported() &&
+                (saveMode == SaveMode.INSERT_IF_ABSENT || !isGuaranteedSingleConflictTarget(drafts))) {
+            return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
+        }
+        if (ctx.updateWhereEnabled) {
+            boolean optimisticLock = ctx.options.getOptimisticLockCondition(ctx.path.getType()) != null;
+            ImmutableProp versionProp = ctx.path.getType().getVersionProp();
+            if (!optimisticLock && versionProp != null && ctx.options.getVersionMode() == VersionMode.OPTIMISTIC_LOCK) {
+                PropId versionPropId = versionProp.getId();
+                for (DraftSpi draft : drafts) {
+                    if (draft.__isLoaded(versionPropId)) {
+                        optimisticLock = true;
+                        break;
+                    }
+                }
+            }
+            if (optimisticLock) {
+                return QueryReason.UPDATE_WHERE;
+            }
+            if (saveMode != SaveMode.UPDATE_ONLY &&
+                    !clearMode &&
+                    !sqlClient.getDialect().isUpsertWithUpdateWhereSupported()) {
+                return QueryReason.UPDATE_WHERE;
+            }
+        }
+        if (!clearMode &&
+                saveMode != SaveMode.INSERT_IF_ABSENT &&
+                hasSingleTableDiscriminatorGuard(drafts) &&
+                !sqlClient.getDialect().isUpsertWithUpdateWhereSupported()) {
+            return QueryReason.UPDATE_WHERE;
+        }
         if (!clearMode && !sqlClient.getDialect().isUpsertSupported()) {
             return QueryReason.UPSERT_NOT_SUPPORTED;
         }
@@ -387,9 +422,10 @@ abstract class AbstractPreHandler implements PreHandler {
         if (!clearMode) {
             if (saveMode != SaveMode.INSERT_IF_ABSENT &&
                     !sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
-                UserOptimisticLock<?, ?> userLock = ctx.options.getUserOptimisticLock(ctx.path.getType());
-                boolean useOptimisticLock = userLock != null;
-                if (!useOptimisticLock) {
+                UpdateCondition<?, ?> optimisticLockCondition =
+                        ctx.options.getOptimisticLockCondition(ctx.path.getType());
+                boolean useOptimisticLock = optimisticLockCondition != null;
+                if (!useOptimisticLock && ctx.options.getVersionMode() == VersionMode.OPTIMISTIC_LOCK) {
                     ImmutableProp versionProp = ctx.path.getType().getVersionProp();
                     if (versionProp != null) {
                         PropId versionPropId = versionProp.getId();
@@ -402,7 +438,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     }
                 }
                 if (useOptimisticLock) {
-                    if (userLock != null) {
+                    if (optimisticLockCondition != null) {
                         return QueryReason.OPTIMISTIC_LOCK;
                     }
                     if (!(this instanceof UpdatePreHandler)) {
@@ -471,6 +507,81 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return QueryReason.NONE;
+    }
+
+    private boolean isGuaranteedSingleConflictTarget(Collection<DraftSpi> drafts) {
+        ImmutableType type = ctx.path.getType();
+        ImmutableProp idProp = type.getIdProp();
+        if (idProp != null) {
+            PropId idPropId = idProp.getId();
+            for (DraftSpi draft : drafts) {
+                if (draft.__isLoaded(idPropId)) {
+                    return false;
+                }
+            }
+        }
+        ImmutableType keyConstraintType = type;
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null) {
+            keyConstraintType = inheritanceInfo.getRootType();
+        }
+        KeyUniqueConstraint constraint = type.getJavaClass().getAnnotation(KeyUniqueConstraint.class);
+        if (constraint == null && keyConstraintType != type) {
+            constraint = keyConstraintType.getJavaClass().getAnnotation(KeyUniqueConstraint.class);
+        }
+        if (constraint == null || !constraint.noMoreUniqueConstraints()) {
+            return false;
+        }
+        Map<String, Set<ImmutableProp>> modelGroups = keyConstraintType.getKeyMatcher().toMap();
+        if (modelGroups.size() != 1) {
+            return false;
+        }
+        Set<ImmutableProp> selectedProps = keyMatcher.toMap().get("");
+        return selectedProps != null && sameProps(selectedProps, modelGroups.values().iterator().next());
+    }
+
+    private static boolean sameProps(Set<ImmutableProp> a, Set<ImmutableProp> b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        Set<ImmutableProp> originalProps = new HashSet<>();
+        for (ImmutableProp prop : a) {
+            originalProps.add(prop.toOriginal());
+        }
+        for (ImmutableProp prop : b) {
+            if (!originalProps.remove(prop.toOriginal())) {
+                return false;
+            }
+        }
+        return originalProps.isEmpty();
+    }
+
+    private boolean hasSingleTableDiscriminatorGuard(Collection<DraftSpi> drafts) {
+        for (DraftSpi draft : drafts) {
+            ImmutableType type = draft.__type();
+            InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+            if (inheritanceInfo != null &&
+                    inheritanceInfo.getStrategy() == InheritanceType.SINGLE_TABLE &&
+                    !ctx.options.isTypeChangeAllowed(type) &&
+                    Operator.discriminatorGuardProp(ctx.options, inheritanceInfo, type) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    final void markPreselectedAccepted(DraftSpi draft) {
+        ImmutableType type = draft.__type();
+        if (ctx.options.getOptimisticLockCondition(type) != null) {
+            return;
+        }
+        ImmutableProp versionProp = type.getVersionProp();
+        if (versionProp != null &&
+                ctx.options.getVersionMode() == VersionMode.OPTIMISTIC_LOCK &&
+                draft.__isLoaded(versionProp.getId())) {
+            return;
+        }
+        ctx.markPreselectedAccepted(draft);
     }
 
     private boolean isExplicitJoinedTypeChange(Collection<DraftSpi> drafts) {
@@ -615,7 +726,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     // Notes: This method can only be overridden by InsertPreHandler
     // Otherwise, it is bug!
-    void assignDefaultValues(DraftSpi draft) {}
+    void assignDefaultValues(DraftSpi draft) {
+    }
 
     final void resolve() {
         if (!resolved) {
@@ -956,7 +1068,12 @@ class UpdatePreHandler extends AbstractPreHandler {
                     Object id = draft.__get(idPropId);
                     ImmutableSpi original = idMap.get(id);
                     if (original != null) {
-                        items.add(newItem(draft, original));
+                        if (!ctx.updateWhereEnabled || SaveUpdateConditions.isAllowed(ctx, draft)) {
+                            markPreselectedAccepted(draft);
+                            items.add(newItem(draft, original));
+                        } else {
+                            itr.remove();
+                        }
                     } else if (ctx.options.isTypeChangeAllowed(draft.__type()) &&
                             isExistingDifferentTypeById(queryReason, draft)) {
                         items.add(newItem(draft, null));
@@ -980,8 +1097,14 @@ class UpdatePreHandler extends AbstractPreHandler {
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
                     if (original != null) {
-                        items.add(newItem(draft, original));
+                        DraftInterceptor.Item<Object, DraftSpi> item = newItem(draft, original);
                         draft.__set(idPropId, original.__get(idPropId));
+                        if (!ctx.updateWhereEnabled || SaveUpdateConditions.isAllowed(ctx, draft)) {
+                            markPreselectedAccepted(draft);
+                            items.add(item);
+                        } else {
+                            itr.remove();
+                        }
                     } else {
                         itr.remove();
                     }
@@ -1042,7 +1165,7 @@ class UpsertPreHandler extends AbstractPreHandler {
         List<DraftSpi> updatedWithoutKeyList = null;
 
         List<DraftInterceptor.Item<Object, DraftSpi>> items = new ArrayList<>(
-                (draftsWithNothing != null ? draftsWithNothing.size() : 0)+
+                (draftsWithNothing != null ? draftsWithNothing.size() : 0) +
                         draftsWithId.size() +
                         draftsWithKey.size()
         );
@@ -1074,8 +1197,11 @@ class UpsertPreHandler extends AbstractPreHandler {
                             items.add(newItem(draft, null));
                         }
                     } else if (!ignoreUpdate) {
-                        updatedList.add(draft);
-                        items.add(newItem(draft, original));
+                        if (!ctx.updateWhereEnabled || SaveUpdateConditions.isAllowed(ctx, draft)) {
+                            markPreselectedAccepted(draft);
+                            updatedList.add(draft);
+                            items.add(newItem(draft, original));
+                        }
                     }
                 }
             } else {
@@ -1104,12 +1230,17 @@ class UpsertPreHandler extends AbstractPreHandler {
                         itr.remove();
                         items.add(newItem(draft, null));
                     } else {
-                        if (!ignoreUpdate) {
-                            updatedWithoutKeyList.add(draft);
-                            items.add(newItem(draft, original));
-                        }
+                        DraftInterceptor.Item<Object, DraftSpi> item =
+                                !ignoreUpdate ? newItem(draft, original) : null;
                         if (!ignoreUpdate || ctx.isIdRetrievingRequired()) {
                             draft.__set(idPropId, original.__get(idPropId));
+                        }
+                        if (!ignoreUpdate) {
+                            if (!ctx.updateWhereEnabled || SaveUpdateConditions.isAllowed(ctx, draft)) {
+                                markPreselectedAccepted(draft);
+                                updatedWithoutKeyList.add(draft);
+                                items.add(item);
+                            }
                         }
                     }
                 }

@@ -119,13 +119,17 @@ class SaveReturningFactory {
             List<PropertyGetter> nullGetters,
             @Nullable SaveReturningUpdateCondition updateCondition,
             @Nullable Set<ImmutableProp> keyProps,
-            @Nullable Predicate userOptimisticLockPredicate,
+            @Nullable Predicate updateWherePredicate,
+            @Nullable Predicate optimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
             boolean fakeUpdate,
             boolean forceOneByOne
     ) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         if (!sqlClient.getDialect().isUpdateByValuesReturningSupported()) {
+            return null;
+        }
+        if (updateWherePredicate != null) {
             return null;
         }
         List<PropertyGetter> customTargetGetters = customTargetGetters(assignments);
@@ -136,7 +140,8 @@ class SaveReturningFactory {
                 shape,
                 entities,
                 false,
-                customTargetGetters
+                customTargetGetters,
+                false
         );
         if (basic == null ||
                 fakeUpdate ||
@@ -243,18 +248,18 @@ class SaveReturningFactory {
                     discriminatorGuardValue
             );
         }
-        if (userOptimisticLockPredicate != null) {
-            SaveReturningUpdateCondition userOptimisticLockCondition =
-                    SaveReturningUpdateCondition.userOptimisticLock(
+        if (optimisticLockPredicate != null) {
+            SaveReturningUpdateCondition optimisticLockCondition =
+                    SaveReturningUpdateCondition.fromPredicate(
                             sqlClient,
-                            userOptimisticLockPredicate
+                            optimisticLockPredicate
                     );
-            if (userOptimisticLockCondition == null) {
+            if (optimisticLockCondition == null) {
                 return null;
             }
             updateCondition = SaveReturningUpdateCondition.and(
                     updateCondition,
-                    userOptimisticLockCondition
+                    optimisticLockCondition
             );
         }
         if (updateCondition != null) {
@@ -312,7 +317,8 @@ class SaveReturningFactory {
             @Nullable LogicalDeletedInfo conflictPredicate,
             List<SaveAssignment> assignments,
             boolean ignoreUpdate,
-            @Nullable Predicate userOptimisticLockPredicate,
+            @Nullable Predicate updateWherePredicate,
+            @Nullable Predicate optimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
             boolean fakeUpdate,
             boolean forceOneByOne
@@ -327,7 +333,8 @@ class SaveReturningFactory {
                 batch.shape(),
                 batch.entities(),
                 generatedIdProp != null,
-                requiredReturningGetters
+                requiredReturningGetters,
+                updateWherePredicate != null
         );
         if (basic == null ||
                 versionGetter != null ||
@@ -342,7 +349,7 @@ class SaveReturningFactory {
                         Collections.emptyList() :
                         upsertKnownSourceGetters(insertedGetters, assignments, ignoreUpdate)
         );
-        if (returningFetcherProps.isEmpty() && generatedIdProp == null) {
+        if (returningFetcherProps.isEmpty() && generatedIdProp == null && updateWherePredicate == null) {
             return null;
         }
         if (generatedIdProp != null && generatedIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
@@ -400,17 +407,30 @@ class SaveReturningFactory {
             }
         }
         SaveReturningUpdateCondition updateCondition = null;
-        if (userOptimisticLockPredicate != null) {
-            if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
+        if (updateWherePredicate != null) {
+            if (!sqlClient.getDialect().isUpsertWithUpdateWhereSupported()) {
                 return null;
             }
-            updateCondition = SaveReturningUpdateCondition.userOptimisticLock(
+            updateCondition = SaveReturningUpdateCondition.fromPredicate(
                     sqlClient,
-                    userOptimisticLockPredicate
+                    updateWherePredicate
             );
             if (updateCondition == null || !updateCondition.isSourceValueReady(sourceValues)) {
                 return null;
             }
+        }
+        if (optimisticLockPredicate != null) {
+            if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
+                return null;
+            }
+            SaveReturningUpdateCondition optimisticLockCondition = SaveReturningUpdateCondition.fromPredicate(
+                    sqlClient,
+                    optimisticLockPredicate
+            );
+            if (optimisticLockCondition == null || !optimisticLockCondition.isSourceValueReady(sourceValues)) {
+                return null;
+            }
+            updateCondition = SaveReturningUpdateCondition.and(updateCondition, optimisticLockCondition);
         }
         SaveReturningColumns returning = returningColumns(
                 sqlClient,
@@ -454,19 +474,24 @@ class SaveReturningFactory {
             Shape shape,
             EntityCollection<DraftSpi> entities,
             boolean idWillBeLoadedByDml,
-            List<PropertyGetter> requiredReturningGetters
+            List<PropertyGetter> requiredReturningGetters,
+            boolean acceptanceRequired
     ) {
-        if (!ctx.options.isSaveReturningEnabled()) {
+        if (!ctx.options.isSaveReturningEnabled() && !acceptanceRequired) {
             return null;
         }
-        if (ctx.path.getParent() != null || ctx.trigger != null || ctx.fetcher == null) {
+        if (ctx.path.getParent() != null || ctx.trigger != null ||
+                ctx.fetcher == null && !acceptanceRequired) {
             return null;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
         LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
-        Fetcher<?> fetcher = ctx.fetcher;
-        if (!isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml) &&
+        Fetcher<?> fetcher = ctx.fetcher != null ?
+                ctx.fetcher :
+                new org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl<>(shape.getType().getJavaClass());
+        if (!acceptanceRequired &&
+                !isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml) &&
                 !isReturningRequiredByFetcher(
                         fetcher,
                         shape.getType(),

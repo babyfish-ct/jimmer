@@ -129,13 +129,8 @@ public final class BaseTableOwner {
             AbstractTypedEmbeddedPropExpression<?> embeddedPropExpression = (AbstractTypedEmbeddedPropExpression<?>) expression;
             return embeddedPropExpression.__baseTableOwner();
         }
-        if (expression instanceof BaseTableExpression<?>) {
-            BaseTableExpression<?> baseTableExpression = (BaseTableExpression<?>) expression;
-            return baseTableExpression.getBaseTableOwner();
-        }
-        if (expression instanceof BaseTablePropExpression<?>) {
-            BaseTablePropExpression<?> baseTablePropExpression = (BaseTablePropExpression<?>) expression;
-            return baseTablePropExpression.getBaseTableOwner();
+        if (expression instanceof AbstractBaseTableExpression<?, ?>) {
+            return ((AbstractBaseTableExpression<?, ?>) expression).getBaseTableOwner();
         }
         return null;
     }

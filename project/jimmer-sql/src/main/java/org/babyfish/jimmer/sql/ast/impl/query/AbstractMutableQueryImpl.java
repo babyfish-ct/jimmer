@@ -45,6 +45,10 @@ public abstract class AbstractMutableQueryImpl
 
     private int acceptedByPriority = ORDER_BY_PRIORITY_STATEMENT;
 
+    protected AbstractMutableQueryImpl(JSqlClientImplementor sqlClient) {
+        super(sqlClient);
+    }
+
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType
@@ -107,7 +111,7 @@ public abstract class AbstractMutableQueryImpl
      *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
      *     </li>
      * </ul>
-     *
+     * <p>
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
      * <pre>{@code
@@ -134,7 +138,7 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public AbstractMutableQueryImpl groupBy(Expression<?> ... expressions) {
+    public AbstractMutableQueryImpl groupBy(Expression<?>... expressions) {
         validateMutable();
         for (Expression<?> expression : expressions) {
             if (expression != null) {
@@ -145,7 +149,7 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public AbstractMutableQueryImpl having(Predicate ... predicates) {
+    public AbstractMutableQueryImpl having(Predicate... predicates) {
         validateMutable();
         for (Predicate predicate : predicates) {
             if (predicate != null) {
@@ -156,7 +160,7 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public AbstractMutableQueryImpl orderBy(Expression<?> ... expressions) {
+    public AbstractMutableQueryImpl orderBy(Expression<?>... expressions) {
         validateMutable();
         Order[] orders = new Order[expressions.length];
         for (int i = orders.length - 1; i >= 0; --i) {
@@ -240,7 +244,9 @@ public abstract class AbstractMutableQueryImpl
         visitor.visitStatement(this);
 
         TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
-        tableLikeImplementor.accept(visitor);
+        if (tableLikeImplementor != null) {
+            tableLikeImplementor.accept(visitor);
+        }
 
         List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
@@ -251,23 +257,23 @@ public abstract class AbstractMutableQueryImpl
 
         Predicate havingPredicate = getHavingPredicate(visitor.getAstContext());
         for (Predicate predicate : unfrozenPredicates()) {
-            ((Ast)predicate).accept(visitor);
+            ((Ast) predicate).accept(visitor);
         }
         for (Expression<?> expression : groupByExpressions) {
-            ((Ast)expression).accept(visitor);
+            ((Ast) expression).accept(visitor);
         }
         if (havingPredicate != null) {
-            ((Ast)havingPredicate).accept(visitor);
+            ((Ast) havingPredicate).accept(visitor);
         }
         AstContext astContext = visitor.getAstContext();
         if (withoutSortingAndPaging) {
             AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(astContext);
             for (Order order : orders) {
-                ((Ast)order.getExpression()).accept(ignoredVisitor);
+                ((Ast) order.getExpression()).accept(ignoredVisitor);
             }
         } else {
             for (Order order : orders) {
-                ((Ast)order.getExpression()).accept(visitor);
+                ((Ast) order.getExpression()).accept(visitor);
             }
         }
         if (overriddenSelections != null) {
@@ -280,6 +286,14 @@ public abstract class AbstractMutableQueryImpl
 
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
         TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        if (tableLikeImplementor == null) {
+            String constantTableName = getSqlClient().getDialect().getConstantTableName();
+            if (constantTableName != null) {
+                builder.from().sql(constantTableName);
+            }
+            renderClausesAfterTable(builder, withoutSortingAndPaging, reverseOrder);
+            return;
+        }
         if (tableLikeImplementor.hasBaseTable()) {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderClausesAfterTable(tmpBuilder, withoutSortingAndPaging, reverseOrder);
@@ -303,7 +317,7 @@ public abstract class AbstractMutableQueryImpl
             builder.enter(SqlBuilder.ScopeType.GROUP_BY);
             for (Expression<?> expression : groupByExpressions) {
                 builder.separator();
-                ((Ast)expression).renderTo(builder);
+                ((Ast) expression).renderTo(builder);
             }
             builder.leave();
         }
@@ -319,7 +333,7 @@ public abstract class AbstractMutableQueryImpl
             builder.enter(SqlBuilder.ScopeType.ORDER_BY);
             for (Order order : orders) {
                 builder.separator();
-                ((Ast)order.getExpression()).renderTo(builder);
+                ((Ast) order.getExpression()).renderTo(builder);
                 if (order.getOrderMode() == OrderMode.DESC) {
                     builder.sql(reverseOrder ? " asc" : " desc");
                 } else {

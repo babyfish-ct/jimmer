@@ -1,3 +1,5 @@
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.View
@@ -8,11 +10,9 @@ import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
 import org.babyfish.jimmer.sql.kt.ast.expression.constant
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.*
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KPropsWeakJoinFun
-import org.babyfish.jimmer.sql.kt.ast.table.KRecursiveRef
+import org.babyfish.jimmer.sql.kt.ast.table.*
 import java.sql.Connection
+import kotlin.internal.LowPriorityInOverloadResolution
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -56,6 +56,26 @@ inline fun <reified E : Any, R> KSqlClient.createUpdateReturning(
 ): KSelectionExecutable<R> =
     this.createUpdateReturning(E::class, block)
 
+inline fun <reified E : Any, B : KNonNullBaseTable<*>> KSqlClient.createInsert(
+    source: KBaseTableSymbol<B>,
+    noinline block: KMutableInsert<E, B>.() -> Unit
+): KExecutable<Int> = this.createInsert(E::class, source, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>, R> KSqlClient.createInsertReturning(
+    source: KBaseTableSymbol<B>,
+    noinline block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
+): KSelectionExecutable<R> = this.createInsertReturning(E::class, source, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>> KSqlClient.createUpsert(
+    source: KBaseTableSymbol<B>,
+    noinline block: KMutableUpsert<E, B>.() -> Unit
+): KExecutable<Int> = this.createUpsert(E::class, source, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>, R> KSqlClient.createUpsertReturning(
+    source: KBaseTableSymbol<B>,
+    noinline block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
+): KSelectionExecutable<R> = this.createUpsertReturning(E::class, source, block)
+
 inline fun <reified E : Any> KSqlClient.createDelete(
     noinline block: KMutableDelete<E>.() -> Unit
 ): KExecutable<Int> =
@@ -65,6 +85,87 @@ inline fun <reified E : Any, B : KNonNullBaseTable<*>> KSqlClient.createBaseQuer
     noinline block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
 ): KConfigurableBaseQuery<B> =
     this.createBaseQuery(E::class, block)
+
+@JvmName("createReferenceBaseAssociationQuery")
+@LowPriorityInOverloadResolution
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>> KSqlClient.createBaseQuery(
+    prop: KProperty1<S, T?>,
+    block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+): KConfigurableBaseQuery<B> =
+    createBaseQueryForReference(prop, block)
+
+@JvmName("createListBaseAssociationQuery")
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>> KSqlClient.createBaseQuery(
+    prop: KProperty1<S, List<T>>,
+    block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+): KConfigurableBaseQuery<B> =
+    createBaseQueryForList(prop, block)
+
+@JvmName("createReferenceAssociationInsert")
+@LowPriorityInOverloadResolution
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>> KSqlClient.createInsert(
+    prop: KProperty1<S, T?>,
+    source: KBaseTableSymbol<B>,
+    block: KMutableInsert<Association<S, T>, B>.() -> Unit
+): KExecutable<Int> = createInsertForReference(prop, source, block)
+
+@JvmName("createListAssociationInsert")
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>> KSqlClient.createInsert(
+    prop: KProperty1<S, List<T>>,
+    source: KBaseTableSymbol<B>,
+    block: KMutableInsert<Association<S, T>, B>.() -> Unit
+): KExecutable<Int> = createInsertForList(prop, source, block)
+
+@JvmName("createReferenceAssociationInsertReturning")
+@LowPriorityInOverloadResolution
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> KSqlClient.createInsertReturning(
+    prop: KProperty1<S, T?>,
+    source: KBaseTableSymbol<B>,
+    block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+): KSelectionExecutable<R> =
+    createInsertReturningForReference(prop, source, block)
+
+@JvmName("createListAssociationInsertReturning")
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> KSqlClient.createInsertReturning(
+    prop: KProperty1<S, List<T>>,
+    source: KBaseTableSymbol<B>,
+    block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+): KSelectionExecutable<R> =
+    createInsertReturningForList(prop, source, block)
+
+@JvmName("executeReferenceAssociationInsert")
+@LowPriorityInOverloadResolution
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>> KSqlClient.executeInsert(
+    prop: KProperty1<S, T?>,
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    block: KMutableInsert<Association<S, T>, B>.() -> Unit
+): Int = createInsert(prop, source, block).execute(con)
+
+@JvmName("executeListAssociationInsert")
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>> KSqlClient.executeInsert(
+    prop: KProperty1<S, List<T>>,
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    block: KMutableInsert<Association<S, T>, B>.() -> Unit
+): Int = createInsert(prop, source, block).execute(con)
+
+@JvmName("executeReferenceAssociationInsertReturning")
+@LowPriorityInOverloadResolution
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> KSqlClient.executeInsertReturning(
+    prop: KProperty1<S, T?>,
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+): List<R> = createInsertReturning(prop, source, block).execute(con)
+
+@JvmName("executeListAssociationInsertReturning")
+fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> KSqlClient.executeInsertReturning(
+    prop: KProperty1<S, List<T>>,
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+): List<R> = createInsertReturning(prop, source, block).execute(con)
 
 inline fun <reified E : Any, B : KNonNullBaseTable<*>> KSqlClient.createBaseQuery(
     recursiveRef: KRecursiveRef<B>,
@@ -91,6 +192,30 @@ inline fun <reified E : Any, R> KSqlClient.executeUpdateReturning(
     noinline block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
 ): List<R> =
     this.executeUpdateReturning(E::class, con, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>> KSqlClient.executeInsert(
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    noinline block: KMutableInsert<E, B>.() -> Unit
+): Int = this.executeInsert(E::class, source, con, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>, R> KSqlClient.executeInsertReturning(
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    noinline block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
+): List<R> = this.executeInsertReturning(E::class, source, con, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>> KSqlClient.executeUpsert(
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    noinline block: KMutableUpsert<E, B>.() -> Unit
+): Int = this.executeUpsert(E::class, source, con, block)
+
+inline fun <reified E : Any, B : KNonNullBaseTable<*>, R> KSqlClient.executeUpsertReturning(
+    source: KBaseTableSymbol<B>,
+    con: Connection? = null,
+    noinline block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
+): List<R> = this.executeUpsertReturning(E::class, source, con, block)
 
 inline fun <reified E : Any> KSqlClient.executeDelete(
     con: Connection? = null,

@@ -15,6 +15,11 @@ import java.util.UUID;
 
 public abstract class MySqlStyleDialect extends DefaultDialect {
 
+    @Override
+    public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+        return InsertFromSelectRenderers.MYSQL;
+    }
+
     public void paginate(PaginationContext ctx) {
         ctx.origin().space().sql("limit ").variable(ctx.getOffset()).sql(", ").variable(ctx.getLimit());
     }

@@ -38,7 +38,8 @@ public abstract class AstVisitor {
         return queryRenderContext;
     }
 
-    public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {}
+    public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
+    }
 
     public final RealTable realTableForAnalysis(TableLikeImplementor<?> tableLikeImplementor) {
         return queryRenderContext != null ?
@@ -50,13 +51,21 @@ public abstract class AstVisitor {
         visitTableReference(table, field.getProp(), field.isRawId());
     }
 
-    public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {}
+    public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {
+    }
 
-    public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {}
+    public void visitBaseTableExpression(BaseTableOwner baseTableOwner) {
+    }
 
-    public void visitSaveInputValue(ImmutableProp prop) {}
+    public void visitBaseTableExpression(BaseTableOwner baseTableOwner, Expression<?> expression) {
+        visitBaseTableExpression(baseTableOwner);
+    }
 
-    public void visitStatement(AbstractMutableStatementImpl statement) {}
+    public void visitSaveInputValue(ImmutableProp prop) {
+    }
+
+    public void visitStatement(AbstractMutableStatementImpl statement) {
+    }
 
     public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
         return true;

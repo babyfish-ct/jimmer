@@ -6,12 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 final class CteTableDependencyAnalyzer {
 
@@ -29,7 +24,7 @@ final class CteTableDependencyAnalyzer {
         Map<AbstractMutableStatementImpl, List<CteTableDeclaration>> declarationMap = null;
         for (AbstractMutableStatementImpl statement : statements) {
             TableLikeImplementor<?> tableLikeImplementor = statement.getTableLikeImplementor();
-            if (!tableLikeImplementor.hasBaseTable()) {
+            if (tableLikeImplementor == null || !tableLikeImplementor.hasBaseTable()) {
                 continue;
             }
             List<RealTable> tables = collectRenderTables(tableLikeImplementor.realTable(astContext));
@@ -188,7 +183,7 @@ final class CteTableDependencyAnalyzer {
             astContext.pushStatement(query.getMutableQuery());
             try {
                 TableLikeImplementor<?> tableLikeImplementor = query.getMutableQuery().getTableLikeImplementor();
-                if (tableLikeImplementor.hasBaseTable()) {
+                if (tableLikeImplementor != null && tableLikeImplementor.hasBaseTable()) {
                     collectCteTables(tableLikeImplementor.realTable(astContext));
                 }
             } finally {

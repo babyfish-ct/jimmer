@@ -72,7 +72,7 @@ interface SaveReturningUpdateCondition {
         return new LogicalDeletedGuard(logicalDeletedInfo);
     }
 
-    static @Nullable SaveReturningUpdateCondition userOptimisticLock(
+    static @Nullable SaveReturningUpdateCondition fromPredicate(
             JSqlClientImplementor sqlClient,
             Predicate predicate
     ) {
@@ -104,7 +104,7 @@ interface SaveReturningUpdateCondition {
         if (!valid[0]) {
             return null;
         }
-        return new UserOptimisticLock(predicate, newValueGetters);
+        return new PredicateCondition(predicate, newValueGetters);
     }
 
     static @Nullable PropertyGetter singleColumnGetter(
@@ -284,13 +284,13 @@ interface SaveReturningUpdateCondition {
         }
     }
 
-    class UserOptimisticLock implements SaveReturningUpdateCondition {
+    class PredicateCondition implements SaveReturningUpdateCondition {
 
         private final Predicate predicate;
 
         private final List<PropertyGetter> newValueGetters;
 
-        private UserOptimisticLock(Predicate predicate, List<PropertyGetter> newValueGetters) {
+        private PredicateCondition(Predicate predicate, List<PropertyGetter> newValueGetters) {
             this.predicate = predicate;
             this.newValueGetters = newValueGetters;
         }

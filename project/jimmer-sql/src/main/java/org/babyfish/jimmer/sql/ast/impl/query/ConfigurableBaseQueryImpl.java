@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TupleCreator;
 import org.jetbrains.annotations.NotNull;
@@ -243,7 +244,8 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     @Override
     public TableImplementor<?> resolveRootTable(Table<?> table) {
         MutableBaseQueryImpl mutableQuery = getMutableQuery();
-        return AbstractTypedTable.__refEquals(mutableQuery.getTable(), table) ?
+        TableLike<?> rootTable = mutableQuery.getTable();
+        return rootTable != null && AbstractTypedTable.__refEquals(rootTable, table) ?
                 (TableImplementor<?>) mutableQuery.getTableLikeImplementor() :
                 null;
     }

@@ -1154,7 +1154,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateAbstractRootWithUserOptimisticLock() {
+    public void testUpdateAbstractRootWithOptimisticLockCondition() {
         connectAndExpect(
                 con -> {
                     getSqlClient()

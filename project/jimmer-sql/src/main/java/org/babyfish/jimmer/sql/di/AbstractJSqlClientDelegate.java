@@ -57,12 +57,30 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createQuery(
+            AssociationTable<SE, ST, TE, TT> table
+    ) {
+        return sqlClient().createQuery(table);
+    }
+
+    @Override
     public <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable) {
         return sqlClient().createQuery(baseTable);
     }
 
     @Override
+    public MutableBaseQuery createBaseQuery() {
+        return sqlClient().createBaseQuery();
+    }
+
+    @Override
     public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
+        return sqlClient().createBaseQuery(table);
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(AssociationTable<?, ?, ?, ?> table) {
         return sqlClient().createBaseQuery(table);
     }
 
@@ -96,8 +114,21 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createAssociationQuery(AssociationTable<SE, ST, TE, TT> table) {
-        return sqlClient().createAssociationQuery(table);
+    public <S extends BaseTable> MutableInsert<S> createInsert(TableProxy<?> target, S source) {
+        return sqlClient().createInsert(target, source);
+    }
+
+    @Override
+    public <S extends BaseTable> MutableInsert<S> createInsert(
+            AssociationTable<?, ?, ?, ?> target,
+            S source
+    ) {
+        return sqlClient().createInsert(target, source);
+    }
+
+    @Override
+    public <S extends BaseTable> MutableUpsert<S> createUpsert(TableProxy<?> target, S source) {
+        return sqlClient().createUpsert(target, source);
     }
 
     @Override

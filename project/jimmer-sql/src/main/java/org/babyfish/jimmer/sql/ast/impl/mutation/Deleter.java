@@ -1111,7 +1111,7 @@ public class Deleter {
             }
 
             @Override
-            public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
+            public UpdateCondition<?, ?> getOptimisticLockCondition(ImmutableType type) {
                 return null;
             }
 

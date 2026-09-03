@@ -9,16 +9,16 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
-import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
-import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
-import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.*;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.JWeakJoinLambdaFactory;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinLambda;
 import org.babyfish.jimmer.sql.ast.impl.util.JdbcOptionValidator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
+import org.babyfish.jimmer.sql.ast.mutation.MutableInsert;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpsert;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRecursiveBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
@@ -49,7 +49,6 @@ import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
-import org.babyfish.jimmer.sql.meta.GeneratorContext;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.babyfish.jimmer.sql.transaction.Propagation;
@@ -473,6 +472,22 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createQuery(
+            AssociationTable<SE, ST, TE, TT> table
+    ) {
+        if (!(table instanceof TableProxy<?>)) {
+            throw new IllegalArgumentException("The argument \"table\" must be proxy");
+        }
+        return new MutableRootQueryImpl<>(
+                this,
+                (TableProxy<?>) table,
+                ExecutionPurpose.QUERY,
+                FilterLevel.DEFAULT
+        );
+    }
+
+    @Override
     public <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable) {
         return new MutableRootQueryImpl<>(
                 this,
@@ -483,8 +498,21 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public MutableBaseQuery createBaseQuery() {
+        return new MutableBaseQueryImpl(this);
+    }
+
+    @Override
     public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
         return new MutableBaseQueryImpl(this, table);
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(AssociationTable<?, ?, ?, ?> table) {
+        if (!(table instanceof TableProxy<?>)) {
+            throw new IllegalArgumentException("The association table must be a table proxy");
+        }
+        return new MutableBaseQueryImpl(this, (TableProxy<?>) table);
     }
 
     @Override
@@ -533,19 +561,24 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createAssociationQuery(
-            AssociationTable<SE, ST, TE, TT> table
+    public <S extends BaseTable> MutableInsert<S> createInsert(TableProxy<?> target, S source) {
+        return new MutableInsertImpl<>(this, target, source);
+    }
+
+    @Override
+    public <S extends BaseTable> MutableInsert<S> createInsert(
+            AssociationTable<?, ?, ?, ?> target,
+            S source
     ) {
-        if (!(table instanceof TableProxy<?>)) {
-            throw new IllegalArgumentException("The argument \"table\" must be proxy");
+        if (!(target instanceof TableProxy<?>)) {
+            throw new IllegalArgumentException("The association target must be a table proxy");
         }
-        return new MutableRootQueryImpl<>(
-                this,
-                (TableProxy<?>) table,
-                ExecutionPurpose.QUERY,
-                FilterLevel.DEFAULT
-        );
+        return new MutableInsertImpl<>(this, (TableProxy<?>) target, source);
+    }
+
+    @Override
+    public <S extends BaseTable> MutableUpsert<S> createUpsert(TableProxy<?> target, S source) {
+        return new MutableUpsertImpl<>(this, target, source);
     }
 
     @Override

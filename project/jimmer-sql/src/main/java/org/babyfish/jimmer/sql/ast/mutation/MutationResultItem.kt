@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.sql.ast.mutation
 
-interface MutationResultItem<E: Any> {
+interface MutationResultItem<E : Any> {
 
     val originalEntity: E
 
     val modifiedEntity: E
+
+    val isAccepted: Boolean
+        get() = true
 
     /**
      * If it is true, that means the save object is changed,

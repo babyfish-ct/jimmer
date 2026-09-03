@@ -29,6 +29,10 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
 
     private StatementContext ctx;
 
+    public MutableBaseQueryImpl(JSqlClientImplementor sqlClient) {
+        super(sqlClient);
+    }
+
     public MutableBaseQueryImpl(
             JSqlClientImplementor sqlClient,
             TableLike<?> table

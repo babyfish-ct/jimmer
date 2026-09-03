@@ -57,9 +57,16 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
 
+    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createQuery(AssociationTable<SE, ST, TE, TT> table);
+
     <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable);
 
+    MutableBaseQuery createBaseQuery();
+
     MutableBaseQuery createBaseQuery(TableProxy<?> table);
+
+    MutableBaseQuery createBaseQuery(AssociationTable<?, ?, ?, ?> table);
 
     MutableBaseQuery createBaseQuery(BaseTable table);
 
@@ -79,10 +86,20 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     MutableDelete createDelete(TableProxy<?> table);
 
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createAssociationQuery(
-            AssociationTable<SE, ST, TE, TT> table
-    );
+    <S extends BaseTable> MutableInsert<S> createInsert(TableProxy<?> target, S source);
+
+    <S extends BaseTable> MutableInsert<S> createInsert(AssociationTable<?, ?, ?, ?> target, S source);
+
+    <S extends BaseTable> MutableUpsert<S> createUpsert(TableProxy<?> target, S source);
+
+    /**
+     * @deprecated Use {@link #createQuery(AssociationTable)}.
+     */
+    @Deprecated
+    default <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    MutableRootQuery<AssociationTable<SE, ST, TE, TT>> createAssociationQuery(AssociationTable<SE, ST, TE, TT> table) {
+        return createQuery(table);
+    }
 
     Entities getEntities();
 

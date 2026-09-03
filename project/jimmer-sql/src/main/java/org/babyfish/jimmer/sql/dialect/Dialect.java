@@ -54,11 +54,17 @@ public interface Dialect extends SqlTypeStrategy {
         return null;
     }
 
-    default boolean isDeletedAliasRequired() { return false; }
+    default boolean isDeletedAliasRequired() {
+        return false;
+    }
 
-    default boolean isDeleteNeedsAsKeyword() { return false; }
+    default boolean isDeleteNeedsAsKeyword() {
+        return false;
+    }
 
-    default boolean isUpdateNeedsAsKeyword() { return false; }
+    default boolean isUpdateNeedsAsKeyword() {
+        return false;
+    }
 
     /**
      * Whether UPDATE statement requires alias before table name.
@@ -71,16 +77,22 @@ public interface Dialect extends SqlTypeStrategy {
      *
      * @return whether update alias is required before table name
      */
-    default boolean isUpdateAliasRequired() { return false; }
+    default boolean isUpdateAliasRequired() {
+        return false;
+    }
 
     @Nullable
     default String getOffsetOptimizationNumField() {
         return null;
     }
 
-    default boolean isMultiInsertionSupported() { return true; }
+    default boolean isMultiInsertionSupported() {
+        return true;
+    }
 
-    default boolean isArraySupported() { return false; }
+    default boolean isArraySupported() {
+        return false;
+    }
 
     default boolean isAnyEqualityOfArraySupported() {
         return isArraySupported();
@@ -107,7 +119,21 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     @Nullable
-    default String getConstantTableName() { return null; }
+    default String getConstantTableName() {
+        return null;
+    }
+
+    /**
+     * Whether selections of a rootless base query must be explicitly typed
+     * when that query is rendered as a derived table.
+     */
+    default boolean isRootlessSelectionCastRequired() {
+        return false;
+    }
+
+    default InsertFromSelectRenderer getInsertFromSelectRenderer() {
+        return InsertFromSelectRenderers.DEFAULT;
+    }
 
     default Class<?> getJsonBaseType() {
         return String.class;
@@ -127,7 +153,9 @@ public interface Dialect extends SqlTypeStrategy {
         return true;
     }
 
-    default boolean isIgnoreCaseLikeSupported() { return false; }
+    default boolean isIgnoreCaseLikeSupported() {
+        return false;
+    }
 
     default int resolveJdbcType(Class<?> sqlType) {
         return Types.OTHER;
@@ -183,6 +211,14 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     default boolean isUpsertWithOptimisticLockSupported() {
+        return false;
+    }
+
+    /**
+     * Whether native upsert can put a predicate on the update branch so that
+     * a non-matching conflict executes no update at all.
+     */
+    default boolean isUpsertWithUpdateWhereSupported() {
         return false;
     }
 
@@ -253,19 +289,29 @@ public interface Dialect extends SqlTypeStrategy {
     interface UpdateContext {
 
         boolean isIdInteger();
+
         boolean isUpdatedByKey();
+
         boolean hasUpdatedColumns();
+
         boolean isFakeUpdateRequired();
 
         UpdateContext sql(String sql);
+
         UpdateContext sql(ValueGetter getter);
+
         UpdateContext enter(AbstractSqlBuilder.ScopeType type);
+
         UpdateContext separator();
+
         UpdateContext leave();
 
         UpdateContext appendTableName();
+
         UpdateContext appendAssignments();
+
         UpdateContext appendPredicates();
+
         UpdateContext appendId();
     }
 
@@ -325,44 +371,68 @@ public interface Dialect extends SqlTypeStrategy {
     interface UpsertContext {
 
         boolean hasUpdatedColumns();
+
         boolean hasUpdateCondition();
+
         boolean hasGeneratedId();
+
         boolean isFakeUpdateRequired();
+
         boolean isUpdateIgnored();
+
         boolean isComplete();
+
         boolean isIdInteger();
+
         boolean hasConflictPredicate();
+
         default boolean isCurrentRowReturningRequired() {
             return false;
         }
+
         List<ValueGetter> getConflictGetters();
 
         UpsertContext sql(String sql);
+
         UpsertContext sql(ValueGetter getter);
+
         UpsertContext enter(AbstractSqlBuilder.ScopeType type);
+
         UpsertContext separator();
+
         UpsertContext leave();
 
         UpsertContext appendTableName();
+
         UpsertContext appendInsertedColumns(String prefix);
+
         UpsertContext appendConflictColumns();
+
         UpsertContext appendConflictPredicate(String alias);
+
         UpsertContext appendInsertingValues();
+
         default UpsertContext appendInsertingRows() {
             return enter(AbstractSqlBuilder.ScopeType.TUPLE)
                     .appendInsertingValues()
                     .leave();
         }
+
         UpsertContext appendUpdatingAssignments(
                 String targetPrefix,
                 String targetSuffix,
                 String sourcePrefix,
                 String sourceSuffix
         );
+
         UpsertContext appendFakeUpdateAssignment(String targetPrefix, String targetSuffix);
+
         UpsertContext appendConditionalUpdatingAssignments(String sourcePrefix, String sourceSuffix, String valuePrefix, String valueSuffix);
+
         UpsertContext appendUpdateCondition(String targetPrefix, String targetSuffix, String sourcePrefix, String sourceSuffix);
+
         UpsertContext appendGeneratedId();
+
         default UpsertContext appendReturning(String prefix) {
             throw new UnsupportedOperationException(
                     "The upsert-returning statement is not supported by \"" +
@@ -370,6 +440,7 @@ public interface Dialect extends SqlTypeStrategy {
                             "\""
             );
         }
+
         UpsertContext appendId();
     }
 
@@ -420,10 +491,10 @@ public interface Dialect extends SqlTypeStrategy {
             );
         }
         builder.sql("position(")
-                    .ast(expressionAst, currentPrecedence)
-                    .sql(" in ")
-                    .ast(subStrAst, currentPrecedence)
-                    .sql(")");
+                .ast(expressionAst, currentPrecedence)
+                .sql(" in ")
+                .ast(subStrAst, currentPrecedence)
+                .sql(")");
     }
 
     default void renderLeft(

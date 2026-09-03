@@ -79,7 +79,7 @@ class SaveResultMaterializer {
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         SaveShapeMatcher inputShapeMatcher = SaveShapeMatcher.forSaveInput(ctx.options);
         for (DraftSpi draft : drafts) {
-            if (ctx.isSaveReturningNotAccepted(draft)) {
+            if (!fillIdIfNecessary && ctx.isSaveReturningNotAccepted(draft)) {
                 // Returning row-count 0 rows must remain unmaterialized.
                 ++index;
                 continue;

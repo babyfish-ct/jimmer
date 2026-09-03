@@ -1,10 +1,5 @@
 package org.babyfish.jimmer.sql.base;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -23,11 +18,38 @@ import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 public class BaseQueryTest extends AbstractQueryTest {
 
     private static final BaseTableFactory<StoreStatisticsTable, StoreStatisticsTable>
             STORE_STATISTICS_FACTORY =
             BaseTableFactory.of(StoreStatisticsTable::new);
+
+    @Test
+    public void testRootlessBaseQuery() {
+        BaseTable2<NumericExpression<Integer>, StringExpression> baseTable = getSqlClient()
+                .createBaseQuery()
+                .addSelect(Expression.value(1))
+                .addSelect(Expression.value("rootless"))
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(baseTable.get_1(), baseTable.get_2()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c2 from (" +
+                                    "select cast(? as int) as c1, cast(? as varchar) as c2" +
+                                    ") tb_1_"
+                    );
+                    ctx.rows("[{\"_1\":1,\"_2\":\"rootless\"}]");
+                }
+        );
+    }
 
     @Test
     public void testNamedBaseTable() {

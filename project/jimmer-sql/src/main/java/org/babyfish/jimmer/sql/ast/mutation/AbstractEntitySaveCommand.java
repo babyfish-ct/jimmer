@@ -14,6 +14,20 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setMode(SaveMode mode);
 
+    /**
+     * Configure how the {@code @Version} property of the root entity is saved.
+     * This configuration does not propagate to associated entities.
+     *
+     * <p>The default is {@link VersionMode#OPTIMISTIC_LOCK}. In
+     * {@link VersionMode#ASSIGNMENT} mode, a loaded version is treated as an
+     * ordinary insert/update value and does not enable an implicit optimistic
+     * lock or automatic increment.</p>
+     *
+     * @param mode The version mode, it cannot be {@code null}
+     */
+    @NewChain
+    AbstractEntitySaveCommand setVersionMode(VersionMode mode);
+
     @NewChain
     AbstractEntitySaveCommand setAssociatedModeAll(AssociatedSaveMode mode);
 
@@ -24,16 +38,26 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode);
 
     @NewChain
-    AbstractEntitySaveCommand setKeyProps(ImmutableProp ... props);
+    AbstractEntitySaveCommand setKeyProps(ImmutableProp... props);
 
     @NewChain
-    AbstractEntitySaveCommand setKeyProps(String group, ImmutableProp ... props);
+    AbstractEntitySaveCommand setKeyProps(String group, ImmutableProp... props);
 
     @NewChain
-    AbstractEntitySaveCommand setKeyProps(TypedProp.Single<?, ?> ... props);
+    AbstractEntitySaveCommand setKeyProps(TypedProp.Single<?, ?>... props);
 
     @NewChain
-    AbstractEntitySaveCommand setKeyProps(String group, TypedProp.Single<?, ?> ... props);
+    AbstractEntitySaveCommand setKeyProps(String group, TypedProp.Single<?, ?>... props);
+
+    /**
+     * Forbid update assignments derived from entity properties during upsert.
+     *
+     * <p>This is equivalent to specifying an {@link UpsertMask} whose updatable
+     * property list is empty. A dialect can still render a fake update assignment
+     * when it is required by id fetching, returning, or other save semantics.</p>
+     */
+    @NewChain
+    AbstractEntitySaveCommand forbidUpdate();
 
     /**
      * Set UpsertMask with updatable properties
@@ -54,13 +78,13 @@ public interface AbstractEntitySaveCommand {
      * }</pre>
      *
      * @param props Properties that can be updated
-     *          <ul>
-     *              <li>its length cannot be 0</li>
-     *              <li>all properties must belong to one entity type</li>
-     *          </ul>
+     *              <ul>
+     *                  <li>An empty array selects no entity properties for update</li>
+     *                  <li>all properties must belong to one entity type</li>
+     *              </ul>
      */
     @NewChain
-    AbstractEntitySaveCommand setUpsertMask(ImmutableProp ... props);
+    AbstractEntitySaveCommand setUpsertMask(ImmutableProp... props);
 
     /**
      * Set UpsertMask with updatable properties
@@ -81,13 +105,13 @@ public interface AbstractEntitySaveCommand {
      * }</pre>
      *
      * @param props Properties that can be updated
-     *          <ul>
-     *              <li>its length cannot be 0</li>
-     *              <li>all properties must belong to one entity type</li>
-     *          </ul>
+     *              <ul>
+     *                  <li>An empty array selects no entity properties for update</li>
+     *                  <li>all properties must belong to one entity type</li>
+     *              </ul>
      */
     @NewChain
-    AbstractEntitySaveCommand setUpsertMask(TypedProp.Single<?, ?> ... props);
+    AbstractEntitySaveCommand setUpsertMask(TypedProp.Single<?, ?>... props);
 
     /**
      * Set UpsertMask object
@@ -126,6 +150,12 @@ public interface AbstractEntitySaveCommand {
             Class<T> tableType,
             TypedProp.Scalar<E, V> prop,
             SaveAssignmentExpression<E, T, V> expression
+    );
+
+    @NewChain
+    <E, T extends Table<E>> AbstractEntitySaveCommand setUpdateWhere(
+            Class<T> tableType,
+            UpdateCondition<E, T> condition
     );
 
     @NewChain

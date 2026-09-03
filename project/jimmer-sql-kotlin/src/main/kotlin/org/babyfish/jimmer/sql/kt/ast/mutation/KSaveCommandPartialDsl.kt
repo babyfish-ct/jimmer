@@ -6,10 +6,7 @@ import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.TypeMatchMode
-import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
-import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
-import org.babyfish.jimmer.sql.ast.mutation.UpsertMask
+import org.babyfish.jimmer.sql.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
@@ -20,6 +17,12 @@ import kotlin.reflect.KProperty1
 
 @DslScope
 interface KSaveCommandPartialDsl {
+
+    /**
+     * Configure how the `@Version` property of the root entity is saved.
+     * This configuration does not propagate to associated entities.
+     */
+    fun setVersionMode(mode: VersionMode)
 
     fun setAssociatedMode(prop: KProperty1<*, *>, mode: AssociatedSaveMode)
 
@@ -34,6 +37,13 @@ interface KSaveCommandPartialDsl {
     fun <E : Any> setKeyProps(group: String, vararg keyProps: KProperty1<E, *>)
 
     fun <E : Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>)
+
+    /**
+     * Forbid update assignments derived from entity properties during upsert.
+     * A dialect can still render a fake update assignment when required by
+     * id fetching, returning, or other save semantics.
+     */
+    fun forbidUpdate()
 
     /**
      * Set UpsertMask with updatable properties
@@ -55,7 +65,7 @@ interface KSaveCommandPartialDsl {
      *
      * @param props Properties that can be updated
      *
-     *          - its length cannot be 0
+     *          - An empty array selects no entity properties for update
      *          - all properties must belong to one entity type
      */
     fun <E : Any> setUpsertMask(vararg props: ImmutableProp)
@@ -80,7 +90,7 @@ interface KSaveCommandPartialDsl {
      *
      * @param props Properties that can be updated
      *
-     *          - its length cannot be 0
+     *          - An empty array selects no entity properties for update
      *          - all properties must belong to one entity type
      */
     fun <E : Any> setUpsertMask(vararg props: KProperty1<E, *>)
@@ -105,7 +115,7 @@ interface KSaveCommandPartialDsl {
      *
      * @param props Properties that can be updated
      *
-     *          - its length cannot be 0
+     *          - An empty array selects no entity properties for update
      *          - all properties must belong to one entity type
      */
     fun <E : Any> setUpsertMask(vararg props: TypedProp.Single<E, *>)
@@ -163,7 +173,12 @@ interface KSaveCommandPartialDsl {
     fun <E : Any> setOptimisticLock(
         type: KClass<E>,
         behavior: UnloadedVersionBehavior = UnloadedVersionBehavior.IGNORE,
-        block: (OptimisticLockContext<E>).() -> KNonNullExpression<Boolean>?
+        block: UpdateConditionContext<E>.() -> KNonNullExpression<Boolean>?
+    )
+
+    fun <E : Any> setUpdateWhere(
+        type: KClass<E>,
+        block: UpdateConditionContext<E>.() -> KNonNullExpression<Boolean>?
     )
 
     fun <E : Any> setPessimisticLock(entityType: KClass<E>, lock: Boolean = true)
@@ -239,7 +254,7 @@ interface KSaveCommandPartialDsl {
         val target: KNonNullTable<E>
     }
 
-    interface OptimisticLockContext<E : Any> : ValueExpressionContext<E> {
+    interface UpdateConditionContext<E : Any> : ValueExpressionContext<E> {
         val table: KNonNullTable<E>
     }
 }

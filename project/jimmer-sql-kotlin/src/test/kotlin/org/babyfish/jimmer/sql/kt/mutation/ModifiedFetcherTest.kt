@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -98,16 +97,8 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
-            statement {
-                queryReason(QueryReason.FETCHER)
-                sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
-                        |from BOOK tb_1_ 
-                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
-                )
-            }
             value(
-                """{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00}""".trimMargin()
+                """{"name":"GraphQL in Action","edition":3,"price":73.9}""".trimMargin()
             )
         }
     }
@@ -149,16 +140,9 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
-            statement {
-                sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
-                        |from BOOK tb_1_ 
-                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
-                )
-            }
             value(
                 """[
-                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00}, 
+                    |{"name":"GraphQL in Action","edition":3,"price":73.9},
                     |{"id":100,"name":"GraphQL in Action","edition":4,"price":78.9}
                     |]""".trimMargin()
             )
@@ -193,15 +177,8 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
-            statement {
-                queryReason(QueryReason.FETCHER)
-                sql(
-                    """select tb_1_.ID from BOOK tb_1_ 
-                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
-                )
-            }
             value(
-                """{"id":12}"""
+                """{"name":"GraphQL in Action","edition":3,"price":73.9}"""
             )
         }
     }
@@ -242,16 +219,8 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
-            statement {
-                queryReason(QueryReason.FETCHER)
-                sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
-                        |from BOOK tb_1_ 
-                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
-                )
-            }
             value(
-                """[{"id":12}, {"id":100}]"""
+                """[{"name":"GraphQL in Action","edition":3,"price":73.9}, {"id":100}]"""
             )
         }
     }

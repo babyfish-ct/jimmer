@@ -46,11 +46,13 @@ public class Saver {
         validateInstantiableSaveType(immutableType, ctx.options);
         MutationTrigger trigger = ctx.trigger;
         // single object save also call `produceList` because `fetch` may change draft
+        boolean[] accepted = {true};
         E newEntity = (E) Internal.produceList(
                 immutableType,
                 Collections.singleton(entity),
                 drafts -> {
                     saveAllImpl((List<DraftSpi>) drafts);
+                    accepted[0] = !ctx.isRejected((DraftSpi) drafts.get(0));
                 },
                 trigger == null ? null : trigger::prepareSubmit
         ).get(0);
@@ -60,7 +62,8 @@ public class Saver {
         return new SimpleSaveResult<>(
                 ctx.affectedRowCountMap,
                 entity,
-                newEntity
+                newEntity,
+                accepted[0]
         );
     }
 
@@ -77,11 +80,15 @@ public class Saver {
         ImmutableType immutableType = ImmutableType.get(entities.iterator().next().getClass());
         validateInstantiableSaveType(immutableType, ctx.options);
         MutationTrigger trigger = ctx.trigger;
+        List<Boolean> accepted = new ArrayList<>(entities.size());
         List<E> newEntities = (List<E>) Internal.produceList(
                 immutableType,
                 entities,
                 drafts -> {
                     saveAllImpl((List<DraftSpi>) drafts);
+                    for (Object draft : drafts) {
+                        accepted.add(!ctx.isRejected((DraftSpi) draft));
+                    }
                 },
                 trigger == null ? null : trigger::prepareSubmit
         );
@@ -91,11 +98,13 @@ public class Saver {
         Iterator<E> oldItr = entities.iterator();
         Iterator<E> newItr = newEntities.iterator();
         List<BatchSaveResult.Item<E>> items = new ArrayList<>(entities.size());
-        while (oldItr.hasNext() && newItr.hasNext()) {
+        Iterator<Boolean> acceptedItr = accepted.iterator();
+        while (oldItr.hasNext() && newItr.hasNext() && acceptedItr.hasNext()) {
             items.add(
                     new BatchSaveResult.Item<>(
                             oldItr.next(),
-                            newItr.next()
+                            newItr.next(),
+                            acceptedItr.next()
                     )
             );
         }
@@ -218,6 +227,16 @@ public class Saver {
 
         SaveOperation operation = prepareSave(drafts);
         SaveSelfResult selfResult = saveSelf(operation);
+        if (selfResult.acceptedDrafts != null) {
+            for (DraftSpi draft : drafts) {
+                if (!selfResult.acceptedDrafts.contains(draft)) {
+                    ctx.markRejected(draft);
+                    if (ctx.options.getMode() != SaveMode.INSERT_IF_ABSENT) {
+                        ctx.markAssociationTargetUnavailable(draft);
+                    }
+                }
+            }
+        }
         finishSave(operation, selfResult);
     }
 
@@ -225,9 +244,12 @@ public class Saver {
         if (!drafts.isEmpty() && !isIdOnlyAssociationReference(drafts)) {
             validateInstantiableSaveType(drafts.get(0).__type(), ctx.options);
         }
+        ctx.updateWhereEnabled = SaveUpdateConditions.validate(ctx, drafts);
+        validateUpdateWhereMode();
+        validatePreAssociationsForUpdateWhere(drafts);
 
         for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
-            if (isVisitable(prop) && prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
+            if (isPreAssociation(prop)) {
                 savePreAssociation(prop, drafts);
             }
         }
@@ -237,14 +259,21 @@ public class Saver {
         for (DraftSpi draft : drafts) {
             preHandler.add(draft);
         }
-        return new SaveOperation(this, drafts, preHandler, isOwnerAcceptanceRequired(preHandler));
+        return new SaveOperation(this, drafts, preHandler, isOwnerAcceptanceRequired(preHandler, drafts));
     }
 
     private void finishSave(SaveOperation operation, SaveSelfResult selfResult) {
         finishAssociations(operation, selfResult);
+        // A rejected INSERT_IF_ABSENT target still needs its existing id so the parent can link to it.
+        boolean materializeAssociationTargets =
+                ctx.path.getParent() != null && ctx.options.getMode() == SaveMode.INSERT_IF_ABSENT;
         new SaveResultMaterializer(ctx).materialize(
-                SaveBatches.drafts(operation.drafts, selfResult.acceptedDrafts),
-                SaveBatches.selfBatches(operation.preHandler, selfResult.acceptedDrafts)
+                materializeAssociationTargets ?
+                        operation.drafts :
+                        SaveBatches.drafts(operation.drafts, selfResult.acceptedDrafts),
+                materializeAssociationTargets ?
+                        operation.preHandler.batches() :
+                        SaveBatches.selfBatches(operation.preHandler, selfResult.acceptedDrafts)
         );
     }
 
@@ -283,6 +312,53 @@ public class Saver {
             }
         }
         return true;
+    }
+
+    private void validatePreAssociationsForUpdateWhere(List<DraftSpi> drafts) {
+        if (!ctx.updateWhereEnabled) {
+            return;
+        }
+        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+            if (!isPreAssociation(prop)) {
+                continue;
+            }
+            PropId propId = prop.getId();
+            for (DraftSpi draft : drafts) {
+                if (!draft.__isLoaded(propId)) {
+                    continue;
+                }
+                Object target = draft.__get(propId);
+                if (target != null && !ImmutableObjects.isIdOnly(target)) {
+                    throw new IllegalArgumentException(
+                            "Cannot save the owning-side reference property \"" + prop +
+                                    "\" because update-where is configured for its owner type and the reference " +
+                                    "is neither null nor id-only; saving it before the owner may execute DML even " +
+                                    "if the owner is rejected"
+                    );
+                }
+            }
+        }
+    }
+
+    private void validateUpdateWhereMode() {
+        if (!ctx.updateWhereEnabled) {
+            return;
+        }
+        switch (ctx.options.getMode()) {
+            case UPDATE_ONLY:
+            case UPSERT:
+            case NON_IDEMPOTENT_UPSERT:
+                return;
+            default:
+                throw new IllegalArgumentException(
+                        "Update-where predicates can only be used with UPDATE_ONLY, UPSERT or " +
+                                "NON_IDEMPOTENT_UPSERT mode"
+                );
+        }
+    }
+
+    private boolean isPreAssociation(ImmutableProp prop) {
+        return isVisitable(prop) && prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition();
     }
 
     @SuppressWarnings("unchecked")
@@ -362,7 +438,12 @@ public class Saver {
             targetSaver.saveAllImpl(targets);
         }
 
-        updateAssociations(batch, prop, detachOtherSiblings);
+        updateAssociations(
+                batch,
+                prop,
+                detachOtherSiblings,
+                targetSaver
+        );
     }
 
     private boolean isVisitable(ImmutableProp prop) {
@@ -489,6 +570,13 @@ public class Saver {
             } else {
                 acceptedDrafts.addAll(batch.entities());
             }
+            if (batch.mode() == SaveMode.UPDATE_ONLY) {
+                for (DraftSpi draft : batch.entities()) {
+                    if (ctx.isPreselectedAccepted(draft)) {
+                        acceptedDrafts.add(draft);
+                    }
+                }
+            }
         }
         return new SaveSelfResult(detach, acceptedDrafts);
     }
@@ -514,15 +602,49 @@ public class Saver {
         return mode != SaveMode.INSERT_ONLY && mode != SaveMode.INSERT_IF_ABSENT;
     }
 
-    private boolean isOwnerAcceptanceRequired(PreHandler preHandler) {
+    private boolean isOwnerAcceptanceRequired(PreHandler preHandler, List<DraftSpi> drafts) {
         if (!isOwnerAcceptanceMode()) {
             return false;
+        }
+        if (ctx.options.isForceMatchedUpdate()) {
+            return true;
+        }
+        if (ctx.options.getMode() == SaveMode.INSERT_IF_ABSENT) {
+            return true;
+        }
+        if (ctx.updateWhereEnabled) {
+            return true;
+        }
+        if (hasSingleTableDiscriminatorGuard(preHandler, drafts)) {
+            return true;
         }
         if (isJoinedTypeBranchTarget()) {
             return ctx.trigger != null || hasLoadedPostAssociation(preHandler);
         }
-        return ctx.options.getUserOptimisticLock(ctx.path.getType()) != null &&
+        return ctx.options.getOptimisticLockCondition(ctx.path.getType()) != null &&
                 hasLoadedPostAssociation(preHandler);
+    }
+
+    private boolean hasSingleTableDiscriminatorGuard(PreHandler preHandler, List<DraftSpi> drafts) {
+        for (DraftSpi draft : drafts) {
+            if (hasSingleTableDiscriminatorGuard(draft.__type())) {
+                return true;
+            }
+        }
+        for (Batch<DraftSpi> batch : preHandler.batches()) {
+            if (hasSingleTableDiscriminatorGuard(batch.shape().getType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasSingleTableDiscriminatorGuard(ImmutableType type) {
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        return inheritanceInfo != null &&
+                inheritanceInfo.getStrategy() == InheritanceType.SINGLE_TABLE &&
+                !ctx.options.isTypeChangeAllowed(type) &&
+                Operator.discriminatorGuardProp(ctx.options, inheritanceInfo, type) != null;
     }
 
     private boolean hasLoadedPostAssociation(PreHandler preHandler) {
@@ -604,7 +726,12 @@ public class Saver {
         }
     }
 
-    private void updateAssociations(Batch<DraftSpi> batch, ImmutableProp prop, boolean detach) {
+    private void updateAssociations(
+            Batch<DraftSpi> batch,
+            ImmutableProp prop,
+            boolean detach,
+            Saver targetSaver
+    ) {
         ChildTableOperator subOperator = null;
         MiddleTableOperator middleTableOperator = null;
         if (prop.isMiddleTableDefinition()) {
@@ -637,7 +764,11 @@ public class Saver {
         if (subOperator == null && middleTableOperator == null) {
             return;
         }
-        IdPairs.Retain retainedIdPairs = IdPairs.retain(batch.entities(), prop);
+        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
+        IdPairs.Retain retainedIdPairs = IdPairs.retain(batch.entities(), prop, target ->
+                target.__isLoaded(targetIdPropId) &&
+                        !targetSaver.ctx.isAssociationTargetUnavailable((DraftSpi) target)
+        );
         if (subOperator != null && detach && ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {
             subOperator.disconnectExcept(retainedIdPairs, true);
         }
