@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
@@ -45,9 +47,28 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
 
         if (selection instanceof Expression<?>) {
             builder.separator();
+            ConfigurableBaseQueryImpl<?> query =
+                    ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).toSymbol().getQuery();
+            boolean rootless = query.getMutableQuery().getTableLikeImplementor() == null;
+            String castType = null;
+            if (rootless && builder.sqlClient().getDialect().isRootlessSelectionCastRequired()) {
+                castType = builder.sqlClient().getDialect().sqlType(
+                        Classes.primitiveTypeOf(((ExpressionImplementor<?>) selection).getType())
+                );
+            }
+            if (castType != null) {
+                builder.sql("cast(");
+            }
             ((Ast) selection).renderTo(builder);
+            if (castType != null) {
+                builder.sql(" as ").sql(castType).sql(")");
+            }
             if (!cte) {
-                builder.sql(" c").sql(Integer.toString(exportSelection.expressionIndex()));
+                builder.sql(
+                        rootless ?
+                                " as c" :
+                                " c"
+                ).sql(Integer.toString(exportSelection.expressionIndex()));
             }
             return;
         }

@@ -69,8 +69,11 @@ public abstract class TableUsageVisitor extends AstVisitor {
 
     @Override
     public void visitStatement(AbstractMutableStatementImpl statement) {
-        AstContext ctx = getAstContext();
-        RealTable table = realTable(ctx.getStatement().getTableLikeImplementor());
+        TableLikeImplementor<?> tableLikeImplementor = getAstContext().getStatement().getTableLikeImplementor();
+        if (tableLikeImplementor == null) {
+            return;
+        }
+        RealTable table = realTable(tableLikeImplementor);
         addRootTable(table);
         table.use(this);
     }
@@ -86,7 +89,8 @@ public abstract class TableUsageVisitor extends AstVisitor {
             RealTable table,
             @Nullable ImmutableProp prop,
             boolean rawId
-    ) {}
+    ) {
+    }
 
     protected final RealTable realTable(TableLikeImplementor<?> tableLikeImplementor) {
         return realTableForAnalysis(tableLikeImplementor);

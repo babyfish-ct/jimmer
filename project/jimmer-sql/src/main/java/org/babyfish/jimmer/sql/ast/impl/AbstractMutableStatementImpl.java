@@ -11,21 +11,8 @@ import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableSubQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.QueryAnalysis;
-import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
-import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
+import org.babyfish.jimmer.sql.ast.impl.query.*;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.util.FlaternIterator;
 import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
@@ -34,11 +21,7 @@ import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.Props;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -52,11 +35,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public abstract class AbstractMutableStatementImpl implements FilterableImplementor, MutableStatementImplementor {
 
@@ -77,6 +56,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     private int modCount;
 
     private final IdentityMap<TableImplementor<?>, List<Predicate>> filterPredicates = new IdentityMap<>();
+
+    protected AbstractMutableStatementImpl(JSqlClientImplementor sqlClient) {
+        this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
+        this.type = null;
+    }
 
     public AbstractMutableStatementImpl(
             JSqlClientImplementor sqlClient,
@@ -147,6 +131,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     @SuppressWarnings("unchecked")
     public <T extends TableLike<?>> T getTable() {
         TableLike<?> table = this.table;
+        if (table == null && type == null) {
+            return null;
+        }
         if (table == null) {
             this.table = table = TableProxies.wrap((TableImplementor<?>) getTableLikeImplementor());
         }
@@ -159,6 +146,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     public TableLikeImplementor<?> getTableLikeImplementor() {
         TableLikeImplementor<?> tableLikeImplementor = this.tableLikeImplementor;
+        if (tableLikeImplementor == null && table == null && type == null) {
+            return null;
+        }
         if (tableLikeImplementor == null) {
             if (table instanceof BaseTable) {
                 BaseTable rawBaseTable = BaseTableProxies.unwrap((BaseTable) table);

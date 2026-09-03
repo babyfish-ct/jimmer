@@ -40,6 +40,27 @@ public interface SaveOptions {
         return Collections.emptyMap();
     }
 
+    @Nullable
+    default TypedUpdateCondition getUpdateWhere(ImmutableType type) {
+        return null;
+    }
+
+    default Map<ImmutableType, TypedUpdateCondition> getUpdateWheres() {
+        return Collections.emptyMap();
+    }
+
+    default VersionMode getVersionMode() {
+        return VersionMode.OPTIMISTIC_LOCK;
+    }
+
+    default boolean isForceMatchedUpdate() {
+        return false;
+    }
+
+    default boolean isExactConflictTargetRequired() {
+        return false;
+    }
+
     default boolean hasAssignment(ImmutableType type) {
         for (SaveAssignmentLambda assignment : getAssignments().values()) {
             if (assignment.type.isAssignableFrom(type)) {
@@ -77,7 +98,7 @@ public interface SaveOptions {
 
     UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type);
 
-    UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type);
+    UpdateCondition<?, ?> getOptimisticLockCondition(ImmutableType type);
 
     boolean isAutoCheckingProp(ImmutableProp prop);
 
@@ -173,6 +194,31 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
+    public @Nullable TypedUpdateCondition getUpdateWhere(ImmutableType type) {
+        return raw.getUpdateWhere(type);
+    }
+
+    @Override
+    public Map<ImmutableType, TypedUpdateCondition> getUpdateWheres() {
+        return raw.getUpdateWheres();
+    }
+
+    @Override
+    public VersionMode getVersionMode() {
+        return raw.getVersionMode();
+    }
+
+    @Override
+    public boolean isForceMatchedUpdate() {
+        return raw.isForceMatchedUpdate();
+    }
+
+    @Override
+    public boolean isExactConflictTargetRequired() {
+        return raw.isExactConflictTargetRequired();
+    }
+
+    @Override
     public boolean isTargetTransferable(ImmutableProp prop) {
         return raw.isTargetTransferable(prop);
     }
@@ -233,8 +279,8 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
-        return raw.getUserOptimisticLock(type);
+    public UpdateCondition<?, ?> getOptimisticLockCondition(ImmutableType type) {
+        return raw.getOptimisticLockCondition(type);
     }
 
     @Override
@@ -351,5 +397,20 @@ class SaveOptionsForAssociatedProp extends AbstractSaveOptionsWrapper {
     @Override
     public boolean isTypeChangeAllowed(ImmutableType type) {
         return super.isAssociatedTypeChangeAllowed(prop, type);
+    }
+
+    @Override
+    public VersionMode getVersionMode() {
+        return VersionMode.OPTIMISTIC_LOCK;
+    }
+
+    @Override
+    public boolean isForceMatchedUpdate() {
+        return false;
+    }
+
+    @Override
+    public boolean isExactConflictTargetRequired() {
+        return false;
     }
 }

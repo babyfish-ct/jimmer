@@ -1,13 +1,12 @@
 package org.babyfish.jimmer.sql.kt.di
 
+import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdateReturning
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
@@ -39,6 +38,23 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQuery(entityType, block)
+
+    override fun <B : KNonNullBaseTable<*>> createBaseQuery(
+        block: KMutableStaticBaseQuery.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sqlClient().createBaseQuery(block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForReference(
+        prop: KProperty1<S, T?>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sqlClient().createBaseQueryForReference(prop, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForList(
+        prop: KProperty1<S, List<T>>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        sqlClient().createBaseQueryForList(prop, block)
 
     override fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
@@ -73,6 +89,56 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
         block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R> =
         sqlClient().createUpdateReturning(entityType, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createInsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<E, B>.() -> Unit
+    ): KExecutable<Int> = sqlClient().createInsert(entityType, source, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> = sqlClient().createInsertReturning(entityType, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForReference(
+        prop: KProperty1<S, T?>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int> = sqlClient().createInsertForReference(prop, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForReference(
+        prop: KProperty1<S, T?>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> =
+        sqlClient().createInsertReturningForReference(prop, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForList(
+        prop: KProperty1<S, List<T>>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int> = sqlClient().createInsertForList(prop, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForList(
+        prop: KProperty1<S, List<T>>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> =
+        sqlClient().createInsertReturningForList(prop, source, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createUpsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableUpsert<E, B>.() -> Unit
+    ): KExecutable<Int> = sqlClient().createUpsert(entityType, source, block)
+
+    override fun <E : Any, B : KNonNullBaseTable<*>, R> createUpsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> = sqlClient().createUpsertReturning(entityType, source, block)
 
     override fun <E : Any> createDelete(
         entityType: KClass<E>,

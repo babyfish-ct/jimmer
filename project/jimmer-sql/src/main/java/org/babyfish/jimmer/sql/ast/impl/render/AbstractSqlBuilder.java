@@ -37,6 +37,8 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
     private SaveInputValueRenderFrame saveInputValueRenderFrame;
 
+    private MutationExpressionFrame mutationExpressionFrame;
+
     private boolean indentRequired;
 
     protected abstract SqlFormatter formatter();
@@ -100,6 +102,26 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         }
         renderSingleColumnValueGetter(getters.get(0), frame.prefix, frame.suffix);
         return true;
+    }
+
+    public void pushMutationExpressionMap(Map<?, ?> map) {
+        mutationExpressionFrame = new MutationExpressionFrame(map, mutationExpressionFrame);
+    }
+
+    public void popMutationExpressionMap() {
+        mutationExpressionFrame = mutationExpressionFrame.parent;
+    }
+
+    @Nullable
+    public Object getMutationExpressionReplacement(Object expression) {
+        for (MutationExpressionFrame frame = mutationExpressionFrame; frame != null; frame = frame.parent) {
+            Object replacement = frame.map.get(expression);
+            if (replacement != null) {
+                return replacement;
+            }
+        }
+        AstContext astContext = getAstContext();
+        return astContext != null ? astContext.getMutationExpressionReplacement(expression) : null;
     }
 
     public void pushSaveInputValueRender(@Nullable String prefix, String suffix) {
@@ -720,6 +742,18 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             this.parent = parent;
             this.prefix = prefix;
             this.suffix = suffix;
+        }
+    }
+
+    private static class MutationExpressionFrame {
+
+        final Map<?, ?> map;
+
+        final MutationExpressionFrame parent;
+
+        MutationExpressionFrame(Map<?, ?> map, MutationExpressionFrame parent) {
+            this.map = map;
+            this.parent = parent;
         }
     }
 

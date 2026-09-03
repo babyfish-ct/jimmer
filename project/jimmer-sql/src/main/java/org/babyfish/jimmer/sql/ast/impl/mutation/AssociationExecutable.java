@@ -5,9 +5,10 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -161,13 +162,20 @@ class AssociationExecutable implements Executable<Integer> {
 
     @Override
     public Integer execute(Connection con) {
+        return execute(con, false);
+    }
+
+    Integer execute(Connection con, boolean forceCheckingExistence) {
         return sqlClient
                 .getConnectionManager()
-                .execute(con == null ? this.con : con, this::executeImpl);
+                .execute(
+                        con == null ? this.con : con,
+                        actualCon -> executeImpl(actualCon, forceCheckingExistence)
+                );
     }
 
     @SuppressWarnings("unchecked")
-    private Integer executeImpl(Connection con) {
+    private Integer executeImpl(Connection con, boolean forceCheckingExistence) {
         if (sqlClient.isTargetTransferable()) {
             Executor.validateMutationConnection(con);
         }
@@ -227,7 +235,7 @@ class AssociationExecutable implements Executable<Integer> {
                 operator.disconnectExcept(IdPairs.retain(idPairs));
             }
             if (checkExistence) {
-                operator.merge(idPairs);
+                operator.merge(idPairs, forceCheckingExistence);
             } else {
                 operator.append(idPairs);
             }

@@ -59,6 +59,11 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setVersionMode(VersionMode mode) {
+        return new SimpleEntitySaveCommandImpl<>(new VersionModeCfg(cfg, mode));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setAssociatedModeAll(AssociatedSaveMode mode) {
         return new SimpleEntitySaveCommandImpl<>(new AssociatedModeCfg(cfg, mode));
     }
@@ -74,8 +79,27 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> forbidUpdate() {
+        RootCfg rootCfg = cfg.as(RootCfg.class);
+        assert rootCfg != null;
+        return new SimpleEntitySaveCommandImpl<>(
+                addForbiddenUpdateMask(cfg, ((ImmutableSpi) rootCfg.argument).__type())
+        );
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask) {
         return new SimpleEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, mask));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setForceMatchedUpdate() {
+        return new SimpleEntitySaveCommandImpl<>(new ForceMatchedUpdateCfg(cfg));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setExactConflictTargetRequired() {
+        return new SimpleEntitySaveCommandImpl<>(new ExactConflictTargetRequiredCfg(cfg));
     }
 
     @Override
@@ -97,6 +121,24 @@ public class SimpleEntitySaveCommandImpl<E>
         return new SimpleEntitySaveCommandImpl<>(
                 new AssignmentCfg(cfg, prop, prop.getDeclaringType(), expression)
         );
+    }
+
+    @Override
+    public <X, T extends Table<X>> SimpleEntitySaveCommand<E> setUpdateWhere(
+            Class<T> tableType,
+            UpdateCondition<X, T> condition
+    ) {
+        return new SimpleEntitySaveCommandImpl<>(
+                new UpdateWhereCfg(cfg, ImmutableType.get(tableType), condition)
+        );
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setEntityUpdateWhere(
+            ImmutableType type,
+            UpdateCondition<?, ?> condition
+    ) {
+        return new SimpleEntitySaveCommandImpl<>(new UpdateWhereCfg(cfg, type, condition));
     }
 
     @Override
@@ -126,7 +168,7 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @Override
     public SimpleEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop, boolean asReference) {
-        return new SimpleEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, prop,asReference));
+        return new SimpleEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, prop, asReference));
     }
 
     @Override
@@ -159,14 +201,14 @@ public class SimpleEntitySaveCommandImpl<E>
     public <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
             UnloadedVersionBehavior behavior,
-            UserOptimisticLock<E, T> block
+            UpdateCondition<E, T> condition
     ) {
         return new SimpleEntitySaveCommandImpl<>(
-                new OptimisticLockLambdaCfg(
+                new OptimisticLockConditionCfg(
                         cfg,
                         ImmutableType.get(tableType),
                         behavior,
-                        (UserOptimisticLock<Object, Table<Object>>) block
+                        (UpdateCondition<Object, Table<Object>>) condition
                 )
         );
     }
@@ -175,14 +217,14 @@ public class SimpleEntitySaveCommandImpl<E>
     public SimpleEntitySaveCommand<E> setEntityOptimisticLock(
             ImmutableType type,
             UnloadedVersionBehavior behavior,
-            UserOptimisticLock<Object, Table<Object>> block
+            UpdateCondition<Object, Table<Object>> condition
     ) {
         return new SimpleEntitySaveCommandImpl<>(
-                new OptimisticLockLambdaCfg(
+                new OptimisticLockConditionCfg(
                         cfg,
                         type,
                         behavior,
-                        block
+                        condition
                 )
         );
     }
@@ -323,6 +365,6 @@ public class SimpleEntitySaveCommandImpl<E>
                 entity.__type(),
                 fetcher
         );
-        return saver.save((E)entity);
+        return saver.save((E) entity);
     }
 }

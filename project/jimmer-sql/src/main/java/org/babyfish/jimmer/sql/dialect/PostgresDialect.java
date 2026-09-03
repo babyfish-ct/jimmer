@@ -18,6 +18,11 @@ import java.util.function.IntSupplier;
 
 public class PostgresDialect extends DefaultDialect {
 
+    @Override
+    public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+        return InsertFromSelectRenderers.POSTGRES;
+    }
+
     private static final Reader<PGobject> PG_OBJECT_READER = new Reader<PGobject>() {
         @Override
         public PGobject read(ResultSet rs, Context ctx) throws SQLException {
@@ -190,6 +195,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpsertWithUpdateWhereSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isUpsertWithNullableKeySupported() {
         return true;
     }
@@ -327,6 +337,9 @@ public class PostgresDialect extends DefaultDialect {
             }
         } else if (ctx.hasGeneratedId() || ctx.isFakeUpdateRequired()) {
             ctx.sql(" do update set ").appendFakeUpdateAssignment("tb_1_.", "");
+            if (ctx.hasUpdateCondition()) {
+                ctx.sql(" where ").appendUpdateCondition("tb_1_.", "", "excluded.", "");
+            }
             if (ctx.isCurrentRowReturningRequired()) {
                 ctx.sql(" returning ").appendReturning("");
             } else if (ctx.hasGeneratedId()) {

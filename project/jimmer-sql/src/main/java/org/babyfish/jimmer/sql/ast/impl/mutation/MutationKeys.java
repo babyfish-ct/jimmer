@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,7 +11,8 @@ import java.util.List;
 
 class MutationKeys {
 
-    private MutationKeys() {}
+    private MutationKeys() {
+    }
 
     static List<ImmutableProp> keyAndLogicalDeletedProps(
             ImmutableType type,
@@ -22,6 +24,14 @@ class MutationKeys {
             addProp(props, logicalDeletedInfo.getProp());
         }
         return props;
+    }
+
+    @Nullable
+    static LogicalDeletedInfo logicalDeletedConflictPredicate(ImmutableType type) {
+        LogicalDeletedInfo logicalDeletedInfo = type.getLogicalDeletedInfo();
+        return logicalDeletedInfo != null && logicalDeletedInfo.getType() == boolean.class ?
+                logicalDeletedInfo :
+                null;
     }
 
     private static void addProp(List<ImmutableProp> props, ImmutableProp prop) {

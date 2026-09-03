@@ -489,11 +489,15 @@ class Operator {
         return inheritanceInfo.getDiscriminatorProp();
     }
 
-    private ImmutableProp discriminatorGuardProp(@Nullable InheritanceInfo inheritanceInfo, ImmutableType type) {
+    static @Nullable ImmutableProp discriminatorGuardProp(
+            SaveOptions options,
+            @Nullable InheritanceInfo inheritanceInfo,
+            ImmutableType type
+    ) {
         if (inheritanceInfo == null) {
             return null;
         }
-        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, ctx.options.getTypeMatchMode(type));
+        TypeMatchMode resolvedMode = TypeMatchModes.resolve(type, options.getTypeMatchMode(type));
         if (resolvedMode == TypeMatchMode.POLYMORPHIC) {
             if (inheritanceInfo.getRootType() == type) {
                 return null;
@@ -683,7 +687,7 @@ class Operator {
                 batch,
                 ctx.path.getType(),
                 typeChangeAllowed ? discriminatorProp(inheritanceInfo) : null,
-                typeChangeAllowed ? null : discriminatorGuardProp(inheritanceInfo, type),
+                typeChangeAllowed ? null : discriminatorGuardProp(ctx.options, inheritanceInfo, type),
                 typeChangeAllowed ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
                 ownerAcceptanceRequired,
                 false
@@ -970,11 +974,14 @@ class Operator {
     }
 
     private boolean isOptimisticLockActive(Shape rootShape) {
-        if (ctx.options.getUserOptimisticLock(ctx.path.getType()) != null) {
-            userLockOptimisticPredicate();
-            return true;
+        if (ctx.options.getOptimisticLockCondition(ctx.path.getType()) != null) {
+            return optimisticLockPredicate() != null || optimisticLockVersionGetter(rootShape) != null;
         }
-        return rootShape.getVersionGetter() != null;
+        return optimisticLockVersionGetter(rootShape) != null;
+    }
+
+    private @Nullable PropertyGetter optimisticLockVersionGetter(Shape shape) {
+        return ctx.options.getVersionMode() == VersionMode.ASSIGNMENT ? null : shape.getVersionGetter();
     }
 
     private boolean hasMissingTypeChangeRow(Batch<DraftSpi> rootBatch, Set<Object> acceptedIds) {
@@ -1217,9 +1224,12 @@ class Operator {
                             "when id property is embeddable"
             );
         }
-        Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        PropertyGetter versionGetter = shape.getVersionGetter();
-        boolean hasOptimisticLock = userOptimisticLockPredicate != null || versionGetter != null;
+        Predicate optimisticLockPredicate = optimisticLockPredicate();
+        Predicate updateWherePredicate = ctx.updateWhereEnabled ?
+                ctx.updateWherePredicate :
+                null;
+        PropertyGetter versionGetter = optimisticLockVersionGetter(shape);
+        boolean hasOptimisticLock = optimisticLockPredicate != null || versionGetter != null;
         if (hasOptimisticLock && keyProps != null) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
@@ -1266,7 +1276,9 @@ class Operator {
             if (prop.isId()) {
                 continue;
             }
-            if (prop.isVersion() && userOptimisticLockPredicate == null) {
+            if (prop.isVersion() &&
+                    optimisticLockPredicate == null &&
+                    ctx.options.getVersionMode() == VersionMode.OPTIMISTIC_LOCK) {
                 continue;
             }
             if (!prop.isColumnDefinition()) {
@@ -1316,6 +1328,7 @@ class Operator {
             }
         }
         MutationTrigger trigger = fireTrigger ? ctx.trigger : null;
+        ImmutableProp unchangedVersionProp = unchangedVersionProp(updatedGetters);
         EntityCollection<DraftSpi> entities = changedProps != null ?
                 new EntityList<>(batch.entities().size()) :
                 null;
@@ -1332,7 +1345,8 @@ class Operator {
                         Collections.emptyMap();
                 for (DraftSpi draft : batch.entities()) {
                     ImmutableSpi oldRow = subMap.get(Keys.keyOf(draft, keyProps));
-                    if (hasCustomAssignments || isChanged(changedProps, oldRow, draft)) {
+                    restoreUnchangedVersion(draft, oldRow, unchangedVersionProp);
+                    if (hasCustomAssignments || fakeUpdate || isChanged(changedProps, oldRow, draft)) {
                         if (pendingTriggerData != null) {
                             pendingTriggerData.add(new Object[]{oldRow, draft});
                         }
@@ -1347,7 +1361,8 @@ class Operator {
                     ImmutableSpi oldRow = originalIdObjMap != null ?
                             originalIdObjMap.get(draft.__get(idPropId)) :
                             null;
-                    if (hasCustomAssignments || isChanged(changedProps, oldRow, draft) || hasOptimisticLock) {
+                    restoreUnchangedVersion(draft, oldRow, unchangedVersionProp);
+                    if (hasCustomAssignments || fakeUpdate || isChanged(changedProps, oldRow, draft) || hasOptimisticLock) {
                         if (pendingTriggerData != null) {
                             pendingTriggerData.add(new Object[]{oldRow, draft});
                         }
@@ -1374,7 +1389,8 @@ class Operator {
                 nullGetters,
                 null,
                 keyProps,
-                userOptimisticLockPredicate,
+                updateWherePredicate,
+                optimisticLockPredicate,
                 versionGetter,
                 fakeUpdate,
                 forceOneByOne
@@ -1398,7 +1414,8 @@ class Operator {
                     discriminatorGuardProp,
                     discriminatorGuardValue,
                     nullGetters,
-                    userOptimisticLockPredicate,
+                    updateWherePredicate,
+                    optimisticLockPredicate,
                     versionGetter,
                     fakeUpdate
             );
@@ -1413,7 +1430,7 @@ class Operator {
             );
             unloadCustomAssignmentTargets(entities, rowCounts, assignments);
         }
-        if (versionGetter != null || userOptimisticLockPredicate != null) {
+        if (versionGetter != null || optimisticLockPredicate != null) {
             int index = 0;
             for (DraftSpi row : entities) {
                 if (rowCounts[index++] == 0) {
@@ -1432,6 +1449,9 @@ class Operator {
     }
 
     private boolean isVersionUpdateRequired(@Nullable PropertyGetter versionGetter) {
+        if (ctx.options.getVersionMode() == VersionMode.ASSIGNMENT) {
+            return false;
+        }
         if (versionGetter != null) {
             return true;
         }
@@ -1511,17 +1531,29 @@ class Operator {
                 (inheritanceInfo.getRootType() != type || typeChangeAllowed)) {
             return upsertJoined(batch, inheritanceInfo, ignoreUpdate);
         }
+        ImmutableProp discriminatorGuardProp = typeChangeAllowed ?
+                null :
+                discriminatorGuardProp(ctx.options, inheritanceInfo, type);
         int[] rowCounts = upsert(
                 batch,
                 ctx.path.getType(),
                 discriminatorProp(inheritanceInfo),
                 typeChangeAllowed,
-                typeChangeAllowed ? null : discriminatorGuardProp(inheritanceInfo, type),
+                discriminatorGuardProp,
                 typeChangeAllowed ? redundantSingleTableGetters(inheritanceInfo, type) : Collections.emptyList(),
                 ignoreUpdate,
-                false
+                ctx.options.isForceMatchedUpdate() && !ignoreUpdate
         );
         if (ownerAcceptanceRequired) {
+            // An unconditional upsert accepts every row. Some drivers can report 0 for a matched
+            // self-assignment, so the physical changed-row count is not an acceptance signal here.
+            if (!ignoreUpdate &&
+                    !ctx.updateWhereEnabled &&
+                    discriminatorGuardProp == null &&
+                    ctx.options.getOptimisticLockCondition(type) == null &&
+                    (ctx.options.getVersionMode() == VersionMode.ASSIGNMENT || batch.shape().getVersionGetter() == null)) {
+                return MutationRows.UNKNOWN;
+            }
             return MutationRows.accepted(acceptedOriginalEntities(batch, rowCounts));
         }
         return MutationRows.UNKNOWN;
@@ -1693,6 +1725,7 @@ class Operator {
                 null,
                 null,
                 null,
+                null,
                 false,
                 false
         );
@@ -1835,7 +1868,8 @@ class Operator {
                     implicitKeyProps
             );
             LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
-            boolean filteredLogicalDeletedKey = isFilteredLogicalDeletedKey(batch.shape().getType());
+            boolean filteredLogicalDeletedKey =
+                    MutationKeys.logicalDeletedConflictPredicate(batch.shape().getType()) != null;
             conflictProps = MutationKeys.keyAndLogicalDeletedProps(batch.shape().getType(), keyProps);
             conflictGetters = new ArrayList<>();
             for (PropertyGetter getter : fullShape.getGetters()) {
@@ -1870,14 +1904,18 @@ class Operator {
         }
         List<SaveAssignment> assignments = SaveAssignments.of(ctx, batch.shape(), tableType, updatedGetters);
         if (!forceMatchedUpdate &&
+                !ctx.updateWhereEnabled &&
                 ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
                 batch.shape().isIdOnly() &&
                 assignments.isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
 
-        Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        PropertyGetter versionGetter = batch.shape().getVersionGetter();
+        Predicate optimisticLockPredicate = optimisticLockPredicate();
+        Predicate updateWherePredicate = ctx.updateWhereEnabled ?
+                ctx.updateWherePredicate :
+                null;
+        PropertyGetter versionGetter = optimisticLockVersionGetter(batch.shape());
 
         SaveReturning returning = SaveReturning.forUpsert(
                 ctx,
@@ -1894,13 +1932,15 @@ class Operator {
                 conflictPredicate,
                 assignments,
                 ignoreUpdate,
-                userOptimisticLockPredicate,
+                updateWherePredicate,
+                optimisticLockPredicate,
                 versionGetter,
-                forceMatchedUpdate,
+                forceMatchedUpdate || updateWherePredicate != null,
                 forceOneByOne
         );
         if (returning != null) {
             int[] rowCounts = returning.executeUpsert(batch.entities());
+            unloadUnchangedVersion(batch.entities(), updatedGetters);
             AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
             return rowCounts;
         }
@@ -1923,9 +1963,10 @@ class Operator {
                 conflictPredicate,
                 assignments,
                 ignoreUpdate,
-                userOptimisticLockPredicate,
+                updateWherePredicate,
+                optimisticLockPredicate,
                 versionGetter,
-                forceMatchedUpdate
+                forceMatchedUpdate || updateWherePredicate != null
         );
         sqlClient.getDialect().upsert(upsertContext);
         int[] rowCounts = executeAndGetRowCounts(
@@ -1937,8 +1978,49 @@ class Operator {
                 forceOneByOne
         );
         unloadCustomAssignmentTargets(batch.entities(), rowCounts, assignments);
+        unloadUnchangedVersion(batch.entities(), updatedGetters);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
         return rowCounts;
+    }
+
+    private @Nullable ImmutableProp unchangedVersionProp(List<PropertyGetter> updatedGetters) {
+        if (ctx.options.getVersionMode() != VersionMode.ASSIGNMENT) {
+            return null;
+        }
+        ImmutableProp versionProp = ctx.path.getType().getVersionProp();
+        if (versionProp == null) {
+            return null;
+        }
+        for (PropertyGetter getter : updatedGetters) {
+            if (getter.prop().toOriginal() == versionProp.toOriginal()) {
+                return null;
+            }
+        }
+        return versionProp;
+    }
+
+    private static void restoreUnchangedVersion(
+            DraftSpi draft,
+            @Nullable ImmutableSpi oldRow,
+            @Nullable ImmutableProp versionProp
+    ) {
+        if (versionProp != null && oldRow != null && oldRow.__isLoaded(versionProp.getId())) {
+            draft.__set(versionProp.getId(), oldRow.__get(versionProp.getId()));
+        }
+    }
+
+    private void unloadUnchangedVersion(
+            EntityCollection<DraftSpi> entities,
+            List<PropertyGetter> updatedGetters
+    ) {
+        ImmutableProp versionProp = unchangedVersionProp(updatedGetters);
+        if (versionProp == null) {
+            return;
+        }
+        PropId versionPropId = versionProp.getId();
+        for (DraftSpi draft : entities) {
+            draft.__unload(versionPropId);
+        }
     }
 
     private static void unloadCustomAssignmentTargets(
@@ -2094,11 +2176,6 @@ class Operator {
         }
     }
 
-    private boolean isFilteredLogicalDeletedKey(ImmutableType type) {
-        LogicalDeletedInfo logicalDeletedInfo = type.getLogicalDeletedInfo();
-        return logicalDeletedInfo != null && logicalDeletedInfo.getType() == boolean.class;
-    }
-
     private void validate(Shape shape, boolean insertOnly) {
         validate(shape, insertOnly, Collections.emptySet());
     }
@@ -2140,11 +2217,11 @@ class Operator {
     }
 
     @SuppressWarnings("unchecked")
-    private Predicate userLockOptimisticPredicate() {
+    private @Nullable Predicate optimisticLockPredicate() {
 
-        UserOptimisticLock<Object, Table<Object>> userOptimisticLock =
-                (UserOptimisticLock<Object, Table<Object>>) ctx.options.getUserOptimisticLock(ctx.path.getType());
-        if (userOptimisticLock == null) {
+        UpdateCondition<Object, Table<Object>> optimisticLockCondition =
+                (UpdateCondition<Object, Table<Object>>) ctx.options.getOptimisticLockCondition(ctx.path.getType());
+        if (optimisticLockCondition == null) {
             return null;
         }
         MutableRootQueryImpl<?> fakeQuery = new MutableRootQueryImpl<>(
@@ -2162,15 +2239,17 @@ class Operator {
         } else {
             table = ((TableProxy<?>) table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
         }
-        Predicate predicate = userOptimisticLock.predicate(
+        Predicate predicate = optimisticLockCondition.predicate(
                 (Table<Object>) table,
                 ValueExpressionFactories.<Object>of()
         );
-        validateUserOptimisticLockPredicate(predicate);
+        if (predicate != null) {
+            validateOptimisticLockCondition(predicate);
+        }
         return predicate;
     }
 
-    private void validateUserOptimisticLockPredicate(Predicate predicate) {
+    private void validateOptimisticLockCondition(Predicate predicate) {
         InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
         if (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED) {
             return;
@@ -2443,7 +2522,7 @@ class Operator {
             }
         }
 
-        PropertyGetter versionGetter = shape.getVersionGetter();
+        PropertyGetter versionGetter = optimisticLockVersionGetter(shape);
         if (updatable && versionGetter != null) {
             PropId versionPropId = versionGetter.prop().getId();
             Integer version = (Integer) item.getEntity().__get(versionPropId);
@@ -2653,7 +2732,9 @@ class Operator {
 
         private final List<PropertyGetter> nullGetters;
 
-        private final Predicate userOptimisticLockPredicate;
+        private final Predicate optimisticLockPredicate;
+
+        private final Predicate updateWherePredicate;
 
         private final PropertyGetter versionGetter;
 
@@ -2670,7 +2751,8 @@ class Operator {
                 @Nullable ImmutableProp discriminatorGuardProp,
                 @Nullable Object discriminatorGuardValue,
                 List<PropertyGetter> nullGetters,
-                Predicate userOptimisticLockPredicate,
+                Predicate updateWherePredicate,
+                Predicate optimisticLockPredicate,
                 PropertyGetter versionGetter,
                 boolean fakeUpdate
         ) {
@@ -2697,7 +2779,8 @@ class Operator {
             }
             this.discriminatorGuardValue = discriminatorGuardValue;
             this.nullGetters = nullGetters;
-            this.userOptimisticLockPredicate = userOptimisticLockPredicate;
+            this.updateWherePredicate = updateWherePredicate;
+            this.optimisticLockPredicate = optimisticLockPredicate;
             this.versionGetter = versionGetter;
             this.fakeUpdate = fakeUpdate;
         }
@@ -2791,7 +2874,8 @@ class Operator {
             PropertyGetter actualVersionGetter = versionGetter;
             if (actualVersionGetter == null) {
                 ImmutableProp versionProp = ctx.path.getType().getVersionProp();
-                if (versionProp != null &&
+                if (ctx.options.getVersionMode() == VersionMode.OPTIMISTIC_LOCK &&
+                        versionProp != null &&
                         ctx.options.getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE
                 ) {
                     actualVersionGetter = PropertyGetter
@@ -2852,10 +2936,18 @@ class Operator {
                         .sql(" = ")
                         .variable(versionGetter);
             }
-            if (userOptimisticLockPredicate != null) {
+            if (updateWherePredicate != null) {
                 builder.separator();
                 AbstractExpression.renderChild(
-                        (Ast) userOptimisticLockPredicate,
+                        (Ast) updateWherePredicate,
+                        ExpressionPrecedences.AND,
+                        builder
+                );
+            }
+            if (optimisticLockPredicate != null) {
+                builder.separator();
+                AbstractExpression.renderChild(
+                        (Ast) optimisticLockPredicate,
                         ExpressionPrecedences.AND,
                         builder
                 );
@@ -2915,7 +3007,9 @@ class Operator {
 
         private final boolean fakeUpdate;
 
-        private final Predicate userOptimisticLockPredicate;
+        private final Predicate optimisticLockPredicate;
+
+        private final Predicate updateWherePredicate;
 
         private final PropertyGetter versionGetter;
 
@@ -2935,7 +3029,8 @@ class Operator {
                 LogicalDeletedInfo conflictPredicate,
                 List<SaveAssignment> assignments,
                 boolean updateIgnored,
-                Predicate userOptimisticLockPredicate,
+                Predicate updateWherePredicate,
+                Predicate optimisticLockPredicate,
                 PropertyGetter versionGetter,
                 boolean fakeUpdate
         ) {
@@ -2943,7 +3038,7 @@ class Operator {
                 throw new IllegalArgumentException("Generated id prop cannot be embeddable");
             }
             if (generatedIdProp != null && (
-                    userOptimisticLockPredicate != null || versionGetter != null)
+                    optimisticLockPredicate != null || versionGetter != null)
             ) {
                 throw new IllegalArgumentException(
                         "Optimistic lock is not support by upsert statement which can generate id"
@@ -2972,7 +3067,8 @@ class Operator {
             this.assignments = assignments;
             this.updateIgnored = updateIgnored;
             this.fakeUpdate = fakeUpdate;
-            this.userOptimisticLockPredicate = userOptimisticLockPredicate;
+            this.updateWherePredicate = updateWherePredicate;
+            this.optimisticLockPredicate = optimisticLockPredicate;
             this.versionGetter = versionGetter;
         }
 
@@ -2986,7 +3082,8 @@ class Operator {
 
         @Override
         public boolean hasUpdateCondition() {
-            return userOptimisticLockPredicate != null ||
+            return optimisticLockPredicate != null ||
+                    updateWherePredicate != null ||
                     versionGetter != null ||
                     discriminatorGuardGetter != null;
         }
@@ -3251,12 +3348,30 @@ class Operator {
                 String sourceSuffix
         ) {
             boolean hasPrevious = false;
-            if (userOptimisticLockPredicate != null) {
+            if (updateWherePredicate != null) {
                 builder.pushValueGetterRender(targetPrefix, targetSuffix);
-                builder.pushSaveInputValueRender(null, "");
+                builder.pushSaveInputValueRender(sourcePrefix, sourceSuffix);
                 try {
                     AbstractExpression.renderChild(
-                            (Ast) userOptimisticLockPredicate,
+                            (Ast) updateWherePredicate,
+                            ExpressionPrecedences.AND,
+                            builder
+                    );
+                } finally {
+                    builder.popSaveInputValueRender();
+                    builder.popValueGetterRender();
+                }
+                hasPrevious = true;
+            }
+            if (optimisticLockPredicate != null) {
+                if (hasPrevious) {
+                    builder.sql(" and ");
+                }
+                builder.pushValueGetterRender(targetPrefix, targetSuffix);
+                builder.pushSaveInputValueRender(sourcePrefix, sourceSuffix);
+                try {
+                    AbstractExpression.renderChild(
+                            (Ast) optimisticLockPredicate,
                             ExpressionPrecedences.AND,
                             builder
                     );
@@ -3327,7 +3442,8 @@ class Operator {
             PropertyGetter getter = assignment.target;
             if (assignment.value == null &&
                     getter.metadata().getValueProp().isVersion() &&
-                    ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
+                    ctx.options.getVersionMode() == VersionMode.OPTIMISTIC_LOCK &&
+                    ctx.options.getOptimisticLockCondition(ctx.path.getType()) == null) {
                 builder.sql(inputPrefix)
                         .sql(getter)
                         .sql(inputSuffix)

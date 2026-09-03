@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.JSqlClient
+import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException
@@ -47,6 +48,20 @@ interface KSqlClient : KSaveOperations {
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
+    fun <B : KNonNullBaseTable<*>> createBaseQuery(
+        block: KMutableStaticBaseQuery.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B>
+
+    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForReference(
+        prop: KProperty1<S, T?>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B>
+
+    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForList(
+        prop: KProperty1<S, List<T>>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B>
+
     fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
@@ -74,6 +89,54 @@ interface KSqlClient : KSaveOperations {
     fun <E : Any, R> createUpdateReturning(
         entityType: KClass<E>,
         block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R>
+
+    fun <E : Any, B : KNonNullBaseTable<*>> createInsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<E, B>.() -> Unit
+    ): KExecutable<Int>
+
+    fun <E : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R>
+
+    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForReference(
+        prop: KProperty1<S, T?>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int>
+
+    fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForReference(
+        prop: KProperty1<S, T?>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R>
+
+    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForList(
+        prop: KProperty1<S, List<T>>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int>
+
+    fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForList(
+        prop: KProperty1<S, List<T>>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R>
+
+    fun <E : Any, B : KNonNullBaseTable<*>> createUpsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableUpsert<E, B>.() -> Unit
+    ): KExecutable<Int>
+
+    fun <E : Any, B : KNonNullBaseTable<*>, R> createUpsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R>
 
     fun <E : Any> createDelete(
@@ -104,6 +167,34 @@ interface KSqlClient : KSaveOperations {
         con: Connection? = null,
         block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
     ): List<R> = createUpdateReturning(entityType, block).execute(con)
+
+    fun <E : Any, B : KNonNullBaseTable<*>> executeInsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        con: Connection? = null,
+        block: KMutableInsert<E, B>.() -> Unit
+    ): Int = createInsert(entityType, source, block).execute(con)
+
+    fun <E : Any, B : KNonNullBaseTable<*>, R> executeInsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        con: Connection? = null,
+        block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): List<R> = createInsertReturning(entityType, source, block).execute(con)
+
+    fun <E : Any, B : KNonNullBaseTable<*>> executeUpsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        con: Connection? = null,
+        block: KMutableUpsert<E, B>.() -> Unit
+    ): Int = createUpsert(entityType, source, block).execute(con)
+
+    fun <E : Any, B : KNonNullBaseTable<*>, R> executeUpsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        con: Connection? = null,
+        block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): List<R> = createUpsertReturning(entityType, source, block).execute(con)
 
     fun <E : Any> executeDelete(
         entityType: KClass<E>,

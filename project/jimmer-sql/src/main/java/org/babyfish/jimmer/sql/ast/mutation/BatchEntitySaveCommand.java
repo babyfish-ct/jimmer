@@ -24,6 +24,10 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
+    BatchEntitySaveCommand<E> setVersionMode(VersionMode mode);
+
+    @NewChain
+    @Override
     BatchEntitySaveCommand<E> setAssociatedModeAll(AssociatedSaveMode mode);
 
     @NewChain
@@ -64,9 +68,13 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
+    BatchEntitySaveCommand<E> forbidUpdate();
+
+    @NewChain
+    @Override
     default BatchEntitySaveCommand<E> setUpsertMask(ImmutableProp... props) {
         if (props.length == 0) {
-            throw new IllegalArgumentException("props cannot be empty");
+            return forbidUpdate();
         }
         UpsertMask<?> mask = UpsertMask.of(props[0].getDeclaringType().getJavaClass());
         for (ImmutableProp prop : props) {
@@ -79,7 +87,7 @@ public interface BatchEntitySaveCommand<E>
     @Override
     default BatchEntitySaveCommand<E> setUpsertMask(TypedProp.Single<?, ?>... props) {
         if (props.length == 0) {
-            throw new IllegalArgumentException("props cannot be empty");
+            return forbidUpdate();
         }
         UpsertMask<?> mask = UpsertMask.of(props[0].unwrap().getDeclaringType().getJavaClass());
         for (TypedProp.Single<?, ?> prop : props) {
@@ -98,6 +106,13 @@ public interface BatchEntitySaveCommand<E>
             Class<T> tableType,
             TypedProp.Scalar<X, V> prop,
             SaveAssignmentExpression<X, T, V> expression
+    );
+
+    @NewChain
+    @Override
+    <X, T extends Table<X>> BatchEntitySaveCommand<E> setUpdateWhere(
+            Class<T> tableType,
+            UpdateCondition<X, T> condition
     );
 
     @NewChain
@@ -309,9 +324,9 @@ public interface BatchEntitySaveCommand<E>
     @NewChain
     default <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            UserOptimisticLock<E, T> block
+            UpdateCondition<E, T> condition
     ) {
-        return setOptimisticLock(tableType, UnloadedVersionBehavior.IGNORE, block);
+        return setOptimisticLock(tableType, UnloadedVersionBehavior.IGNORE, condition);
     }
 
     /**
@@ -334,7 +349,7 @@ public interface BatchEntitySaveCommand<E>
     <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
             UnloadedVersionBehavior unloadedVersionBehavior,
-            UserOptimisticLock<E, T> block
+            UpdateCondition<E, T> condition
     );
 
     @NewChain

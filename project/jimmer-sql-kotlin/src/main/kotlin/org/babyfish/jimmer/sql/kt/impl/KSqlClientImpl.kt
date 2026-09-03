@@ -3,9 +3,13 @@ package org.babyfish.jimmer.sql.kt.impl
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.JoinType
+import org.babyfish.jimmer.sql.association.Association
+import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutableInsertImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpsertImpl
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRecursiveBaseQueryImpl
@@ -19,15 +23,16 @@ import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.KSelectionExecutable
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdateReturning
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
+import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableInsertImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
+import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpsertImpl
 import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRecursiveBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableStaticBaseQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.createPropsWeakJoinHandle
@@ -93,6 +98,29 @@ internal class KSqlClientImpl(
         )
         return KMutableBaseQueryImpl<E>(query).block()
     }
+
+    override fun <B : KNonNullBaseTable<*>> createBaseQuery(
+        block: KMutableStaticBaseQuery.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        KMutableStaticBaseQueryImpl(MutableBaseQueryImpl(javaClient)).block()
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForReference(
+        prop: KProperty1<S, T?>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> = createBaseQuery(prop, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForList(
+        prop: KProperty1<S, List<T>>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> = createBaseQuery(prop, block)
+
+    private fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+        prop: KProperty1<S, *>,
+        block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
+    ): KConfigurableBaseQuery<B> =
+        KMutableBaseQueryImpl<Association<S, T>>(
+            MutableBaseQueryImpl(javaClient, AssociationType.of(prop.toImmutableProp()))
+        ).block()
 
     override fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
@@ -162,6 +190,111 @@ internal class KSqlClientImpl(
     ): KSelectionExecutable<R> {
         val update = MutableUpdateImpl(javaClient, ImmutableType.get(entityType.java))
         return block(KMutableUpdateImpl(update))
+    }
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createInsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<E, B>.() -> Unit
+    ): KExecutable<Int> {
+        val mutation = MutableInsertImpl(
+            javaClient,
+            ImmutableType.get(entityType.java),
+            (source.baseTable as AbstractKBaseTable).javaTable
+        )
+        block(KMutableInsertImpl(mutation, source.baseTable))
+        return KExecutableImpl(mutation)
+    }
+
+    override fun <E : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> {
+        val mutation = MutableInsertImpl(
+            javaClient,
+            ImmutableType.get(entityType.java),
+            (source.baseTable as AbstractKBaseTable).javaTable
+        )
+        return block(KMutableInsertImpl(mutation, source.baseTable))
+    }
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForReference(
+        prop: KProperty1<S, T?>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int> = createInsert(prop, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForReference(
+        prop: KProperty1<S, T?>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> = createInsertReturning(prop, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForList(
+        prop: KProperty1<S, List<T>>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int> = createInsert(prop, source, block)
+
+    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForList(
+        prop: KProperty1<S, List<T>>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> = createInsertReturning(prop, source, block)
+
+    private fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsert(
+        prop: KProperty1<S, *>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsert<Association<S, T>, B>.() -> Unit
+    ): KExecutable<Int> {
+        val mutation = MutableInsertImpl(
+            javaClient,
+            AssociationType.of(prop.toImmutableProp()),
+            (source.baseTable as AbstractKBaseTable).javaTable
+        )
+        block(KMutableInsertImpl(mutation, source.baseTable))
+        return KExecutableImpl(mutation)
+    }
+
+    private fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+        prop: KProperty1<S, *>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> {
+        val mutation = MutableInsertImpl(
+            javaClient,
+            AssociationType.of(prop.toImmutableProp()),
+            (source.baseTable as AbstractKBaseTable).javaTable
+        )
+        return block(KMutableInsertImpl(mutation, source.baseTable))
+    }
+
+    override fun <E : Any, B : KNonNullBaseTable<*>> createUpsert(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableUpsert<E, B>.() -> Unit
+    ): KExecutable<Int> {
+        val mutation = MutableUpsertImpl(
+            javaClient,
+            ImmutableType.get(entityType.java),
+            (source.baseTable as AbstractKBaseTable).javaTable
+        )
+        block(KMutableUpsertImpl(mutation, source.baseTable))
+        return KExecutableImpl(mutation)
+    }
+
+    override fun <E : Any, B : KNonNullBaseTable<*>, R> createUpsertReturning(
+        entityType: KClass<E>,
+        source: KBaseTableSymbol<B>,
+        block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
+    ): KSelectionExecutable<R> {
+        val mutation = MutableUpsertImpl(
+            javaClient,
+            ImmutableType.get(entityType.java),
+            (source.baseTable as AbstractKBaseTable).javaTable
+        )
+        return block(KMutableUpsertImpl(mutation, source.baseTable))
     }
 
     override fun <E : Any> createDelete(

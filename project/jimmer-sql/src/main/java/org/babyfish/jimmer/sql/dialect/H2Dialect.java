@@ -37,6 +37,16 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isRootlessSelectionCastRequired() {
+        return true;
+    }
+
+    @Override
+    public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+        return InsertFromSelectRenderers.H2;
+    }
+
+    @Override
     public String arrayTypeSuffix() {
         return " array";
     }
@@ -133,6 +143,11 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public boolean isUpsertSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isUpsertWithUpdateWhereSupported() {
         return true;
     }
 
@@ -267,7 +282,7 @@ public class H2Dialect extends DefaultDialect {
             }
             ctx.sql(" then update").enter(AbstractSqlBuilder.ScopeType.SET);
             if (ctx.hasUpdatedColumns()) {
-            ctx.appendUpdatingAssignments("tb_1_.", "", "tb_2_.", "");
+                ctx.appendUpdatingAssignments("tb_1_.", "", "tb_2_.", "");
             } else {
                 ctx.appendFakeUpdateAssignment("tb_1_.", "");
             }

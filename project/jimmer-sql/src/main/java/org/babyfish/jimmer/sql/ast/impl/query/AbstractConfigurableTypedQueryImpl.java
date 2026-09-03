@@ -90,7 +90,10 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 for (Selection<?> selection : data.selections) {
                     acceptSelection(selection, visitor);
                 }
-                visitBaseTable(mutableQuery.getTableLikeImplementor(), visitor);
+                TableLikeImplementor<?> tableLikeImplementor = mutableQuery.getTableLikeImplementor();
+                if (tableLikeImplementor != null) {
+                    visitBaseTable(tableLikeImplementor, visitor);
+                }
             }
         } finally {
             astContext.popStatement();

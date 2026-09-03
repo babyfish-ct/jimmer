@@ -136,7 +136,8 @@ class SaveReturning {
             List<PropertyGetter> nullGetters,
             @Nullable SaveReturningUpdateCondition updateCondition,
             @Nullable Set<ImmutableProp> keyProps,
-            @Nullable Predicate userOptimisticLockPredicate,
+            @Nullable Predicate updateWherePredicate,
+            @Nullable Predicate optimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
             boolean fakeUpdate,
             boolean forceOneByOne
@@ -152,7 +153,8 @@ class SaveReturning {
                 nullGetters,
                 updateCondition,
                 keyProps,
-                userOptimisticLockPredicate,
+                updateWherePredicate,
+                optimisticLockPredicate,
                 versionGetter,
                 fakeUpdate,
                 forceOneByOne
@@ -174,7 +176,8 @@ class SaveReturning {
             @Nullable LogicalDeletedInfo conflictPredicate,
             List<SaveAssignment> assignments,
             boolean ignoreUpdate,
-            @Nullable Predicate userOptimisticLockPredicate,
+            @Nullable Predicate updateWherePredicate,
+            @Nullable Predicate optimisticLockPredicate,
             @Nullable PropertyGetter versionGetter,
             boolean fakeUpdate,
             boolean forceOneByOne
@@ -194,7 +197,8 @@ class SaveReturning {
                 conflictPredicate,
                 assignments,
                 ignoreUpdate,
-                userOptimisticLockPredicate,
+                updateWherePredicate,
+                optimisticLockPredicate,
                 versionGetter,
                 fakeUpdate,
                 forceOneByOne

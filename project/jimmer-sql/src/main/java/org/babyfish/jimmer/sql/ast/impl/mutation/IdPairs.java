@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.function.Predicate;
 
 interface IdPairs {
 
@@ -17,6 +18,14 @@ interface IdPairs {
 
     static Retain retain(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
         return new EntityIdPairsImpl(rows, prop);
+    }
+
+    static Retain retain(
+            Collection<? extends ImmutableSpi> rows,
+            ImmutableProp prop,
+            Predicate<ImmutableSpi> targetFilter
+    ) {
+        return new EntityIdPairsImpl(rows, prop, targetFilter);
     }
 
     static Retain retain(IdPairs idPairs) {
@@ -50,6 +59,6 @@ interface IdPairs {
         return new TupleIdPairsImpl(Arrays.asList(tuples));
     }
 
-    interface Retain extends IdPairs {}
+    interface Retain extends IdPairs {
+    }
 }
-

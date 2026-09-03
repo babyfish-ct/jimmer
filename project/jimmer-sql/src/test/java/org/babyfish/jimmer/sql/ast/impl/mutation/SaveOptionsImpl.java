@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.sql.ast.TypeMatchMode;
-
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -24,7 +23,7 @@ public class SaveOptionsImpl implements SaveOptions {
 
     AssociatedSaveMode associatedMode = AssociatedSaveMode.REPLACE;
 
-    UserOptimisticLock<?, ?> userOptimisticLock;
+    UpdateCondition<?, ?> optimisticLockCondition;
 
     public SaveOptionsImpl(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
@@ -119,8 +118,8 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
-    public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
-        return userOptimisticLock;
+    public UpdateCondition<?, ?> getOptimisticLockCondition(ImmutableType type) {
+        return optimisticLockCondition;
     }
 
     @Override

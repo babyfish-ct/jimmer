@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.OneToMany;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.exception.SaveException;
@@ -40,7 +41,15 @@ class SaveContext extends MutationContext {
 
     private final SaveResultCoverage saveResultCoverage;
 
-    private final Set<DraftSpi> saveReturningNotAcceptedDrafts;
+    private final Set<DraftSpi> rejectedDrafts;
+
+    private final Set<DraftSpi> unavailableAssociationTargets;
+
+    private final Set<DraftSpi> preselectedAcceptedDrafts;
+
+    boolean updateWhereEnabled;
+
+    Predicate updateWherePredicate;
 
     SaveContext(
             SaveOptions options,
@@ -75,7 +84,9 @@ class SaveContext extends MutationContext {
         this.backReferenceFrozen = false;
         this.affectedRowCountMap = affectedRowCountMap;
         this.saveResultCoverage = new SaveResultCoverage();
-        this.saveReturningNotAcceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.rejectedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.unavailableAssociationTargets = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.preselectedAcceptedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
     }
 
     private SaveContext(SaveContext parent, ImmutableProp prop, ImmutableProp backProp) {
@@ -131,7 +142,9 @@ class SaveContext extends MutationContext {
         }
         this.affectedRowCountMap = parent.affectedRowCountMap;
         this.saveResultCoverage = parent.saveResultCoverage;
-        this.saveReturningNotAcceptedDrafts = parent.saveReturningNotAcceptedDrafts;
+        this.rejectedDrafts = parent.rejectedDrafts;
+        this.unavailableAssociationTargets = parent.unavailableAssociationTargets;
+        this.preselectedAcceptedDrafts = parent.preselectedAcceptedDrafts;
     }
 
     private SaveContext(SaveContext base, JSqlClientImplementor sqlClient) {
@@ -144,7 +157,11 @@ class SaveContext extends MutationContext {
         this.backReferenceProp = base.backReferenceProp;
         this.backReferenceFrozen = base.backReferenceFrozen;
         this.saveResultCoverage = base.saveResultCoverage;
-        this.saveReturningNotAcceptedDrafts = base.saveReturningNotAcceptedDrafts;
+        this.rejectedDrafts = base.rejectedDrafts;
+        this.unavailableAssociationTargets = base.unavailableAssociationTargets;
+        this.preselectedAcceptedDrafts = base.preselectedAcceptedDrafts;
+        this.updateWhereEnabled = base.updateWhereEnabled;
+        this.updateWherePredicate = base.updateWherePredicate;
     }
 
     public Object allocateId() {
@@ -248,10 +265,34 @@ class SaveContext extends MutationContext {
     }
 
     public void markSaveReturningNotAccepted(DraftSpi draft) {
-        saveReturningNotAcceptedDrafts.add(draft);
+        rejectedDrafts.add(draft);
     }
 
     public boolean isSaveReturningNotAccepted(DraftSpi draft) {
-        return saveReturningNotAcceptedDrafts.contains(draft);
+        return rejectedDrafts.contains(draft);
+    }
+
+    public void markRejected(DraftSpi draft) {
+        rejectedDrafts.add(draft);
+    }
+
+    public boolean isRejected(DraftSpi draft) {
+        return rejectedDrafts.contains(draft);
+    }
+
+    public void markAssociationTargetUnavailable(DraftSpi draft) {
+        unavailableAssociationTargets.add(draft);
+    }
+
+    public boolean isAssociationTargetUnavailable(DraftSpi draft) {
+        return unavailableAssociationTargets.contains(draft);
+    }
+
+    public void markPreselectedAccepted(DraftSpi draft) {
+        preselectedAcceptedDrafts.add(draft);
+    }
+
+    public boolean isPreselectedAccepted(DraftSpi draft) {
+        return preselectedAcceptedDrafts.contains(draft);
     }
 }

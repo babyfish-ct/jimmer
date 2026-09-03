@@ -42,4 +42,8 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
     private Integer executeImpl(Connection con) {
         return executable.execute(con);
     }
+
+    int executeWithCheckingExistence(Connection con) {
+        return executable.execute(con, true);
+    }
 }

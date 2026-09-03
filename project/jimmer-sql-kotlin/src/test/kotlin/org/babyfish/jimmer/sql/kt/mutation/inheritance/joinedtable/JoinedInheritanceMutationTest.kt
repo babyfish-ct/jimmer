@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql.kt.mutation.inheritance.joinedtable
 
 import org.babyfish.jimmer.sql.DissociateAction
+import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import org.babyfish.jimmer.sql.ast.TypeMatchMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
@@ -54,7 +54,7 @@ class JoinedInheritanceMutationTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testUpdateAbstractRootWithUserOptimisticLock() {
+    fun testUpdateAbstractRootWithOptimisticLockCondition() {
         connectAndExpect({ con ->
             sqlClient.entities.forConnection(con).save(
                 KClient {

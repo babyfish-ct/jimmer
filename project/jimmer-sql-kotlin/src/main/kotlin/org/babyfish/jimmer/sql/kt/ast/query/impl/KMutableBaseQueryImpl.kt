@@ -225,6 +225,15 @@ internal open class KMutableBaseQueryImpl<E : Any>(
     }
 }
 
+internal class KMutableStaticBaseQueryImpl(
+    private val javaBaseQuery: MutableBaseQueryImpl
+) : KMutableStaticBaseQuery {
+
+    override fun <T : KNonNullBaseTable<NT>, NT : KNullableBaseTable> select(
+        projection: KBaseTableProjection<T, NT>
+    ): KConfigurableBaseQuery<T> = select(javaBaseQuery, projection)
+}
+
 private fun <
         T : KNonNullBaseTable<NT>,
         NT : KNullableBaseTable

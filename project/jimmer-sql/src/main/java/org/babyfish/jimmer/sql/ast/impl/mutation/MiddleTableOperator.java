@@ -32,12 +32,12 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     private static final int[] EMPTY_ROW_COUNTS = new int[0];
 
-    private static final int[] SINGLE_ERROR_ROW_COUNTS = new int[] {-1};
+    private static final int[] SINGLE_ERROR_ROW_COUNTS = new int[]{-1};
 
     private final MutationPath path;
 
     private final ExceptionTranslator<Exception> exceptionTranslator;
-    
+
     private final MutationTrigger trigger;
 
     final Map<AffectedTable, Integer> affectedRowCount;
@@ -62,7 +62,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     MiddleTableOperator(SaveContext ctx, boolean isSourceLogicalDeleted) {
         this(
-                ctx.options.getSqlClient(), 
+                ctx.options.getSqlClient(),
                 ctx.con,
                 ctx.options.isBatchForbidden(),
                 ctx.options.getExceptionTranslator(),
@@ -201,7 +201,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
     }
 
     public final void merge(IdPairs idPairs) {
-        if (queryReason == QueryReason.NONE) {
+        merge(idPairs, false);
+    }
+
+    final void merge(IdPairs idPairs, boolean forceCheckingExistence) {
+        if (!forceCheckingExistence && queryReason == QueryReason.NONE) {
             int[] rowCounts = connectIfNecessary(idPairs);
             int index = 0;
             MutationTrigger trigger = this.trigger;
@@ -216,7 +220,9 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         Set<Tuple2<Object, Object>> existingIdTuples = findByTuples(
                 idPairs.tuples(),
-                queryReason
+                queryReason != QueryReason.NONE ?
+                        queryReason :
+                        QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED
         );
         List<Tuple2<Object, Object>> insertingIdTuples =
                 new ArrayList<>(idPairs.tuples().size() - existingIdTuples.size());
@@ -548,7 +554,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             int rowCount = execute(
                     builder,
                     args.deletedIds != null ?
-                            args.deletedIds:
+                            args.deletedIds :
                             args.retainedIdPairs.entries(),
                     null
             );
@@ -718,7 +724,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         builder.sql("exists ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         builder.sql("select * from ")
                 .sql(path.getParent().getType()
-                .getTableName(sqlClient.getMetadataStrategy()))
+                        .getTableName(sqlClient.getMetadataStrategy()))
                 .sql(" tb_2_");
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         int size = sourceGetters.size();
@@ -1085,7 +1091,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             builder.sql(middleTable.getFilterInfo().getColumnName());
         }
     }
-    
+
     private void fireInsert(Object sourceId, Object targetId) {
         ImmutableProp prop = path.getProp();
         if (prop != null) {
@@ -1115,7 +1121,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         int[] affectedRowCounts;
         if (ex instanceof BatchUpdateException) {
-            affectedRowCounts = ((BatchUpdateException)ex).getUpdateCounts();
+            affectedRowCounts = ((BatchUpdateException) ex).getUpdateCounts();
         } else {
             affectedRowCounts = SINGLE_ERROR_ROW_COUNTS;
         }
