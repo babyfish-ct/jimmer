@@ -1,7 +1,7 @@
 [versions]
-addzero-ddlgenerator = "2026.07.30"
+addzero-ddlgenerator = "2026.08.26"
 addzero-ddlgenerator-archived = "2026.07.15.2"
-addzero-lsi = "2026.07.30"
+addzero-lsi = "2026.08.26"
 antlr = "4.13.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
