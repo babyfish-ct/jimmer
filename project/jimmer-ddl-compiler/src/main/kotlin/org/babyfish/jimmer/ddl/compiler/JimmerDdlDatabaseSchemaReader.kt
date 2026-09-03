@@ -46,20 +46,21 @@ object JimmerDdlDatabaseSchemaReader {
             Class.forName(driverClassName)
         }
 
-        DriverManager.getConnection(jdbc.url, settings.jdbcConnectionProperties()).use { connection ->
-        val properties = Properties().apply {
-            if (jdbc.username.isNotBlank()) {
-                setProperty("user", jdbc.username)
+        return DriverManager.getConnection(jdbc.url, settings.jdbcConnectionProperties()).use { connection ->
+            val properties = Properties().apply {
+                if (jdbc.username.isNotBlank()) {
+                    setProperty("user", jdbc.username)
+                }
+                if (jdbc.password.isNotBlank()) {
+                    setProperty("password", jdbc.password)
+                }
+                setProperty("connectTimeout", "5000")
+                setProperty("loginTimeout", "5")
             }
-            if (jdbc.password.isNotBlank()) {
-                setProperty("password", jdbc.password)
+            DriverManager.getConnection(jdbc.url, properties).use { connection ->
+                val schemaName = jdbc.schema ?: runCatching { connection.schema }.getOrNull()
+                return readSchema(connection, schemaName, desiredSchema, renamedTables)
             }
-            setProperty("connectTimeout", "5000")
-            setProperty("loginTimeout", "5")
-        }
-        DriverManager.getConnection(jdbc.url, properties).use { connection ->
-            val schemaName = jdbc.schema ?: runCatching { connection.schema }.getOrNull()
-            return readSchema(connection, schemaName, desiredSchema, renamedTables)
         }
     }
 
