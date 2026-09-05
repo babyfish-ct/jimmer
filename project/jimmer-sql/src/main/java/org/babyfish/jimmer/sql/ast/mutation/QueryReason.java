@@ -209,6 +209,12 @@ public enum QueryReason {
     UPDATE_WHERE,
 
     /**
+     * The explicit conflict key must determine the matched row even though
+     * an id is supplied for the insert arm.
+     */
+    EXPLICIT_CONFLICT_TARGET,
+
+    /**
      * The current entity type being operated on is annotated with
      * {@link org.babyfish.jimmer.sql.KeyUniqueConstraint}.
      *

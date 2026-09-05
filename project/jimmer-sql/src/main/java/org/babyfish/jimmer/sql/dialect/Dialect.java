@@ -131,6 +131,15 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    /**
+     * The cast used to type a rootless selection must preserve its value
+     * without relying on the precision or scale of a target column.
+     */
+    @Nullable
+    default String getRootlessSelectionCastType(Class<?> javaType) {
+        return isRootlessSelectionCastRequired() ? sqlType(javaType) : null;
+    }
+
     default InsertFromSelectRenderer getInsertFromSelectRenderer() {
         return InsertFromSelectRenderers.DEFAULT;
     }
@@ -243,6 +252,10 @@ public interface Dialect extends SqlTypeStrategy {
     }
 
     default boolean isInsertReturningSupported() {
+        return false;
+    }
+
+    default boolean isUpsertReturningSupported() {
         return false;
     }
 

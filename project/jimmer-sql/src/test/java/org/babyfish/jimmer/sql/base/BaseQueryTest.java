@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.base;
 
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -17,6 +18,8 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -49,6 +52,19 @@ public class BaseQueryTest extends AbstractQueryTest {
                     ctx.rows("[{\"_1\":1,\"_2\":\"rootless\"}]");
                 }
         );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"12.34", "-34.567", "0.000000000123456789", "123456789012345678901234567890.123456789"})
+    public void rootlessDecimalPreservesValue(String text) {
+        JSqlClient client = getSqlClient();
+        BigDecimal value = new BigDecimal(text);
+        BaseTable1<NumericExpression<BigDecimal>> source = client.createBaseQuery()
+                .addSelect(Expression.value(value)).asBaseTable();
+        jdbc(con -> {
+            BigDecimal actual = client.createQuery(source).select(source.get_1()).execute(con).get(0);
+            Assertions.assertEquals(0, value.compareTo(actual), actual::toString);
+        });
     }
 
     @Test

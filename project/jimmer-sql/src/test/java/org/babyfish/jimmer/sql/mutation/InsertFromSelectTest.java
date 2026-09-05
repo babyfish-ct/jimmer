@@ -22,6 +22,7 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.embedded.MachineTable;
 import org.babyfish.jimmer.sql.model.embedded.ProductTable;
 import org.babyfish.jimmer.sql.model.hr.DepartmentTable;
 import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
@@ -31,6 +32,8 @@ import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.tuple.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.sql.Connection;
 import java.util.UUID;
@@ -238,6 +241,44 @@ public class InsertFromSelectTest extends AbstractMutationTest {
         });
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void returningInsertOnlyValueOnMatchedRow(boolean fallback) {
+        JSqlClient client = client(fallback);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> {
+            assertEquals(singletonList("O'REILLY"), client.createUpsert(table, singleRowSource(client))
+                    .key(table.id(), Expression.value(oreillyId))
+                    .insert(table.name(), Expression.value("INSERT-ONLY"))
+                    .merge(table.website(), Expression.value("updated"))
+                    .returning(table.name())
+                    .execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void materializedReturningThroughNativeSaveUpsert(boolean returningSupported) {
+        JSqlClient client = getSqlClient(it -> it.setDialect(new H2Dialect() {
+            @Override
+            public boolean isUpsertReturningSupported() {
+                return returningSupported;
+            }
+
+            @Override
+            public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+                return DefaultDialect.INSTANCE.getInsertFromSelectRenderer();
+            }
+        }));
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> assertEquals(singletonList("O'REILLY"), client.createUpsert(table, singleRowSource(client))
+                .key(table.id(), Expression.value(oreillyId))
+                .insert(table.name(), Expression.value("INSERT-ONLY"))
+                .merge(table.website(), Expression.value("updated"))
+                .returning(table.name())
+                .execute(con)));
+    }
+
     @Test
     public void testMaterializedReturningWithDatabaseDefault() {
         resetIdentity(null, "SYS_USER");
@@ -284,8 +325,7 @@ public class InsertFromSelectTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.ACCOUNT, tb_1_.EMAIL, tb_1_.AREA, " +
-                                        "tb_1_.NICK_NAME, tb_1_.DESCRIPTION " +
+                                "select tb_1_.ID, tb_1_.DESCRIPTION " +
                                         "from SYS_USER tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(100L);
@@ -360,6 +400,24 @@ public class InsertFromSelectTest extends AbstractMutationTest {
             assertEquals("00A", rows.get(0).get_1());
             assertEquals("00A", rows.get(0).get_2());
             assertEquals("Car+", rows.get(0).get_3());
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void embeddedInsertOnlyPartMustNotUpdate(boolean fallback) {
+        JSqlClient client = client(fallback);
+        MachineTable table = MachineTable.$;
+        jdbc(con -> {
+            client.createUpsert(table, singleRowSource(client))
+                    .key(table.id(), Expression.value(1L))
+                    .insert(table.location().host(), Expression.value("new-host"))
+                    .merge(table.location().port(), Expression.value(9090))
+                    .execute(con);
+            assertEquals(singletonList("localhost"), client.createQuery(table)
+                    .where(table.id().eq(1L)).select(table.location().host()).execute(con));
+            assertEquals(singletonList(9090), client.createQuery(table)
+                    .where(table.id().eq(1L)).select(table.location().port()).execute(con));
         });
     }
 
@@ -529,6 +587,71 @@ public class InsertFromSelectTest extends AbstractMutationTest {
                     ctx.rowCount(0);
                 }
         );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void insertDoNothingUsesExplicitNaturalKey(boolean fallback) {
+        JSqlClient client = client(fallback);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> assertEquals(emptyList(), client.createInsert(table, singleRowSource(client))
+                .set(table.name(), Expression.value("O'REILLY"))
+                .set(table.id(), Expression.value(UUID.fromString("a0000000-0000-0000-0000-000000000099")))
+                .onConflictDoNothing(table.name())
+                .returning(table.id())
+                .execute(con)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void naturalKeyPreservesInsertIdWhenNoConflict(boolean fallback) {
+        JSqlClient client = client(fallback);
+        BookStoreTable table = BookStoreTable.$;
+        UUID id = UUID.fromString("a0000000-0000-0000-0000-000000000099");
+        jdbc(con -> {
+            assertEquals(singletonList(id), client.createUpsert(table, singleRowSource(client))
+                    .key(table.name(), Expression.value("NEW-STORE"))
+                    .insert(table.id(), Expression.value(id))
+                    .merge(table.website(), Expression.value("inserted"))
+                    .returning(table.id())
+                    .execute(con));
+            assertEquals(singletonList("inserted"), client.createQuery(table)
+                    .where(table.id().eq(id)).select(table.website()).execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void naturalKeyWithExplicitInsertId(boolean fallback) {
+        JSqlClient client = client(fallback);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> {
+            assertEquals(singletonList(oreillyId), client.createUpsert(table, singleRowSource(client))
+                    .key(table.name(), Expression.value("O'REILLY"))
+                    .insert(table.id(), Expression.value(UUID.fromString("a0000000-0000-0000-0000-000000000099")))
+                    .merge(table.website(), Expression.value("updated"))
+                    .returning(table.id())
+                    .execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void naturalKeyMustNotUpdateAnotherId(boolean fallback) {
+        JSqlClient client = client(fallback);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> {
+            assertEquals(singletonList(oreillyId), client.createUpsert(table, singleRowSource(client))
+                    .key(table.name(), Expression.value("O'REILLY"))
+                    .insert(table.id(), Expression.value(manningId))
+                    .merge(table.website(), Expression.value("updated"))
+                    .returning(table.id())
+                    .execute(con));
+            assertEquals(singletonList("updated"), client.createQuery(table)
+                    .where(table.id().eq(oreillyId)).select(table.website()).execute(con));
+            assertEquals(singletonList(null), client.createQuery(table)
+                    .where(table.id().eq(manningId)).select(table.website()).execute(con));
+        });
     }
 
     @Test
@@ -744,6 +867,13 @@ public class InsertFromSelectTest extends AbstractMutationTest {
                                     "on duplicate key update " +
                                     "/* fake update to return all ids */ ID = last_insert_id(ID)"
                     ));
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Market", 0L);
+                    });
                     ctx.value(rows -> assertEquals(singletonList("Market"), rows));
                 }
         );
@@ -1249,6 +1379,14 @@ public class InsertFromSelectTest extends AbstractMutationTest {
                 .addSelect(Expression.value(name))
                 .addSelect(Expression.value(version))
                 .asBaseTable();
+    }
+
+    private JSqlClient client(boolean fallback) {
+        return getSqlClient(it -> it.setDialect(fallback ? DefaultDialect.INSTANCE : new H2Dialect()));
+    }
+
+    private BaseTable1<NumericExpression<Integer>> singleRowSource(JSqlClient client) {
+        return client.createBaseQuery().addSelect(Expression.constant(1)).asBaseTable();
     }
 
     private static String rootlessSql() {

@@ -129,8 +129,8 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setExactConflictTargetRequired() {
-        return new BatchEntitySaveCommandImpl<>(new ExactConflictTargetRequiredCfg(cfg));
+    public BatchEntitySaveCommand<E> setExactConflictTargetRequired(boolean byKey) {
+        return new BatchEntitySaveCommandImpl<>(new ExactConflictTargetRequiredCfg(cfg, byKey));
     }
 
     @Override

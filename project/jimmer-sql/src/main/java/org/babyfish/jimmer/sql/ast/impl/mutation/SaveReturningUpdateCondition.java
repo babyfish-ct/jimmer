@@ -86,14 +86,14 @@ interface SaveReturningUpdateCondition {
                     @Nullable ImmutableProp prop,
                     boolean rawId
             ) {
-                if (prop == null || singleColumnGetter(sqlClient, prop) == null) {
+                if (prop == null || SaveExpressionUtils.singleColumnGetter(sqlClient, prop) == null) {
                     valid[0] = false;
                 }
             }
 
             @Override
             public void visitSaveInputValue(ImmutableProp prop) {
-                PropertyGetter getter = singleColumnGetter(sqlClient, prop);
+                PropertyGetter getter = SaveExpressionUtils.singleColumnGetter(sqlClient, prop);
                 if (getter == null) {
                     valid[0] = false;
                 } else if (!containsProp(newValueGetters, getter.prop())) {
@@ -105,17 +105,6 @@ interface SaveReturningUpdateCondition {
             return null;
         }
         return new PredicateCondition(predicate, newValueGetters);
-    }
-
-    static @Nullable PropertyGetter singleColumnGetter(
-            JSqlClientImplementor sqlClient,
-            ImmutableProp prop
-    ) {
-        List<PropertyGetter> getters = PropertyGetter.propertyGetters(sqlClient, prop);
-        if (getters.size() != 1 || getters.get(0).metadata().getColumnName() == null) {
-            return null;
-        }
-        return getters.get(0);
     }
 
     static boolean containsProp(List<PropertyGetter> getters, ImmutableProp prop) {

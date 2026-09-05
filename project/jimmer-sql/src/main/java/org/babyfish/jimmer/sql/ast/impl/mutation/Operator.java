@@ -1940,7 +1940,9 @@ class Operator {
         );
         if (returning != null) {
             int[] rowCounts = returning.executeUpsert(batch.entities());
-            unloadUnchangedVersion(batch.entities(), updatedGetters);
+            if (!returning.returningProps.contains(batch.shape().getType().getVersionProp())) {
+                unloadUnchangedVersion(batch.entities(), updatedGetters);
+            }
             AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
             return rowCounts;
         }

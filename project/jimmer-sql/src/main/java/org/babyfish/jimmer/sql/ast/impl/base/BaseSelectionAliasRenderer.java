@@ -51,8 +51,8 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
                     ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).toSymbol().getQuery();
             boolean rootless = query.getMutableQuery().getTableLikeImplementor() == null;
             String castType = null;
-            if (rootless && builder.sqlClient().getDialect().isRootlessSelectionCastRequired()) {
-                castType = builder.sqlClient().getDialect().sqlType(
+            if (rootless) {
+                castType = builder.sqlClient().getDialect().getRootlessSelectionCastType(
                         Classes.primitiveTypeOf(((ExpressionImplementor<?>) selection).getType())
                 );
             }

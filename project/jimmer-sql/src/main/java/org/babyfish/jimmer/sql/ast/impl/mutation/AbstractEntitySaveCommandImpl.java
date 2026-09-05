@@ -146,8 +146,11 @@ abstract class AbstractEntitySaveCommandImpl
 
     static class ExactConflictTargetRequiredCfg extends Cfg {
 
-        ExactConflictTargetRequiredCfg(Cfg prev) {
+        final boolean byKey;
+
+        ExactConflictTargetRequiredCfg(Cfg prev, boolean byKey) {
             super(prev);
+            this.byKey = byKey;
         }
     }
 
@@ -565,6 +568,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean exactConflictTargetRequired;
 
+        private final boolean keyBasedConflict;
+
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
         private final boolean autoCheckingAll;
@@ -694,6 +699,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.updateWhereMap = MapNode.toMap(updateWhereCfg, it -> it.mapNode);
             this.forceMatchedUpdate = forceMatchedUpdateCfg != null;
             this.exactConflictTargetRequired = exactConflictTargetRequiredCfg != null;
+            this.keyBasedConflict = exactConflictTargetRequiredCfg != null && exactConflictTargetRequiredCfg.byKey;
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.idOnlyAsReferenceMap = MapNode.toMap(idOnlyAsReferenceCfg, it -> it.mapNode);
@@ -851,6 +857,11 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public boolean isExactConflictTargetRequired() {
             return exactConflictTargetRequired;
+        }
+
+        @Override
+        public boolean isKeyBasedConflict() {
+            return keyBasedConflict;
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -1017,6 +1028,7 @@ abstract class AbstractEntitySaveCommandImpl
                     versionMode,
                     forceMatchedUpdate,
                     exactConflictTargetRequired,
+                    keyBasedConflict,
                     targetTransferModeMap,
                     targetTransferModeAll,
                     typeMatchMode,
@@ -1057,6 +1069,7 @@ abstract class AbstractEntitySaveCommandImpl
                     versionMode == other.versionMode &&
                     forceMatchedUpdate == other.forceMatchedUpdate &&
                     exactConflictTargetRequired == other.exactConflictTargetRequired &&
+                    keyBasedConflict == other.keyBasedConflict &&
                     mode == other.mode &&
                     deleteMode == other.deleteMode &&
                     Objects.equals(argument, other.argument) &&
@@ -1087,6 +1100,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", versionMode=" + versionMode +
                     ", forceMatchedUpdate=" + forceMatchedUpdate +
                     ", exactConflictTargetRequired=" + exactConflictTargetRequired +
+                    ", keyBasedConflict=" + keyBasedConflict +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", targetTransferModeAll=" + targetTransferModeAll +
                     ", typeMatchMode=" + typeMatchMode +

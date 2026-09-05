@@ -225,6 +225,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpsertReturningSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isInsertBatchReturningByOrderSupported() {
         return true;
     }

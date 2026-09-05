@@ -61,6 +61,10 @@ public interface SaveOptions {
         return false;
     }
 
+    default boolean isKeyBasedConflict() {
+        return false;
+    }
+
     default boolean hasAssignment(ImmutableType type) {
         for (SaveAssignmentLambda assignment : getAssignments().values()) {
             if (assignment.type.isAssignableFrom(type)) {
@@ -216,6 +220,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isExactConflictTargetRequired() {
         return raw.isExactConflictTargetRequired();
+    }
+
+    @Override
+    public boolean isKeyBasedConflict() {
+        return raw.isKeyBasedConflict();
     }
 
     @Override
@@ -411,6 +420,11 @@ class SaveOptionsForAssociatedProp extends AbstractSaveOptionsWrapper {
 
     @Override
     public boolean isExactConflictTargetRequired() {
+        return false;
+    }
+
+    @Override
+    public boolean isKeyBasedConflict() {
         return false;
     }
 }

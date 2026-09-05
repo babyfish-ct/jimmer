@@ -42,6 +42,12 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
+    public String getRootlessSelectionCastType(Class<?> javaType) {
+        // DECIMAL without a scale rounds fractional input to an integer in H2.
+        return javaType == BigDecimal.class ? "decfloat" : super.getRootlessSelectionCastType(javaType);
+    }
+
+    @Override
     public InsertFromSelectRenderer getInsertFromSelectRenderer() {
         return InsertFromSelectRenderers.H2;
     }
@@ -168,6 +174,11 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public boolean isInsertReturningSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isUpsertReturningSupported() {
         return true;
     }
 

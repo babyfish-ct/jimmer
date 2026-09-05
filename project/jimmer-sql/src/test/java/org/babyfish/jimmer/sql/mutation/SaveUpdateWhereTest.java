@@ -1,17 +1,23 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.single.employee.PartTimeEmployeeDraft;
+import org.babyfish.jimmer.sql.model.inheritance.single.employee.PartTimeEmployeeProps;
+import org.babyfish.jimmer.sql.model.inheritance.single.employee.PartTimeEmployeeTable;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.Organization;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationDraft;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationProps;
 import org.babyfish.jimmer.sql.model.inheritance.singletable.OrganizationTable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -575,6 +581,63 @@ public class SaveUpdateWhereTest extends AbstractMutationTest {
                     });
                 }
         );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void nullableInputInUpdateWhere(boolean fallback) {
+        JSqlClient client = getSqlClient(it -> it.setDialect(fallback ? DefaultDialect.INSTANCE : new H2Dialect()));
+        jdbc(con -> {
+            assertTrue(client.saveCommand(BookStoreDraft.$.produce(draft -> {
+                        draft.setId(oreillyId);
+                        draft.setWebsite(null);
+                    }))
+                    .setMode(SaveMode.UPSERT)
+                    .setVersionMode(VersionMode.ASSIGNMENT)
+                    .setUpdateWhere(BookStoreTable.class, (table, values) -> Predicate.and(
+                            values.newString(BookStoreProps.WEBSITE).isNull(),
+                            values.newComparable(BookStoreProps.WEBSITE).isNull()
+                    ))
+                    .execute(con)
+                    .isAccepted());
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void nullableNumericInputInUpdateWhere(boolean fallback) {
+        JSqlClient client = getSqlClient(it -> it.setDialect(fallback ? DefaultDialect.INSTANCE : new H2Dialect()));
+        jdbc(con -> assertTrue(client.saveCommand(PartTimeEmployeeDraft.$.produce(draft -> {
+                    draft.setId(6002L);
+                    draft.setAnnualSalary(null);
+                    draft.setHourlyRate(null);
+                }))
+                .setMode(SaveMode.UPSERT)
+                .setUpdateWhere(PartTimeEmployeeTable.class, (table, values) -> Predicate.and(
+                        values.newNumber(PartTimeEmployeeProps.ANNUAL_SALARY).isNull(),
+                        values.newNumber(PartTimeEmployeeProps.HOURLY_RATE).isNull(),
+                        values.newComparable(PartTimeEmployeeProps.ANNUAL_SALARY).isNull()
+                ))
+                .execute(con)
+                .isAccepted()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void nullInputEqualityKeepsSqlNullSemantics(boolean fallback) {
+        JSqlClient client = getSqlClient(it -> it.setDialect(fallback ? DefaultDialect.INSTANCE : new H2Dialect()));
+        jdbc(con -> assertFalse(client.saveCommand(BookStoreDraft.$.produce(draft -> {
+                    draft.setId(oreillyId);
+                    draft.setWebsite(null);
+                }))
+                .setMode(SaveMode.UPSERT)
+                .setVersionMode(VersionMode.ASSIGNMENT)
+                .setUpdateWhere(BookStoreTable.class, (table, values) -> Predicate.or(
+                        values.newValue(BookStoreProps.WEBSITE).eq(table.website()),
+                        values.newString(BookStoreProps.WEBSITE).eq(table.website())
+                ))
+                .execute(con)
+                .isAccepted()));
     }
 
     @Test

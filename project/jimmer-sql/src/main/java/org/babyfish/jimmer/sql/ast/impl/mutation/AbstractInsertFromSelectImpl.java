@@ -35,6 +35,10 @@ import org.babyfish.jimmer.sql.dialect.InsertFromSelectMode;
 import org.babyfish.jimmer.sql.dialect.InsertFromSelectRenderer;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
@@ -626,6 +630,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         }
         int affectedRowCount = 0;
         List<Object> acceptedEntities = returningSelections != null ? new ArrayList<>() : null;
+        Fetcher<Object> returningFetcher = returningSelections != null ? materializedReturningFetcher(returningSelections) : null;
         for (Object[] row : sourceRows) {
             Object entity = createMaterializedEntity(row);
             SimpleEntitySaveCommand<Object> command = getSqlClient()
@@ -640,7 +645,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
                     .setVersionMode(VersionMode.ASSIGNMENT);
             SaveCommandImplementor implementor = (SaveCommandImplementor) command;
             if (isUpsert() || isConflictIgnored()) {
-                implementor = (SaveCommandImplementor) implementor.setExactConflictTargetRequired();
+                implementor = (SaveCommandImplementor) implementor.setExactConflictTargetRequired(!isIdConflict(conflictTargets()));
             }
             if (isUpsert()) {
                 implementor = (SaveCommandImplementor) implementor.setForceMatchedUpdate();
@@ -672,16 +677,16 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
                         .forbidInsert()
                         .forbidUpdate();
                 for (Assignment assignment : assignments.values()) {
-                    ImmutableProp maskProp = materializedProp(assignment.target.prop);
-                    mask = mask.addInsertableProp(maskProp);
+                    ImmutableProp[] maskPath = materializedPath(assignment.target);
+                    mask = mask.addInsertablePath(maskPath);
                     if (assignment.role == Role.MERGE) {
-                        mask = mask.addUpdatableProp(maskProp);
+                        mask = mask.addUpdatablePath(maskPath);
                     }
                 }
                 command = command.setUpsertMask(mask);
                 command = configureMaterializedSaveCommand(command, row);
             }
-            SimpleSaveResult<Object> result = command.execute(con);
+            SimpleSaveResult<Object> result = returningFetcher != null ? command.execute(con, returningFetcher) : command.execute(con);
             affectedRowCount += result.getTotalAffectedRowCount();
             if (acceptedEntities != null && result.isAccepted()) {
                 acceptedEntities.add(result.getModifiedEntity());
@@ -790,6 +795,35 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     private ImmutableProp materializedProp(ImmutableProp prop) {
         ImmutableProp actualProp = getType().getProps().get(prop.getName());
         return actualProp != null ? actualProp : prop;
+    }
+
+    private ImmutableProp[] materializedPath(Target target) {
+        List<ImmutableProp> props = new ArrayList<>();
+        ImmutableProp prop = materializedProp(target.prop);
+        props.add(prop);
+        String path = target.expr.getPath();
+        if (path != null) {
+            ImmutableType type = prop.getTargetType();
+            if (type.isEntity()) {
+                type = type.getIdProp().getTargetType();
+            }
+            for (String part : path.split("\\.")) {
+                prop = type.getProp(part);
+                props.add(prop);
+                type = prop.getTargetType();
+            }
+        }
+        return props.toArray(new ImmutableProp[0]);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Fetcher<Object> materializedReturningFetcher(List<Selection<?>> selections) {
+        FetcherImplementor<Object> fetcher = new FetcherImpl<>((Class<Object>) getType().getJavaClass());
+        for (Selection<?> selection : selections) {
+            Target target = Target.of((PropExpression<?>) selection, getSqlClient().getMetadataStrategy());
+            fetcher = fetcher.add(materializedProp(target.prop).getName(), IdOnlyFetchType.RAW);
+        }
+        return fetcher;
     }
 
     private Object createMaterializedEmbedded(
@@ -1488,7 +1522,15 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
                     builder.separator();
                     renderTarget(builder, assignment.target, targetPrefix);
                     builder.sql(" = ");
-                    renderExpression(builder, assignment.updateExpression, false);
+                    if (insertedValuePrefix != null && assignment.updateExpression == assignment.insertSource) {
+                        builder.sql(insertedValuePrefix);
+                        renderTarget(builder, assignment.target, null);
+                        if (insertedValueSuffix != null) {
+                            builder.sql(insertedValueSuffix);
+                        }
+                    } else {
+                        renderExpression(builder, assignment.updateExpression, false);
+                    }
                 }
             });
             return this;

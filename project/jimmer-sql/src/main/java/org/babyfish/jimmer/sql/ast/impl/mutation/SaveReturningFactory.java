@@ -324,7 +324,7 @@ class SaveReturningFactory {
             boolean forceOneByOne
     ) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        if (!sqlClient.getDialect().isUpsertSupported()) {
+        if (!sqlClient.getDialect().isUpsertSupported() || !sqlClient.getDialect().isUpsertReturningSupported()) {
             return null;
         }
         List<PropertyGetter> requiredReturningGetters = customTargetGetters(assignments);

@@ -12,7 +12,7 @@ public interface SaveCommandImplementor extends AbstractEntitySaveCommand {
 
     AbstractEntitySaveCommand setForceMatchedUpdate();
 
-    AbstractEntitySaveCommand setExactConflictTargetRequired();
+    AbstractEntitySaveCommand setExactConflictTargetRequired(boolean byKey);
 
     AbstractEntitySaveCommand setEntityOptimisticLock(
             ImmutableType type,

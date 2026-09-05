@@ -199,7 +199,9 @@ abstract class AbstractPreHandler implements PreHandler {
         }
         KeyMatcher.Group group = keyMatcher.match(draft);
         callPreProcessor(draft, group);
-        if (draft.__isLoaded(idProp.getId())) {
+        if (ctx.options.isKeyBasedConflict() && group != null) {
+            draftsWithKey.add(draft);
+        } else if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
         } else if (group == null) {
             if (draftsWithNothing == null) {
@@ -362,6 +364,15 @@ abstract class AbstractPreHandler implements PreHandler {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         SaveMode saveMode = ctx.options.getMode();
         boolean clearMode = saveMode == SaveMode.INSERT_ONLY || saveMode == SaveMode.UPDATE_ONLY;
+        if (!clearMode && ctx.options.isKeyBasedConflict()) {
+            PropId idPropId = ctx.path.getType().getIdProp().getId();
+            for (DraftSpi draft : drafts) {
+                if (draft.__isLoaded(idPropId)) {
+                    // The supplied id belongs to the insert arm; resolve the matched row by key.
+                    return QueryReason.EXPLICIT_CONFLICT_TARGET;
+                }
+            }
+        }
         if (!clearMode &&
                 ctx.options.isExactConflictTargetRequired() &&
                 !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported() &&

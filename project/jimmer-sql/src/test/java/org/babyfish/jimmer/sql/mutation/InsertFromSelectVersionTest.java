@@ -88,14 +88,12 @@ public class InsertFromSelectVersionTest extends AbstractMutationTest {
                             "select tb_1_.ID c1, concat(tb_1_.NAME, ?) c2 " +
                             "from BOOK_STORE tb_1_ where tb_1_.ID = ?" +
                             ") tb_1_",
-                    "merge into BOOK_STORE tb_1_ " +
+                    "select ID, VERSION from final table (merge into BOOK_STORE tb_1_ " +
                             "using(values(?, ?, ?)) tb_2_(ID, NAME, VERSION) " +
                             "on tb_1_.ID = tb_2_.ID " +
                             "when matched then update set NAME = tb_2_.NAME " +
                             "when not matched then insert(ID, NAME, VERSION) " +
-                            "values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION)",
-                    "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                            "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
+                            "values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"
             );
         });
     }
@@ -128,15 +126,13 @@ public class InsertFromSelectVersionTest extends AbstractMutationTest {
                             "select tb_1_.ID c1, tb_1_.VERSION + ? c2 " +
                             "from BOOK_STORE tb_1_ where tb_1_.ID = ?" +
                             ") tb_1_",
-                    "merge into BOOK_STORE tb_1_ " +
+                    "select ID, VERSION from final table (merge into BOOK_STORE tb_1_ " +
                             "using(values(?, ?)) tb_2_(ID, VERSION) " +
                             "on tb_1_.ID = tb_2_.ID " +
                             "when matched then update set " +
                             "/* fake update to return all ids */ VERSION = tb_1_.VERSION " +
                             "when not matched then insert(ID, VERSION) " +
-                            "values(tb_2_.ID, tb_2_.VERSION)",
-                    "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                            "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
+                            "values(tb_2_.ID, tb_2_.VERSION))"
             );
         });
     }
@@ -315,7 +311,7 @@ public class InsertFromSelectVersionTest extends AbstractMutationTest {
                             "where tb_1_.ID = ? and ? = tb_1_.VERSION",
                     "update BOOK_STORE set VERSION = VERSION + ? " +
                             "where ID = ? and ? = VERSION",
-                    "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                    "select tb_1_.ID, tb_1_.VERSION " +
                             "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
             );
         });

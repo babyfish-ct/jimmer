@@ -98,8 +98,8 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setExactConflictTargetRequired() {
-        return new SimpleEntitySaveCommandImpl<>(new ExactConflictTargetRequiredCfg(cfg));
+    public SimpleEntitySaveCommand<E> setExactConflictTargetRequired(boolean byKey) {
+        return new SimpleEntitySaveCommandImpl<>(new ExactConflictTargetRequiredCfg(cfg, byKey));
     }
 
     @Override
