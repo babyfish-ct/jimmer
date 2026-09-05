@@ -1480,7 +1480,7 @@ public class DtoGenerator {
         if (stateFieldName != null) {
             getterBuilder.beginControlFlow(
                     "if ($L)",
-                    '!' + stateFieldName
+                    "!this." + stateFieldName
             );
             getterBuilder.addStatement(
                     "throw new IllegalStateException($S)",
@@ -1490,7 +1490,7 @@ public class DtoGenerator {
         }
         if (!prop.isNullable() && isFieldNullable(prop)) {
             getterBuilder.beginControlFlow(
-                    "if ($L == null)",
+                    "if (this.$L == null)",
                     prop.getName()
             );
             if (dtoType.getModifiers().contains(DtoModifier.INPUT) &&
@@ -1514,7 +1514,7 @@ public class DtoGenerator {
             }
             getterBuilder.endControlFlow();
         }
-        getterBuilder.addStatement("return $L", prop.getName());
+        getterBuilder.addStatement("return this.$L", prop.getName());
         typeBuilder.addMethod(getterBuilder.build());
 
         ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(typeName, prop.getName());
@@ -2148,7 +2148,7 @@ public class DtoGenerator {
                 .addParameter(dtoPropTypeName, "value")
                 .returns(baseTypeName);
         CodeBlock.Builder cb = CodeBlock.builder();
-        cb.beginControlFlow("if ($L == null)", prop.getName());
+        cb.beginControlFlow("if (this.$L == null)", prop.getName());
         cb.addStatement("return null");
         cb.endControlFlow();
         if (prop.getEnumType() != null) {
@@ -2182,7 +2182,7 @@ public class DtoGenerator {
                 .beginControlFlow("switch (name)");
         for (AbstractProp prop : dtoType.getProps()) {
             builder.addStatement(
-                    "case $S: return $L",
+                    "case $S: return this.$L",
                     getter ?
                             StringUtil.identifier(
                                     getPropTypeName(prop) == TypeName.BOOLEAN ? "is" : "get",
@@ -2395,19 +2395,19 @@ public class DtoGenerator {
             TypeName typeName = getPropTypeName(prop);
             if (typeName.isPrimitive()) {
                 cb.add(
-                        "$T.hashCode($L)",
+                        "$T.hashCode(this.$L)",
                         typeName.box(),
-                        prop.getName().equals("hash") ? "this." + prop.getName() : prop.getName()
+                        prop.getName()
                 );
             } else if (typeName instanceof ArrayTypeName) {
-                cb.add("$T.hashCode($L)", Arrays.class, prop.getName());
+                cb.add("$T.hashCode(this.$L)", Arrays.class, prop.getName());
             } else {
-                cb.add("$T.hashCode($L)", Objects.class, prop.getName());
+                cb.add("$T.hashCode(this.$L)", Objects.class, prop.getName());
             }
             builder.addStatement(cb.build());
             String stateFieldName = stateFieldName(prop, false);
             if (stateFieldName != null) {
-                builder.addStatement("hash = hash * 31 + Boolean.hashCode($L)", stateFieldName);
+                builder.addStatement("hash = hash * 31 + Boolean.hashCode(this.$L)", stateFieldName);
             }
         }
         builder.addStatement(first ? "return 0" : "return hash");
@@ -2429,23 +2429,23 @@ public class DtoGenerator {
             String propName = prop.getName();
             String stateFieldName = stateFieldName(prop, false);
             if (stateFieldName != null) {
-                builder.beginControlFlow("if ($L != other.$L)", stateFieldName, stateFieldName);
+                builder.beginControlFlow("if (this.$L != other.$L)", stateFieldName, stateFieldName);
                 builder.addStatement("return false");
                 builder.endControlFlow();
             }
-            String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
+            String thisProp = "this." + propName;
             TypeName typeName = getPropTypeName(prop);
             if (stateFieldName != null) {
                 if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                     builder.beginControlFlow(
-                            "if ($L && $L != other.$L)",
+                            "if (this.$L && $L != other.$L)",
                             stateFieldName,
                             thisProp,
                             propName
                     );
                 } else {
                     builder.beginControlFlow(
-                            "if ($L && !$T.equals($L, other.$L))",
+                            "if (this.$L && !$T.equals($L, other.$L))",
                             stateFieldName,
                             Objects.class,
                             thisProp,
@@ -2491,15 +2491,11 @@ public class DtoGenerator {
                     prop.getInputModifier() == DtoModifier.FUZZY &&
                     prop.isNullable();
             if (stateFieldName != null) {
-                builder.beginControlFlow("if ($L)", stateFieldName);
+                builder.beginControlFlow("if (this.$L)", stateFieldName);
             } else if (fuzzy) {
-                builder.beginControlFlow("if ($L != null)", prop.getName());
+                builder.beginControlFlow("if (this.$L != null)", prop.getName());
             }
-            if (prop.getName().equals("builder")) {
-                builder.addStatement("builder.append($L).append($S).append(this.$L)", separator, prop.getName() + '=', prop.getName());
-            } else {
-                builder.addStatement("builder.append($L).append($S).append($L)", separator, prop.getName() + '=', prop.getName());
-            }
+            builder.addStatement("builder.append($L).append($S).append(this.$L)", separator, prop.getName() + '=', prop.getName());
             if (dynamicSeparator) {
                 builder.addStatement("_sp = \", \"");
                 separator = "_sp";

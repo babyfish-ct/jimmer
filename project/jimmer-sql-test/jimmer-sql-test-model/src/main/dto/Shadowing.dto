@@ -1,0 +1,29 @@
+export org.babyfish.jimmer.sql.model.Book
+    -> package org.babyfish.jimmer.sql.model.dto
+
+ShadowingView {
+    name
+    hash: String?
+    o: String?
+    other: String?
+    builder: String?
+}
+
+ShadowingArrayView {
+    hash: Array<String>?
+}
+
+ShadowingPrimitiveView {
+    edition as hash
+}
+
+dynamic input ShadowingValidationInput {
+    name?
+}
+
+fuzzy input ShadowingInput {
+    name? as builder
+    dynamic id?
+    _sp: String?
+    _input: String?
+}

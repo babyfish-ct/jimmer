@@ -20,6 +20,7 @@ dependencies {
 
     testImplementation(projects.jimmerSqlKotlin)
     testImplementation(libs.javax.validation.api)
+    testImplementation(libs.hibernate.validation)
 }
 
 tasks.test {

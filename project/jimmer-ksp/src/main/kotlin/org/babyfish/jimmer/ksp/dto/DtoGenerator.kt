@@ -1205,7 +1205,7 @@ class DtoGenerator private constructor(
                                     .setterBuilder()
                                     .addParameter(name, typeName)
                                     .addStatement("field = %L", name)
-                                    .addStatement("%L = true", stateProp)
+                                    .addStatement("this.%L = true", stateProp)
                                     .build()
                             )
                         }
@@ -1516,7 +1516,7 @@ class DtoGenerator private constructor(
         for (concreteType in knownConcreteTypes(dtoType.baseType)) {
             val value = concreteType.discriminatorValue ?: continue
             beginControlFlow(
-                "if (%L == %T.get(%T::class.java).inheritanceInfo!!.discriminatorValue(%S))",
+                "if (this.%L == %T.get(%T::class.java).inheritanceInfo!!.discriminatorValue(%S))",
                 discriminatorProp.name,
                 IMMUTABLE_TYPE_CLASS_NAME,
                 polymorphicRootType.className,
@@ -1531,7 +1531,7 @@ class DtoGenerator private constructor(
             endControlFlow()
         }
         addStatement(
-            "throw %T(%S + %L + %S)",
+            "throw %T(%S + this.%L + %S)",
             IllegalArgumentException::class,
             "Illegal discriminator value \"",
             discriminatorProp.name,
@@ -1583,11 +1583,11 @@ class DtoGenerator private constructor(
                                 }
                                 val statePropName = statePropName(dtoProp, false)
                                 if (statePropName !== null) {
-                                    beginControlFlow("if (%L)", statePropName)
-                                    addDraftAssignment(dtoProp, dtoProp.name)
+                                    beginControlFlow("if (this.%L)", statePropName)
+                                    addDraftAssignment(dtoProp, "this.${dtoProp.name}")
                                     endControlFlow()
                                 } else {
-                                    addDraftAssignment(dtoProp, dtoProp.name)
+                                    addDraftAssignment(dtoProp, "this.${dtoProp.name}")
                                 }
                             }
                         }
@@ -1602,14 +1602,14 @@ class DtoGenerator private constructor(
     ) {
         val value = dtoType.baseType.discriminatorValue ?: return
         beginControlFlow(
-            "if (%L != %T.get(%T::class.java).inheritanceInfo!!.discriminatorValue(%S))",
+            "if (this.%L != %T.get(%T::class.java).inheritanceInfo!!.discriminatorValue(%S))",
             discriminatorProp.name,
             IMMUTABLE_TYPE_CLASS_NAME,
             polymorphicRootType.className,
             value
         )
         addStatement(
-            "throw %T(%S + %L + %S)",
+            "throw %T(%S + this.%L + %S)",
             IllegalArgumentException::class,
             "Discriminator value \"",
             discriminatorProp.name,
@@ -2151,7 +2151,7 @@ class DtoGenerator private constructor(
                 .apply {
                     for (prop in dtoType.props) {
                         addStatement(
-                            "%S -> %L",
+                            "%S -> this.%L",
                             if (getter) {
                                 StringUtil.identifier(
                                     if (propTypeName(prop) == BOOLEAN) "is" else "get",
@@ -2522,13 +2522,13 @@ class DtoGenerator private constructor(
                                     "%L %L",
                                     if (index == 0) "var _hash =" else "_hash = 31 * _hash +",
                                     if (prop.isNullable) {
-                                        "(${prop.alias}?.$hashCodeFunName() ?: 0)"
+                                        "(this.${prop.alias}?.$hashCodeFunName() ?: 0)"
                                     } else {
-                                        "${prop.alias}.$hashCodeFunName()"
+                                        "this.${prop.alias}.$hashCodeFunName()"
                                     }
                                 )
                                 statePropName(prop, false)?.let {
-                                    addStatement("_hash = _hash * 31 + %L.hashCode()", it)
+                                    addStatement("_hash = _hash * 31 + this.%L.hashCode()", it)
                                 }
                             }
                             addStatement("return _hash")
@@ -2556,14 +2556,14 @@ class DtoGenerator private constructor(
                                 }
                                 val statePropName = statePropName(prop, false)
                                 if (statePropName !== null) {
-                                    add("%L == _other.%L && (\n", statePropName, statePropName)
+                                    add("this.%L == _other.%L && (\n", statePropName, statePropName)
                                     indent()
-                                    add("!%L || ", statePropName)
+                                    add("!this.%L || ", statePropName)
                                 }
                                 if (propTypeName(prop).isArray()) {
-                                    add("%L.contentEquals(_other.%L)", prop.alias, prop.alias)
+                                    add("this.%L.contentEquals(_other.%L)", prop.alias, prop.alias)
                                 } else {
-                                    add("%L == _other.%L", prop.alias, prop.alias)
+                                    add("this.%L == _other.%L", prop.alias, prop.alias)
                                 }
                                 if (statePropName !== null) {
                                     unindent()
@@ -2604,25 +2604,16 @@ class DtoGenerator private constructor(
                                 for (prop in dtoType.props) {
                                     val stateFieldName = statePropName(prop, false)
                                     if (stateFieldName != null) {
-                                        beginControlFlow("if (%L)", stateFieldName)
+                                        beginControlFlow("if (this.%L)", stateFieldName)
                                     } else if (prop is DtoProp<*, *> && prop.getInputModifier() == DtoModifier.FUZZY) {
-                                        beginControlFlow("if (%L != null)", prop.getName())
+                                        beginControlFlow("if (this.%L != null)", prop.getName())
                                     }
-                                    if (prop.getName() == "builder") {
-                                        addStatement(
-                                            "builder.append(separator).append(%S).append(this.%L)",
-                                            prop.getName() + '=',
-                                            prop.getName()
-                                        )
-                                        addStatement("separator = \", \"")
-                                    } else {
-                                        addStatement(
-                                            "builder.append(separator).append(%S).append(%L)",
-                                            prop.getName() + '=',
-                                            prop.getName()
-                                        )
-                                        addStatement("separator = \", \"")
-                                    }
+                                    addStatement(
+                                        "builder.append(separator).append(%S).append(this.%L)",
+                                        prop.getName() + '=',
+                                        prop.getName()
+                                    )
+                                    addStatement("separator = \", \"")
                                     if (stateFieldName != null || (prop is DtoProp<*, *> && prop.getInputModifier() == DtoModifier.FUZZY)) {
                                         endControlFlow()
                                     }
@@ -2633,7 +2624,7 @@ class DtoGenerator private constructor(
                                 add("return %S +\n", simpleNamePart() + "(")
                                 dtoType.props.forEachIndexed { index, prop ->
                                     add(
-                                        "    %S + %L + \n",
+                                        "    %S + this.%L + \n",
                                         (if (index == 0) "" else ", ") + prop.name + '=',
                                         prop.name
                                     )

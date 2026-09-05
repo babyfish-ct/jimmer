@@ -168,7 +168,7 @@ public class InputBuilderGenerator {
         for (AbstractProp prop : dtoType.getProps()) {
             DtoModifier inputModifier = prop.getInputModifier();
             if (!prop.isNullable()) {
-                builder.beginControlFlow("if ($L == null)", prop.getName());
+                builder.beginControlFlow("if (this.$L == null)", prop.getName());
                 builder.addStatement(
                         "throw $T.$L($T.class, $S)",
                         Constants.INPUT_CLASS_NAME,
@@ -178,7 +178,7 @@ public class InputBuilderGenerator {
                 );
                 builder.endControlFlow();
                 builder.addStatement(
-                        "_input.$L($L)",
+                        "_input.$L(this.$L)",
                         setterName(prop),
                         prop.getName()
                 );
@@ -186,7 +186,7 @@ public class InputBuilderGenerator {
                 String stateFieldName = parentGenerator.stateFieldName(prop, true);
                 switch (inputModifier) {
                     case FIXED:
-                        builder.beginControlFlow("if (!$L)", stateFieldName);
+                        builder.beginControlFlow("if (!this.$L)", stateFieldName);
                         builder.addStatement(
                                 "throw $T.$L($T.class, $S)",
                                 Constants.INPUT_CLASS_NAME,
@@ -197,24 +197,24 @@ public class InputBuilderGenerator {
                         builder.endControlFlow();
                     case STATIC:
                         builder.addStatement(
-                                "_input.$L($L)",
+                                "_input.$L(this.$L)",
                                 setterName(prop),
                                 prop.getName()
                         );
                         break;
                     case DYNAMIC:
-                        builder.beginControlFlow("if ($L)", stateFieldName);
+                        builder.beginControlFlow("if (this.$L)", stateFieldName);
                         builder.addStatement(
-                                "_input.$L($L)",
+                                "_input.$L(this.$L)",
                                 setterName(prop),
                                 prop.getName()
                         );
                         builder.endControlFlow();
                         break;
                     case FUZZY:
-                        builder.beginControlFlow("if ($L != null)", prop.getName());
+                        builder.beginControlFlow("if (this.$L != null)", prop.getName());
                         builder.addStatement(
-                                "_input.$L($L)",
+                                "_input.$L(this.$L)",
                                 setterName(prop),
                                 prop.getName()
                         );
@@ -223,13 +223,13 @@ public class InputBuilderGenerator {
                 }
             } else if (prop instanceof UserProp) {
                 builder.addStatement(
-                        "_input.$L($L)",
+                        "_input.$L(this.$L)",
                         setterName((UserProp) prop),
                         prop.getName()
                 );
             } else {
                 if (!prop.isNullable()) {
-                    builder.beginControlFlow("if ($L == null)", prop.getName());
+                    builder.beginControlFlow("if (this.$L == null)", prop.getName());
                     builder.addStatement(
                             "throw $T.$L($T.class, $S)",
                             Constants.INPUT_CLASS_NAME,
@@ -240,7 +240,7 @@ public class InputBuilderGenerator {
                     builder.endControlFlow();
                 }
                 builder.addStatement(
-                        "_input.$L($L)",
+                        "_input.$L(this.$L)",
                         setterName(prop),
                         prop.getName()
                 );
