@@ -27,13 +27,24 @@ final class SaveAssignments {
             List<PropertyGetter> targets
     ) {
         Map<ImmutableProp, SaveAssignmentLambda> lambdaMap = ctx.options.getAssignments();
-        if (lambdaMap.isEmpty()) {
+        Map<PropertyGetter, SaveAssignmentLambda> columnMap = ctx.options.getColumnAssignments();
+        // Include unloaded update-only columns in the caller's update, version, and fake-update bookkeeping.
+        for (PropertyGetter target : columnMap.keySet()) {
+            if (columnMap.get(target).type.isAssignableFrom(shape.getType()) &&
+                    SaveExpressionUtils.belongsToTable(target.prop(), tableType) && !targets.contains(target)) {
+                targets.add(target);
+            }
+        }
+        if (lambdaMap.isEmpty() && columnMap.isEmpty()) {
             return SaveAssignment.defaults(targets);
         }
         Set<ImmutableProp> matchedProps = new LinkedHashSet<>();
         List<SaveAssignment> assignments = new ArrayList<>(targets.size());
         for (PropertyGetter target : targets) {
-            SaveAssignmentLambda lambda = lambdaMap.get(target.prop());
+            SaveAssignmentLambda lambda = columnMap.get(target);
+            if (lambda == null) {
+                lambda = lambdaMap.get(target.prop());
+            }
             if (lambda == null) {
                 assignments.add(SaveAssignment.defaultOf(target));
             } else {
@@ -85,7 +96,7 @@ final class SaveAssignments {
             );
         }
         Class<?> valueType = ((ExpressionImplementor<?>) value).getType();
-        if (!Classes.matches(targetProp.getReturnClass(), valueType)) {
+        if (!Classes.matches(target.metadata().getValueProp().getReturnClass(), valueType)) {
             throw new IllegalArgumentException(
                     "The save assignment expression for \"" +
                             targetProp +

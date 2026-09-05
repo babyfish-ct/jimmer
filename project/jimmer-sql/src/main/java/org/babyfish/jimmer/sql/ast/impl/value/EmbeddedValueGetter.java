@@ -139,7 +139,7 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         AstContext astContext = builder.getAstContext();
         if (table != null && astContext != null) {
             SqlBuilder sqlBuilder = builder.assertSimple();
-            TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
+            TableImplementor<?> tableImplementor = TableProxies.resolveForRender(table, builder);
             if (renderJoinedTypeBranchColumn(builder, tableImplementor, columnProp, columnName)) {
                 return;
             }

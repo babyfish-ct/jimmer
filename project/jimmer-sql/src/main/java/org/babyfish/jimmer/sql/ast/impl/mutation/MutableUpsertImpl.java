@@ -39,6 +39,12 @@ public final class MutableUpsertImpl<S extends BaseTable>
     }
 
     @Override
+    public <T> MutableUpsert<S> update(PropExpression<T> target, Expression<T> expression) {
+        addAssignment(target, null, expression, Role.UPDATE);
+        return this;
+    }
+
+    @Override
     public <T> MutableUpsert<S> merge(PropExpression<T> target, Expression<T> source) {
         addAssignment(target, source, source, Role.MERGE);
         return this;

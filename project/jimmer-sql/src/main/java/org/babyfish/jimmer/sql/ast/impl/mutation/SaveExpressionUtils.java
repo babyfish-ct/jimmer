@@ -64,8 +64,8 @@ final class SaveExpressionUtils {
 
             @Override
             public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
-                if (prop == null || !belongsToTable(prop, tableType) || singleColumnGetter(sqlClient, prop) == null) {
-                    throw new IllegalArgumentException(expressionDescription + " can only read local physical scalar target properties");
+                if (prop == null || !belongsToTable(prop, tableType) || !prop.isColumnDefinition()) {
+                    throw new IllegalArgumentException(expressionDescription + " can only read local physical target properties");
                 }
             }
 

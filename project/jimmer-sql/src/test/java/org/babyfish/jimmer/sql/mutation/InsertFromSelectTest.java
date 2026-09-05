@@ -47,6 +47,147 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class InsertFromSelectTest extends AbstractMutationTest {
 
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyPreservesDatabaseDefaultOnInsert(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        SysUserTable table = SysUserTable.$;
+        jdbc(con -> {
+            assertEquals(singletonList("DEFAULT_DESCRIPTION"), client.createUpsert(table, singleRowSource(client))
+                    .update(table.description(), table.description().concat("!"))
+                    .key(table.id(), Expression.value(100L))
+                    .insert(table.account(), Expression.value("update_only"))
+                    .insert(table.email(), Expression.value("update_only@example.org"))
+                    .insert(table.area(), Expression.value("north"))
+                    .insert(table.nickName(), Expression.value("Update only"))
+                    .returning(table.description())
+                    .execute(con));
+            assertEquals(singletonList("DEFAULT_DESCRIPTION"), client.createQuery(table)
+                    .where(table.id().eq(100L)).select(table.description()).execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyReadsTargetAndUninsertedSource(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookStoreTable table = BookStoreTable.$;
+        BaseTable2<NumericExpression<Integer>, StringExpression> source = client.createBaseQuery()
+                .addSelect(Expression.value(3)).addSelect(Expression.value("UPDATED")).asBaseTable();
+        jdbc(con -> {
+            assertEquals(singletonList(new Tuple3<>(oreillyId, "UPDATED", 3)), client.createUpsert(table, source)
+                    .update(table.website(), source.get_2())
+                    .key(table.id(), Expression.value(oreillyId))
+                    .insert(table.name(), Expression.value("INSERT-ONLY"))
+                    .update(table.version(), table.version().plus(source.get_1()))
+                    .returning(table.id(), table.website(), table.version())
+                    .execute(con));
+            assertEquals(singletonList("O'REILLY"), client.createQuery(table)
+                    .where(table.id().eq(oreillyId)).select(table.name()).execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyEmbeddedMember(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        MachineTable table = MachineTable.$;
+        jdbc(con -> {
+            assertEquals(singletonList(new Tuple2<>("localhost", 8081)), client.createUpsert(table, singleRowSource(client))
+                    .update(table.location().port(), table.location().port().plus(1))
+                    .key(table.id(), Expression.value(1L))
+                    .insert(table.location().host(), Expression.value("INSERT-ONLY"))
+                    .returning(table.location().host(), table.location().port())
+                    .execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyCanBeRejectedByUpdateWhere(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> {
+            assertEquals(emptyList(), client.createUpsert(table, singleRowSource(client))
+                    .key(table.id(), Expression.value(oreillyId))
+                    .update(table.website(), Expression.value("REJECTED"))
+                    .updateWhere(table.name().eq("OTHER"))
+                    .returning(table.id())
+                    .execute(con));
+            assertEquals(singletonList(null), client.createQuery(table)
+                    .where(table.id().eq(oreillyId)).select(table.website()).execute(con));
+        });
+    }
+
+    private JSqlClient updateOnlyClient(String plan) {
+        switch (plan) {
+            case "native":
+                return getSqlClient();
+            case "save":
+                return getSqlClient(it -> it.setDialect(new H2Dialect() {
+                    @Override
+                    public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+                        return DefaultDialect.INSTANCE.getInsertFromSelectRenderer();
+                    }
+                }));
+            case "emulated":
+                return getSqlClient(it -> it.setDialect(new H2Dialect() {
+                    @Override
+                    public InsertFromSelectRenderer getInsertFromSelectRenderer() {
+                        return DefaultDialect.INSTANCE.getInsertFromSelectRenderer();
+                    }
+
+                    @Override
+                    public boolean isUpsertSupported() {
+                        return false;
+                    }
+                }));
+            default:
+                throw new AssertionError("Unexpected execution plan: " + plan);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyVersionIsInitializedOnInsert(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> assertEquals(singletonList(0), client.createUpsert(table, singleRowSource(client))
+                .key(table.id(), Expression.value(UUID.fromString("a0000000-0000-0000-0000-000000000099")))
+                .insert(table.name(), Expression.value("UPDATE-ONLY-VERSION"))
+                .update(table.version(), table.version().plus(5))
+                .updateWhere(table.version().lt(0))
+                .returning(table.version())
+                .execute(con)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyNullableValue(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> {
+            client.createUpdate(table).set(table.website(), "BEFORE").where(table.id().eq(oreillyId)).execute(con);
+            assertEquals(singletonList(null), client.createUpsert(table, singleRowSource(client))
+                    .update(table.website(), Expression.nullValue(String.class))
+                    .key(table.id(), Expression.value(oreillyId))
+                    .returning(table.website())
+                    .execute(con));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testUpdateOnlyReferenceId(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookTable table = BookTable.$;
+        jdbc(con -> assertEquals(singletonList(manningId), client.createUpsert(table, singleRowSource(client))
+                .update(table.storeId(), Expression.value(manningId))
+                .key(table.id(), Expression.value(learningGraphQLId1))
+                .returning(table.storeId())
+                .execute(con)));
+    }
+
     @Test
     public void testDialectRendererDelegation() {
         AtomicBoolean supported = new AtomicBoolean();

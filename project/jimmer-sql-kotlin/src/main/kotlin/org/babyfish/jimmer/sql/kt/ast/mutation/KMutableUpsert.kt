@@ -18,6 +18,12 @@ interface KMutableUpsert<E : Any, B : KNonNullBaseTable<*>> {
 
     fun <T : Any> insert(target: KPropExpression<T>, source: KExpression<out T>)
 
+    /**
+     * Assign a physical scalar target only on update, preserving its default on insert.
+     * The expression can reference both [table] and [sourceTable].
+     */
+    fun <T : Any> update(target: KPropExpression<T>, expression: KExpression<out T>)
+
     fun <T : Any> merge(target: KPropExpression<T>, source: KExpression<out T>)
 
     fun <T : Any> merge(

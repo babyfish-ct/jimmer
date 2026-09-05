@@ -2,11 +2,13 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableInsert;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpsert;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.embedded.MachineTable;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -16,6 +18,32 @@ import static org.babyfish.jimmer.sql.common.Constants.oreillyId;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InsertFromSelectValidationTest extends AbstractMutationTest {
+
+    @Test
+    public void testUpdateOnlyTargetValidation() {
+        BaseTable2<ComparableExpression<UUID>, StringExpression> source = uuidAndString(oreillyId, "VALUE");
+        BookStoreTable table = BookStoreTable.$;
+        MutableUpsert<?> command = getSqlClient().createUpsert(table, source);
+        assertThrows(IllegalArgumentException.class, () -> command.update(table.id(), source.get_1()));
+        assertThrows(IllegalArgumentException.class, () -> command.update(BookTable.$.name(), source.get_2()));
+        assertThrows(NullPointerException.class, () -> command.update(table.website(), null));
+        command.update(table.website(), source.get_2());
+        assertThrows(IllegalStateException.class, () -> command.insert(table.website(), source.get_2()));
+
+        MachineTable machine = MachineTable.$;
+        assertThrows(IllegalArgumentException.class, () -> getSqlClient().createUpsert(machine, source)
+                .update(machine.location(), machine.location()));
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void testUpdateOnlyExpressionTypeValidation() {
+        BaseTable2<ComparableExpression<UUID>, StringExpression> source = uuidAndString(oreillyId, "VALUE");
+        MutableUpsert command = getSqlClient().createUpsert(BookStoreTable.$, source);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> command.update(BookStoreTable.$.version(), source.get_2()));
+        assertTrue(ex.getMessage().contains("is incompatible with target expression type"));
+    }
 
     @Test
     public void testStrictInsertDoesNotSuppressConflict() {

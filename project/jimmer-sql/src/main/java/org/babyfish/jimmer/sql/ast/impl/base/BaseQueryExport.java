@@ -27,6 +27,10 @@ public final class BaseQueryExport {
         return realBaseTable;
     }
 
+    boolean isEmpty() {
+        return selectionExportMap.isEmpty();
+    }
+
     public BaseQueryExportSelection selection(int selectionIndex, RealTable rootRealTable) {
         return selectionMap.computeIfAbsent(
                 selectionIndex,

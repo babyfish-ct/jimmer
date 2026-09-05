@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.ComparableExpression;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpsert;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.sql.Connection;
@@ -28,6 +30,41 @@ import static org.babyfish.jimmer.sql.common.Constants.oreillyId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SQLiteInsertFromSelectTest extends AbstractMutationTest {
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    public void testUpdateOnlyPreservesInsertDefault(boolean sourceValue, boolean returning) throws Exception {
+        JSqlClient client = getSqlClient(it -> it.setDialect(new SQLiteDialect()));
+        BookStoreTable table = BookStoreTable.$;
+        BaseTable1<StringExpression> source = client.createBaseQuery().addSelect(Expression.value("UPDATED")).asBaseTable();
+        try (Connection con = DriverManager.getConnection("jdbc:sqlite::memory:")) {
+            try (Statement stmt = con.createStatement()) {
+                stmt.execute("create table BOOK_STORE(ID text primary key, NAME text, WEBSITE text default 'DEFAULT', VERSION integer)");
+            }
+            MutableUpsert<?> insert = client.createUpsert(table, source)
+                    .update(table.website(), sourceValue ? source.get_1() : table.website().concat("!"))
+                    .key(table.id(), Expression.value(oreillyId))
+                    .insert(table.name(), Expression.value("OReilly"));
+            if (returning) {
+                assertEquals(Collections.singletonList("DEFAULT"), insert.returning(table.website()).execute(con));
+            } else {
+                assertEquals(1, insert.execute(con));
+            }
+            assertEquals(Collections.singletonList("DEFAULT"), client.createQuery(table).select(table.website()).execute(con));
+            MutableUpsert<?> update = client.createUpsert(table, source)
+                    .update(table.website(), sourceValue ? source.get_1() : table.website().concat("!"))
+                    .key(table.id(), Expression.value(oreillyId))
+                    .insert(table.name(), Expression.value("IGNORED"));
+            if (returning) {
+                assertEquals(Collections.singletonList(sourceValue ? "UPDATED" : "DEFAULT!"),
+                        update.returning(table.website()).execute(con));
+            } else {
+                assertEquals(1, update.execute(con));
+            }
+            assertEquals(Collections.singletonList(sourceValue ? "UPDATED" : "DEFAULT!"),
+                    client.createQuery(table).select(table.website()).execute(con));
+        }
+    }
 
     @BeforeAll
     public static void beforeAll() {

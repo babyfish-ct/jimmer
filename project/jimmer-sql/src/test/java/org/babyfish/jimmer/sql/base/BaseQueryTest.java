@@ -55,6 +55,19 @@ public class BaseQueryTest extends AbstractQueryTest {
     }
 
     @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testUnusedRootlessProjection(boolean cte) {
+        TypedBaseQuery<BaseTable1<StringExpression>> query = getSqlClient().createBaseQuery().addSelect(Expression.value("UNUSED"));
+        BaseTable1<StringExpression> source = cte ? query.asCteBaseTable() : query.asBaseTable();
+        executeAndExpect(getSqlClient().createQuery(source).select(Expression.constant(7)), ctx -> {
+            ctx.sql(cte ?
+                    "with tb_1_(c0) as (select 1) select 7 from tb_1_" :
+                    "select 7 from (select 1 as c0) tb_1_");
+            ctx.rows("[7]");
+        });
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"12.34", "-34.567", "0.000000000123456789", "123456789012345678901234567890.123456789"})
     public void rootlessDecimalPreservesValue(String text) {
         JSqlClient client = getSqlClient();

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -219,5 +220,11 @@ public class TableProxies {
             return ((TableProxy<E>) table).__resolve(resolver);
         }
         throw new IllegalArgumentException("Unknown table implementation");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E> TableImplementor<E> resolveForRender(Table<E> table, AbstractSqlBuilder<?> builder) {
+        Object replacement = builder.getMutationExpressionReplacement(table);
+        return resolve(replacement instanceof Table<?> ? (Table<E>) replacement : table, builder.getAstContext());
     }
 }

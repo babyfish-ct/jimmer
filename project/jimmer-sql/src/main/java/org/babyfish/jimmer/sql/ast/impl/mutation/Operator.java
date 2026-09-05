@@ -2183,10 +2183,11 @@ class Operator {
     }
 
     private void validate(Shape shape, boolean insertOnly, Collection<ImmutableProp> implicitKeyProps) {
-        Set<ImmutableProp> keyProps = shape.keyProps(
-                ctx.options.getKeyMatcher(shape.getType()),
-                implicitKeyProps
-        );
+        // An explicit id conflict does not use partially supplied natural keys.
+        Set<ImmutableProp> keyProps = ctx.options.isExactConflictTargetRequired() &&
+                !ctx.options.isKeyBasedConflict() && !shape.getIdGetters().isEmpty() ?
+                Collections.emptySet() :
+                shape.keyProps(ctx.options.getKeyMatcher(shape.getType()), implicitKeyProps);
         if (!insertOnly) {
             if (shape.isWild(keyProps)) {
                 ctx.throwNeitherIdNorKey(shape.getType(), keyProps);

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -121,6 +122,11 @@ public class SimpleEntitySaveCommandImpl<E>
         return new SimpleEntitySaveCommandImpl<>(
                 new AssignmentCfg(cfg, prop, prop.getDeclaringType(), expression)
         );
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setEntityAssignment(PropertyGetter target, SaveAssignmentExpression<?, ?, ?> expression) {
+        return new SimpleEntitySaveCommandImpl<>(new ColumnAssignmentCfg(cfg, target, expression));
     }
 
     @Override

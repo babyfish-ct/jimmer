@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -199,14 +200,7 @@ abstract class AbstractEntitySaveCommandImpl
                                 "\""
                 );
             }
-            if (!prop.isColumnDefinition() ||
-                    prop.isId() ||
-                    prop.isLogicalDeleted() ||
-                    prop.isDiscriminator()) {
-                throw new IllegalArgumentException(
-                        "The property \"" + prop + "\" cannot be a save assignment target"
-                );
-            }
+            validateAssignmentTarget(prop);
             AssignmentCfg p = prev.as(AssignmentCfg.class);
             if (p != null && p.mapNode.containsKey(prop)) {
                 throw new IllegalArgumentException(
@@ -217,6 +211,31 @@ abstract class AbstractEntitySaveCommandImpl
                     p != null ? p.mapNode : null,
                     prop,
                     new SaveAssignmentLambda(type, expression)
+            );
+        }
+    }
+
+    private static void validateAssignmentTarget(ImmutableProp prop) {
+        if (!prop.isColumnDefinition() || prop.isId() || prop.isLogicalDeleted() || prop.isDiscriminator()) {
+            throw new IllegalArgumentException("The property \"" + prop + "\" cannot be a save assignment target");
+        }
+    }
+
+    static class ColumnAssignmentCfg extends Cfg {
+
+        final MapNode<PropertyGetter, SaveAssignmentLambda> mapNode;
+
+        ColumnAssignmentCfg(Cfg prev, PropertyGetter target, SaveAssignmentExpression<?, ?, ?> expression) {
+            super(prev);
+            validateAssignmentTarget(target.prop());
+            ColumnAssignmentCfg p = prev.as(ColumnAssignmentCfg.class);
+            if (p != null && p.mapNode.containsKey(target)) {
+                throw new IllegalArgumentException("The save assignment column \"" + target + "\" is configured more than once");
+            }
+            this.mapNode = new MapNode<>(
+                    p != null ? p.mapNode : null,
+                    target,
+                    new SaveAssignmentLambda(target.prop().getDeclaringType(), expression)
             );
         }
     }
@@ -560,6 +579,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableProp, SaveAssignmentLambda> assignmentMap;
 
+        private final Map<PropertyGetter, SaveAssignmentLambda> columnAssignmentMap;
+
         private final Map<ImmutableType, TypedUpdateCondition> updateWhereMap;
 
         private final VersionMode versionMode;
@@ -636,6 +657,7 @@ abstract class AbstractEntitySaveCommandImpl
             KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
             UpsertMaskCfg upsertMaskCfg = cfg.as(UpsertMaskCfg.class);
             AssignmentCfg assignmentCfg = cfg.as(AssignmentCfg.class);
+            ColumnAssignmentCfg columnAssignmentCfg = cfg.as(ColumnAssignmentCfg.class);
             UpdateWhereCfg updateWhereCfg = cfg.as(UpdateWhereCfg.class);
             VersionModeCfg versionModeCfg = cfg.as(VersionModeCfg.class);
             ForceMatchedUpdateCfg forceMatchedUpdateCfg = cfg.as(ForceMatchedUpdateCfg.class);
@@ -680,9 +702,14 @@ abstract class AbstractEntitySaveCommandImpl
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
             this.upsertMaskMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
             this.assignmentMap = MapNode.toMap(assignmentCfg, it -> it.mapNode);
+            this.columnAssignmentMap = MapNode.toMap(columnAssignmentCfg, it -> it.mapNode);
             this.versionMode = versionModeCfg != null ? versionModeCfg.mode : VersionMode.OPTIMISTIC_LOCK;
             if (this.versionMode != VersionMode.ASSIGNMENT) {
-                for (ImmutableProp prop : this.assignmentMap.keySet()) {
+                Set<ImmutableProp> assignmentProps = new LinkedHashSet<>(this.assignmentMap.keySet());
+                for (PropertyGetter getter : columnAssignmentMap.keySet()) {
+                    assignmentProps.add(getter.prop());
+                }
+                for (ImmutableProp prop : assignmentProps) {
                     if (prop.isVersion()) {
                         throw new IllegalArgumentException(
                                 "The version property \"" + prop +
@@ -691,7 +718,7 @@ abstract class AbstractEntitySaveCommandImpl
                     }
                 }
             }
-            if (this.mode == SaveMode.INSERT_ONLY && !this.assignmentMap.isEmpty()) {
+            if (this.mode == SaveMode.INSERT_ONLY && (!this.assignmentMap.isEmpty() || !this.columnAssignmentMap.isEmpty())) {
                 throw new IllegalArgumentException(
                         "Save assignment expressions cannot be used with INSERT_ONLY mode"
                 );
@@ -832,6 +859,11 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public Map<ImmutableProp, SaveAssignmentLambda> getAssignments() {
             return assignmentMap;
+        }
+
+        @Override
+        public Map<PropertyGetter, SaveAssignmentLambda> getColumnAssignments() {
+            return columnAssignmentMap;
         }
 
         @Override
@@ -1024,6 +1056,7 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedMode,
                     associatedModeMap,
                     assignmentMap,
+                    columnAssignmentMap,
                     updateWhereMap,
                     versionMode,
                     forceMatchedUpdate,
@@ -1081,6 +1114,7 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedTypeChangeAllowedTypeMap.equals(other.associatedTypeChangeAllowedTypeMap) &&
                     associatedModeMap.equals(other.associatedModeMap) &&
                     assignmentMap.equals(other.assignmentMap) &&
+                    columnAssignmentMap.equals(other.columnAssignmentMap) &&
                     updateWhereMap.equals(other.updateWhereMap) &&
                     keyMatcherMap.equals(other.keyMatcherMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
@@ -1096,6 +1130,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
                     ", assignmentMap=" + assignmentMap +
+                    ", columnAssignmentMap=" + columnAssignmentMap +
                     ", updateWhereMap=" + updateWhereMap +
                     ", versionMode=" + versionMode +
                     ", forceMatchedUpdate=" + forceMatchedUpdate +

@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
+import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.query.tuple.AggregateTupleMapper
 import java.math.BigDecimal
 import kotlin.test.Test
@@ -50,12 +51,14 @@ class InsertFromSelectApiShapeTest : AbstractMutationTest() {
         val upsert: KExecutable<Int> = client.createUpsert<BookStore, _>(source) {
             key(table.id, sourceTable.storeId)
             merge(table.name, value("UPSERT"))
+            update(table.website, value("UPDATED"))
             updateWhere(table.name eq "OLD")
         }
         val upsertReturning: KSelectionExecutable<Long> =
             client.createUpsertReturning<BookStore, _, Long>(source) {
                 key(table.id, sourceTable.storeId)
                 merge(table.name, value("UPSERT-RETURNING"))
+                update(table.website, nullValue<String>())
                 returning(table.id)
             }
 
@@ -100,11 +103,13 @@ class InsertFromSelectApiShapeTest : AbstractMutationTest() {
         assertTrue("onConflictDoNothing" in insertMethods)
         assertFalse("key" in insertMethods)
         assertFalse("merge" in insertMethods)
+        assertFalse("update" in insertMethods)
         assertFalse("updateWhere" in insertMethods)
 
         val upsertMethods = KMutableUpsert::class.java.methods.map { it.name }.toSet()
         assertTrue("key" in upsertMethods)
         assertTrue("merge" in upsertMethods)
+        assertTrue("update" in upsertMethods)
         assertTrue("updateWhere" in upsertMethods)
         assertFalse("onConflictDoNothing" in upsertMethods)
     }

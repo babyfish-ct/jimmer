@@ -34,6 +34,11 @@ internal class KMutableUpsertImpl<E : Any, B : KNonNullBaseTable<*>>(
     }
 
     @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> update(target: KPropExpression<T>, expression: KExpression<out T>) {
+        javaUpsert.update(target as PropExpression<T>, expression as Expression<T>)
+    }
+
+    @Suppress("UNCHECKED_CAST")
     override fun <T : Any> merge(target: KPropExpression<T>, source: KExpression<out T>) {
         javaUpsert.merge(target as PropExpression<T>, source as Expression<T>)
     }

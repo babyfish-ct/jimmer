@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
@@ -40,6 +41,10 @@ public interface SaveOptions {
         return Collections.emptyMap();
     }
 
+    default Map<PropertyGetter, SaveAssignmentLambda> getColumnAssignments() {
+        return Collections.emptyMap();
+    }
+
     @Nullable
     default TypedUpdateCondition getUpdateWhere(ImmutableType type) {
         return null;
@@ -67,6 +72,11 @@ public interface SaveOptions {
 
     default boolean hasAssignment(ImmutableType type) {
         for (SaveAssignmentLambda assignment : getAssignments().values()) {
+            if (assignment.type.isAssignableFrom(type)) {
+                return true;
+            }
+        }
+        for (SaveAssignmentLambda assignment : getColumnAssignments().values()) {
             if (assignment.type.isAssignableFrom(type)) {
                 return true;
             }
@@ -195,6 +205,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public Map<ImmutableProp, SaveAssignmentLambda> getAssignments() {
         return raw.getAssignments();
+    }
+
+    @Override
+    public Map<PropertyGetter, SaveAssignmentLambda> getColumnAssignments() {
+        return raw.getColumnAssignments();
     }
 
     @Override
@@ -406,6 +421,11 @@ class SaveOptionsForAssociatedProp extends AbstractSaveOptionsWrapper {
     @Override
     public boolean isTypeChangeAllowed(ImmutableType type) {
         return super.isAssociatedTypeChangeAllowed(prop, type);
+    }
+
+    @Override
+    public Map<PropertyGetter, SaveAssignmentLambda> getColumnAssignments() {
+        return Collections.emptyMap();
     }
 
     @Override

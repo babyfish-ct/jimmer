@@ -20,6 +20,8 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,6 +34,34 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InsertFromSelectEventsAndCacheTest extends AbstractMutationTest {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testUpdateOnlyEventAndCacheInvalidation(boolean accepted) {
+        List<EntityEvent<?>> events = new ArrayList<>();
+        List<String> evictions = new ArrayList<>();
+        JSqlClient client = cachedClient(evictions, false);
+        client.getTriggers(true).addEntityListener(BookStore.class, events::add);
+        BaseTable2<ComparableExpression<UUID>, StringExpression> source = source(client, oreillyId, "UPDATE-ONLY");
+        BookStoreTable table = BookStoreTable.$;
+        jdbc(con -> assertEquals(accepted ? singletonList("UPDATE-ONLY") : java.util.Collections.emptyList(),
+                client.createUpsert(table, source)
+                        .update(table.website(), source.get_2())
+                        .key(table.id(), source.get_1())
+                        .updateWhere(table.name().eq(accepted ? "O'REILLY" : "OTHER"))
+                        .returning(table.website())
+                        .execute(con)));
+
+        if (accepted) {
+            assertEquals(1, events.size());
+            assertNull(((BookStore) events.get(0).getOldEntity()).website());
+            assertEquals("UPDATE-ONLY", ((BookStore) events.get(0).getNewEntity()).website());
+            assertEquals(singletonList("BookStore-" + oreillyId), evictions);
+        } else {
+            assertTrue(events.isEmpty());
+            assertTrue(evictions.isEmpty());
+        }
+    }
 
     @Test
     public void testInsertEventAndObjectCacheInvalidation() {

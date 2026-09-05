@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -152,6 +153,11 @@ public class BatchEntitySaveCommandImpl<E>
         return new BatchEntitySaveCommandImpl<>(
                 new AssignmentCfg(cfg, prop, prop.getDeclaringType(), expression)
         );
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setEntityAssignment(PropertyGetter target, SaveAssignmentExpression<?, ?, ?> expression) {
+        return new BatchEntitySaveCommandImpl<>(new ColumnAssignmentCfg(cfg, target, expression));
     }
 
     @Override

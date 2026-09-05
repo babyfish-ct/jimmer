@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.selectable.ReturningSelectable;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
@@ -54,7 +55,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         extends AbstractMutableStatementImpl
         implements ReturningSelectable {
 
-    enum Role {KEY, INSERT, MERGE}
+    enum Role {KEY, INSERT, UPDATE, MERGE}
 
     final S source;
 
@@ -165,16 +166,26 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
 
     final <T> void addAssignment(
             PropExpression<T> targetExpression,
-            Expression<T> insertSource,
+            @Nullable Expression<T> insertSource,
             @Nullable Expression<T> updateExpression,
             Role role
     ) {
         validateMutable();
-        Objects.requireNonNull(insertSource, "source expression cannot be null");
+        if (role == Role.UPDATE) {
+            Objects.requireNonNull(updateExpression, "update expression cannot be null");
+        } else {
+            Objects.requireNonNull(insertSource, "source expression cannot be null");
+        }
         Target target = Target.of(targetExpression, getSqlClient().getMetadataStrategy());
         validateTarget(target);
-        Literals.bind(insertSource, targetExpression);
-        validateAssignmentType(targetExpression, insertSource);
+        if (role == Role.UPDATE && (target.definition.size() != 1 || target.prop.isId() ||
+                target.prop.isLogicalDeleted() || target.prop.isDiscriminator())) {
+            throw new IllegalArgumentException("The property \"" + targetExpression + "\" cannot be an update-only target");
+        }
+        if (insertSource != null) {
+            Literals.bind(insertSource, targetExpression);
+            validateAssignmentType(targetExpression, insertSource);
+        }
         if (updateExpression != null) {
             Literals.bind(updateExpression, targetExpression);
             validateAssignmentType(targetExpression, updateExpression);
@@ -359,7 +370,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             addImplicit(logicalDeletedInfo.getProp(), logicalDeletedInfo.allocateInitializedValue());
         }
         ImmutableProp versionProp = type.getVersionProp();
-        if (versionProp != null && assignmentByProp(versionProp) == null) {
+        if (versionProp != null) {
             addImplicit(versionProp, 0);
         }
         ImmutableProp idProp = type instanceof AssociationType ? null : type.getIdProp();
@@ -411,7 +422,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     private boolean isUpdateExpressionAliasingSupported() {
         Set<Object> availableSources = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Assignment assignment : assignments.values()) {
-            if (assignment.target.definition.size() == 1) {
+            if (assignment.insertSource != null && assignment.target.definition.size() == 1) {
                 availableSources.add(assignment.insertSource);
             }
         }
@@ -421,7 +432,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             }
         }
         for (Assignment assignment : assignments.values()) {
-            if (assignment.role == Role.MERGE && assignment.target.definition.size() != 1) {
+            if (assignment.updateExpression != null && assignment.target.definition.size() != 1) {
                 return false;
             }
         }
@@ -433,7 +444,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             return false;
         }
         for (Assignment assignment : assignments.values()) {
-            if (assignment.role == Role.MERGE &&
+            if (assignment.updateExpression != null &&
                     (assignment.target.definition.size() != 1 ||
                             assignment.updateExpression != assignment.insertSource)) {
                 return false;
@@ -549,7 +560,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         Set<Expression<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         Set<Expression<?>> loadedSources = new HashSet<>();
         for (Assignment assignment : assignments.values()) {
-            loadedSources.add(assignment.insertSource);
+            if (assignment.insertSource != null) {
+                loadedSources.add(assignment.insertSource);
+            }
         }
         AstVisitor visitor = new AstVisitor(ctx) {
             @Override
@@ -600,7 +613,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     ) {
         List<Selection<?>> sourceSelections = new ArrayList<>(assignments.size());
         for (Assignment assignment : assignments.values()) {
-            sourceSelections.add(assignment.insertSource);
+            if (assignment.insertSource != null) {
+                sourceSelections.add(assignment.insertSource);
+            }
         }
         for (Expression<?> expression : materializedSourceExpressions) {
             sourceSelections.add(expression);
@@ -678,8 +693,10 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
                         .forbidUpdate();
                 for (Assignment assignment : assignments.values()) {
                     ImmutableProp[] maskPath = materializedPath(assignment.target);
-                    mask = mask.addInsertablePath(maskPath);
-                    if (assignment.role == Role.MERGE) {
+                    if (assignment.insertSource != null) {
+                        mask = mask.addInsertablePath(maskPath);
+                    }
+                    if (assignment.updateExpression != null) {
                         mask = mask.addUpdatablePath(maskPath);
                     }
                 }
@@ -705,12 +722,11 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     ) {
         SaveCommandImplementor implementor = (SaveCommandImplementor) command;
         for (Assignment assignment : assignments.values()) {
-            if (assignment.role == Role.MERGE &&
-                    assignment.updateExpression != null &&
+            if (assignment.updateExpression != null &&
                     assignment.updateExpression != assignment.insertSource) {
                 ExpressionImplementor<?> raw = (ExpressionImplementor<?>) assignment.updateExpression;
                 implementor = (SaveCommandImplementor) implementor.setEntityAssignment(
-                        materializedProp(assignment.target.prop),
+                        materializedAssignmentGetter(assignment.target),
                         (SaveAssignmentExpression) (target, values) ->
                                 new MaterializedExpression(
                                         raw,
@@ -746,6 +762,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         );
         replacements.put(getTable(), target);
         for (Assignment assignment : assignments.values()) {
+            if (assignment.insertSource == null) {
+                continue;
+            }
             Expression<?> replacement;
             ImmutableProp prop = materializedProp(assignment.target.prop);
             if (assignment.target.expr.getPath() == null &&
@@ -769,6 +788,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             int index = 0;
             Map<ImmutableProp, Map<String, Object>> embeddedValues = new LinkedHashMap<>();
             for (Assignment assignment : assignments.values()) {
+                if (assignment.insertSource == null) {
+                    continue;
+                }
                 Object value = row[index++];
                 ImmutableProp prop = materializedProp(assignment.target.prop);
                 String path = assignment.target.expr.getPath();
@@ -795,6 +817,17 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     private ImmutableProp materializedProp(ImmutableProp prop) {
         ImmutableProp actualProp = getType().getProps().get(prop.getName());
         return actualProp != null ? actualProp : prop;
+    }
+
+    private PropertyGetter materializedAssignmentGetter(Target target) {
+        if (target.definition.size() == 1) {
+            for (PropertyGetter getter : PropertyGetter.propertyGetters(getSqlClient(), materializedProp(target.prop))) {
+                if (target.definition.name(0).equals(getter.metadata().getColumnName())) {
+                    return getter;
+                }
+            }
+        }
+        throw new IllegalArgumentException("A custom update expression must assign a single physical column: " + target.expr);
     }
 
     private ImmutableProp[] materializedPath(Target target) {
@@ -860,7 +893,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             List<Expression<?>> sourceExpressions
     ) {
         Map<Object, Object> replacements = new HashMap<>();
-        int offset = assignments.size();
+        int offset = insertTargets().size();
         for (int i = 0; i < sourceExpressions.size(); i++) {
             Expression<?> sourceExpression = sourceExpressions.get(i);
             Object value = row[offset + i];
@@ -899,6 +932,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         List<Integer> keyIndexes = new ArrayList<>();
         int index = 0;
         for (Assignment assignment : assignments.values()) {
+            if (assignment.insertSource == null) {
+                continue;
+            }
             if (assignment.role == Role.KEY) {
                 keyIndexes.add(index);
             }
@@ -970,6 +1006,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     private int assignmentIndex(Assignment expected) {
         int index = 0;
         for (Assignment assignment : assignments.values()) {
+            if (assignment.insertSource == null) {
+                continue;
+            }
             if (assignment == expected) {
                 return index;
             }
@@ -1097,14 +1136,19 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void addImplicit(ImmutableProp prop, Object value) {
-        if (assignmentByProp(prop) != null) {
+        Assignment existing = assignmentByProp(prop);
+        if (existing != null && existing.insertSource != null) {
             return;
         }
         PropExpression expression = ((Table<?>) getTable()).get(prop);
         Expression sourceExpression = value instanceof Expression<?> ?
                 (Expression<?>) value :
                 Expression.any().value(value);
-        addAssignment(expression, sourceExpression, null, Role.INSERT);
+        if (existing != null) {
+            assignments.put(existing.target, new Assignment(existing.target, sourceExpression, existing.updateExpression, Role.MERGE));
+        } else {
+            addAssignment(expression, sourceExpression, null, Role.INSERT);
+        }
     }
 
     final Assignment assignmentByProp(ImmutableProp prop) {
@@ -1217,7 +1261,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         List<Target> targets = new ArrayList<>();
         Set<String> assignedColumns = new LinkedHashSet<>();
         for (Assignment assignment : assignments.values()) {
-            if (originals.contains(assignment.target.prop.toOriginal())) {
+            if (assignment.insertSource != null && originals.contains(assignment.target.prop.toOriginal())) {
                 targets.add(assignment.target);
                 assignedColumns.addAll(
                         assignment.target.columnNames(getSqlClient().getMetadataStrategy())
@@ -1253,7 +1297,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     private void renderSourceSelect(SqlBuilder builder) {
         List<Selection<?>> selections = new ArrayList<>(assignments.size());
         for (Assignment assignment : assignments.values()) {
-            selections.add(assignment.insertSource);
+            if (assignment.insertSource != null) {
+                selections.add(assignment.insertSource);
+            }
         }
         renderSourceSelect(builder, selections);
     }
@@ -1277,18 +1323,20 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
         }
     }
 
-    private List<Target> assignmentTargets() {
+    private List<Target> insertTargets() {
         List<Target> targets = new ArrayList<>(assignments.size());
         for (Assignment assignment : assignments.values()) {
-            targets.add(assignment.target);
+            if (assignment.insertSource != null) {
+                targets.add(assignment.target);
+            }
         }
         return targets;
     }
 
-    private List<Assignment> mergeAssignments() {
+    private List<Assignment> updateAssignments() {
         List<Assignment> list = new ArrayList<>();
         for (Assignment assignment : assignments.values()) {
-            if (assignment.role == Role.MERGE) {
+            if (assignment.updateExpression != null) {
                 list.add(assignment);
             }
         }
@@ -1370,7 +1418,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
 
         @Override
         public boolean hasUpdateAssignments() {
-            return !mergeAssignments().isEmpty();
+            return !updateAssignments().isEmpty();
         }
 
         @Override
@@ -1442,7 +1490,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
 
         @Override
         public InsertFromSelectContext appendInsertColumns() {
-            renderTargets(builder(), assignmentTargets(), null);
+            renderTargets(builder(), insertTargets(), null);
             return this;
         }
 
@@ -1502,6 +1550,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             SqlBuilder builder = builder();
             withSourceScope(() -> {
                 for (Assignment assignment : assignments.values()) {
+                    if (assignment.insertSource == null) {
+                        continue;
+                    }
                     builder.separator();
                     renderExpression(builder, assignment.insertSource, true);
                 }
@@ -1518,7 +1569,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             SqlBuilder builder = builder();
             withSourceScope(insertedValueReplacements(insertedValuePrefix, insertedValueSuffix), () -> {
                 String targetPrefix = targetAlias ? targetAlias(builder) : null;
-                for (Assignment assignment : mergeAssignments()) {
+                for (Assignment assignment : updateAssignments()) {
                     builder.separator();
                     renderTarget(builder, assignment.target, targetPrefix);
                     builder.sql(" = ");
@@ -1594,7 +1645,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             String actualSuffix = suffix != null ? suffix : "";
             Map<Object, String> map = new HashMap<>();
             for (Assignment assignment : assignments.values()) {
-                if (assignment.target.definition.size() == 1) {
+                if (assignment.insertSource != null && assignment.target.definition.size() == 1) {
                     map.put(
                             assignment.insertSource,
                             prefix + assignment.target.definition.name(0) + actualSuffix
@@ -1644,7 +1695,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             visitor.visitStatement(sourceQuery);
             for (Assignment assignment : assignments.values()) {
                 ((Ast) assignment.target.expr).accept(visitor);
-                ((Ast) assignment.insertSource).accept(visitor);
+                if (assignment.insertSource != null) {
+                    ((Ast) assignment.insertSource).accept(visitor);
+                }
                 if (assignment.updateExpression != null) {
                     ((Ast) assignment.updateExpression).accept(visitor);
                 }
@@ -1787,11 +1840,13 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     static final class Assignment {
 
         final Target target;
+        @Nullable
         final Expression<?> insertSource;
+        @Nullable
         final Expression<?> updateExpression;
         final Role role;
 
-        Assignment(Target target, Expression<?> insertSource, Expression<?> updateExpression, Role role) {
+        Assignment(Target target, @Nullable Expression<?> insertSource, @Nullable Expression<?> updateExpression, Role role) {
             this.target = target;
             this.insertSource = insertSource;
             this.updateExpression = updateExpression;

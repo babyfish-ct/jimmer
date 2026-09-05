@@ -39,8 +39,13 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         BaseQueryExport export = export(
                 ((BaseTableImplementor) realBaseTable.getTableLikeImplementor()).toSymbol()
         );
-        BaseQueryExportSelection exportSelection =
-                export != null ? export.selectionOrNull(index) : null;
+        if (export == null || export.isEmpty()) {
+            if (index == 0) {
+                builder.separator().sql(cte ? "1" : "1 as c0");
+            }
+            return;
+        }
+        BaseQueryExportSelection exportSelection = export.selectionOrNull(index);
         if (exportSelection == null) {
             return;
         }
@@ -107,9 +112,13 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         int size = selections.size();
         BaseQueryExport export = export(baseTableImplementor.toSymbol());
         builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
+        if (export == null || export.isEmpty()) {
+            builder.sql("c0").leave();
+            return;
+        }
         for (int i = 0; i < size; i++) {
             Selection<?> selection = selections.get(i);
-            BaseQueryExportSelection exportSelection = export != null ? export.selectionOrNull(i) : null;
+            BaseQueryExportSelection exportSelection = export.selectionOrNull(i);
             if (exportSelection == null) {
                 continue;
             }

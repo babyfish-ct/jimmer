@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveAssignmentExpression;
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
@@ -24,6 +25,8 @@ public interface SaveCommandImplementor extends AbstractEntitySaveCommand {
             ImmutableProp prop,
             SaveAssignmentExpression<?, ?, ?> expression
     );
+
+    AbstractEntitySaveCommand setEntityAssignment(PropertyGetter target, SaveAssignmentExpression<?, ?, ?> expression);
 
     AbstractEntitySaveCommand setEntityUpdateWhere(
             ImmutableType type,

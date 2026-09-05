@@ -95,7 +95,7 @@ class SimpleValueGetter extends AbstractValueGetter {
         AstContext astContext = builder.getAstContext();
         if (table != null && astContext != null) {
             SqlBuilder sqlBuilder = builder.assertSimple();
-            TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
+            TableImplementor<?> tableImplementor = TableProxies.resolveForRender(table, builder);
             if (valueProp.isId() && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
                 RealTable realTable = tableImplementor.realTableForRender(builder);
                 String middleTableAlias = sqlBuilder.middleTableAlias(realTable);
