@@ -102,7 +102,7 @@ public class BaseTableSymbols {
             JoinType joinType
     ) {
         BaseTableSymbol recursive =
-                (BaseTableSymbol) BaseTableProxies.unwrap(baseTableOf(recursiveRef));
+                (BaseTableSymbol) BaseTableProxies.resolve(baseTableOf(recursiveRef));
         return of(recursive, parent, handle, joinType, recursive);
     }
 
@@ -140,11 +140,11 @@ public class BaseTableSymbols {
         }
     }
 
-    public static <B extends BaseTable> RecursiveRef<B> recursive(B baseTable) {
+    public static <B extends TableLike<?>> RecursiveRef<B> recursive(B baseTable) {
         return new RecursiveRefImpl<>(baseTable);
     }
 
-    public static <B extends BaseTable> B baseTableOf(RecursiveRef<B> recursiveRef) {
+    public static <B extends TableLike<?>> B baseTableOf(RecursiveRef<B> recursiveRef) {
         if (!(recursiveRef instanceof RecursiveRefImpl<?>)) {
             throw new IllegalArgumentException("Unexpected " + RecursiveRef.class.getName());
         }
@@ -193,7 +193,7 @@ public class BaseTableSymbols {
         }
     }
 
-    private static class RecursiveRefImpl<B extends BaseTable> implements RecursiveRef<B> {
+    private static class RecursiveRefImpl<B extends TableLike<?>> implements RecursiveRef<B> {
 
         private final B baseTable;
 
@@ -223,7 +223,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table1<S1> query(TypedBaseQueryImplementor<?> query) {
-            return new Table1<>(query, wrapSelections(selections, query.asBaseTable()), selectionLayout, kind);
+            return new Table1<>(query, wrapSelections(selections, BaseTableProxies.resolve(query.asBaseTable())), selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")
@@ -291,7 +291,7 @@ public class BaseTableSymbols {
 
         @Override
         public Table2<S1, S2> query(TypedBaseQueryImplementor<?> query) {
-            return new Table2<>(query, wrapSelections(selections, query.asBaseTable()), selectionLayout, kind);
+            return new Table2<>(query, wrapSelections(selections, BaseTableProxies.resolve(query.asBaseTable())), selectionLayout, kind);
         }
 
         @SuppressWarnings("unchecked")

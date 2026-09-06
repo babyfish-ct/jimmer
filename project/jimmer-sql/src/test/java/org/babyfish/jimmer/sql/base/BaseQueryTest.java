@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.base;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
@@ -23,10 +24,105 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 public class BaseQueryTest extends AbstractQueryTest {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testSelectTable(boolean cte) {
+        BookStoreTable store = BookStoreTable.$;
+        ConfigurableBaseQuery<BookStoreTable> query = getSqlClient()
+                .createBaseQuery(store)
+                .where(store.name().eq("MANNING"))
+                .select(store);
+        BookStoreTable source = cte ? query.asCteBaseTable() : query.asBaseTable();
+        Assertions.assertSame(source, cte ? query.asCteBaseTable() : query.asBaseTable());
+        executeAndExpect(getSqlClient().createQuery(source).select(source.name()), ctx -> {
+            ctx.sql(cte ?
+                    "with tb_1_(c1) as (select tb_2_.NAME from BOOK_STORE tb_2_ where tb_2_.NAME = ?) " +
+                            "select tb_1_.c1 from tb_1_" :
+                    "select tb_1_.c1 from (select tb_2_.NAME c1 from BOOK_STORE tb_2_ where tb_2_.NAME = ?) tb_1_");
+            ctx.variables("MANNING");
+            ctx.rows("[\"MANNING\"]");
+        });
+    }
+
+    @Test
+    public void testSelectTableFromNestedUnion() {
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable union = TypedBaseQuery.unionAll(
+                getSqlClient().createBaseQuery(store).where(store.name().eq("MANNING")).select(store),
+                getSqlClient().createBaseQuery(store).where(store.name().eq("O'REILLY")).select(store)
+        ).asBaseTable();
+        BookStoreTable nested = getSqlClient().createBaseQuery(union)
+                .where(union.name().eq("MANNING")).select(union).asBaseTable();
+        executeAndExpect(getSqlClient().createQuery(nested).select(nested.name()), ctx -> {
+            ctx.sql("select tb_1_.c1 from (select tb_2_.c1 c1 from (" +
+                    "select tb_3_.NAME c1 from BOOK_STORE tb_3_ where tb_3_.NAME = ? union all " +
+                    "select tb_4_.NAME c1 from BOOK_STORE tb_4_ where tb_4_.NAME = ?) tb_2_ " +
+                    "where tb_2_.c1 = ?) tb_1_");
+            ctx.variables("MANNING", "O'REILLY", "MANNING");
+            ctx.rows("[\"MANNING\"]");
+        });
+    }
+
+    @Test
+    public void testSelectedJoinedTableAndFetcher() {
+        BookStoreTable store = BookStoreTable.$;
+        BookTable books = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING"))
+                .select(store.asTableEx().books()).asBaseTable();
+        jdbc(con -> {
+            List<String> names = getSqlClient().createQuery(books).select(books.name()).execute(con);
+            Assertions.assertEquals(3, names.size());
+            Assertions.assertFalse(names.contains("Learning GraphQL"));
+        });
+        BookStoreTable source = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        jdbc(con -> {
+            List<BookStore> stores = getSqlClient().createQuery(source)
+                    .select(source.fetch(BookStoreFetcher.$.name())).execute(con);
+            Assertions.assertEquals(1, stores.size());
+            Assertions.assertEquals("MANNING", stores.get(0).name());
+        });
+    }
+
+    @Test
+    public void testUnusedSelectedTable() {
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        executeAndExpect(getSqlClient().createQuery(source).select(Expression.constant(7)), ctx -> {
+            ctx.sql("select 7 from (select 1 as c0 from BOOK_STORE tb_2_ where tb_2_.NAME = ?) tb_1_");
+            ctx.rows("[7]");
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testSelectedTablePreservesDistinctRows(boolean union) {
+        BookTable book = BookTable.$;
+        ConfigurableBaseQuery<BookTable> query = getSqlClient()
+                .createBaseQuery(book).where(book.name().eq("GraphQL in Action")).select(book);
+        BookTable source = union ? TypedBaseQuery.union(query, getSqlClient()
+                .createBaseQuery(book).where(book.name().eq("GraphQL in Action")).select(book)).asBaseTable() :
+                query.distinct().asBaseTable();
+        jdbc(con -> Assertions.assertEquals(3, getSqlClient().createQuery(source).select(source.name()).execute(con).size()));
+    }
+
+    @Test
+    public void testSelectedTableRecursiveCte() {
+        TreeNodeTable node = TreeNodeTable.$;
+        TreeNodeTable source = TypedBaseQuery.unionAllRecursively(
+                getSqlClient().createBaseQuery(node).where(node.parentId().isNull()).select(node),
+                ref -> getSqlClient().createBaseQuery(node, ref, (t, r) -> t.parentId().eq(r.id())).select(node)
+        ).asCteBaseTable();
+        jdbc(con -> Assertions.assertEquals(Collections.singletonList(2L), getSqlClient()
+                .createQuery(source).where(source.name().eq("Food")).select(source.id()).execute(con)));
+    }
 
     private static final BaseTableFactory<StoreStatisticsTable, StoreStatisticsTable>
             STORE_STATISTICS_FACTORY =

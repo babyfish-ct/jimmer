@@ -27,42 +27,42 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     override val loaders: KLoaders
         get() = sqlClient().loaders
 
-    override fun <B : KNonNullBaseTable<*>, R> createQuery(
+    override fun <B : KPropsLike, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R> =
         sqlClient().createQuery(symbol, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQuery(entityType, block)
 
-    override fun <B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <B : KPropsLike> createBaseQuery(
         block: KMutableStaticBaseQuery.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQuery(block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForReference(
+    override fun <S : Any, T : Any, B : KPropsLike> createBaseQueryForReference(
         prop: KProperty1<S, T?>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQueryForReference(prop, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForList(
+    override fun <S : Any, T : Any, B : KPropsLike> createBaseQueryForList(
         prop: KProperty1<S, List<T>>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQueryForList(prop, block)
 
-    override fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <B : KPropsLike, R : KPropsLike> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
     ): KConfigurableBaseQuery<R> =
         sqlClient().createBaseQuery(symbol, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
@@ -70,7 +70,7 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     ): KConfigurableBaseQuery<B> =
         sqlClient().createBaseQuery(entityType, recursiveRef, joinBlock, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
@@ -90,51 +90,51 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     ): KSelectionExecutable<R> =
         sqlClient().createUpdateReturning(entityType, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createInsert(
+    override fun <E : Any, B : KPropsLike> createInsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<E, B>.() -> Unit
     ): KExecutable<Int> = sqlClient().createInsert(entityType, source, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+    override fun <E : Any, B : KPropsLike, R> createInsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R> = sqlClient().createInsertReturning(entityType, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForReference(
+    override fun <S : Any, T : Any, B : KPropsLike> createInsertForReference(
         prop: KProperty1<S, T?>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
     ): KExecutable<Int> = sqlClient().createInsertForReference(prop, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForReference(
+    override fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturningForReference(
         prop: KProperty1<S, T?>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R> =
         sqlClient().createInsertReturningForReference(prop, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForList(
+    override fun <S : Any, T : Any, B : KPropsLike> createInsertForList(
         prop: KProperty1<S, List<T>>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
     ): KExecutable<Int> = sqlClient().createInsertForList(prop, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForList(
+    override fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturningForList(
         prop: KProperty1<S, List<T>>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R> =
         sqlClient().createInsertReturningForList(prop, source, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createUpsert(
+    override fun <E : Any, B : KPropsLike> createUpsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableUpsert<E, B>.() -> Unit
     ): KExecutable<Int> = sqlClient().createUpsert(entityType, source, block)
 
-    override fun <E : Any, B : KNonNullBaseTable<*>, R> createUpsertReturning(
+    override fun <E : Any, B : KPropsLike, R> createUpsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>

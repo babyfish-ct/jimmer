@@ -3,12 +3,12 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface MutableRecursiveBaseQuery<R extends BaseTable> extends MutableBaseQuery {
+public interface MutableRecursiveBaseQuery<R extends TableLike<?>> extends MutableBaseQuery {
 
     R recursive();
 
@@ -56,7 +56,7 @@ public interface MutableRecursiveBaseQuery<R extends BaseTable> extends MutableB
      *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
      *     </li>
      * </ul>
-     *
+     * <p>
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
      * <pre>{@code

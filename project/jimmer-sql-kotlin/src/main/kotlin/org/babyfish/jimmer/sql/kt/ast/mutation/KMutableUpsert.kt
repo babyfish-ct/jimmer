@@ -4,11 +4,11 @@ import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 
 @DslScope
-interface KMutableUpsert<E : Any, B : KNonNullBaseTable<*>> {
+interface KMutableUpsert<E : Any, B : KPropsLike> {
 
     val table: KNonNullTableEx<E>
 
@@ -35,6 +35,6 @@ interface KMutableUpsert<E : Any, B : KNonNullBaseTable<*>> {
     fun updateWhere(vararg predicates: KNonNullExpression<Boolean>?)
 }
 
-interface KMutableUpsertReturning<E : Any, B : KNonNullBaseTable<*>> :
+interface KMutableUpsertReturning<E : Any, B : KPropsLike> :
     KMutableUpsert<E, B>,
     KReturningSelectable

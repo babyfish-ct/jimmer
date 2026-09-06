@@ -24,7 +24,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.Where
 import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
 import org.babyfish.jimmer.sql.kt.ast.query.specification.applyKSpecification
-import org.babyfish.jimmer.sql.kt.ast.table.KBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
@@ -32,7 +31,7 @@ import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 import org.babyfish.jimmer.sql.runtime.TupleMapper
 
-internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
+internal abstract class KMutableRootQueryImpl<P : KPropsLike>(
     protected val javaQuery: MutableRootQueryImpl<TableLike<*>>,
     override val table: P
 ) : KMutableRootQuery<P>, MutableStatementImplementor {
@@ -72,7 +71,7 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
     }
 
     override fun groupBy(vararg expressions: KExpression<*>) {
-        javaQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
+        javaQuery.groupBy(*expressions.map { it as Expression<*> }.toTypedArray())
     }
 
     override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
@@ -241,12 +240,12 @@ internal abstract class KMutableRootQueryImpl<P: KPropsLike>(
         javaQuery.resolveVirtualPredicate(ctx)
     }
 
-    internal class ForBaseTableImpl<B: KBaseTable>(
+    internal class ForBaseTableImpl<B : KPropsLike>(
         javaTable: MutableRootQueryImpl<TableLike<*>>,
         table: B
-    ): KMutableRootQueryImpl<B>(javaTable, table)
+    ) : KMutableRootQueryImpl<B>(javaTable, table)
 
-    internal class ForEntityImpl<E: Any>(
+    internal class ForEntityImpl<E : Any>(
         javaQuery: MutableRootQueryImpl<TableLike<*>>
     ) : KMutableRootQueryImpl<KNonNullTable<E>>(
         javaQuery,

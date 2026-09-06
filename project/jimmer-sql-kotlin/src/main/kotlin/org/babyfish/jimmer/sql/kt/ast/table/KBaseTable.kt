@@ -17,12 +17,12 @@ interface KNonNullBaseTable1<
 
     val _1: T1
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
     ): TT
@@ -42,12 +42,12 @@ interface KNullableBaseTable1<T1 : Selection<*>> : KNullableBaseTable {
 
     val _1: T1
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1>, TT>>
     ): TT
@@ -74,12 +74,12 @@ interface KNonNullBaseTable2<
 
     val _2: T2
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>>
     ): TT
@@ -104,12 +104,12 @@ interface KNullableBaseTable2<
 
     val _2: T2
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable2<T1, T2, T1, T2>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1, T2>, TT>>
     ): TT
@@ -140,12 +140,12 @@ interface KNonNullBaseTable3<
 
     val _3: T3
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable3<T1, T2, T3, T1Nullable, T2Nullable, T3Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable3<T1, T2, T3, T1Nullable, T2Nullable, T3Nullable>, TT>>
     ): TT
@@ -173,12 +173,12 @@ interface KNullableBaseTable3<
 
     val _3: T3
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable3<T1, T2, T3, T1, T2, T3>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable3<T1, T2, T3, T1, T2, T3>, TT>>
     ): TT
@@ -213,12 +213,12 @@ interface KNonNullBaseTable4<
 
     val _4: T4
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable4<T1, T2, T3, T4, T1Nullable, T2Nullable, T3Nullable, T4Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable4<T1, T2, T3, T4, T1Nullable, T2Nullable, T3Nullable, T4Nullable>, TT>>
     ): TT
@@ -249,12 +249,12 @@ interface KNullableBaseTable4<
 
     val _4: T4
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable4<T1, T2, T3, T4, T1, T2, T3, T4>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable4<T1, T2, T3, T4, T1, T2, T3, T4>, TT>>
     ): TT
@@ -293,12 +293,12 @@ interface KNonNullBaseTable5<
 
     val _5: T5
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable>, TT>>
     ): TT
@@ -332,12 +332,12 @@ interface KNullableBaseTable5<
 
     val _5: T5
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1, T2, T3, T4, T5>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1, T2, T3, T4, T5>, TT>>
     ): TT
@@ -381,12 +381,12 @@ interface KNonNullBaseTable6<
 
     val _6: T6
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>>
     ): TT
@@ -423,12 +423,12 @@ interface KNullableBaseTable6<
 
     val _6: T6
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>>
     ): TT
@@ -476,12 +476,12 @@ interface KNonNullBaseTable7<
 
     val _7: T7
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>>
     ): TT
@@ -521,12 +521,12 @@ interface KNullableBaseTable7<
 
     val _7: T7
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>>
     ): TT
@@ -578,12 +578,12 @@ interface KNonNullBaseTable8<
 
     val _8: T8
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>>
     ): TT
@@ -626,12 +626,12 @@ interface KNullableBaseTable8<
 
     val _8: T8
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>>
     ): TT
@@ -687,12 +687,12 @@ interface KNonNullBaseTable9<
 
     val _9: T9
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>>
     ): TT
@@ -738,12 +738,12 @@ interface KNullableBaseTable9<
 
     val _9: T9
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>
     ): TT
 
-    fun <TT : KNonNullBaseTable<*>> weakJoin(
+    fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>>
     ): TT

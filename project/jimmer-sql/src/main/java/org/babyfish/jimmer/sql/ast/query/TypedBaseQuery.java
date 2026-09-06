@@ -2,23 +2,22 @@ package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.RecursiveBaseQueryCreator;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.RecursiveRef;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
-public interface TypedBaseQuery<T extends BaseTable> {
+public interface TypedBaseQuery<T extends TableLike<?>> {
 
     @SafeVarargs
-    static <T extends BaseTable> TypedBaseQuery<T> union(TypedBaseQuery<T> ... queries) {
+    static <T extends TableLike<?>> TypedBaseQuery<T> union(TypedBaseQuery<T>... queries) {
         return MergedBaseQueryImpl.of("union", queries);
     }
 
     @SafeVarargs
-    static <T extends BaseTable> TypedBaseQuery<T> unionAll(TypedBaseQuery<T> ... queries) {
+    static <T extends TableLike<?>> TypedBaseQuery<T> unionAll(TypedBaseQuery<T>... queries) {
         return MergedBaseQueryImpl.of("union all", queries);
     }
 
     @SafeVarargs
-    static <T extends BaseTable> TypedBaseQuery<T> unionAllRecursively(
+    static <T extends TableLike<?>> TypedBaseQuery<T> unionAllRecursively(
             TypedBaseQuery<T> query,
             RecursiveBaseQueryCreator<T>... recursiveBaseQueryCreators
     ) {
@@ -26,12 +25,12 @@ public interface TypedBaseQuery<T extends BaseTable> {
     }
 
     @SafeVarargs
-    static <T extends BaseTable> TypedBaseQuery<T> minus(TypedBaseQuery<T> ... queries) {
+    static <T extends TableLike<?>> TypedBaseQuery<T> minus(TypedBaseQuery<T>... queries) {
         return MergedBaseQueryImpl.of("minus", queries);
     }
 
     @SafeVarargs
-    static <T extends BaseTable> TypedBaseQuery<T> intersect(TypedBaseQuery<T> ... queries) {
+    static <T extends TableLike<?>> TypedBaseQuery<T> intersect(TypedBaseQuery<T>... queries) {
         return MergedBaseQueryImpl.of("intersect", queries);
     }
 

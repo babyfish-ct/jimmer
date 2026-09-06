@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.base.EntityBaseTableFactory;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutationQuerySupport;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
@@ -19,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.time.temporal.Temporal;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Supplier;
@@ -205,6 +207,16 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
         return (ConfigurableBaseQuery<B>) select(
                 projection.getSelections(),
                 projection.getBaseTableFactory()
+        );
+    }
+
+    @Override
+    public <T extends Table<?>> ConfigurableBaseQuery<T> select(T table) {
+        return new ConfigurableBaseQueryImpl<>(
+                Collections.singletonList(table),
+                null,
+                this,
+                EntityBaseTableFactory.INSTANCE
         );
     }
 

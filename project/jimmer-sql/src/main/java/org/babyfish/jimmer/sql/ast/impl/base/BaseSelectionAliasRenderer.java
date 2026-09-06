@@ -79,8 +79,15 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
         }
         RealTable realTable = TableProxies.resolve((Table<?>) selection, builder.getAstContext())
                 .realTable(builder.getQueryRenderContext());
+        BaseTableOwner sourceOwner = BaseTableOwner.of((Table<?>) selection);
         for (BaseQueryExportColumn column : exportSelection.columns()) {
             RealTable childTable = childTableByKeys(realTable, column.getTableKeys());
+            BaseQueryRead sourceRead = sourceOwner == null ? null :
+                    column.getFormula() != null ?
+                            builder.getQueryRenderContext().getBaseQueryReadSupport()
+                                    .formula(sourceOwner, childTable, column.getFormula()) :
+                            builder.getQueryRenderContext().getBaseQueryReadSupport()
+                                    .column(sourceOwner, childTable, column.getName(), column.isForeignKeyInBaseQuery());
             if (column.isForeignKeyInBaseQuery()) {
                 RealTable newChildTable = childTable.getParent();
                 if (newChildTable != null) {
@@ -89,7 +96,9 @@ final class BaseSelectionAliasRenderer implements BaseSelectionAliasRender {
             }
             String alias = builder.alias(childTable);
             builder.separator();
-            if (column.getFormula() != null) {
+            if (sourceRead != null) {
+                builder.sql(builder.alias(sourceRead.getRealBaseTable())).sql(".c").sql(Integer.toString(sourceRead.index(0)));
+            } else if (column.getFormula() != null) {
                 builder.sql(column.getFormula().toSql(alias));
             } else {
                 builder

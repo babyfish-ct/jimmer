@@ -1,4 +1,6 @@
 package org.babyfish.jimmer.sql.ast.table;
 
-public interface RecursiveRef<B extends BaseTable> {
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+
+public interface RecursiveRef<B extends TableLike<?>> {
 }

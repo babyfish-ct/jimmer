@@ -148,8 +148,8 @@ public abstract class AbstractBaseTableSymbol implements BaseTableSymbol {
                 kind == BaseTableKind.CTE ? "(CTE)" : "";
     }
 
-    public static <T extends BaseTable> T validateCte(T baseTable, boolean cte) {
-        BaseTableSymbol symbol = (BaseTableSymbol) BaseTableProxies.unwrap(baseTable);
+    public static <T extends TableLike<?>> T validateCte(T baseTable, boolean cte) {
+        BaseTableSymbol symbol = (BaseTableSymbol) BaseTableProxies.resolve(baseTable);
         if (symbol.isCte() != cte) {
             throw new IllegalStateException(
                     "BaseQuery does not support calling " +

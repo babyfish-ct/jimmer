@@ -70,7 +70,7 @@ public class MutableUpdateImpl
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
-        super(sqlClient, table);
+        super(sqlClient, MutationQuerySupport.requireMutationTarget(table));
         this.updateQuery = MutationQuerySupport.createUpdateQuery(
                 sqlClient,
                 table,
@@ -835,7 +835,7 @@ public class MutableUpdateImpl
     private void updateSetters(SqlBuilder builder,
                                boolean joinedTypeStageJoinRequired,
                                ImmutableType physicalType,
-                               Map<ImmutableType, String> joinedTypeStageAliasMap){
+                               Map<ImmutableType, String> joinedTypeStageAliasMap) {
         builder.enter(SqlBuilder.ScopeType.SET);
         renderAssignments(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
         builder.leave();
@@ -945,7 +945,7 @@ public class MutableUpdateImpl
                 }
             }
 
-            if(!dialect.isUpdateAliasRequired()) {
+            if (!dialect.isUpdateAliasRequired()) {
                 updateSetters(builder, joinedTypeStageJoinRequired, physicalType, joinedTypeStageAliasMap);
             }
 

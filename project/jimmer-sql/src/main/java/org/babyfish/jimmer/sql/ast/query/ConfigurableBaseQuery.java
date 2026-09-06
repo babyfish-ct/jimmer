@@ -3,16 +3,16 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableExProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
 
-public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQuery<T> {
+public interface ConfigurableBaseQuery<T extends TableLike<?>> extends TypedBaseQuery<T> {
 
     @NewChain
     ConfigurableBaseQuery<T> distinct();
@@ -36,7 +36,7 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query2<S1, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query2<S1, T> addSelect(T expr);
@@ -61,7 +61,7 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query3<S1, S2, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query3<S1, S2, T> addSelect(T expr);
@@ -86,7 +86,7 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query4<S1, S2, S3, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query4<S1, S2, S3, T> addSelect(T expr);
@@ -109,13 +109,13 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
             S2 extends Selection<?>,
             S3 extends Selection<?>,
             S4 extends Selection<?>
-    > extends ConfigurableBaseQuery<BaseTable4<S1, S2, S3, S4>> {
+            > extends ConfigurableBaseQuery<BaseTable4<S1, S2, S3, S4>> {
 
         <T extends Table<?>> Query5<S1, S2, S3, S4, T> addSelect(T table);
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query5<S1, S2, S3, S4, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query5<S1, S2, S3, S4, T> addSelect(T expr);
@@ -139,13 +139,13 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
             S3 extends Selection<?>,
             S4 extends Selection<?>,
             S5 extends Selection<?>
-    > extends ConfigurableBaseQuery<BaseTable5<S1, S2, S3, S4, S5>> {
+            > extends ConfigurableBaseQuery<BaseTable5<S1, S2, S3, S4, S5>> {
 
         <T extends Table<?>> Query6<S1, S2, S3, S4, S5, T> addSelect(T table);
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query6<S1, S2, S3, S4, S5, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query6<S1, S2, S3, S4, S5, T> addSelect(T expr);
@@ -170,13 +170,13 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
             S4 extends Selection<?>,
             S5 extends Selection<?>,
             S6 extends Selection<?>
-    > extends ConfigurableBaseQuery<BaseTable6<S1, S2, S3, S4, S5, S6>> {
+            > extends ConfigurableBaseQuery<BaseTable6<S1, S2, S3, S4, S5, S6>> {
 
         <T extends Table<?>> Query7<S1, S2, S3, S4, S5, S6, T> addSelect(T table);
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query7<S1, S2, S3, S4, S5, S6, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query7<S1, S2, S3, S4, S5, S6, T> addSelect(T expr);
@@ -202,13 +202,13 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
             S5 extends Selection<?>,
             S6 extends Selection<?>,
             S7 extends Selection<?>
-    > extends ConfigurableBaseQuery<BaseTable7<S1, S2, S3, S4, S5, S6, S7>> {
+            > extends ConfigurableBaseQuery<BaseTable7<S1, S2, S3, S4, S5, S6, S7>> {
 
         <T extends Table<?>> Query8<S1, S2, S3, S4, S5, S6, S7, T> addSelect(T table);
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query8<S1, S2, S3, S4, S5, S6, S7, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query8<S1, S2, S3, S4, S5, S6, S7, T> addSelect(T expr);
@@ -235,13 +235,13 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
             S6 extends Selection<?>,
             S7 extends Selection<?>,
             S8 extends Selection<?>
-    > extends ConfigurableBaseQuery<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>> {
+            > extends ConfigurableBaseQuery<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>> {
 
         <T extends Table<?>> Query9<S1, S2, S3, S4, S5, S6, S7, S8, T> addSelect(T table);
 
         @SuppressWarnings("unchecked")
         default <T extends Table<?>, TEX extends TableExProxy<?, T>> Query9<S1, S2, S3, S4, S5, S6, S7, S8, T> addSelect(TEX table) {
-            return addSelect((T)table);
+            return addSelect((T) table);
         }
 
         <T extends AbstractTypedEmbeddedPropExpression<?>> Query9<S1, S2, S3, S4, S5, S6, S7, S8, T> addSelect(T expr);
@@ -269,7 +269,7 @@ public interface ConfigurableBaseQuery<T extends BaseTable> extends TypedBaseQue
             S7 extends Selection<?>,
             S8 extends Selection<?>,
             S9 extends Selection<?>
-    > extends ConfigurableBaseQuery<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>> {
+            > extends ConfigurableBaseQuery<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>> {
 
     }
 }

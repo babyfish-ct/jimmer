@@ -5,15 +5,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-public interface BaseTableFactory<T extends BaseTable, NT extends BaseTable> {
+public interface BaseTableFactory<T extends TableLike<?>, NT extends TableLike<?>> {
 
     @NotNull
-    static <T extends BaseTable> BaseTableFactory<T, T> of(@NotNull Function<BaseTable, T> creator) {
+    static <T extends TableLike<?>> BaseTableFactory<T, T> of(@NotNull Function<BaseTable, T> creator) {
         return new BaseTableFactoryImpl<>(creator, creator);
     }
 
     @NotNull
-    static <T extends BaseTable, NT extends BaseTable> BaseTableFactory<T, NT> of(
+    static <T extends TableLike<?>, NT extends TableLike<?>> BaseTableFactory<T, NT> of(
             @NotNull Function<BaseTable, T> nonNullCreator,
             @NotNull Function<BaseTable, NT> nullableCreator
     ) {

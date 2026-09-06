@@ -72,13 +72,13 @@ internal class KSqlClientImpl(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <B : KNonNullBaseTable<*>, R> createQuery(
+    override fun <B : KPropsLike, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R> {
         val query = MutableRootQueryImpl<BaseTable>(
             javaClient,
-            (symbol.baseTable as AbstractKBaseTable).javaTable,
+            symbol.javaTable,
             ExecutionPurpose.QUERY,
             FilterLevel.DEFAULT
         )
@@ -88,7 +88,7 @@ internal class KSqlClientImpl(
         ).block()
     }
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> {
@@ -99,22 +99,22 @@ internal class KSqlClientImpl(
         return KMutableBaseQueryImpl<E>(query).block()
     }
 
-    override fun <B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <B : KPropsLike> createBaseQuery(
         block: KMutableStaticBaseQuery.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
         KMutableStaticBaseQueryImpl(MutableBaseQueryImpl(javaClient)).block()
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForReference(
+    override fun <S : Any, T : Any, B : KPropsLike> createBaseQueryForReference(
         prop: KProperty1<S, T?>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> = createBaseQuery(prop, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForList(
+    override fun <S : Any, T : Any, B : KPropsLike> createBaseQueryForList(
         prop: KProperty1<S, List<T>>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> = createBaseQuery(prop, block)
 
-    private fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    private fun <S : Any, T : Any, B : KPropsLike> createBaseQuery(
         prop: KProperty1<S, *>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B> =
@@ -122,19 +122,19 @@ internal class KSqlClientImpl(
             MutableBaseQueryImpl(javaClient, AssociationType.of(prop.toImmutableProp()))
         ).block()
 
-    override fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <B : KPropsLike, R : KPropsLike> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
     ): KConfigurableBaseQuery<R> {
         val query = MutableBaseQueryImpl(
             javaClient,
-            (symbol.baseTable as AbstractKBaseTable).javaTable as TableLike<*>
+            symbol.javaTable as TableLike<*>
         )
         return KMutableBaseQueryImpl.ForBaseTableImpl<B>(query, symbol.baseTable).block()
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
@@ -155,7 +155,7 @@ internal class KSqlClientImpl(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    override fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
@@ -192,7 +192,7 @@ internal class KSqlClientImpl(
         return block(KMutableUpdateImpl(update))
     }
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createInsert(
+    override fun <E : Any, B : KPropsLike> createInsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<E, B>.() -> Unit
@@ -200,13 +200,13 @@ internal class KSqlClientImpl(
         val mutation = MutableInsertImpl(
             javaClient,
             ImmutableType.get(entityType.java),
-            (source.baseTable as AbstractKBaseTable).javaTable
+            source.javaTable
         )
         block(KMutableInsertImpl(mutation, source.baseTable))
         return KExecutableImpl(mutation)
     }
 
-    override fun <E : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+    override fun <E : Any, B : KPropsLike, R> createInsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
@@ -214,36 +214,36 @@ internal class KSqlClientImpl(
         val mutation = MutableInsertImpl(
             javaClient,
             ImmutableType.get(entityType.java),
-            (source.baseTable as AbstractKBaseTable).javaTable
+            source.javaTable
         )
         return block(KMutableInsertImpl(mutation, source.baseTable))
     }
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForReference(
+    override fun <S : Any, T : Any, B : KPropsLike> createInsertForReference(
         prop: KProperty1<S, T?>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
     ): KExecutable<Int> = createInsert(prop, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForReference(
+    override fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturningForReference(
         prop: KProperty1<S, T?>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R> = createInsertReturning(prop, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForList(
+    override fun <S : Any, T : Any, B : KPropsLike> createInsertForList(
         prop: KProperty1<S, List<T>>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
     ): KExecutable<Int> = createInsert(prop, source, block)
 
-    override fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForList(
+    override fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturningForList(
         prop: KProperty1<S, List<T>>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R> = createInsertReturning(prop, source, block)
 
-    private fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsert(
+    private fun <S : Any, T : Any, B : KPropsLike> createInsert(
         prop: KProperty1<S, *>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
@@ -251,13 +251,13 @@ internal class KSqlClientImpl(
         val mutation = MutableInsertImpl(
             javaClient,
             AssociationType.of(prop.toImmutableProp()),
-            (source.baseTable as AbstractKBaseTable).javaTable
+            source.javaTable
         )
         block(KMutableInsertImpl(mutation, source.baseTable))
         return KExecutableImpl(mutation)
     }
 
-    private fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+    private fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturning(
         prop: KProperty1<S, *>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
@@ -265,12 +265,12 @@ internal class KSqlClientImpl(
         val mutation = MutableInsertImpl(
             javaClient,
             AssociationType.of(prop.toImmutableProp()),
-            (source.baseTable as AbstractKBaseTable).javaTable
+            source.javaTable
         )
         return block(KMutableInsertImpl(mutation, source.baseTable))
     }
 
-    override fun <E : Any, B : KNonNullBaseTable<*>> createUpsert(
+    override fun <E : Any, B : KPropsLike> createUpsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableUpsert<E, B>.() -> Unit
@@ -278,13 +278,13 @@ internal class KSqlClientImpl(
         val mutation = MutableUpsertImpl(
             javaClient,
             ImmutableType.get(entityType.java),
-            (source.baseTable as AbstractKBaseTable).javaTable
+            source.javaTable
         )
         block(KMutableUpsertImpl(mutation, source.baseTable))
         return KExecutableImpl(mutation)
     }
 
-    override fun <E : Any, B : KNonNullBaseTable<*>, R> createUpsertReturning(
+    override fun <E : Any, B : KPropsLike, R> createUpsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
@@ -292,7 +292,7 @@ internal class KSqlClientImpl(
         val mutation = MutableUpsertImpl(
             javaClient,
             ImmutableType.get(entityType.java),
-            (source.baseTable as AbstractKBaseTable).javaTable
+            source.javaTable
         )
         return block(KMutableUpsertImpl(mutation, source.baseTable))
     }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -101,6 +102,14 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private void acceptSelection(Selection<?> selection, AstVisitor visitor) {
+        if (this instanceof ConfigurableBaseQueryImpl<?> &&
+                visitor instanceof TableUsageCollector &&
+                selection instanceof Table<?> &&
+                BaseTableOwner.of((Table<?>) selection) != null &&
+                !data.distinct && !((ConfigurableBaseQueryImpl<?>) this).isFullTableSelectionRequired()) {
+            // Consumers propagate their required fields through an exported entity table.
+            return;
+        }
         AstContext astContext = visitor.getAstContext();
         Ast.from(selection, astContext).accept(visitor);
         TableSelection tableSelection = null;

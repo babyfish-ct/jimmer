@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols
+import org.babyfish.jimmer.sql.ast.impl.base.*
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle
 import org.babyfish.jimmer.sql.ast.table.BaseTable
@@ -53,13 +50,13 @@ abstract class AbstractKBaseTable protected constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <ST : KBaseTable, TT : KNonNullBaseTable<*>> weakJoinImpl(
+    protected fun <ST : KPropsLike, TT : KPropsLike> weakJoinImpl(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<ST, TT>
     ): TT {
         val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.INNER,
@@ -69,13 +66,13 @@ abstract class AbstractKBaseTable protected constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <ST : KBaseTable, TT : KNonNullBaseTable<*>> weakJoinImpl(
+    protected fun <ST : KPropsLike, TT : KPropsLike> weakJoinImpl(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<ST, TT>>
     ): TT {
         val handle = WeakJoinHandle.of(weakJoinType.java)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.INNER,
@@ -85,13 +82,13 @@ abstract class AbstractKBaseTable protected constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <ST : KBaseTable, TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoinImpl(
+    protected fun <ST : KPropsLike, TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoinImpl(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<ST, TT>
     ): TNT {
         val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.LEFT,
@@ -101,13 +98,13 @@ abstract class AbstractKBaseTable protected constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <ST : KBaseTable, TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoinImpl(
+    protected fun <ST : KPropsLike, TNT : KNullableBaseTable, TT : KNonNullBaseTable<TNT>> weakOuterJoinImpl(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<ST, TT>>
     ): TNT {
         val handle = WeakJoinHandle.of(weakJoinType.java)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.LEFT,
@@ -118,9 +115,12 @@ abstract class AbstractKBaseTable protected constructor(
 
     companion object {
 
-        fun nonNull(baseTable: BaseTable): AbstractKBaseTable {
+        fun nonNull(baseTable: BaseTable): KPropsLike {
             val baseTable = BaseTableProxies.unwrap(baseTable)
             val symbol = baseTable as BaseTableSymbol
+            if (symbol.baseTableFactory === EntityBaseTableFactory.INSTANCE) {
+                return kotlinSelection(symbol.selections[0], symbol.selectionLayout[0], false) as KPropsLike
+            }
             val projected = symbol.baseTableFactory?.createNonNull(symbol)
             if (projected is AbstractKBaseTable) {
                 return projected
@@ -364,13 +364,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1Nullable>, TT>>
         ): TT =
@@ -401,13 +401,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable1<T1, T1>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable1<T1, T1>, TT>>
         ): TT =
@@ -454,13 +454,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>, TT>>
         ): TT =
@@ -503,13 +503,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable2<T1, T2, T1, T2>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable2<T1, T2, T1, T2>, TT>>
         ): TT =
@@ -567,13 +567,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable3<T1, T2, T3, T1Nullable, T2Nullable, T3Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable3<T1, T2, T3, T1Nullable, T2Nullable, T3Nullable>, TT>>
         ): TT =
@@ -625,13 +625,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable3<T1, T2, T3, T1, T2, T3>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable3<T1, T2, T3, T1, T2, T3>, TT>>
         ): TT =
@@ -700,13 +700,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable4<T1, T2, T3, T4, T1Nullable, T2Nullable, T3Nullable, T4Nullable>, TT>
         ): TT =
             weakJoin(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable4<T1, T2, T3, T4, T1Nullable, T2Nullable, T3Nullable, T4Nullable>, TT>>
         ): TT =
@@ -767,13 +767,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable4<T1, T2, T3, T4, T1, T2, T3, T4>, TT>
         ): TT =
             weakJoin(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable4<T1, T2, T3, T4, T1, T2, T3, T4>, TT>>
         ): TT =
@@ -853,13 +853,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable>, TT>>
         ): TT =
@@ -929,13 +929,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1, T2, T3, T4, T5>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable5<T1, T2, T3, T4, T5, T1, T2, T3, T4, T5>, TT>>
         ): TT =
@@ -1026,13 +1026,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>, TT>>
         ): TT =
@@ -1111,13 +1111,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1, T2, T3, T4, T5, T6>, TT>>
         ): TT =
@@ -1219,13 +1219,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>, TT>>
         ): TT =
@@ -1313,13 +1313,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1, T2, T3, T4, T5, T6, T7>, TT>>
         ): TT =
@@ -1432,13 +1432,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>, TT>>
         ): TT =
@@ -1535,13 +1535,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1, T2, T3, T4, T5, T6, T7, T8>, TT>>
         ): TT =
@@ -1665,13 +1665,13 @@ abstract class AbstractKBaseTable protected constructor(
                 false
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>, TT>>
         ): TT =
@@ -1778,13 +1778,13 @@ abstract class AbstractKBaseTable protected constructor(
                 true
             )
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinLambda: KPropsWeakJoinFun<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>
         ): TT =
             weakJoinImpl(targetSymbol, weakJoinLambda)
 
-        override fun <TT : KNonNullBaseTable<*>> weakJoin(
+        override fun <TT : KPropsLike> weakJoin(
             targetSymbol: KBaseTableSymbol<TT>,
             weakJoinType: KClass<out KPropsWeakJoin<KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1, T2, T3, T4, T5, T6, T7, T8, T9>, TT>>
         ): TT =

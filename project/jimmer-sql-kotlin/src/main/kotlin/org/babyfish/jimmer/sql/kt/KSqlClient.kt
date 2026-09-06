@@ -38,43 +38,43 @@ interface KSqlClient : KSaveOperations {
     ): KConfigurableRootQuery<KNonNullTable<E>, R> =
         queries.forEntity(entityType, block)
 
-    fun <B : KNonNullBaseTable<*>, R> createQuery(
+    fun <B : KPropsLike, R> createQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableRootQuery<B>.() -> KConfigurableRootQuery<B, R>
     ): KConfigurableRootQuery<B, R>
 
-    fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         block: KMutableBaseQuery<E>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <B : KNonNullBaseTable<*>> createBaseQuery(
+    fun <B : KPropsLike> createBaseQuery(
         block: KMutableStaticBaseQuery.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForReference(
+    fun <S : Any, T : Any, B : KPropsLike> createBaseQueryForReference(
         prop: KProperty1<S, T?>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createBaseQueryForList(
+    fun <S : Any, T : Any, B : KPropsLike> createBaseQueryForList(
         prop: KProperty1<S, List<T>>,
         block: KMutableBaseQuery<Association<S, T>>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <B : KNonNullBaseTable<*>, R : KNonNullBaseTable<*>> createBaseQuery(
+    fun <B : KPropsLike, R : KPropsLike> createBaseQuery(
         symbol: KBaseTableSymbol<B>,
         block: KMutableBaseTableQuery<B>.() -> KConfigurableBaseQuery<R>
     ): KConfigurableBaseQuery<R>
 
-    fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         joinBlock: KPropsWeakJoinFun<KNonNullTable<E>, B>,
         block: KMutableRecursiveBaseQuery<E, B>.() -> KConfigurableBaseQuery<B>
     ): KConfigurableBaseQuery<B>
 
-    fun <E : Any, B : KNonNullBaseTable<*>> createBaseQuery(
+    fun <E : Any, B : KPropsLike> createBaseQuery(
         entityType: KClass<E>,
         recursiveRef: KRecursiveRef<B>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, B>>,
@@ -91,49 +91,49 @@ interface KSqlClient : KSaveOperations {
         block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R>
 
-    fun <E : Any, B : KNonNullBaseTable<*>> createInsert(
+    fun <E : Any, B : KPropsLike> createInsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<E, B>.() -> Unit
     ): KExecutable<Int>
 
-    fun <E : Any, B : KNonNullBaseTable<*>, R> createInsertReturning(
+    fun <E : Any, B : KPropsLike, R> createInsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R>
 
-    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForReference(
+    fun <S : Any, T : Any, B : KPropsLike> createInsertForReference(
         prop: KProperty1<S, T?>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
     ): KExecutable<Int>
 
-    fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForReference(
+    fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturningForReference(
         prop: KProperty1<S, T?>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R>
 
-    fun <S : Any, T : Any, B : KNonNullBaseTable<*>> createInsertForList(
+    fun <S : Any, T : Any, B : KPropsLike> createInsertForList(
         prop: KProperty1<S, List<T>>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsert<Association<S, T>, B>.() -> Unit
     ): KExecutable<Int>
 
-    fun <S : Any, T : Any, B : KNonNullBaseTable<*>, R> createInsertReturningForList(
+    fun <S : Any, T : Any, B : KPropsLike, R> createInsertReturningForList(
         prop: KProperty1<S, List<T>>,
         source: KBaseTableSymbol<B>,
         block: KMutableInsertReturning<Association<S, T>, B>.() -> KSelectionExecutable<R>
     ): KSelectionExecutable<R>
 
-    fun <E : Any, B : KNonNullBaseTable<*>> createUpsert(
+    fun <E : Any, B : KPropsLike> createUpsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableUpsert<E, B>.() -> Unit
     ): KExecutable<Int>
 
-    fun <E : Any, B : KNonNullBaseTable<*>, R> createUpsertReturning(
+    fun <E : Any, B : KPropsLike, R> createUpsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         block: KMutableUpsertReturning<E, B>.() -> KSelectionExecutable<R>
@@ -168,28 +168,28 @@ interface KSqlClient : KSaveOperations {
         block: KMutableUpdateReturning<E>.() -> KSelectionExecutable<R>
     ): List<R> = createUpdateReturning(entityType, block).execute(con)
 
-    fun <E : Any, B : KNonNullBaseTable<*>> executeInsert(
+    fun <E : Any, B : KPropsLike> executeInsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         con: Connection? = null,
         block: KMutableInsert<E, B>.() -> Unit
     ): Int = createInsert(entityType, source, block).execute(con)
 
-    fun <E : Any, B : KNonNullBaseTable<*>, R> executeInsertReturning(
+    fun <E : Any, B : KPropsLike, R> executeInsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         con: Connection? = null,
         block: KMutableInsertReturning<E, B>.() -> KSelectionExecutable<R>
     ): List<R> = createInsertReturning(entityType, source, block).execute(con)
 
-    fun <E : Any, B : KNonNullBaseTable<*>> executeUpsert(
+    fun <E : Any, B : KPropsLike> executeUpsert(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         con: Connection? = null,
         block: KMutableUpsert<E, B>.() -> Unit
     ): Int = createUpsert(entityType, source, block).execute(con)
 
-    fun <E : Any, B : KNonNullBaseTable<*>, R> executeUpsertReturning(
+    fun <E : Any, B : KPropsLike, R> executeUpsertReturning(
         entityType: KClass<E>,
         source: KBaseTableSymbol<B>,
         con: Connection? = null,

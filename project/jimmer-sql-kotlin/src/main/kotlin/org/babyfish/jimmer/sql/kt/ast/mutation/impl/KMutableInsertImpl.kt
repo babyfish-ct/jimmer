@@ -7,11 +7,11 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableInsertReturning
 import org.babyfish.jimmer.sql.kt.ast.mutation.KReturningSelectable
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 
-internal class KMutableInsertImpl<E : Any, B : KNonNullBaseTable<*>>(
+internal class KMutableInsertImpl<E : Any, B : KPropsLike>(
     private val javaInsert: MutableInsertImpl<*>,
     override val sourceTable: B
 ) : KMutableInsertReturning<E, B>,

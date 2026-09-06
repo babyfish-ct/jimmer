@@ -47,6 +47,53 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class InsertFromSelectTest extends AbstractMutationTest {
 
+    @Test
+    public void testSelectedTableIsNotAMutationTarget() {
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = getSqlClient().createBaseQuery(store).select(store).asBaseTable();
+        assertThrows(IllegalArgumentException.class, () -> getSqlClient().createInsert(source, source));
+        assertThrows(IllegalArgumentException.class, () -> getSqlClient().createUpsert(source, source));
+        assertThrows(IllegalArgumentException.class, () -> getSqlClient().createUpdate(source));
+        assertThrows(IllegalArgumentException.class, () -> getSqlClient().createDelete(source));
+        assertThrows(IllegalArgumentException.class, () -> getSqlClient().createInsert(store, store));
+    }
+
+    @Test
+    public void testSelectTableInsertPrunesUnusedColumns() {
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        UUID id = UUID.fromString("a0000000-0000-0000-0000-000000000098");
+        executeAndExpectRowCount(getSqlClient().createInsert(store, source)
+                .set(store.id(), Expression.value(id))
+                .set(store.name(), source.name().concat("-COPY")), ctx -> {
+            ctx.statement(it -> it.sql("insert into BOOK_STORE(ID, NAME, VERSION) " +
+                    "select ?, concat(tb_1_.c1, ?), ? from (" +
+                    "select tb_1_.NAME c1 from BOOK_STORE tb_1_ where tb_1_.NAME = ?) tb_1_"));
+            ctx.rowCount(1);
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testSelectTableReturningAndUpsert(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = client.createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        UUID id = UUID.fromString("a0000000-0000-0000-0000-000000000097");
+        jdbc(con -> {
+            assertEquals(singletonList("MANNING-COPY"), client.createInsert(store, source)
+                    .set(store.id(), Expression.value(id))
+                    .set(store.name(), source.name().concat("-COPY"))
+                    .returning(store.name()).execute(con));
+            assertEquals(singletonList("MANNING-UPDATED"), client.createUpsert(store, source)
+                    .key(store.id(), Expression.value(id))
+                    .merge(store.name(), source.name().concat("-UPDATED"))
+                    .returning(store.name()).execute(con));
+        });
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"native", "save", "emulated"})
     public void testUpdateOnlyPreservesDatabaseDefaultOnInsert(String plan) {

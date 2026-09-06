@@ -11,6 +11,11 @@ interface KMutableBaseQuery<E : Any> : KMutableQuery<KNonNullTable<E>> {
 
     val selections: Selections
 
+    /** Select a table with direct property access and demand-driven column propagation. */
+    fun <T : Any> select(table: KNonNullTable<T>): KConfigurableBaseQuery<KNonNullTable<T>>
+
+    fun <T : Any> select(table: KNullableTable<T>): KConfigurableBaseQuery<KNullableTable<T>>
+
     fun <
             T : KNonNullBaseTable<NT>,
             NT : KNullableBaseTable

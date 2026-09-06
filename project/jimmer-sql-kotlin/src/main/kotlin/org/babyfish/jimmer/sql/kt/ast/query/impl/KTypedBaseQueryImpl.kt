@@ -4,9 +4,9 @@ import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KBaseTableSymbol
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 
-internal class KTypedBaseQueryImpl<T: KNonNullBaseTable<*>>(
+internal class KTypedBaseQueryImpl<T : KPropsLike>(
     private val _javaQuery: TypedBaseQuery<BaseTable>
 ) : KTypedBaseQuery<T> {
 

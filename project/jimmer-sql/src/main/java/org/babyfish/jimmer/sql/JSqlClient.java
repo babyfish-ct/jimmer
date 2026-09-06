@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.SubQueryProvider;
 import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.di.AopProxyProvider;
@@ -70,13 +71,13 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     MutableBaseQuery createBaseQuery(BaseTable table);
 
-    <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+    <T extends TableProxy<?>, R extends TableLike<?>> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
             WeakJoin<T, R> weakJoinLambda
     );
 
-    <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+    <T extends TableProxy<?>, R extends TableLike<?>> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
             Class<? extends WeakJoin<T, R>> weakJoinType
@@ -86,11 +87,11 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
 
     MutableDelete createDelete(TableProxy<?> table);
 
-    <S extends BaseTable> MutableInsert<S> createInsert(TableProxy<?> target, S source);
+    <S extends TableLike<?>> MutableInsert<S> createInsert(TableProxy<?> target, S source);
 
-    <S extends BaseTable> MutableInsert<S> createInsert(AssociationTable<?, ?, ?, ?> target, S source);
+    <S extends TableLike<?>> MutableInsert<S> createInsert(AssociationTable<?, ?, ?, ?> target, S source);
 
-    <S extends BaseTable> MutableUpsert<S> createUpsert(TableProxy<?> target, S source);
+    <S extends TableLike<?>> MutableUpsert<S> createUpsert(TableProxy<?> target, S source);
 
     /**
      * @deprecated Use {@link #createQuery(AssociationTable)}.

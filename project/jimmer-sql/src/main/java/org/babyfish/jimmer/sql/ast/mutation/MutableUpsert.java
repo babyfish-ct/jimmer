@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.query.selectable.ReturningSelectable;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 /**
  * Bulk upsert whose rows are supplied by a typed {@link BaseTable} source.
@@ -24,7 +25,7 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
  * The affected-row count returned by {@code execute} follows the database and
  * JDBC driver conventions and is not normalized across dialects.
  */
-public interface MutableUpsert<S extends BaseTable>
+public interface MutableUpsert<S extends TableLike<?>>
         extends Executable<Integer>, ReturningSelectable {
 
     /**
@@ -35,7 +36,7 @@ public interface MutableUpsert<S extends BaseTable>
      *
      * @param target a physical property of the mutation target
      * @param source the value to insert and use for conflict matching
-     * @param <T> the value type
+     * @param <T>    the value type
      * @return this command
      */
     @OldChain
@@ -47,7 +48,7 @@ public interface MutableUpsert<S extends BaseTable>
      *
      * @param target a physical property of the mutation target
      * @param source the value to insert
-     * @param <T> the value type
+     * @param <T>    the value type
      * @return this command
      */
     @OldChain
@@ -65,9 +66,9 @@ public interface MutableUpsert<S extends BaseTable>
      * Use {@link #merge(PropExpression, Expression, Expression)} to also specify
      * an insert value for the same target.
      *
-     * @param target a physical scalar property of the mutation target
+     * @param target     a physical scalar property of the mutation target
      * @param expression the value to assign to an accepted conflicting row
-     * @param <T> the value type
+     * @param <T>        the value type
      * @return this command
      */
     @OldChain
@@ -79,7 +80,7 @@ public interface MutableUpsert<S extends BaseTable>
      *
      * @param target a physical property of the mutation target
      * @param source the value to assign in either branch
-     * @param <T> the value type
+     * @param <T>    the value type
      * @return this command
      */
     @OldChain
@@ -90,10 +91,10 @@ public interface MutableUpsert<S extends BaseTable>
      * The insert expression reads the source; the update expression can also read
      * the existing target row, for example to add a source amount to a stored total.
      *
-     * @param target a physical property of the mutation target
-     * @param insertSource the value to insert when no conflict exists
+     * @param target           a physical property of the mutation target
+     * @param insertSource     the value to insert when no conflict exists
      * @param updateExpression the value to assign to an accepted conflicting row
-     * @param <T> the value type
+     * @param <T>              the value type
      * @return this command
      */
     @OldChain

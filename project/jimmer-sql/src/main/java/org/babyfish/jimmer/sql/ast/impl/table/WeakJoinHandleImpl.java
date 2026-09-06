@@ -267,6 +267,12 @@ abstract class WeakJoinHandleImpl implements WeakJoinHandle {
                 TableLike<?> target,
                 AbstractMutableStatementImpl statement
         ) {
+            if (source instanceof BaseTable) {
+                source = BaseTableProxies.wrap((BaseTable) source);
+            }
+            if (target instanceof BaseTable) {
+                target = BaseTableProxies.wrap((BaseTable) target);
+            }
             if (weakJoin instanceof KWeakJoinImplementor) {
                 KWeakJoinImplementor<Object, Object> implementor =
                         (KWeakJoinImplementor<Object, Object>) weakJoin;

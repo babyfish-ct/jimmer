@@ -4,11 +4,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
 import org.babyfish.jimmer.sql.ast.table.spi.TableExProxy;
 
 import java.time.temporal.Temporal;
@@ -62,7 +58,7 @@ public interface MutableBaseQuery extends MutableQuery {
      *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
      *     </li>
      * </ul>
-     *
+     * <p>
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
      * <pre>{@code
@@ -145,11 +141,22 @@ public interface MutableBaseQuery extends MutableQuery {
 
     <B extends BaseTable> ConfigurableBaseQuery<B> select(BaseTableProjection<B> projection);
 
+    /**
+     * Select an entity table as a typed source, with properties accessed directly
+     * on the result of {@code asBaseTable()}. Only columns required by its consumers are propagated.
+     */
+    <T extends Table<?>> ConfigurableBaseQuery<T> select(T table);
+
+    @SuppressWarnings("unchecked")
+    default <T extends Table<?>, TEX extends TableExProxy<?, T>> ConfigurableBaseQuery<T> select(TEX table) {
+        return select((T) table);
+    }
+
     <T extends Table<?>> ConfigurableBaseQuery.Query1<T> addSelect(T table);
 
     @SuppressWarnings("unchecked")
     default <T extends Table<?>, TEX extends TableExProxy<?, T>> ConfigurableBaseQuery.Query1<T> addSelect(TEX table) {
-        return addSelect((T)table);
+        return addSelect((T) table);
     }
 
     <T extends AbstractTypedEmbeddedPropExpression<?>> ConfigurableBaseQuery.Query1<T> addSelect(T expr);

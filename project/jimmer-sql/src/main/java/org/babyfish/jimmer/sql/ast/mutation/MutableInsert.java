@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.query.selectable.ReturningSelectable;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 /**
  * Bulk insert whose rows are supplied by a typed {@link BaseTable} source.
@@ -17,7 +18,7 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
  * return order is not guaranteed. The affected-row count returned by {@code execute}
  * follows the database and JDBC driver conventions and is not normalized across dialects.
  */
-public interface MutableInsert<S extends BaseTable>
+public interface MutableInsert<S extends TableLike<?>>
         extends Executable<Integer>, ReturningSelectable {
 
     /**
@@ -27,7 +28,7 @@ public interface MutableInsert<S extends BaseTable>
      *
      * @param target a physical property of the mutation target
      * @param source the value to insert; it cannot reference the existing target row
-     * @param <T> the value type
+     * @param <T>    the value type
      * @return this command
      */
     @OldChain
@@ -63,7 +64,7 @@ public interface MutableInsert<S extends BaseTable>
      * @param targetProps the non-empty, duplicate-free physical conflict key
      * @return this command
      * @throws IllegalArgumentException if the array is null or empty, or a property
-     * does not belong to the target or is not backed by physical columns
+     *                                  does not belong to the target or is not backed by physical columns
      */
     @OldChain
     MutableInsert<S> onConflictDoNothing(PropExpression<?>... targetProps);

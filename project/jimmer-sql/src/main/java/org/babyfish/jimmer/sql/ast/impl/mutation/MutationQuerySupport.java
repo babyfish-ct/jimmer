@@ -21,7 +21,15 @@ import java.util.Map;
 
 public final class MutationQuerySupport {
 
-    private MutationQuerySupport() {}
+    private MutationQuerySupport() {
+    }
+
+    static TableProxy<?> requireMutationTarget(TableProxy<?> table) {
+        if (table.__baseTableOwner() != null) {
+            throw new IllegalArgumentException("A table selected by a base query cannot be used as a mutation target");
+        }
+        return table;
+    }
 
     public static boolean isCompatibleParent(
             AbstractMutableStatementImpl a,

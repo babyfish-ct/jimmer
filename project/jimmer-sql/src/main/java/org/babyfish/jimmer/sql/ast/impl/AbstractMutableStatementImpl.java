@@ -93,7 +93,12 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 sqlClient,
                 "sqlClient cannot be null"
         );
-        if (table instanceof TableProxy<?>) {
+        BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+        if (baseTableOwner != null) {
+            this.table = table;
+            this.tableLikeImplementor = BaseTableImpl.of(baseTableOwner.getBaseTable(), null, null);
+            this.type = null;
+        } else if (table instanceof TableProxy<?>) {
             TableProxy<?> tableProxy = (TableProxy<?>) table;
             if (tableProxy.__unwrap() != null) {
                 throw new IllegalArgumentException("table proxy cannot be wrapper");

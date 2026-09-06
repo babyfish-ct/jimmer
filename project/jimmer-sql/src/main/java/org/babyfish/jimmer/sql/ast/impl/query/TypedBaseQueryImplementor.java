@@ -5,14 +5,14 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.util.List;
 
-public interface TypedBaseQueryImplementor<T extends BaseTable>
+public interface TypedBaseQueryImplementor<T extends TableLike<?>>
         extends TypedBaseQuery<T>, TypedQueryImplementor {
 
     TableImplementor<?> resolveRootTable(Table<?> table);

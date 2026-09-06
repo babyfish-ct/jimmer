@@ -28,6 +28,7 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -51,7 +52,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.stream.Stream;
 
-abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
+abstract class AbstractInsertFromSelectImpl<S extends TableLike<?>>
         extends AbstractMutableStatementImpl
         implements ReturningSelectable {
 
@@ -94,9 +95,9 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
             TableProxy<?> target,
             S source
     ) {
-        super(sqlClient, target);
+        super(sqlClient, MutationQuerySupport.requireMutationTarget(target));
         this.source = Objects.requireNonNull(source, "source cannot be null");
-        BaseTable rawSource = BaseTableProxies.unwrap(source);
+        BaseTable rawSource = BaseTableProxies.resolve(source);
         if (!(rawSource instanceof BaseTableSymbol)) {
             throw new IllegalArgumentException("source must be a typed base-table symbol");
         }
@@ -121,7 +122,7 @@ abstract class AbstractInsertFromSelectImpl<S extends BaseTable>
     ) {
         super(sqlClient, targetType);
         this.source = Objects.requireNonNull(source, "source cannot be null");
-        BaseTable rawSource = BaseTableProxies.unwrap(source);
+        BaseTable rawSource = BaseTableProxies.resolve(source);
         if (!(rawSource instanceof BaseTableSymbol)) {
             throw new IllegalArgumentException("source must be a typed base-table symbol");
         }

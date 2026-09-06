@@ -66,7 +66,7 @@ public class MutableDeleteImpl
     }
 
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
-        super(sqlClient, table);
+        super(sqlClient, MutationQuerySupport.requireMutationTarget(table));
         deleteQuery = new MutableRootQueryImpl<>(
                 new StatementContext(ExecutionPurpose.delete(QueryReason.CANNOT_DELETE_DIRECTLY)),
                 sqlClient,
@@ -474,7 +474,7 @@ public class MutableDeleteImpl
             MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), table.getImmutableType());
             update.shareRootAliasWith(deleteQuery.getTableLikeImplementor());
             update.set(
-                    (PropExpression<Object>)PropExpressionImpl.of(
+                    (PropExpression<Object>) PropExpressionImpl.of(
                             update.getTable(),
                             deleteQuery.getType().getLogicalDeletedInfo().getProp(),
                             false

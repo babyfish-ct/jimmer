@@ -3,11 +3,11 @@ package org.babyfish.jimmer.sql.kt.ast.mutation
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 
 @DslScope
-interface KMutableInsert<E : Any, B : KNonNullBaseTable<*>> {
+interface KMutableInsert<E : Any, B : KPropsLike> {
 
     val table: KNonNullTableEx<E>
 
@@ -20,6 +20,6 @@ interface KMutableInsert<E : Any, B : KNonNullBaseTable<*>> {
     fun onConflictDoNothing(vararg targetProps: KPropExpression<*>)
 }
 
-interface KMutableInsertReturning<E : Any, B : KNonNullBaseTable<*>> :
+interface KMutableInsertReturning<E : Any, B : KPropsLike> :
     KMutableInsert<E, B>,
     KReturningSelectable

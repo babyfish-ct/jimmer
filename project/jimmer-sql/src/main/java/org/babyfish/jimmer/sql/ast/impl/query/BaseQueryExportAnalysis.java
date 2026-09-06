@@ -112,7 +112,8 @@ final class BaseQueryExportAnalysis {
         java.util.List<BaseQueryExportUsages.TableReferenceUsage> usages =
                 analysis.tableReferenceUsages(baseTableOwner);
         boolean[] consumedUsages = new boolean[usages.size()];
-        boolean fullRow = analysis.isFullRowExportRequired(baseTableOwner);
+        boolean fullRow = analysis.isFullRowExportRequired(baseTableOwner) ||
+                baseTableOwner.getBaseTable().getQuery().isFullTableSelectionRequired();
         for (ImmutableProp prop : tableImplementor.getImmutableType().getSelectableProps().values()) {
             if (fullRow) {
                 analyzeProp(realTable, tableImplementor, prop, false, false, exportSelection, ctx);

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery
 import org.babyfish.jimmer.sql.ast.table.BaseTable
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionKind
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
@@ -14,13 +15,13 @@ import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.ast.table.impl.AbstractKBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 
-internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable<*>>(
-    internal val javaBaseQuery: ConfigurableBaseQuery<out BaseTable>,
+internal abstract class AbstractKConfigurableBaseQueryImpl<T : KPropsLike>(
+    internal val javaBaseQuery: ConfigurableBaseQuery<out TableLike<*>>,
     internal val selectionLayout: BaseTableSelectionLayout
 ) : KConfigurableBaseQuery<T> {
 
-    internal class ProjectedImpl<T : KNonNullBaseTable<*>>(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+    internal class ProjectedImpl<T : KPropsLike>(
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<T>(javaQuery, selectionLayout)
 
@@ -100,7 +101,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T1Nullable : Selection<*>,
             T2Nullable : Selection<*>,
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable2<T1, T2, T1Nullable, T2Nullable>
@@ -149,7 +150,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T2Nullable : Selection<*>,
             T3Nullable : Selection<*>,
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable3<T1, T2, T3, T1Nullable, T2Nullable, T3Nullable>
@@ -201,7 +202,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T3Nullable : Selection<*>,
             T4Nullable : Selection<*>,
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable4<T1, T2, T3, T4, T1Nullable, T2Nullable, T3Nullable, T4Nullable>
@@ -255,7 +256,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T4Nullable : Selection<*>,
             T5Nullable : Selection<*>,
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable5<T1, T2, T3, T4, T5, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable>
@@ -311,7 +312,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T5Nullable : Selection<*>,
             T6Nullable : Selection<*>
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable6<T1, T2, T3, T4, T5, T6, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable>
@@ -369,7 +370,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T6Nullable : Selection<*>,
             T7Nullable : Selection<*>
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable7<T1, T2, T3, T4, T5, T6, T7, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable>
@@ -429,7 +430,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T7Nullable : Selection<*>,
             T8Nullable : Selection<*>
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable8<T1, T2, T3, T4, T5, T6, T7, T8, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable>
@@ -491,7 +492,7 @@ internal abstract class AbstractKConfigurableBaseQueryImpl<T : KNonNullBaseTable
             T8Nullable : Selection<*>,
             T9Nullable : Selection<*>
             >(
-        javaQuery: ConfigurableBaseQuery<out BaseTable>,
+        javaQuery: ConfigurableBaseQuery<out TableLike<*>>,
         selectionLayout: BaseTableSelectionLayout
     ) : AbstractKConfigurableBaseQueryImpl<
             KNonNullBaseTable9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T1Nullable, T2Nullable, T3Nullable, T4Nullable, T5Nullable, T6Nullable, T7Nullable, T8Nullable, T9Nullable>

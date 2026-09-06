@@ -8,6 +8,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
 import org.babyfish.jimmer.sql.ast.impl.mutation.*;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
@@ -460,7 +461,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @Override
     public <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table) {
-        if (table instanceof TableEx<?>) {
+        if (table instanceof TableEx<?> && table.__baseTableOwner() == null) {
             throw new IllegalArgumentException("Top-level query does not support TableEx");
         }
         return new MutableRootQueryImpl<>(
@@ -522,7 +523,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+    public <T extends TableProxy<?>, R extends TableLike<?>> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
             WeakJoin<T, R> weakJoinLambda
@@ -534,19 +535,23 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 true,
                 (WeakJoin<TableLike<?>, TableLike<?>>) (WeakJoin<?, ?>) weakJoinLambda
         );
-        R recursiveTable = (R) BaseTableSymbols.of(recursiveRef, table, handle, JoinType.INNER);
+        R recursiveTable = BaseTableProxies.wrap(
+                BaseTableSymbols.of(recursiveRef, table, handle, JoinType.INNER)
+        );
         return new MutableRecursiveBaseQueryImpl<>(this, table, recursiveTable);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+    public <T extends TableProxy<?>, R extends TableLike<?>> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
             Class<? extends WeakJoin<T, R>> weakJoinType
     ) {
         WeakJoinHandle handle = WeakJoinHandle.of(weakJoinType);
-        R recursiveTable = (R) BaseTableSymbols.of(recursiveRef, table, handle, JoinType.INNER);
+        R recursiveTable = BaseTableProxies.wrap(
+                BaseTableSymbols.of(recursiveRef, table, handle, JoinType.INNER)
+        );
         return new MutableRecursiveBaseQueryImpl<>(this, table, recursiveTable);
     }
 
@@ -561,12 +566,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public <S extends BaseTable> MutableInsert<S> createInsert(TableProxy<?> target, S source) {
+    public <S extends TableLike<?>> MutableInsert<S> createInsert(TableProxy<?> target, S source) {
         return new MutableInsertImpl<>(this, target, source);
     }
 
     @Override
-    public <S extends BaseTable> MutableInsert<S> createInsert(
+    public <S extends TableLike<?>> MutableInsert<S> createInsert(
             AssociationTable<?, ?, ?, ?> target,
             S source
     ) {
@@ -577,7 +582,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public <S extends BaseTable> MutableUpsert<S> createUpsert(TableProxy<?> target, S source) {
+    public <S extends TableLike<?>> MutableUpsert<S> createUpsert(TableProxy<?> target, S source) {
         return new MutableUpsertImpl<>(this, target, source);
     }
 

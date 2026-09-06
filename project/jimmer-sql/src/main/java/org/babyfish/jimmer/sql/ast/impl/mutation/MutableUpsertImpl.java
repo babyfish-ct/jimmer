@@ -5,14 +5,14 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpsert;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class MutableUpsertImpl<S extends BaseTable>
+public final class MutableUpsertImpl<S extends TableLike<?>>
         extends AbstractInsertFromSelectImpl<S>
         implements MutableUpsert<S> {
 

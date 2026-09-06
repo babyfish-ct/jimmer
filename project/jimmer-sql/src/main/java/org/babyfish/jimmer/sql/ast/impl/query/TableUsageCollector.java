@@ -2,12 +2,15 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
@@ -16,15 +19,12 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class TableUsageCollector extends TableUsageVisitor {
+
+    @Nullable
+    private Set<BaseTableOwner> propagatingBaseTableOwners;
 
     private final List<RealTable> rootTables = new ArrayList<>();
 
@@ -122,6 +122,26 @@ public class TableUsageCollector extends TableUsageVisitor {
             baseQueryExportUsagesBuilder.requireFullRowExport(canonicalTableOwner(baseTableOwner));
         } else {
             baseQueryExportUsagesBuilder.requireTableReference(canonicalTableOwner(baseTableOwner), table, prop, rawId);
+        }
+        Selection<?> selection = baseTableOwner.getBaseTable()
+                .getQuery().getSelections().get(baseTableOwner.getIndex());
+        if (selection instanceof Table<?> && BaseTableOwner.of((Table<?>) selection) != null) {
+            if (propagatingBaseTableOwners == null) {
+                propagatingBaseTableOwners = new HashSet<>();
+            }
+            if (!propagatingBaseTableOwners.add(baseTableOwner)) {
+                return;
+            }
+            try {
+                baseTableOwner.visitOwnerStatementChain(getAstContext(), () -> {
+                    TableImplementor<?> sourceTable = TableProxies.resolve((Table<?>) selection, getAstContext());
+                    if (prop == null || prop.getDeclaringType().isAssignableFrom(sourceTable.getImmutableType())) {
+                        visitTableReference(realTableForAnalysis(sourceTable), prop, rawId);
+                    }
+                });
+            } finally {
+                propagatingBaseTableOwners.remove(baseTableOwner);
+            }
         }
     }
 

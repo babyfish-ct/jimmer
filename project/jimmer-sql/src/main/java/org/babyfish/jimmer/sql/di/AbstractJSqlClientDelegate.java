@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
@@ -90,7 +91,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(
+    public <T extends TableProxy<?>, R extends TableLike<?>> MutableRecursiveBaseQuery<R> createBaseQuery(
             T table,
             RecursiveRef<R> recursiveRef,
             WeakJoin<T, R> weakJoinLambda
@@ -99,7 +100,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <T extends TableProxy<?>, R extends BaseTable> MutableRecursiveBaseQuery<R> createBaseQuery(T table, RecursiveRef<R> recursiveRef, Class<? extends WeakJoin<T, R>> weakJoinType) {
+    public <T extends TableProxy<?>, R extends TableLike<?>> MutableRecursiveBaseQuery<R> createBaseQuery(
+            T table,
+            RecursiveRef<R> recursiveRef,
+            Class<? extends WeakJoin<T, R>> weakJoinType
+    ) {
         return sqlClient().createBaseQuery(table, recursiveRef, weakJoinType);
     }
 
@@ -114,12 +119,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <S extends BaseTable> MutableInsert<S> createInsert(TableProxy<?> target, S source) {
+    public <S extends TableLike<?>> MutableInsert<S> createInsert(TableProxy<?> target, S source) {
         return sqlClient().createInsert(target, source);
     }
 
     @Override
-    public <S extends BaseTable> MutableInsert<S> createInsert(
+    public <S extends TableLike<?>> MutableInsert<S> createInsert(
             AssociationTable<?, ?, ?, ?> target,
             S source
     ) {
@@ -127,7 +132,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <S extends BaseTable> MutableUpsert<S> createUpsert(TableProxy<?> target, S source) {
+    public <S extends TableLike<?>> MutableUpsert<S> createUpsert(TableProxy<?> target, S source) {
         return sqlClient().createUpsert(target, source);
     }
 

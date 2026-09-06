@@ -78,13 +78,13 @@ internal abstract class KTableExImpl<E : Any>(
         )
 
     @Suppress("UNCHECKED_CAST")
-    override fun <TT : KNonNullBaseTable<*>> weakJoin(
+    override fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinLambda: KPropsWeakJoinFun<KNonNullTable<E>, TT>
     ): TT {
         val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.INNER,
@@ -94,13 +94,13 @@ internal abstract class KTableExImpl<E : Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <TT : KNonNullBaseTable<*>> weakJoin(
+    override fun <TT : KPropsLike> weakJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
     ): TT {
         val handle = WeakJoinHandle.of(weakJoinType.java)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.INNER,
@@ -116,7 +116,7 @@ internal abstract class KTableExImpl<E : Any>(
     ): TNT {
         val handle = createPropsWeakJoinHandle(this::class.java, targetSymbol::class.java, weakJoinLambda)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.LEFT,
@@ -126,13 +126,13 @@ internal abstract class KTableExImpl<E : Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <TNT : KNullableBaseTable, TT : KNonNullBaseTable<*>> weakOuterJoin(
+    override fun <TNT : KNullableBaseTable, TT : KPropsLike> weakOuterJoin(
         targetSymbol: KBaseTableSymbol<TT>,
         weakJoinType: KClass<out KPropsWeakJoin<KNonNullTable<E>, TT>>
     ): TNT {
         val handle = WeakJoinHandle.of(weakJoinType.java)
         val javaJoinedTable = BaseTableSymbols.of(
-            (targetSymbol.baseTable as AbstractKBaseTable).javaTable as BaseTableSymbol?,
+            targetSymbol.javaTable as BaseTableSymbol?,
             javaTable,
             handle,
             JoinType.LEFT,

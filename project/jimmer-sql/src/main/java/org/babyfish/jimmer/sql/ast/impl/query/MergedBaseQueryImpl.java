@@ -14,17 +14,17 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableFactory;
 import org.babyfish.jimmer.sql.ast.table.spi.BaseTableSelectionLayout;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<T>, TypedBaseQueryImplementor<T> {
+public class MergedBaseQueryImpl<T extends TableLike<?>> implements TypedBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     private static final ConfigurableBaseQueryImpl<?>[] EMPTY_QUERIES = new ConfigurableBaseQueryImpl[0];
 
@@ -52,8 +52,12 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     private RecursiveBaseQueryCreator<T>[] recursiveBaseQueryCreators;
 
+    boolean isDuplicateSensitive() {
+        return !"union all".equals(operator);
+    }
+
     @SafeVarargs
-    public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T>... queries) {
+    public static <T extends TableLike<?>> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T>... queries) {
         switch (queries.length) {
             case 0:
                 throw new IllegalArgumentException("No queries are specified");
@@ -71,7 +75,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    public static <T extends BaseTable> TypedBaseQuery<T> of(
+    public static <T extends TableLike<?>> TypedBaseQuery<T> of(
             TypedBaseQuery<T> query,
             RecursiveBaseQueryCreator<T>... recursiveBaseQueryCreators
     ) {
@@ -388,7 +392,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
-        BaseTable wrapped = baseTableFactory != null ?
+        TableLike<?> wrapped = baseTableFactory != null ?
                 baseTableFactory.createNonNull(symbol) :
                 symbol;
         this.baseTable = baseTable = (T) wrapped;

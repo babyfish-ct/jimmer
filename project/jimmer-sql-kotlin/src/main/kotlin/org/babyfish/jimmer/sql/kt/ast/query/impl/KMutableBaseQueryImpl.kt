@@ -17,10 +17,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.*
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableBaseTable
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
+import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
@@ -77,6 +74,18 @@ internal open class KMutableBaseQueryImpl<E : Any>(
     override val where: Where =
         Where(this)
 
+    override fun <T : Any> select(table: KNonNullTable<T>): KConfigurableBaseQuery<KNonNullTable<T>> =
+        AbstractKConfigurableBaseQueryImpl.ProjectedImpl(
+            javaBaseQuery.select((table as KTableImplementor<*>).javaTable),
+            BaseTableSelectionLayout.of(BaseTableSelectionKind.NON_NULL_TABLE)
+        )
+
+    override fun <T : Any> select(table: KNullableTable<T>): KConfigurableBaseQuery<KNullableTable<T>> =
+        AbstractKConfigurableBaseQueryImpl.ProjectedImpl(
+            javaBaseQuery.select((table as KTableImplementor<*>).javaTable),
+            BaseTableSelectionLayout.of(BaseTableSelectionKind.NULLABLE_TABLE)
+        )
+
     override val selections: KMutableBaseQuery.Selections
         get() = SelectionsImpl()
 
@@ -123,12 +132,12 @@ internal open class KMutableBaseQueryImpl<E : Any>(
         }
     }
 
-    internal class ForBaseTableImpl<B : KNonNullBaseTable<*>>(
+    internal class ForBaseTableImpl<B : KPropsLike>(
         javaBaseQuery: MutableBaseQueryImpl,
         table: B
     ) : BaseTableImpl<B>(javaBaseQuery, table)
 
-    internal abstract class BaseTableImpl<B : KNonNullBaseTable<*>>(
+    internal abstract class BaseTableImpl<B : KPropsLike>(
         private val javaBaseQuery: MutableBaseQueryImpl,
         override val table: B
     ) : KMutableBaseTableQuery<B>, MutableStatementImplementor {
@@ -176,6 +185,18 @@ internal open class KMutableBaseQueryImpl<E : Any>(
 
         override val where: Where =
             Where(this)
+
+        override fun <T : Any> select(table: KNonNullTable<T>): KConfigurableBaseQuery<KNonNullTable<T>> =
+            AbstractKConfigurableBaseQueryImpl.ProjectedImpl(
+                javaBaseQuery.select((table as KTableImplementor<*>).javaTable),
+                BaseTableSelectionLayout.of(BaseTableSelectionKind.NON_NULL_TABLE)
+            )
+
+        override fun <T : Any> select(table: KNullableTable<T>): KConfigurableBaseQuery<KNullableTable<T>> =
+            AbstractKConfigurableBaseQueryImpl.ProjectedImpl(
+                javaBaseQuery.select((table as KTableImplementor<*>).javaTable),
+                BaseTableSelectionLayout.of(BaseTableSelectionKind.NULLABLE_TABLE)
+            )
 
         override val selections: KMutableBaseQuery.Selections
             get() = SelectionsImpl()

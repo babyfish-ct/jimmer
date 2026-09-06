@@ -9,7 +9,10 @@ import org.babyfish.jimmer.sql.kt.ast.expression.nullValue
 import org.babyfish.jimmer.sql.kt.ast.expression.value
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableInsert
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpsert
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableBaseQuery
 import org.babyfish.jimmer.sql.kt.ast.query.baseTableSymbol
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
 import org.babyfish.jimmer.sql.kt.ast.table.sourceId
 import org.babyfish.jimmer.sql.kt.ast.table.targetId
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -20,12 +23,49 @@ import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.query.tuple.AggregateTupleMapper
 import java.math.BigDecimal
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class InsertFromSelectApiShapeTest : AbstractMutationTest() {
+
+    @Test
+    fun testSelectedEntityTableTypeInference() {
+        val client = sqlClient { setDialect(H2Dialect()) }
+        val query: KConfigurableBaseQuery<KNonNullTable<BookStore>> = client.createBaseQuery(BookStore::class) {
+            where(table.name eq "MANNING")
+            select(table)
+        }
+        val source = query.asBaseTable()
+        val insert = client.createInsert<BookStore, _>(source) {
+            set(table.id, sourceTable.id)
+            set(table.name, sourceTable.name)
+        }
+        val upsert = client.createUpsertReturning<BookStore, _, Long>(source) {
+            key(table.id, sourceTable.id)
+            merge(table.name, sourceTable.name)
+            returning(table.id)
+        }
+        val nested = client.createBaseQuery(source) {
+            where(table.name eq "MANNING")
+            select(table)
+        }.asCteBaseTable()
+        val select = client.createQuery(nested) { select(table.name) }
+        assertNotNull(insert)
+        assertNotNull(upsert)
+        jdbc { con -> assertEquals(listOf("MANNING"), select.execute(con)) }
+    }
+
+    @Test
+    fun testNullableSelectedTableAndUnionTypeInference() {
+        val client = sqlClient { setDialect(H2Dialect()) }
+        val first: KConfigurableBaseQuery<KNullableTable<BookStore>> = client.createBaseQuery(Book::class) {
+            select(table.asTableEx().outerJoinReference(Book::store))
+        }
+        val second = client.createBaseQuery(Book::class) { select(table.asTableEx().outerJoinReference(Book::store)) }
+        val source = (first unionAll second).asBaseTable()
+        val query: org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery<KNullableTable<BookStore>, String?> =
+            client.createQuery(source) { select(table.name) }
+        assertNotNull(query)
+    }
 
     @Test
     fun testEntityFactoryReturnTypesAndDslSeparation() {

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 
 import java.util.function.Function;
 
-final class BaseTableFactoryImpl<T extends BaseTable, NT extends BaseTable> implements BaseTableFactory<T, NT> {
+final class BaseTableFactoryImpl<T extends TableLike<?>, NT extends TableLike<?>> implements BaseTableFactory<T, NT> {
 
     private final Function<BaseTable, T> nonNullCreator;
 

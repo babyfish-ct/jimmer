@@ -5,14 +5,10 @@ import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.base.AbstractBaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableKind;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbols;
+import org.babyfish.jimmer.sql.ast.impl.base.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -30,7 +26,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class ConfigurableBaseQueryImpl<T extends BaseTable>
+public class ConfigurableBaseQueryImpl<T extends TableLike<?>>
         extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
@@ -75,6 +71,21 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     @Override
     public MutableBaseQueryImpl getMutableQuery() {
         return (MutableBaseQueryImpl) super.getMutableQuery();
+    }
+
+    boolean isFullTableSelectionRequired() {
+        if (baseTableFactory != EntityBaseTableFactory.INSTANCE) {
+            return false;
+        }
+        if (getData().distinct) {
+            return true;
+        }
+        for (MergedBaseQueryImpl<?> merged = mergedBy; merged != null; merged = merged.getMergedBy()) {
+            if (merged.isDuplicateSensitive()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -183,7 +194,7 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
             return AbstractBaseTableSymbol.validateCte(baseTable, cte);
         }
         BaseTableSymbol symbol = asBaseTableSymbol(selectionLayout, cte);
-        BaseTable wrapped = baseTableFactory != null ?
+        TableLike<?> wrapped = baseTableFactory != null ?
                 baseTableFactory.createNonNull(symbol) :
                 symbol;
         this.baseTable = baseTable = (T) wrapped;
@@ -244,6 +255,10 @@ public class ConfigurableBaseQueryImpl<T extends BaseTable>
     @Override
     public TableImplementor<?> resolveRootTable(Table<?> table) {
         MutableBaseQueryImpl mutableQuery = getMutableQuery();
+        if (mutableQuery.getTableLikeImplementor() instanceof BaseTableImplementor) {
+            return ((BaseTableImplementor) mutableQuery.getTableLikeImplementor())
+                    .getQuery().resolveRootTable(table);
+        }
         TableLike<?> rootTable = mutableQuery.getTable();
         return rootTable != null && AbstractTypedTable.__refEquals(rootTable, table) ?
                 (TableImplementor<?>) mutableQuery.getTableLikeImplementor() :

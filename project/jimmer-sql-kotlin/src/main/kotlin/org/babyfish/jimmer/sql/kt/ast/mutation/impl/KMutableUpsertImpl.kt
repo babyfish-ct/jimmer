@@ -9,11 +9,11 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpsertReturning
 import org.babyfish.jimmer.sql.kt.ast.mutation.KReturningSelectable
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullBaseTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KPropsLike
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 
-internal class KMutableUpsertImpl<E : Any, B : KNonNullBaseTable<*>>(
+internal class KMutableUpsertImpl<E : Any, B : KPropsLike>(
     private val javaUpsert: MutableUpsertImpl<*>,
     override val sourceTable: B
 ) : KMutableUpsertReturning<E, B>,
