@@ -417,18 +417,24 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             }
             if (prop.getIdViewBaseProp() != null) {
                 P referenceProp = (P) prop.getIdViewBaseProp();
-                if (!referenceProp.isList()) {
-                    pathNodes.add(
-                            new AssociatedIdPathNodeImpl<>(
-                                    referenceProp,
-                                    ctx.getIdProp(ctx.getTargetType(referenceProp)).getName()
-                            )
+                if (referenceProp.isList()) {
+                    throw ctx.exception(
+                            part.getLine(),
+                            part.getCharPositionInLine(),
+                            "The property \"" + prop + "\" is an id-view list and cannot be used " +
+                                    "because join is forbidden by fetcher field predicate"
                     );
-                    T targetType = ctx.getTargetType(referenceProp);
-                    P idProp = ctx.getIdProp(targetType);
-                    baseType = ctx.getTargetType(idProp);
-                    continue;
                 }
+                pathNodes.add(
+                        new AssociatedIdPathNodeImpl<>(
+                                referenceProp,
+                                ctx.getIdProp(ctx.getTargetType(referenceProp)).getName()
+                        )
+                );
+                T targetType = ctx.getTargetType(referenceProp);
+                P idProp = ctx.getIdProp(targetType);
+                baseType = ctx.getTargetType(idProp);
+                continue;
             }
             if (prop.isAssociation(true)) {
                 if (prop.isReference()) {

@@ -84,7 +84,7 @@ class KspDtoCompiler(
             } else {
                 pathNode.prop.typeName().copy(nullable = false)
             }
-        ] ?: error(pathNode.prop.typeName())
+        ] ?: SimplePropType.NONE
 
     override fun getGenericTypeCount(qualifiedName: String): Int? =
         resolver.getClassDeclarationByName(qualifiedName)?.typeParameters?.size

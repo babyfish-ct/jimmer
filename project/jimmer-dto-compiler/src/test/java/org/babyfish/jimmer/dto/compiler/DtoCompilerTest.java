@@ -1673,6 +1673,43 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testIdViewListIsRejectedInFetcherConfigPaths() {
+        BaseProp peers = new BasePropImpl("peers", () -> MyDtoCompiler.BOOK_TYPE, false, true);
+        BaseType childType = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.ConfigChild",
+                new BasePropImpl("id"),
+                new BasePropImpl("peerIds", null, false, true) {
+                    @Override
+                    public BaseProp getIdViewBaseProp() {
+                        return peers;
+                    }
+                }
+        );
+        BaseType parentType = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.ConfigParent",
+                new BasePropImpl("children", () -> childType, false, true)
+        );
+        for (String config : Arrays.asList(
+                "!where(peerIds = 10)",
+                "!where(peerIds is null)",
+                "!orderBy(peerIds)",
+                "!orderBy(peerIds.name)"
+        )) {
+            String code = "ParentView {\n    " + config + " children { id }\n}";
+            DtoAstException ex = Assertions.assertThrows(
+                    DtoAstException.class,
+                    () -> MyDtoCompiler.compiler("ConfigParent.dto", code).compile(parentType)
+            );
+            Assertions.assertEquals(2, ex.getLineNumber());
+            Assertions.assertEquals(config.indexOf('(') + 5, ex.getColNumber());
+            Assertions.assertTrue(ex.getMessage().contains(
+                    "The property \"entity::peerIds\" is an id-view list and cannot be used " +
+                            "because join is forbidden by fetcher field predicate"
+            ));
+        }
+    }
+
+    @Test
     public void testWhereIntegerLiteralOnStringOperandReportsIntegerDiagnostic() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.treeNode(
