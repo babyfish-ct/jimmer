@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
 plugins {
     `kotlin-publish-convention`
     `dokka-convention`
@@ -23,7 +25,12 @@ dependencies {
     testImplementation(libs.hibernate.validation)
 }
 
+val testJvmTarget = tasks.compileTestKotlin
+    .flatMap { it.compilerOptions.jvmTarget }
+    .map { it.target }
+
 tasks.test {
     useJUnit()
     maxHeapSize = "2g"
+    systemProperty("jimmer.test.jvmTarget", testJvmTarget.get())
 }

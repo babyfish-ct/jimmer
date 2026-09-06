@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.tschuchort.compiletesting.*
-import org.babyfish.jimmer.ksp.JimmerProcessorProvider
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.*
 
@@ -56,10 +55,7 @@ class PropConfigTest : AbstractTest() {
     }
 
     private fun prepare(config: String): KotlinCompilation {
-        val compilation = KotlinCompilation().apply {
-            useKsp2()
-            symbolProcessorProviders = mutableListOf(JimmerProcessorProvider())
-            inheritClassPath = true
+        val compilation = createCompilation().apply {
             sources = MODEL.map { (name, code) ->
                 SourceFile.kotlin(
                     "$name.kt",

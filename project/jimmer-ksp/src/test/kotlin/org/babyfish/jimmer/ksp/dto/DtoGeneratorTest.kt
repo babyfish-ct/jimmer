@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.tschuchort.compiletesting.*
-import org.babyfish.jimmer.ksp.JimmerProcessorProvider
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.*
 
@@ -239,10 +238,7 @@ class DtoGeneratorTest : AbstractTest() {
 
     @OptIn(ExperimentalCompilerApi::class)
     private fun prepare(entity: String, dto: String): KotlinCompilation {
-        val compilation = KotlinCompilation().apply {
-            useKsp2()
-            symbolProcessorProviders = mutableListOf(JimmerProcessorProvider())
-            inheritClassPath = true
+        val compilation = createCompilation().apply {
             sources = listOf(SourceFile.kotlin("Entity.kt", entity))
         }
         compilation.workingDir.resolve("src/main/dto").mkdirs()
