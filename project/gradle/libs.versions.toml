@@ -32,7 +32,7 @@ spring = "5.3.20"
 springBoot = "2.7.0"
 springGraphql = "1.0.0"
 springdoc = "1.7.0"
-hibernateValitation = "8.0.1.Final"
+hibernateValitation = "8.0.5.Final"
 quarkus = "3.15.0"
 swaggerUi = "5.31.0"
 scalar = "0.5.47"
@@ -132,7 +132,7 @@ springdoc-openapi-common = { group = "org.springdoc", name = "springdoc-openapi-
 
 quarkus-redis-client = { group = "io.quarkus", name = "quarkus-redis-client", version.ref = "quarkus" }
 
-hibernate-validation = { group = "org.hibernate", name = "hibernate-validator", version.ref = "hibernateValitation" }
+hibernate-validation = { group = "org.hibernate.validator", name = "hibernate-validator", version.ref = "hibernateValitation" }
 
 swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swaggerUi" }
 scalar-core = { module = "com.scalar.maven:scalar-core", version.ref = "scalar" }
