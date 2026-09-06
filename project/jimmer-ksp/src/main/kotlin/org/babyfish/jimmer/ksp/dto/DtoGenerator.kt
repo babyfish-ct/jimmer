@@ -1069,7 +1069,7 @@ class DtoGenerator private constructor(
             val prop = pathNode.prop
             val packageName = prop.declaringType.packageName
             val name = if (pathNode.isAssociatedId) {
-                "${prop.name}Id"
+                prop.idViewProp?.name ?: "${prop.name}Id"
             } else {
                 prop.name
             }

@@ -36,6 +36,17 @@ class PropConfigTest : AbstractTest() {
     }
 
     @Test
+    fun `custom reference id view names compile in fetcher configurations`() {
+        for ((parentId, keyedParentId) in listOf("parentKey" to "keyedParentKey", "parentId" to "keyedParentId")) {
+            val result = prepare(
+                "!orderBy($parentId asc, $keyedParentId.x desc)\n" +
+                    "    !where($parentId = 1 and $keyedParentId.x = 2 and $keyedParentId is not null)"
+            ).compile()
+            assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        }
+    }
+
+    @Test
     fun `ordering and nullity do not require a DTO literal type`() {
         val result = prepare(
             "!orderBy(bytes, tags, attrs, location, location.x, createdAt, custom, keyedParentId, keyedParentId.x)\n" +
@@ -77,6 +88,7 @@ class PropConfigTest : AbstractTest() {
             interface Item {
                 @Id val id: Long
                 @ManyToOne val parent: Parent
+                @IdView("parent") val parentKey: Long
                 val bytes: ByteArray
                 val tags: List<String>
                 @Serialized val attrs: Map<String, String>?
@@ -88,7 +100,7 @@ class PropConfigTest : AbstractTest() {
                 @ManyToMany val keyedPeers: List<KeyedItem>
                 @IdView("keyedPeers") val peerKeys: List<Point>
                 @ManyToOne val keyedParent: KeyedItem
-                @IdView("keyedParent") val keyedParentId: Point
+                @IdView("keyedParent") val keyedParentKey: Point
             }
             data class CustomScalar(val value: String)
             """,

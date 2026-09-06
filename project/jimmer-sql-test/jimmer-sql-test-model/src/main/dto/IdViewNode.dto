@@ -1,0 +1,19 @@
+export org.babyfish.jimmer.sql.model.idview.Node
+
+IdViewNodeView {
+    id
+    !orderBy(parentKey desc)
+    !where(parentKey = 1 and parentKey is not null)
+    children {
+        id
+    }
+}
+
+SyntheticIdViewNodeView {
+    id
+    !orderBy(parentId asc)
+    !where(parentId = 1 and parentId is not null)
+    children {
+        id
+    }
+}

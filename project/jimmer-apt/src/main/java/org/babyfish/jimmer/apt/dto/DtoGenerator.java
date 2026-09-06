@@ -1048,7 +1048,9 @@ public class DtoGenerator {
         cb.add("it.getTable()");
         for (PropConfig.PathNode<ImmutableProp> pathNode : pathNodes) {
             if (pathNode.isAssociatedId()) {
-                cb.add(".$LId()", pathNode.getProp().getName());
+                ImmutableProp prop = pathNode.getProp();
+                ImmutableProp idViewProp = prop.getIdViewProp();
+                cb.add(".$L()", idViewProp != null ? idViewProp.getName() : prop.getName() + "Id");
             } else {
                 cb.add(".$L()", pathNode.getProp().getName());
             }
