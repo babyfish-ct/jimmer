@@ -31,6 +31,67 @@ import java.util.UUID;
 public class BaseQueryTest extends AbstractQueryTest {
 
     @ParameterizedTest
+    @ValueSource(strings = {"derived", "cte", "nested"})
+    public void testSelectedTableToManyJoin(String kind) {
+        BookStoreTable store = BookStoreTable.$;
+        ConfigurableBaseQuery<BookStoreTable> query = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store);
+        BookStoreTable source = "cte".equals(kind) ? query.asCteBaseTable() : query.asBaseTable();
+        if ("nested".equals(kind)) {
+            source = getSqlClient().createBaseQuery(source).select(source).asBaseTable();
+        }
+        BookTable books = source.asTableEx().books();
+        TypedRootQuery<String> result = getSqlClient().createQuery(source).orderBy(books.edition()).select(books.name());
+        jdbc(con -> Assertions.assertEquals(
+                Arrays.asList("GraphQL in Action", "GraphQL in Action", "GraphQL in Action"), result.execute(con)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testSelectedTableManyToManyJoin(boolean nested) {
+        BookTable book = BookTable.$;
+        BookTable source = getSqlClient().createBaseQuery(book)
+                .where(book.id().eq(Constants.learningGraphQLId3)).select(book).asBaseTable();
+        if (nested) {
+            source = getSqlClient().createBaseQuery(source).select(source).asBaseTable();
+        }
+        AuthorTable authors = source.asTableEx().authors();
+        TypedRootQuery<String> result = getSqlClient().createQuery(source)
+                .orderBy(authors.firstName()).select(authors.firstName());
+        jdbc(con -> Assertions.assertEquals(Arrays.asList("Alex", "Eve"), result.execute(con)));
+    }
+
+    @Test
+    public void testSelectedTableJoinChain() {
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        AuthorTable authors = source.asTableEx().books().authors();
+        jdbc(con -> Assertions.assertEquals(Collections.singletonList("Samer"), getSqlClient().createQuery(source)
+                .select(authors.firstName()).distinct().execute(con)));
+    }
+
+    @Test
+    public void testSelectedTableInverseManyToManyJoin() {
+        AuthorTable author = AuthorTable.$;
+        AuthorTable source = getSqlClient().createBaseQuery(author)
+                .where(author.firstName().eq("Alex")).select(author).asBaseTable();
+        BookTable books = source.asTableEx().books();
+        jdbc(con -> Assertions.assertEquals(Collections.singletonList("Learning GraphQL"), getSqlClient().createQuery(source)
+                .select(books.name()).distinct().execute(con)));
+    }
+
+    @Test
+    public void testNestedSelectedTableReferenceJoin() {
+        BookTable book = BookTable.$;
+        BookTable source = getSqlClient().createBaseQuery(book)
+                .where(book.id().eq(Constants.learningGraphQLId3)).select(book).asBaseTable();
+        BookTable nested = getSqlClient().createBaseQuery(source).select(source).asBaseTable();
+        jdbc(con -> Assertions.assertEquals(Collections.singletonList("O'REILLY"), getSqlClient().createQuery(nested)
+                .select(nested.store().name()).execute(con)));
+    }
+
+    @ParameterizedTest
     @ValueSource(booleans = {false, true})
     public void testSelectTable(boolean cte) {
         BookStoreTable store = BookStoreTable.$;

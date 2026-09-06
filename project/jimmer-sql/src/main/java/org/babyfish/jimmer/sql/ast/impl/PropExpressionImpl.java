@@ -192,11 +192,7 @@ public class PropExpressionImpl<T>
         Object replacement = ctx.getMutationExpressionReplacement(table);
         Table<?> actualTable = replacement instanceof Table<?> ? (Table<?>) replacement : table;
         TableImplementor<?> tableImplementor = TableProxies.resolve(actualTable, ctx);
-        visitor.visitTableReference(
-                visitor.realTableForAnalysis(tableImplementor),
-                prop,
-                rawId
-        );
+        visitor.visitPropExpression(visitor.realTableForAnalysis(tableImplementor), this);
     }
 
     @Override
@@ -220,6 +216,16 @@ public class PropExpressionImpl<T>
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder, boolean ignoreBrackets) {
+        Object expressionReplacement = abstractBuilder.getMutationExpressionReplacement(this);
+        if (expressionReplacement instanceof Ast) {
+            ((Ast) expressionReplacement).renderTo(abstractBuilder);
+            return;
+        }
+        if (expressionReplacement instanceof String) {
+            String sql = (String) expressionReplacement;
+            abstractBuilder.sql(ignoreBrackets && sql.startsWith("(") ? sql.substring(1, sql.length() - 1) : sql);
+            return;
+        }
         if (abstractBuilder.renderValueGetter(this)) {
             return;
         }

@@ -48,6 +48,45 @@ import static org.junit.jupiter.api.Assertions.*;
 public class InsertFromSelectTest extends AbstractMutationTest {
 
     @Test
+    public void testSelectTableInsertWithToManyJoin() {
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = getSqlClient().createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        BookTable books = source.asTableEx().books();
+        executeAndExpectRowCount(getSqlClient().createInsert(store, source)
+                .set(store.id(), books.id())
+                .set(store.name(), books.name().concat(Expression.string().sql("cast(%e as varchar)", books.edition())))
+                .set(store.website(), source.name()), ctx -> {
+            ctx.statement(it -> it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) " +
+                    "select tb_3_.ID, concat(tb_3_.NAME, cast(tb_3_.EDITION as varchar)), tb_1_.c1, ? from (" +
+                    "select tb_1_.NAME c1, tb_1_.ID c2 from BOOK_STORE tb_1_ where tb_1_.NAME = ?) tb_1_ " +
+                    "inner join BOOK tb_3_ on tb_1_.c2 = tb_3_.STORE_ID"));
+            ctx.rowCount(3);
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"native", "save", "emulated"})
+    public void testSelectTableToManyJoinReturningAndUpsert(String plan) {
+        JSqlClient client = updateOnlyClient(plan);
+        BookStoreTable store = BookStoreTable.$;
+        BookStoreTable source = client.createBaseQuery(store)
+                .where(store.name().eq("MANNING")).select(store).asBaseTable();
+        BookTable books = source.asTableEx().books();
+        StringExpression name = books.name().concat(Expression.string().sql("cast(%e as varchar)", books.edition()));
+        jdbc(con -> {
+            assertEquals(3, client.createInsert(store, source)
+                    .set(store.id(), books.id()).set(store.name(), name)
+                    .returning(store.id()).execute(con).size());
+            assertEquals(3, client.createUpsert(store, source)
+                    .key(store.id(), books.id()).merge(store.name(), name.concat("-UPDATED"))
+                    .returning(store.id()).execute(con).size());
+            assertEquals(3, client.createQuery(store).where(store.name().like("GraphQL in Action%UPDATED"))
+                    .select(store.id()).execute(con).size());
+        });
+    }
+
+    @Test
     public void testSelectedTableIsNotAMutationTarget() {
         BookStoreTable store = BookStoreTable.$;
         BookStoreTable source = getSqlClient().createBaseQuery(store).select(store).asBaseTable();

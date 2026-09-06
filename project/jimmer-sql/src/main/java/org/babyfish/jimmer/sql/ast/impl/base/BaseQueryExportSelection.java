@@ -67,7 +67,7 @@ public class BaseQueryExportSelection {
     Integer columnIndexIfContained(RealTable table, String columnName, boolean foreignKeyInBaseQuery) {
         List<RealTable.Key> tableKeys = tableKeysOrNull(table);
         return tableKeys != null ?
-                export.column(this, tableKeys, columnName, foreignKeyInBaseQuery).getIndex() :
+                export.columnIndexOrNull(this, tableKeys, columnName, foreignKeyInBaseQuery) :
                 null;
     }
 

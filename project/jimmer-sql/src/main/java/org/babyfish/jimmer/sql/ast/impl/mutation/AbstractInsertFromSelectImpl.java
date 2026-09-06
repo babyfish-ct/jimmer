@@ -14,14 +14,18 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableProxies;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSymbol;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.selectable.ReturningSelectable;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
@@ -1393,6 +1397,8 @@ abstract class AbstractInsertFromSelectImpl<S extends TableLike<?>>
 
     private final class NativeInsertFromSelectContext implements InsertFromSelectContext {
 
+        private Map<Object, String> sourceTableReplacements = Collections.emptyMap();
+
         @Nullable
         private final SqlBuilder builder;
 
@@ -1524,10 +1530,64 @@ abstract class AbstractInsertFromSelectImpl<S extends TableLike<?>>
         @Override
         public InsertFromSelectContext appendSourceTable() {
             SqlBuilder builder = builder();
-            withSourceScope(() ->
-                    sourceTable.realTable(builder.getQueryRenderContext()).renderTo(builder, false)
-            );
+            withSourceScope(() -> {
+                if (!hasSourceTableJoins(builder.getAstContext())) {
+                    sourceTable.realTable(builder.getQueryRenderContext()).renderTo(builder, false);
+                    return;
+                }
+                // MERGE requires one source relation whose columns are visible to
+                // ON, UPDATE and INSERT, including values from joins added outside the base query.
+                Set<Expression<?>> expressions = new LinkedHashSet<>();
+                acceptForAnalysis(new AstVisitor(builder.getAstContext()) {
+                    @Override
+                    public void visitPropExpression(RealTable table, PropExpressionImplementor<?> expression) {
+                        BaseTableOwner owner = table.getBaseTableOwner();
+                        if (owner != null && owner.getBaseTable() == sourceSymbol) {
+                            expressions.add(expression);
+                        }
+                    }
+
+                    @Override
+                    public void visitBaseTableExpression(BaseTableOwner owner, Expression<?> expression) {
+                        if (owner.getBaseTable() == sourceSymbol) {
+                            expressions.add(expression);
+                        }
+                    }
+                });
+                builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
+                renderSourceSelect(builder, new ArrayList<>(expressions));
+                String sourceAlias = builder.alias(sourceTable.realTable(builder.getQueryRenderContext()));
+                builder.leave().sql(" ").sql(sourceAlias).enter(SqlBuilder.ScopeType.TUPLE);
+                Map<Object, String> replacements = new HashMap<>();
+                int index = 0;
+                for (Expression<?> expression : expressions) {
+                    int size = ValueGetter.valueGetters(getSqlClient(), expression, null).size();
+                    StringJoiner columns = new StringJoiner(", ", size > 1 ? "(" : "", size > 1 ? ")" : "");
+                    for (int i = 0; i < size; i++) {
+                        String column = "c" + ++index;
+                        builder.separator().sql(column);
+                        columns.add(sourceAlias + '.' + column);
+                    }
+                    replacements.put(expression, columns.toString());
+                }
+                builder.leave();
+                sourceTableReplacements = replacements;
+            });
             return this;
+        }
+
+        private boolean hasSourceTableJoins(AstContext ctx) {
+            for (Selection<?> selection : ((BaseTableImplementor) sourceTable).getSelections()) {
+                if (selection instanceof Table<?>) {
+                    TableImplementor<?> table = TableProxies.resolve((Table<?>) selection, ctx);
+                    for (RealTable child : table.realTable(ctx)) {
+                        if (ctx.getTableUsedState(child) != TableUsedState.NONE) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         @Override
@@ -1555,7 +1615,12 @@ abstract class AbstractInsertFromSelectImpl<S extends TableLike<?>>
                         continue;
                     }
                     builder.separator();
-                    renderExpression(builder, assignment.insertSource, true);
+                    String replacement = sourceTableReplacements.get(assignment.insertSource);
+                    if (replacement != null && replacement.startsWith("(")) {
+                        builder.sql(replacement.substring(1, replacement.length() - 1));
+                    } else {
+                        renderExpression(builder, assignment.insertSource, true);
+                    }
                 }
             });
             return this;
@@ -1664,6 +1729,10 @@ abstract class AbstractInsertFromSelectImpl<S extends TableLike<?>>
             AstContext astContext = builder().getAstContext();
             astContext.pushStatement(AbstractInsertFromSelectImpl.this);
             astContext.pushStatement(sourceQuery);
+            Map<Object, String> sourceReplacements = sourceTableReplacements;
+            if (!sourceReplacements.isEmpty()) {
+                astContext.pushMutationExpressionMap(sourceReplacements);
+            }
             if (!replacements.isEmpty()) {
                 astContext.pushMutationExpressionMap(replacements);
             }
@@ -1671,6 +1740,9 @@ abstract class AbstractInsertFromSelectImpl<S extends TableLike<?>>
                 block.run();
             } finally {
                 if (!replacements.isEmpty()) {
+                    astContext.popMutationExpressionMap();
+                }
+                if (!sourceReplacements.isEmpty()) {
                     astContext.popMutationExpressionMap();
                 }
                 astContext.popStatement();

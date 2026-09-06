@@ -17,7 +17,9 @@ import org.babyfish.jimmer.sql.kt.ast.table.sourceId
 import org.babyfish.jimmer.sql.kt.ast.table.targetId
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.books
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
@@ -38,6 +40,7 @@ class InsertFromSelectApiShapeTest : AbstractMutationTest() {
         val insert = client.createInsert<BookStore, _>(source) {
             set(table.id, sourceTable.id)
             set(table.name, sourceTable.name)
+            set(table.website, sourceTable.asTableEx().books.name)
         }
         val upsert = client.createUpsertReturning<BookStore, _, Long>(source) {
             key(table.id, sourceTable.id)

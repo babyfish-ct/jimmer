@@ -150,13 +150,13 @@ final class BaseQueryExportAnalysis {
                     (TableImplementor<?>) childTable.getTableLikeImplementor();
             ImmutableProp prop = childTableImplementor.getJoinProp();
             if (prop == null) {
-                break;
+                continue;
             }
-            if (childTableImplementor.isInverse()) {
-                prop = prop.getOpposite();
-                if (prop == null) {
-                    continue;
-                }
+            if (prop.getSqlTemplate() instanceof JoinTemplate) {
+                continue;
+            }
+            if (childTableImplementor.isInverse() || prop.isMiddleTableDefinition()) {
+                prop = tableImplementor.getImmutableType().getIdProp();
             }
             if (!prop.isColumnDefinition()) {
                 continue;

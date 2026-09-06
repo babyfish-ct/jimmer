@@ -126,6 +126,9 @@ public class TableUsageCollector extends TableUsageVisitor {
         Selection<?> selection = baseTableOwner.getBaseTable()
                 .getQuery().getSelections().get(baseTableOwner.getIndex());
         if (selection instanceof Table<?> && BaseTableOwner.of((Table<?>) selection) != null) {
+            BaseTableImplementor baseTable = getAstContext().resolveBaseTable(baseTableOwner.getBaseTable());
+            Table<?> selectedTable = (Table<?>) baseTable.getSelections().get(baseTableOwner.getIndex());
+            RealTable selectedRealTable = realTableForAnalysis(TableProxies.resolve(selectedTable, getAstContext()));
             if (propagatingBaseTableOwners == null) {
                 propagatingBaseTableOwners = new HashSet<>();
             }
@@ -135,13 +138,37 @@ public class TableUsageCollector extends TableUsageVisitor {
             try {
                 baseTableOwner.visitOwnerStatementChain(getAstContext(), () -> {
                     TableImplementor<?> sourceTable = TableProxies.resolve((Table<?>) selection, getAstContext());
-                    if (prop == null || prop.getDeclaringType().isAssignableFrom(sourceTable.getImmutableType())) {
-                        visitTableReference(realTableForAnalysis(sourceTable), prop, rawId);
-                    }
+                    propagateBaseTableReference(table, selectedRealTable, sourceTable, prop, rawId);
                 });
             } finally {
                 propagatingBaseTableOwners.remove(baseTableOwner);
             }
+        }
+    }
+
+    private void propagateBaseTableReference(
+            RealTable table,
+            RealTable selectedTable,
+            TableImplementor<?> sourceTable,
+            @Nullable ImmutableProp prop,
+            boolean rawId
+    ) {
+        if (table == selectedTable) {
+            visitTableReference(realTableForAnalysis(sourceTable), prop, rawId);
+            return;
+        }
+        for (RealTable child = table; child != null; child = child.getParent()) {
+            if (child.getParent() != selectedTable || !(child.getTableLikeImplementor() instanceof TableImplementor<?>)) {
+                continue;
+            }
+            TableImplementor<?> childTable = (TableImplementor<?>) child.getTableLikeImplementor();
+            ImmutableProp joinProp = childTable.getJoinProp();
+            if (joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate)) {
+                ImmutableProp sourceProp = childTable.isInverse() || joinProp.isMiddleTableDefinition() ?
+                        sourceTable.getImmutableType().getIdProp() : joinProp;
+                visitTableReference(realTableForAnalysis(sourceTable), sourceProp, false);
+            }
+            return;
         }
     }
 
