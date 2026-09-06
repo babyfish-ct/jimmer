@@ -17,7 +17,7 @@ public interface GenericBaseTreeEntity<T extends GenericBaseTreeEntity<T>> {
 
     @IdView("parent")
     @Nullable
-    Long getParentId();
+    Long getParentKey();
 
     @OneToMany(mappedBy = "parent")
     List<T> getChildren();
