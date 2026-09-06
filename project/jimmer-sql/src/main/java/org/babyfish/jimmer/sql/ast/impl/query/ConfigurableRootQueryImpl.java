@@ -497,7 +497,7 @@ public class ConfigurableRootQueryImpl<T extends TableLike<?>, R>
         SqlBuilder builder = new SqlBuilder(astContext);
         QueryAnalyzer analyzer = new QueryAnalyzer(astContext, this);
         if (!getMutableQuery().isFrozen()) {
-            getMutableQuery().applyVirtualPredicates(astContext);
+            applyVirtualPredicates(astContext);
             getMutableQuery().applyGlobalFilters(
                     astContext,
                     getMutableQuery().getContext().getFilterLevel(),

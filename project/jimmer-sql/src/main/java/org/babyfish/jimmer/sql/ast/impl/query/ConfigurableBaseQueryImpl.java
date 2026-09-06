@@ -157,17 +157,6 @@ public class ConfigurableBaseQueryImpl<T extends TableLike<?>>
     }
 
     @Override
-    public boolean hasVirtualPredicate() {
-        return getMutableQuery().hasVirtualPredicate();
-    }
-
-    @Override
-    public Ast resolveVirtualPredicate(AstContext ctx) {
-        getMutableQuery().resolveVirtualPredicate(ctx);
-        return this;
-    }
-
-    @Override
     public T asBaseTable() {
         return asBaseTable(null, false);
     }
@@ -247,7 +236,7 @@ public class ConfigurableBaseQueryImpl<T extends TableLike<?>>
     public void applyGlobalFilters(AstContext astContext, FilterLevel level, QueryAnalysis queryAnalysis) {
         MutableBaseQueryImpl mutableQuery = getMutableQuery();
         if (!mutableQuery.isFrozen()) {
-            mutableQuery.applyVirtualPredicates(astContext);
+            applyVirtualPredicates(astContext);
             mutableQuery.applyGlobalFilters(astContext, level, getData().selections, queryAnalysis);
         }
     }

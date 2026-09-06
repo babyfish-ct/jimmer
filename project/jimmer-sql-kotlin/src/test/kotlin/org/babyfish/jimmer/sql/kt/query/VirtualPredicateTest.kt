@@ -17,8 +17,30 @@ import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.link.Student
 import org.babyfish.jimmer.sql.kt.model.link.learningLinks
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class VirtualPredicateTest : AbstractQueryTest() {
+
+    @Test
+    fun testSelectedSubQueryWithAssociatedPredicateAndParentTable() {
+        jdbc { con ->
+            val rows = sqlClient.createQuery(Author::class) {
+                orderBy(table.firstName)
+                select(
+                    table.firstName,
+                    subQuery(Book::class) {
+                        val authorId = parentTable.id
+                        where(table.authors { id eq authorId })
+                        select(rowCount())
+                    }
+                )
+            }.execute(con)
+            assertEquals(
+                listOf("Alex" to 3L, "Boris" to 3L, "Dan" to 3L, "Eve" to 3L, "Samer" to 3L),
+                rows.map { it._1 to it._2 }
+            )
+        }
+    }
 
     @Test
     fun testMergeAnd() {

@@ -29,7 +29,7 @@ public final class MutationQueryAnalyzer {
         for (ConfigurableBaseQueryImpl<?> query : queries) {
             MutableBaseQueryImpl mutableQuery = query.getMutableQuery();
             if (!mutableQuery.isFrozen()) {
-                mutableQuery.applyVirtualPredicates(astContext);
+                query.applyVirtualPredicates(astContext);
             }
         }
         StatementContext sourceContext = source.firstConfigurableQuery().getMutableQuery().getContext();

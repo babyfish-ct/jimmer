@@ -30,7 +30,7 @@ import java.util.Objects;
 
 abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
-    private final TypedQueryData data;
+    private TypedQueryData data;
 
     private AbstractMutableQueryImpl mutableQuery;
 
@@ -269,13 +269,27 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     @Override
     public boolean hasVirtualPredicate() {
-        return mutableQuery.hasVirtualPredicate();
+        return mutableQuery.hasVirtualPredicate() || data.hasVirtualPredicate();
     }
 
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
-        mutableQuery = ctx.resolveVirtualPredicate(mutableQuery);
+        mutableQuery.resolveVirtualPredicate(ctx);
+        ctx.pushStatement(mutableQuery);
+        try {
+            data = data.resolveVirtualPredicate(ctx);
+        } finally {
+            ctx.popStatement();
+        }
         return this;
+    }
+
+    final void applyVirtualPredicates(AstContext ctx) {
+        int modCount = -1;
+        while (modCount != ctx.modCount()) {
+            modCount = ctx.modCount();
+            resolveVirtualPredicate(ctx);
+        }
     }
 
     private void renderWithoutPaging(

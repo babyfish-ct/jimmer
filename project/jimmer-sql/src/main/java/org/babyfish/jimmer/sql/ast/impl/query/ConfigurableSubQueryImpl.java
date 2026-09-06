@@ -227,17 +227,6 @@ public class ConfigurableSubQueryImpl<R>
         return 0;
     }
 
-    @Override
-    public boolean hasVirtualPredicate() {
-        return getMutableQuery().hasVirtualPredicate();
-    }
-
-    @Override
-    public Ast resolveVirtualPredicate(AstContext ctx) {
-        getMutableQuery().resolveVirtualPredicate(ctx);
-        return this;
-    }
-
     private static class Str extends ConfigurableSubQueryImpl<String> implements ConfigurableSubQuery.Str, StringExpressionImplementor {
 
         Str(TypedQueryData data, MutableSubQueryImpl baseQuery) {

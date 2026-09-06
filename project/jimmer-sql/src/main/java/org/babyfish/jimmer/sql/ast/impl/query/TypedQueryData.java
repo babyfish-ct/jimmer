@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
@@ -124,6 +126,42 @@ class TypedQueryData {
                 tupleCreator,
                 this.selections,
                 this.tupleCreator,
+                distinct,
+                limit,
+                offset,
+                withoutSortingAndPaging,
+                reverseSorting,
+                reverseSortOptimizationEnabled,
+                forUpdate,
+                hint,
+                jdbcOptions
+        );
+    }
+
+    public boolean hasVirtualPredicate() {
+        return hasVirtualPredicate(selections) || oldSelections != null && hasVirtualPredicate(oldSelections);
+    }
+
+    private static boolean hasVirtualPredicate(List<Selection<?>> selections) {
+        for (Selection<?> selection : selections) {
+            if (selection instanceof Ast && ((Ast) selection).hasVirtualPredicate()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public TypedQueryData resolveVirtualPredicate(AstContext ctx) {
+        List<Selection<?>> selections = ctx.resolveVirtualPredicates(this.selections);
+        List<Selection<?>> oldSelections = this.oldSelections != null ? ctx.resolveVirtualPredicates(this.oldSelections) : null;
+        if (selections == this.selections && oldSelections == this.oldSelections) {
+            return this;
+        }
+        return new TypedQueryData(
+                selections,
+                tupleCreator,
+                oldSelections,
+                oldTupleCreator,
                 distinct,
                 limit,
                 offset,
