@@ -1153,8 +1153,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel =
                 IdOnlyTargetCheckingLevel.NONE;
 
-        private boolean saveCommandPessimisticLock = false;
-
         private final Collection<DraftPreProcessor<?>> processors = new ArrayList<>();
 
         private final List<DraftInterceptor<?, ?>> interceptors = new ArrayList<>();
