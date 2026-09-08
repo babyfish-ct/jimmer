@@ -13,5 +13,5 @@ tasks {
 }
 
 dependencies {
-    dokkaHtmlPlugin("org.jetbrains.dokka", "dokka-base", DokkaVersion.version)
+    dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:${DokkaVersion.version}")
 }
