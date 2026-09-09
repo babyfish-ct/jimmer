@@ -57,6 +57,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setAssociatedMode(prop, mode)
     }
 
+    override fun matchByKey() {
+        javaCommand = javaCommand.matchByKey()
+    }
+
     override fun <E : Any> setKeyProps(vararg keyProps: KProperty1<E, *>) {
         javaCommand = javaCommand.setKeyProps(
             *keyProps.map { it.toImmutableProp() }.toTypedArray()

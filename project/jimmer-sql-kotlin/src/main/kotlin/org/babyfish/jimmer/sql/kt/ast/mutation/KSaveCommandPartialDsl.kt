@@ -30,12 +30,40 @@ interface KSaveCommandPartialDsl {
 
     fun setAssociatedMode(prop: TypedProp.Association<*, *>, mode: AssociatedSaveMode)
 
+    /**
+     * Matches root entities by the single key group declared in their model, even when an id is supplied.
+     * Accepted matches use the existing row's id; new rows keep the supplied id.
+     *
+     * Explicit `setKeyProps` for the root type takes precedence, regardless of call order.
+     * Otherwise, exactly one named or unnamed model key group must exist. Missing or ambiguous groups
+     * cause an error when the command is executed. A complete key must be loaded; there is no fallback to id.
+     * Applies to the root types throughout the saved graph. Other types retain their matching rules.
+     * [SaveMode.INSERT_ONLY] performs no conflict lookup and does not require loaded keys.
+     */
+    fun matchByKey()
+
+    /**
+     * Configures the unnamed key group for the properties' declaring entity type.
+     * This defines the key properties without changing the matching priority: a supplied id still wins.
+     * Objects without an id can be matched by a loaded key group.
+     * Does not enable [matchByKey] automatically.
+     * To match root entities by key even when an id is supplied, also call [matchByKey].
+     *
+     * Applies to this type throughout the saved graph. Other types keep their usual id-first matching.
+     * The properties must belong to one type and form a unique key in the database.
+     */
     fun <E : Any> setKeyProps(vararg keyProps: KProperty1<E, *>)
 
+    /** Typed-property form of the unnamed key-group configuration; does not enable [matchByKey]. */
     fun <E : Any> setKeyProps(vararg keyProps: TypedProp.Single<E, *>)
 
+    /**
+     * Configures [group] without changing id precedence; does not enable [matchByKey].
+     * Replaces the group of the same name and preserves other key groups.
+     */
     fun <E : Any> setKeyProps(group: String, vararg keyProps: KProperty1<E, *>)
 
+    /** Typed-property form of the named key-group configuration; does not enable [matchByKey]. */
     fun <E : Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>)
 
     /**

@@ -75,6 +75,11 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> matchByKey() {
+        return new SimpleEntitySaveCommandImpl<>(new MatchByKeyCfg(cfg));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props) {
         return new SimpleEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, group, Arrays.asList(props)));
     }

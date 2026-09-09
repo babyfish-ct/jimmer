@@ -5,6 +5,15 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Result of saving one root entity and its supplied associations.
+ *
+ * <p>The entity snapshots and logical acceptance are defined by {@link MutationResultItem}.
+ * Affected-row counts include associated entities and association tables, and are independent
+ * of both {@link #isAccepted()} and {@link #isModified()}.</p>
+ *
+ * @param <E> The root entity type
+ */
 public class SimpleSaveResult<E> extends AbstractMutationResult implements MutationResultItem<E> {
 
     final E originalEntity;
@@ -13,6 +22,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
 
     final boolean accepted;
 
+    /** Creates an accepted result with the supplied row counts and entity snapshots. */
     public SimpleSaveResult(
             Map<AffectedTable, Integer> affectedRowCountMap,
             E originalEntity,
@@ -21,6 +31,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
         this(affectedRowCountMap, originalEntity, modifiedEntity, true);
     }
 
+    /** Creates a result with an explicit logical acceptance state. */
     public SimpleSaveResult(
             Map<AffectedTable, Integer> affectedRowCountMap,
             E originalEntity,
@@ -81,6 +92,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
                 '}';
     }
 
+    /** Converts the resulting entity to a view, preserving row counts, snapshots, and acceptance. */
     public <V extends org.babyfish.jimmer.View<E>> View<E, V> toView(
             Function<E, V> converter
     ) {
@@ -93,6 +105,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
         );
     }
 
+    /** A save result that also exposes the resulting entity as a view. */
     public static class View<E, V extends org.babyfish.jimmer.View<E>> extends SimpleSaveResult<E> {
 
         private final V modifiedView;
@@ -108,6 +121,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
             this.modifiedView = modifiedView;
         }
 
+        /** Returns the view converted from {@link #getModifiedEntity()}. */
         public V getModifiedView() {
             return modifiedView;
         }

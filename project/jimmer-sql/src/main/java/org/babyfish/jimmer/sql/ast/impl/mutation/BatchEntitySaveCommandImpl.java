@@ -100,6 +100,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> matchByKey() {
+        return new BatchEntitySaveCommandImpl<>(new MatchByKeyCfg(cfg));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props) {
         return new BatchEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, group, Arrays.asList(props)));
     }

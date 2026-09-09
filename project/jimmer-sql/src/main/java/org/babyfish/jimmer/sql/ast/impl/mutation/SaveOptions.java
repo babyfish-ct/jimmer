@@ -62,12 +62,19 @@ public interface SaveOptions {
         return false;
     }
 
-    default boolean isExactConflictTargetRequired() {
+    /** Whether matchByKey was requested for the given entity type. */
+    default boolean isKeyMatchingRequired(ImmutableType type) {
         return false;
     }
 
-    default boolean isKeyBasedConflict() {
-        return false;
+    /** Whether an upsert must match the selected target rather than any unique constraint. */
+    default boolean isExactConflictTargetRequired(ImmutableType type) {
+        return isKeyMatchingRequired(type);
+    }
+
+    /** Whether a loaded key group takes precedence over a supplied id for the given type. */
+    default boolean isKeyBasedConflict(ImmutableType type) {
+        return isKeyMatchingRequired(type);
     }
 
     default boolean hasAssignment(ImmutableType type) {
@@ -233,13 +240,18 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public boolean isExactConflictTargetRequired() {
-        return raw.isExactConflictTargetRequired();
+    public boolean isKeyMatchingRequired(ImmutableType type) {
+        return raw.isKeyMatchingRequired(type);
     }
 
     @Override
-    public boolean isKeyBasedConflict() {
-        return raw.isKeyBasedConflict();
+    public boolean isExactConflictTargetRequired(ImmutableType type) {
+        return raw.isExactConflictTargetRequired(type);
+    }
+
+    @Override
+    public boolean isKeyBasedConflict(ImmutableType type) {
+        return raw.isKeyBasedConflict(type);
     }
 
     @Override
@@ -439,12 +451,12 @@ class SaveOptionsForAssociatedProp extends AbstractSaveOptionsWrapper {
     }
 
     @Override
-    public boolean isExactConflictTargetRequired() {
-        return false;
+    public boolean isExactConflictTargetRequired(ImmutableType type) {
+        return isKeyMatchingRequired(type);
     }
 
     @Override
-    public boolean isKeyBasedConflict() {
-        return false;
+    public boolean isKeyBasedConflict(ImmutableType type) {
+        return isKeyMatchingRequired(type);
     }
 }

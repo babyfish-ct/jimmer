@@ -42,6 +42,10 @@ public interface SimpleEntitySaveCommand<E>
 
     @NewChain
     @Override
+    SimpleEntitySaveCommand<E> matchByKey();
+
+    @NewChain
+    @Override
     default SimpleEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
         return setKeyProps("", props);
     }

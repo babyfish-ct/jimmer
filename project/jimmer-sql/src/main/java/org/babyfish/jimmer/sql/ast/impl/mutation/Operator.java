@@ -1315,7 +1315,9 @@ class Operator {
                 }
             } else {
                 if (!forceAllRows) {
-                    fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
+                    if (keyProps != null) {
+                        fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
+                    }
                     return EMPTY_ROW_COUNTS;
                 }
                 fakeUpdate = true;
@@ -2184,8 +2186,8 @@ class Operator {
 
     private void validate(Shape shape, boolean insertOnly, Collection<ImmutableProp> implicitKeyProps) {
         // An explicit id conflict does not use partially supplied natural keys.
-        Set<ImmutableProp> keyProps = ctx.options.isExactConflictTargetRequired() &&
-                !ctx.options.isKeyBasedConflict() && !shape.getIdGetters().isEmpty() ?
+        Set<ImmutableProp> keyProps = ctx.options.isExactConflictTargetRequired(shape.getType()) &&
+                !ctx.options.isKeyBasedConflict(shape.getType()) && !shape.getIdGetters().isEmpty() ?
                 Collections.emptySet() :
                 shape.keyProps(ctx.options.getKeyMatcher(shape.getType()), implicitKeyProps);
         if (!insertOnly) {

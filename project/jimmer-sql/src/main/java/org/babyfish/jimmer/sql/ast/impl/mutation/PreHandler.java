@@ -172,6 +172,14 @@ abstract class AbstractPreHandler implements PreHandler {
 
     @Override
     public void add(DraftSpi draft) {
+        KeyMatcher.Group group = keyMatcher.match(draft);
+        if (ctx.options.getMode() != SaveMode.INSERT_ONLY &&
+                ctx.options.isKeyMatchingRequired(ctx.path.getType()) && group == null) {
+            throw new IllegalArgumentException(
+                    "Cannot match entity type \"" + draft.__type() +
+                            "\" by key: no complete key group is loaded. Required key groups: " + keyMatcher.toMap()
+            );
+        }
         Lazy<Boolean> hasNonIdValues = new Lazy<>(() -> {
             for (ImmutableProp prop : draft.__type().getProps().values()) {
                 if (!prop.isId() && draft.__isLoaded(prop.getId())) {
@@ -197,9 +205,9 @@ abstract class AbstractPreHandler implements PreHandler {
                 return;
             }
         }
-        KeyMatcher.Group group = keyMatcher.match(draft);
         callPreProcessor(draft, group);
-        if (ctx.options.isKeyBasedConflict() && group != null) {
+        if (ctx.options.getMode() != SaveMode.INSERT_ONLY &&
+                ctx.options.isKeyBasedConflict(ctx.path.getType()) && group != null) {
             draftsWithKey.add(draft);
         } else if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
@@ -364,7 +372,7 @@ abstract class AbstractPreHandler implements PreHandler {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         SaveMode saveMode = ctx.options.getMode();
         boolean clearMode = saveMode == SaveMode.INSERT_ONLY || saveMode == SaveMode.UPDATE_ONLY;
-        if (!clearMode && ctx.options.isKeyBasedConflict()) {
+        if (saveMode != SaveMode.INSERT_ONLY && ctx.options.isKeyBasedConflict(ctx.path.getType())) {
             PropId idPropId = ctx.path.getType().getIdProp().getId();
             for (DraftSpi draft : drafts) {
                 if (draft.__isLoaded(idPropId)) {
@@ -374,7 +382,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         if (!clearMode &&
-                ctx.options.isExactConflictTargetRequired() &&
+                ctx.options.isExactConflictTargetRequired(ctx.path.getType()) &&
                 !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported() &&
                 (saveMode == SaveMode.INSERT_IF_ABSENT || !isGuaranteedSingleConflictTarget(drafts))) {
             return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
@@ -1089,6 +1097,8 @@ class UpdatePreHandler extends AbstractPreHandler {
                             isExistingDifferentTypeById(queryReason, draft)) {
                         items.add(newItem(draft, null));
                     } else {
+                        ctx.markRejected(draft);
+                        ctx.markAssociationTargetUnavailable(draft);
                         itr.remove();
                     }
                 }
@@ -1117,6 +1127,8 @@ class UpdatePreHandler extends AbstractPreHandler {
                             itr.remove();
                         }
                     } else {
+                        ctx.markRejected(draft);
+                        ctx.markAssociationTargetUnavailable(draft);
                         itr.remove();
                     }
                 }

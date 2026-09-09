@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.TypeMatchMode;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
@@ -66,6 +67,13 @@ abstract class AbstractEntitySaveCommandImpl
             AssociatedModeCfg p = prev.as(AssociatedModeCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, mode);
             this.defaultMode = p != null ? p.defaultMode : AssociatedSaveMode.REPLACE;
+        }
+    }
+
+    static class MatchByKeyCfg extends Cfg {
+
+        MatchByKeyCfg(Cfg prev) {
+            super(prev);
         }
     }
 
@@ -575,6 +583,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, KeyMatcher> keyMatcherMap;
 
+        private final Set<ImmutableType> keyMatchingTypes;
+
         private final Map<ImmutableType, UpsertMask<?>> upsertMaskMap;
 
         private final Map<ImmutableProp, SaveAssignmentLambda> assignmentMap;
@@ -699,6 +709,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.maxCommandJoinCount = maxCommandJoinCountCfg != null ?
                     maxCommandJoinCountCfg.maxCommandJoinCount :
                     sqlClient.getMaxCommandJoinCount();
+            this.keyMatchingTypes = cfg.as(MatchByKeyCfg.class) != null ? rootTypes() : Collections.emptySet();
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
             this.upsertMaskMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
             this.assignmentMap = MapNode.toMap(assignmentCfg, it -> it.mapNode);
@@ -887,13 +898,18 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
-        public boolean isExactConflictTargetRequired() {
-            return exactConflictTargetRequired;
+        public boolean isKeyMatchingRequired(ImmutableType type) {
+            return keyMatchingTypes.contains(type);
         }
 
         @Override
-        public boolean isKeyBasedConflict() {
-            return keyBasedConflict;
+        public boolean isExactConflictTargetRequired(ImmutableType type) {
+            return exactConflictTargetRequired || isKeyMatchingRequired(type);
+        }
+
+        @Override
+        public boolean isKeyBasedConflict(ImmutableType type) {
+            return keyBasedConflict || isKeyMatchingRequired(type);
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -1078,6 +1094,7 @@ abstract class AbstractEntitySaveCommandImpl
                     saveResultReadsAllProperties,
                     deleteMode,
                     keyMatcherMap,
+                    keyMatchingTypes,
                     autoCheckingAll,
                     autoCheckingMap,
                     dissociateActionMap
@@ -1117,6 +1134,7 @@ abstract class AbstractEntitySaveCommandImpl
                     columnAssignmentMap.equals(other.columnAssignmentMap) &&
                     updateWhereMap.equals(other.updateWhereMap) &&
                     keyMatcherMap.equals(other.keyMatcherMap) &&
+                    keyMatchingTypes.equals(other.keyMatchingTypes) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
                     dissociateActionMap.equals(other.dissociateActionMap) &&
                     pessimisticLockMap.equals(other.pessimisticLockMap);
@@ -1152,6 +1170,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", saveResultReadsAllProperties=" + saveResultReadsAllProperties +
                     ", deleteMode=" + deleteMode +
                     ", keyMatcherMap=" + keyMatcherMap +
+                    ", keyMatchingTypes=" + keyMatchingTypes +
                     ", autoCheckingMap=" + autoCheckingMap +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", dissociateActionMap=" + dissociateActionMap +
@@ -1159,10 +1178,19 @@ abstract class AbstractEntitySaveCommandImpl
                     '}';
         }
 
+        private Set<ImmutableType> rootTypes() {
+            Set<ImmutableType> types = new LinkedHashSet<>();
+            Iterable<?> entities = argument instanceof Iterable<?> ? (Iterable<?>) argument : Collections.singleton(argument);
+            for (Object entity : entities) {
+                types.add(((ImmutableSpi) entity).__type());
+            }
+            return types;
+        }
+
         private Map<ImmutableType, KeyMatcher> keyMatcherMap(
                 Map<ImmutableType, Map<String, Set<ImmutableProp>>> map
         ) {
-            if (map.isEmpty()) {
+            if (map.isEmpty() && keyMatchingTypes.isEmpty()) {
                 return Collections.emptyMap();
             }
             Map<ImmutableType, KeyMatcher> keyMatcherMap = new LinkedHashMap<>();
@@ -1171,6 +1199,18 @@ abstract class AbstractEntitySaveCommandImpl
                 Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>(type.getKeyMatcher().toMap());
                 groupMap.putAll(e.getValue());
                 keyMatcherMap.put(type, KeyMatcher.of(type, groupMap));
+            }
+            for (ImmutableType keyMatchingType : keyMatchingTypes) {
+                keyMatcherMap.computeIfAbsent(keyMatchingType, type -> {
+                    KeyMatcher matcher = type.getKeyMatcher();
+                    if (matcher.toMap().size() != 1) {
+                        throw new IllegalArgumentException(
+                                "Cannot match entity type \"" + type + "\" by key: expected exactly one key group, but found " +
+                                        matcher.toMap().size() + ". Specify the key properties with setKeyProps"
+                        );
+                    }
+                    return matcher;
+                });
             }
             return keyMatcherMap;
         }

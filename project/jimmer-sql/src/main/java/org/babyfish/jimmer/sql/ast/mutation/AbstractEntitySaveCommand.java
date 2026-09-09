@@ -37,15 +37,47 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode);
 
+    /**
+     * Matches root entities by the single key group declared in their model, even when an id is supplied.
+     * The id is used for inserting a new row; accepted matches use the existing row's id.
+     *
+     * <p>If {@code setKeyProps} configures the root entity type, that configuration is used instead,
+     * regardless of call order. Otherwise, the model must declare exactly one key group, named or unnamed.
+     * Missing or ambiguous groups cause an error when the command is executed.</p>
+     *
+     * <p>The selected key must be loaded; matching never falls back to the supplied id.
+     * This configuration applies to the root entity types throughout the saved graph, and does not
+     * change other types' matching rules. {@link SaveMode#INSERT_ONLY} performs no conflict lookup.</p>
+     */
+    @NewChain
+    AbstractEntitySaveCommand matchByKey();
+
+    /**
+     * Configures the unnamed key group for the entity type declaring these properties.
+     *
+     * <p>This defines the key properties without changing the matching priority: a supplied id
+     * still takes precedence. Objects without an id can be matched by a loaded key group.
+     * It does not enable {@link #matchByKey()} automatically.
+     * To match root entities by key even when an id is supplied, also call {@link #matchByKey()}.</p>
+     *
+     * <p>The configuration applies to this entity type throughout the saved graph.
+     * Properties must belong to one type and form a unique key in the database.</p>
+     */
     @NewChain
     AbstractEntitySaveCommand setKeyProps(ImmutableProp... props);
 
+    /**
+     * Configures a named key group without changing id precedence, as in {@link #setKeyProps(ImmutableProp...)}.
+     * Replaces the group of the same name and preserves other key groups.
+     */
     @NewChain
     AbstractEntitySaveCommand setKeyProps(String group, ImmutableProp... props);
 
+    /** Typed-property form of {@link #setKeyProps(ImmutableProp...)}. */
     @NewChain
     AbstractEntitySaveCommand setKeyProps(TypedProp.Single<?, ?>... props);
 
+    /** Typed-property form of {@link #setKeyProps(String, ImmutableProp...)}. */
     @NewChain
     AbstractEntitySaveCommand setKeyProps(String group, TypedProp.Single<?, ?>... props);
 

@@ -42,6 +42,10 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
+    BatchEntitySaveCommand<E> matchByKey();
+
+    @NewChain
+    @Override
     default BatchEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
         return setKeyProps("", props);
     }
