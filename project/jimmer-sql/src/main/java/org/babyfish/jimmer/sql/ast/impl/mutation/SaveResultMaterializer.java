@@ -25,6 +25,30 @@ class SaveResultMaterializer {
         this.ctx = ctx;
     }
 
+    static List<ImmutableProp> keyLookupProps(SaveContext ctx, Batch<DraftSpi> batch) {
+        List<ImmutableProp> props = new ArrayList<>();
+        ImmutableProp versionProp = batch.shape().getType().getVersionProp();
+        if (versionProp != null) {
+            props.add(versionProp);
+        }
+        if (ctx.path.getParent() == null && ctx.fetcher != null) {
+            SaveShapeMatcher matcher = SaveShapeMatcher.forSaveInput(ctx.options);
+            for (ImmutableProp prop : SaveFetcherAnalysis.of(ctx.fetcher, batch.shape().getType()).getReturningProps()) {
+                if (props.contains(prop)) {
+                    continue;
+                }
+                for (DraftSpi draft : batch.entities()) {
+                    if (ctx.options.isSaveResultReadsAllProperties() ||
+                            !matcher.isScalarPropSatisfiedByInput(draft, ctx.fetcher.getImmutableType(), prop)) {
+                        props.add(prop);
+                        break;
+                    }
+                }
+            }
+        }
+        return props;
+    }
+
     void materialize(List<DraftSpi> drafts, Iterable<Batch<DraftSpi>> batches) {
         if (ctx.path.getParent() != null) {
             fetchIdIfNecessary(drafts, batches);

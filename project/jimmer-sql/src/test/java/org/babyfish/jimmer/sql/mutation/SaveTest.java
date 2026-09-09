@@ -284,8 +284,9 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) tb_2_(ID, " +
-                                "NAME, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set /* fake update to " +
+                                "select ID, VERSION, NAME from final table (merge into BOOK_STORE tb_1_ " +
+                                "using(values(?, ?, ?)) tb_2_(ID, NAME, VERSION) on tb_1_.NAME = tb_2_.NAME " +
+                                "when matched then update set /* fake update to " +
                                 "return all ids */ VERSION = tb_1_.VERSION when not matched then insert(ID, NAME, VERSION) " +
                                 "values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"
                         );
@@ -293,7 +294,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.entity(it -> {
                         it.original("{\"name\":\"TURING\"}");
-                        it.modified("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\"}");
+                        it.modified("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"version\":0}");
                     });
                     ctx.totalRowCount(1);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -446,8 +447,9 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) tb_2_(ID, " +
-                                "NAME, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set /* fake update to " +
+                                "select ID, VERSION, NAME from final table (merge into BOOK_STORE tb_1_ " +
+                                "using(values(?, ?, ?)) tb_2_(ID, NAME, VERSION) on tb_1_.NAME = tb_2_.NAME " +
+                                "when matched then update set /* fake update to " +
                                 "return all ids */ VERSION = tb_1_.VERSION when not matched then insert(ID, NAME, VERSION) " +
                                 "values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"
                         );
@@ -468,6 +470,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.modified("{" +
                                 "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                                 "\"name\":\"TURING\"," +
+                                "\"version\":0," +
                                 "\"books\":[" +
                                 "--->{" +
                                 "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +

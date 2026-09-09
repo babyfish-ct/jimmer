@@ -56,8 +56,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?, ?)) tb_2_(ID, " +
-                                "NAME, WEBSITE, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set WEBSITE = " +
+                                "select ID, VERSION, NAME from final table (merge into BOOK_STORE tb_1_ " +
+                                "using(values(?, ?, ?, ?)) tb_2_(ID, NAME, WEBSITE, VERSION) on tb_1_.NAME = tb_2_.NAME " +
+                                "when matched then update set WEBSITE = " +
                                 "tb_2_.WEBSITE when not matched then insert(ID, NAME, WEBSITE, VERSION) values(tb_2_.ID, tb_2_.NAME, " +
                                 "tb_2_.WEBSITE, tb_2_.VERSION))"
                         );
@@ -88,7 +89,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "\"store\":{" +
                                 "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
                                 "\"name\":\"TURING\"," +
-                                "\"website\":\"http://www.turing.com\"" +
+                                "\"website\":\"http://www.turing.com\"," +
+                                "\"version\":0" +
                                 "}" +
                                 "}");
                     });
@@ -181,7 +183,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) " +
+                                "select ID, VERSION, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) " +
                                 "tb_2_(ID, NAME, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set /* fake " +
                                 "update to return all ids */ VERSION = tb_1_.VERSION when not matched then insert(ID, NAME, " +
                                 "VERSION) values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"
@@ -222,6 +224,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{" +
                                         "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                                         "\"name\":\"TURING\"," +
+                                        "\"version\":0," +
                                         "\"books\":[" +
                                         "{" +
                                         "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
@@ -1871,7 +1874,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) " +
+                                "select ID, VERSION, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) " +
                                 "tb_2_(ID, NAME, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set /* fake " +
                                 "update to return all ids */ VERSION = tb_1_.VERSION when not matched then insert(ID, NAME, " +
                                 "VERSION) values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"

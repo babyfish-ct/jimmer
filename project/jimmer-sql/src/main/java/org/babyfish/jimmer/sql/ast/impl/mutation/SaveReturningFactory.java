@@ -356,6 +356,10 @@ class SaveReturningFactory {
         if (returningFetcherProps.isEmpty() && generatedIdProp == null && updateWherePredicate == null && !resolveIdByKey) {
             return null;
         }
+        if (resolveIdByKey && tableType.getVersionProp() != null) {
+            returningFetcherProps = new ArrayList<>(returningFetcherProps);
+            addProp(returningFetcherProps, tableType.getVersionProp());
+        }
         if (generatedIdProp != null && generatedIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             return null;
         }

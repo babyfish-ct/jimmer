@@ -1483,6 +1483,15 @@ class Operator {
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
+        return fillIdsAndGetRowCounts(queryReason, originalKeyObjMap, batch, Collections.emptyList());
+    }
+
+    private int[] fillIdsAndGetRowCounts(
+            QueryReason queryReason,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
+            Batch<DraftSpi> batch,
+            List<ImmutableProp> resultProps
+    ) {
         KeyMatcher.Group group = batch.shape().group(
                 ctx.options.getKeyMatcher(ctx.path.getType())
         );
@@ -1498,6 +1507,9 @@ class Operator {
                 } else {
                     fetcher = fetcher.add(keyProp.getName());
                 }
+            }
+            for (ImmutableProp prop : resultProps) {
+                fetcher = fetcher.add(prop.getName());
             }
             keyMap = Rows.findMapByKeys(
                     ctx,
@@ -1515,6 +1527,13 @@ class Operator {
             if (row != null) {
                 for (DraftSpi draft : item.getOriginalEntities()) {
                     draft.__set(idPropId, row.__get(idPropId));
+                    for (ImmutableProp prop : resultProps) {
+                        draft.__set(prop.getId(), row.__get(prop.getId()));
+                    }
+                    if (!resultProps.isEmpty()) {
+                        ctx.addSaveResultCoverage(draft, resultProps);
+                        ctx.addSaveResultCoverage(draft, keyProps);
+                    }
                 }
                 rowCounts[index] = 1;
             }
@@ -2000,20 +2019,41 @@ class Operator {
                 ignoreUpdate,
                 forceOneByOne
         );
+        unloadCustomAssignmentTargets(batch.entities(), rowCounts, assignments);
+        if (!ignoreUpdate) {
+            unloadUnchangedVersion(batch.entities(), updatedGetters);
+        } else if (resolveIdByKey) {
+            // DO NOTHING reports only inserts as accepted, so their inserted version is known without a lookup.
+            for (PropertyGetter getter : defaultGetters) {
+                if (getter.prop().isVersion()) {
+                    int index = 0;
+                    for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
+                        if (rowCounts[index++] != 0) {
+                            for (DraftSpi draft : item.getOriginalEntities()) {
+                                draft.__set(getter.prop().getId(), getter.metadata().getDefaultValue());
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (resolveIdByKey && !ignoreUpdate) {
             Batch<DraftSpi> acceptedBatch = updateWherePredicate != null || optimisticLockPredicate != null ||
                     versionGetter != null || discriminatorGuardProp != null ?
                     batchOf(batch, batch.shape(), acceptedOriginalEntities(batch, rowCounts)) : batch;
             if (!acceptedBatch.entities().isEmpty()) {
-                fillIdsAndGetRowCounts(QueryReason.EXPLICIT_CONFLICT_TARGET, null, acceptedBatch);
+                fillIdsAndGetRowCounts(
+                        QueryReason.EXPLICIT_CONFLICT_TARGET,
+                        null,
+                        acceptedBatch,
+                        SaveResultMaterializer.keyLookupProps(ctx, acceptedBatch)
+                );
             }
         }
         if (userGeneratedIds && (ignoreUpdate || updateWherePredicate != null || optimisticLockPredicate != null ||
                 versionGetter != null || discriminatorGuardProp != null)) {
             unloadRejectedGeneratedIds(batch, rowCounts);
         }
-        unloadCustomAssignmentTargets(batch.entities(), rowCounts, assignments);
-        unloadUnchangedVersion(batch.entities(), updatedGetters);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
         return rowCounts;
     }

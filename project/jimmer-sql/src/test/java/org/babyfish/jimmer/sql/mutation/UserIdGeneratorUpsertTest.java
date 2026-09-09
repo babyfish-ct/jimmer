@@ -73,6 +73,11 @@ public class UserIdGeneratorUpsertTest extends AbstractMutationTest {
             }
             assertEquals(returning ? 1 : 0, result.getTotalAffectedRowCount());
             assertNativeMerge();
+            assertEquals(returning ? 1 : 2, getExecutions().size());
+            if (!returning) {
+                assertTrue(getExecutions().get(1).getSql().contains("tb_1_.PRICE"));
+                assertTrue(getExecutions().get(1).getSql().contains("(tb_1_.NAME, tb_1_.EDITION) = (?, ?)"));
+            }
         });
     }
 
@@ -204,6 +209,124 @@ public class UserIdGeneratorUpsertTest extends AbstractMutationTest {
         return Stream.of(false, true).flatMap(returning ->
                 Stream.of(AssociatedSaveMode.MERGE, AssociatedSaveMode.APPEND_IF_ABSENT).map(mode -> Arguments.of(returning, mode))
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("versionModes")
+    public void testKeyUpsertReturnsActualVersion(boolean returning, boolean existing, boolean nested) {
+        JSqlClient client = getSqlClient(builder -> builder
+                .setDialect(new H2Dialect() {
+                    @Override
+                    public boolean isUpsertReturningSupported() {
+                        return returning;
+                    }
+                })
+                .setIdGenerator(BookStore.class, new UUIDIdGenerator()));
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setName(existing ? "MANNING" : "New store");
+            draft.setWebsite("https://store.example");
+        });
+        jdbc(con -> {
+            try (java.sql.Statement statement = con.createStatement()) {
+                statement.executeUpdate("update BOOK_STORE set VERSION = 7 where NAME = 'MANNING'");
+            }
+            BookStore result;
+            if (nested) {
+                Book input = BookDraft.$.produce(draft -> {
+                    draft.setId(Constants.graphQLInActionId3);
+                    draft.setPrice(BigDecimal.ONE);
+                    draft.setStore(store);
+                });
+                result = client.saveCommand(input).execute(con).getModifiedEntity().store();
+            } else {
+                result = client.saveCommand(store).execute(con).getModifiedEntity();
+            }
+            assertEquals(existing ? 7 : 0, result.version());
+            assertFalse(ImmutableObjects.isLoaded(store, BookStoreProps.VERSION));
+            assertEquals((returning ? 1 : 2) + (nested ? 1 : 0), getExecutions().size());
+            if (existing) {
+                assertEquals(Constants.manningId, result.id());
+            }
+        });
+    }
+
+    private static Stream<Arguments> versionModes() {
+        return Stream.of(false, true).flatMap(returning -> Stream.of(false, true)
+                .flatMap(existing -> Stream.of(false, true).map(nested -> Arguments.of(returning, existing, nested))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testForbidUpdateFetchesMixedBatch(boolean returning) {
+        List<UUID> generatedIds = new ArrayList<>();
+        jdbc(con -> {
+            BatchSaveResult<Book> result = client(returning, generatedIds).saveEntitiesCommand(Arrays.asList(
+                    book("GraphQL in Action", BigDecimal.ONE),
+                    book("New book", BigDecimal.TEN),
+                    book("GraphQL in Action", BigDecimal.ONE)
+            )).forbidUpdate().execute(con, BookFetcher.$.allScalarFields());
+            assertEquals(returning ? 1 : 2, getExecutions().size());
+            assertEquals(2, generatedIds.size());
+            assertEquals(Constants.graphQLInActionId3, result.getItems().get(0).getModifiedEntity().id());
+            assertEquals(Constants.graphQLInActionId3, result.getItems().get(2).getModifiedEntity().id());
+            assertEquals(new BigDecimal("80.00"), result.getItems().get(0).getModifiedEntity().price());
+            assertEquals(new BigDecimal("80.00"), result.getItems().get(2).getModifiedEntity().price());
+            assertEquals(generatedIds.get(1), result.getItems().get(1).getModifiedEntity().id());
+            assertEquals(0, BigDecimal.TEN.compareTo(result.getItems().get(1).getModifiedEntity().price()));
+            assertTrue(result.getItems().stream().allMatch(BatchSaveResult.Item::isAccepted));
+            assertEquals(returning ? 2 : 1, result.getTotalAffectedRowCount());
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testForbidUpdateReturnsDatabaseVersion(boolean returning) {
+        JSqlClient client = getSqlClient(builder -> builder.setDialect(new H2Dialect() {
+            @Override
+            public boolean isUpsertReturningSupported() {
+                return returning;
+            }
+        }));
+        BookStore input = BookStoreDraft.$.produce(draft -> {
+            draft.setId(UUID.randomUUID());
+            draft.setName("MANNING");
+            draft.setVersion(100);
+        });
+        jdbc(con -> {
+            try (java.sql.Statement statement = con.createStatement()) {
+                statement.executeUpdate("update BOOK_STORE set VERSION = 7 where NAME = 'MANNING'");
+            }
+            BookStore result = client.saveCommand(input).matchByKey().setVersionMode(VersionMode.ASSIGNMENT)
+                    .forbidUpdate().execute(con).getModifiedEntity();
+            assertEquals(Constants.manningId, result.id());
+            assertEquals(7, result.version());
+            assertEquals(100, input.version());
+            assertEquals(returning ? 1 : 2, getExecutions().size());
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testInsertIfAbsentVersion(boolean returning) {
+        JSqlClient client = getSqlClient(builder -> builder
+                .setDialect(new H2Dialect() {
+                    @Override
+                    public boolean isUpsertReturningSupported() {
+                        return returning;
+                    }
+                })
+                .setIdGenerator(BookStore.class, new UUIDIdGenerator()));
+        jdbc(con -> {
+            BatchSaveResult<BookStore> result = client.saveEntitiesCommand(Arrays.asList(
+                    BookStoreDraft.$.produce(draft -> draft.setName("MANNING")),
+                    BookStoreDraft.$.produce(draft -> draft.setName("New store"))
+            )).setMode(SaveMode.INSERT_IF_ABSENT).execute(con);
+            assertEquals(1, getExecutions().size());
+            assertFalse(result.getItems().get(0).isAccepted());
+            assertFalse(ImmutableObjects.isLoaded(result.getItems().get(0).getModifiedEntity(), BookStoreProps.VERSION));
+            assertTrue(result.getItems().get(1).isAccepted());
+            assertEquals(0, result.getItems().get(1).getModifiedEntity().version());
+        });
     }
 
     private JSqlClient client(boolean returning, List<UUID> generatedIds) {
