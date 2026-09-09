@@ -76,11 +76,11 @@ public class Literals {
     }
 
     public static void bind(Expression<?> mayBeLiteral, Expression<?> expression) {
-        if (!(mayBeLiteral instanceof Any<?>)) {
+        if (!(mayBeLiteral instanceof LiteralExpressionImplementor<?>)) {
             return;
         }
         if (expression instanceof PropExpression<?>) {
-            ((Any<?>)mayBeLiteral).setMatchedProp(((PropExpressionImplementor<?>)expression).getProp());
+            ((LiteralExpressionImplementor<?>)mayBeLiteral).bindProp(((PropExpressionImplementor<?>)expression).getProp());
         } else if (expression instanceof TupleExpressionImplementor<?>) {
             TupleExpressionImplementor<?> tupleExpr = (TupleExpressionImplementor<?>) expression;
             int size = tupleExpr.size();
@@ -94,7 +94,7 @@ public class Literals {
                 }
             }
             if (hasProp) {
-                ((Any<?>) mayBeLiteral).setMatchedProps(props);
+                ((LiteralExpressionImplementor<?>) mayBeLiteral).bindProps(props);
             }
         }
     }
@@ -292,7 +292,8 @@ public class Literals {
             return 0;
         }
 
-        public void setMatchedProp(ImmutableProp matchedProp) {
+        @Override
+        public void bindProp(ImmutableProp matchedProp) {
             if (this.matchedProp != null && this.matchedProp != matchedProp) {
                 throw new IllegalStateException(
                         "The matched property of current literal expression has been configured, " +
@@ -302,7 +303,8 @@ public class Literals {
             this.matchedProp = matchedProp;
         }
 
-        public void setMatchedProps(ImmutableProp[] matchedProps) {
+        @Override
+        public void bindProps(ImmutableProp[] matchedProps) {
             if (this.matchedProps != null && this.matchedProps != matchedProps) {
                 throw new IllegalStateException(
                         "The matched properties of current literal expression has been configured, " +

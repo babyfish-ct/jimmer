@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.json;
 
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
@@ -21,7 +24,26 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class H2SaveTest extends AbstractMutationTest {
+
+    @Test
+    public void testInsertFromSelectWithPropertySerialization() {
+        MedicineTable table = MedicineTable.$;
+        List<Medicine.Tag> tags = Arrays.asList(new Medicine.Tag("Tag-1", "Description-1"));
+        BaseTable1<NumericExpression<Long>> source = getSqlClient()
+                .createBaseQuery().addSelect(Expression.value(100L)).asBaseTable();
+        jdbc(con -> {
+            int count = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                    .createInsert(table, source)
+                    .set(table.id(), source.get_1())
+                    .set(table.tags(), Expression.value(tags))
+                    .execute(con);
+            assertEquals(1, count);
+            assertEquals(tags, getSqlClient().createQuery(table).where(table.id().eq(100L)).select(table.tags()).fetchOne(con));
+        });
+    }
 
     @Test
     public void testDML() {

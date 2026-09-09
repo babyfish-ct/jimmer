@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ScalarProviderUtils.toSql
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
@@ -9,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.runtime.DbLiteral.DbNull
 import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
@@ -87,36 +87,31 @@ internal class LiteralExpression<T: Any>(
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
 
+    override fun bindProp(prop: ImmutableProp) {
+        if (matchedProp !== null && matchedProp !== prop) {
+            throw IllegalStateException(
+                "The matched property of the current literal has already been set, " +
+                    "is the current literal expression is shared by difference parts of SQL DSL"
+            )
+        }
+        matchedProp = prop
+    }
+
+    override fun bindProps(props: Array<ImmutableProp?>) {
+        if (matchedProps !== null && matchedProps !== props) {
+            throw IllegalStateException(
+                "The matched properties of the current literal has already been set, " +
+                    "is the current literal expression is shared by difference parts of SQL DSL"
+            )
+        }
+        matchedProps = props
+    }
+
     companion object {
 
         @JvmStatic
         fun bind(mayBeLiteral: KExpression<*>, expression: KExpression<*>) {
-            if (mayBeLiteral !is LiteralExpression<*>) {
-                return
-            }
-            if (expression is KPropExpression<*>) {
-                val propExpr = expression as PropExpressionImplementor<*>
-                if (mayBeLiteral.matchedProp !== null && mayBeLiteral.matchedProp !== propExpr.prop) {
-                    throw IllegalStateException(
-                        "The matched property of the current literal has already been set, " +
-                            "is the current literal expression is shared by difference parts of SQL DSL"
-                    )
-                }
-                mayBeLiteral.matchedProp = propExpr.prop
-            } else if (expression is TupleExpressionImplementor<*>) {
-                val props =
-                    (0 until expression.size())
-                        .map { (expression[it] as? PropExpressionImplementor<*>)?.prop }
-                        .takeIf { it.any { v-> v !== null } }
-                        ?.toTypedArray() ?: return
-                if (mayBeLiteral.matchedProps !== null && mayBeLiteral.matchedProps != props) {
-                    throw IllegalStateException(
-                        "The matched properties of the current literal has already been set, " +
-                            "is the current literal expression is shared by difference parts of SQL DSL"
-                    )
-                }
-                mayBeLiteral.matchedProps = props
-            }
+            Literals.bind(mayBeLiteral as Expression<*>, expression as Expression<*>)
         }
 
         @JvmStatic
