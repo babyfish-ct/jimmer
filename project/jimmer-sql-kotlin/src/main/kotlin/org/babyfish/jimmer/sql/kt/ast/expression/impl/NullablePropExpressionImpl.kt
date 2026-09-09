@@ -67,4 +67,7 @@ internal open class NullablePropExpressionImpl<T: Any>(
         javaPropExpression
 
     override fun isNullable(): Boolean = true
+
+    override fun toString(): String =
+        javaPropExpression.toString()
 }

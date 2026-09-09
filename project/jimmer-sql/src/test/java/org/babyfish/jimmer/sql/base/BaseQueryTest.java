@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.base;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSelections;
 import org.babyfish.jimmer.sql.ast.query.BaseTableProjection;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
@@ -29,6 +30,15 @@ import java.util.List;
 import java.util.UUID;
 
 public class BaseQueryTest extends AbstractQueryTest {
+
+    @Test
+    public void testPropertyExpressionToString() {
+        BookStoreTable store = BookStoreTable.$;
+        BaseTable2<StringExpression, StringExpression> source = getSqlClient().createBaseQuery(store)
+                .addSelect(store.name()).addSelect(store.website()).asBaseTable();
+        Assertions.assertEquals("BookStore.name", BaseTableSelections.of(store.name(), source, 0).toString());
+        Assertions.assertEquals("BookStore.website", BaseTableSelections.of(store.website(), source, 1).toString());
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"derived", "cte", "nested"})

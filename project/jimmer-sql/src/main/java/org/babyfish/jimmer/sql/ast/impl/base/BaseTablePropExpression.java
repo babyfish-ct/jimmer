@@ -89,6 +89,11 @@ class BaseTablePropExpression<T>
     }
 
     @Override
+    public String toString() {
+        return raw().toString();
+    }
+
+    @Override
     protected void renderWithoutReplacement(AbstractSqlBuilder<?> builder) {
         renderWithoutReplacement(builder, false, true);
     }

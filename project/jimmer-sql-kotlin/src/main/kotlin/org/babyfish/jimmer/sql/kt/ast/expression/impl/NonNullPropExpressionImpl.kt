@@ -67,4 +67,7 @@ internal open class NonNullPropExpressionImpl<T: Any>(
         javaPropExpression
 
     override fun isNullable(): Boolean = false
+
+    override fun toString(): String =
+        javaPropExpression.toString()
 }
