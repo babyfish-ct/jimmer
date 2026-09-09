@@ -423,14 +423,16 @@ abstract class AbstractPreHandler implements PreHandler {
         boolean allIdsLoaded = hasId || nativeKeyMatching && drafts.stream()
                 .allMatch(draft -> draft.__isLoaded(ctx.path.getType().getIdProp().getId()));
         if (!allIdsLoaded) {
-            if (!clearMode && !ctx.options.getSqlClient().getDialect().isNoIdUpsertSupported()) {
+            IdGenerator idGenerator = sqlClient.getGeneratorContext().getIdGenerator(ctx.path.getType());
+            boolean clientGeneratedId = idGenerator instanceof UserIdGenerator<?>;
+            if (!clearMode && clientGeneratedId && !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
+                // A generated insert id must not become an alternative conflict target.
+                return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
+            }
+            if (!clearMode && !clientGeneratedId && !sqlClient.getDialect().isNoIdUpsertSupported()) {
                 return QueryReason.NO_ID_UPSERT_NOT_SUPPORTED;
             }
             if (saveMode != SaveMode.UPDATE_ONLY) {
-                IdGenerator idGenerator = ctx.options
-                        .getSqlClient()
-                        .getGeneratorContext()
-                        .getIdGenerator(ctx.path.getType());
                 if (idGenerator == null) {
                     ctx.throwNoIdGenerator();
                 }
@@ -438,7 +440,7 @@ abstract class AbstractPreHandler implements PreHandler {
                 if (prop != null && ctx.options.isKeyOnlyAsReference(prop) && isKeyOnly(drafts)) {
                     return QueryReason.KEY_ONLY_AS_REFERENCE;
                 }
-                if (!(idGenerator instanceof IdentityIdGenerator)) {
+                if (!(idGenerator instanceof IdentityIdGenerator) && !clientGeneratedId) {
                     return QueryReason.IDENTITY_GENERATOR_REQUIRED;
                 }
             }
@@ -453,7 +455,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     ImmutableProp versionProp = ctx.path.getType().getVersionProp();
                     if (versionProp != null) {
                         PropId versionPropId = versionProp.getId();
-                        for (DraftSpi draft : draftsWithId) {
+                        for (DraftSpi draft : drafts) {
                             if (draft.__isLoaded(versionPropId)) {
                                 useOptimisticLock = true;
                                 break;

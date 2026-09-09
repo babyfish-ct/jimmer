@@ -58,6 +58,15 @@ class Shape {
         );
     }
 
+    Shape withId(JSqlClientImplementor sqlClient) {
+        if (!getIdGetters().isEmpty()) {
+            return this;
+        }
+        List<PropertyGetter> newGetters = new ArrayList<>(PropertyGetter.propertyGetters(sqlClient, type.getIdProp()));
+        newGetters.addAll(getters);
+        return new Shape(type, newGetters);
+    }
+
     @NotNull
     public ImmutableType getType() {
         return type;

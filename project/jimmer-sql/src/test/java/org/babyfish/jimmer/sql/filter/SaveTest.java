@@ -169,7 +169,7 @@ public class SaveTest extends AbstractMutationTest {
                                             "where tb_1_.NAME = ? and tb_1_.DELETED_TIME is null"
                             );
                             it.variables("Andrew");
-                            it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.KEY_UNIQUE_CONSTRAINT_REQUIRED);
                         });
                         ctx.statement(it -> {
                             it.sql(

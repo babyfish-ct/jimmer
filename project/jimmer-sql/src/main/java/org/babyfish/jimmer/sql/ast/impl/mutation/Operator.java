@@ -1846,15 +1846,28 @@ class Operator {
                 defaultGetters.add(getter);
             }
         }
+        // Matching is determined by the input shape, before a client generator supplies insert ids.
+        boolean matchByKey = batch.shape().getIdGetters().isEmpty() || ctx.options.isKeyBasedConflict(tableType);
+        boolean userGeneratedIds = false;
         SequenceIdGenerator sequenceIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
             IdGenerator idGenerator = sqlClient.getGeneratorContext().getIdGenerator(tableType);
-            if (idGenerator instanceof SequenceIdGenerator) {
+            if (idGenerator instanceof UserIdGenerator<?>) {
+                userGeneratedIds = true;
+                PropId idPropId = batch.shape().getType().getIdProp().getId();
+                for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
+                    Object id = ((UserIdGenerator<?>) idGenerator).generate(batch.shape().getType().getJavaClass());
+                    for (DraftSpi draft : item.getOriginalEntities()) {
+                        draft.__set(idPropId, id);
+                    }
+                }
+                batch = batchOf(batch, batch.shape().withId(sqlClient));
+            } else if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 ctx.throwIllegalIdGenerator(
                         "In order to upsert object without id, " +
-                                "the id generator must be IdentityGenerator or Sequence"
+                                "the id generator must be UserIdGenerator, IdentityIdGenerator or SequenceIdGenerator"
                 );
             }
         }
@@ -1862,8 +1875,8 @@ class Operator {
         List<ImmutableProp> conflictProps;
         List<PropertyGetter> conflictGetters;
         LogicalDeletedInfo conflictPredicate;
-        boolean resolveIdByKey = !batch.shape().getIdGetters().isEmpty() && ctx.options.isKeyBasedConflict(tableType);
-        if (!batch.shape().getIdGetters().isEmpty() && !resolveIdByKey) {
+        boolean resolveIdByKey = !batch.shape().getIdGetters().isEmpty() && matchByKey;
+        if (!matchByKey) {
             conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
             conflictGetters = batch.shape().getIdGetters();
             conflictPredicate = null;
@@ -1945,6 +1958,9 @@ class Operator {
         );
         if (returning != null) {
             int[] rowCounts = returning.executeUpsert(batch.entities());
+            if (userGeneratedIds) {
+                unloadRejectedGeneratedIds(batch, rowCounts);
+            }
             if (!returning.returningProps.contains(batch.shape().getType().getVersionProp())) {
                 unloadUnchangedVersion(batch.entities(), updatedGetters);
             }
@@ -1992,10 +2008,26 @@ class Operator {
                 fillIdsAndGetRowCounts(QueryReason.EXPLICIT_CONFLICT_TARGET, null, acceptedBatch);
             }
         }
+        if (userGeneratedIds && (ignoreUpdate || updateWherePredicate != null || optimisticLockPredicate != null ||
+                versionGetter != null || discriminatorGuardProp != null)) {
+            unloadRejectedGeneratedIds(batch, rowCounts);
+        }
         unloadCustomAssignmentTargets(batch.entities(), rowCounts, assignments);
         unloadUnchangedVersion(batch.entities(), updatedGetters);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
         return rowCounts;
+    }
+
+    private static void unloadRejectedGeneratedIds(Batch<DraftSpi> batch, int[] rowCounts) {
+        PropId idPropId = batch.shape().getType().getIdProp().getId();
+        int index = 0;
+        for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
+            if (rowCounts[index++] == 0) {
+                for (DraftSpi draft : item.getOriginalEntities()) {
+                    draft.__unload(idPropId);
+                }
+            }
+        }
     }
 
     private @Nullable ImmutableProp unchangedVersionProp(List<PropertyGetter> updatedGetters) {

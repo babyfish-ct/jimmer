@@ -300,6 +300,7 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
 
     @Test
     public void testKeyOnlyAsEntity() {
+        setAutoIds(Author.class, java.util.UUID.randomUUID(), java.util.UUID.randomUUID());
         Book book = Immutables.createBook(draft -> {
             draft.setId(Constants.learningGraphQLId1);
             draft.addIntoAuthors(author -> {
@@ -323,16 +324,14 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
                         .saveCommand(book),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
+                                "select ID, FIRST_NAME, LAST_NAME from final table (merge into AUTHOR tb_1_ " +
+                                "using(values(?, ?, ?, ?), (?, ?, ?, ?)) tb_2_(ID, FIRST_NAME, LAST_NAME, GENDER) " +
+                                "on tb_1_.FIRST_NAME = tb_2_.FIRST_NAME and tb_1_.LAST_NAME = tb_2_.LAST_NAME " +
+                                "when matched then update set GENDER = tb_2_.GENDER when not matched then " +
+                                "insert(ID, FIRST_NAME, LAST_NAME, GENDER) " +
+                                "values(tb_2_.ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
-                        it.batches(2);
                     });
                     ctx.statement(it -> {
                         it.sql(

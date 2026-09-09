@@ -56,27 +56,20 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
+                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?, ?)) tb_2_(ID, " +
+                                "NAME, WEBSITE, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set WEBSITE = " +
+                                "tb_2_.WEBSITE when not matched then insert(ID, NAME, WEBSITE, VERSION) values(tb_2_.ID, tb_2_.NAME, " +
+                                "tb_2_.WEBSITE, tb_2_.VERSION))"
                         );
-                        it.variables("TURING");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) values(?, ?, ?, ?)");
                         it.variables(newStoreId, "TURING", "http://www.turing.com", 0);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
-                        );
-                        it.variables("Kotlin in Action", 1);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?, " +
+                                "?)) tb_2_(ID, NAME, EDITION, PRICE, STORE_ID) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = " +
+                                "tb_2_.EDITION when matched then update set PRICE = tb_2_.PRICE, STORE_ID = tb_2_.STORE_ID " +
+                                "when not matched then insert(ID, NAME, EDITION, PRICE, STORE_ID) values(tb_2_.ID, " +
+                                "tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID))"
                         );
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(40), newStoreId);
                     });
@@ -95,8 +88,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "\"store\":{" +
                                 "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
                                 "\"name\":\"TURING\"," +
-                                "\"website\":\"http://www.turing.com\"," +
-                                "\"version\":0" +
+                                "\"website\":\"http://www.turing.com\"" +
                                 "}" +
                                 "}");
                     });
@@ -189,15 +181,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) " +
+                                "tb_2_(ID, NAME, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set /* fake " +
+                                "update to return all ids */ VERSION = tb_1_.VERSION when not matched then insert(ID, NAME, " +
+                                "VERSION) values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"
                         );
-                        it.variables("TURING");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
                         it.variables(newId, "TURING", 0);
                     });
                     ctx.statement(it -> {
@@ -214,6 +202,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.batchVariables(0, newBookId1, "SQL Cookbook", 1, new BigDecimal(50), newId);
                         it.batchVariables(1, newBookId2, "Learning SQL", 1, new BigDecimal(40), newId);
                     });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.STORE_ID = ? and tb_1_.ID not in (?, ?) limit ?"
+                        );
+                        it.variables(newId, newBookId1, newBookId2, 1);
+                    });
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
@@ -228,7 +222,6 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{" +
                                         "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                                         "\"name\":\"TURING\"," +
-                                        "\"version\":0," +
                                         "\"books\":[" +
                                         "{" +
                                         "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
@@ -256,6 +249,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithOneToMany() {
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -281,7 +275,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
@@ -289,17 +283,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?, ?), (?, ?, " +
+                                "?, ?, ?)) tb_2_(ID, NAME, EDITION, PRICE, STORE_ID) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = " +
+                                "tb_2_.EDITION when matched then update set PRICE = tb_2_.PRICE, STORE_ID = tb_2_.STORE_ID when not " +
+                                "matched then insert(ID, NAME, EDITION, PRICE, STORE_ID) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, " +
+                                "tb_2_.PRICE, tb_2_.STORE_ID))"
                         );
-                        it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");
-                        it.batchVariables(0, new BigDecimal(45), oreillyId, learningGraphQLId3);
-                        it.batchVariables(1, new BigDecimal(42), oreillyId, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?)");
@@ -366,7 +355,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                         );
                         it.variables("MANNING");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -411,7 +400,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                         );
                         it.variables("MANNING");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -469,36 +458,38 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?)) " +
+                                "tb_2_(ID, NAME, EDITION, PRICE) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION " +
+                                "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, " +
+                                "EDITION, PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
-                        it.variables("Kotlin in Action", 1);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(49));
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
+                                "select ID, FIRST_NAME, LAST_NAME from final table (merge into AUTHOR tb_1_ using(values(?, ?, ?, ?), " +
+                                "(?, ?, ?, ?)) tb_2_(ID, FIRST_NAME, LAST_NAME, GENDER) on tb_1_.FIRST_NAME = tb_2_.FIRST_NAME and " +
+                                "tb_1_.LAST_NAME = tb_2_.LAST_NAME when matched then update set GENDER = tb_2_.GENDER when not " +
+                                "matched then insert(ID, FIRST_NAME, LAST_NAME, GENDER) values(tb_2_.ID, tb_2_.FIRST_NAME, " +
+                                "tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
-                        it.variables("Andrey", "Breslav", "Pierre-Yves", "Saumont");
+                        it.variables(
+                                newAuthorId1, "Andrey", "Breslav", "M",
+                                newAuthorId2, "Pierre-Yves", "Saumont", "M"
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)"
+                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)"
                         );
-                        it.batchVariables(0, newAuthorId1, "Andrey", "Breslav", "M");
-                        it.batchVariables(1, newAuthorId2, "Pierre-Yves", "Saumont", "M");
+                        it.variables(newId, newAuthorId1, newAuthorId2);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
-                        it.batchVariables(0, newId, newAuthorId1);
-                        it.batchVariables(1, newId, newAuthorId2);
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) on " +
+                                "tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID when not matched then " +
+                                "insert(BOOK_ID, AUTHOR_ID) values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
+                        );
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -537,6 +528,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithManyToMany() {
+        setAutoIds(Author.class, UUID.randomUUID(), UUID.randomUUID());
+        setAutoIds(Book.class, UUID.randomUUID());
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookDraft.$.produce(book -> {
@@ -552,30 +545,20 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?)) " +
+                                "tb_2_(ID, NAME, EDITION, PRICE) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION " +
+                                "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, " +
+                                "EDITION, PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
-                        it.variables("Learning GraphQL", 3);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ? where ID = ?");
-                        it.variables(new BigDecimal(49), learningGraphQLId3);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
+                                "select ID, FIRST_NAME, LAST_NAME from final table (merge into AUTHOR tb_1_ using(values(?, ?, ?, ?), " +
+                                "(?, ?, ?, ?)) tb_2_(ID, FIRST_NAME, LAST_NAME, GENDER) on tb_1_.FIRST_NAME = tb_2_.FIRST_NAME and " +
+                                "tb_1_.LAST_NAME = tb_2_.LAST_NAME when matched then update set GENDER = tb_2_.GENDER when not " +
+                                "matched then insert(ID, FIRST_NAME, LAST_NAME, GENDER) values(tb_2_.ID, tb_2_.FIRST_NAME, " +
+                                "tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
-                        it.variables("Dan", "Vanderkam", "Boris", "Cherny");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
-                        it.batchVariables(0, "F", danId);
-                        it.batchVariables(1, "F", borisId);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)");
@@ -623,6 +606,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithEmptyManyToMany() {
+        setAutoIds(Book.class, UUID.randomUUID());
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookDraft.$.produce(book -> {
@@ -633,16 +617,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?)) " +
+                                "tb_2_(ID, NAME, EDITION, PRICE) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION " +
+                                "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, " +
+                                "EDITION, PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
-                        it.variables("Learning GraphQL", 3);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ? where ID = ?");
-                        it.variables(new BigDecimal(49), learningGraphQLId3);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -683,36 +662,38 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
+                                "select ID, FIRST_NAME, LAST_NAME from final table (merge into AUTHOR tb_1_ using(values(?, " +
+                                "?, ?, ?)) tb_2_(ID, FIRST_NAME, LAST_NAME, GENDER) on tb_1_.FIRST_NAME = tb_2_.FIRST_NAME " +
+                                "and tb_1_.LAST_NAME = tb_2_.LAST_NAME when matched then update set GENDER = tb_2_.GENDER " +
+                                "when not matched then insert(ID, FIRST_NAME, LAST_NAME, GENDER) values(tb_2_.ID, " +
+                                "tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
-                        it.variables("Jim", "Green");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
                         it.variables(newId, "Jim", "Green", "M");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?), (?, ?, ?, " +
+                                "?)) tb_2_(ID, NAME, EDITION, PRICE) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION " +
+                                "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, EDITION, " +
+                                "PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
-                        it.variables("Learning SQL", 1, "SQL Cookbook", 1);
+                        it.variables(
+                                newBookId1, "Learning SQL", 1, new BigDecimal(30),
+                                newBookId2, "SQL Cookbook", 1, new BigDecimal(40)
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
+                                "delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID not in (?, ?)"
                         );
-                        it.batchVariables(0, newBookId1, "Learning SQL", 1, new BigDecimal(30));
-                        it.batchVariables(1, newBookId2, "SQL Cookbook", 1, new BigDecimal(40));
+                        it.variables(newId, newBookId1, newBookId2);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
-                        it.batchVariables(0, newId, newBookId1);
-                        it.batchVariables(1, newId, newBookId2);
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) on " +
+                                "tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID when not matched then " +
+                                "insert(AUTHOR_ID, BOOK_ID) values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
+                        );
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -747,6 +728,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithInverseManyToMany() {
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        setAutoIds(Author.class, UUID.randomUUID());
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         AuthorDraft.$.produce(author -> {
@@ -762,32 +745,20 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
+                                "select ID, FIRST_NAME, LAST_NAME from final table (merge into AUTHOR tb_1_ using(values(?, " +
+                                "?, ?, ?)) tb_2_(ID, FIRST_NAME, LAST_NAME, GENDER) on tb_1_.FIRST_NAME = tb_2_.FIRST_NAME " +
+                                "and tb_1_.LAST_NAME = tb_2_.LAST_NAME when matched then update set GENDER = tb_2_.GENDER " +
+                                "when not matched then insert(ID, FIRST_NAME, LAST_NAME, GENDER) values(tb_2_.ID, " +
+                                "tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
-                        it.variables("Eve", "Procello");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update AUTHOR set GENDER = ? where ID = ?"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?), (?, ?, ?, " +
+                                "?)) tb_2_(ID, NAME, EDITION, PRICE) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION " +
+                                "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, EDITION, " +
+                                "PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
-                        it.variables("F", eveId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
-                        );
-                        it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ? where ID = ?");
-                        it.batchVariables(0, new BigDecimal(35), learningGraphQLId3);
-                        it.batchVariables(1, new BigDecimal(28), graphQLInActionId3);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID not in (?, ?)");
@@ -1253,17 +1224,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ using(values(?, ?, ?, ?, " +
+                                "?), (?, ?, ?, ?, ?)) tb_2_(ID, NAME, EDITION, PRICE, STORE_ID) on tb_1_.NAME = tb_2_.NAME " +
+                                "and tb_1_.EDITION = tb_2_.EDITION when matched then update set PRICE = tb_2_.PRICE, STORE_ID " +
+                                "= tb_2_.STORE_ID when not matched then insert(ID, NAME, EDITION, PRICE, STORE_ID) " +
+                                "values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID))"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
-                                        "values(?, ?, ?, ?, ?)"
-                        );
-                        it.batches(2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1904,16 +1870,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         .saveCommand(store),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE tb_1_ " +
-                                        "where tb_1_.NAME = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)"
+                                "select ID, NAME from final table (merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) " +
+                                "tb_2_(ID, NAME, VERSION) on tb_1_.NAME = tb_2_.NAME when matched then update set /* fake " +
+                                "update to return all ids */ VERSION = tb_1_.VERSION when not matched then insert(ID, NAME, " +
+                                "VERSION) values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION))"
                         );
                     });
                     ctx.statement(it -> {

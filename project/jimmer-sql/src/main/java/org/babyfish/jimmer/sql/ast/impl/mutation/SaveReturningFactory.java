@@ -141,6 +141,7 @@ class SaveReturningFactory {
                 entities,
                 false,
                 customTargetGetters,
+                false,
                 false
         );
         if (basic == null ||
@@ -336,7 +337,8 @@ class SaveReturningFactory {
                 batch.entities(),
                 generatedIdProp != null,
                 requiredReturningGetters,
-                updateWherePredicate != null || resolveIdByKey
+                updateWherePredicate != null,
+                resolveIdByKey
         );
         if (basic == null ||
                 versionGetter != null ||
@@ -477,22 +479,25 @@ class SaveReturningFactory {
             EntityCollection<DraftSpi> entities,
             boolean idWillBeLoadedByDml,
             List<PropertyGetter> requiredReturningGetters,
-            boolean acceptanceRequired
+            boolean acceptanceRequired,
+            boolean keyIdRequired
     ) {
-        if (!ctx.options.isSaveReturningEnabled() && !acceptanceRequired) {
+        boolean resultRequired = acceptanceRequired || keyIdRequired;
+        if (!ctx.options.isSaveReturningEnabled() && !resultRequired) {
             return null;
         }
-        if (ctx.path.getParent() != null || ctx.trigger != null ||
-                ctx.fetcher == null && !acceptanceRequired) {
+        boolean nested = ctx.path.getParent() != null;
+        if (nested && !keyIdRequired || ctx.trigger != null || ctx.fetcher == null && !resultRequired) {
             return null;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         LogicalDeletedBehavior logicalDeletedBehavior = sqlClient.getFilters().getBehavior(shape.getType());
         LogicalDeletedInfo logicalDeletedInfo = logicalDeletedInfo(shape.getType(), logicalDeletedBehavior);
-        Fetcher<?> fetcher = ctx.fetcher != null ?
+        // Cascades need the matched id for linking; fetching their other properties remains a separate concern.
+        Fetcher<?> fetcher = !nested && ctx.fetcher != null ?
                 ctx.fetcher :
                 new org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl<>(shape.getType().getJavaClass());
-        if (!acceptanceRequired &&
+        if (!resultRequired &&
                 !isFetchRequired(ctx, fetcher, entities, idWillBeLoadedByDml) &&
                 !isReturningRequiredByFetcher(
                         fetcher,

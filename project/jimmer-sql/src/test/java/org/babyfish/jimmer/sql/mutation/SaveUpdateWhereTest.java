@@ -224,7 +224,7 @@ public class SaveUpdateWhereTest extends AbstractMutationTest {
             public boolean isNoIdUpsertSupported() {
                 return false;
             }
-        }));
+        }).setIdGenerator(Book.class, org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator.INSTANCE));
         Book keyBasedBook = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(2);
@@ -565,7 +565,15 @@ public class SaveUpdateWhereTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ " +
+                                "select ID, NAME, EDITION from final table (merge into BOOK tb_1_ " +
+                                "using(values(?, ?, ?, ?)) tb_2_(ID, NAME, EDITION, PRICE) on " +
+                                "tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION when not matched then insert(ID, " +
+                                "NAME, EDITION, PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 1);
