@@ -252,7 +252,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithOneToMany() {
-        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        UUID candidateBookId1 = UUID.randomUUID();
+        UUID candidateBookId2 = UUID.randomUUID();
+        setAutoIds(Book.class, candidateBookId1, candidateBookId2);
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -291,6 +293,10 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "tb_2_.EDITION when matched then update set PRICE = tb_2_.PRICE, STORE_ID = tb_2_.STORE_ID when not " +
                                 "matched then insert(ID, NAME, EDITION, PRICE, STORE_ID) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, " +
                                 "tb_2_.PRICE, tb_2_.STORE_ID))"
+                        );
+                        it.variables(
+                                candidateBookId1, "Learning GraphQL", 3, new BigDecimal(45), oreillyId,
+                                candidateBookId2, "GraphQL in Action", 3, new BigDecimal(42), oreillyId
                         );
                     });
                     ctx.statement(it -> {
@@ -493,6 +499,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID when not matched then " +
                                 "insert(BOOK_ID, AUTHOR_ID) values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
+                        it.batches(2);
+                        it.batchVariables(0, newId, newAuthorId1);
+                        it.batchVariables(1, newId, newAuthorId2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -531,8 +540,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithManyToMany() {
-        setAutoIds(Author.class, UUID.randomUUID(), UUID.randomUUID());
-        setAutoIds(Book.class, UUID.randomUUID());
+        UUID candidateAuthorId1 = UUID.randomUUID();
+        UUID candidateAuthorId2 = UUID.randomUUID();
+        setAutoIds(Author.class, candidateAuthorId1, candidateAuthorId2);
+        UUID candidateBookId = UUID.randomUUID();
+        setAutoIds(Book.class, candidateBookId);
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookDraft.$.produce(book -> {
@@ -553,6 +565,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, " +
                                 "EDITION, PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
+                        it.variables(candidateBookId, "Learning GraphQL", 3, new BigDecimal(49));
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -562,6 +575,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "matched then insert(ID, FIRST_NAME, LAST_NAME, GENDER) values(tb_2_.ID, tb_2_.FIRST_NAME, " +
                                 "tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
+                        it.variables(candidateAuthorId1, "Dan", "Vanderkam", "F", candidateAuthorId2, "Boris", "Cherny", "F");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)");
@@ -575,6 +589,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
                                         "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
+                        it.batches(2);
+                        it.batchVariables(0, learningGraphQLId3, danId);
+                        it.batchVariables(1, learningGraphQLId3, borisId);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -609,7 +626,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithEmptyManyToMany() {
-        setAutoIds(Book.class, UUID.randomUUID());
+        UUID candidateBookId = UUID.randomUUID();
+        setAutoIds(Book.class, candidateBookId);
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookDraft.$.produce(book -> {
@@ -625,6 +643,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, " +
                                 "EDITION, PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
                         );
+                        it.variables(candidateBookId, "Learning GraphQL", 3, new BigDecimal(49));
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -697,6 +716,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID when not matched then " +
                                 "insert(AUTHOR_ID, BOOK_ID) values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
                         );
+                        it.batches(2);
+                        it.batchVariables(0, newId, newBookId1);
+                        it.batchVariables(1, newId, newBookId2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -731,8 +753,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithInverseManyToMany() {
-        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
-        setAutoIds(Author.class, UUID.randomUUID());
+        UUID candidateBookId1 = UUID.randomUUID();
+        UUID candidateBookId2 = UUID.randomUUID();
+        setAutoIds(Book.class, candidateBookId1, candidateBookId2);
+        UUID candidateAuthorId = UUID.randomUUID();
+        setAutoIds(Author.class, candidateAuthorId);
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         AuthorDraft.$.produce(author -> {
@@ -754,6 +779,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "when not matched then insert(ID, FIRST_NAME, LAST_NAME, GENDER) values(tb_2_.ID, " +
                                 "tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
+                        it.variables(candidateAuthorId, "Eve", "Procello", "F");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -761,6 +787,10 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "?)) tb_2_(ID, NAME, EDITION, PRICE) on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION " +
                                 "when matched then update set PRICE = tb_2_.PRICE when not matched then insert(ID, NAME, EDITION, " +
                                 "PRICE) values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE))"
+                        );
+                        it.variables(
+                                candidateBookId1, "Learning GraphQL", 3, new BigDecimal(35),
+                                candidateBookId2, "GraphQL in Action", 3, new BigDecimal(28)
                         );
                     });
                     ctx.statement(it -> {
@@ -777,6 +807,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         );
                         it.batchVariables(0, eveId, learningGraphQLId3);
                         it.batchVariables(1, eveId, graphQLInActionId3);
+                        it.batches(2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1219,11 +1250,13 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
+                        it.variables(storeId);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)"
                         );
+                        it.variables(storeId, "TURING", 0);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1233,6 +1266,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "= tb_2_.STORE_ID when not matched then insert(ID, NAME, EDITION, PRICE, STORE_ID) " +
                                 "values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID))"
                         );
+                        it.variables(bookId1, "A", 1, new BigDecimal(48), storeId, bookId2, "B", 1, new BigDecimal(49), storeId);
                     });
                     ctx.entity(it -> {
                         it.original(

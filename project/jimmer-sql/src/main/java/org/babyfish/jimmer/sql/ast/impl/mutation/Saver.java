@@ -781,6 +781,7 @@ public class Saver {
                         break;
                     case UPDATE:
                     case MERGE:
+                    case APPEND_IF_ABSENT:
                         middleTableOperator.merge(retainedIdPairs);
                         break;
                     default:

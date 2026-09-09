@@ -53,6 +53,11 @@ public enum AssociatedSaveMode {
     /**
      * Insert the associated object if it is absent.
      * The operation will be ignored if the associated object already exists.
+     *
+     * <p>An existing target's fields and dependent associations are not saved. Its id
+     * can still be looked up to link it to an accepted owner when the ignored insert
+     * does not return that id. Existing links of the owner are preserved; this mode
+     * adds missing links rather than replacing the association.</p>
      */
     APPEND_IF_ABSENT,
 

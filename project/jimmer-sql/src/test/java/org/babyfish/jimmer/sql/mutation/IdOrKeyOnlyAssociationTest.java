@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.jetbrains.annotations.NotNull;
@@ -300,7 +301,9 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
 
     @Test
     public void testKeyOnlyAsEntity() {
-        setAutoIds(Author.class, java.util.UUID.randomUUID(), java.util.UUID.randomUUID());
+        java.util.UUID candidateAuthorId1 = java.util.UUID.randomUUID();
+        java.util.UUID candidateAuthorId2 = java.util.UUID.randomUUID();
+        setAutoIds(Author.class, candidateAuthorId1, candidateAuthorId2);
         Book book = Immutables.createBook(draft -> {
             draft.setId(Constants.learningGraphQLId1);
             draft.addIntoAuthors(author -> {
@@ -314,6 +317,7 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
         });
         executeAndExpectResult(
                 getSqlClient(it -> {
+                    it.setIdGenerator(Author.class, (UserIdGenerator<?>) this::autoId);
                     it.addDraftPreProcessor(new DraftPreProcessor<AuthorDraft>() {
                         @Override
                         public void beforeSave(@NotNull AuthorDraft draft) {
@@ -332,12 +336,14 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
                                 "insert(ID, FIRST_NAME, LAST_NAME, GENDER) " +
                                 "values(tb_2_.ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER))"
                         );
+                        it.variables(candidateAuthorId1, "Alex", "Banks", "M", candidateAuthorId2, "Dan", "Vanderkam", "M");
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK_AUTHOR_MAPPING " +
                                         "where BOOK_ID = ? and AUTHOR_ID not in (?, ?)"
                         );
+                        it.variables(Constants.learningGraphQLId1, Constants.alexId, Constants.danId);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -348,6 +354,9 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
                                         "--->insert(BOOK_ID, AUTHOR_ID) " +
                                         "--->values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
+                        it.batches(2);
+                        it.batchVariables(0, Constants.learningGraphQLId1, Constants.alexId);
+                        it.batchVariables(1, Constants.learningGraphQLId1, Constants.danId);
                     });
                     ctx.entity(it -> {});
                 }

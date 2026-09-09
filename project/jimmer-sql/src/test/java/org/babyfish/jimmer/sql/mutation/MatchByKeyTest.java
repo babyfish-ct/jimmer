@@ -87,6 +87,10 @@ public class MatchByKeyTest extends AbstractMutationTest {
                     .saveCommand(input).matchByKey().setMode(SaveMode.UPDATE_ONLY).execute(con);
             assertTrue(result.isAccepted());
             assertEquals(1L, result.getModifiedEntity().id());
+            assertExecutedSql(
+                    "select tb_1_.ID, tb_1_.ACCOUNT from NAMED_KEY_USER tb_1_ where tb_1_.ACCOUNT = ?",
+                    "update NAMED_KEY_USER set ACCOUNT = ?, DESCRIPTION = ? where ID = ?"
+            );
             assertEquals("Updated by named key", getSqlClient().getEntities().forConnection(con)
                     .findById(NamedKeyUser.class, 1L).description());
         });
@@ -110,6 +114,10 @@ public class MatchByKeyTest extends AbstractMutationTest {
             assertTrue(result.isAccepted());
             assertEquals(1L, result.getModifiedEntity().id());
             assertEquals(1, result.getTotalAffectedRowCount());
+            assertExecutedSql(
+                    "select tb_1_.ID, tb_1_.ACCOUNT, tb_1_.EMAIL, tb_1_.AREA, tb_1_.NICK_NAME from SYS_USER tb_1_ where tb_1_.EMAIL = ?",
+                    "update SYS_USER set EMAIL = ?, DESCRIPTION = ? where ID = ?"
+            );
         });
     }
 
@@ -134,9 +142,19 @@ public class MatchByKeyTest extends AbstractMutationTest {
         SimpleEntitySaveCommand<Book> byKey = byId.matchByKey();
         jdbc(con -> {
             assertFalse(byKey.execute(con).isAccepted());
+            assertExecutedSql(
+                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ " +
+                            "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+            );
+            clearExecutions();
             assertTrue(byId.execute(con).isAccepted());
+            assertExecutedSql("update BOOK set NAME = ?, EDITION = ?, PRICE = ? where ID = ?");
             assertEquals("Renamed book", getSqlClient().getEntities().forConnection(con)
                     .findById(Book.class, input.id()).name());
         });
+    }
+
+    private void assertExecutedSql(String... sql) {
+        assertArrayEquals(sql, getExecutions().stream().map(Execution::getSql).toArray(String[]::new));
     }
 }

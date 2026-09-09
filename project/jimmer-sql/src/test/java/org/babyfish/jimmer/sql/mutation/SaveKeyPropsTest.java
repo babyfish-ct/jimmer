@@ -62,6 +62,12 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(updated ? 1 : 0, result.getTotalAffectedRowCount());
             if (mode != SaveMode.UPDATE_ONLY) {
                 assertNativeKeyMerge(1);
+            } else {
+                assertExecutedSql(
+                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ " +
+                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)",
+                        "update BOOK set NAME = ?, EDITION = ?, PRICE = ? where ID = ?"
+                );
             }
             Book stored = getSqlClient().getEntities().forConnection(con).findById(Book.class, Constants.graphQLInActionId3);
             assertEquals(new BigDecimal(updated ? "1.00" : "80.00"), stored.price());
@@ -81,6 +87,8 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(1, result.getTotalAffectedRowCount());
             if (mode != SaveMode.INSERT_ONLY) {
                 assertNativeKeyMerge(1);
+            } else {
+                assertExecutedSql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
             }
         });
     }
@@ -113,6 +121,10 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
                     .execute(con);
             assertFalse(result.isAccepted());
             assertEquals(0, result.getTotalAffectedRowCount());
+            assertExecutedSql(
+                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ " +
+                            "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+            );
             assertEquals("GraphQL in Action", getSqlClient().getEntities().forConnection(con)
                     .findById(Book.class, input.id()).name());
         });
@@ -129,6 +141,7 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertTrue(result.isAccepted());
             assertEquals(input.id(), result.getModifiedEntity().id());
             assertEquals(1, result.getTotalAffectedRowCount());
+            assertExecutedSql("merge into BOOK(ID, NAME, EDITION, PRICE) key(ID) values(?, ?, ?, ?)");
             assertEquals("Renamed book", getSqlClient().getEntities().forConnection(con).findById(Book.class, input.id()).name());
         });
     }
@@ -255,6 +268,11 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(Constants.graphQLInActionId3, result.getItems().get(0).getModifiedEntity().id());
             assertEquals(Constants.graphQLInActionId2, result.getItems().get(1).getModifiedEntity().id());
             assertNotNull(result.getItems().get(2).getModifiedEntity().id());
+            assertEquals(2, getExecutions().size());
+            assertEquals("merge into BOOK(ID, NAME, EDITION, PRICE) key(ID) values(?, ?, ?, ?)", getExecutions().get(0).getSql());
+            String keySql = getExecutions().get(1).getSql();
+            assertTrue(keySql.startsWith("select ID, NAME, EDITION from final table (merge into BOOK "), keySql);
+            assertTrue(keySql.contains("using(values(?, ?, ?, ?), (?, ?, ?, ?))"), keySql);
             assertEquals("Renamed book", getSqlClient().getEntities().forConnection(con)
                     .findById(Book.class, byId.id()).name());
         });
@@ -280,6 +298,7 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
                     .saveCommand(input).execute(con);
             assertEquals(input.id(), result.getModifiedEntity().id());
             assertEquals(1, result.getTotalAffectedRowCount());
+            assertExecutedSql("merge into BOOK(ID, NAME, EDITION, PRICE) key(ID) values(?, ?, ?, ?)");
             assertEquals("Renamed book", getSqlClient().getEntities().forConnection(con).findById(Book.class, input.id()).name());
         });
     }
@@ -298,6 +317,14 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
                     .execute(con);
             assertEquals(Constants.graphQLInActionId3, result.getModifiedEntity().id());
             assertEquals(Constants.manningId, result.getModifiedEntity().store().id());
+            assertEquals(2, getExecutions().size());
+            assertEquals(
+                    "merge into BOOK_STORE tb_1_ using(values(?, ?, ?)) tb_2_(ID, NAME, VERSION) on tb_1_.ID = tb_2_.ID " +
+                            "when matched then update set NAME = tb_2_.NAME when not matched then insert(ID, NAME, VERSION) " +
+                            "values(tb_2_.ID, tb_2_.NAME, tb_2_.VERSION)",
+                    getExecutions().get(0).getSql()
+            );
+            assertTrue(getExecutions().get(1).getSql().startsWith("select ID, NAME, EDITION from final table (merge into BOOK "));
             assertEquals("Renamed store", getSqlClient().getEntities().forConnection(con)
                     .findById(BookStore.class, Constants.manningId).name());
         });
@@ -318,6 +345,12 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(Constants.graphQLInActionId3, result.getModifiedEntity().id());
             assertEquals("Renamed book", result.getModifiedEntity().name());
             assertEquals(Constants.manningId, result.getModifiedEntity().store().id());
+            assertEquals(2, getExecutions().size());
+            String storeSql = getExecutions().get(0).getSql();
+            assertTrue(storeSql.startsWith("select ID, VERSION, NAME from final table (merge into BOOK_STORE "), storeSql);
+            assertTrue(storeSql.contains("VERSION = tb_1_.VERSION"), storeSql);
+            assertEquals("merge into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) key(ID) values(?, ?, ?, ?, ?)",
+                    getExecutions().get(1).getSql());
         });
     }
 
@@ -332,6 +365,11 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
         assertTrue(sql.contains("merge into BOOK "), sql);
         assertTrue(sql.contains("on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION"), sql);
         assertFalse(sql.contains("tb_1_.ID = tb_2_.ID"), sql);
+        if (statementCount == 2) {
+            String lookup = getExecutions().get(1).getSql();
+            assertTrue(lookup.startsWith("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where "), lookup);
+            assertTrue(lookup.contains("(tb_1_.NAME, tb_1_.EDITION)"), lookup);
+        }
     }
 
     private BatchEntitySaveCommand<Book> keyBatchCommand(List<Book> input, boolean inferKeys) {
@@ -358,5 +396,9 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             draft.setEdition(3);
             draft.setPrice(price);
         });
+    }
+
+    private void assertExecutedSql(String... sql) {
+        assertArrayEquals(sql, getExecutions().stream().map(Execution::getSql).toArray(String[]::new));
     }
 }

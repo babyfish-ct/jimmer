@@ -9,7 +9,9 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class EntityIdPairsImpl implements IdPairs.Retain {
@@ -59,7 +61,7 @@ public class EntityIdPairsImpl implements IdPairs.Retain {
     public Collection<Tuple2<Object, Object>> tuples() {
         List<Tuple2<Object, Object>> tuples = this.tuples;
         if (tuples == null) {
-            tuples = new ArrayList<>();
+            Set<Tuple2<Object, Object>> distinctTuples = new LinkedHashSet<>();
             for (ImmutableSpi row : rows) {
                 Object sourceId = row.__get(sourceIdPropId);
                 Object associatedValue = row.__get(propId);
@@ -67,15 +69,15 @@ public class EntityIdPairsImpl implements IdPairs.Retain {
                     for (ImmutableSpi e : ((Collection<ImmutableSpi>) associatedValue)) {
                         if (targetFilter.test(e)) {
                             Object targetId = e.__get(targetIdProId);
-                            tuples.add(new Tuple2<>(sourceId, targetId));
+                            distinctTuples.add(new Tuple2<>(sourceId, targetId));
                         }
                     }
                 } else if (associatedValue != null && targetFilter.test((ImmutableSpi) associatedValue)) {
                     Object targetId = ((ImmutableSpi) associatedValue).__get(targetIdProId);
-                    tuples.add(new Tuple2<>(sourceId, targetId));
+                    distinctTuples.add(new Tuple2<>(sourceId, targetId));
                 }
             }
-            this.tuples = tuples = Collections.unmodifiableList(tuples);
+            this.tuples = tuples = Collections.unmodifiableList(new ArrayList<>(distinctTuples));
         }
         return tuples;
     }
@@ -95,7 +97,7 @@ public class EntityIdPairsImpl implements IdPairs.Retain {
                     targetIds = Collections.emptyList();
                 } else if (isList) {
                     List<ImmutableSpi> list = (List<ImmutableSpi>) value;
-                    List<Object> acceptedTargetIds = new ArrayList<>(list.size());
+                    Set<Object> acceptedTargetIds = new LinkedHashSet<>();
                     for (ImmutableSpi target : list) {
                         if (targetFilter.test(target)) {
                             acceptedTargetIds.add(target.__get(targetIdProId));
@@ -105,9 +107,9 @@ public class EntityIdPairsImpl implements IdPairs.Retain {
                         targetIds = Collections.emptyList();
                         includeEntry = list.isEmpty();
                     } else if (acceptedTargetIds.size() == 1) {
-                        targetIds = Collections.singletonList(acceptedTargetIds.get(0));
+                        targetIds = Collections.singletonList(acceptedTargetIds.iterator().next());
                     } else {
-                        targetIds = Collections.unmodifiableList(acceptedTargetIds);
+                        targetIds = Collections.unmodifiableSet(acceptedTargetIds);
                     }
                 } else {
                     ImmutableSpi target = (ImmutableSpi) value;

@@ -1017,10 +1017,10 @@ class SaveCommandTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """select BOOK_ID 
-                        |from BOOK_AUTHOR_MAPPING 
-                        |where AUTHOR_ID = ?""".trimMargin()
+                    "select AUTHOR_ID, BOOK_ID from BOOK_AUTHOR_MAPPING " +
+                        "where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?))"
                 )
+                variables(100L, 3L, 100L, 100L)
             }
             entity {
                 modified(
