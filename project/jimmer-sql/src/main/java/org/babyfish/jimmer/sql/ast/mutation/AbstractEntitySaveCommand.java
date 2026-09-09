@@ -39,7 +39,8 @@ public interface AbstractEntitySaveCommand {
 
     /**
      * Matches root entities by the single key group declared in their model, even when an id is supplied.
-     * The id is used for inserting a new row; accepted matches use the existing row's id.
+     * A supplied id is used only for inserting a new row. Matching an existing row never replaces its id;
+     * accepted results contain that existing id.
      *
      * <p>If {@code setKeyProps} configures the root entity type, that configuration is used instead,
      * regardless of call order. Otherwise, the model must declare exactly one key group, named or unnamed.

@@ -25,6 +25,8 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
     private final Predicate<ImmutableProp> propFilter;
 
+    private final boolean matchByKey;
+
     private SemNode<E>[] tab;
 
     private int modCount;
@@ -36,10 +38,22 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
             SaveMode mode,
             @Nullable SaveMode originalMode
     ) {
+        this(sqlClient, keyMatcher, propFilter, mode, originalMode, false);
+    }
+
+    ShapedEntityMap(
+            JSqlClientImplementor sqlClient,
+            KeyMatcher keyMatcher,
+            Predicate<ImmutableProp> propFilter,
+            SaveMode mode,
+            @Nullable SaveMode originalMode,
+            boolean matchByKey
+    ) {
         super(0, null, null, mode, originalMode != null ? originalMode : mode, null, null, null);
         this.sqlClient = sqlClient;
         this.keyMatcher = keyMatcher;
         this.propFilter = propFilter;
+        this.matchByKey = matchByKey;
         before = this;
         after = this;
     }
@@ -79,7 +93,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         }
         PropId idPropId = key.getType().getIdProp().getId();
         EntityCollection<E> entities;
-        if (((ImmutableSpi)entity).__isLoaded(idPropId)) {
+        if (((ImmutableSpi)entity).__isLoaded(idPropId) && (!matchByKey || excludeKeysProps)) {
             entities = new EntitySet<>(new PropId[]{ idPropId });
         } else if (keyProps.isEmpty()) {
             entities = new EntityList<>();

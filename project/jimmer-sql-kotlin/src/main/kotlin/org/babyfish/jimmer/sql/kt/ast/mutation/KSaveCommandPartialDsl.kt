@@ -32,7 +32,8 @@ interface KSaveCommandPartialDsl {
 
     /**
      * Matches root entities by the single key group declared in their model, even when an id is supplied.
-     * Accepted matches use the existing row's id; new rows keep the supplied id.
+     * A supplied id is used only for inserting a new row. Matching an existing row never replaces its id;
+     * accepted results contain that existing id.
      *
      * Explicit `setKeyProps` for the root type takes precedence, regardless of call order.
      * Otherwise, exactly one named or unnamed model key group must exist. Missing or ambiguous groups

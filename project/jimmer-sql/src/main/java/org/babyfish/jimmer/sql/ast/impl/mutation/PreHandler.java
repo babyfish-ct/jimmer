@@ -372,7 +372,10 @@ abstract class AbstractPreHandler implements PreHandler {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         SaveMode saveMode = ctx.options.getMode();
         boolean clearMode = saveMode == SaveMode.INSERT_ONLY || saveMode == SaveMode.UPDATE_ONLY;
-        if (saveMode != SaveMode.INSERT_ONLY && ctx.options.isKeyBasedConflict(ctx.path.getType())) {
+        InheritanceInfo inheritanceInfo = ctx.path.getType().getInheritanceInfo();
+        boolean nativeKeyMatching = ctx.options.isKeyMatchingRequired(ctx.path.getType()) &&
+                !clearMode && (inheritanceInfo == null || inheritanceInfo.getStrategy() != InheritanceType.JOINED);
+        if (saveMode != SaveMode.INSERT_ONLY && ctx.options.isKeyBasedConflict(ctx.path.getType()) && !nativeKeyMatching) {
             PropId idPropId = ctx.path.getType().getIdProp().getId();
             for (DraftSpi draft : drafts) {
                 if (draft.__isLoaded(idPropId)) {
@@ -417,7 +420,9 @@ abstract class AbstractPreHandler implements PreHandler {
         if (!clearMode && !sqlClient.getDialect().isUpsertSupported()) {
             return QueryReason.UPSERT_NOT_SUPPORTED;
         }
-        if (!hasId) {
+        boolean allIdsLoaded = hasId || nativeKeyMatching && drafts.stream()
+                .allMatch(draft -> draft.__isLoaded(ctx.path.getType().getIdProp().getId()));
+        if (!allIdsLoaded) {
             if (!clearMode && !ctx.options.getSqlClient().getDialect().isNoIdUpsertSupported()) {
                 return QueryReason.NO_ID_UPSERT_NOT_SUPPORTED;
             }
@@ -798,8 +803,10 @@ abstract class AbstractPreHandler implements PreHandler {
             @Nullable SaveMode originalMode
     ) {
 
-        ShapedEntityMap<DraftSpi> entityMap =
-                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyMatcher, propFilter, mode, originalMode);
+        ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>(
+                ctx.options.getSqlClient(), keyMatcher, propFilter, mode, originalMode,
+                ctx.options.isKeyBasedConflict(ctx.path.getType()) && mode != SaveMode.INSERT_ONLY && mode != SaveMode.UPDATE_ONLY
+        );
         if (i1 != null) {
             for (DraftSpi draft : i1) {
                 entityMap.add(draft);

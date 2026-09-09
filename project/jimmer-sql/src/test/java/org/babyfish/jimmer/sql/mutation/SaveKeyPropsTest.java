@@ -42,7 +42,9 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(Constants.graphQLInActionId3, result.getModifiedEntity().id());
             assertEquals(new BigDecimal("80.00"), result.getModifiedEntity().price());
             assertTrue(result.isAccepted());
-            assertEquals(0, result.getTotalAffectedRowCount());
+            // The matched arm performs a fake update to return the existing row atomically.
+            assertEquals(1, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(1);
         });
     }
 
@@ -58,6 +60,9 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(updated ? Constants.graphQLInActionId3 : input.id(), result.getModifiedEntity().id());
             assertEquals(updated, result.isAccepted());
             assertEquals(updated ? 1 : 0, result.getTotalAffectedRowCount());
+            if (mode != SaveMode.UPDATE_ONLY) {
+                assertNativeKeyMerge(1);
+            }
             Book stored = getSqlClient().getEntities().forConnection(con).findById(Book.class, Constants.graphQLInActionId3);
             assertEquals(new BigDecimal(updated ? "1.00" : "80.00"), stored.price());
         });
@@ -74,6 +79,9 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(input.id(), result.getModifiedEntity().id());
             assertTrue(result.isAccepted());
             assertEquals(1, result.getTotalAffectedRowCount());
+            if (mode != SaveMode.INSERT_ONLY) {
+                assertNativeKeyMerge(1);
+            }
         });
     }
 
@@ -90,7 +98,8 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(Constants.graphQLInActionId3, result.getItems().get(0).getModifiedEntity().id());
             assertEquals(new BigDecimal("80.00"), result.getItems().get(0).getModifiedEntity().price());
             assertEquals(inserted.id(), result.getItems().get(1).getModifiedEntity().id());
-            assertEquals(1, result.getTotalAffectedRowCount());
+            assertEquals(2, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(1);
         });
     }
 
@@ -122,6 +131,106 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(1, result.getTotalAffectedRowCount());
             assertEquals("Renamed book", getSqlClient().getEntities().forConnection(con).findById(Book.class, input.id()).name());
         });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testMatchWithoutFetcher(boolean returningSupported) {
+        Book input = book(UUID.randomUUID(), "GraphQL in Action", BigDecimal.ONE);
+        jdbc(con -> {
+            SimpleSaveResult<Book> result = getSqlClient(it -> it.setDialect(keyDialect(returningSupported)))
+                    .saveCommand(input).matchByKey().forbidUpdate().execute(con);
+            assertTrue(result.isAccepted());
+            assertEquals(Constants.graphQLInActionId3, result.getModifiedEntity().id());
+            assertEquals(returningSupported ? 1 : 0, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(returningSupported ? 1 : 2);
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testBatchDoesNotDeduplicateBySuppliedId(boolean returningSupported) {
+        Book first = book(UUID.randomUUID(), "GraphQL in Action", BigDecimal.ONE);
+        Book second = BookDraft.$.produce(first, draft -> draft.setEdition(2));
+        jdbc(con -> {
+            BatchSaveResult<Book> result = getSqlClient(it -> it.setDialect(keyDialect(returningSupported)))
+                    .saveEntitiesCommand(Arrays.asList(first, second)).matchByKey().execute(con);
+            assertEquals(Constants.graphQLInActionId3, result.getItems().get(0).getModifiedEntity().id());
+            assertEquals(Constants.graphQLInActionId2, result.getItems().get(1).getModifiedEntity().id());
+            assertTrue(result.getItems().stream().allMatch(BatchSaveResult.Item::isAccepted));
+            assertEquals(2, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(returningSupported ? 1 : 2);
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testBatchDeduplicatesByKey(boolean returningSupported) {
+        Book first = book(UUID.randomUUID(), "GraphQL in Action", BigDecimal.ONE);
+        Book second = book(UUID.randomUUID(), "GraphQL in Action", BigDecimal.ONE);
+        jdbc(con -> {
+            BatchSaveResult<Book> result = getSqlClient(it -> it.setDialect(keyDialect(returningSupported)))
+                    .saveEntitiesCommand(Arrays.asList(first, second)).matchByKey().execute(con);
+            for (BatchSaveResult.Item<Book> item : result.getItems()) {
+                assertTrue(item.isAccepted());
+                assertEquals(Constants.graphQLInActionId3, item.getModifiedEntity().id());
+            }
+            assertEquals(1, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(returningSupported ? 1 : 2);
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testInsertIfAbsentBatchByKey(boolean returningSupported) {
+        Book existing = book(UUID.randomUUID(), "GraphQL in Action", BigDecimal.ONE);
+        Book inserted = book(UUID.randomUUID(), "New book", BigDecimal.TEN);
+        jdbc(con -> {
+            BatchSaveResult<Book> result = getSqlClient(it -> it.setDialect(keyDialect(returningSupported)))
+                    .saveEntitiesCommand(Arrays.asList(existing, inserted)).matchByKey()
+                    .setMode(SaveMode.INSERT_IF_ABSENT).execute(con);
+            assertFalse(result.getItems().get(0).isAccepted());
+            assertEquals(existing.id(), result.getItems().get(0).getModifiedEntity().id());
+            assertTrue(result.getItems().get(1).isAccepted());
+            assertEquals(inserted.id(), result.getItems().get(1).getModifiedEntity().id());
+            assertEquals(1, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(1);
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testUpdateWhereByKey(boolean returningSupported) {
+        Book accepted = book(UUID.randomUUID(), "GraphQL in Action", BigDecimal.valueOf(100));
+        Book duplicate = BookDraft.$.produce(accepted, draft -> draft.setId(UUID.randomUUID()));
+        Book rejected = BookDraft.$.produce(accepted, draft -> {
+            draft.setId(UUID.randomUUID());
+            draft.setEdition(2);
+            draft.setPrice(BigDecimal.ONE);
+        });
+        jdbc(con -> {
+            BatchSaveResult<Book> result = getSqlClient(it -> it.setDialect(keyDialect(returningSupported)))
+                    .saveEntitiesCommand(Arrays.asList(accepted, duplicate, rejected)).matchByKey()
+                    .setUpdateWhere(BookTable.class, (table, values) -> table.price().lt(values.newNumber(BookProps.PRICE)))
+                    .execute(con);
+            assertTrue(result.getItems().get(0).isAccepted());
+            assertEquals(Constants.graphQLInActionId3, result.getItems().get(0).getModifiedEntity().id());
+            assertTrue(result.getItems().get(1).isAccepted());
+            assertEquals(Constants.graphQLInActionId3, result.getItems().get(1).getModifiedEntity().id());
+            assertFalse(result.getItems().get(2).isAccepted());
+            assertEquals(rejected.id(), result.getItems().get(2).getModifiedEntity().id());
+            assertEquals(1, result.getTotalAffectedRowCount());
+            assertNativeKeyMerge(returningSupported ? 1 : 2);
+        });
+    }
+
+    private static H2Dialect keyDialect(boolean returningSupported) {
+        return new H2Dialect() {
+            @Override
+            public boolean isUpsertReturningSupported() {
+                return returningSupported;
+            }
+        };
     }
 
     @Test
@@ -215,6 +324,14 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
     private SimpleEntitySaveCommand<Book> keyCommand(Book input, boolean inferKeys) {
         SimpleEntitySaveCommand<Book> command = getSqlClient(it -> it.setDialect(new H2Dialect())).saveCommand(input);
         return inferKeys ? command.matchByKey() : command.setKeyProps(BookProps.NAME, BookProps.EDITION).matchByKey();
+    }
+
+    private void assertNativeKeyMerge(int statementCount) {
+        assertEquals(statementCount, getExecutions().size());
+        String sql = getExecutions().get(0).getSql();
+        assertTrue(sql.contains("merge into BOOK "), sql);
+        assertTrue(sql.contains("on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION"), sql);
+        assertFalse(sql.contains("tb_1_.ID = tb_2_.ID"), sql);
     }
 
     private BatchEntitySaveCommand<Book> keyBatchCommand(List<Book> input, boolean inferKeys) {

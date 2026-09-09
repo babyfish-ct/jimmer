@@ -328,13 +328,15 @@ class SaveReturningFactory {
             return null;
         }
         List<PropertyGetter> requiredReturningGetters = customTargetGetters(assignments);
+        boolean matchByKey = conflictGetters.stream().noneMatch(getter -> getter.prop().isId());
+        boolean resolveIdByKey = matchByKey && !batch.shape().getIdGetters().isEmpty();
         SaveReturningBasic basic = basic(
                 ctx,
                 batch.shape(),
                 batch.entities(),
                 generatedIdProp != null,
                 requiredReturningGetters,
-                updateWherePredicate != null
+                updateWherePredicate != null || resolveIdByKey
         );
         if (basic == null ||
                 versionGetter != null ||
@@ -349,7 +351,7 @@ class SaveReturningFactory {
                         Collections.emptyList() :
                         upsertKnownSourceGetters(insertedGetters, assignments, ignoreUpdate)
         );
-        if (returningFetcherProps.isEmpty() && generatedIdProp == null && updateWherePredicate == null) {
+        if (returningFetcherProps.isEmpty() && generatedIdProp == null && updateWherePredicate == null && !resolveIdByKey) {
             return null;
         }
         if (generatedIdProp != null && generatedIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
@@ -361,7 +363,7 @@ class SaveReturningFactory {
         }
         List<PropertyGetter> matchGetters;
         SaveReturningMatchMode matchMode;
-        if (batch.shape().getIdGetters().isEmpty()) {
+        if (matchByKey) {
             matchMode = SaveReturningMatchMode.KEY;
             matchGetters = conflictGetters;
         } else {
@@ -387,7 +389,7 @@ class SaveReturningFactory {
                 conflictPredicate,
                 assignments,
                 ignoreUpdate,
-                fakeUpdate
+                fakeUpdate || resolveIdByKey
         );
         List<SaveReturningColumnValue> sourceValues = new ArrayList<>(upsertSourceValues(
                 sqlClient,

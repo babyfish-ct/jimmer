@@ -1510,10 +1510,12 @@ class Operator {
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         int[] rowCounts = new int[batch.entities().size()];
         int index = 0;
-        for (DraftSpi draft : batch.entities()) {
-            ImmutableSpi row = subMap.get(Keys.keyOf(draft, keyProps));
+        for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
+            ImmutableSpi row = subMap.get(Keys.keyOf(item.getEntity(), keyProps));
             if (row != null) {
-                draft.__set(idPropId, row.__get(idPropId));
+                for (DraftSpi draft : item.getOriginalEntities()) {
+                    draft.__set(idPropId, row.__get(idPropId));
+                }
                 rowCounts[index] = 1;
             }
             index++;
@@ -1860,7 +1862,8 @@ class Operator {
         List<ImmutableProp> conflictProps;
         List<PropertyGetter> conflictGetters;
         LogicalDeletedInfo conflictPredicate;
-        if (!batch.shape().getIdGetters().isEmpty()) {
+        boolean resolveIdByKey = !batch.shape().getIdGetters().isEmpty() && ctx.options.isKeyBasedConflict(tableType);
+        if (!batch.shape().getIdGetters().isEmpty() && !resolveIdByKey) {
             conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
             conflictGetters = batch.shape().getIdGetters();
             conflictPredicate = null;
@@ -1886,7 +1889,7 @@ class Operator {
         UpsertMask<?> upsertMask = ctx.options.getUpsertMask(tableType);
         List<PropertyGetter> insertedGetters = new ArrayList<>();
         for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
-            if (getter.isInsertable(conflictProps, upsertMask)) {
+            if (getter.prop().isId() || getter.isInsertable(conflictProps, upsertMask)) {
                 insertedGetters.add(getter);
             }
         }
@@ -1899,7 +1902,7 @@ class Operator {
         List<PropertyGetter> updatedGetters = new ArrayList<>();
         if (!ignoreUpdate) {
             for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
-                if (getter.isUpdatable(conflictProps, upsertMask)) {
+                if (!getter.prop().isId() && getter.isUpdatable(conflictProps, upsertMask)) {
                     updatedGetters.add(getter);
                 }
             }
@@ -1981,6 +1984,14 @@ class Operator {
                 ignoreUpdate,
                 forceOneByOne
         );
+        if (resolveIdByKey && !ignoreUpdate) {
+            Batch<DraftSpi> acceptedBatch = updateWherePredicate != null || optimisticLockPredicate != null ||
+                    versionGetter != null || discriminatorGuardProp != null ?
+                    batchOf(batch, batch.shape(), acceptedOriginalEntities(batch, rowCounts)) : batch;
+            if (!acceptedBatch.entities().isEmpty()) {
+                fillIdsAndGetRowCounts(QueryReason.EXPLICIT_CONFLICT_TARGET, null, acceptedBatch);
+            }
+        }
         unloadCustomAssignmentTargets(batch.entities(), rowCounts, assignments);
         unloadUnchangedVersion(batch.entities(), updatedGetters);
         AffectedRows.add(ctx.affectedRowCountMap, tableType, rowCount(rowCounts));
