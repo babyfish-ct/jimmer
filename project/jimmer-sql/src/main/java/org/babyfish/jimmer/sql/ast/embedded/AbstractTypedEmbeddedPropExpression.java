@@ -4,6 +4,7 @@ import org.babyfish.jimmer.EmbeddableDto;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionEquality;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -183,6 +184,16 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     @Override
     public String toString() {
         return raw.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return PropExpressionEquality.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return PropExpressionEquality.hashCode(this);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.sql.dialect.H2Dialect
+import org.babyfish.jimmer.sql.kt.ast.expression.asNullable
 import org.babyfish.jimmer.sql.kt.ast.expression.nullValue
 import org.babyfish.jimmer.sql.kt.ast.expression.value
 import org.babyfish.jimmer.sql.kt.ast.query.baseTableSymbol
@@ -12,11 +13,63 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
+import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.query.tuple.AggregateTupleMapper
 import java.math.BigDecimal
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class InsertFromSelectDslTest : AbstractMutationTest() {
+
+    @Test
+    fun testConflictTargetWithSeparatePropertyExpressions() {
+        val client = sqlClient {
+            setDialect(H2Dialect())
+        }
+        val source = baseTableSymbol {
+            client.createBaseQuery(BookStore::class) {
+                select(table)
+            }
+        }
+        jdbc { con ->
+            for (conflictFirst in listOf(true, false)) {
+                val command = client.createInsert(BookStore::class, source) {
+                    if (conflictFirst) {
+                        onConflictDoNothing(table.name)
+                    }
+                    set(table.id, sourceTable.id)
+                    set(table.name, sourceTable.name)
+                    if (!conflictFirst) {
+                        onConflictDoNothing(table.name)
+                    }
+                }
+                assertEquals(0, command.execute(con))
+            }
+        }
+    }
+
+    @Test
+    fun testDuplicateAssignmentsWithSeparatePropertyExpressions() {
+        val source = baseTableSymbol {
+            sqlClient.createBaseQuery(BookStore::class) {
+                select(table)
+            }
+        }
+        assertFailsWith<IllegalStateException> {
+            sqlClient.createInsert(BookStore::class, source) {
+                set(table.name, sourceTable.name)
+                set(table.name.asNullable(), sourceTable.name)
+            }
+        }
+        assertFailsWith<IllegalStateException> {
+            sqlClient.createUpsert(BookStore::class, source) {
+                key(table.id, sourceTable.id)
+                insert(table.website, sourceTable.website)
+                merge(table.website, sourceTable.website)
+            }
+        }
+    }
 
     @Test
     fun testRootlessTypedTupleInsert() {

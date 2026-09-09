@@ -11,6 +11,10 @@ import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Implementations must preserve property equality across API wrappers, as defined
+ * by {@link org.babyfish.jimmer.sql.ast.impl.PropExpressionEquality}.
+ */
 public interface PropExpressionImplementor<T> extends PropExpression<T>, ExpressionImplementor<T> {
 
     Table<?> getTable();

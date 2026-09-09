@@ -27,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
 import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
@@ -276,15 +275,12 @@ public class PropExpressionImpl<T>
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PropExpressionImpl<?> that = (PropExpressionImpl<?>) o;
-        return table.equals(that.table) && prop.equals(that.prop) && Objects.equals(path, that.path);
+        return PropExpressionEquality.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(table, prop, path);
+        return PropExpressionEquality.hashCode(this);
     }
 
     @Override

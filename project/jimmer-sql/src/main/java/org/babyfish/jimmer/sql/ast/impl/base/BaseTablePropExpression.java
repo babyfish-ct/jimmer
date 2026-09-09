@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionEquality;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.QueryRenderContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -91,6 +92,16 @@ class BaseTablePropExpression<T>
     @Override
     public String toString() {
         return raw().toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return PropExpressionEquality.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return PropExpressionEquality.hashCode(this);
     }
 
     @Override

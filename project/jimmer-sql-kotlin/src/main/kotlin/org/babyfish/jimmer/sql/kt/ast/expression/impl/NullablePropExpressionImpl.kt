@@ -68,6 +68,12 @@ internal open class NullablePropExpressionImpl<T: Any>(
 
     override fun isNullable(): Boolean = true
 
+    override fun equals(other: Any?): Boolean =
+        javaPropExpression == other
+
+    override fun hashCode(): Int =
+        javaPropExpression.hashCode()
+
     override fun toString(): String =
         javaPropExpression.toString()
 }
