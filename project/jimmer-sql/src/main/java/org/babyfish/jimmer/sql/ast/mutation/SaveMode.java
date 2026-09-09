@@ -28,11 +28,31 @@ public enum SaveMode {
      * optimize to the former situation.</p>
      * </li>
      * </ul>
+     *
+     * <p>When a native upsert needs to return an existing row's id or other result fields,
+     * it can use a technical update such as {@code SET column = column}, even if there are
+     * no property values to update. This also applies to objects containing only keys and
+     * associations: Jimmer can need the existing id to save their associations, without an
+     * explicit returning request. An empty set of update assignments does not change this
+     * mode into {@link #INSERT_IF_ABSENT} or require a preliminary select.</p>
+     *
+     * <p>The technical update allows conflict resolution and retrieval of the existing row
+     * in one atomic database statement. It is still an SQL update and can contribute to
+     * affected-row counts and invoke database update triggers. It does not make saving the
+     * entire object graph a single atomic statement.</p>
      */
     UPSERT,
 
     INSERT_ONLY,
 
+    /**
+     * Insert the aggregate-root object(s) if absent, without updating conflicting rows.
+     *
+     * <p>A conflicting root row is not accepted: {@link MutationResultItem#isAccepted()}
+     * is {@code false}. Requesting result fields does not return the existing row for such
+     * an item; the caller can query it separately if needed. Conflict resolution and that
+     * subsequent query are separate database statements.</p>
+     */
     INSERT_IF_ABSENT,
 
     UPDATE_ONLY,
@@ -65,4 +85,3 @@ public enum SaveMode {
      */
     NON_IDEMPOTENT_UPSERT,
 }
-

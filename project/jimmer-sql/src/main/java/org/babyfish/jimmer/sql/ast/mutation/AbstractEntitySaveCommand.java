@@ -86,8 +86,16 @@ public interface AbstractEntitySaveCommand {
      * Forbid update assignments derived from entity properties during upsert.
      *
      * <p>This is equivalent to specifying an {@link UpsertMask} whose updatable
-     * property list is empty. A dialect can still render a fake update assignment
-     * when it is required by id fetching, returning, or other save semantics.</p>
+     * property list is empty. A dialect can still render a technical update such as
+     * {@code SET column = column} to resolve a conflict and return the existing row's id
+     * or other result fields in one atomic statement. This includes ids needed to save
+     * associations, even without an explicit returning request. Such an SQL update can
+     * contribute to affected-row counts and invoke database update triggers.</p>
+     *
+     * <p>This preserves {@link SaveMode#UPSERT} semantics: an existing row can be accepted
+     * and returned even though no property values are assigned from the input.
+     * Use {@link SaveMode#INSERT_IF_ABSENT} to skip conflicting rows instead; those rows
+     * are not accepted and must be queried separately if their data is needed.</p>
      */
     @NewChain
     AbstractEntitySaveCommand forbidUpdate();

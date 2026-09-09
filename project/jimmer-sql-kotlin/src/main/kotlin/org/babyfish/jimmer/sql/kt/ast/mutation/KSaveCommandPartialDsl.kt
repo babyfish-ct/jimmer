@@ -69,8 +69,17 @@ interface KSaveCommandPartialDsl {
 
     /**
      * Forbid update assignments derived from entity properties during upsert.
-     * A dialect can still render a fake update assignment when required by
-     * id fetching, returning, or other save semantics.
+     *
+     * Equivalent to an [UpsertMask] with no updatable properties. A dialect can still render
+     * a technical update such as `SET column = column` to resolve a conflict and return the
+     * existing row's id or other result fields in one atomic statement. This includes ids
+     * needed to save associations, even without an explicit returning request. Such an SQL
+     * update can contribute to affected-row counts and invoke database update triggers.
+     *
+     * This preserves [SaveMode.UPSERT] semantics: an existing row can be accepted and returned
+     * even though no property values are assigned from the input. Use [SaveMode.INSERT_IF_ABSENT]
+     * to skip conflicting rows instead; those rows are not accepted and must be queried
+     * separately if their data is needed.
      */
     fun forbidUpdate()
 

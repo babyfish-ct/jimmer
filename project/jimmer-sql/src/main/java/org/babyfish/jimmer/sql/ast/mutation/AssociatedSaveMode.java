@@ -33,6 +33,11 @@ public enum AssociatedSaveMode {
     /**
      * If the associated object exists, update it; otherwise, insert it.
      *
+     * <p>Like {@link SaveMode#UPSERT}, a native upsert can use a technical update such as
+     * {@code SET column = column} to return the existing id needed for associations,
+     * even when no property values need updating and no result fields were explicitly
+     * requested. This is still an SQL update, with the corresponding database side effects.</p>
+     *
      * <p>Note that this mode requires the associated object to have either an
      * {@link org.babyfish.jimmer.sql.Id} or {@link org.babyfish.jimmer.sql.Key} properties
      * otherwise an error will be reported.</p>
