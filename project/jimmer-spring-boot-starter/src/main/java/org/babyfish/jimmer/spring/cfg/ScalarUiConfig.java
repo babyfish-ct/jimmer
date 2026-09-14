@@ -16,6 +16,6 @@ public class ScalarUiConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler(path + "/**")
-                .addResourceLocations("classpath:META-INF/resources/webjars/scalar");
+                .addResourceLocations("classpath:META-INF/resources/webjars/scalar/");
     }
 }
