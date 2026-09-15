@@ -7,12 +7,15 @@ import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.InheritanceType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.impl.mutation.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -103,6 +106,75 @@ public class BinLogParser {
             throw new IllegalArgumentException("type cannot be AssociationType");
         }
         return (T) parseEntity(type.getJavaClass(), data);
+    }
+
+    Object deserializeEntity(ImmutableType type, Node node) {
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        InheritanceInfo inheritanceInfo = type.getInheritanceInfo();
+        if (inheritanceInfo != null && inheritanceInfo.getStrategy() != InheritanceType.SINGLE_TABLE) {
+            inheritanceInfo = null;
+        }
+        ImmutableType actualType = inheritanceInfo != null ? concreteType(type, inheritanceInfo, node) : type;
+        InheritanceInfo singleTableInfo = inheritanceInfo;
+        return Internal.produce(actualType, null, draft -> {
+            Iterator<Map.Entry<String, Node>> itr = node.fieldsIterator();
+            while (itr.hasNext()) {
+                Map.Entry<String, Node> entry = itr.next();
+                String columnName = entry.getKey();
+                List<ImmutableProp> chain = actualType.getPropChain(columnName, strategy, true);
+                if (chain == null) {
+                    if (singleTableInfo != null && isSubtypeColumn(singleTableInfo, columnName, strategy)) {
+                        continue;
+                    }
+                    chain = actualType.getPropChain(columnName, strategy);
+                }
+                ValueParser.addEntityProp((DraftSpi) draft, chain, entry.getValue(), this);
+            }
+            for (ImmutableProp prop : actualType.getProps().values()) {
+                if (prop.isMutable() && prop.isEmbedded(EmbeddedLevel.BOTH)) {
+                    if (!EmbeddableObjects.isCompleted(((DraftSpi) draft).__get(prop.getId()))) {
+                        if (!prop.isNullable()) {
+                            throw new IllegalArgumentException(
+                                    "Illegal binlog data, the property \"" + prop + "\" is not nullable"
+                            );
+                        }
+                        ((DraftSpi) draft).__set(prop.getId(), null);
+                    }
+                }
+            }
+        });
+    }
+
+    private ImmutableType concreteType(ImmutableType type, InheritanceInfo info, Node node) {
+        ImmutableProp discriminatorProp = info.getDiscriminatorProp();
+        SingleColumn column = discriminatorProp.getStorage(sqlClient.getMetadataStrategy());
+        String columnName = DatabaseIdentifiers.comparableIdentifier(column.getName());
+        Object discriminator = null;
+        Iterator<Map.Entry<String, Node>> itr = node.fieldsIterator();
+        while (itr.hasNext()) {
+            Map.Entry<String, Node> entry = itr.next();
+            if (DatabaseIdentifiers.comparableIdentifier(entry.getKey()).equals(columnName)) {
+                discriminator = ValueParser.parseSingleValue(this, entry.getValue(), discriminatorProp, true);
+                break;
+            }
+        }
+        ImmutableType actualType = info.getDiscriminatorTypeMap(type).get(discriminator);
+        if (actualType == null) {
+            throw new IllegalArgumentException(
+                    "Cannot resolve the concrete type of \"" + type +
+                            "\" from binlog data because there is no type mapped by discriminator value \"" + discriminator + "\""
+            );
+        }
+        return actualType;
+    }
+
+    private static boolean isSubtypeColumn(InheritanceInfo info, String columnName, MetadataStrategy strategy) {
+        for (ImmutableType subtype : info.getRootType().getAllDerivedTypes()) {
+            if (subtype.getPropChain(columnName, strategy, true) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
