@@ -307,31 +307,26 @@ internal class KSqlClientImpl(
         return KExecutableImpl(delete)
     }
 
-    override val queries: KQueries by lazy {
-        KQueriesImpl(javaClient)
-    }
+    override val queries: KQueries
+        get() = KQueriesImpl(javaClient)
 
     override val entities: KEntities
         get() = KEntitiesImpl(javaClient.entities)
 
-    override val caches: KCaches by lazy {
-        KCachesImpl(javaClient.caches)
-    }
+    override val caches: KCaches
+        get() = KCachesImpl(javaClient.caches)
 
-    override val triggers: KTriggers by lazy {
-        KTriggersImpl(javaClient.triggers)
-    }
+    override val triggers: KTriggers
+        get() = KTriggersImpl(javaClient.triggers)
 
     override fun getTriggers(transaction: Boolean): KTriggers =
         KTriggersImpl(javaClient.getTriggers(transaction))
 
-    override val filters: KFilters by lazy {
-        KFiltersImpl(javaClient.filters)
-    }
+    override val filters: KFilters
+        get() = KFiltersImpl(javaClient.filters)
 
-    override val loaders: KLoaders by lazy {
-        KLoadersImpl(javaClient.loaders as LoadersImpl)
-    }
+    override val loaders: KLoaders
+        get() = KLoadersImpl(javaClient.loaders as LoadersImpl)
 
     override fun getAssociations(
         prop: KProperty1<*, *>
