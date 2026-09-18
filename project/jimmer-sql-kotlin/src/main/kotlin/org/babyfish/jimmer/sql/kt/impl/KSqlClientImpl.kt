@@ -312,7 +312,7 @@ internal class KSqlClientImpl(
     }
 
     override val entities: KEntities
-        get() = KEntitiesImpl(EntitiesImpl(javaClient))
+        get() = KEntitiesImpl(javaClient.entities)
 
     override val caches: KCaches by lazy {
         KCachesImpl(javaClient.caches)
