@@ -10,12 +10,15 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.json.MedicineDraft;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -115,10 +118,57 @@ public class MatchByKeyTest extends AbstractMutationTest {
             assertEquals(1L, result.getModifiedEntity().id());
             assertEquals(1, result.getTotalAffectedRowCount());
             assertExecutedSql(
-                    "select tb_1_.ID, tb_1_.ACCOUNT, tb_1_.EMAIL, tb_1_.AREA, tb_1_.NICK_NAME from SYS_USER tb_1_ where tb_1_.EMAIL = ?",
+                    "select tb_1_.ID, tb_1_.EMAIL from SYS_USER tb_1_ where tb_1_.EMAIL = ?",
                     "update SYS_USER set EMAIL = ?, DESCRIPTION = ? where ID = ?"
             );
         });
+    }
+
+    @ParameterizedTest
+    @MethodSource("explicitKeyCases")
+    public void testExplicitKeysWithOtherLoadedGroups(SaveMode mode, boolean matchFirst) {
+        SysUser input = SysUserDraft.$.produce(draft -> draft.setId(900L).setAccount("sysusr_001")
+                .setEmail("new@example.com").setArea("new").setNickName("New user").setDescription("New description"));
+        SimpleEntitySaveCommand<SysUser> command = getSqlClient().saveCommand(input).setMode(mode).forbidUpdate();
+        SimpleEntitySaveCommand<SysUser> configured = matchFirst ? command.matchByKey().setKeyProps(SysUserProps.ACCOUNT) :
+                command.setKeyProps(SysUserProps.ACCOUNT).matchByKey();
+        jdbc(con -> {
+            SimpleSaveResult<SysUser> result = configured.execute(con);
+            boolean accepted = mode != SaveMode.INSERT_IF_ABSENT;
+            assertEquals(accepted, result.isAccepted());
+            assertEquals(accepted ? 1 : 0, result.getTotalAffectedRowCount());
+            if (accepted) {
+                assertEquals(1L, result.getModifiedEntity().id());
+            }
+            assertEquals(mode == SaveMode.UPDATE_ONLY ? 2 : 1, getExecutions().size());
+            String sql = getExecutions().get(0).getSql();
+            assertTrue(sql.contains(mode == SaveMode.UPDATE_ONLY ? "where tb_1_.ACCOUNT = ?" :
+                    "on tb_1_.ACCOUNT = tb_2_.ACCOUNT"), sql);
+            assertFalse(sql.contains("tb_1_.AREA = tb_2_.AREA"), sql);
+            SysUser stored = getSqlClient().getEntities().forConnection(con).findById(SysUser.class, 1L);
+            assertEquals(mode == SaveMode.UPDATE_ONLY ? "New description" : "description_001", stored.description());
+            assertNull(getSqlClient().getEntities().forConnection(con).findById(SysUser.class, 900L));
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testMissingExplicitKeyDoesNotFallBackToAnotherGroup(boolean suppliedId) {
+        SysUser input = SysUserDraft.$.produce(draft -> {
+            if (suppliedId) {
+                draft.setId(1L);
+            }
+            draft.setEmail("tom.cook@gmail.com").setDescription("Must not write");
+        });
+        executeAndExpectResult(
+                getSqlClient().saveCommand(input).setKeyProps(SysUserProps.ACCOUNT).matchByKey(),
+                ctx -> ctx.throwable(it -> it.type(IllegalArgumentException.class))
+        );
+    }
+
+    private static Stream<Arguments> explicitKeyCases() {
+        return Stream.of(SaveMode.UPSERT, SaveMode.INSERT_IF_ABSENT, SaveMode.UPDATE_ONLY).flatMap(mode ->
+                Stream.of(false, true).map(matchFirst -> Arguments.of(mode, matchFirst)));
     }
 
     @Test

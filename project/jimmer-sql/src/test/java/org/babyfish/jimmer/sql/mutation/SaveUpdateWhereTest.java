@@ -165,20 +165,25 @@ public class SaveUpdateWhereTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAcceptanceContractForFakeUpdateAndInsertIfAbsentConflict() {
+    public void testAcceptanceContractForIdOnlyNoOpAndInsertIfAbsentConflict() {
         jdbc(con -> {
             Book idOnlyBook = BookDraft.$.produce(draft -> draft.setId(graphQLInActionId3));
-            SimpleSaveResult<Book> fakeUpdate = getSqlClient()
+            SimpleSaveResult<Book> noOp = getSqlClient()
                     .saveCommand(idOnlyBook)
                     .setMode(SaveMode.UPSERT)
                     .execute(con);
+            assertTrue(noOp.isAccepted());
+            assertEquals(0, noOp.getTotalAffectedRowCount());
+            assertTrue(getExecutions().isEmpty());
             SimpleSaveResult<Book> insertIfAbsentConflict = getSqlClient()
-                    .saveCommand(idOnlyBook)
+                    .saveCommand(book(BigDecimal.ONE))
                     .setMode(SaveMode.INSERT_IF_ABSENT)
                     .execute(con);
 
-            assertTrue(fakeUpdate.isAccepted());
             assertFalse(insertIfAbsentConflict.isAccepted());
+            assertEquals(0, insertIfAbsentConflict.getTotalAffectedRowCount());
+            assertEquals(1, getExecutions().size());
+            assertFalse(getExecutions().get(0).getSql().contains("/* fake update"));
         });
     }
 

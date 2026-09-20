@@ -1196,7 +1196,9 @@ abstract class AbstractEntitySaveCommandImpl
             Map<ImmutableType, KeyMatcher> keyMatcherMap = new LinkedHashMap<>();
             for (Map.Entry<ImmutableType, Map<String, Set<ImmutableProp>>> e : map.entrySet()) {
                 ImmutableType type = e.getKey();
-                Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>(type.getKeyMatcher().toMap());
+                // Explicit root keys must not compete with annotated groups when matchByKey is requested.
+                Map<String, Set<ImmutableProp>> groupMap = keyMatchingTypes.contains(type) ?
+                        new LinkedHashMap<>() : new LinkedHashMap<>(type.getKeyMatcher().toMap());
                 groupMap.putAll(e.getValue());
                 keyMatcherMap.put(type, KeyMatcher.of(type, groupMap));
             }
