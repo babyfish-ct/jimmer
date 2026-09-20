@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UpsertMaskTest extends AbstractMutationTest {
 
@@ -116,7 +118,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         )
                         .execute(con))
         );
-        org.junit.jupiter.api.Assertions.assertTrue(
+        assertTrue(
                 ex.getMessage().contains("is not selected for update"),
                 ex.getMessage()
         );
@@ -140,7 +142,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         )
                         .execute(con))
         );
-        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("is unloaded"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("is unloaded"), ex.getMessage());
     }
 
     @Test
@@ -162,7 +164,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         )
                         .execute(con))
         );
-        org.junit.jupiter.api.Assertions.assertTrue(
+        assertTrue(
                 ex.getMessage().contains("is not selected for update"),
                 ex.getMessage()
         );
@@ -190,7 +192,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                 (target, values) -> target.price().minus(values.newNumber(BookProps.PRICE))
                         )
         );
-        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("configured more than once"));
+        assertTrue(ex.getMessage().contains("configured more than once"));
     }
 
     @Test
@@ -212,7 +214,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         )
                         .execute()
         );
-        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("INSERT_ONLY"));
+        assertTrue(ex.getMessage().contains("INSERT_ONLY"));
     }
 
     @Test
@@ -320,6 +322,8 @@ public class UpsertMaskTest extends AbstractMutationTest {
                             )
                             .setUpsertMask(UpsertMask.of(Book.class).forbidUpdate())
                             .execute(con, BookFetcher.$.price());
+                    assertTrue(result.isAccepted());
+                    assertEquals(new BigDecimal("80.00"), result.getModifiedEntity().price());
                     return result.getTotalAffectedRowCount() +
                             "; " + (result.getOriginalEntity() == result.getModifiedEntity()) +
                             "; " + ImmutableObjects.isLoaded(result.getModifiedEntity(), BookProps.PRICE);
@@ -331,13 +335,15 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                         "merge into BOOK tb_1_ " +
                                         "using(values(?, ?, ?)) tb_2_(ID, NAME, EDITION) " +
                                         "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then update set " +
+                                        "/* fake update to return all ids */ PRICE = tb_1_.PRICE " +
                                         "when not matched then insert(ID, NAME, EDITION) " +
                                         "values(tb_2_.ID, tb_2_.NAME, tb_2_.EDITION)" +
                                         ")"
                         );
                         it.variables(Constants.graphQLInActionId3, "GraphQL in Action", 3);
                     });
-                    ctx.value("0; true; false");
+                    ctx.value("1; false; true");
                 }
         );
     }
@@ -372,8 +378,8 @@ public class UpsertMaskTest extends AbstractMutationTest {
                     });
                     ctx.value(user -> {
                         SysUser modified = (SysUser) user;
-                        org.junit.jupiter.api.Assertions.assertEquals(1L, modified.id());
-                        org.junit.jupiter.api.Assertions.assertEquals("description_001", modified.description());
+                        assertEquals(1L, modified.id());
+                        assertEquals("description_001", modified.description());
                     });
                 }
         );

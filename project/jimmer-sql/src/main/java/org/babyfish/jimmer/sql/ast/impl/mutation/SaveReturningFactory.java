@@ -395,7 +395,8 @@ class SaveReturningFactory {
                 conflictPredicate,
                 assignments,
                 ignoreUpdate,
-                fakeUpdate || resolveIdByKey
+                // Returning existing fields needs a matched row even when its id is already supplied.
+                fakeUpdate || resolveIdByKey || !returningFetcherProps.isEmpty()
         );
         List<SaveReturningColumnValue> sourceValues = new ArrayList<>(upsertSourceValues(
                 sqlClient,

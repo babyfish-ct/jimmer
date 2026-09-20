@@ -1276,7 +1276,7 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
     public void testUpsertDerivedTypeWithEmptyUpdateMasksAndStageReturning() {
         connectAndExpect(
                 con -> {
-                    Organization modified = getSqlClient(it -> it.setDialect(new H2Dialect()))
+                    SimpleSaveResult<Organization> result = getSqlClient(it -> it.setDialect(new H2Dialect()))
                             .getEntities()
                             .saveCommand(
                                     OrganizationDraft.$.produce(organization -> {
@@ -1292,9 +1292,12 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                     OrganizationFetcher.$
                                             .description()
                                             .status()
-                            )
-                            .getModifiedEntity();
-                    return Arrays.asList(modified, joinedClientRow(con, 200L));
+                            );
+                    assertTrue(result.isAccepted());
+                    assertEquals(2, result.getTotalAffectedRowCount());
+                    assertEquals(1, result.getAffectedRowCount(Client.class));
+                    assertEquals(1, result.getAffectedRowCount(Organization.class));
+                    return Arrays.asList(result.getModifiedEntity(), joinedClientRow(con, 200L));
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -1317,6 +1320,8 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                                         "merge into JOINED_ORGANIZATION tb_1_ " +
                                         "using(values(?, ?)) tb_2_(ID, TAX_CODE) " +
                                         "on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then update set " +
+                                        "/* fake update to return all ids */ TAX_CODE = tb_1_.TAX_CODE " +
                                         "when not matched then insert(ID, TAX_CODE) " +
                                         "values(tb_2_.ID, tb_2_.TAX_CODE)" +
                                         ")"
@@ -1326,10 +1331,10 @@ public class JoinedInheritanceMutationTest extends AbstractMutationTest {
                     ctx.value(values -> {
                         Organization modified = (Organization) values.get(0);
                         assertEquals(200L, modified.id());
-                        assertEquals("Ignored root value", modified.name());
+                        assertFalse(ImmutableObjects.isLoaded(modified, OrganizationProps.NAME));
                         assertEquals("DEFAULT_CLIENT_DESCRIPTION", modified.description());
-                        assertEquals("IGNORED-DERIVED-VALUE", modified.taxCode());
-                        assertFalse(ImmutableObjects.isLoaded(modified, OrganizationProps.STATUS));
+                        assertFalse(ImmutableObjects.isLoaded(modified, OrganizationProps.TAX_CODE));
+                        assertEquals("DEFAULT_ORGANIZATION_STATUS", modified.status());
                         assertEquals("[ORG, Globex, GLOBEX-001, null, null]", values.get(1));
                     });
                 }
