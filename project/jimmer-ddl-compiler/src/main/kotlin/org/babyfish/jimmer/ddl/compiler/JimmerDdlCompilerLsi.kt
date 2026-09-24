@@ -75,6 +75,21 @@ private class MethodBackedLsiField(
     override val typeName get() = method.returnTypeName
     override val comment get() = method.comment
     override val annotations get() = method.annotations
+    // Jimmer 的 Java 属性默认非空，包装基本类型及显式可空注解除外。
+    override val isNullable: Boolean
+        get() {
+            if (type?.isPrimitive == true) {
+                return false
+            }
+            if (type?.qualifiedName in JAVA_BOXED_TYPES) {
+                return true
+            }
+            return (annotations + type?.annotations.orEmpty()).any { annotation ->
+                val qualifiedName = annotation.qualifiedName.orEmpty()
+                qualifiedName.endsWith(".Null") || qualifiedName.endsWith(".Nullable") ||
+                    qualifiedName == "org.babyfish.jimmer.client.TNullable"
+            }
+        }
     override val isStatic get() = method.isStatic
     override val isConstant get() = false
     override val isEnum get() = method.returnType?.lsiClass?.isEnum ?: false
@@ -152,4 +167,9 @@ private val JIMMER_TYPE_SIMPLE_NAMES = setOf(
     "MappedSuperclass",
     "Embeddable",
     "Immutable",
+)
+
+private val JAVA_BOXED_TYPES = setOf(
+    "java.lang.Boolean", "java.lang.Byte", "java.lang.Short", "java.lang.Integer",
+    "java.lang.Long", "java.lang.Float", "java.lang.Double", "java.lang.Character",
 )

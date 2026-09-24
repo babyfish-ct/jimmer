@@ -22,12 +22,23 @@ dependencies {
     implementation(libs.ksp.symbolProcessing.api)
 
     testImplementation(projects.jimmerCore)
+    testImplementation(projects.jimmerKsp)
+    testImplementation(projects.jimmerSqlKotlin)
+    testImplementation(libs.dev.zacsweers.kctfork.ksp) {
+        exclude(module = "symbol-processing-api")
+    }
     testImplementation(libs.kotlin.test)
     testImplementation(libs.h2)
 }
 
+val testJvmTarget = tasks.compileTestKotlin
+    .flatMap { it.compilerOptions.jvmTarget }
+    .map { it.target }
+
 tasks.test {
     useJUnit()
+    maxHeapSize = "4g"
+    systemProperty("jimmer.test.jvmTarget", testJvmTarget.get())
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
