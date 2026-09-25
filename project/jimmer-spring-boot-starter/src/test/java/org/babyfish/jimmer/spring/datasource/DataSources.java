@@ -15,4 +15,11 @@ public class DataSources {
         dataSource.setUrl("jdbc:h2:./build/h2/jimmer_spring_test_db;database_to_upper=true");
         return callback == null ? dataSource : new DataSourceProxy(dataSource, callback);
     }
+
+    public static DataSource create(String name, TxCallback callback) {
+        SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
+        dataSource.setDriver(new Driver());
+        dataSource.setUrl("jdbc:h2:mem:" + name + ";DB_CLOSE_DELAY=-1;database_to_upper=true");
+        return callback == null ? dataSource : new DataSourceProxy(dataSource, callback);
+    }
 }

@@ -3,6 +3,8 @@ package org.babyfish.jimmer.spring.transaction;
 import org.babyfish.jimmer.spring.cfg.support.DataSourceAwareConnectionManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
+import org.babyfish.jimmer.sql.kt.KSqlClientKt;
+import org.babyfish.jimmer.sql.kt.impl.KSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -22,13 +24,22 @@ public class JimmerTransactionManager extends JdbcTransactionManager {
 
     private final JSqlClient sqlClient;
 
+    private final KSqlClientImplementor kotlinSqlClient;
+
     public JimmerTransactionManager(JSqlClient sqlClient) {
-        super(dataSourceOf(sqlClient));
-        this.sqlClient = sqlClient;
+        this(sqlClient, null);
     }
 
     public JimmerTransactionManager(KSqlClient sqlClient) {
-        this(sqlClient.getJavaClient());
+        this(sqlClient.getJavaClient(), sqlClient);
+    }
+
+    private JimmerTransactionManager(JSqlClient sqlClient, KSqlClient kotlinSqlClient) {
+        super(dataSourceOf(sqlClient));
+        this.sqlClient = sqlClient;
+        this.kotlinSqlClient = kotlinSqlClient instanceof KSqlClientImplementor ?
+                (KSqlClientImplementor) kotlinSqlClient :
+                (KSqlClientImplementor) KSqlClientKt.toKSqlClient(sqlClient);
     }
 
     @Deprecated
@@ -50,7 +61,7 @@ public class JimmerTransactionManager extends JdbcTransactionManager {
 
     @Override
     protected void doBegin(@NotNull Object transaction, @NotNull TransactionDefinition definition) {
-        Frame frame = new Frame(sqlClient, FRAME_THREAD_LOCAL.get());
+        Frame frame = new Frame(this, FRAME_THREAD_LOCAL.get());
         FRAME_THREAD_LOCAL.set(frame);
         super.doBegin(transaction, definition);
     }
@@ -69,7 +80,12 @@ public class JimmerTransactionManager extends JdbcTransactionManager {
 
     public static JSqlClient sqlClient() {
         Frame frame = FRAME_THREAD_LOCAL.get();
-        return frame != null ? frame.sqlClient : null;
+        return frame != null ? frame.transactionManager.sqlClient : null;
+    }
+
+    static KSqlClientImplementor kotlinSqlClient() {
+        Frame frame = FRAME_THREAD_LOCAL.get();
+        return frame != null ? frame.transactionManager.kotlinSqlClient : null;
     }
 
     private static DataSource dataSourceOf(JSqlClient sqlClient) {
@@ -94,12 +110,12 @@ public class JimmerTransactionManager extends JdbcTransactionManager {
 
     private static class Frame {
 
-        final JSqlClient sqlClient;
+        final JimmerTransactionManager transactionManager;
 
         final Frame parent;
 
-        private Frame(JSqlClient sqlClient, Frame parent) {
-            this.sqlClient = sqlClient;
+        private Frame(JimmerTransactionManager transactionManager, Frame parent) {
+            this.transactionManager = transactionManager;
             this.parent = parent;
         }
     }
