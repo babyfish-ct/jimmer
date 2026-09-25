@@ -10,7 +10,7 @@ public class ScalarUiConfig implements WebMvcConfigurer {
     private final String path;
 
     public ScalarUiConfig(String uiPath) {
-        path = uiPath.substring(0, uiPath.indexOf("/"));
+        path = uiPath.substring(0, uiPath.lastIndexOf('/')) + "/jimmer-scalar";
     }
 
     @Override

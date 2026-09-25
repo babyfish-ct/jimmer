@@ -36,6 +36,7 @@ dependencies {
     testImplementation(libs.h2)
     testRuntimeOnly(libs.bundles.jackson)
     testRuntimeOnly(projects.jimmerClientSwagger)
+    testRuntimeOnly(projects.jimmerClientScalar)
 }
 
 buildConfig {
