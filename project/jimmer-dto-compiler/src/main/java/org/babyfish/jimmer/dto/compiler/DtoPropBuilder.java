@@ -216,6 +216,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     "Configuration can only be applied to output DTO(Not input, not specification)"
             );
         }
+        if (!prop.configurations.isEmpty() && ("id".equals(funcName) || "flat".equals(funcName))) {
+            throw ctx.exception(
+                    prop.configurations.get(0).start.getLine(),
+                    prop.configurations.get(0).start.getCharPositionInLine(),
+                    "Configuration cannot be applied to properties produced by the \"" + funcName + "\" function"
+            );
+        }
         for (DtoParser.ConfigurationContext configuration : prop.configurations) {
             if (configuration.where() != null) {
                 propConfigBuilder.setPredicate(configuration.where());

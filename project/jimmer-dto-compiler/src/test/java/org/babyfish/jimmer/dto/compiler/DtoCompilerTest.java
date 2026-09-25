@@ -1444,6 +1444,34 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testConfigOnIdAndFlatFunctionsIsRejected() {
+        List<String> configs = Arrays.asList(
+                "!where(name = '')",
+                "!orderBy(name)",
+                "!filter(org.example.NodeFilter)",
+                "!recursion(org.example.NodeRecursion)",
+                "!fetchType(JOIN_ALWAYS)",
+                "!limit(2)",
+                "!batch(10)",
+                "!depth(2)"
+        );
+        for (String prop : Arrays.asList("id(parent)", "id(childNodes) as childIds", "flat(parent) { name as parentName }")) {
+            String function = prop.substring(0, prop.indexOf('('));
+            for (String config : configs) {
+                String code = "TreeNodeView {\n    " + config + " " + prop + "\n}";
+                DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> MyDtoCompiler.treeNode(code), code);
+                Assertions.assertEquals(
+                        "file:/User/test/TreeNode.dto:2 : Configuration cannot be applied to properties produced by the \"" +
+                                function + "\" function\n" +
+                                "    " + config + " " + prop + "\n" +
+                                "    ^",
+                        ex.getMessage()
+                );
+            }
+        }
+    }
+
+    @Test
     public void testConfig() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "BookView {\n" +
