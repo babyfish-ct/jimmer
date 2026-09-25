@@ -58,6 +58,7 @@ drop table maps_id_message_delivery if exists;
 drop table maps_id_message if exists;
 drop table maps_id_profile if exists;
 drop table maps_id_principal if exists;
+drop table save_returning_key_entity if exists;
 drop table time_row if exists;
 drop table issue888_item if exists;
 drop table issue888_structure if exists;
@@ -2175,6 +2176,15 @@ create table time_row(
     value8 timestamp with time zone not null,
     value9 timestamp with time zone not null
 );
+
+create table save_returning_key_entity(
+    id bigint not null primary key,
+    date_key date not null,
+    enum_key varchar(20) not null,
+    value_text varchar(50),
+    unique(date_key, enum_key)
+);
+
 insert into time_row(
     id, value1, value2, value3, value4, value5, value6, value7, value8, value9
 ) values(
