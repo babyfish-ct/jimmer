@@ -2181,7 +2181,7 @@ create table save_returning_key_entity(
     id bigint not null primary key,
     date_key date not null,
     enum_key varchar(20) not null,
-    value_text varchar(50),
+    value_text varchar(50) not null,
     unique(date_key, enum_key)
 );
 

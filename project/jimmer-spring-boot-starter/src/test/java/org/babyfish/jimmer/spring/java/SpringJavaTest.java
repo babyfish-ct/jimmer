@@ -54,11 +54,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import javax.sql.DataSource;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.*;
 
@@ -992,48 +995,16 @@ public class SpringJavaTest extends AbstractTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/html"))
                 .andReturn();
+        // Both UI providers are on the test classpath, so use the template selected by the controller's class loader.
+        String template;
+        try (InputStream input = OpenApiController.class.getClassLoader()
+                .getResourceAsStream("META-INF/jimmer/openapi/index.html.template")) {
+            Assertions.assertNotNull(input);
+            template = StreamUtils.copyToString(input, StandardCharsets.UTF_8).replace("\r\n", "\n");
+        }
+        Assertions.assertTrue(template.contains("${openapi.refPath}"));
         Assertions.assertEquals(
-                "<!-- HTML for static distribution bundle build -->\n" +
-                        "<!DOCTYPE html>\n" +
-                        "<html lang=\"en\">\n" +
-                        "  <head>\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <title>Swagger UI</title>\n" +
-                        "    <link rel=\"stylesheet\" type=\"text/css\" href=\"./swagger-ui.css\" />\n" +
-                        "    <link rel=\"stylesheet\" type=\"text/css\" href=\"index.css\" />\n" +
-                        "    <link rel=\"icon\" type=\"image/png\" href=\"./favicon-32x32.png\" sizes=\"32x32\" />\n" +
-                        "    <link rel=\"icon\" type=\"image/png\" href=\"./favicon-16x16.png\" sizes=\"16x16\" />\n" +
-                        "  </head>\n" +
-                        "\n" +
-                        "  <body>\n" +
-                        "    <div id=\"swagger-ui\"></div>\n" +
-                        "    <script src=\"./swagger-ui-bundle.js\" charset=\"UTF-8\"> </script>\n" +
-                        "    <script src=\"./swagger-ui-standalone-preset.js\" charset=\"UTF-8\"> </script>\n" +
-                        "    <script>\n" +
-                        "      window.onload = function() {\n" +
-                        "        //<editor-fold desc=\"Changeable Configuration Block\">\n" +
-                        "\n" +
-                        "        // the following lines will be replaced by docker/configurator, when it runs in a docker-container\n" +
-                        "        window.ui = SwaggerUIBundle({\n" +
-                        "          url: '/my-openapi.yml',\n" +
-                        "          dom_id: '#swagger-ui',\n" +
-                        "          deepLinking: true,\n" +
-                        "          presets: [\n" +
-                        "            SwaggerUIBundle.presets.apis,\n" +
-                        "            SwaggerUIStandalonePreset\n" +
-                        "          ],\n" +
-                        "          plugins: [\n" +
-                        "            SwaggerUIBundle.plugins.DownloadUrl\n" +
-                        "          ],\n" +
-                        "          layout: \"StandaloneLayout\"\n" +
-                        "        });\n" +
-                        "\n" +
-                        "        //</editor-fold>\n" +
-                        "      };\n" +
-                        "\n" +
-                        "    </script>\n" +
-                        "  </body>\n" +
-                        "</html>\n",
+                template.replace("${openapi.refPath}", "/my-openapi.yml"),
                 result.getResponse().getContentAsString()
         );
     }
