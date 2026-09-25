@@ -52,9 +52,20 @@ private fun LsiField.snapshot(
     val association = annotationSnapshots.any { annotation ->
         annotation.simpleName in setOf("ManyToOne", "OneToOne", "OneToMany", "ManyToMany")
     }
+    val resolvedFieldTypeClass = fieldTypeClass ?: type?.lsiClass
+    val embeddableType = resolvedFieldTypeClass?.annotations.orEmpty().any { annotation ->
+        annotation.qualifiedName == "org.babyfish.jimmer.sql.Embeddable"
+    }
+    // 关联目标仅保留浅快照，但其嵌入式主键必须保留完整字段结构。
+    val snapshotTypeClass = embeddableType || (snapshotFieldTypeClass && association)
+    val shallowTypeClass = !embeddableType
     return SnapshotLsiField(
         name = name,
-        type = type?.snapshot(cache, snapshotLsiClass = snapshotFieldTypeClass && association),
+        type = type?.snapshot(
+            cache = cache,
+            snapshotLsiClass = snapshotTypeClass,
+            shallowLsiClass = shallowTypeClass,
+        ),
         typeName = typeName,
         comment = comment,
         annotations = annotationSnapshots,
@@ -67,7 +78,11 @@ private fun LsiField.snapshot(
         defaultValue = defaultValue,
         columnName = columnName,
         declaringClass = null,
-        fieldTypeClass = if (snapshotFieldTypeClass && association) fieldTypeClass?.snapshot(cache, shallow = true) else null,
+        fieldTypeClass = if (snapshotTypeClass) {
+            resolvedFieldTypeClass?.snapshot(cache, shallow = shallowTypeClass)
+        } else {
+            null
+        },
         isNestedObject = false,
         children = emptyList(),
         isNullable = isNullable,
@@ -101,6 +116,7 @@ private fun LsiParameter.snapshot(cache: MutableMap<String, LsiClass>): LsiParam
 private fun LsiType.snapshot(
     cache: MutableMap<String, LsiClass>,
     snapshotLsiClass: Boolean = false,
+    shallowLsiClass: Boolean = true,
 ): LsiType {
     return SnapshotLsiType(
         simpleName = simpleName,
@@ -109,12 +125,22 @@ private fun LsiType.snapshot(
         annotations = annotations.map { it.snapshot() },
         isCollectionType = isCollectionType,
         isNullable = isNullable,
-        typeParameters = typeParameters.map { it.snapshot(cache, snapshotLsiClass = snapshotLsiClass) },
+        typeParameters = typeParameters.map { typeParameter ->
+            typeParameter.snapshot(
+                cache = cache,
+                snapshotLsiClass = snapshotLsiClass,
+                shallowLsiClass = shallowLsiClass,
+            )
+        },
         isPrimitive = isPrimitive,
-        componentType = componentType?.snapshot(cache, snapshotLsiClass = snapshotLsiClass),
+        componentType = componentType?.snapshot(
+            cache = cache,
+            snapshotLsiClass = snapshotLsiClass,
+            shallowLsiClass = shallowLsiClass,
+        ),
         isArray = isArray,
         lsiClass = if (snapshotLsiClass && !isCollectionType) {
-            lsiClass?.snapshot(cache, shallow = true)
+            lsiClass?.snapshot(cache, shallow = shallowLsiClass)
         } else {
             null
         },
@@ -133,6 +159,7 @@ private fun Any?.freezeAnnotationAttribute(): Any? {
     return when (this) {
         null -> null
         is String, is Number, is Boolean -> this
+        is LsiAnnotation -> snapshot()
         is Collection<*> -> map { it.freezeAnnotationAttribute() }
         is Array<*> -> map { it.freezeAnnotationAttribute() }
         else -> toString()

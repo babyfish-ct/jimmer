@@ -1,7 +1,8 @@
 [versions]
-addzero-ddlgenerator = "2026.08.26"
+addzero-ddlgenerator = "2026.09.27"
 addzero-ddlgenerator-archived = "2026.07.15.2"
-addzero-lsi = "2026.08.26"
+addzero-lsi = "2026.09.25"
+addzero-tool-database-model = "2026.08.26"
 antlr = "4.13.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
@@ -53,7 +54,7 @@ addzero-ddlgenerator-dialect-oracle = { group = "site.addzero", name = "ddlgener
 addzero-ddlgenerator-dialect-dm = { group = "site.addzero", name = "ddlgenerator-dialect-dm", version.ref = "addzero-ddlgenerator-archived" }
 addzero-ddlgenerator-dialect-kingbase = { group = "site.addzero", name = "ddlgenerator-dialect-kingbase", version.ref = "addzero-ddlgenerator-archived" }
 addzero-ddlgenerator-dialect-taos = { group = "site.addzero", name = "ddlgenerator-dialect-taos", version.ref = "addzero-ddlgenerator-archived" }
-addzero-tool-database-model = { group = "site.addzero", name = "tool-database-model", version.ref = "addzero-ddlgenerator" }
+addzero-tool-database-model = { group = "site.addzero", name = "tool-database-model", version.ref = "addzero-tool-database-model" }
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }

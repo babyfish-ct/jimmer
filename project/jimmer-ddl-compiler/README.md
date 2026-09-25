@@ -69,6 +69,16 @@ tasks.withType<JavaCompile>().configureEach {
 
 With the default `false`, removed columns remain in the staged structural snapshot so they can still be dropped by a later explicitly enabled run. An inferred table rename instead creates the desired table, preserves the old database table, and emits a warning.
 
+## Association constraints
+
+Business `@Key` groups use the actual join columns, including custom names and every component of an embedded target ID. Repeatable `@Key` declarations retain all groups. Owning `@OneToOne` properties receive independent uniqueness even when they also belong to a composite business key; inverse `mappedBy` properties have no local columns. Ordinary `@ManyToOne` associations are not implicitly unique. `ForeignKeyType.FAKE` suppresses the foreign key constraint while preserving key uniqueness.
+
+A Key group containing a nullable physical column is skipped as a whole. Associations with `inputNotNull = true` have non-null physical columns. Java method-backed properties follow Jimmer's default non-null semantics, except boxed primitive types and explicit nullable annotations.
+
+Existing indexes are compared by definition. Replacing a changed index with the same name requires `jimmerDdl.allowDestructiveChanges=true`; otherwise the repair remains pending in the snapshot. An equivalent index with a different name is retained. Apply repairs through new migrations rather than editing previously applied files.
+
+The association regression tests run real KSP and APT compilation, persist structural snapshots, verify repeat-generation idempotency, and execute generated constraints on H2. PostgreSQL and H2 snapshots are generated independently to preserve each dialect's type semantics.
+
 ## Snapshot model
 
 The durable schema baseline is a directory of per-table lockfiles under `.jimmer-ddl/entity-table-snapshot/`. Each lockfile records one table schema hash, its encoded structural model, and the Jimmer entities mapped to that table. Keeping tables in independent files prevents unrelated entity changes on separate branches from rewriting the same Git-tracked snapshot.
