@@ -69,6 +69,12 @@ tasks.withType<JavaCompile>().configureEach {
 
 With the default `false`, removed columns remain in the staged structural snapshot so they can still be dropped by a later explicitly enabled run. An inferred table rename instead creates the desired table, preserves the old database table, and emits a warning.
 
+## Kotlin computed getters
+
+Ordinary Kotlin properties with an implemented getter and no backing field do not generate columns, even without `@Formula`. This includes expression getters, block getters, inherited getters and getters inside embeddables. Abstract properties and stored properties remain eligible for persistence. Explicit `@Formula` and `@Transient` properties continue to be excluded from DDL.
+
+Adding only computed getters produces no schema migration. Use `@Formula(dependencies = [...])` when a getter should participate in Jimmer fetchers and dependency loading. Ordinary getters use their Kotlin implementation and require their referenced persistent properties to be loaded.
+
 ## Snapshot model
 
 The durable schema baseline is a directory of per-table lockfiles under `.jimmer-ddl/entity-table-snapshot/`. Each lockfile records one table schema hash, its encoded structural model, and the Jimmer entities mapped to that table. Keeping tables in independent files prevents unrelated entity changes on separate branches from rewriting the same Git-tracked snapshot.

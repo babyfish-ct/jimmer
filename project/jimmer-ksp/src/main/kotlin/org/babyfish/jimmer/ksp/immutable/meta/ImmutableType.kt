@@ -386,7 +386,7 @@ class ImmutableType(
                     }
                 }
             } else {
-                for (anno in propDeclaration.annotations) {
+                for (anno in propDeclaration.annotations { true }) {
                     if (anno.fullName.startsWith("org.babyfish.jimmer.") && anno.fullName != FORMULA_CLASS_NAME) {
                         throw MetaException(
                             propDeclaration,
@@ -446,15 +446,16 @@ class ImmutableType(
             }
         }
 
+        val propDeclarations = classDeclaration.getDeclaredProperties()
+            .filter { it.isAbstract() || it.annotation(Formula::class) !== null }
+            .toList()
         declaredProperties =
-            classDeclaration
-                .getDeclaredProperties()
+            propDeclarations
                 .filter { it.annotation(Id::class) != null }
                 .associateBy({ it.name }) {
                     ImmutableProp(ctx, this, propIdSequence++, it)
                 } +
-                    classDeclaration
-                        .getDeclaredProperties()
+                    propDeclarations
                         .filter { it.annotation(Id::class) == null }
                         .associateBy({ it.name }) {
                             ImmutableProp(ctx, this, propIdSequence++, it)
