@@ -111,12 +111,7 @@ class Operator {
                 inheritanceInfo.getRootType() != type) {
             return insertJoined(batch, inheritanceInfo);
         }
-        insert(
-                batch,
-                ctx.path.getType(),
-                discriminatorProp(inheritanceInfo),
-                false
-        );
+        insert(batch, ctx.path.getType(), discriminatorProp(inheritanceInfo));
         return MutationRows.accepted(batch.entities());
     }
 
@@ -136,16 +131,11 @@ class Operator {
     }
 
     void insertJoinedRoot(Batch<DraftSpi> batch, InheritanceInfo inheritanceInfo) {
-        insert(
-                batch,
-                inheritanceInfo.getRootType(),
-                discriminatorProp(inheritanceInfo),
-                true
-        );
+        insert(batch, inheritanceInfo.getRootType(), discriminatorProp(inheritanceInfo));
     }
 
     void insertJoinedStage(Batch<DraftSpi> batch, ImmutableType tableType) {
-        insert(batch, tableType, null, true);
+        insert(batch, tableType, null);
     }
 
     int[] updateJoinedRootStage(
@@ -238,23 +228,23 @@ class Operator {
     private void insert(
             Batch<DraftSpi> batch,
             ImmutableType tableType,
-            @Nullable ImmutableProp discriminatorProp,
-            boolean allowIdOnly
+            @Nullable ImmutableProp discriminatorProp
     ) {
-        insert(batch, tableType, discriminatorProp, allowIdOnly, true);
+        insert(batch, tableType, discriminatorProp, true);
     }
 
     private void insert(
             Batch<DraftSpi> batch,
             ImmutableType tableType,
             @Nullable ImmutableProp discriminatorProp,
-            boolean allowIdOnly,
             boolean fireTrigger
     ) {
 
-        if (batch.entities().isEmpty() || (!allowIdOnly && batch.shape().isIdOnly())) {
+        if (batch.entities().isEmpty()) {
             return;
         }
+        // Reference-only objects have already been excluded by PreHandler.
+        // An insert can have only an ID column even when the object has backward associations.
         validate(batch.shape(), true, implicitKeyProps(null));
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
@@ -1040,7 +1030,7 @@ class Operator {
             );
         }
         if (!missingEntities.isEmpty()) {
-            insert(batchOf(batch, batch.shape(), missingEntities), tableType, null, true, false);
+            insert(batchOf(batch, batch.shape(), missingEntities), tableType, null, false);
         }
     }
 
@@ -1634,7 +1624,6 @@ class Operator {
                             missingRootBatch,
                             rootType,
                             discriminatorProp(inheritanceInfo),
-                            true,
                             false
                     );
                     collectIds(acceptedTypeChangeIds, missingRootBatch);
@@ -1707,7 +1696,7 @@ class Operator {
                         acceptedTypeChangeRows
                 );
             } else if (ignoreUpdate) {
-                insert(childBatch, tableType, null, true);
+                insert(childBatch, tableType, null);
             } else {
                 upsert(childBatch, tableType, null, false, null, Collections.emptyList(), false, false);
             }

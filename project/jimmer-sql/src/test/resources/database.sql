@@ -3,6 +3,20 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table id_only_file if exists;
+drop table id_only_document if exists;
+
+create table id_only_document (
+    id uuid not null primary key,
+    name varchar(100)
+);
+
+create table id_only_file (
+    id uuid not null primary key,
+    document_id uuid not null references id_only_document(id),
+    link varchar(100) not null
+);
+
 
 drop table endorsement if exists;
 drop table documented_entity if exists;
