@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -8,6 +9,7 @@ import org.babyfish.jimmer.sql.OneToMany;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
 import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -38,6 +40,9 @@ class SaveContext extends MutationContext {
     final ImmutableProp backReferenceProp;
 
     final boolean backReferenceFrozen;
+
+    // Targets were references before Saver injected the inverse association's FK.
+    final boolean backReferenceOnly;
 
     private final SaveResultCoverage saveResultCoverage;
 
@@ -82,6 +87,7 @@ class SaveContext extends MutationContext {
         this.trigger = trigger;
         this.backReferenceProp = null;
         this.backReferenceFrozen = false;
+        this.backReferenceOnly = false;
         this.affectedRowCountMap = affectedRowCountMap;
         this.saveResultCoverage = new SaveResultCoverage();
         this.rejectedDrafts = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -122,6 +128,7 @@ class SaveContext extends MutationContext {
             options = options.withAssociatedOptions(prop);
         }
         this.options = options;
+        this.backReferenceOnly = false;
         this.con = parent.con;
         this.fetcher = null;
         this.trigger = parent.trigger;
@@ -148,8 +155,13 @@ class SaveContext extends MutationContext {
     }
 
     private SaveContext(SaveContext base, JSqlClientImplementor sqlClient) {
+        this(base, base.options.withSqlClient(sqlClient), base.backReferenceOnly);
+    }
+
+    private SaveContext(SaveContext base, SaveOptions options, boolean backReferenceOnly) {
         super(base.path);
-        this.options = base.options.withSqlClient(sqlClient);
+        this.options = options;
+        this.backReferenceOnly = backReferenceOnly;
         this.con = base.con;
         this.fetcher = base.fetcher;
         this.trigger = base.trigger;
@@ -162,6 +174,19 @@ class SaveContext extends MutationContext {
         this.preselectedAcceptedDrafts = base.preselectedAcceptedDrafts;
         this.updateWhereEnabled = base.updateWhereEnabled;
         this.updateWherePredicate = base.updateWherePredicate;
+    }
+
+    boolean isIdOnlyReference(DraftSpi draft) {
+        return draft.__isLoaded(draft.__type().getIdProp().getId()) &&
+                !options.isForceMatchedUpdate() &&
+                options.isIdOnlyAsReference(path.getProp()) &&
+                !options.hasAssignment(draft.__type()) &&
+                options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
+                ImmutableObjects.isIdOnly(draft);
+    }
+
+    SaveContext backReferenceOnly() {
+        return new SaveContext(this, options.withMode(SaveMode.UPDATE_ONLY), true);
     }
 
     public Object allocateId() {

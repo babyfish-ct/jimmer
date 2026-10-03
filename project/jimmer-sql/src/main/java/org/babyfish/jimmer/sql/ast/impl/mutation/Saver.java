@@ -286,7 +286,6 @@ public class Saver {
                     if (ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.VIOLENTLY_REPLACE) {
                         clearAssociations(batch.entities(), prop);
                     }
-                    setBackReference(prop, batch);
                     savePostAssociation(prop, batch, selfResult.detach);
                 }
             }
@@ -295,20 +294,12 @@ public class Saver {
 
     private boolean isIdOnlyAssociationReference(List<DraftSpi> drafts) {
         ImmutableProp prop = ctx.path.getProp();
-        if (prop == null || !ctx.options.isIdOnlyAsReference(prop)) {
+        if (prop == null) {
             return false;
         }
         for (DraftSpi draft : drafts) {
-            if (ctx.options.hasAssignment(draft.__type())) {
+            if (!ctx.backReferenceOnly && !ctx.isIdOnlyReference(draft)) {
                 return false;
-            }
-            if (!draft.__isLoaded(draft.__type().getIdProp().getId())) {
-                return false;
-            }
-            for (ImmutableProp draftProp : draft.__type().getProps().values()) {
-                if (!draftProp.isId() && draft.__isLoaded(draftProp.getId())) {
-                    return false;
-                }
             }
         }
         return true;
@@ -362,7 +353,8 @@ public class Saver {
     }
 
     @SuppressWarnings("unchecked")
-    private void setBackReference(ImmutableProp prop, Batch<DraftSpi> batch) {
+    private Set<DraftSpi> setBackReference(ImmutableProp prop, Batch<DraftSpi> batch, SaveContext targetCtx) {
+        Set<DraftSpi> references = null;
         ImmutableProp backProp = prop.getMappedBy();
         if (backProp != null && backProp.isColumnDefinition()) {
             ImmutableType parentType = prop.getDeclaringType();
@@ -375,14 +367,27 @@ public class Saver {
                     Object associated = draft.__get(propId);
                     if (associated instanceof Collection<?>) {
                         for (DraftSpi child : (List<DraftSpi>) associated) {
+                            if (targetCtx.isIdOnlyReference(child)) {
+                                if (references == null) {
+                                    references = Collections.newSetFromMap(new IdentityHashMap<>());
+                                }
+                                references.add(child);
+                            }
                             child.__set(backPropId, idOnlyParent);
                         }
                     } else if (associated instanceof DraftSpi) {
+                        if (targetCtx.isIdOnlyReference((DraftSpi) associated)) {
+                            if (references == null) {
+                                references = Collections.newSetFromMap(new IdentityHashMap<>());
+                            }
+                            references.add((DraftSpi) associated);
+                        }
                         ((DraftSpi) associated).__set(backPropId, idOnlyParent);
                     }
                 }
             }
         }
+        return references != null ? references : Collections.emptySet();
     }
 
     private void savePreAssociation(ImmutableProp prop, List<DraftSpi> drafts) {
@@ -422,6 +427,8 @@ public class Saver {
             targetSaver.ctx.throwUnstructuredAssociation();
         }
 
+        // Capture reference intent before injecting the FK: a framework-owned backlink is not entity input.
+        Set<DraftSpi> references = setBackReference(prop, batch, targetSaver.ctx);
         List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
         PropId targetPropId = prop.getId();
         for (DraftSpi draft : batch.entities()) {
@@ -433,6 +440,25 @@ public class Saver {
             } else if (!prop.isNullable() || prop.isInputNotNull()) {
                 targetSaver.ctx.throwNullTarget();
             }
+        }
+        if (!references.isEmpty()) {
+            List<DraftSpi> referenceTargets;
+            if (references.size() == targets.size()) {
+                referenceTargets = targets;
+                targets = Collections.emptyList();
+            } else {
+                referenceTargets = new ArrayList<>(references.size());
+                List<DraftSpi> entityTargets = new ArrayList<>();
+                for (DraftSpi target : targets) {
+                    if (references.contains(target)) {
+                        referenceTargets.add(target);
+                    } else {
+                        entityTargets.add(target);
+                    }
+                }
+                targets = entityTargets;
+            }
+            new Saver(targetSaver.ctx.backReferenceOnly()).saveAllImpl(referenceTargets);
         }
         if (!targets.isEmpty()) {
             targetSaver.saveAllImpl(targets);

@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -133,9 +132,9 @@ abstract class AbstractPreHandler implements PreHandler {
     @SuppressWarnings("unchecked")
     AbstractPreHandler(SaveContext ctx) {
         this.ctx = ctx;
-        this.processor = (DraftPreProcessor<DraftSpi>)
+        this.processor = ctx.backReferenceOnly ? null : (DraftPreProcessor<DraftSpi>)
                 ctx.options.getSqlClient().getDraftPreProcessor(ctx.path.getType());
-        this.interceptor = (DraftInterceptor<Object, DraftSpi>)
+        this.interceptor = ctx.backReferenceOnly ? null : (DraftInterceptor<Object, DraftSpi>)
                 ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
         idProp = ctx.path.getType().getIdProp();
         keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
@@ -183,28 +182,19 @@ abstract class AbstractPreHandler implements PreHandler {
                             "\" by key: no complete key group is loaded. Required key groups: " + keyMatcher.toMap()
             );
         }
-        Lazy<Boolean> hasNonIdValues = new Lazy<>(() -> {
-            for (ImmutableProp prop : draft.__type().getProps().values()) {
-                if (!prop.isId() && draft.__isLoaded(prop.getId())) {
-                    return true;
+        ImmutableProp prop = ctx.path.getProp();
+        if (prop != null && prop.isRemote()) {
+            for (ImmutableProp draftProp : draft.__type().getProps().values()) {
+                if (!draftProp.isId() && draft.__isLoaded(draftProp.getId())) {
+                    ctx.throwLongRemoteAssociation();
                 }
             }
-            return false;
-        });
-        ImmutableProp prop = ctx.path.getProp();
-        if (prop != null && prop.isRemote() && hasNonIdValues.get()) {
-            ctx.throwLongRemoteAssociation();
         }
-        if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
-            if (!ctx.options.isForceMatchedUpdate() &&
-                    ctx.options.isIdOnlyAsReference(prop) &&
-                    !ctx.options.hasAssignment(draft.__type()) &&
-                    ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
-                    !hasNonIdValues.get()
-            ) {
-                if (validatedIds != null) {
-                    validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
-                }
+        if (ctx.backReferenceOnly || ctx.isIdOnlyReference(draft)) {
+            if (validatedIds != null) {
+                validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
+            }
+            if (!ctx.backReferenceOnly) {
                 return;
             }
         }

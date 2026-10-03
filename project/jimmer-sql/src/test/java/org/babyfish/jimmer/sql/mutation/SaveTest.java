@@ -456,9 +456,9 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(newId, "TURING", 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)");
-                        it.batchVariables(0, learningGraphQLId1, newId);
-                        it.batchVariables(1, learningGraphQLId2, newId);
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, newId, learningGraphQLId1);
+                        it.batchVariables(1, newId, learningGraphQLId2);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -943,10 +943,10 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)");
-                        it.batchVariables(0, effectiveTypeScriptId1, manningId);
-                        it.batchVariables(1, effectiveTypeScriptId2, manningId);
-                        it.batchVariables(2, effectiveTypeScriptId3, manningId);
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, manningId, effectiveTypeScriptId1);
+                        it.batchVariables(1, manningId, effectiveTypeScriptId2);
+                        it.batchVariables(2, manningId, effectiveTypeScriptId3);
                     });
                     ctx.entity(it -> {
                         it.original(
