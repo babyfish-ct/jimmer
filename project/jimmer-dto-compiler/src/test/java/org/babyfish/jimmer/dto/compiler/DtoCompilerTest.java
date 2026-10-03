@@ -2285,6 +2285,73 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testUserPropConflictsWithMacroAlias() {
+        for (boolean nested : new boolean[] {false, true}) {
+            for (boolean aliasGroup : new boolean[] {false, true}) {
+                for (boolean userPropFirst : new boolean[] {false, true}) {
+                    String indent = nested ? "        " : "    ";
+                    String alias = aliasGroup ? "nameFile" : "name";
+                    String userProp = indent + alias + ": Int\n";
+                    String macro = aliasGroup ?
+                            indent + "as($ -> file) {\n" + indent + "    #allScalars\n" + indent + "}\n" :
+                            indent + "#allScalars\n";
+                    String code = "input StoreInput {\n" +
+                            (nested ? "    books {\n" : "") +
+                            (userPropFirst ? userProp + macro : macro + userProp) +
+                            (nested ? "    }\n" : "") +
+                            "}";
+                    int line = (int) code.substring(0, code.indexOf(userProp)).chars().filter(c -> c == '\n').count() + 1;
+                    DtoAstException ex = Assertions.assertThrows(
+                            DtoAstException.class,
+                            () -> MyDtoCompiler.bookStore(code),
+                            code
+                    );
+                    Assertions.assertEquals(line, ex.getLineNumber(), code);
+                    Assertions.assertEquals(indent.length(), ex.getColNumber(), code);
+                    Assertions.assertEquals(
+                            "file:/User/test/BookStore.dto:" + line + " : Duplicated property alias \"" + alias + "\"\n" +
+                                    userProp + indent + "^",
+                            ex.getMessage(),
+                            code
+                    );
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testExplicitPropOverridesMacroAlias() {
+        for (boolean nested : new boolean[] {false, true}) {
+            for (boolean aliasGroup : new boolean[] {false, true}) {
+                for (boolean explicitPropFirst : new boolean[] {false, true}) {
+                    String indent = nested ? "        " : "    ";
+                    String alias = aliasGroup ? "nameFile" : "name";
+                    String explicitProp = indent + "name?" + (aliasGroup ? " as nameFile" : "") + "\n";
+                    String macro = aliasGroup ?
+                            indent + "as($ -> file) {\n" + indent + "    #allScalars\n" + indent + "}\n" :
+                            indent + "#allScalars\n";
+                    String code = "input StoreInput {\n" +
+                            (nested ? "    books {\n" : "") +
+                            (explicitPropFirst ? explicitProp + macro : macro + explicitProp) +
+                            (nested ? "    }\n" : "") +
+                            "}";
+                    DtoType<BaseType, BaseProp> type = MyDtoCompiler.bookStore(code).get(0);
+                    if (nested) {
+                        type = ((DtoProp<BaseType, BaseProp>) type.getProps().get(0)).getTargetType();
+                    }
+                    List<AbstractProp> props = type.getProps().stream()
+                            .filter(prop -> alias.equals(prop.getAlias()))
+                            .collect(Collectors.toList());
+                    Assertions.assertEquals(1, props.size(), code);
+                    Assertions.assertTrue(props.get(0) instanceof DtoProp<?, ?>, code);
+                    Assertions.assertTrue(props.get(0).isNullable(), code);
+                    Assertions.assertEquals("name", ((DtoProp<?, ?>) props.get(0)).getBaseProp().getName(), code);
+                }
+            }
+        }
+    }
+
+    @Test
     public void testReferenceTwice() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(

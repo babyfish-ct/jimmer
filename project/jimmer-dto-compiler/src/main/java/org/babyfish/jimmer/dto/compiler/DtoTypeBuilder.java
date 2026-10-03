@@ -1035,7 +1035,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             addProps(builder, declaredPropMap);
         }
         for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
-            if (declaredPropMap.containsKey(builder.getAlias())) {
+            if (!(builder instanceof UserProp) && declaredPropMap.containsKey(builder.getAlias())) {
                 continue;
             }
             addProps(builder, declaredPropMap);
