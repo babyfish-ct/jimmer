@@ -27,7 +27,7 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
                 return valueGetter.get(discriminatorValue);
             }
         }
-        if (spi.__isLoaded(propId) && !prop.isLogicalDeleted()) {
+        if (spi.__isLoaded(propId)) {
             return valueGetter.get(spi.__get(propId));
         }
         Ref<Object> valueRef = prop.getDefaultValueRef();

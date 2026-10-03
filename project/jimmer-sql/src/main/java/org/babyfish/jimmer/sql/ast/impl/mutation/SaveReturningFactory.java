@@ -173,7 +173,7 @@ class SaveReturningFactory {
         SaveReturningMatchMode matchMode;
         if (keyProps != null) {
             matchMode = SaveReturningMatchMode.KEY;
-            matchGetters = propertyGetters(sqlClient, keyProps);
+            matchGetters = propertyGetters(sqlClient, MutationKeys.matchingKeyProps(shape.getType(), keyProps));
             if (matchGetters == null) {
                 return null;
             }

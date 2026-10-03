@@ -172,6 +172,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     @Override
     public void add(DraftSpi draft) {
+        validateLogicalDeletedValue(draft);
         KeyMatcher.Group group = keyMatcher.match(draft);
         if (ctx.options.getMode() != SaveMode.INSERT_ONLY &&
                 ctx.options.isKeyMatchingRequired(ctx.path.getType()) && group == null) {
@@ -652,6 +653,7 @@ abstract class AbstractPreHandler implements PreHandler {
             return;
         }
         processor.beforeSave(draft);
+        validateLogicalDeletedValue(draft);
     }
 
     final void callInterceptor(List<DraftInterceptor.Item<Object, DraftSpi>> items) {
@@ -709,6 +711,9 @@ abstract class AbstractPreHandler implements PreHandler {
             return;
         }
         interceptor.beforeSaveAll(items);
+        for (DraftInterceptor.Item<Object, DraftSpi> item : items) {
+            validateLogicalDeletedValue(item.getDraft());
+        }
         for (Map.Entry<DraftPropKey, Object> e : idKeyColumnValueMap.entrySet()) {
             DraftPropKey key = e.getKey();
             ImmutableProp prop = key.prop;
@@ -743,11 +748,21 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private void assignLocalDeletedInfo(DraftSpi draft) {
         LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
-        if (logicalDeletedInfo == null) {
+        if (logicalDeletedInfo == null || draft.__isLoaded(logicalDeletedInfo.getProp().getId())) {
             return;
         }
         Object value = logicalDeletedInfo.allocateInitializedValue();
         draft.__set(logicalDeletedInfo.getProp().getId(), value);
+    }
+
+    private void validateLogicalDeletedValue(DraftSpi draft) {
+        LogicalDeletedInfo info = draft.__type().getLogicalDeletedInfo();
+        if (info != null && draft.__isLoaded(info.getProp().getId()) && info.isDeleted(draft.__get(info.getProp().getId()))) {
+            throw new IllegalArgumentException(
+                    "Cannot save a deleted value for property \"" + info.getProp() +
+                            "\" at path \"" + ctx.path + "\"; use a delete command instead"
+            );
+        }
     }
 
     // Notes: This method can only be overridden by InsertPreHandler
@@ -1123,7 +1138,7 @@ class UpdatePreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     KeyMatcher.Group group = keyMatcher.match(draft);
                     assert group != null;
-                    Object key = Keys.keyOf(draft, group.getProps());
+                    Object key = Keys.matchingKeyOf(draft, group.getProps());
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
                     if (original != null) {
@@ -1254,7 +1269,7 @@ class UpsertPreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     KeyMatcher.Group group = ctx.options.getKeyMatcher(ctx.path.getType()).match(draft);
                     assert group != null;
-                    Object key = Keys.keyOf(draft, group.getProps());
+                    Object key = Keys.matchingKeyOf(draft, group.getProps());
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
                     if (original == null) {

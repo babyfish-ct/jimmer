@@ -1274,7 +1274,8 @@ class Operator {
             if (!prop.isColumnDefinition()) {
                 continue;
             }
-            if (keyProps != null && keyProps.contains(prop)) {
+            if (keyProps != null && (keyProps.contains(prop) ||
+                    prop.isLogicalDeleted() && MutationKeys.activeStateKeyProp(shape.getType()) != null)) {
                 continue;
             }
             if (changedProps != null) {
@@ -1336,7 +1337,7 @@ class Operator {
                         originalKeyObjMap.getOrDefault(group, Collections.emptyMap()) :
                         Collections.emptyMap();
                 for (DraftSpi draft : batch.entities()) {
-                    ImmutableSpi oldRow = subMap.get(Keys.keyOf(draft, keyProps));
+                    ImmutableSpi oldRow = subMap.get(Keys.matchingKeyOf(draft, keyProps));
                     restoreUnchangedVersion(draft, oldRow, unchangedVersionProp);
                     if (hasCustomAssignments || fakeUpdate || isChanged(changedProps, oldRow, draft)) {
                         if (pendingTriggerData != null) {
@@ -1513,7 +1514,7 @@ class Operator {
         int[] rowCounts = new int[batch.entities().size()];
         int index = 0;
         for (EntityCollection.Item<DraftSpi> item : batch.entities().items()) {
-            ImmutableSpi row = subMap.get(Keys.keyOf(item.getEntity(), keyProps));
+            ImmutableSpi row = subMap.get(Keys.matchingKeyOf(item.getEntity(), keyProps));
             if (row != null) {
                 for (DraftSpi draft : item.getOriginalEntities()) {
                     draft.__set(idPropId, row.__get(idPropId));
@@ -2983,7 +2984,7 @@ class Operator {
         public Dialect.UpdateContext appendPredicates() {
             if (keyProps != null) {
                 Map<ImmutableProp, List<PropertyGetter>> getterMap = shape.getGetterMap();
-                for (ImmutableProp keyProp : keyProps) {
+                for (ImmutableProp keyProp : MutationKeys.matchingKeyProps(shape.getType(), keyProps)) {
                     List<PropertyGetter> getters = getterMap.get(keyProp);
                     if (getters == null) {
                         getters = PropertyGetter.propertyGetters(ctx.options.getSqlClient(), keyProp);

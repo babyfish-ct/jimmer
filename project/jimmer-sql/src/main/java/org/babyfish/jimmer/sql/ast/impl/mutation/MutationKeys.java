@@ -14,6 +14,24 @@ class MutationKeys {
     private MutationKeys() {
     }
 
+    @Nullable
+    static ImmutableProp activeStateKeyProp(ImmutableType type) {
+        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
+        // Unlike boolean flags or generated deletion markers, enum/int flags can have several live values.
+        return info != null && info.getAction() instanceof LogicalDeletedInfo.Action.Ne &&
+                (info.getType().isEnum() || info.getType() == int.class) ? info.getProp() : null;
+    }
+
+    static Collection<ImmutableProp> matchingKeyProps(ImmutableType type, Collection<ImmutableProp> keyProps) {
+        ImmutableProp prop = activeStateKeyProp(type);
+        if (prop == null || keyProps.contains(prop)) {
+            return keyProps;
+        }
+        List<ImmutableProp> props = new ArrayList<>(keyProps);
+        addProp(props, prop);
+        return props;
+    }
+
     static List<ImmutableProp> keyAndLogicalDeletedProps(
             ImmutableType type,
             Collection<ImmutableProp> keyProps

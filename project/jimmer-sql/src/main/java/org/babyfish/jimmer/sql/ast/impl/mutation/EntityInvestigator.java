@@ -135,7 +135,7 @@ class EntityInvestigator {
             if (!mapByKeys.isEmpty()) {
                 Map<Object, ImmutableSpi> rowMap = mapByKeys.values().iterator().next();
                 for (DraftSpi draft : drafts) {
-                    Object key = Keys.keyOf(draft, group.getProps());
+                    Object key = Keys.matchingKeyOf(draft, group.getProps());
                     ImmutableSpi row = rowMap.get(key);
                     if (row != null) {
                         for (ImmutableProp missedProp : missedProps) {
@@ -265,7 +265,7 @@ class EntityInvestigator {
                 }
                 PropId idPropId = idProp.getId();
                 for (ImmutableSpi entity : entities) {
-                    Object key = Keys.keyOf(entity, keyProps);
+                    Object key = Keys.matchingKeyOf(entity, keyProps);
                     ImmutableSpi row = rowMap.get(key);
                     if (row != null) {
                         if (!isSameIdentifier(entity, row, idPropId, primaryGroup)) {
@@ -333,8 +333,8 @@ class EntityInvestigator {
             return false;
         } else if (primaryGroup != null) {
             return Objects.equals(
-                    Keys.keyOf(entity, primaryGroup.getProps()),
-                    Keys.keyOf(row, primaryGroup.getProps())
+                    Keys.matchingKeyOf(entity, primaryGroup.getProps()),
+                    Keys.matchingKeyOf(row, primaryGroup.getProps())
             );
         } else {
             return entity.__get(idPropId).equals(row.__get(idPropId));
