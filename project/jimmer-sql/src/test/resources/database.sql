@@ -1932,6 +1932,12 @@ create table issue_1434_user_department_mapping(
 alter table issue_1434_user_department_mapping
     add constraint pk_issue_1434_user_department_mapping
         primary key(user_id, department_id);
+alter table issue_1434_user_department_mapping
+    add constraint fk_issue_1434_mapping_user
+        foreign key(user_id) references issue_1434_user(id);
+alter table issue_1434_user_department_mapping
+    add constraint fk_issue_1434_mapping_department
+        foreign key(department_id) references issue_1434_department(id);
 
 create table issue_1434_message(
     id bigint not null,
@@ -2069,6 +2075,9 @@ create table category_2(
     deleted_millis bigint not null
 );
 alter table category_2
+    add constraint pk_category_2
+        primary key(id);
+alter table category_2
     add constraint uq_category
         unique(name);
 
@@ -2179,7 +2188,7 @@ INSERT INTO public.issue888_item (id, name, parent_id, structure_id) values
             (3, 'sub-child-item3', 4, 1);
 
 create table time_row(
-    id bigint not null,
+    id bigint not null primary key,
     value1 timestamp not null,
     value2 date not null,
     value3 time not null,
