@@ -122,6 +122,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyObjMap;
 
+    private Map<KeyMatcher.Group, Map<Object, Object>> generatedIdMap;
+
     private Fetcher<ImmutableSpi> originalFetcher;
 
     private ShapedEntityMap<DraftSpi> associationMap;
@@ -669,7 +671,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             if (item.getOriginal() == null && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
                 DraftSpi draft = item.getDraft();
-                assignId(draft);
+                assignId(draft, items.size() > 1);
                 assignVersion(draft);
                 assignLocalDeletedInfo(draft);
                 assignDefaultValues(draft);
@@ -724,12 +726,31 @@ abstract class AbstractPreHandler implements PreHandler {
         }
     }
 
-    private void assignId(DraftSpi draft) {
+    final void assignId(DraftSpi draft, boolean deduplicate) {
         PropId idPropId = idProp.getId();
         if (draft.__isLoaded(idPropId)) {
             return;
         }
-        Object id = ctx.allocateId();
+        KeyMatcher.Group group = deduplicate ? keyMatcher.match(draft) : null;
+        Map<Object, Object> ids = group != null && generatedIdMap != null ? generatedIdMap.get(group) : null;
+        Object key = ids != null ? Keys.matchingKeyOf(draft, group.getProps()) : null;
+        Object id = ids != null ? ids.get(key) : null;
+        if (id == null) {
+            id = ctx.allocateId();
+            if (id != null && group != null) {
+                // Resolve identity before generated ids become the batching/deduplication key.
+                // Keep this registry local to the handler, whose save options and target type are shared.
+                if (generatedIdMap == null) {
+                    generatedIdMap = new HashMap<>();
+                }
+                if (ids == null) {
+                    ids = new HashMap<>();
+                    generatedIdMap.put(group, ids);
+                    key = Keys.matchingKeyOf(draft, group.getProps());
+                }
+                ids.put(key, id);
+            }
+        }
         if (id != null) {
             draft.__set(idPropId, id);
         }
@@ -1021,12 +1042,8 @@ class InsertPreHandler extends AbstractPreHandler {
                     .getGeneratorContext()
                     .getIdGenerator(ctx.path.getType());
             if (idGenerator instanceof UserIdGenerator<?>) {
-                PropId idPropId = ctx.path.getType().getIdProp().getId();
                 for (DraftSpi draft : draftsWithKey) {
-                    Object id = ctx.allocateId();
-                    if (id != null) {
-                        draft.__set(idPropId, id);
-                    }
+                    assignId(draft, draftsWithKey.size() > 1);
                 }
             }
         }

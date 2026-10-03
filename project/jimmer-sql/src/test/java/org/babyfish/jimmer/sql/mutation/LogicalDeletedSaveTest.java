@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.model.ld.LifecycleItemDraft;
 import org.babyfish.jimmer.sql.model.ld.LifecycleItemFetcher;
 import org.babyfish.jimmer.sql.model.ld.LifecycleItemProps;
 import org.babyfish.jimmer.sql.model.ld.BoolKeyFileDraft;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +33,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.babyfish.jimmer.sql.model.ld.LifecycleItem.Status.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +42,43 @@ public class LogicalDeletedSaveTest extends AbstractMutationTest {
 
     enum Route {
         INSERT, UPDATE, UPSERT, FALLBACK
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Route.class, names = {"INSERT", "UPSERT", "FALLBACK"})
+    void generatedIdsRespectLiveStatus(Route route) {
+        AtomicInteger generated = new AtomicInteger(1000);
+        JSqlClient client = getSqlClient(builder -> {
+            builder.setIdGenerator(LifecycleItem.class, (UserIdGenerator<Long>) type -> (long) generated.incrementAndGet());
+            if (route == Route.FALLBACK) {
+                builder.setDialect(new H2Dialect() {
+                    @Override
+                    public boolean isUpsertSupported() {
+                        return false;
+                    }
+                });
+            }
+        });
+        jdbc(con -> {
+            BatchSaveResult<LifecycleItem> result = client.saveEntitiesCommand(Arrays.asList(
+                    LifecycleItemDraft.$.produce(draft -> draft.setCode("shared").setName("new").setStatus(NEW)),
+                    LifecycleItemDraft.$.produce(draft -> draft.setCode("shared").setName("running").setStatus(RUNNING)),
+                    LifecycleItemDraft.$.produce(draft -> {
+                        draft.setCode("shared").setName("last");
+                        if (route == Route.UPSERT) {
+                            draft.setStatus(NEW);
+                        }
+                    })
+            )).setMode(route == Route.INSERT ? SaveMode.INSERT_ONLY : SaveMode.UPSERT).execute(con);
+            assertEquals(1002, generated.get());
+            assertEquals(1001L, result.getItems().get(0).getModifiedEntity().id());
+            assertEquals(1002L, result.getItems().get(1).getModifiedEntity().id());
+            assertEquals(1001L, result.getItems().get(2).getModifiedEntity().id());
+            assertEquals(NEW, status(con, 1001));
+            assertEquals(RUNNING, status(con, 1002));
+            assertEquals(2, result.getTotalAffectedRowCount());
+            assertEquals(route == Route.FALLBACK ? 2 : 1, getExecutions().size());
+        });
     }
 
     @BeforeAll
