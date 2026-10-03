@@ -152,6 +152,26 @@ public class PrettySqlAppenderTest {
         Assertions.assertEquals("select 'O''Reilly'", format(SqlFormatter.INLINE_PRETTY, new PostgresDialect(), "O'Reilly"));
     }
 
+    @Test
+    public void testDbLiteralIsRenderedOnce() {
+        DbLiteral nullLiteral = new DbLiteral.DbNull(String.class);
+        Assertions.assertEquals("select null", format(SqlFormatter.INLINE_PRETTY, new PostgresDialect(), nullLiteral));
+        Assertions.assertEquals("select null", format(SqlFormatter.INLINE_PRETTY, null, nullLiteral));
+        Assertions.assertEquals("select ? /* <null: String> */", format(SqlFormatter.PRETTY, new PostgresDialect(), nullLiteral));
+    }
+
+    @Test
+    public void testCustomDbLiteralAppender() {
+        DbLiteral literal = new DbLiteral.DbNull(Integer.class) {
+            @Override
+            public void renderValue(StringBuilder builder) {
+                builder.append("42");
+            }
+        };
+        Assertions.assertEquals("select 42", format(SqlFormatter.INLINE_PRETTY, new PostgresDialect(), literal));
+        Assertions.assertEquals("select 42", format(SqlFormatter.INLINE_PRETTY, null, literal));
+    }
+
     private static void assertArray(String expected, String type, Object... values) {
         Assertions.assertEquals(
                 "select " + expected,

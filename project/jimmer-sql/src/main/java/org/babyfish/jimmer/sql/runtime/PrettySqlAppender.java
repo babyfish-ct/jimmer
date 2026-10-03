@@ -154,6 +154,8 @@ abstract class PrettySqlAppender {
                     }
                 };
 
+        private static final VariableAppender<DbLiteral> DB_LITERAL_APPENDER = new DbLiteralAppender();
+
         @Override
         public void append(
                 StringBuilder builder,
@@ -177,7 +179,8 @@ abstract class PrettySqlAppender {
             for (int index : variablePositions) {
                 builder.append(sql, cloneFrom, jdbcParamIndex(sql, cloneFrom, index));
                 cloneFrom = index;
-                appendVariable(builder, variables.get(paramIndex++), dialect);
+                Object variable = variables.get(paramIndex++);
+                resolveAppender(variable).append(builder, variable, dialect);
             }
             int len = sql.length();
             if (cloneFrom < len) {
@@ -186,23 +189,11 @@ abstract class PrettySqlAppender {
         }
 
         @SuppressWarnings("unchecked")
-        private static void appendVariable(
-                StringBuilder builder,
-                Object variable,
-                Dialect dialect
-        ) {
-            if (variable instanceof TypedList<?> && dialect != null &&
-                    dialect.appendArrayLiteral(builder, (TypedList<?>) variable)) {
-                return;
-            }
-            if (variable instanceof DbLiteral) {
-                ((DbLiteral)variable).renderValue(builder);
-            }
-            VariableAppender<?> appender = APPENDER_MAP.get(variable.getClass());
-            if (appender == null) {
-                appender = ANY_APPENDER;
-            }
-            ((VariableAppender<Object>)appender).append(builder, variable);
+        private static VariableAppender<Object> resolveAppender(Object variable) {
+            VariableAppender<?> appender = variable instanceof DbLiteral ?
+                    DB_LITERAL_APPENDER :
+                    APPENDER_MAP.getOrDefault(variable.getClass(), ANY_APPENDER);
+            return (VariableAppender<Object>) appender;
         }
 
         @Override
@@ -222,6 +213,33 @@ abstract class PrettySqlAppender {
 
         private interface VariableAppender<T> {
             void append(StringBuilder builder, T variable);
+
+            default void append(StringBuilder builder, T variable, Dialect dialect) {
+                append(builder, variable);
+            }
+        }
+
+        private static class DbLiteralAppender implements VariableAppender<DbLiteral> {
+
+            @Override
+            public void append(StringBuilder builder, DbLiteral variable) {
+                variable.renderValue(builder);
+            }
+        }
+
+        private static class TypedListAppender implements VariableAppender<TypedList<?>> {
+
+            @Override
+            public void append(StringBuilder builder, TypedList<?> variable) {
+                builder.append('\'').append(variable).append('\'');
+            }
+
+            @Override
+            public void append(StringBuilder builder, TypedList<?> variable, Dialect dialect) {
+                if (dialect == null || !dialect.appendArrayLiteral(builder, variable)) {
+                    append(builder, variable);
+                }
+            }
         }
 
         private static int jdbcParamIndex(String sql, int start, int stop) {
@@ -403,6 +421,7 @@ abstract class PrettySqlAppender {
             map.put(OffsetDateTime.class, new OffsetDateTimeAppender());
             map.put(ZonedDateTime.class, new ZonedDateTimeAppender());
             map.put(byte[].class, new ByteArrayAppender());
+            map.put(TypedList.class, new TypedListAppender());
             APPENDER_MAP = map;
         }
     }
