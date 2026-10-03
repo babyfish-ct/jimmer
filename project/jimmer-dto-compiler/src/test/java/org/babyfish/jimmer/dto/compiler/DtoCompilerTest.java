@@ -1121,6 +1121,52 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testAnnotationPositionalValues() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "import org.example.{A, N}\n" +
+                        "@A(10, 20, label = \"x\", nested = N(30, 40))\nBook { name }"
+        );
+        Anno anno = dtoTypes.get(0).getAnnotations().get(0);
+        Assertions.assertEquals("[10, 20]", anno.getValueMap().get("value").toString());
+        Assertions.assertEquals("\"x\"", anno.getValueMap().get("label").toString());
+        Anno nested = ((Anno.AnnoValue) anno.getValueMap().get("nested")).anno;
+        Assertions.assertEquals("[30, 40]", nested.getValueMap().get("value").toString());
+        Assertions.assertEquals(3, anno.getValueMap().size());
+    }
+
+    @Test
+    public void testEmptyAnnotationArrays() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "import org.example.A\n@A({}, other = [])\nBook { name }"
+        );
+        Anno anno = dtoTypes.get(0).getAnnotations().get(0);
+        Assertions.assertTrue(((Anno.ArrayValue) anno.getValueMap().get("value")).elements.isEmpty());
+        Assertions.assertTrue(((Anno.ArrayValue) anno.getValueMap().get("other")).elements.isEmpty());
+    }
+
+    @Test
+    public void testIllegalAnnotationPositionalValues() {
+        for (String args : Arrays.asList("10, value = 20", "10, 20, value = 30")) {
+            DtoAstException ex = Assertions.assertThrows(
+                    DtoAstException.class,
+                    () -> MyDtoCompiler.book("import org.example.A\n@A(" + args + ")\nBook { name }")
+            );
+            Assertions.assertTrue(ex.getMessage().contains("Duplicated annotation argument \"value\""), ex.getMessage());
+        }
+        for (String args : Arrays.asList("{10, 20}, 30", "10, [20, 30]")) {
+            DtoAstException ex = Assertions.assertThrows(
+                    DtoAstException.class,
+                    () -> MyDtoCompiler.book("import org.example.A\n@A(" + args + ")\nBook { name }")
+            );
+            Assertions.assertTrue(ex.getMessage().contains("Cannot mix an array and positional annotation values"), ex.getMessage());
+        }
+        Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book("import org.example.A\n@A(label = \"x\", 10)\nBook { name }")
+        );
+    }
+
+    @Test
     public void testAnnotation() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import org.framework.annotations.{A, B, C, D}\n" +

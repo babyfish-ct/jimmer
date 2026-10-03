@@ -111,8 +111,26 @@ class AnnoParser {
 
     private Map<String, Anno.Value> parse(DtoParser.AnnotationArgumentsContext ctx) {
         Map<String, Anno.Value> argumentMap = new LinkedHashMap<>();
-        if (ctx.defaultArgument != null) {
-            argumentMap.put("value", parse(ctx.defaultArgument));
+        if (ctx.positionalArguments.size() == 1) {
+            argumentMap.put("value", parse(ctx.positionalArguments.get(0)));
+        } else if (ctx.positionalArguments.size() > 1) {
+            for (DtoParser.AnnotationValueContext valueCtx : ctx.positionalArguments) {
+                if (valueCtx.annotationArrayValue() != null) {
+                    throw this.ctx.exception(
+                            valueCtx.start.getLine(),
+                            valueCtx.start.getCharPositionInLine(),
+                            "Cannot mix an array and positional annotation values"
+                    );
+                }
+            }
+            argumentMap.put(
+                    "value",
+                    new Anno.ArrayValue(
+                            Collections.unmodifiableList(
+                                    ctx.positionalArguments.stream().map(this::parse).collect(Collectors.toList())
+                            )
+                    )
+            );
         }
         for (DtoParser.AnnotationNamedArgumentContext namedCtx : ctx.namedArguments) {
             String name = namedCtx.name.getText();

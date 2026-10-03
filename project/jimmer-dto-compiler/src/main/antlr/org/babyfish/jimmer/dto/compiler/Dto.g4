@@ -347,7 +347,9 @@ annotation
 
 annotationArguments
     :
-    defaultArgument = annotationValue (',' namedArguments += annotationNamedArgument)*
+    positionalArguments += annotationValue
+    (',' positionalArguments += annotationValue)*
+    (',' namedArguments += annotationNamedArgument)*
     |
     namedArguments += annotationNamedArgument (',' namedArguments += annotationNamedArgument)*
     ;
@@ -378,9 +380,9 @@ annotationSingleValue
 
 annotationArrayValue
     :
-    '{' elements += annotationSingleValue (',' elements += annotationSingleValue)* '}'
+    '{' (elements += annotationSingleValue (',' elements += annotationSingleValue)*)? '}'
     |
-    '[' elements += annotationSingleValue (',' elements += annotationSingleValue)* ']'
+    '[' (elements += annotationSingleValue (',' elements += annotationSingleValue)*)? ']'
     ;
 
 nestedAnnotation
