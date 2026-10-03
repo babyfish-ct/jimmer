@@ -9,7 +9,8 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.NonSharedList;
+import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.runtime.ListDraft;
 import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -48,6 +49,7 @@ public class DraftImplGenerator {
                 .addSuperinterface(draftSpiClassName)
                 .addSuperinterface(type.getDraftClassName());
         addFields();
+        addListDraftAccessors();
         addStaticFields();
         addConstructor();
         addReadonlyMethods();
@@ -119,6 +121,12 @@ public class DraftImplGenerator {
                         )
                         .build()
         );
+        TypeName draftType = ParameterizedTypeName.get(ClassName.get(ListDraft.class), WildcardTypeName.subtypeOf(Object.class));
+        for (ImmutableProp prop : type.getPropsOrderById()) {
+            if (prop.isList() && prop.isValueRequired()) {
+                typeBuilder.addField(draftType, "__" + prop.getName() + "ListDraft", Modifier.PRIVATE);
+            }
+        }
     }
 
     private void addStaticFields() {
@@ -230,6 +238,66 @@ public class DraftImplGenerator {
                 typeBuilder.addField(builder.build());
             }
         }
+    }
+
+    private void addListDraftAccessors() {
+        addListDraftGetter();
+        addListDraftSetter();
+    }
+
+    private void addListDraftGetter() {
+        TypeName draftType = ParameterizedTypeName.get(ClassName.get(ListDraft.class), WildcardTypeName.subtypeOf(Object.class));
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("__getListDraft")
+                .addModifiers(Modifier.PUBLIC).addAnnotation(Override.class).returns(draftType).addParameter(PropId.class, "prop");
+        builder.beginControlFlow("switch (prop.asIndex())");
+        for (ImmutableProp prop : type.getPropsOrderById()) {
+            if (prop.isList() && prop.isValueRequired()) {
+                builder.addStatement("case $L: return $L", prop.getSlotName(), "__" + prop.getName() + "ListDraft");
+            }
+        }
+        builder.addStatement("default: return __getListDraftByName(prop)");
+        builder.endControlFlow();
+        typeBuilder.addMethod(builder.build());
+        builder = MethodSpec.methodBuilder("__getListDraftByName")
+                .addModifiers(Modifier.PRIVATE).returns(draftType).addParameter(PropId.class, "prop");
+        addNamedListDraftAccess(builder, false);
+        builder.addStatement("return null");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addListDraftSetter() {
+        TypeName draftType = ParameterizedTypeName.get(ClassName.get(ListDraft.class), WildcardTypeName.subtypeOf(Object.class));
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("__setListDraft")
+                .addModifiers(Modifier.PUBLIC).addAnnotation(Override.class)
+                .addParameter(PropId.class, "prop").addParameter(draftType, "draft");
+        builder.beginControlFlow("switch (prop.asIndex())");
+        for (ImmutableProp prop : type.getPropsOrderById()) {
+            if (prop.isList() && prop.isValueRequired()) {
+                builder.addStatement("case $L: $L = draft; return", prop.getSlotName(), "__" + prop.getName() + "ListDraft");
+            }
+        }
+        builder.addStatement("default: __setListDraftByName(prop, draft)");
+        builder.endControlFlow();
+        typeBuilder.addMethod(builder.build());
+        builder = MethodSpec.methodBuilder("__setListDraftByName")
+                .addModifiers(Modifier.PRIVATE).addParameter(PropId.class, "prop").addParameter(draftType, "draft");
+        addNamedListDraftAccess(builder, true);
+        builder.addStatement("throw new IllegalArgumentException($S + prop)", "Illegal list property: ");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addNamedListDraftAccess(MethodSpec.Builder builder, boolean setter) {
+        builder.beginControlFlow("if (prop.asName() != null)");
+        builder.addStatement("$T namedProp = __type().getProps().get(prop.asName())", org.babyfish.jimmer.meta.ImmutableProp.class);
+        builder.beginControlFlow("if (namedProp != null)");
+        if (setter) {
+            builder.addStatement("__setListDraft(namedProp.getId(), draft)");
+            builder.addStatement("return");
+        } else {
+            builder.addStatement("return __getListDraft(namedProp.getId())");
+        }
+        builder.endControlFlow();
+        builder.endControlFlow();
     }
 
     private void addConstructor() {
@@ -388,9 +456,11 @@ public class DraftImplGenerator {
             }
         } else if (prop.isList()) {
             builder.addCode(
-                    "return $L.$L($L.$L(), $T.class, $L);",
+                    "return $L.$L(this, $T.byIndex($L), $L.$L(), $T.class, $L);",
                     Constants.DRAFT_FIELD_CTX,
                     "toDraftList",
+                    Constants.PROP_ID_CLASS_NAME,
+                    prop.getSlotName(),
                     UNMODIFIED,
                     prop.getGetterName(),
                     prop.getElementTypeName(),
@@ -466,9 +536,11 @@ public class DraftImplGenerator {
                 );
             } else {
                 builder.addCode(
-                        "return $L.$L($L.$L(), $T.class, $L);",
+                        "return $L.$L(this, $T.byIndex($L), $L.$L(), $T.class, $L);",
                         Constants.DRAFT_FIELD_CTX,
                         "toDraftList",
+                        Constants.PROP_ID_CLASS_NAME,
+                        prop.getSlotName(),
                         UNMODIFIED,
                         prop.getGetterName(),
                         prop.getElementType(),
@@ -556,12 +628,16 @@ public class DraftImplGenerator {
             builder.addStatement("$T __tmpModified = $L()", type.getImplClassName(), Constants.DRAFT_FIELD_MODIFIED);
             if (prop.isList()) {
                 builder.addStatement(
-                        "__tmpModified.$L = $T.of(__tmpModified.$L, $L)",
-                        prop.getValueName(),
-                        NonSharedList.class,
-                        prop.getValueName(),
+                        "$T __tmpList = $T.prepareListForAssignment($L, $L)",
+                        prop.getTypeName(),
+                        Internal.class,
+                        Constants.DRAFT_FIELD_CTX,
                         prop.getName()
                 );
+                builder.beginControlFlow("if (__tmpModified.$L != __tmpList)", prop.getValueName());
+                builder.addStatement("$L = null", "__" + prop.getName() + "ListDraft");
+                builder.endControlFlow();
+                builder.addStatement("__tmpModified.$L = __tmpList", prop.getValueName());
             } else {
                 builder.addStatement("__tmpModified.$L = $L", prop.getValueName(), prop.getName());
             }
@@ -769,6 +845,9 @@ public class DraftImplGenerator {
         }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
+            if (prop.isList() && prop.getBaseProp() == null && prop.isValueRequired()) {
+                builder.addStatement("$L = null", "__" + prop.getName() + "ListDraft");
+            }
             if (prop.getBaseProp() != null) {
                 builder.addStatement(
                         "__unload($T.byIndex($L));break",
@@ -878,12 +957,17 @@ public class DraftImplGenerator {
                             prop.getTypeName(),
                             prop.getGetterName()
                     );
-                    builder.addStatement(
-                            "$T newValue = $L.$L(oldValue)",
-                            prop.getTypeName(),
-                            Constants.DRAFT_FIELD_CTX,
-                            prop.isList() ? "resolveList" : "resolveObject"
-                    );
+                    if (prop.isList()) {
+                        builder.addStatement(
+                                "$T newValue = $L.resolveList(this, $T.byIndex($L), oldValue)",
+                                prop.getTypeName(),
+                                Constants.DRAFT_FIELD_CTX,
+                                Constants.PROP_ID_CLASS_NAME,
+                                prop.getSlotName()
+                        );
+                    } else {
+                        builder.addStatement("$T newValue = $L.resolveObject(oldValue)", prop.getTypeName(), Constants.DRAFT_FIELD_CTX);
+                    }
                     builder.beginControlFlow("if (oldValue != newValue)");
                     builder.addStatement("$L(newValue)", prop.getSetterName());
                     builder.endControlFlow();
@@ -898,12 +982,11 @@ public class DraftImplGenerator {
                 if (prop.isValueRequired()) {
                     if (prop.isList()) {
                         builder.addStatement(
-                                "__tmpModified.$L = $T.of(__tmpModified.$L, $L.$L(__tmpModified.$L))",
-                                prop.getValueName(),
-                                NonSharedList.class,
+                                "__tmpModified.$L = $L.resolveList(this, $T.byIndex($L), __tmpModified.$L)",
                                 prop.getValueName(),
                                 Constants.DRAFT_FIELD_CTX,
-                                "resolveList",
+                                Constants.PROP_ID_CLASS_NAME,
+                                prop.getSlotName(),
                                 prop.getValueName()
                         );
                     } else if (prop.isAssociation(false)) {

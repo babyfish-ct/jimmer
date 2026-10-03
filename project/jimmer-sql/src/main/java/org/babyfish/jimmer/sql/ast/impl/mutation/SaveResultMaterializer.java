@@ -473,6 +473,8 @@ class SaveResultMaterializer {
                         if (value != null) {
                             if (prop.isReferenceList(TargetLevel.OBJECT)) {
                                 value = draft.__draftContext().toDraftList(
+                                        draft,
+                                        propId,
                                         (List<Object>) value,
                                         (Class<Object>) prop.getElementClass(),
                                         true

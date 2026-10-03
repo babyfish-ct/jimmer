@@ -9,7 +9,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.NonSharedList;
 import org.babyfish.jimmer.sql.Id;
 import org.jspecify.annotations.Nullable;
 
@@ -73,7 +72,7 @@ public class ImplGenerator {
                 FieldSpec.Builder valueBuilder = FieldSpec.builder(
                         prop.isList() ?
                                 ParameterizedTypeName.get(
-                                        ClassName.get(NonSharedList.class),
+                                        Constants.LIST_CLASS_NAME,
                                         prop.getElementTypeName()
                                 ) :
                                 TypeName.get(prop.getReturnType()),

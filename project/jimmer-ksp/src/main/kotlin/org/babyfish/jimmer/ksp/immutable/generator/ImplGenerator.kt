@@ -69,7 +69,7 @@ class ImplGenerator(
                     .builder(
                         it,
                         if (prop.isList) {
-                            NON_SHARED_LIST_CLASS_NAME
+                            LIST
                                 .parameterizedBy(prop.targetTypeName())
                                 .copy(nullable = true)
                         } else {
