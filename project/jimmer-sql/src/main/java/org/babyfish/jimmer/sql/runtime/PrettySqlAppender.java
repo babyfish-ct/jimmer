@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.sql.collection.TypedList;
+import org.babyfish.jimmer.sql.dialect.Dialect;
+
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -25,6 +28,16 @@ abstract class PrettySqlAppender {
             List<Object> variables,
             List<Integer> variablePositions
     );
+
+    public void append(
+            StringBuilder builder,
+            String sql,
+            List<Object> variables,
+            List<Integer> variablePositions,
+            Dialect dialect
+    ) {
+        append(builder, sql, variables, variablePositions);
+    }
 
     public static PrettySqlAppender comment(int maxVariableLength) {
         return maxVariableLength == DEFAULT_MAX_VARIABLE_LENGTH ?
@@ -148,12 +161,23 @@ abstract class PrettySqlAppender {
                 List<Object> variables,
                 List<Integer> variablePositions
         ) {
+            append(builder, sql, variables, variablePositions, null);
+        }
+
+        @Override
+        public void append(
+                StringBuilder builder,
+                String sql,
+                List<Object> variables,
+                List<Integer> variablePositions,
+                Dialect dialect
+        ) {
             int cloneFrom = 0;
             int paramIndex = 0;
             for (int index : variablePositions) {
                 builder.append(sql, cloneFrom, jdbcParamIndex(sql, cloneFrom, index));
                 cloneFrom = index;
-                appendVariable(builder, variables.get(paramIndex++));
+                appendVariable(builder, variables.get(paramIndex++), dialect);
             }
             int len = sql.length();
             if (cloneFrom < len) {
@@ -164,8 +188,13 @@ abstract class PrettySqlAppender {
         @SuppressWarnings("unchecked")
         private static void appendVariable(
                 StringBuilder builder,
-                Object variable
+                Object variable,
+                Dialect dialect
         ) {
+            if (variable instanceof TypedList<?> && dialect != null &&
+                    dialect.appendArrayLiteral(builder, (TypedList<?>) variable)) {
+                return;
+            }
             if (variable instanceof DbLiteral) {
                 ((DbLiteral)variable).renderValue(builder);
             }

@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -61,10 +64,21 @@ public final class SqlFormatter {
     }
 
     public void append(StringBuilder builder, String sql, List<Object> variables, List<Integer> variablePositions) {
+        append(builder, sql, variables, variablePositions, null);
+    }
+
+    public void append(
+            StringBuilder builder,
+            String sql,
+            List<Object> variables,
+            List<Integer> variablePositions,
+            @Nullable Dialect dialect
+    ) {
         if (prettySqlAppender == null) {
             builder.append(sql);
+        } else {
+            prettySqlAppender.append(builder, sql, variables, variablePositions, dialect);
         }
-        prettySqlAppender.append(builder, sql, variables, variablePositions);
     }
 
     @Override

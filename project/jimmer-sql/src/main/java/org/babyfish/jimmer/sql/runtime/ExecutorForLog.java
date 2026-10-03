@@ -235,7 +235,8 @@ public class ExecutorForLog extends AbstractExecutorProxy {
                     builder,
                     sql,
                     variables,
-                    variablePositions
+                    variablePositions,
+                    sqlClient.getDialect()
             );
         }
         builder.append('\n');
