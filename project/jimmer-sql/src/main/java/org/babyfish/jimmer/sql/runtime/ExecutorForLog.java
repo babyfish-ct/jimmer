@@ -55,7 +55,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
 
     @Override
     public <R> R execute(@NotNull Args<R> args) {
-        if (!logger.isEnabledForLevel(level)) {
+        if (!isEnabled(logger, level)) {
             return raw.execute(args);
         }
         if (args.sqlClient.getSqlFormatter().isPretty()) {
@@ -70,7 +70,46 @@ public class ExecutorForLog extends AbstractExecutorProxy {
      * @param message the message to log
      */
     protected void log(String message, Object... args) {
-        logger.atLevel(level).log(message, args);
+        log(logger, level, message, args);
+    }
+
+    private static boolean isEnabled(Logger logger, Level level) {
+        switch (level) {
+            case ERROR:
+                return logger.isErrorEnabled();
+            case WARN:
+                return logger.isWarnEnabled();
+            case INFO:
+                return logger.isInfoEnabled();
+            case DEBUG:
+                return logger.isDebugEnabled();
+            case TRACE:
+                return logger.isTraceEnabled();
+            default:
+                throw new AssertionError("Unexpected log level: " + level);
+        }
+    }
+
+    private static void log(Logger logger, Level level, String message, Object... args) {
+        switch (level) {
+            case ERROR:
+                logger.error(message, args);
+                break;
+            case WARN:
+                logger.warn(message, args);
+                break;
+            case INFO:
+                logger.info(message, args);
+                break;
+            case DEBUG:
+                logger.debug(message, args);
+                break;
+            case TRACE:
+                logger.trace(message, args);
+                break;
+            default:
+                throw new AssertionError("Unexpected log level: " + level);
+        }
     }
 
     @Override
@@ -84,7 +123,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             JSqlClientImplementor sqlClient
     ) {
         super.openCursor(cursorId, sql, variables, variablePositions, purpose, ctx, sqlClient);
-        if (!logger.isEnabledForLevel(level)) {
+        if (!isEnabled(logger, level)) {
             return;
         }
         StringBuilder builder = new StringBuilder();
@@ -104,7 +143,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
     @Override
     public void closeCursor(long cursorId) {
         super.closeCursor(cursorId);
-        if (!logger.isEnabledForLevel(level)) {
+        if (!isEnabled(logger, level)) {
             return;
         }
         log(RESPONSE + "Close cursor(" + cursorId + ")");
@@ -301,7 +340,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
 
         @Override
         public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
-            if (!logger.isEnabledForLevel(level)) {
+            if (!isEnabled(logger, level)) {
                 return raw.execute(exceptionTranslator);
             }
             if (raw.sqlClient().getSqlFormatter().isPretty()) {
@@ -316,7 +355,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
          * @param message the message to log
          */
         protected void log(String message, Object... args) {
-            logger.atLevel(level).log(message, args);
+            ExecutorForLog.log(logger, level, message, args);
         }
 
         @Override

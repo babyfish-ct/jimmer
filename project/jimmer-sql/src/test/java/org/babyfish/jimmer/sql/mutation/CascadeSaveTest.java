@@ -1951,8 +1951,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)"
+                                "update BOOK set STORE_ID = ? where ID = ?"
                         );
+                        it.variables(manningId, graphQLInActionId1);
                     });
                     ctx.statement(it -> {
                         it.sql(

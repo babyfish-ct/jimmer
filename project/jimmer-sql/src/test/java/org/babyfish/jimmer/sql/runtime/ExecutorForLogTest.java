@@ -6,7 +6,10 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -16,11 +19,36 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class ExecutorForLogTest {
+
+    @ParameterizedTest
+    @EnumSource(Level.class)
+    public void testLogLevelCompatibility(Level level) {
+        String methodName = level.name().toLowerCase(Locale.ROOT);
+        String enabledMethod = "is" + level.name().charAt(0) + methodName.substring(1) + "Enabled";
+        for (boolean enabled : new boolean[] {false, true}) {
+            List<String> calls = new ArrayList<>();
+            Logger logger = (Logger) Proxy.newProxyInstance(Logger.class.getClassLoader(), new Class<?>[] {Logger.class},
+                    (proxy, method, args) -> {
+                        calls.add(method.getName());
+                        if (method.getReturnType() == boolean.class) {
+                            Assertions.assertEquals(enabledMethod, method.getName());
+                            return enabled;
+                        }
+                        Assertions.assertEquals(methodName, method.getName());
+                        Assertions.assertEquals("<===Close cursor(1)", args[0]);
+                        return null;
+                    });
+            ExecutorForLog.wrap(DefaultExecutor.INSTANCE, logger, level).closeCursor(1L);
+            Assertions.assertEquals(enabled ? Arrays.asList(enabledMethod, methodName) : Collections.singletonList(enabledMethod), calls);
+        }
+    }
 
     @Test
     public void testPostgresArrayInCursorLog() {

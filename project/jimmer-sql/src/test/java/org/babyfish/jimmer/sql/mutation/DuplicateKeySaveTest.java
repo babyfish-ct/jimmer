@@ -18,7 +18,6 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.model.steam.*;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -31,20 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DuplicateKeySaveTest extends AbstractMutationTest {
-
-    @BeforeAll
-    static void createTables() {
-        jdbc(null, false, con -> {
-            try (java.sql.Statement stmt = con.createStatement()) {
-                stmt.execute("create sequence if not exists DUPLICATE_KEY_ID_SEQ start with 10000");
-                stmt.execute("create table if not exists STEAM_GAME(ID varchar(40) primary key, APP_ID int not null unique)");
-                stmt.execute("create table if not exists STEAM_BUNDLE(ID varchar(40) primary key, BUNDLE_ID int not null unique)");
-                stmt.execute("create table if not exists STEAM_BUNDLE_GAME(" +
-                        "BUNDLE_ID varchar(40) not null references STEAM_BUNDLE(ID), " +
-                        "GAME_ID varchar(40) not null references STEAM_GAME(ID), primary key(BUNDLE_ID, GAME_ID))");
-            }
-        });
-    }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})

@@ -19,7 +19,6 @@ import org.babyfish.jimmer.sql.model.ld.LifecycleItemFetcher;
 import org.babyfish.jimmer.sql.model.ld.LifecycleItemProps;
 import org.babyfish.jimmer.sql.model.ld.BoolKeyFileDraft;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,11 +78,6 @@ public class LogicalDeletedSaveTest extends AbstractMutationTest {
             assertEquals(2, result.getTotalAffectedRowCount());
             assertEquals(route == Route.FALLBACK ? 2 : 1, getExecutions().size());
         });
-    }
-
-    @BeforeAll
-    static void createTable() {
-        jdbc(null, false, LogicalDeletedSaveTest::createTable);
     }
 
     private static void createTable(Connection con) throws SQLException {

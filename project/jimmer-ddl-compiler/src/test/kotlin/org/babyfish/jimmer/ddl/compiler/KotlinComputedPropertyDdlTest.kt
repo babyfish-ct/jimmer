@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCompilerApi::class)
 @RunWith(Parameterized::class)
-class KotlinComputedPropertyDdlTest(private val kind: String) {
+class KotlinComputedPropertyDdlTest(private val kind: String) : AbstractKspTest() {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 

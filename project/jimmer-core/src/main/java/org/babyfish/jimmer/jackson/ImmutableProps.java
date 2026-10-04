@@ -3,6 +3,7 @@ package org.babyfish.jimmer.jackson;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -11,6 +12,15 @@ public class ImmutableProps {
     private ImmutableProps() {}
 
     public static ImmutableProp get(ImmutableType type, Method method) {
+        ImmutableProp prop = tryGet(type, method);
+        if (prop == null) {
+            throw new IllegalArgumentException("There is no jimmer property for " + method);
+        }
+        return prop;
+    }
+
+    @Nullable
+    public static ImmutableProp tryGet(ImmutableType type, Method method) {
         String propName = StringUtil.propName(method.getName(), false);
         if (propName == null) {
             propName = method.getName();
@@ -34,9 +44,6 @@ public class ImmutableProps {
             if (conflict) {
                 prop = null;
             }
-        }
-        if (prop == null) {
-            throw new IllegalArgumentException("There is no jimmer property for " + method);
         }
         return prop;
     }
