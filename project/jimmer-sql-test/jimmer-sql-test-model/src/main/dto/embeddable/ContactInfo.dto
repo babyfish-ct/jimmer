@@ -1,0 +1,10 @@
+export org.babyfish.jimmer.sql.model.embedded.ContactInfo
+    -> package org.babyfish.jimmer.sql.model.embedded.dto.shared
+
+input ContactInfoInput {
+    #allScalars
+}
+
+ContactInfoView {
+    #allScalars
+}

@@ -724,13 +724,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     ctx
             );
         } else if (prop.referencedType != null) {
-            if (!baseProp.isAssociation(true)) {
+            if (!baseProp.isAssociation(true) && !baseProp.isEmbedded()) {
                 throw ctx.exception(
                         prop.referencedType.start.getLine(),
                         prop.referencedType.start.getCharPositionInLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
-                                "\", reusable DTO type can only be specified for an association"
+                                "\", reusable DTO type can only be specified for an association or embedded property"
                 );
             }
             if (funcName != null) {

@@ -1166,6 +1166,14 @@ insert into permission(id, name, role_id, deleted, created_time, modified_time)
     (4000, 'p_4', 200, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
 
 
+create table contact_record(
+    id bigint not null primary key,
+    name varchar(50) not null,
+    email varchar(100)
+);
+
+insert into contact_record(id, name, email) values(1, 'Alice', 'old@example.com');
+
 create table transform(
     id bigint not null,
     `left` bigint not null,

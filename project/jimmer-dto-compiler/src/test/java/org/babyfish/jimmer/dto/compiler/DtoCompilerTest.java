@@ -2863,6 +2863,67 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testReusableEmbeddedInput() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = embeddedInputs("input ContactInput { #allScalars }");
+        DtoTypeLinker.link(dtoTypes);
+        Assertions.assertSame(dtoTypes.get(1), dtoTypes.get(0).getDtoProps().get(0).getTargetTypeRef().getSourceType());
+    }
+
+    @Test
+    public void testIllegalReusableEmbeddedInputKind() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = embeddedInputs("ContactInput { #allScalars }");
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> DtoTypeLinker.link(dtoTypes));
+        Assertions.assertTrue(ex.getMessage().contains("Reusable input property requires an input DTO"));
+    }
+
+    @Test
+    public void testIllegalReusableEmbeddedBaseType() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = embeddedInputs("input ContactInput { #allScalars }");
+        List<DtoType<BaseType, BaseProp>> wrongTypes = MyDtoCompiler.book("input ContactInput { name }");
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> DtoTypeLinker.link(Arrays.asList(dtoTypes.get(0), wrongTypes.get(0)))
+        );
+        Assertions.assertTrue(ex.getMessage().contains("does not match the reusable DTO"));
+    }
+
+    @Test
+    public void testIllegalReusableScalarProperty() {
+        DtoAstException ex = Assertions.assertThrows(
+                DtoAstException.class,
+                () -> MyDtoCompiler.book("input BookInput { name -> NameInput }")
+        );
+        Assertions.assertTrue(ex.getMessage().contains(
+                "reusable DTO type can only be specified for an association or embedded property"
+        ));
+    }
+
+    private static List<DtoType<BaseType, BaseProp>> embeddedInputs(String contactDto) {
+        BaseType contactType = new BaseTypeImpl("org.babyfish.jimmer.sql.model.Contact", new BasePropImpl("name")) {
+            @Override
+            public boolean isEntity() {
+                return false;
+            }
+        };
+        BaseProp contactProp = new BasePropImpl("contact", () -> contactType, false, false) {
+            @Override
+            public boolean isAssociation(boolean entityLevel) {
+                return !entityLevel;
+            }
+
+            @Override
+            public boolean isEmbedded() {
+                return true;
+            }
+        };
+        BaseType recordType = new BaseTypeImpl("org.babyfish.jimmer.sql.model.ContactRecord", contactProp);
+        List<DtoType<BaseType, BaseProp>> dtoTypes = new ArrayList<>();
+        dtoTypes.addAll(MyDtoCompiler.compiler("ContactRecord.dto", "input RecordInput { contact -> ContactInput }").compile(recordType));
+        dtoTypes.addAll(MyDtoCompiler.compiler("Contact.dto", contactDto).compile(contactType));
+        return dtoTypes;
+    }
+
+    @Test
     public void testReusableSpecificationFromDependency() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "specification BookSpecification { store -> dependency.BookStoreSpecification }"
