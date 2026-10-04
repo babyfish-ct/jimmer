@@ -1,6 +1,6 @@
 plugins {
     `kotlin-publish-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
     alias(libs.plugins.buildconfig)
 }
 

@@ -94,6 +94,7 @@ kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test" }
 kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
+ksp-gradle-plugin = { group = "com.google.devtools.ksp", name = "symbol-processing-gradle-plugin", version.ref = "ksp" }
 ksp-symbolProcessing-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 dev-zacsweers-kctfork-ksp = { group = "dev.zacsweers.kctfork", name = "ksp", version.ref = "kspTest" }
 
