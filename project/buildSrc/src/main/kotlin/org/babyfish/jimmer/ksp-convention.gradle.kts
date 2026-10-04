@@ -18,7 +18,7 @@ ksp {
 }
 
 tasks.withType<KspAATask>().configureEach {
-    val directories = if (name == "kspTestKotlin") dtoDirectories.test else dtoDirectories.main
+    val directories = if (name == "kspKotlin") dtoDirectories.main else dtoDirectories.test
     val dtoFiles = directories.map { directories ->
         directories.map { directory ->
             projectDirectory.dir(directory).asFileTree.matching { include("**/*.dto") }
