@@ -2,16 +2,40 @@ package org.babyfish.jimmer.kt
 
 import junit.framework.TestCase.assertEquals
 import org.babyfish.jimmer.ImmutableObjects
+import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.meta.PropId
+import org.babyfish.jimmer.runtime.DraftSpi
 import org.babyfish.jimmer.kt.model.Book
 import org.babyfish.jimmer.kt.model.BookDraft
 import org.babyfish.jimmer.kt.model.addBy
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertSame
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.expect
 
 class BookTest {
+
+    @Test
+    fun testVisibilityOnlyChangesDoNotMutateBase() {
+        for (prop in listOf("name", PropId.byName("name"), ImmutableType.get(Book::class.java).getProp("name").id)) {
+            val base = Book {
+                name = "base"
+                hide(this, BookDraft::name)
+            }
+            val shown = Book(base) {
+                if (prop is String) {
+                    (this as DraftSpi).__show(prop, true)
+                } else {
+                    (this as DraftSpi).__show(prop as PropId, true)
+                }
+            }
+            assertEquals("{}", base.toString())
+            assertEquals("""{"name":"base"}""", shown.toString())
+            assertSame(shown, Book(shown) { show(this, BookDraft::name) })
+        }
+    }
 
     @Test
     fun `test base object should remain unchanged after creating derived object`() {

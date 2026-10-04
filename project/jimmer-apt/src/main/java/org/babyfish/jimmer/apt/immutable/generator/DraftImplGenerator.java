@@ -780,11 +780,11 @@ public class DraftImplGenerator {
                         Constants.FROZEN_EXCEPTION_MESSAGE
                 )
                 .endControlFlow();
-        builder.addStatement("$T __visibility = $L.__visibility", Constants.VISIBILITY_CLASS_NAME, UNMODIFIED);
-        builder.beginControlFlow("if (__visibility == null)", UNMODIFIED);
-        builder.beginControlFlow("if (visible)");
+        builder.beginControlFlow("if (__isVisible(prop) == visible)");
         builder.addStatement("return");
         builder.endControlFlow();
+        builder.addStatement("$T __visibility = $L().__visibility", Constants.VISIBILITY_CLASS_NAME, Constants.DRAFT_FIELD_MODIFIED);
+        builder.beginControlFlow("if (__visibility == null)");
         builder.addStatement(
                 "$L().__visibility = __visibility = $T.of($L)",
                 Constants.DRAFT_FIELD_MODIFIED,
