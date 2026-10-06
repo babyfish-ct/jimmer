@@ -1,5 +1,6 @@
 [versions]
 addzero-ddlgenerator = "2026.09.27"
+addzero-ddlgenerator-core = "2026.10.06"
 addzero-ddlgenerator-archived = "2026.07.15.2"
 addzero-lsi = "2026.09.25"
 addzero-tool-database-model = "2026.08.26"
@@ -43,7 +44,7 @@ scalar = "0.5.47"
 addzero-lsi-core = { group = "site.addzero", name = "lsi-core", version.ref = "addzero-lsi" }
 addzero-lsi-ksp = { group = "site.addzero", name = "lsi-ksp", version.ref = "addzero-lsi" }
 addzero-lsi-apt = { group = "site.addzero", name = "lsi-apt", version.ref = "addzero-lsi" }
-addzero-ddlgenerator-core = { group = "site.addzero", name = "ddlgenerator-core", version.ref = "addzero-ddlgenerator" }
+addzero-ddlgenerator-core = { group = "site.addzero", name = "ddlgenerator-core", version.ref = "addzero-ddlgenerator-core" }
 addzero-ddlgenerator-lsi-adaptor = { group = "site.addzero", name = "ddlgenerator-lsi-adaptor", version.ref = "addzero-ddlgenerator" }
 addzero-ddlgenerator-dialect-mysql = { group = "site.addzero", name = "ddlgenerator-dialect-mysql", version.ref = "addzero-ddlgenerator" }
 addzero-ddlgenerator-dialect-postgresql = { group = "site.addzero", name = "ddlgenerator-dialect-postgresql", version.ref = "addzero-ddlgenerator" }

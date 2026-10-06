@@ -7,9 +7,11 @@ import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.StringReader
 import java.io.StringWriter
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.sql.Statement
 import javax.tools.ToolProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,6 +21,7 @@ import kotlin.test.assertTrue
 import org.babyfish.jimmer.ddl.compiler.apt.JimmerDdlCompilerAptProcessor
 import org.babyfish.jimmer.ddl.compiler.ksp.JimmerDdlCompilerProcessorProvider
 import org.babyfish.jimmer.ksp.JimmerProcessorProvider
+import org.h2.tools.RunScript
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -178,13 +181,133 @@ class AssociationKeyCompilerTest {
         generated.copyRecursively(accepted, overwrite = true)
     }
 
+    @Test
+    fun `renaming then extending a key drops its actual database index`() {
+        for (databaseType in listOf("h2", "postgresql")) {
+            withMigrationDatabase("rename", databaseType) { projectDir, statement ->
+                val output = projectDir.resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+                val settings = JimmerDdlCompilerSettings(outputDir = output.absolutePath)
+                fun generate(description: String, group: String, composite: Boolean): String {
+                    compile(
+                        output, description, databaseType, projectDir,
+                        declarations = listOf("""
+                            @Entity @Table(name = "review_item") interface ReviewItem {
+                                @Id val id: Long
+                                @Key(group = "$group") val code: String
+                                ${if (composite) "@Key(group = \"$group\")" else ""} val region: String
+                            }
+                        """),
+                        allowDestructiveChanges = true,
+                    )
+                    val file = output.resolve("$description.sql")
+                    return if (file.exists()) file.readText() else ""
+                }
+
+                val initial = generate("initial", "old", false)
+                RunScript.execute(statement.connection, StringReader(initial))
+                acceptGeneratedSnapshot(settings)
+                statement.execute("insert into review_item(id, code, region) values (1, 'A', 'X')")
+
+                val renamed = generate("renamed", "new", false)
+                assertTrue(renamed.isBlank(), renamed)
+                acceptGeneratedSnapshot(settings)
+                val renamedTable = JimmerDdlEntityTableSnapshot.readSnapshot(settings).tableSchemas.getValue("review_item")
+                assertEquals("uk_review_item_old", renamedTable.indexes.single().name)
+                assertEquals("23505", assertFailsWith<SQLException> {
+                    statement.execute("insert into review_item(id, code, region) values (2, 'A', 'Y')")
+                }.sqlState)
+
+                val extended = generate("extended", "new", true)
+                assertTrue(extended.contains("DROP INDEX") && extended.contains("uk_review_item_old"), extended)
+                RunScript.execute(statement.connection, StringReader(extended))
+                acceptGeneratedSnapshot(settings)
+                val finalTable = JimmerDdlEntityTableSnapshot.readSnapshot(settings).tableSchemas.getValue("review_item")
+                assertEquals("uk_review_item_new", finalTable.indexes.single().name)
+                assertEquals(listOf("code", "region"), finalTable.indexes.single().columnNames)
+                statement.execute("insert into review_item(id, code, region) values (2, 'A', 'Y')")
+                assertEquals("23505", assertFailsWith<SQLException> {
+                    statement.execute("insert into review_item(id, code, region) values (3, 'A', 'X')")
+                }.sqlState)
+                assertTrue(generate("repeated", "new", true).isBlank())
+            }
+        }
+    }
+
+    @Test
+    fun `equivalent key releases a physical name needed by another key`() {
+        for (databaseType in listOf("h2", "postgresql")) {
+            withMigrationDatabase("collision", databaseType) { projectDir, statement ->
+                val output = projectDir.resolve("build/generated/jimmer-ddl/main/resources/db/migration")
+                val settings = JimmerDdlCompilerSettings(outputDir = output.absolutePath)
+                fun generate(description: String, changed: Boolean, destructive: Boolean): String {
+                    compile(
+                        output, description, databaseType, projectDir,
+                        declarations = listOf("""
+                            @Entity @Table(name = "review_item") interface ReviewItem {
+                                @Id val id: Long
+                                @Key(group = "${if (changed) "a" else "shared"}") val a: String
+                                ${if (changed) "@Key(group = \"shared\")" else ""} val b: String
+                            }
+                        """),
+                        allowDestructiveChanges = destructive,
+                    )
+                    val file = output.resolve("$description.sql")
+                    return if (file.exists()) file.readText() else ""
+                }
+
+                val initial = generate("initial", false, false)
+                RunScript.execute(statement.connection, StringReader(initial))
+                acceptGeneratedSnapshot(settings)
+                statement.execute("insert into review_item(id, a, b) values (1, 'A', 'X')")
+
+                assertTrue(generate("pending", true, false).isBlank())
+                acceptGeneratedSnapshot(settings)
+                val pendingTable = JimmerDdlEntityTableSnapshot.readSnapshot(settings).tableSchemas.getValue("review_item")
+                assertEquals("uk_review_item_shared", pendingTable.indexes.single().name)
+                assertEquals(listOf("a"), pendingTable.indexes.single().columnNames)
+
+                val replacement = generate("replacement", true, true)
+                assertTrue(replacement.contains("DROP INDEX"), replacement)
+                RunScript.execute(statement.connection, StringReader(replacement))
+                acceptGeneratedSnapshot(settings)
+                val finalTable = JimmerDdlEntityTableSnapshot.readSnapshot(settings).tableSchemas.getValue("review_item")
+                assertEquals(setOf("uk_review_item_shared", "uk_review_item_a"), finalTable.indexes.map { it.name }.toSet())
+                assertEquals("23505", assertFailsWith<SQLException> {
+                    statement.execute("insert into review_item(id, a, b) values (2, 'A', 'Y')")
+                }.sqlState)
+                assertEquals("23505", assertFailsWith<SQLException> {
+                    statement.execute("insert into review_item(id, a, b) values (3, 'B', 'X')")
+                }.sqlState)
+                statement.execute("insert into review_item(id, a, b) values (4, 'B', 'Y')")
+                assertTrue(generate("repeated", true, true).isBlank())
+            }
+        }
+    }
+
+    private fun withMigrationDatabase(
+        name: String,
+        databaseType: String,
+        action: (File, Statement) -> Unit,
+    ) {
+        val projectDir = temporaryFolder.root.resolve("$name-$databaseType")
+        val url = "jdbc:h2:mem:${name}_$databaseType;DATABASE_TO_LOWER=TRUE" +
+            if (databaseType == "postgresql") ";MODE=PostgreSQL" else ""
+        DriverManager.getConnection(url).use { connection ->
+            connection.createStatement().use { statement ->
+                action(projectDir, statement)
+            }
+        }
+    }
+
     private fun compile(
         output: File,
         description: String,
         databaseType: String = "postgresql",
         projectDir: File = temporaryFolder.root,
+        declarations: List<String>? = null,
+        allowDestructiveChanges: Boolean = false,
     ) {
-        val declarations = listOf(
+        val entityDeclarations = declarations ?: listOf(
             """
             @Entity @Table(name = "account") interface Account {
                 @Id @Column(name = "account_pk") val id: Long
@@ -276,7 +399,7 @@ class AssociationKeyCompilerTest {
         val messages = ByteArrayOutputStream()
         val result = KotlinCompilation().apply {
             workingDir = projectDir.resolve("src/compilation/$description")
-            sources = declarations.mapIndexed { index, declaration ->
+            sources = entityDeclarations.mapIndexed { index, declaration ->
                 SourceFile.kotlin("Entity$index.kt", "package demo\nimport org.babyfish.jimmer.sql.*\n" + declaration.trimIndent())
             }
             inheritClassPath = true
@@ -297,6 +420,7 @@ class AssociationKeyCompilerTest {
                 "jimmerDdl.outputDir" to output.absolutePath,
                 "jimmerDdl.description" to description,
                 "jimmerDdl.compareDatabase" to "false",
+                "jimmerDdl.allowDestructiveChanges" to allowDestructiveChanges.toString(),
             )
         }.compile()
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, messages.toString())

@@ -8,6 +8,7 @@ import site.addzero.ddlgenerator.core.diff.AutoDdlOperation
 import site.addzero.ddlgenerator.core.diff.CreateIndex
 import site.addzero.ddlgenerator.core.diff.CreateSequence
 import site.addzero.ddlgenerator.core.diff.CreateTable
+import site.addzero.ddlgenerator.core.diff.DropIndex
 import site.addzero.ddlgenerator.core.diff.SchemaDiffPlanner
 import site.addzero.ddlgenerator.core.model.AutoDdlColumn
 import site.addzero.ddlgenerator.core.model.AutoDdlComment
@@ -136,17 +137,18 @@ object JimmerDdlCompiler {
             changePlan = changePlan,
             settings = settings,
         )
+        val previousSchema = changePlan.previous.toSchemaFor(
+            schema = schema,
+            renameOperations = changePlan.renameOperations,
+        )
+        val snapshotSchema = if (settings.allowDestructiveChanges) {
+            schema
+        } else {
+            schema.preserveSkippedDestructiveChanges(previousSchema, settings)
+        }
         return JimmerDdlOperationPlan(
             operations = operations,
-            snapshotSchema = if (settings.allowDestructiveChanges) {
-                schema
-            } else {
-                val previousSchema = changePlan.previous.toSchemaFor(
-                    schema = schema,
-                    renameOperations = changePlan.renameOperations,
-                )
-                schema.preserveSkippedDestructiveChanges(previousSchema, settings)
-            },
+            snapshotSchema = snapshotSchema.withAppliedIndexes(previousSchema, operations),
         )
     }
 
@@ -474,17 +476,7 @@ object JimmerDdlCompiler {
                     } else {
                         previousTable.foreignKeys
                     },
-                    indexes = if (settings.options.includeIndexes) {
-                        previousTable.indexes + desiredTable.indexes.filter { desiredIndex ->
-                            previousTable.indexes.none { previousIndex ->
-                                val sameDefinition = previousIndex.type == desiredIndex.type &&
-                                    previousIndex.columnNames.normalizedNames() == desiredIndex.columnNames.normalizedNames()
-                                previousIndex.name.equals(desiredIndex.name, ignoreCase = true) || sameDefinition
-                            }
-                        }
-                    } else {
-                        previousTable.indexes
-                    },
+                    indexes = previousTable.indexes,
                     comment = when {
                         !settings.options.includeComments -> previousTable.comment
                         !desiredTable.comment.isNullOrBlank() -> desiredTable.comment
@@ -493,6 +485,24 @@ object JimmerDdlCompiler {
                 )
             },
         )
+    }
+
+    private fun AutoDdlSchema.withAppliedIndexes(
+        previousSchema: AutoDdlSchema,
+        operations: List<AutoDdlOperation>,
+    ): AutoDdlSchema {
+        val previousTables = previousSchema.tables.associateBy { it.name.lowercase() }
+        val droppedIndexes = operations.filterIsInstance<DropIndex>().groupBy { it.tableName.lowercase() }
+        val createdIndexes = operations.filterIsInstance<CreateIndex>().groupBy { it.tableName.lowercase() }
+        return copy(tables = tables.map { table ->
+            val tableName = table.name.lowercase()
+            val droppedNames = droppedIndexes[tableName].orEmpty().map { it.indexName.lowercase() }.toSet()
+            // 快照保存迁移后的物理索引，未执行重命名的等价索引必须保留原名称。
+            val retainedIndexes = previousTables[tableName]?.indexes.orEmpty().filterNot {
+                it.name.lowercase() in droppedNames
+            }
+            table.copy(indexes = retainedIndexes + createdIndexes[tableName].orEmpty().map { it.index })
+        })
     }
 
     private fun List<String>.normalizedNames(): List<String> {

@@ -75,9 +75,12 @@ Business `@Key` groups use the actual join columns, including custom names and e
 
 A Key group containing a nullable physical column is skipped as a whole. Associations with `inputNotNull = true` have non-null physical columns. Java method-backed properties follow Jimmer's default non-null semantics, except boxed primitive types and explicit nullable annotations.
 
-Existing indexes are compared by definition. Replacing a changed index with the same name requires `jimmerDdl.allowDestructiveChanges=true`; otherwise the repair remains pending in the snapshot. An equivalent index with a different name is retained. Apply repairs through new migrations rather than editing previously applied files.
+Existing indexes are compared by definition. Replacing a changed index with the same name requires `jimmerDdl.allowDestructiveChanges=true`; otherwise the repair remains pending in the snapshot. An equivalent index with a different name is retained with its actual physical name in the structural snapshot. If that name is needed by another desired index, a destructive migration drops it before creating both required definitions. Apply repairs through new migrations rather than editing previously applied files.
 
-The association regression tests run real KSP and APT compilation, persist structural snapshots, verify repeat-generation idempotency, and execute generated constraints on H2. PostgreSQL and H2 snapshots are generated independently to preserve each dialect's type semantics.
+The index planner uses `ddlgenerator-core:2026.10.06`; the unchanged adapters and active dialects remain at `2026.09.27`.
+
+The association regression tests run real KSP and APT compilation, persist structural snapshots, verify repeat-generation idempotency, and execute generated constraints on H2. The index migration regressions apply each generation before accepting its snapshot and verify insert behavior, including the non-destructive-to-destructive transition. PostgreSQL SQL executes on H2 in PostgreSQL compatibility mode, not on a PostgreSQL server. PostgreSQL and H2 snapshots are generated independently to preserve each dialect's type semantics.
+
 ## Kotlin computed getters
 
 Ordinary Kotlin properties with an implemented getter and no backing field do not generate columns, even without `@Formula`. This includes expression getters, block getters, inherited getters and getters inside embeddables. Abstract properties and stored properties remain eligible for persistence. Explicit `@Formula` and `@Transient` properties continue to be excluded from DDL.
