@@ -85,8 +85,8 @@ class ImmutableAnnotationIntrospectorV3 extends AnnotationIntrospector {
             Method method = (Method) element;
             ImmutableType type = ImmutableType.tryGet(method.getDeclaringClass());
             if (type != null) {
-                ImmutableProp prop = ImmutableProps.get(type, method);
-                ConverterMetadata metadata = prop.getConverterMetadata();
+                ImmutableProp prop = ImmutableProps.tryGet(type, method);
+                ConverterMetadata metadata = prop != null ? prop.getConverterMetadata() : null;
                 if (metadata != null) {
                     return toOutput(metadata);
                 }

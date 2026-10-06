@@ -1,0 +1,60 @@
+export org.babyfish.jimmer.sql.model.embedded.ContactRecord
+    -> package org.babyfish.jimmer.sql.model.embedded.dto
+
+import org.babyfish.jimmer.sql.model.embedded.dto.shared.ContactInfoInput
+import org.babyfish.jimmer.sql.model.embedded.dto.shared.ContactInfoView
+
+ReusableContactRecordView {
+    id
+    contact -> ContactInfoView
+}
+
+input ContactRecordInput {
+    #allScalars
+}
+
+dynamic input DynamicContactRecordInput {
+    #allScalars
+}
+
+fuzzy input FuzzyContactRecordInput {
+    #allScalars
+}
+
+input ExplicitContactRecordInput {
+    #allScalars
+    contact {
+        #allScalars
+    }
+}
+
+dynamic input DynamicExplicitContactRecordInput {
+    #allScalars
+    contact {
+        #allScalars
+    }
+}
+
+fuzzy input FuzzyExplicitContactRecordInput {
+    #allScalars
+    contact {
+        #allScalars
+    }
+}
+
+input ReusableContactRecordInput {
+    #allScalars
+    contact -> ContactInfoInput
+}
+
+dynamic input DynamicReusableContactRecordInput {
+    #allScalars
+    contact -> ContactInfoInput
+}
+
+fixed input FixedExplicitContactRecordInput {
+    #allScalars
+    contact {
+        #allScalars
+    }
+}

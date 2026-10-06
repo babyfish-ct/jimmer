@@ -100,19 +100,19 @@ class Rows {
             List<ImmutableSpi> spis = e.getValue();
             Map<Object, ImmutableSpi> keyMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
             for (ImmutableSpi spi : spis) {
-                Object key = Keys.keyOf(spi, group.getProps());
+                Object key = Keys.matchingKeyOf(spi, group.getProps());
                 ImmutableSpi conflictEntity = keyMap.put(key, spi);
                 if (conflictEntity != null) {
-                    throw ctx.createConflictKey(group.getProps(), key);
+                    throw ctx.createConflictKey(group.getProps(), Keys.keyOf(spi, group.getProps()));
                 }
             }
             for (KeyMatcher.Group otherGroup : entityMap.keySet()) {
                 if (!group.getName().equals(otherGroup.getName())) {
                     Set<Object> keys = new HashSet<>();
                     for (ImmutableSpi spi : spis) {
-                        Object key = Keys.keyOf(spi, otherGroup.getProps());
+                        Object key = Keys.matchingKeyOf(spi, otherGroup.getProps());
                         if (!keys.add(key)) {
-                            throw ctx.createConflictKey(otherGroup.getProps(), key);
+                            throw ctx.createConflictKey(otherGroup.getProps(), Keys.keyOf(spi, otherGroup.getProps()));
                         }
                     }
                 }
@@ -132,6 +132,10 @@ class Rows {
         if (rows.isEmpty()) {
             return Collections.emptyMap();
         }
+        ImmutableProp activeStateProp = MutationKeys.activeStateKeyProp(ctx.path.getType());
+        if (activeStateProp != null) {
+            fetcher = fetcher.add(activeStateProp.getName());
+        }
         KeyMatcher keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
         if (keyMatcher.toMap().size() == 1 || fixedGroup != null) {
             if (fixedGroup == null) {
@@ -139,7 +143,8 @@ class Rows {
                         keyMatcher.toMap().keySet().iterator().next()
                 );
             }
-            Set<ImmutableProp> keyProps = fixedGroup.getProps();
+            assert fixedGroup != null;
+            Collection<ImmutableProp> keyProps = MutationKeys.matchingKeyProps(ctx.path.getType(), fixedGroup.getProps());
             Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
             // Record missing non-null key prop
             List<String> missingKeyProps = new ArrayList<>();
@@ -160,7 +165,7 @@ class Rows {
                 }
 
                 if (!unloaded) {
-                    keys.add(Keys.keyOf(spi, keyProps));
+                    keys.add(Keys.matchingKeyOf(spi, keyProps));
                 } else {
                     // Add the current missing non-null key prop of the SPI object
                     String spiId = spi.__type().getJavaClass().getSimpleName();
@@ -204,7 +209,7 @@ class Rows {
             }
             keyMultiMap
                     .computeIfAbsent(group, it -> new LinkedHashSet<>())
-                    .add(Keys.keyOf(spi, group.getProps()));
+                    .add(Keys.matchingKeyOf(spi, group.getProps()));
         }
         if (keyMultiMap.isEmpty()) {
             return Collections.emptyMap();
@@ -226,6 +231,7 @@ class Rows {
 
     private static boolean isLoaded(ImmutableSpi spi, ImmutableProp prop) {
         return spi.__isLoaded(prop.getId()) ||
+                prop.isLogicalDeleted() ||
                 prop.isDiscriminator() && ImmutableObjects.getDiscriminator(spi) != null;
     }
 
@@ -311,22 +317,23 @@ class Rows {
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
-            Set<ImmutableProp> keyProps,
+            Collection<ImmutableProp> keyProps,
             Set<Object> keys
     ) {
+        Collection<ImmutableProp> matchingProps = MutationKeys.matchingKeyProps(ctx.path.getType(), keyProps);
         return findRows(ctx, queryReason, fetcher, (q, t) -> {
             Expression<Object> keyExpr;
-            if (keyProps.size() == 1) {
-                ImmutableProp prop = keyProps.iterator().next();
+            if (matchingProps.size() == 1) {
+                ImmutableProp prop = matchingProps.iterator().next();
                 if (prop.isReference(TargetLevel.PERSISTENT)) {
                     keyExpr = t.getAssociatedId(prop);
                 } else {
                     keyExpr = t.get(prop);
                 }
             } else {
-                Expression<?>[] arr = new Expression[keyProps.size()];
+                Expression<?>[] arr = new Expression[matchingProps.size()];
                 int index = 0;
-                for (ImmutableProp keyProp : keyProps) {
+                for (ImmutableProp keyProp : matchingProps) {
                     Expression<Object> expr;
                     if (keyProp.isReference(TargetLevel.PERSISTENT)) {
                         expr = t.getAssociatedId(keyProp);

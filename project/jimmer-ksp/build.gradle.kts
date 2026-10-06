@@ -1,9 +1,6 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
-
 plugins {
     `kotlin-publish-convention`
     `dokka-convention`
-    alias(libs.plugins.ksp)
 }
 
 dependencies {

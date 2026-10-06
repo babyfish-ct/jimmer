@@ -539,9 +539,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         @Override
         public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
             if (subQuery instanceof ConfigurableSubQueryImpl<?>) {
-                AbstractMutableStatementImpl statement = ((ConfigurableSubQueryImpl<?>) subQuery).getMutableQuery();
-                FilterManager.executing(((MutableSubQueryImpl) statement).filterOwner(), () -> {
-                    statement.applyGlobalFiltersImpl(this, null, null);
+                ConfigurableSubQueryImpl<?> query = (ConfigurableSubQueryImpl<?>) subQuery;
+                AbstractMutableStatementImpl statement = query.getMutableQuery();
+                FilterManager.executing(query.getMutableQuery().filterOwner(), () -> {
+                    // Selections can introduce joins and nested subqueries that are absent from predicates.
+                    statement.applyGlobalFiltersImpl(this, query.getSelections(), null);
                 });
                 return false;
             }

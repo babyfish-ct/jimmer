@@ -34,8 +34,12 @@ class ImmutableSerializerModifierV2 extends BeanSerializerModifier {
                 continue;
             }
             Method method = (Method) member;
-            ImmutableProp prop = ImmutableProps.get(type, method);
-            itr.set(new ImmutablePropertyWriterV2(writer, prop.getId()));
+            ImmutableProp prop = ImmutableProps.tryGet(type, method);
+            if (prop != null) {
+                itr.set(new ImmutablePropertyWriterV2(writer, prop.getId()));
+            } else {
+                itr.remove();
+            }
         }
         return beanProperties;
     }

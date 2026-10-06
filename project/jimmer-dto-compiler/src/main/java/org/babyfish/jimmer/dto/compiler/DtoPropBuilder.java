@@ -216,6 +216,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     "Configuration can only be applied to output DTO(Not input, not specification)"
             );
         }
+        if (!prop.configurations.isEmpty() && ("id".equals(funcName) || "flat".equals(funcName))) {
+            throw ctx.exception(
+                    prop.configurations.get(0).start.getLine(),
+                    prop.configurations.get(0).start.getCharPositionInLine(),
+                    "Configuration cannot be applied to properties produced by the \"" + funcName + "\" function"
+            );
+        }
         for (DtoParser.ConfigurationContext configuration : prop.configurations) {
             if (configuration.where() != null) {
                 propConfigBuilder.setPredicate(configuration.where());
@@ -717,13 +724,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     ctx
             );
         } else if (prop.referencedType != null) {
-            if (!baseProp.isAssociation(true)) {
+            if (!baseProp.isAssociation(true) && !baseProp.isEmbedded()) {
                 throw ctx.exception(
                         prop.referencedType.start.getLine(),
                         prop.referencedType.start.getCharPositionInLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
-                                "\", reusable DTO type can only be specified for an association"
+                                "\", reusable DTO type can only be specified for an association or embedded property"
                 );
             }
             if (funcName != null) {

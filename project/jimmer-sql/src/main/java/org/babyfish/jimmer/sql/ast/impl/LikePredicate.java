@@ -27,12 +27,7 @@ class LikePredicate extends AbstractPredicate {
         if (pattern == null) {
             pattern = "";
         }
-        if (!likeMode.isStartExact() && !pattern.startsWith("%")) {
-            pattern = '%' + pattern;
-        }
-        if (!likeMode.isEndExact() && !pattern.endsWith("%")) {
-            pattern = pattern + '%';
-        }
+        pattern = LikePattern.of(pattern, likeMode);
         if (insensitive) {
             pattern = pattern.toLowerCase();
         }

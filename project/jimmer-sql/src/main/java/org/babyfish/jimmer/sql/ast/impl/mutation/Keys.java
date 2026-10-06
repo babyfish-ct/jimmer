@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
@@ -10,6 +11,10 @@ import java.util.*;
 class Keys {
 
     private Keys() {}
+
+    static Object matchingKeyOf(ImmutableSpi spi, Collection<ImmutableProp> keyProps) {
+        return keyOf(spi, MutationKeys.matchingKeyProps(spi.__type(), keyProps));
+    }
 
     static Object keyOf(ImmutableSpi spi, Collection<ImmutableProp> keyProps) {
         if (keyProps.size() == 1) {
@@ -33,6 +38,11 @@ class Keys {
     }
 
     static Object valueOf(ImmutableSpi spi, ImmutableProp prop) {
+        if (prop.isLogicalDeleted() && !spi.__isLoaded(prop.getId())) {
+            LogicalDeletedInfo info = spi.__type().getLogicalDeletedInfo();
+            assert info != null;
+            return info.allocateInitializedValue();
+        }
         if (prop.isDiscriminator() && !spi.__isLoaded(prop.getId())) {
             Object value = ImmutableObjects.getDiscriminator(spi);
             if (value != null) {

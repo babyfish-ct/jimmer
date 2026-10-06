@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.getClassDeclarationByName
+import com.google.devtools.ksp.getDeclaredFunctions
+import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
@@ -2781,32 +2783,9 @@ class DtoGenerator private constructor(
                             CodeBlock
                                 .builder()
                                 .apply {
-                                    var vararg = false
-                                    if (anno.valueMap.let { it.size == 1 && it.keys.first() == "value" }) {
-                                        val declaration = resolver.getClassDeclarationByName(anno.qualifiedName)
-                                        if (declaration?.origin == Origin.KOTLIN || declaration?.origin == Origin.KOTLIN_LIB) {
-                                            vararg = declaration.primaryConstructor?.parameters?.any {
-                                                it.name?.asString() == "value" && it.isVararg
-                                            } ?: false
-                                        }
-                                    }
-                                    if (vararg) {
-                                        val value = anno.valueMap.values.first()
-                                        if (value is ArrayValue) {
-                                            for (i in 0 until value.elements.size) {
-                                                if (i != 0) {
-                                                    add(", ")
-                                                }
-                                                add(value.elements[i])
-                                            }
-                                        } else {
-                                            add(value)
-                                        }
-                                    } else {
-                                        add("\n")
-                                        add(anno.valueMap)
-                                        add("\n")
-                                    }
+                                    add("\n")
+                                    add(anno, resolver)
+                                    add("\n")
                                 }
                                 .build()
                         )
@@ -2827,37 +2806,33 @@ class DtoGenerator private constructor(
                 .useSiteTarget(target)
                 .build()
 
-        private fun CodeBlock.Builder.add(value: Value) {
-            when (value) {
-                is ArrayValue -> {
-                    add("[\n")
-                    indent()
-                    var addSeparator = false
-                    for (element in value.elements) {
-                        if (addSeparator) {
-                            add(", \n")
-                        } else {
-                            addSeparator = true
-                        }
-                        add(element)
+        private fun CodeBlock.Builder.add(value: Value, type: KSType, resolver: Resolver, vararg: Boolean = false) {
+            val elementType = annotationElementType(type, resolver) ?: if (vararg) type else null
+            if (elementType != null) {
+                val elements = (value as? ArrayValue)?.elements ?: listOf(value)
+                add("[\n")
+                indent()
+                for ((index, element) in elements.withIndex()) {
+                    if (index != 0) {
+                        add(", \n")
                     }
-                    unindent()
-                    add("\n]")
+                    add(element, elementType, resolver)
                 }
+                unindent()
+                add("\n]")
+                return
+            }
+            when (value) {
+                is ArrayValue -> throw DtoException("Annotation parameter of type \"$type\" is not an array")
 
                 is AnnoValue -> {
-                    add("%T", ClassName.bestGuess(value.anno.qualifiedName))
-                    if (value.anno.valueMap.isEmpty()) {
-                        add("{}")
-                    } else if (value.anno.valueMap.let { it.size == 1 && it.keys.first() == "value" }) {
-                        add("(")
-                        add(value.anno.valueMap.values.first())
-                        add(")")
-                    } else {
-                        add("(\n")
-                        add(value.anno.valueMap)
-                        add("\n)")
+                    add("%T(", ClassName.bestGuess(value.anno.qualifiedName))
+                    if (value.anno.valueMap.isNotEmpty()) {
+                        add("\n")
+                        add(value.anno, resolver)
+                        add("\n")
                     }
+                    add(")")
                 }
 
                 is TypeRefValue -> value.typeRef.let {
@@ -2885,20 +2860,53 @@ class DtoGenerator private constructor(
             }
         }
 
-        private fun CodeBlock.Builder.add(valueMap: Map<String, Value>) {
-            indent()
-            var addSeparator = false
-            for ((name, value) in valueMap) {
-                if (addSeparator) {
-                    add(", \n")
-                } else {
-                    addSeparator = true
+        private fun CodeBlock.Builder.add(anno: Anno, resolver: Resolver) {
+            val declaration = resolver.getClassDeclarationByName(anno.qualifiedName)
+                ?: throw DtoException("Cannot resolve annotation \"${anno.qualifiedName}\"")
+            val constructor = declaration.primaryConstructor
+            val parameters = if (constructor != null) {
+                constructor.parameters.associate {
+                    it.name!!.asString() to AnnotationParameter(it.type.fastResolve(), it.isVararg)
                 }
+            } else {
+                (
+                    declaration.getDeclaredFunctions().filter { it.parameters.isEmpty() && it.returnType != null }.map {
+                        it.simpleName.asString() to AnnotationParameter(it.returnType!!.fastResolve())
+                    } + declaration.getDeclaredProperties().map {
+                        it.simpleName.asString() to AnnotationParameter(it.type.fastResolve())
+                    }
+                ).toMap()
+            }
+            indent()
+            for ((index, entry) in anno.valueMap.entries.withIndex()) {
+                if (index != 0) {
+                    add(", \n")
+                }
+                val (name, value) = entry
+                val parameter = parameters[name]
+                    ?: throw DtoException("Annotation \"${anno.qualifiedName}\" has no parameter \"$name\"")
                 add("%N = ", name)
-                add(value)
+                try {
+                    add(value, parameter.type, resolver, parameter.vararg)
+                } catch (ex: DtoException) {
+                    throw DtoException("Illegal argument \"$name\" of annotation \"${anno.qualifiedName}\": ${ex.message}", ex)
+                }
             }
             unindent()
         }
+
+        private fun annotationElementType(type: KSType, resolver: Resolver): KSType? {
+            val name = type.declaration.qualifiedName?.asString()
+            return when (name) {
+                "kotlin.Array" -> type.arguments.single().type!!.fastResolve()
+                "kotlin.BooleanArray", "kotlin.ByteArray", "kotlin.ShortArray", "kotlin.IntArray",
+                "kotlin.LongArray", "kotlin.FloatArray", "kotlin.DoubleArray", "kotlin.CharArray" ->
+                    resolver.getClassDeclarationByName(name.removeSuffix("Array"))!!.asType(emptyList())
+                else -> null
+            }
+        }
+
+        private class AnnotationParameter(val type: KSType, val vararg: Boolean = false)
 
         fun typeName(typeRef: TypeRef?): TypeName {
             val typeName = if (typeRef === null) {

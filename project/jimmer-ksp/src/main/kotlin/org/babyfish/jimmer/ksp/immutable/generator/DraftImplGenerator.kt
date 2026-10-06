@@ -34,6 +34,7 @@ class DraftImplGenerator(
                 )
                 .apply {
                     addFields()
+                    addListDraftAccessors()
                     addIsLoadedProp(PropId::class)
                     addIsLoadedProp(String::class)
                     addIsVisibleProp(PropId::class)
@@ -114,6 +115,15 @@ class DraftImplGenerator(
                 .build()
         )
         addCompanionObject()
+        val draftType = LIST_DRAFT_CLASS_NAME.parameterizedBy(STAR).copy(nullable = true)
+        for (prop in type.propsOrderById) {
+            if (prop.isList && prop.valueFieldName !== null) {
+                addProperty(
+                    PropertySpec.builder("__${prop.name}ListDraft", draftType)
+                        .addModifiers(KModifier.PRIVATE).mutable().initializer("null").build()
+                )
+            }
+        }
     }
 
     private fun TypeSpec.Builder.addIsLoadedProp(argType: KClass<*>) {
@@ -126,6 +136,70 @@ class DraftImplGenerator(
                 .addCode("return %L.__isLoaded(prop)", UNMODIFIED)
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addListDraftAccessors() {
+        addListDraftGetter()
+        addListDraftSetter()
+    }
+
+    private fun TypeSpec.Builder.addListDraftGetter() {
+        val draftType = LIST_DRAFT_CLASS_NAME.parameterizedBy(STAR).copy(nullable = true)
+        val builder = FunSpec.builder("__getListDraft")
+            .addModifiers(KModifier.OVERRIDE).addParameter("prop", PROP_ID_CLASS_NAME).returns(draftType)
+        builder.beginControlFlow("return when (prop.asIndex())")
+        for (prop in type.propsOrderById) {
+            if (prop.isList && prop.valueFieldName !== null) {
+                builder.addStatement("%L -> %N", prop.slotName, "__${prop.name}ListDraft")
+            }
+        }
+        builder.addStatement("else -> __getListDraftByName(prop)")
+        builder.endControlFlow()
+        addFunction(builder.build())
+        val namedBuilder = FunSpec.builder("__getListDraftByName")
+            .addModifiers(KModifier.PRIVATE).addParameter("prop", PROP_ID_CLASS_NAME).returns(draftType)
+        addNamedListDraftAccess(namedBuilder, false)
+        addFunction(namedBuilder.build())
+    }
+
+    private fun TypeSpec.Builder.addListDraftSetter() {
+        val draftType = LIST_DRAFT_CLASS_NAME.parameterizedBy(STAR).copy(nullable = true)
+        val builder = FunSpec.builder("__setListDraft")
+            .addModifiers(KModifier.OVERRIDE).addParameter("prop", PROP_ID_CLASS_NAME).addParameter("draft", draftType)
+        builder.beginControlFlow("when (prop.asIndex())")
+        for (prop in type.propsOrderById) {
+            if (prop.isList && prop.valueFieldName !== null) {
+                builder.addStatement("%L -> %N = draft", prop.slotName, "__${prop.name}ListDraft")
+            }
+        }
+        builder.addStatement("else -> __setListDraftByName(prop, draft)")
+        builder.endControlFlow()
+        addFunction(builder.build())
+        val namedBuilder = FunSpec.builder("__setListDraftByName")
+            .addModifiers(KModifier.PRIVATE).addParameter("prop", PROP_ID_CLASS_NAME).addParameter("draft", draftType)
+        addNamedListDraftAccess(namedBuilder, true)
+        addFunction(namedBuilder.build())
+    }
+
+    private fun addNamedListDraftAccess(builder: FunSpec.Builder, setter: Boolean) {
+        builder.addStatement("val name = prop.asName()")
+        builder.addStatement("val namedProp = if (name !== null) __type().props[name] else null")
+        if (!setter) {
+            builder.addCode("return ")
+        }
+        builder.beginControlFlow("if (namedProp !== null)")
+        if (setter) {
+            builder.addStatement("__setListDraft(namedProp.id, draft)")
+        } else {
+            builder.addStatement("__getListDraft(namedProp.id)")
+        }
+        builder.nextControlFlow("else")
+        if (setter) {
+            builder.addStatement("throw IllegalArgumentException(%S + prop)", "Illegal list property: ")
+        } else {
+            builder.addStatement("null")
+        }
+        builder.endControlFlow()
     }
 
     private fun TypeSpec.Builder.addIsVisibleProp(argType: KClass<*>) {
@@ -214,7 +288,9 @@ class DraftImplGenerator(
                                     )
                                 prop.isList || prop.isScalarList ->
                                     addCode(
-                                        "return __ctx().toDraftList(%L.%L, %T::class.java, %L)",
+                                        "return __ctx().toDraftList(this, %T.byIndex(%L), %L.%L, %T::class.java, %L)",
+                                        PROP_ID_CLASS_NAME,
+                                        prop.slotName,
                                         UNMODIFIED,
                                         prop.name,
                                         prop.targetTypeName(),
@@ -274,12 +350,14 @@ class DraftImplGenerator(
                                                 addStatement("val __tmpModified = %L", MODIFIED)
                                                 if (prop.isList || prop.isScalarList) {
                                                     addStatement(
-                                                        "__tmpModified.%L = %T.of(__tmpModified.%L, %L)",
-                                                        prop.valueFieldName,
-                                                        NON_SHARED_LIST_CLASS_NAME,
-                                                        prop.valueFieldName,
+                                                        "val __tmpList = %T.prepareListForAssignment(__ctx, %L)",
+                                                        INTERNAL_TYPE_CLASS_NAME,
                                                         prop.name
                                                     )
+                                                    beginControlFlow("if (__tmpModified.%L !== __tmpList)", prop.valueFieldName)
+                                                    addStatement("%N = null", "__${prop.name}ListDraft")
+                                                    endControlFlow()
+                                                    addStatement("__tmpModified.%L = __tmpList", prop.valueFieldName)
                                                 } else {
                                                     addStatement(
                                                         "__tmpModified.%L = %L",
@@ -410,6 +488,10 @@ class DraftImplGenerator(
                             for (prop in type.propsOrderById) {
                                 appender.addCase(prop)
                                 indent()
+                                val unloadList = prop.isList && prop.baseProp === null && prop.valueFieldName !== null
+                                if (unloadList) {
+                                    beginControlFlow("")
+                                }
                                 when {
                                     prop.baseProp !== null ->
                                         addStatement(
@@ -442,6 +524,10 @@ class DraftImplGenerator(
                                     }
                                     else ->
                                         addStatement("%L\n.%L = null", MODIFIED, prop.valueFieldName)
+                                }
+                                if (unloadList) {
+                                    addStatement("%N = null", "__${prop.name}ListDraft")
+                                    endControlFlow()
                                 }
                                 unindent()
                             }
@@ -519,22 +605,16 @@ class DraftImplGenerator(
                                 FROZEN_EXCEPTION_MESSAGE
                             )
                             endControlFlow()
-                            add("val __visibility = %L.__visibility\n", UNMODIFIED)
+                            beginControlFlow("if (__isVisible(prop) == visible)")
+                            addStatement("return")
+                            endControlFlow()
+                            add("val __visibility = %L.__visibility\n", MODIFIED)
                             indent()
-                            add("?: if (visible) {\n")
+                            add("?: %T.of(%L).also {\n", VISIBILITY_CLASS_NAME, type.properties.size)
                             indent()
-                            add("null\n")
-                            unindent()
-                            add("} else {\n")
-                            indent()
-                            add("%T.of(%L).also{\n", VISIBILITY_CLASS_NAME, type.properties.size)
-                            indent()
-                            add("%L.__visibility = it", MODIFIED)
+                            addStatement("%L.__visibility = it", MODIFIED)
                             unindent()
                             add("}\n")
-                            unindent()
-                            add("}\n")
-                            addStatement("?: return")
                             unindent()
                             val appender = CaseAppender(this, type, argType)
                             if (argType == PropId::class) {
@@ -571,9 +651,9 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder("__draftContext")
-                .returns(DRAFT_CONTEXT_CLASS_NAME)
+                .returns(DRAFT_CONTEXT_CLASS_NAME.copy(nullable = true))
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return __ctx()")
+                .addCode("return __ctx")
                 .build()
         )
     }
@@ -614,14 +694,15 @@ class DraftImplGenerator(
                                             prop.slotName
                                         )
                                         addStatement("val oldValue = base!!.%L", prop.name)
-                                        addStatement(
-                                            "val newValue = __ctx.%L(oldValue)",
-                                            if (prop.isList || prop.isScalarList) {
-                                                "resolveList"
-                                            } else {
-                                                "resolveObject"
-                                            }
-                                        )
+                                        if (prop.isList || prop.isScalarList) {
+                                            addStatement(
+                                                "val newValue = __ctx.resolveList(this, %T.byIndex(%L), oldValue)",
+                                                PROP_ID_CLASS_NAME,
+                                                prop.slotName
+                                            )
+                                        } else {
+                                            addStatement("val newValue = __ctx.resolveObject(oldValue)")
+                                        }
                                         add("if (oldValue !== newValue)")
                                         beginControlFlow("")
                                         addStatement("this@%L.%L = newValue", DRAFT_IMPL, prop.name)
@@ -635,11 +716,10 @@ class DraftImplGenerator(
                                     if (prop.valueFieldName !== null) {
                                         if (prop.isList) {
                                             addStatement(
-                                                "__tmpModified.%L = %T.of(__tmpModified.%L, __ctx.%L(__tmpModified.%L))",
+                                                "__tmpModified.%L = __ctx.resolveList(this, %T.byIndex(%L), __tmpModified.%L)",
                                                 prop.valueFieldName,
-                                                NON_SHARED_LIST_CLASS_NAME,
-                                                prop.valueFieldName,
-                                                "resolveList",
+                                                PROP_ID_CLASS_NAME,
+                                                prop.slotName,
                                                 prop.valueFieldName
                                             )
                                         } else if (prop.isReference) {

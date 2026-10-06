@@ -1,6 +1,6 @@
 plugins {
     `kotlin-publish-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
 }
 
 dependencies {
@@ -36,7 +36,10 @@ ksp {
         "jimmer.source.excludes",
         "org.example.internal; org.babyfish.jimmer.client.kotlin.model.KExcludedDefaultTarget"
     )
-    arg("jimmer.dto.testDirs", "src/test/dto2")
+}
+
+dtoDirectories {
+    test.set(listOf("src/test/dto2"))
 }
 
 kotlin {

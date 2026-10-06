@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -96,6 +97,15 @@ public interface Dialect extends SqlTypeStrategy {
 
     default boolean isAnyEqualityOfArraySupported() {
         return isArraySupported();
+    }
+
+    /**
+     * Appends an array literal for inline SQL logging.
+     *
+     * @return {@code true} if rendered; otherwise {@code false}, leaving the builder unchanged
+     */
+    default boolean appendArrayLiteral(StringBuilder builder, TypedList<?> values) {
+        return false;
     }
 
     default <T> T[] getArray(ResultSet rs, int col, Class<T[]> arrayType) throws SQLException {

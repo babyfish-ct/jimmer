@@ -260,7 +260,9 @@ public class ImmutableObjects {
         if (id == null) {
             return null;
         }
-        return (T) Internal.produce(type, null, draft -> {
+        // Context-free builders also use this method for id views, including during cache deserialization.
+        // Do not let their immutable results retain a draft from the caller's active context.
+        return (T) Internal.produce(type, null, true, draft -> {
             DraftSpi targetDraft = (DraftSpi) draft;
             targetDraft.__set(idProp.getId(), id);
         });

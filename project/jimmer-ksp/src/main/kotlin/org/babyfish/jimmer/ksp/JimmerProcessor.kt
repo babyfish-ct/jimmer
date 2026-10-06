@@ -12,6 +12,7 @@ import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.ksp.client.ClientProcessor
 import org.babyfish.jimmer.ksp.client.ExportDocProcessor
+import org.babyfish.jimmer.ksp.dto.DtoException
 import org.babyfish.jimmer.ksp.dto.DtoProcessor
 import org.babyfish.jimmer.ksp.error.ErrorProcessor
 import org.babyfish.jimmer.ksp.immutable.ImmutableProcessor
@@ -130,6 +131,9 @@ class JimmerProcessor(
             environment.logger.error(ex.message!!, ex.declaration)
             emptyList()
         } catch (ex: DtoAstException) {
+            environment.logger.error(ex.message!!)
+            emptyList()
+        } catch (ex: DtoException) {
             environment.logger.error(ex.message!!)
             emptyList()
         }

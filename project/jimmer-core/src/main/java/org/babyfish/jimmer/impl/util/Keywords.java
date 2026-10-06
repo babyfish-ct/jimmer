@@ -26,6 +26,8 @@ public class Keywords {
                             "__set",
                             "__show",
                             "__draftContext",
+                            "__getListDraft",
+                            "__setListDraft",
                             "__resolve",
                             "__isResolved",
 

@@ -96,7 +96,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                                     "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.WEBSITE like ?"
                     );
-                    ctx.variables("%");
+                    ctx.variables("%%");
                     ctx.rows("[]");
                 }
         );
@@ -115,7 +115,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                                     "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.WEBSITE not like ?"
                     );
-                    ctx.variables("%");
+                    ctx.variables("%%");
                     ctx.rows("[]");
                 }
         );

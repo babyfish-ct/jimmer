@@ -252,7 +252,7 @@ class SaveResultMaterializer {
                             continue;
                         }
                         Map<Object, ImmutableSpi> subMap = map.values().iterator().next();
-                        Object key = Keys.keyOf(draft, keyProps);
+                        Object key = Keys.matchingKeyOf(draft, keyProps);
                         ImmutableSpi fetched = subMap.get(key);
                         if (unloadPropIds == null) {
                             draft.__set(idPropId, fetched.__get(idPropId));
@@ -473,6 +473,8 @@ class SaveResultMaterializer {
                         if (value != null) {
                             if (prop.isReferenceList(TargetLevel.OBJECT)) {
                                 value = draft.__draftContext().toDraftList(
+                                        draft,
+                                        propId,
                                         (List<Object>) value,
                                         (Class<Object>) prop.getElementClass(),
                                         true

@@ -1,0 +1,22 @@
+export org.babyfish.jimmer.sql.model.Book
+
+import testpkg.annotations.ArrayArguments
+
+@ArrayArguments(10, numberClass = Int::class, n = ArrayArguments.N(20), m = ArrayArguments.M())
+ArrayArgumentsSingletonView { name }
+
+@ArrayArguments(10, 20, n = ArrayArguments.N(30, 40))
+ArrayArgumentsPositionalView { name }
+
+@ArrayArguments(
+    value = [1, 2],
+    numberClass = [Int::class, Long::class],
+    n = [ArrayArguments.N({3, 4}), ArrayArguments.N(value = [5, 6])]
+)
+ArrayArgumentsArrayView { name }
+
+@ArrayArguments([], numberClass = {}, n = [])
+ArrayArgumentsEmptyView { name }
+
+@ArrayArguments(n = ArrayArguments.N())
+ArrayArgumentsDefaultView { name }

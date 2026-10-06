@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -122,6 +121,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyObjMap;
 
+    private Map<KeyMatcher.Group, Map<Object, Object>> generatedIdMap;
+
     private Fetcher<ImmutableSpi> originalFetcher;
 
     private ShapedEntityMap<DraftSpi> associationMap;
@@ -131,9 +132,9 @@ abstract class AbstractPreHandler implements PreHandler {
     @SuppressWarnings("unchecked")
     AbstractPreHandler(SaveContext ctx) {
         this.ctx = ctx;
-        this.processor = (DraftPreProcessor<DraftSpi>)
+        this.processor = ctx.backReferenceOnly ? null : (DraftPreProcessor<DraftSpi>)
                 ctx.options.getSqlClient().getDraftPreProcessor(ctx.path.getType());
-        this.interceptor = (DraftInterceptor<Object, DraftSpi>)
+        this.interceptor = ctx.backReferenceOnly ? null : (DraftInterceptor<Object, DraftSpi>)
                 ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
         idProp = ctx.path.getType().getIdProp();
         keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
@@ -172,6 +173,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     @Override
     public void add(DraftSpi draft) {
+        validateLogicalDeletedValue(draft);
         KeyMatcher.Group group = keyMatcher.match(draft);
         if (ctx.options.getMode() != SaveMode.INSERT_ONLY &&
                 ctx.options.isKeyMatchingRequired(ctx.path.getType()) && group == null) {
@@ -180,28 +182,19 @@ abstract class AbstractPreHandler implements PreHandler {
                             "\" by key: no complete key group is loaded. Required key groups: " + keyMatcher.toMap()
             );
         }
-        Lazy<Boolean> hasNonIdValues = new Lazy<>(() -> {
-            for (ImmutableProp prop : draft.__type().getProps().values()) {
-                if (!prop.isId() && draft.__isLoaded(prop.getId())) {
-                    return true;
+        ImmutableProp prop = ctx.path.getProp();
+        if (prop != null && prop.isRemote()) {
+            for (ImmutableProp draftProp : draft.__type().getProps().values()) {
+                if (!draftProp.isId() && draft.__isLoaded(draftProp.getId())) {
+                    ctx.throwLongRemoteAssociation();
                 }
             }
-            return false;
-        });
-        ImmutableProp prop = ctx.path.getProp();
-        if (prop != null && prop.isRemote() && hasNonIdValues.get()) {
-            ctx.throwLongRemoteAssociation();
         }
-        if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
-            if (!ctx.options.isForceMatchedUpdate() &&
-                    ctx.options.isIdOnlyAsReference(prop) &&
-                    !ctx.options.hasAssignment(draft.__type()) &&
-                    ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
-                    !hasNonIdValues.get()
-            ) {
-                if (validatedIds != null) {
-                    validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
-                }
+        if (ctx.backReferenceOnly || ctx.isIdOnlyReference(draft)) {
+            if (validatedIds != null) {
+                validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
+            }
+            if (!ctx.backReferenceOnly) {
                 return;
             }
         }
@@ -652,6 +645,7 @@ abstract class AbstractPreHandler implements PreHandler {
             return;
         }
         processor.beforeSave(draft);
+        validateLogicalDeletedValue(draft);
     }
 
     final void callInterceptor(List<DraftInterceptor.Item<Object, DraftSpi>> items) {
@@ -667,7 +661,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             if (item.getOriginal() == null && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
                 DraftSpi draft = item.getDraft();
-                assignId(draft);
+                assignId(draft, items.size() > 1);
                 assignVersion(draft);
                 assignLocalDeletedInfo(draft);
                 assignDefaultValues(draft);
@@ -709,6 +703,9 @@ abstract class AbstractPreHandler implements PreHandler {
             return;
         }
         interceptor.beforeSaveAll(items);
+        for (DraftInterceptor.Item<Object, DraftSpi> item : items) {
+            validateLogicalDeletedValue(item.getDraft());
+        }
         for (Map.Entry<DraftPropKey, Object> e : idKeyColumnValueMap.entrySet()) {
             DraftPropKey key = e.getKey();
             ImmutableProp prop = key.prop;
@@ -719,12 +716,31 @@ abstract class AbstractPreHandler implements PreHandler {
         }
     }
 
-    private void assignId(DraftSpi draft) {
+    final void assignId(DraftSpi draft, boolean deduplicate) {
         PropId idPropId = idProp.getId();
         if (draft.__isLoaded(idPropId)) {
             return;
         }
-        Object id = ctx.allocateId();
+        KeyMatcher.Group group = deduplicate ? keyMatcher.match(draft) : null;
+        Map<Object, Object> ids = group != null && generatedIdMap != null ? generatedIdMap.get(group) : null;
+        Object key = ids != null ? Keys.matchingKeyOf(draft, group.getProps()) : null;
+        Object id = ids != null ? ids.get(key) : null;
+        if (id == null) {
+            id = ctx.allocateId();
+            if (id != null && group != null) {
+                // Resolve identity before generated ids become the batching/deduplication key.
+                // Keep this registry local to the handler, whose save options and target type are shared.
+                if (generatedIdMap == null) {
+                    generatedIdMap = new HashMap<>();
+                }
+                if (ids == null) {
+                    ids = new HashMap<>();
+                    generatedIdMap.put(group, ids);
+                    key = Keys.matchingKeyOf(draft, group.getProps());
+                }
+                ids.put(key, id);
+            }
+        }
         if (id != null) {
             draft.__set(idPropId, id);
         }
@@ -743,11 +759,21 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private void assignLocalDeletedInfo(DraftSpi draft) {
         LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
-        if (logicalDeletedInfo == null) {
+        if (logicalDeletedInfo == null || draft.__isLoaded(logicalDeletedInfo.getProp().getId())) {
             return;
         }
         Object value = logicalDeletedInfo.allocateInitializedValue();
         draft.__set(logicalDeletedInfo.getProp().getId(), value);
+    }
+
+    private void validateLogicalDeletedValue(DraftSpi draft) {
+        LogicalDeletedInfo info = draft.__type().getLogicalDeletedInfo();
+        if (info != null && draft.__isLoaded(info.getProp().getId()) && info.isDeleted(draft.__get(info.getProp().getId()))) {
+            throw new IllegalArgumentException(
+                    "Cannot save a deleted value for property \"" + info.getProp() +
+                            "\" at path \"" + ctx.path + "\"; use a delete command instead"
+            );
+        }
     }
 
     // Notes: This method can only be overridden by InsertPreHandler
@@ -1006,12 +1032,8 @@ class InsertPreHandler extends AbstractPreHandler {
                     .getGeneratorContext()
                     .getIdGenerator(ctx.path.getType());
             if (idGenerator instanceof UserIdGenerator<?>) {
-                PropId idPropId = ctx.path.getType().getIdProp().getId();
                 for (DraftSpi draft : draftsWithKey) {
-                    Object id = ctx.allocateId();
-                    if (id != null) {
-                        draft.__set(idPropId, id);
-                    }
+                    assignId(draft, draftsWithKey.size() > 1);
                 }
             }
         }
@@ -1123,7 +1145,7 @@ class UpdatePreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     KeyMatcher.Group group = keyMatcher.match(draft);
                     assert group != null;
-                    Object key = Keys.keyOf(draft, group.getProps());
+                    Object key = Keys.matchingKeyOf(draft, group.getProps());
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
                     if (original != null) {
@@ -1254,7 +1276,7 @@ class UpsertPreHandler extends AbstractPreHandler {
                     DraftSpi draft = itr.next();
                     KeyMatcher.Group group = ctx.options.getKeyMatcher(ctx.path.getType()).match(draft);
                     assert group != null;
-                    Object key = Keys.keyOf(draft, group.getProps());
+                    Object key = Keys.matchingKeyOf(draft, group.getProps());
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
                     if (original == null) {

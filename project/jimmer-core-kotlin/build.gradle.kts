@@ -1,7 +1,7 @@
 plugins {
     `kotlin-publish-convention`
     `dokka-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
 }
 
 dependencies {

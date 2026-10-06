@@ -98,9 +98,14 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         } else if (keyProps.isEmpty()) {
             entities = new EntityList<>();
         } else {
-            PropId[] keyPropIds = new PropId[keyProps.size()];
+            Collection<ImmutableProp> matchingProps = keyProps;
+            ImmutableProp activeStateProp = MutationKeys.activeStateKeyProp(key.getType());
+            if (activeStateProp != null && ((ImmutableSpi) entity).__isLoaded(activeStateProp.getId())) {
+                matchingProps = MutationKeys.matchingKeyProps(key.getType(), keyProps);
+            }
+            PropId[] keyPropIds = new PropId[matchingProps.size()];
             int i = 0;
-            for (ImmutableProp keyProp : keyProps) {
+            for (ImmutableProp keyProp : matchingProps) {
                 keyPropIds[i++] = keyProp.getId();
             }
             entities = new EntitySet<>(keyPropIds);

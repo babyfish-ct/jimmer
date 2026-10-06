@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.query.ForUpdate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.LockWait;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 import org.postgresql.util.PGobject;
@@ -89,6 +90,62 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public boolean isArraySupported() {
         return true;
+    }
+
+    @Override
+    public boolean appendArrayLiteral(StringBuilder builder, TypedList<?> values) {
+        builder.append("ARRAY[");
+        boolean separator = false;
+        for (Object value : values) {
+            if (separator) {
+                builder.append(", ");
+            }
+            separator = true;
+            if (value == null) {
+                builder.append("NULL");
+            } else if (value instanceof Boolean) {
+                builder.append((Boolean) value ? "TRUE" : "FALSE");
+            } else if (value instanceof Number &&
+                    !(value instanceof Float && !Float.isFinite((Float) value)) &&
+                    !(value instanceof Double && !Double.isFinite((Double) value))) {
+                builder.append(value);
+            } else {
+                appendArrayString(builder, value.toString());
+            }
+        }
+        builder.append("]::").append(values.getSqlElementType()).append("[]");
+        return true;
+    }
+
+    private static void appendArrayString(StringBuilder builder, String value) {
+        boolean escaped = false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '\\' || c < ' ') {
+                escaped = true;
+                break;
+            }
+        }
+        if (escaped) {
+            builder.append('E');
+        }
+        builder.append('\'');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '\'') {
+                builder.append("''");
+            } else if (c == '\\') {
+                builder.append("\\\\");
+            } else if (c < ' ') {
+                builder.append('\\')
+                        .append((char) ('0' + (c >> 6)))
+                        .append((char) ('0' + ((c >> 3) & 7)))
+                        .append((char) ('0' + (c & 7)));
+            } else {
+                builder.append(c);
+            }
+        }
+        builder.append('\'');
     }
 
     @Override

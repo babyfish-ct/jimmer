@@ -101,7 +101,7 @@ public class DatabaseValidators {
         if (table == null) {
             return;
         }
-        if (!(type instanceof AssociationType) && type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) != null) {
+        if (!(type instanceof AssociationType) && type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) == null) {
             ColumnDefinition idColumnDefinition = type.getIdProp().getStorage(strategy);
             Set<String> idColumnNames = new LinkedHashSet<>((idColumnDefinition.size() * 4 + 2) / 3);
             for (int i = 0; i < idColumnDefinition.size(); i++) {
@@ -248,7 +248,7 @@ public class DatabaseValidators {
             if (!prop.isAssociation(TargetLevel.PERSISTENT) ||
                     prop.getAnnotation(DatabaseValidationIgnore.class) != null ||
                     !isPropStoredByTable(type, prop) ||
-                    predicate.test(prop.getTargetType())) {
+                    !predicate.test(prop.getTargetType())) {
                 continue;
             }
             ForeignKeyContext ctx = new ForeignKeyContext(this, type, prop);

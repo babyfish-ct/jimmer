@@ -1,6 +1,6 @@
 plugins {
     `kotlin-publish-convention`
-    alias(libs.plugins.ksp)
+    `ksp-convention`
     alias(libs.plugins.buildconfig)
 }
 
@@ -36,6 +36,7 @@ dependencies {
     testImplementation(libs.h2)
     testRuntimeOnly(libs.bundles.jackson)
     testRuntimeOnly(projects.jimmerClientSwagger)
+    testRuntimeOnly(projects.jimmerClientScalar)
 }
 
 buildConfig {

@@ -4,11 +4,34 @@ import org.babyfish.jimmer.model.Book;
 import org.babyfish.jimmer.model.BookDraft;
 import org.babyfish.jimmer.model.BookProps;
 import org.babyfish.jimmer.model.Immutables;
+import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class BookTest {
+
+    @Test
+    public void testVisibilityOnlyChangesDoNotMutateBase() {
+        for (Object prop : new Object[] {"name", PropId.byName("name"), BookProps.NAME.unwrap().getId()}) {
+            Book base = BookDraft.$.produce(draft -> {
+                draft.setName("base");
+                DraftObjects.hide(draft, BookProps.NAME);
+            });
+            Book shown = BookDraft.$.produce(base, draft -> {
+                if (prop instanceof String) {
+                    ((DraftSpi) draft).__show((String) prop, true);
+                } else {
+                    ((DraftSpi) draft).__show((PropId) prop, true);
+                }
+            });
+            assertEquals("{}", base.toString());
+            assertEquals("{\"name\":\"base\"}", shown.toString());
+            assertSame(shown, BookDraft.$.produce(shown, draft -> DraftObjects.show(draft, BookProps.NAME)));
+        }
+    }
 
     @Test
     public void testBaseObjectShouldRemainUnchangedAfterCreatingDerivedObject() {

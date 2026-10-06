@@ -34,6 +34,10 @@ public class ListDraft<E> implements List<E>, Draft {
         return ctx;
     }
 
+    boolean isBase(List<?> list) {
+        return base == list;
+    }
+
     @Override
     public boolean isEmpty() {
         return (modified != null ? modified : base).isEmpty();
@@ -258,6 +262,11 @@ public class ListDraft<E> implements List<E>, Draft {
         resolveElements();
 
         List<E> b = base;
+        if (b instanceof ListDraft<?>) {
+            // A property-local draft can wrap a list assigned from another property or context.
+            // Resolve that base through this context so cached getters cannot bypass context validation.
+            b = ctx != null ? ctx.resolveList(b) : ((ListDraft<E>) b).resolve();
+        }
         List<E> m = modified;
         if (m == null) {
             return b;

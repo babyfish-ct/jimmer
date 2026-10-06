@@ -34,8 +34,12 @@ class ImmutableSerializerModifierV3 extends ValueSerializerModifier {
                 continue;
             }
             Method method = (Method) member;
-            ImmutableProp prop = ImmutableProps.get(type, method);
-            itr.set(new ImmutablePropertyWriterV3(writer, prop.getId()));
+            ImmutableProp prop = ImmutableProps.tryGet(type, method);
+            if (prop != null) {
+                itr.set(new ImmutablePropertyWriterV3(writer, prop.getId()));
+            } else {
+                itr.remove();
+            }
         }
         return beanProperties;
     }

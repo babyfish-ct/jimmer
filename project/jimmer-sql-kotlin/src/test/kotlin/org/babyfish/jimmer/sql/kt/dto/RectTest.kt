@@ -7,11 +7,28 @@ import org.babyfish.jimmer.sql.kt.model.embedded.Transform
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectFlatView
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectFoldView
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectView
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.DynamicRectInput
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.ReusableTransformInput
 import org.babyfish.jimmer.sql.kt.model.embedded.source
 import org.babyfish.jimmer.sql.kt.model.embedded.target
 import kotlin.test.Test
 
 class RectTest : AbstractQueryTest() {
+
+    @Test
+    fun testReusableEmbeddedInputTypes() {
+        val input = ReusableTransformInput(
+            id = 1L,
+            source = DynamicRectInput(
+                leftTop = DynamicRectInput.TargetOf_leftTop(x = 10L),
+                rightBottom = DynamicRectInput.TargetOf_rightBottom(y = 20L)
+            )
+        )
+        assertContent(
+            """{"id":1,"source":{"leftTop":{"x":10},"rightBottom":{"y":20}}}""",
+            input.toEntity()
+        )
+    }
 
     @Test
     fun testRectView() {

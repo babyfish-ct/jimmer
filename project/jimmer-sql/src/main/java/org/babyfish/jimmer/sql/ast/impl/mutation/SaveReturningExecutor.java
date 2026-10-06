@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
@@ -185,9 +186,12 @@ class SaveReturningExecutor {
     }
 
     private static List<Object> keyOf(SaveReturning returning, Object[] values) {
-        List<Object> key = new ArrayList<>(returning.matchIndexes.size());
-        for (Integer index : returning.matchIndexes) {
-            key.add(values[index]);
+        List<Object> key = new ArrayList<>(returning.matchGetters.size());
+        JSqlClientImplementor sqlClient = returning.ctx.options.getSqlClient();
+        for (int i = 0; i < returning.matchGetters.size(); i++) {
+            PropertyGetter getter = returning.matchGetters.get(i);
+            Object value = values[returning.matchIndexes.get(i)];
+            key.add(Variables.process(value, getter.metadata().getValueProp(), sqlClient));
         }
         return key;
     }

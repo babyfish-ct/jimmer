@@ -1,6 +1,13 @@
 export org.babyfish.jimmer.sql.kt.model.embedded.Transform
     -> package org.babyfish.jimmer.sql.kt.model.embedded.dto
 
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.DynamicRectInput
+
+dynamic input ReusableTransformInput {
+    id
+    source -> DynamicRectInput
+}
+
 TransformView {
     id
     source {

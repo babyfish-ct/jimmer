@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.jspecify.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -20,6 +21,21 @@ public class Internal {
             new ThreadLocal<>();
 
     private Internal() {}
+
+    /**
+     * Prepares a list value for storage in a generated draft or builder.
+     * Live draft lists are retained when a context is present; builders without a context store resolved, unmodifiable lists.
+     */
+    @Nullable
+    public static <E> List<E> prepareListForAssignment(@Nullable DraftContext ctx, @Nullable List<E> list) {
+        if (list instanceof ListDraft<?>) {
+            if (ctx != null) {
+                return list;
+            }
+            list = ((ListDraft<E>) list).resolve();
+        }
+        return ListUtils.unmodifiable(list);
+    }
 
     public static Object produce(
             ImmutableType type,

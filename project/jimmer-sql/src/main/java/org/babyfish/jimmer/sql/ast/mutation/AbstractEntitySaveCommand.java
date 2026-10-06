@@ -214,12 +214,36 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
+    /**
+     * Sets the default interpretation of id-only objects, including the root object.
+     * Association-specific settings override this default.
+     *
+     * @see #setIdOnlyAsReference(ImmutableProp, boolean)
+     */
     @NewChain
     AbstractEntitySaveCommand setIdOnlyAsReferenceAll(boolean asReference);
 
+    /**
+     * Specifies whether id-only targets of the association represent existing objects.
+     * For an inverse association backed by a foreign key, references only update that foreign key;
+     * they are not inserted, even when the associated save mode permits insertion.
+     * The reference is identified before the framework adds the back-reference.
+     * An explicitly supplied back-reference or any other loaded non-id property makes the target an entity.
+     *
+     * <p>When {@code asReference} is {@code false}, id-only targets follow the associated save mode as entities.
+     * Explicit assignments, forced matched updates and non-IGNORE unloaded-version behavior retain their
+     * entity mutation semantics. Target checking and transfer restrictions still apply.
+     *
+     * @param prop The association property
+     * @param asReference Whether id-only targets represent references
+     * @return The configured command
+     */
     @NewChain
     AbstractEntitySaveCommand setIdOnlyAsReference(ImmutableProp prop, boolean asReference);
 
+    /**
+     * @see #setIdOnlyAsReference(ImmutableProp, boolean)
+     */
     @NewChain
     AbstractEntitySaveCommand setIdOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference);
 

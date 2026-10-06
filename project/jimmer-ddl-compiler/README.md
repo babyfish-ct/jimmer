@@ -78,6 +78,11 @@ A Key group containing a nullable physical column is skipped as a whole. Associa
 Existing indexes are compared by definition. Replacing a changed index with the same name requires `jimmerDdl.allowDestructiveChanges=true`; otherwise the repair remains pending in the snapshot. An equivalent index with a different name is retained. Apply repairs through new migrations rather than editing previously applied files.
 
 The association regression tests run real KSP and APT compilation, persist structural snapshots, verify repeat-generation idempotency, and execute generated constraints on H2. PostgreSQL and H2 snapshots are generated independently to preserve each dialect's type semantics.
+## Kotlin computed getters
+
+Ordinary Kotlin properties with an implemented getter and no backing field do not generate columns, even without `@Formula`. This includes expression getters, block getters, inherited getters and getters inside embeddables. Abstract properties and stored properties remain eligible for persistence. Explicit `@Formula` and `@Transient` properties continue to be excluded from DDL.
+
+Adding only computed getters produces no schema migration. Use `@Formula(dependencies = [...])` when a getter should participate in Jimmer fetchers and dependency loading. Ordinary getters use their Kotlin implementation and require their referenced persistent properties to be loaded.
 
 ## Snapshot model
 

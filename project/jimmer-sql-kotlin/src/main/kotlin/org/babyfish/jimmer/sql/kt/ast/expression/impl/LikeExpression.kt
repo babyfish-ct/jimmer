@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.LikePattern
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 
@@ -23,18 +24,8 @@ internal class LikePredicate(
         false,
         expression,
         insensitive,
-        pattern.let {
-            var str = it
-            if (!mode.isStartExact && !str.startsWith("%")) {
-                str = "%$str"
-            }
-            if (!mode.isEndExact && !str.endsWith("%")) {
-                str = "$str%"
-            }
-            if (insensitive) {
-                str = str.lowercase()
-            }
-            str
+        LikePattern.of(pattern, mode).let {
+            if (insensitive) it.lowercase() else it
         }
     )
 

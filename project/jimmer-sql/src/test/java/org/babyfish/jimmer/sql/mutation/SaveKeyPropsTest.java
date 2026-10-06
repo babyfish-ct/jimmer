@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.List;
@@ -208,6 +209,30 @@ public class SaveKeyPropsTest extends AbstractMutationTest {
             assertEquals(inserted.id(), result.getItems().get(1).getModifiedEntity().id());
             assertEquals(1, result.getTotalAffectedRowCount());
             assertNativeKeyMerge(1);
+        });
+    }
+
+    @Test
+    public void testInsertIfAbsentByDateAndEnumKey() {
+        SaveReturningKeyEntity input = Immutables.createSaveReturningKeyEntity(draft -> {
+            draft.setId(1L);
+            draft.setDateKey(LocalDate.of(2026, 9, 24));
+            draft.setEnumKey(SaveReturningKeyEnum.FIRST);
+            draft.setValueText("value");
+        });
+        jdbc(con -> {
+            SimpleSaveResult<SaveReturningKeyEntity> result = getSqlClient()
+                    .saveCommand(input)
+                    .matchByKey()
+                    .setMode(SaveMode.INSERT_IF_ABSENT)
+                    .execute(con, SaveReturningKeyEntityFetcher.$.dateKey()
+                            .enumKey()
+                            .valueText());
+            assertTrue(result.isAccepted());
+            assertEquals(input.dateKey(), result.getModifiedEntity().dateKey());
+            assertEquals(input.enumKey(), result.getModifiedEntity().enumKey());
+            assertEquals(input.valueText(), result.getModifiedEntity().valueText());
+            assertEquals(input.id(), result.getModifiedEntity().id());
         });
     }
 

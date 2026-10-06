@@ -12,7 +12,7 @@ public class SwaggerUiConfig implements WebMvcConfigurer {
     private final String version;
 
     public SwaggerUiConfig(String uiPath, @Nullable String version) {
-        this.path = uiPath.substring(0, uiPath.indexOf("/"));
+        this.path = uiPath.substring(0, uiPath.lastIndexOf('/')) + "/jimmer-swagger-ui";
         this.version = version == null || version.isEmpty() ? SwaggerUiVersion.DEFAULT_VALUE : version;
     }
 

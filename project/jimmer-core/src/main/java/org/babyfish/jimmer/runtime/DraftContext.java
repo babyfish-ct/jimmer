@@ -2,6 +2,7 @@ package org.babyfish.jimmer.runtime;
 
 import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.sql.collection.AbstractIdViewList;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,9 +17,6 @@ public class DraftContext {
 
     @Nullable
     private IdentityHashMap<Object, Draft> objDraftMap;
-
-    @Nullable
-    private IdentityHashMap<List<?>, ListDraft<?>> listDraftMap;
 
     private DisposerHolder disposerHolder;
 
@@ -48,27 +46,33 @@ public class DraftContext {
 
     @SuppressWarnings("unchecked")
     public <E, D> List<D> toDraftList(
+            DraftSpi owner,
+            PropId propId,
             List<E> list,
             Class<E> elementType,
             boolean isElementImmutable
     ) {
-        if (list == null || list instanceof Draft || list instanceof AbstractIdViewList<?, ?>) {
+        if (list == null || list instanceof AbstractIdViewList<?, ?>) {
             return (List<D>) list;
         }
-        IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = this.listDraftMap;
-        ListDraft<?> draft = listDraftMap != null ? listDraftMap.get(list) : null;
-        if (draft == null) {
-            if (isElementImmutable) {
-                draft = new ListDraft<>(this, elementType, list);
-            } else {
-                draft = new ListDraft<>(elementType, list);
-            }
-            if (listDraftMap == null) {
-                listDraftMap = this.listDraftMap = new IdentityHashMap<>(1);
-            }
-            listDraftMap.put(list, draft);
+        ListDraft<?> draft = owner.__getListDraft(propId);
+        if (draft == null || !draft.isBase(list)) {
+            draft = isElementImmutable ? new ListDraft<>(this, elementType, list) : new ListDraft<>(elementType, list);
+            owner.__setListDraft(propId, draft);
         }
         return (List<D>) draft;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E> List<E> resolveList(DraftSpi owner, PropId propId, List<E> list) {
+        if (list == null) {
+            return null;
+        }
+        ListDraft<?> draft = owner.__getListDraft(propId);
+        if (draft != null && draft.isBase(list)) {
+            return ListUtils.unmodifiable((List<E>) draft.resolve());
+        }
+        return ListUtils.unmodifiable(resolveList(list));
     }
 
     @SuppressWarnings("unchecked")
@@ -112,8 +116,7 @@ public class DraftContext {
         if (list instanceof Draft) {
             draft = (ListDraft<?>) list;
         } else {
-            IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = this.listDraftMap;
-            draft = listDraftMap != null ? listDraftMap.get(list) : null;
+            draft = null;
         }
         if (draft == null) {
             List<E> newList = null;
