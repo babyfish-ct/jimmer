@@ -185,10 +185,9 @@ class JimmerDdlCompilerTest {
         val sql = sqlFile.readText()
         assertContains(sql, """CREATE TABLE IF NOT EXISTS "apt_book"""")
         assertContains(sql, """"id" BIGINT NOT NULL""")
-        assertContains(sql, """"title" TEXT""")
-        assertContains(sql, """"subtitle" TEXT""")
-        assertContains(sql, """ALTER TABLE "apt_book" ALTER COLUMN "title" DROP NOT NULL;""")
-        assertContains(sql, """ALTER TABLE "apt_book" ALTER COLUMN "subtitle" DROP NOT NULL;""")
+        assertContains(sql, """"title" TEXT NOT NULL""")
+        assertContains(sql, """"subtitle" TEXT NOT NULL""")
+        assertFalse(sql.contains("DROP NOT NULL"), sql)
 
         val snapshotDirectory = projectDir.resolve("build/generated/jimmer-ddl/main/resources/.jimmer-ddl/entity-table-snapshot")
         val snapshotFile = snapshotDirectory.listFiles { file -> file.extension == "properties" }
@@ -780,6 +779,67 @@ class JimmerDdlCompilerTest {
 
         assertContains(renamed.sql, """ALTER TABLE "book" ADD COLUMN IF NOT EXISTS "title"""")
         assertContains(renamed.sql, """ALTER TABLE "book" DROP COLUMN IF EXISTS "book_title";""")
+    }
+
+    @Test
+    fun `same name association key repair remains pending until destructive changes are enabled`() {
+        val directory = createTempDirectory(prefix = "jimmer-ddl-key-repair").toFile()
+        val settings = JimmerDdlCompilerSettings(
+            databaseType = DatabaseType.POSTGRESQL,
+            outputFormat = JimmerDdlOutputFormat.PLAIN,
+            outputDir = directory.resolve("build/generated/jimmer-ddl/main/resources/db/migration").absolutePath,
+            compareDatabase = false,
+        )
+        val customer = TestClass(
+            simpleName = "Customer",
+            annotations = listOf(entity(), table("customer")),
+            fields = listOf(TestField("id", TestType("Long"), annotations = listOf(id()))),
+        )
+        val key = TestAnnotation("org.babyfish.jimmer.sql.Key", "Key", mapOf("group" to "business"))
+        val member = TestClass(
+            simpleName = "Member",
+            annotations = listOf(entity(), table("member")),
+            fields = listOf(
+                TestField("id", TestType("Long"), annotations = listOf(id())),
+                TestField(
+                    "customer",
+                    TestType("Customer", lsiClass = customer),
+                    fieldTypeClass = customer,
+                    annotations = listOf(
+                        TestAnnotation("org.babyfish.jimmer.sql.ManyToOne", "ManyToOne"),
+                        TestAnnotation("org.babyfish.jimmer.sql.JoinColumn", "JoinColumn", mapOf("name" to "customer_id")),
+                        key,
+                    ),
+                ),
+                TestField("code", TestType("String"), annotations = listOf(key)),
+            ),
+        )
+        val entities = listOf(customer, member)
+        try {
+            val first = JimmerDdlCompiler.compile(entities, settings)
+            val legacy = first.schema.copy(tables = first.schema.tables.map { current ->
+                if (current.name == "member") {
+                    current.copy(indexes = current.indexes.map { it.copy(columnNames = listOf("code")) })
+                } else {
+                    current
+                }
+            })
+            JimmerDdlEntityTableSnapshot.writeSnapshot(first.entities, legacy, settings)
+            val safe = JimmerDdlCompiler.compile(entities, settings)
+            assertFalse(safe.sql.contains("DROP INDEX"), safe.sql)
+            assertFalse(safe.sql.contains("CREATE UNIQUE INDEX"), safe.sql)
+            assertEquals(listOf("code"), safe.snapshotSchema.table("member")!!.indexes.single().columnNames)
+            JimmerDdlEntityTableSnapshot.writeSnapshot(safe.entities, safe.snapshotSchema, settings)
+
+            val repairSettings = settings.copy(allowDestructiveChanges = true)
+            val repaired = JimmerDdlCompiler.compile(entities, repairSettings)
+            assertContains(repaired.sql, "DROP INDEX IF EXISTS \"uk_member_business\"")
+            assertContains(repaired.sql, "(\"customer_id\", \"code\")")
+            JimmerDdlEntityTableSnapshot.writeSnapshot(repaired.entities, repaired.snapshotSchema, repairSettings)
+            assertTrue(JimmerDdlCompiler.compile(entities, repairSettings).isEmpty)
+        } finally {
+            directory.deleteRecursively()
+        }
     }
 
     @Test

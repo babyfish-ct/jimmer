@@ -31,10 +31,14 @@ dependencies {
     testImplementation(libs.h2)
 }
 
+val testJvmTarget = tasks.compileTestKotlin
+    .flatMap { it.compilerOptions.jvmTarget }
+    .map { it.target }
+
 tasks.test {
     useJUnit()
     maxHeapSize = "4g"
-    systemProperty("jimmer.test.jvmTarget", tasks.compileTestKotlin.get().compilerOptions.jvmTarget.get().target)
+    systemProperty("jimmer.test.jvmTarget", testJvmTarget.get())
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
