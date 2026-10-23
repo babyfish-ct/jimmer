@@ -314,10 +314,10 @@ public class OracleDialect extends DefaultDialect {
                     "Oracle only supports LockMode.UPDATE"
             );
         }
-        builder.sql(" for update ");
+        builder.sql(" for update");
         LockWait wait = forUpdate.getLockWait();
         if (wait == LockWait.NO_WAIT) {
-            builder.sql(" no wait");
+            builder.sql(" nowait");
         } else if (wait == LockWait.SKIP_LOCKED) {
             builder.sql(" skip locked");
         } else if (wait instanceof IntSupplier) {
