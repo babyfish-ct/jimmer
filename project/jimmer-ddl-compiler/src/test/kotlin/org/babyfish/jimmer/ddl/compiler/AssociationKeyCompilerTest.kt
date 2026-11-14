@@ -30,7 +30,7 @@ import site.addzero.ddlgenerator.core.model.AutoDdlSchema
 import site.addzero.ddlgenerator.dialect.h2.H2AutoDdlDialect
 
 @OptIn(ExperimentalCompilerApi::class)
-class AssociationKeyCompilerTest {
+class AssociationKeyCompilerTest : AbstractKspTest() {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
