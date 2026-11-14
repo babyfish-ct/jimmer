@@ -312,7 +312,10 @@ public class ComparisonPredicates {
             builder.leave();
             return;
         }
-        if (getters.size() == 1 && dialect.isAnyEqualityOfArraySupported()) {
+        // ANY compares scalar elements, not whole arrays. Keep array-valued operands
+        // as separate IN parameters, which also allows arrays of different lengths.
+        if (getters.size() == 1 && dialect.isAnyEqualityOfArraySupported() &&
+                !isArraySqlType(getters.get(0).metadata().getSqlType())) {
             ValueGetter getter = getters.get(0);
             String sqlType = getter.metadata().getSqlTypeName();
             Object[] arr = new Object[values.size()];
@@ -466,6 +469,10 @@ public class ComparisonPredicates {
             );
         }
         builder.leave().leave();
+    }
+
+    private static boolean isArraySqlType(Class<?> type) {
+        return (type.isArray() && type != byte[].class) || Collection.class.isAssignableFrom(type);
     }
 
     private static Object nonNull(Object value) {

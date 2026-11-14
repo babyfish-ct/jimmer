@@ -20,6 +20,20 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 public class InCollectionTest extends AbstractQueryTest {
 
     @Test
+    public void testScalarExpressionKeepsAnyOptimization() {
+        BookStoreTable table = BookStoreTable.$;
+        executeAndExpect(
+                getSqlClient().createQuery(table)
+                        .where(table.name().lower().in(Arrays.asList("manning", "missing")))
+                        .select(table.name()),
+                ctx -> {
+                    ctx.sql("select tb_1_.NAME from BOOK_STORE tb_1_ where lower(tb_1_.NAME) = any(?)");
+                    ctx.rows("[\"MANNING\"]");
+                }
+        );
+    }
+
+    @Test
     public void testSimpleId() {
         TreeNodeTable table = TreeNodeTable.$;
         executeAndExpect(

@@ -12,9 +12,9 @@ interface PgEnumArrayModel {
     @Id
     val id: Long
 
+    @Column(sqlElementType = "varchar")
     val genderArr: Array<Gender>
 
-    @Column(sqlElementType = "text")
     val textList: List<Gender>
 
     @Column(sqlElementType = "varchar")

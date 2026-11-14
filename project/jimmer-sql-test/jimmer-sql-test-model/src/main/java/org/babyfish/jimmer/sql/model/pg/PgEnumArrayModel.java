@@ -13,9 +13,9 @@ public interface PgEnumArrayModel {
     @Id
     long id();
 
+    @Column(sqlElementType = "varchar")
     Gender[] genderArr();
 
-    @Column(sqlElementType = "text")
     List<Gender> textList();
 
     @Column(sqlElementType = "varchar")
