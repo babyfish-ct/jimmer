@@ -51,6 +51,12 @@ public class CoalesceBuilder<T> {
         if (javaClass.isPrimitive() || Number.class.isAssignableFrom(javaClass)) {
             return (Expression<T>) new NumExpr<>(clonedList);
         }
+        if (Temporal.class.isAssignableFrom(javaClass)) {
+            return (Expression<T>) new TpExpr<>(clonedList);
+        }
+        if (Date.class.isAssignableFrom(javaClass)) {
+            return (Expression<T>) new DtExpr<>(clonedList);
+        }
         if (Comparable.class.isAssignableFrom(javaClass)) {
             return (Expression<T>) new CmpExpr<>(clonedList);
         }
@@ -241,6 +247,20 @@ public class CoalesceBuilder<T> {
     private static class NumExpr<N extends Number & Comparable<N>> extends Expr<N> implements NumericExpressionImplementor<N> {
 
         public NumExpr(List<Expression<?>> expressions) {
+            super(expressions);
+        }
+    }
+
+    private static class TpExpr<T extends Temporal & Comparable<?>> extends Expr<T> implements TemporalExpressionImplementor<T> {
+
+        public TpExpr(List<Expression<?>> expressions) {
+            super(expressions);
+        }
+    }
+
+    private static class DtExpr<T extends Date & Comparable<Date>> extends Expr<T> implements DateExpressionImplementor<T> {
+
+        public DtExpr(List<Expression<?>> expressions) {
             super(expressions);
         }
     }

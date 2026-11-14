@@ -609,13 +609,16 @@ public class PostgresDialect extends DefaultDialect {
         }
         LockWait wait = forUpdate.getLockWait();
         if (wait == LockWait.NO_WAIT) {
-            builder.sql(" no wait");
+            builder.sql(" nowait");
         } else if (wait == LockWait.SKIP_LOCKED) {
             builder.sql(" skip locked");
         } else if (wait instanceof IntSupplier) {
-            IntSupplier supplier = (IntSupplier) wait;
-            int seconds = supplier.getAsInt();
-            builder.sql(" wait ").sql(Integer.toString(seconds));
+            throw new IllegalArgumentException(
+                    "Postgres does not support " +
+                            wait +
+                            ", please use LockWait.NO_WAIT, LockWait.SKIP_LOCKED " +
+                            "or configure the \"lock_timeout\" parameter of the database session"
+            );
         }
     }
 }
