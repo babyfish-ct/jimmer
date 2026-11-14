@@ -21,6 +21,7 @@ drop table if exists shop_customer_mapping cascade;
 drop table if exists shop cascade;
 drop table if exists customer cascade;
 drop table if exists pg_array_model cascade;
+drop table if exists pg_enum_array_model cascade;
 drop table if exists pg_date_time cascade;
 drop table if exists container cascade;
 drop table if exists nullable_bool cascade;
@@ -572,6 +573,26 @@ insert into pg_array_model(id, int_arr, integer_arr, text_arr, text_list, varcha
  array['d', 'e', 'f'],
  array['g', 'h', 'i'],
  array['j', 'k', 'l']
+);
+
+create table pg_enum_array_model(
+    id bigint not null,
+    gender_arr varchar[] not null,
+    text_list text[] not null,
+    varchar_list varchar[] not null,
+    priorities integer[] not null
+);
+alter table pg_enum_array_model
+    add constraint pk_enum_arrays
+        primary key(id)
+;
+
+insert into pg_enum_array_model(id, gender_arr, text_list, varchar_list, priorities) values
+('1',
+ array['M', 'F'],
+ array['F'],
+ array['M'],
+ array[2, 0]
 );
 
 create table pg_date_time(

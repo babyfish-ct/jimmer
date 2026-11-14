@@ -419,7 +419,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
     public Class<?> getSqlType() {
         return scalarProvider != null ?
                 ScalarProviderUtils.getSqlType(scalarProvider, sqlClient.getDialect()) :
-                getValueProp().getReturnClass();
+                javaType;
     }
 
     @Override

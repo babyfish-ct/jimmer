@@ -119,7 +119,11 @@ class ScalarProviderManager implements ScalarTypeStrategy {
 
         Serialized serialized = prop.getAnnotation(Serialized.class);
         if (serialized == null) {
-            return typeScalarProviderCache.get(prop.getReturnClass());
+            provider = typeScalarProviderCache.get(prop.getReturnClass());
+            if (provider != null) {
+                return provider;
+            }
+            return createEnumArrayProvider(prop);
         }
         if (defaultJsonProviderCreator != null) {
             return defaultJsonProviderCreator.apply(prop);
@@ -178,6 +182,36 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         }
 
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private ScalarProvider<?, ?> createEnumArrayProvider(ImmutableProp prop) {
+        if (!dialect.isArraySupported()) {
+            return null;
+        }
+        Class<?> returnClass = prop.getReturnClass();
+        Class<?> elementType;
+        if (returnClass.isArray()) {
+            elementType = returnClass.getComponentType();
+        } else if (returnClass == List.class || returnClass == Collection.class) {
+            elementType = prop.getElementClass();
+        } else {
+            return null;
+        }
+        if (!elementType.isEnum()) {
+            return null;
+        }
+        ScalarProvider<?, ?> elementProvider = typeScalarProviderCache.get(elementType);
+        if (elementProvider == null ||
+                elementProvider.isJsonScalar() ||
+                elementProvider.getSqlType().isPrimitive()) {
+            return null;
+        }
+        return new EnumArrayProvider<>(
+                (Class<Object>) returnClass,
+                (Class<Object>) elementType,
+                (ScalarProvider<Object, Object>) elementProvider
+        );
     }
 
     private <E extends Enum<E>> ScalarProvider<E, ?> newEnumByStringProvider(Class<E> enumType) {
@@ -269,6 +303,58 @@ class ScalarProviderManager implements ScalarTypeStrategy {
                 return "JacksonScalarProvider";
             }
         };
+    }
+
+    private static class EnumArrayProvider<S> extends AbstractScalarProvider<Object, Object[]> {
+
+        private final Class<?> elementType;
+
+        private final ScalarProvider<Object, S> elementProvider;
+
+        @SuppressWarnings("unchecked")
+        EnumArrayProvider(
+                Class<Object> scalarType,
+                Class<Object> elementType,
+                ScalarProvider<Object, S> elementProvider
+        ) {
+            super(
+                    scalarType,
+                    (Class<Object[]>) Array.newInstance(elementProvider.getSqlType(), 0).getClass()
+            );
+            this.elementType = elementType;
+            this.elementProvider = elementProvider;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public @NotNull Object toScalar(@NotNull Object[] sqlValue) throws Exception {
+            Object[] arr = (Object[]) Array.newInstance(elementType, sqlValue.length);
+            for (int i = 0; i < sqlValue.length; i++) {
+                Object sqlElement = sqlValue[i];
+                arr[i] = sqlElement != null ? elementProvider.toScalar((S) sqlElement) : null;
+            }
+            return getScalarType() == List.class || getScalarType() == Collection.class ?
+                    Arrays.asList(arr) :
+                    arr;
+        }
+
+        @Override
+        public @NotNull Object[] toSql(@NotNull Object scalarValue) throws Exception {
+            Object[] arr = scalarValue instanceof Collection<?> ?
+                    ((Collection<?>) scalarValue).toArray() :
+                    (Object[]) scalarValue;
+            Object[] sqlValue = (Object[]) Array.newInstance(getSqlType().getComponentType(), arr.length);
+            for (int i = 0; i < arr.length; i++) {
+                Object element = arr[i];
+                sqlValue[i] = element != null ? elementProvider.toSql(element) : null;
+            }
+            return sqlValue;
+        }
+
+        @Override
+        public String toString() {
+            return "EnumArrayProvider(" + elementProvider + ")";
+        }
     }
 
     private ScalarProvider<?, ?> customizedPropScalarProvider(ImmutableProp prop) {

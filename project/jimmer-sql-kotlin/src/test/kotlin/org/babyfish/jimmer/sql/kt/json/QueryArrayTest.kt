@@ -3,7 +3,14 @@ package org.babyfish.jimmer.sql.kt.json
 import org.babyfish.jimmer.sql.dialect.PostgresDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
+import org.babyfish.jimmer.sql.kt.ast.expression.eq
+import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.pg.PgArrayModel
+import org.babyfish.jimmer.sql.kt.model.pg.PgEnumArrayModel
+import org.babyfish.jimmer.sql.kt.model.pg.Priority
+import org.babyfish.jimmer.sql.kt.model.pg.priorities
+import org.babyfish.jimmer.sql.kt.model.pg.textList
+import org.babyfish.jimmer.sql.kt.model.pg.varcharList
 import org.junit.Assume
 import org.postgresql.Driver
 import org.springframework.jdbc.datasource.SimpleDriverDataSource
@@ -46,6 +53,40 @@ class QueryArrayTest : AbstractQueryTest() {
                     |--->"textList":["d","e","f"],
                     |--->"varcharArr":["g","h","i"],
                     |--->"varcharList":["j","k","l"]
+                    |}]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testQueryEnumArrays() {
+        Assume.assumeTrue(
+            (System.getenv("jimmer-sql-test-native-database") ?: "").let {
+                it.isNotEmpty() && it != "false"
+            }
+        )
+        executeAndExpect(
+            POSTGRES_DATA_SOURCE,
+            _sqlClient.createQuery(PgEnumArrayModel::class) {
+                where(table.textList eq listOf(Gender.FEMALE))
+                where(table.varcharList eq listOf(Gender.MALE))
+                where(table.priorities eq listOf(Priority.HIGH, Priority.LOW))
+                select(table)
+            }
+        ) {
+            sql(
+                """select 
+                    |tb_1_.ID, tb_1_.GENDER_ARR, tb_1_.TEXT_LIST, tb_1_.VARCHAR_LIST, tb_1_.PRIORITIES 
+                    |from PG_ENUM_ARRAY_MODEL tb_1_ 
+                    |where tb_1_.TEXT_LIST = ? and tb_1_.VARCHAR_LIST = ? and tb_1_.PRIORITIES = ?""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":1,
+                    |--->"genderArr":["MALE","FEMALE"],
+                    |--->"textList":["FEMALE"],
+                    |--->"varcharList":["MALE"],
+                    |--->"priorities":["HIGH","LOW"]
                     |}]""".trimMargin()
             )
         }

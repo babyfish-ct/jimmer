@@ -94,7 +94,8 @@ public class Storages {
         boolean isArray = false;
         Class<?> overriddenSqlClass = scalarTypeStrategy.getOverriddenSqlType(prop);
         if (overriddenSqlClass != null) {
-            elementType = overriddenSqlClass;
+            isArray = overriddenSqlClass.isArray() && overriddenSqlClass != byte[].class;
+            elementType = isArray ? overriddenSqlClass.getComponentType() : overriddenSqlClass;
         } else if (prop.getReturnClass().isArray() && prop.getReturnClass() != byte[].class) {
             elementType = prop.getReturnClass().getComponentType();
             isArray = true;

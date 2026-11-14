@@ -144,6 +144,7 @@ drop view tree_node_2 if exists;
 drop table generic_tree_node if exists;
 drop table tree_node if exists;
 drop table array_model if exists;
+drop table enum_array_model if exists;
 drop table person if exists;
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
@@ -1787,6 +1788,20 @@ insert into array_model(id, integers, ints, strings, bytes, longs, uuids, floats
     array[3.0, 2.0, 1.0],
     '[1, 2, 3, 4, 5]'
 );
+
+create table enum_array_model(
+    id bigint not null,
+    genders varchar(10) array not null,
+    gender_list varchar(10) array not null,
+    priorities int array not null
+);
+alter table enum_array_model
+    add constraint pk_enum_array_model
+        primary key(id)
+;
+
+insert into enum_array_model(id, genders, gender_list, priorities) values
+    (1, array['M', 'F'], array['F'], array[2, 0]);
 
 
 

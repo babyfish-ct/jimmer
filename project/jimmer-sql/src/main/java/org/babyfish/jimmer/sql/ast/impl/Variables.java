@@ -76,7 +76,7 @@ public class Variables {
             if (scalarProvider != null) {
                 return scalarProvider.isJsonScalar() ?
                         new DbLiteral.DbValue(prop, value, true) :
-                        handleDateTime(value, sqlClient.getZoneId());
+                        handleDateTime(handleArray(value, prop, sqlClient), sqlClient.getZoneId());
             }
         }
         if (value == null) {
@@ -87,16 +87,24 @@ public class Variables {
             ((Collection<Object>) value).toArray(arr);
             value = arr;
         }
+        return handleDateTime(handleArray(value, prop, sqlClient), sqlClient.getZoneId());
+    }
+
+    private static Object handleArray(
+            Object value,
+            ImmutableProp prop,
+            JSqlClientImplementor sqlClient
+    ) {
         if (value.getClass().isArray()) {
             Storage storage = prop.getStorage(sqlClient.getMetadataStrategy());
             if (storage instanceof SingleColumn) {
                 SingleColumn singleColumn = (SingleColumn) storage;
                 if (singleColumn.getSqlElementType() != null) {
-                    value = new TypedList<>(singleColumn.getSqlElementType(), ArrayUtils.toObject(value));
+                    return new TypedList<>(singleColumn.getSqlElementType(), ArrayUtils.toObject(value));
                 }
             }
         }
-        return handleDateTime(value, sqlClient.getZoneId());
+        return value;
     }
 
     @SuppressWarnings("unchecked")

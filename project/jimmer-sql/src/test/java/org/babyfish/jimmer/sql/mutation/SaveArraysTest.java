@@ -5,17 +5,25 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.arrays.ArrayModelDraft;
 import org.babyfish.jimmer.sql.model.arrays.ArrayModel;
 import org.babyfish.jimmer.sql.model.arrays.ArrayModelProps;
+import org.babyfish.jimmer.sql.model.arrays.EnumArrayModel;
+import org.babyfish.jimmer.sql.model.arrays.EnumArrayModelDraft;
+import org.babyfish.jimmer.sql.model.arrays.Priority;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModel;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModelDraft;
 import org.babyfish.jimmer.sql.model.pg.PgArrayModelTable;
+import org.babyfish.jimmer.sql.model.pg.PgEnumArrayModel;
+import org.babyfish.jimmer.sql.model.pg.PgEnumArrayModelDraft;
+import org.babyfish.jimmer.sql.model.pg.PgEnumArrayModelTable;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.h2.value.ValueJson;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 public class SaveArraysTest extends AbstractMutationTest {
@@ -196,6 +204,115 @@ public class SaveArraysTest extends AbstractMutationTest {
                                 "update PG_ARRAY_MODEL tb_1_ set " +
                                         "INT_ARR = ?, TEXT_ARR = ?, TEXT_LIST = ?, VARCHAR_ARR = ?, VARCHAR_LIST = ? " +
                                         "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testInsertEnumArrays() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        EnumArrayModelDraft.$.produce(model -> {
+                            model.setId(2L);
+                            model.setGenders(new Gender[] {Gender.FEMALE, Gender.MALE});
+                            model.setGenderList(Collections.singletonList(Gender.MALE));
+                            model.setPriorities(Arrays.asList(Priority.MEDIUM, Priority.HIGH));
+                        })
+                ).setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ENUM_ARRAY_MODEL(ID, GENDERS, GENDER_LIST, PRIORITIES) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                2L,
+                                new String[] {"F", "M"},
+                                new String[] {"M"},
+                                new Integer[] {1, 2}
+                        );
+                    });
+                    ctx.entity(it -> {
+                        String json = "{" +
+                                "\"id\":2," +
+                                "\"genders\":[\"FEMALE\",\"MALE\"]," +
+                                "\"genderList\":[\"MALE\"]," +
+                                "\"priorities\":[\"MEDIUM\",\"HIGH\"]" +
+                                "}";
+                        it.original(json);
+                        it.modified(json);
+                    });
+                    ctx.totalRowCount(1);
+                    ctx.rowCount(AffectedTable.of(EnumArrayModel.class), 1);
+                }
+        );
+    }
+
+    @Test
+    public void testInsertEnumArraysByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        PgEnumArrayModel model = PgEnumArrayModelDraft.$.produce(it -> {
+            it.setId(2L);
+            it.setGenderArr(new Gender[] {Gender.FEMALE, Gender.MALE});
+            it.setTextList(Collections.singletonList(Gender.MALE));
+            it.setVarcharList(Collections.singletonList(Gender.FEMALE));
+            it.setPriorities(Arrays.asList(Priority.MEDIUM, Priority.HIGH));
+        });
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                        .getEntities()
+                        .saveCommand(model)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into PG_ENUM_ARRAY_MODEL(ID, GENDER_ARR, TEXT_LIST, VARCHAR_LIST, PRIORITIES) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        String json = "{" +
+                                "\"id\":2," +
+                                "\"genderArr\":[\"FEMALE\",\"MALE\"]," +
+                                "\"textList\":[\"MALE\"]," +
+                                "\"varcharList\":[\"FEMALE\"]," +
+                                "\"priorities\":[\"MEDIUM\",\"HIGH\"]" +
+                                "}";
+                        it.original(json);
+                        it.modified(json);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateDMLEnumArraysByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        PgEnumArrayModelTable table = PgEnumArrayModelTable.$;
+
+        executeAndExpectRowCount(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                        .createUpdate(table)
+                        .set(table.genderArr(), new Gender[] {Gender.FEMALE})
+                        .set(table.textList(), Arrays.asList(Gender.FEMALE, Gender.MALE))
+                        .set(table.priorities(), Collections.singletonList(Priority.LOW))
+                        .where(table.id().eq(1L))
+                        .where(table.varcharList().eq(Collections.singletonList(Gender.MALE))),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update PG_ENUM_ARRAY_MODEL tb_1_ set " +
+                                        "GENDER_ARR = ?, TEXT_LIST = ?, PRIORITIES = ? " +
+                                        "where tb_1_.ID = ? and tb_1_.VARCHAR_LIST = ?"
                         );
                     });
                     ctx.rowCount(1);
