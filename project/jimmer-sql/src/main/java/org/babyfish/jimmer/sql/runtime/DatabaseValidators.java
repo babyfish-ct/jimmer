@@ -298,7 +298,7 @@ public class DatabaseValidators {
     private Table tableOf(ImmutableType type) throws SQLException {
         org.babyfish.jimmer.lang.Ref<Table> tableRef = tableRefMap.get(type);
         if (tableRef == null) {
-            Set<Table> tables = tablesOf(DatabaseIdentifiers.rawIdentifier(type.getTableName(strategy)));
+            Set<Table> tables = tablesOf(type.getTableName(strategy));
             if (tables.isEmpty()) {
                 items.add(
                         new DatabaseValidationException.Item(
@@ -376,24 +376,60 @@ public class DatabaseValidators {
     }
 
     private Set<Table> tablesOf(String table) throws SQLException {
-        String catalogName = null;
-        String schemaName = null;
-        String tableName = table;
-        int index = tableName.lastIndexOf('.');
-        if (index != -1) {
-            schemaName = tableName.substring(0, index);
-            tableName = tableName.substring(index + 1);
-            index = schemaName.lastIndexOf('.');
-            if (index != -1) {
-                catalogName = schemaName.substring(0, index);
-                schemaName = schemaName.substring(index + 1);
+        List<String> parts = splitTableName(table);
+        int size = parts.size();
+        String tableName = parts.get(size - 1);
+        String schemaName = size > 1 ? parts.get(size - 2) : null;
+        String catalogName = size > 2 ? String.join(".", parts.subList(0, size - 2)) : null;
+        boolean catalogOnly = false;
+        if (size == 2) {
+            DatabaseMetaData metadata = con.getMetaData();
+            if (metadata.supportsCatalogsInTableDefinitions() && !metadata.supportsSchemasInTableDefinitions()) {
+                // MariaDB reports catalog support even when configured to use schema metadata.
+                // Both MariaDB and MySQL use one of these arguments and ignore the other.
+                catalogName = schemaName;
+                catalogOnly = true;
             }
         }
         return tablesOf(
                 required(catalogName, con.getCatalog()),
                 required(schemaName, con.getSchema()),
-                tableName
+                tableName,
+                catalogOnly ? schemaName : null
         );
+    }
+
+    private static List<String> splitTableName(String table) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder part = new StringBuilder();
+        char quote = 0;
+        for (int i = 0; i < table.length(); i++) {
+            char c = table.charAt(i);
+            if (quote != 0) {
+                if (c == quote) {
+                    if (i + 1 < table.length() && table.charAt(i + 1) == quote) {
+                        part.append(c);
+                        i++;
+                    } else {
+                        quote = 0;
+                    }
+                } else {
+                    part.append(c);
+                }
+            } else if (c == '`' || c == '"' || c == '[') {
+                quote = c == '[' ? ']' : c;
+            } else if (c == '.') {
+                parts.add(part.toString());
+                part.setLength(0);
+            } else {
+                part.append(c);
+            }
+        }
+        if (quote != 0) {
+            throw new IllegalArgumentException("Unclosed quoted identifier in table name: " + table);
+        }
+        parts.add(part.toString());
+        return parts;
     }
 
     private static String required(String value, String defaultValue) {
@@ -403,14 +439,14 @@ public class DatabaseValidators {
         return value;
     }
 
-    private Set<Table> tablesOf(String catalogName, String schemaName, String tableName) throws SQLException {
+    private Set<Table> tablesOf(String catalogName, String schemaName, String tableName, String databaseName) throws SQLException {
         Set<Tuple3<String, String, String>> tuples = new LinkedHashSet<>();
         new TableNameCollector(
                 new String[]{catalogName, schemaName, tableName},
                 arr -> tuples.add(new Tuple3<>(arr[0], arr[1], arr[2]))
         ).emit();
         for (Tuple3<String, String, String> tuple : tuples) {
-            Set<Table> tables = tablesOf0(tuple.get_1(), tuple.get_2(), tuple.get_3());
+            Set<Table> tables = tablesOf0(tuple.get_1(), tuple.get_2(), tuple.get_3(), databaseName);
             if (!tables.isEmpty()) {
                 return tables;
             }
@@ -418,7 +454,7 @@ public class DatabaseValidators {
         return Collections.emptySet();
     }
 
-    private Set<Table> tablesOf0(String catalogName, String schemaName, String tableName) throws SQLException {
+    private Set<Table> tablesOf0(String catalogName, String schemaName, String tableName, String databaseName) throws SQLException {
         Set<Table> tables = new LinkedHashSet<>();
         try (ResultSet rs = con.getMetaData().getTables(
                 catalogName,
@@ -439,6 +475,9 @@ public class DatabaseValidators {
         return tables
                 .stream()
                 .filter(it -> it.name.equalsIgnoreCase(tableName))
+                .filter(it -> databaseName == null || databaseName.equalsIgnoreCase(
+                        it.schema == null || it.schema.isEmpty() ? it.catalog : it.schema
+                ))
                 .collect(Collectors.toSet());
     }
 
@@ -490,7 +529,8 @@ public class DatabaseValidators {
                 Table referencedTable = tablesOf(
                         upper(rs.getString("PKTABLE_CAT")),
                         upper(rs.getString("PKTABLE_SCHEM")),
-                        rs.getString("PKTABLE_NAME").toUpperCase()
+                        rs.getString("PKTABLE_NAME").toUpperCase(),
+                        null
                 ).iterator().next();
                 String columnName = upper(rs.getString("FKCOLUMN_NAME"));
                 String referencedColumnName = upper(rs.getString("PKCOLUMN_NAME"));
