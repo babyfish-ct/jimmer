@@ -43,7 +43,7 @@ class AssociatedIdGenerator {
         if (!idTypeName.isPrimitive()) {
             builder.addAnnotation(prop.isNullable() ? Nullable.class : NonNull.class);
         }
-        builder.addAnnotation(ctx.getJacksonTypes().jsonIgnore);
+        builder.addAnnotation(org.babyfish.jimmer.json.JsonIgnore.class);
         if (!withImplementation) {
             builder.addModifiers(Modifier.ABSTRACT);
         } else {

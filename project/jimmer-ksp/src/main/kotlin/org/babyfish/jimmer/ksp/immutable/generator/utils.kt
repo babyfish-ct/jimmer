@@ -3,7 +3,6 @@ package org.babyfish.jimmer.ksp.immutable.generator
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
-import org.babyfish.jimmer.currentVersion
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -106,7 +105,9 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp, excluded
         }
         if (declaration.forFun()) {
             addedTypeNames += annoTypeName
-            if (!annoTypeName.startsWith("org.babyfish.jimmer.")) {
+            if (!annoTypeName.startsWith("org.babyfish.jimmer.") ||
+                annoTypeName == org.babyfish.jimmer.json.JsonIgnore::class.qualifiedName ||
+                annoTypeName == org.babyfish.jimmer.json.JsonFormat::class.qualifiedName) {
                 addAnnotation(annotation.toAnnotationSpecWithoutSiteTarget())
             }
         }
@@ -117,7 +118,9 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp, excluded
         if (excludedUserTypePrefixes.any { annoTypeName.startsWith(it) }) {
             continue
         }
-        if (!annoTypeName.startsWith("org.babyfish.jimmer.") &&
+        if ((!annoTypeName.startsWith("org.babyfish.jimmer.") ||
+                annoTypeName == org.babyfish.jimmer.json.JsonIgnore::class.qualifiedName ||
+                annoTypeName == org.babyfish.jimmer.json.JsonFormat::class.qualifiedName) &&
             !addedTypeNames.contains(annoTypeName) &&
             declaration.forFun()) {
             addAnnotation(annotation.toAnnotationSpecWithoutSiteTarget())
@@ -139,11 +142,6 @@ private fun KSDeclaration.forFun(): Boolean =
             ?: annotations
                 .firstOrNull { it.fullName == java.lang.annotation.Target::class.qualifiedName }
                 ?.getEnumListArgument(java.lang.annotation.Target::value)
-                ?.also {
-                    if (currentVersion().length > 1) {
-                        throw IllegalArgumentException(it.toString())
-                    }
-                }
                 ?.contains(ElementType.METHOD)
                 ?.takeIf { it }
     } ?: false

@@ -21,6 +21,7 @@ import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.processing.RoundEnvironment;
@@ -32,7 +33,11 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -56,23 +61,25 @@ public class ClientProcessor {
 
     private final Collection<String> delayedClientTypeNames;
 
-    private final File jimmerClientFile;
+    private final Path jimmerClientFile;
 
     private final boolean explicitApi;
 
-    private final SchemaBuilder<Element> builder;
+    private final JsonCodec jsonCodec;
 
-    private final Set<TypeName> jsonValueTypeNameStack = new HashSet<>();
+    private final SchemaBuilder<Element> builder;
 
     public ClientProcessor(
             Context context,
             boolean explicitApi,
-            Collection<String> delayedClientTypeNames
+            Collection<String> delayedClientTypeNames,
+            JsonCodec jsonCodec
     ) {
         this.context = context;
         this.clientExceptionContext = new ClientExceptionContext(context);
         this.docMetadata = new DocMetadata(context);
         this.explicitApi = explicitApi;
+        this.jsonCodec = jsonCodec;
         this.delayedClientTypeNames = delayedClientTypeNames;
 
         FileObject fileObject;
@@ -81,7 +88,7 @@ public class ClientProcessor {
         } catch (IOException ex) {
             throw new GeneratorException("Cannot get file object \"" + JIMMER_CLIENT + "\"", ex);
         }
-        jimmerClientFile = new File(fileObject.getName());
+        jimmerClientFile = Paths.get(fileObject.getName());
 
         this.builder = new SchemaBuilder<Element>(existingSchema()) {
 
@@ -111,9 +118,9 @@ public class ClientProcessor {
     }
 
     private Schema existingSchema() {
-        if (jimmerClientFile.exists()) {
-            try (Reader reader = new InputStreamReader(Files.newInputStream(jimmerClientFile.toPath()), StandardCharsets.UTF_8)) {
-                return Schemas.readServicesFrom(reader);
+        if (Files.exists(jimmerClientFile)) {
+            try (Reader reader = Files.newBufferedReader(jimmerClientFile, StandardCharsets.UTF_8)) {
+                return Schemas.readServicesFrom(reader, jsonCodec);
             } catch (Exception ex) {
                 throw new GeneratorException("Cannot read content of  \"" + jimmerClientFile + "\"", ex);
             }
@@ -136,9 +143,21 @@ public class ClientProcessor {
         }
 
         Schema schema = builder.build();
-        jimmerClientFile.getParentFile().mkdirs();
-        try (Writer writer = new OutputStreamWriter(Files.newOutputStream(jimmerClientFile.toPath()), StandardCharsets.UTF_8)) {
-            Schemas.writeTo(schema, writer);
+        try {
+            Files.createDirectories(jimmerClientFile.getParent());
+            Path temp = Files.createTempFile(jimmerClientFile.getParent(), "client-", ".tmp");
+            try {
+                try (Writer writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
+                    Schemas.writeTo(schema, writer, jsonCodec);
+                }
+                try {
+                    Files.move(temp, jimmerClientFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(temp, jimmerClientFile, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(temp);
+            }
         } catch (Exception ex) {
             throw new GeneratorException("Cannot write \"" + jimmerClientFile + "\"", ex);
         }
@@ -319,14 +338,10 @@ public class ClientProcessor {
     private void fillType(TypeMirror type) {
         if (type.getKind() != TypeKind.VOID) {
             TypeRefImpl<Element> typeRef = builder.current();
-            try {
-                determineTypeAndArguments(type);
-                determineNullity(type);
-                determineFetchBy(type);
-                removeOptional(typeRef);
-            } catch (JsonValueTypeChangeException ex) {
-                typeRef.replaceBy(ex.typeRef, typeRef.isNullable() || ex.typeRef.isNullable());
-            }
+            determineTypeAndArguments(type);
+            determineNullity(type);
+            determineFetchBy(type);
+            removeOptional(typeRef);
         }
     }
 
@@ -436,7 +451,6 @@ public class ClientProcessor {
     private void determineNullity(TypeMirror type) {
         TypeRefImpl<Element> typeRef = builder.current();
         boolean isRawTypePrimitive = type.getKind().isPrimitive();
-        boolean isPrimitive = typeRef.getTypeName().isPrimitive();
         if (type.getAnnotation(TNullable.class) != null) {
             if (isRawTypePrimitive) {
                 throw new MetaException(
@@ -448,7 +462,7 @@ public class ClientProcessor {
             }
             typeRef.setNullable(true);
         }
-        if (isPrimitive && !isRawTypePrimitive) {
+        if (unboxedTypeName(type) != null) {
             TypeRef parentRef = builder.parent(TypeRefImpl.class);
             if (parentRef == null) {
                 typeRef.setNullable(true);
@@ -588,9 +602,10 @@ public class ClientProcessor {
                 break;
         }
 
-        TypeRefImpl<Element> jsonValueTypeRef = jsonValueTypeRef(typeName);
-        if (jsonValueTypeRef != null) {
-            throw new JsonValueTypeChangeException(jsonValueTypeRef);
+        TypeMirror scalar = enumScalarType(typeElement);
+        if (scalar != null) {
+            determineTypeAndArguments(scalar);
+            return;
         }
         String simpleName = typeElement.getSimpleName().toString();
 
@@ -625,42 +640,42 @@ public class ClientProcessor {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private TypeRefImpl<Element> jsonValueTypeRef(TypeName typeName) {
-        TypeElement typeElement = context.getElements().getTypeElement(typeName.toString());
-        for (Element element : typeElement.getEnclosedElements()) {
-            if (Annotations.annotationMirror(element, context.getJacksonTypes().jsonValue) == null) {
-                continue;
-            }
-            if (element.getKind() != ElementKind.METHOD || element.getModifiers().contains(Modifier.STATIC)) {
-                continue;
-            }
-            ExecutableElement methodElement = (ExecutableElement) element;
-            if (!methodElement.getParameters().isEmpty() || methodElement.getReturnType().getKind() == TypeKind.VOID) {
-                continue;
-            }
-            if (!jsonValueTypeNameStack.add(typeName)) {
-                throw new MetaException(
-                        builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
-                        builder.ancestorSource(),
-                        "Cannot resolve \"@" +
-                                context.getJacksonTypes().jsonValue.reflectionName() +
-                                "\" because of dead recursion: " +
-                                jsonValueTypeNameStack
-                );
-            }
-            try {
-                TypeRefImpl<Element>[] jsonValueTypRef = (TypeRefImpl<Element>[]) new TypeRefImpl[1];
-                builder.typeRef(type -> {
-                    fillType(methodElement.getReturnType());
-                    jsonValueTypRef[0] = type;
-                });
-                return jsonValueTypRef[0];
-            } finally {
-                jsonValueTypeNameStack.remove(typeName);
-            }
+    private TypeMirror enumScalarType(TypeElement type) {
+        if (type.getKind() != ElementKind.ENUM) {
+            return null;
         }
-        return null;
+        TypeMirror scalar = null;
+        for (Element element : type.getEnclosedElements()) {
+            if (element.getKind() != ElementKind.METHOD || element.getAnnotation(org.babyfish.jimmer.json.JsonValue.class) == null) {
+                continue;
+            }
+            ExecutableElement method = (ExecutableElement) element;
+            if (!method.getModifiers().contains(Modifier.PUBLIC) || method.getModifiers().contains(Modifier.STATIC) ||
+                    !method.getParameters().isEmpty() || !isEnumScalar(method.getReturnType())) {
+                throw new MetaException(method, "@JsonValue requires a public instance enum method returning a string or integer");
+            }
+            if (scalar != null) {
+                throw new MetaException(method, "An enum can only declare one @JsonValue method");
+            }
+            scalar = method.getReturnType();
+        }
+        return scalar;
+    }
+
+    private boolean isEnumScalar(TypeMirror type) {
+        switch (type.getKind()) {
+            case BYTE:
+            case SHORT:
+            case INT:
+            case LONG:
+                return true;
+            case DECLARED:
+                String name = ((TypeElement) ((DeclaredType) type).asElement()).getQualifiedName().toString();
+                return name.equals("java.lang.String") || name.equals("java.lang.Byte") ||
+                        name.equals("java.lang.Short") || name.equals("java.lang.Integer") || name.equals("java.lang.Long");
+            default:
+                return false;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -706,7 +721,7 @@ public class ClientProcessor {
                         !executableElement.getModifiers().contains(Modifier.PUBLIC) ||
                         executableElement.getReturnType().getKind() == TypeKind.VOID ||
                         executableElement.getAnnotation(ApiIgnore.class) != null ||
-                        Annotations.annotationMirror(executableElement, context.getJacksonTypes().jsonIgnore) != null
+                        isJsonIgnored(executableElement)
                 ) {
                     continue;
                 }
@@ -763,7 +778,7 @@ public class ClientProcessor {
                 if (prop == null) {
                     continue;
                 }
-                if (Annotations.annotationMirror(fieldElement, context.getJacksonTypes().jsonIgnore) != null) {
+                if (isJsonIgnored(fieldElement)) {
                     typeDefinition.getPropMap().remove(fieldElement.getSimpleName().toString());
                 }
                 if (prop.getDoc() == null) {
@@ -910,7 +925,6 @@ public class ClientProcessor {
         if (typeRef.isNullable()) {
             return;
         }
-        boolean isPrimitive = typeRef.getTypeName().isPrimitive();
         boolean isRawTypePrimitive = rawType.getKind().isPrimitive();
         String nullableTypeName = null;
         String nonNullTypeName = null;
@@ -937,7 +951,7 @@ public class ClientProcessor {
             } else if ((annoClassName.equals("NotNull") || annoClassName.equals("NonNull")) &&
                     !annoClassFullName.equals("javax.validation.constraints.NotNull") &&
                     !annoClassFullName.equals("jakarta.validation.constraints.NotNull")) {
-                if (isPrimitive && !isRawTypePrimitive) {
+                if (unboxedTypeName(rawType) != null) {
                     throw new MetaException(
                             builder.ancestorSource(),
                             "Illegal annotation `@" +
@@ -1028,15 +1042,6 @@ public class ClientProcessor {
         }
     }
 
-    private static class JsonValueTypeChangeException extends RuntimeException {
-
-        final TypeRefImpl<Element> typeRef;
-
-        private JsonValueTypeChangeException(TypeRefImpl<Element> typeRef) {
-            this.typeRef = typeRef;
-        }
-    }
-
     static {
         Method method = null;
         if (Arrays.stream(ElementKind.values()).anyMatch(it -> it.name().equals("RECORD_COMPONENT"))) {
@@ -1049,4 +1054,9 @@ public class ClientProcessor {
         }
         RECORD_COMPONENT_ELEMENT_GET_ACCESSOR = method;
     }
+    private static boolean isJsonIgnored(Element element) {
+        org.babyfish.jimmer.json.JsonIgnore ignore = element.getAnnotation(org.babyfish.jimmer.json.JsonIgnore.class);
+        return ignore != null && ignore.value();
+    }
+
 }

@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.ksp.dto
 
-import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.getClassDeclarationByName
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.dto.compiler.AbstractProp
-import org.babyfish.jimmer.dto.compiler.Anno.TypeRefValue
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoProp
 import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
@@ -25,39 +26,11 @@ class InputBuilderGenerator(
             TypeSpec
                 .classBuilder("Builder")
                 .apply {
-                    addAnnotations()
+                    addAnnotation(generatedAnnotation())
                     addMembers()
                 }
                 .build()
         )
-    }
-
-    private fun TypeSpec.Builder.addAnnotations() {
-        addAnnotation(generatedAnnotation())
-
-        addAnnotation(
-            AnnotationSpec
-                .builder(parentGenerator.ctx.jacksonTypes.jsonPojoBuilder)
-                .addMember("withPrefix = %S", "")
-                .build()
-        )
-
-        for (annotation in dtoType.annotations) {
-            if (annotation.qualifiedName == parentGenerator.ctx.jacksonTypes.jsonNaming.canonicalName) {
-                if (!annotation.valueMap.containsKey("value")) {
-                    continue
-                }
-                addAnnotation(
-                    AnnotationSpec
-                        .builder(parentGenerator.ctx.jacksonTypes.jsonNaming)
-                        .addMember(
-                            "value = %T::class",
-                            ClassName.bestGuess((annotation.valueMap["value"] as TypeRefValue).typeRef.typeName)
-                        )
-                        .build()
-                )
-            }
-        }
     }
 
     private fun TypeSpec.Builder.addMembers() {
@@ -110,7 +83,7 @@ class InputBuilderGenerator(
                 .addParameter(prop.name, typeName)
                 .returns(parentGenerator.getDtoClassName("Builder"))
                 .apply {
-                    addJacksonAnnotations(prop, parentGenerator.ctx.resolver)
+                    addPropertyAnnotations(prop)
                 }
                 .addStatement("this.%L = %L", prop.name, prop.name)
                 .apply {
@@ -185,41 +158,32 @@ class InputBuilderGenerator(
         }
     }
 
-    companion object {
+    private fun acceptsFunction(name: String): Boolean {
+        val annotation = parentGenerator.ctx.resolver.getClassDeclarationByName(name) ?: return false
+        annotation.annotation(kotlin.annotation.Target::class)?.let { target ->
+            return target.get<List<Any>>("allowedTargets").orEmpty().any { it.toString().endsWith("FUNCTION") }
+        }
+        annotation.annotation(java.lang.annotation.Target::class)?.let { target ->
+            return target.get<List<Any>>("value").orEmpty().any { it.toString().endsWith("METHOD") }
+        }
+        return true
+    }
 
-        private val JACKSON_ANNO_PREFIXIES = arrayOf(
-            "tools.jackson.databind.annotation.",
-            "com.fasterxml.jackson.databind.annotation.",
-            "com.fasterxml.jackson.annotation."
-        )
-
-        private fun isFieldNullable(prop: AbstractProp): Boolean =
-            prop.funcName != "null" && prop.funcName != "notNull"
-
-        @Suppress("UNCHECKED_CAST")
-        private fun FunSpec.Builder.addJacksonAnnotations(prop: AbstractProp, resolver: Resolver) {
-            val typeNames = mutableSetOf<String>()
-            for (anno in prop.annotations) {
-                if (JACKSON_ANNO_PREFIXIES.any { anno.qualifiedName.startsWith(it) } &&
-                    typeNames.add(anno.qualifiedName)) {
-                    addAnnotation(DtoGenerator.annotationOf(anno, resolver))
-                }
+    private fun FunSpec.Builder.addPropertyAnnotations(prop: AbstractProp) {
+        val typeNames = mutableSetOf<String>()
+        for (anno in prop.annotations) {
+            if (acceptsFunction(anno.qualifiedName) && typeNames.add(anno.qualifiedName)) {
+                addAnnotation(DtoGenerator.annotationOf(anno, parentGenerator.ctx.resolver))
             }
-            val baseProp = prop.basePropOrNull as ImmutableProp?
-            if (baseProp !== null) {
-                for (anno in baseProp.annotations { an ->
-                    JACKSON_ANNO_PREFIXIES.any { an.fullName.startsWith(it) }
-                }) {
-                    if (typeNames.add(anno.fullName)) {
-                        addAnnotation(
-                            anno.toAnnotationSpec()
-                                .toBuilder()
-                                .useSiteTarget(null)
-                                .build()
-                        )
-                    }
-                }
+        }
+        val base = prop.basePropOrNull as? ImmutableProp ?: return
+        for (anno in base.annotations { DtoGenerator.isCopyableAnnotation(it, prop.annotations) }) {
+            if (acceptsFunction(anno.fullName) && typeNames.add(anno.fullName)) {
+                addAnnotation(anno.toAnnotationSpec().toBuilder().useSiteTarget(null).build())
             }
         }
     }
+
+    private fun isFieldNullable(prop: AbstractProp): Boolean =
+        prop.funcName != "null" && prop.funcName != "notNull"
 }

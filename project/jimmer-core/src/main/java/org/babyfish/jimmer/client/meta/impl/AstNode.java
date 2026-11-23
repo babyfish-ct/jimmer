@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.meta.impl;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.babyfish.jimmer.json.JsonIgnore;
 
 public abstract class AstNode<S> {
 

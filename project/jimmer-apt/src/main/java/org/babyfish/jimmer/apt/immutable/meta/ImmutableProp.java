@@ -13,7 +13,7 @@ import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.apt.util.RecursiveAnnotations;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.impl.util.Keywords;
-import org.babyfish.jimmer.jackson.JsonConverter;
+import org.babyfish.jimmer.json.converter.JsonConverter;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.*;
@@ -606,13 +606,14 @@ public class ImmutableProp implements BaseProp {
                                 "\" because it is association"
                 );
             }
-            if (RecursiveAnnotations.of(executableElement, context.getJacksonTypes().jsonFormat.reflectionName()) != null) {
+            AnnotationMirror jsonFormat = RecursiveAnnotations.of(executableElement, org.babyfish.jimmer.json.JsonFormat.class.getName());
+            if (jsonFormat != null) {
                 throw new MetaException(
                         executableElement,
                         "it cannot be decorated by both \"@" +
                                 JsonConverter.class.getName() +
                                 "\" and \"@" +
-                                "com.fasterxml.jackson.annotation.JsonFormat" +
+                                jsonFormat.getAnnotationType() +
                                 "\""
                 );
             }

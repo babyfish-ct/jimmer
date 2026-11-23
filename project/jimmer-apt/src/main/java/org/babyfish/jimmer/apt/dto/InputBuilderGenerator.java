@@ -7,18 +7,13 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
+import java.lang.annotation.ElementType;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import java.util.*;
 
 public class InputBuilderGenerator {
-
-    private static final String[] JACKSON_ANNO_PREFIXIES = new String[] {
-            "tools.jackson.databind.annotation.",
-            "com.fasterxml.jackson.databind.annotation.",
-            "com.fasterxml.jackson.annotation."
-    };
 
     private final DtoGenerator parentGenerator;
 
@@ -36,36 +31,10 @@ public class InputBuilderGenerator {
                 .classBuilder("Builder")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
         try {
-            addAnnotations();
             addMembers();
             parentGenerator.getTypeBuilder().addType(typeBuilder.build());
         } finally {
             typeBuilder = null;
-        }
-    }
-
-    private void addAnnotations() {
-        typeBuilder.addAnnotation(
-                AnnotationSpec
-                        .builder(parentGenerator.ctx.getJacksonTypes().jsonPojoBuilder)
-                        .addMember("withPrefix", "$S", "")
-                        .build()
-        );
-
-        for (Anno annotation : dtoType.getAnnotations()) {
-            if (annotation.getQualifiedName().equals(parentGenerator.ctx.getJacksonTypes().jsonNaming.canonicalName())) {
-                if (!annotation.getValueMap().containsKey("value")) {
-                    continue;
-                }
-                typeBuilder.addAnnotation(
-                        AnnotationSpec
-                                .builder(parentGenerator.ctx.getJacksonTypes().jsonNaming)
-                                .addMember(
-                                        "value", "$T.class",
-                                        ClassName.bestGuess(((Anno.TypeRefValue) annotation.getValueMap().get("value")).typeRef.getTypeName()))
-                                .build()
-                );
-            }
         }
     }
 
@@ -109,7 +78,7 @@ public class InputBuilderGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(parentGenerator.getPropTypeName(prop), prop.getName())
                 .returns(parentGenerator.getDtoClassName("Builder"));
-        addJacksonAnnotations(prop, builder);
+        addPropertyAnnotations(prop, builder);
         if (prop.isNullable()) {
             builder.addStatement(
                     "this.$L = $L",
@@ -134,13 +103,13 @@ public class InputBuilderGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addJacksonAnnotations(
+    private void addPropertyAnnotations(
             AbstractProp prop,
             MethodSpec.Builder builder
     ) {
         Set<String> typeNames = new HashSet<>();
         for (Anno anno : prop.getAnnotations()) {
-            if (isJacksonQualifiedName(anno.getQualifiedName()) && typeNames.add(anno.getQualifiedName())) {
+            if (parentGenerator.hasElementType(anno, ElementType.METHOD) && typeNames.add(anno.getQualifiedName())) {
                 builder.addAnnotation(DtoGenerator.annotationOf(anno));
             }
         }
@@ -151,7 +120,7 @@ public class InputBuilderGenerator {
                         .asElement())
                         .getQualifiedName()
                         .toString();
-                if (isJacksonQualifiedName(qualifiedName) && typeNames.add(qualifiedName)) {
+                if (DtoGenerator.isCopyableAnnotation(mirror, prop.getAnnotations(), true) && typeNames.add(qualifiedName)) {
                     builder.addAnnotation(AnnotationSpec.get(mirror));
                 }
             }
@@ -253,15 +222,6 @@ public class InputBuilderGenerator {
     private static boolean isFieldNullable(AbstractProp prop) {
         String funcName = prop.getFuncName();
         return !"null".equals(funcName) && !"notNull".equals(funcName);
-    }
-
-    private static boolean isJacksonQualifiedName(String qualifiedName) {
-        for (String prefix : JACKSON_ANNO_PREFIXIES) {
-            if (qualifiedName.startsWith(prefix)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static String setterName(UserProp prop) {

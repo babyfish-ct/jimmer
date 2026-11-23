@@ -5,7 +5,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
+import org.babyfish.jimmer.json.MissingImmutableJsonBindingException;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
@@ -37,7 +37,6 @@ public class ImplementorGenerator {
                 .addSuperinterface(type.getClassName())
                 .addSuperinterface(spiClassName)
                 .addJavadoc("Class, not interface, for free-marker");
-        addPropertyOrderAnnotation();
         addStaticFields();
         addGet(PropId.class);
         addGet(String.class);
@@ -47,21 +46,6 @@ public class ImplementorGenerator {
         addType();
         addDummyProp();
         parentBuilder.addType(typeBuilder.build());
-    }
-
-    private void addPropertyOrderAnnotation() {
-        CodeBlock.Builder builder = CodeBlock.builder();
-        builder.add("{$S", "dummyPropForJacksonError__");
-        for (ImmutableProp prop : type.getPropsOrderById()) {
-            builder.add(", $S", prop.getName());
-        }
-        builder.add("}");
-        typeBuilder.addAnnotation(
-                AnnotationSpec
-                        .builder(ctx.getJacksonTypes().jsonPropertyOrder)
-                        .addMember("value", builder.build())
-                        .build()
-        );
     }
 
     private void addStaticFields() {
@@ -173,7 +157,7 @@ public class ImplementorGenerator {
                 .methodBuilder("getDummyPropForJacksonError__")
                 .returns(TypeName.INT)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addStatement("throw new $T()", ImmutableModuleRequiredException.class);
+                .addStatement("throw new $T()", MissingImmutableJsonBindingException.class);
         typeBuilder.addMethod(builder.build());
     }
 }

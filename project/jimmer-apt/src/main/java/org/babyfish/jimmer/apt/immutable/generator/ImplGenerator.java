@@ -120,7 +120,7 @@ public class ImplGenerator {
                 .addAnnotation(Override.class)
                 .returns(TypeName.get(prop.getReturnType()));
         if (!prop.isBeanStyle()) {
-            builder.addAnnotation(ctx.getJacksonTypes().jsonIgnore);
+            builder.addAnnotation(org.babyfish.jimmer.json.JsonIgnore.class);
         }
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);

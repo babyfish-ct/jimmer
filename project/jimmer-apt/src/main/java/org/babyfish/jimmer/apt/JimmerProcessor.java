@@ -12,6 +12,7 @@ import org.babyfish.jimmer.apt.tuple.TypedTupleProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.*;
+import org.babyfish.jimmer.json.JsonCodecs;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.babyfish.jimmer.sql.TypedTuple;
 
@@ -34,12 +35,12 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.sql.Embeddable",
         "org.babyfish.jimmer.sql.EnableDtoGeneration",
         "org.babyfish.jimmer.error.ErrorFamily",
-        "org.babyfish.jimmer.client.Api",
+        "org.babyfish.jimmer.client.meta.Api",
         "org.babyfish.jimmer.client.ExportDoc",
         "org.springframework.web.bind.annotation.RestController",
         "org.babyfish.jimmer.sql.transaction.Tx"
 })
-@SupportedOptions(DtoBundleLoader.ENABLED_OPTION)
+@SupportedOptions({DtoBundleLoader.ENABLED_OPTION, "jimmer.json.codec"})
 public class JimmerProcessor extends AbstractProcessor {
 
     private Context context;
@@ -148,7 +149,6 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getFiler(),
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix")),
                 new SourceTypeFilter(includes, excludes),
-                detectIsJackson3(processingEnv),
                 processingEnv.getOptions().get("jimmer.entry.immutables"),
                 processingEnv.getOptions().get("jimmer.entry.tables"),
                 processingEnv.getOptions().get("jimmer.entry.tableExes"),
@@ -158,13 +158,6 @@ public class JimmerProcessor extends AbstractProcessor {
                 dtoFieldModifier
         );
         elements = processingEnv.getElementUtils();
-    }
-
-    private static boolean detectIsJackson3(ProcessingEnvironment processingEnv) {
-        String jackson3Text = processingEnv.getOptions().get("jimmer.jackson3");
-        return jackson3Text == null || jackson3Text.isEmpty() ?
-                processingEnv.getElementUtils().getTypeElement("tools.jackson.databind.ObjectMapper") != null :
-                "true".equals(jackson3Text);
     }
 
     @Override
@@ -214,7 +207,18 @@ public class JimmerProcessor extends AbstractProcessor {
             if (!toolGenerated && !context.isBuddyIgnoreResourceGeneration()) {
                 toolGenerated = true;
                 new TypedTupleProcessor(context, delayedTupleTypeNames).process(roundEnv);
-                new ClientProcessor(context, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
+                new ClientProcessor(
+                        context,
+                        clientExplicitApi,
+                        delayedClientTypeNames,
+                        JsonCodecs.create(
+                                processingEnv.getOptions().getOrDefault(
+                                        "jimmer.json.codec",
+                                        "org.babyfish.jimmer.jackson.v2.JsonCodecV2"
+                                ),
+                                getClass().getClassLoader()
+                        )
+                ).process(roundEnv);
                 delayedClientTypeNames = null;
             }
         } catch (MetaException ex) {

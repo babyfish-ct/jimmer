@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.babyfish.jimmer.json.JsonIgnore;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.meta.*;
@@ -81,7 +81,8 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                     if (field.isImplicit()) {
                         continue;
                     }
-                    if (field.getProp().getAnnotation(JsonIgnore.class) != null) {
+                    JsonIgnore ignore = field.getProp().getAnnotation(JsonIgnore.class);
+                    if (ignore != null && ignore.value()) {
                         continue;
                     }
                     if (field.getProp().getAnnotation(ApiIgnore.class) != null) {

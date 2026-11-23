@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.kotlin.model
 
-import com.fasterxml.jackson.annotation.JsonValue
+import org.babyfish.jimmer.json.JsonValue
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.OneToMany

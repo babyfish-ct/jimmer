@@ -92,7 +92,10 @@ public class Annotations {
     ) {
         for (AnnotationMirror annotation : annotations) {
             TypeElement typeElement = (TypeElement) annotation.getAnnotationType().asElement();
-            if (!typeElement.getQualifiedName().toString().startsWith("org.babyfish.jimmer.")) {
+            String name = typeElement.getQualifiedName().toString();
+            if (!name.startsWith("org.babyfish.jimmer.") ||
+                    name.equals(org.babyfish.jimmer.json.JsonIgnore.class.getName()) ||
+                    name.equals(org.babyfish.jimmer.json.JsonFormat.class.getName())) {
                 builder.addAnnotation(AnnotationSpec.get(annotation));
             }
         }

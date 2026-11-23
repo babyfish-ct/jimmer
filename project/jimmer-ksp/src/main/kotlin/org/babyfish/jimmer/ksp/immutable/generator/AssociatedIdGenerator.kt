@@ -31,7 +31,7 @@ internal class AssociatedIdGenerator(
                 )
                 .addModifiers(KModifier.PUBLIC)
                 .addAnnotation(
-                    AnnotationSpec.builder(ctx.jacksonTypes.jsonIgnore)
+                    AnnotationSpec.builder(org.babyfish.jimmer.json.JsonIgnore::class)
                         .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                         .build()
                 )

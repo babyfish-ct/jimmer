@@ -1,73 +1,71 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.meta.Schema;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.codec.JsonWriter;
-import org.babyfish.jimmer.jackson.codec.SharedAttributesCustomization;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.Node;
 
+import java.io.FilterReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.Collection;
 import java.util.Set;
 
-import static java.util.Collections.singletonMap;
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
-
+/** The on-disk format of META-INF/jimmer/client is independent of application JSON settings. */
 public class Schemas {
 
+    /** @deprecated Use {@link #readServicesFrom(Reader)}. */
+    @Deprecated
     public static final Object IGNORE_DEFINITIONS = new Object();
 
-    private static final Object GROUPS = new Object();
+    private Schemas() {}
 
-    private static final JsonCodec<?> READ_SERVICES_JSON_CODEC = jsonCodec()
-            .withCustomizations(new SharedAttributesCustomization(singletonMap(IGNORE_DEFINITIONS, true)));
-
-    private static final JsonWriter WRITER = jsonCodec().writer().withDefaultPrettyPrinter();
-
-    private Schemas() {
+    public static void writeTo(Schema schema, Writer writer) throws IOException {
+        writeTo(schema, writer, JsonCodec.jsonCodec());
     }
 
-    public static void writeTo(Schema schema, Writer writer) throws Exception {
-        WRITER.write(writer, schema);
-    }
-
-    public static Schema readFrom(Reader reader) throws Exception {
-        return readFrom(reader, null);
-    }
-
-    public static Schema readFrom(Reader reader, Set<String> groups) throws Exception {
-        return jsonCodec()
-                .withCustomizations(new SharedAttributesCustomization(singletonMap(GROUPS, groups)))
-                .readerFor(SchemaImpl.class)
-                .read(reader);
-    }
-
-    public static Schema readServicesFrom(Reader reader) throws Exception {
-        return READ_SERVICES_JSON_CODEC.readerFor(SchemaImpl.class).read(reader);
-    }
-
-    @SuppressWarnings("unchecked")
-    static boolean isAllowed(com.fasterxml.jackson.databind.DeserializationContext ctx, Collection<String> elementGroups) {
-        return isAllowed(elementGroups, (Set<String>) ctx.getAttribute(GROUPS));
-    }
-
-    @SuppressWarnings("unchecked")
-    static boolean isAllowed(tools.jackson.databind.DeserializationContext ctx, Collection<String> elementGroups) {
-        return isAllowed(elementGroups, (Set<String>) ctx.getAttribute(GROUPS));
-    }
-
-    private static boolean isAllowed(Collection<String> elementGroups, Set<String> allowedGroups) {
-        if (elementGroups == null || elementGroups.isEmpty()) {
-            return true;
+    public static void writeTo(Schema schema, Writer writer, JsonCodec codec) throws IOException {
+        try {
+            codec.writeTree(writer, SchemaWriter.schema(schema));
+            writer.flush();
+        } catch (IOException | RuntimeException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IOException("Cannot write Jimmer client schema", ex);
         }
-        if (allowedGroups == null || allowedGroups.isEmpty()) {
-            return true;
+    }
+
+    public static Schema readFrom(Reader reader) throws IOException {
+        return readFrom(reader, null, JsonCodec.jsonCodec());
+    }
+
+    public static Schema readFrom(Reader reader, Set<String> groups) throws IOException {
+        return readFrom(reader, groups, JsonCodec.jsonCodec());
+    }
+
+    public static Schema readFrom(Reader reader, Set<String> groups, JsonCodec codec) throws IOException {
+        return new SchemaReader(groups).schema(readTree(reader, codec), false);
+    }
+
+    public static Schema readServicesFrom(Reader reader) throws IOException {
+        return readServicesFrom(reader, JsonCodec.jsonCodec());
+    }
+
+    public static Schema readServicesFrom(Reader reader, JsonCodec codec) throws IOException {
+        return new SchemaReader(null).schema(readTree(reader, codec), true);
+    }
+
+    private static Node readTree(Reader reader, JsonCodec codec) throws IOException {
+        // Some engines close their input after the end of a JSON document.
+        Reader source = new FilterReader(reader) {
+            @Override
+            public void close() {}
+        };
+        try {
+            return codec.treeReader().read(source);
+        } catch (IOException | RuntimeException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IOException("Cannot read Jimmer client schema", ex);
         }
-        for (String elementGroup : elementGroups) {
-            if (allowedGroups.contains(elementGroup)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

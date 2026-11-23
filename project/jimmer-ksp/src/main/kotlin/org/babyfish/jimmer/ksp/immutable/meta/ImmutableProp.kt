@@ -12,7 +12,7 @@ import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.Scalar
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
-import org.babyfish.jimmer.jackson.JsonConverter
+import org.babyfish.jimmer.json.converter.JsonConverter
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
 import org.babyfish.jimmer.ksp.immutable.generator.KEY_FULL_NAME
@@ -505,7 +505,7 @@ class ImmutableProp(
 
     val converterMetadata: ConverterMetadata? by lazy {
         var jsonConverter = propDeclaration.recursiveAnnotationOf(JsonConverter::class.qualifiedName!!)
-        val jsonFormat = propDeclaration.recursiveAnnotationOf(ctx.jacksonTypes.jsonFormat.reflectionName())
+        val jsonFormat = annotation(org.babyfish.jimmer.json.JsonFormat::class)
 
         var autoApply = false
         if (jsonConverter === null) {
@@ -521,7 +521,7 @@ class ImmutableProp(
             throw MetaException(
                 propDeclaration,
                 "it cannot be decorated both \"@${JsonConverter::class.qualifiedName}\" " +
-                        "and \"${ctx.jacksonTypes.jsonFormat.reflectionName()}\""
+                        "and \"${jsonFormat.annotationType.fastResolve().declaration.qualifiedName?.asString()}\""
             )
         }
         if (jsonConverter === null) {
