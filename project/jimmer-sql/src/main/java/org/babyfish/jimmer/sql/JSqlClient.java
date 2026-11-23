@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -153,7 +153,7 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
     @Nullable
     Integer getDefaultJdbcQueryTimeout();
 
-    JsonCodec<?> getJsonCodec();
+    JsonCodec getJsonCodec();
 
     Filters getFilters();
 
@@ -400,19 +400,19 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
 
         @OldChain
-        Builder setJsonCodec(JsonCodec<?> jsonCodec);
+        Builder setJsonCodec(JsonCodec jsonCodec);
 
         @OldChain
-        Builder setDefaultSerializedTypeJsonCodec(JsonCodec<?> jsonCodec);
+        Builder setDefaultSerializedTypeJsonCodec(JsonCodec jsonCodec);
 
         @OldChain
-        Builder setSerializedTypeJsonCodec(Class<?> type, JsonCodec<?> jsonCodec);
+        Builder setSerializedTypeJsonCodec(Class<?> type, JsonCodec jsonCodec);
 
         @OldChain
-        Builder setSerializedPropJsonCodec(TypedProp<?, ?> prop, JsonCodec<?> jsonCodec);
+        Builder setSerializedPropJsonCodec(TypedProp<?, ?> prop, JsonCodec jsonCodec);
 
         @OldChain
-        Builder setSerializedPropJsonCodec(ImmutableProp prop, JsonCodec<?> jsonCodec);
+        Builder setSerializedPropJsonCodec(ImmutableProp prop, JsonCodec jsonCodec);
 
         @OldChain
         Builder setDefaultJsonProviderCreator(Function<ImmutableProp, ScalarProvider<?, ?>> creator);
@@ -496,6 +496,12 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         @OldChain
         Builder setCacheFactory(CacheFactory cacheFactory);
 
+        /** Create the cache factory with the JSON codec selected for this SQL client. */
+        @OldChain
+        default Builder setCacheFactoryProvider(Function<JsonCodec, CacheFactory> provider) {
+            return setCaches(cfg -> cfg.setCacheFactoryProvider(provider));
+        }
+
         @OldChain
         Builder setCacheOperator(CacheOperator cacheOperator);
 
@@ -550,7 +556,7 @@ public interface JSqlClient extends SubQueryProvider, SaveOperations {
         @OldChain
         Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?, ?>> interceptors);
 
-        Builder setDefaultBinLogJsonCodec(JsonCodec<?> jsonCodec);
+        Builder setDefaultBinLogJsonCodec(JsonCodec jsonCodec);
 
         @OldChain
         Builder setBinLogPropReader(ImmutableProp prop, BinLogPropReader reader);

@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
 import org.babyfish.jimmer.impl.util.PropCache;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.codec.Node;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.Node;
 import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -34,18 +34,18 @@ public class BinLogParser {
 
     private final PropCache<BinLogPropReader> readerCache = new PropCache<>(this::createReader, true);
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
     private final Map<ImmutableProp, BinLogPropReader> configuredReaderMap;
 
     private JSqlClientImplementor sqlClient;
 
     public BinLogParser(
-            @NotNull JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec jsonCodec,
             @NotNull Map<ImmutableProp, BinLogPropReader> propReaderMap,
             @NotNull Map<Class<?>, BinLogPropReader> typePropReaderMap
     ) {
-        this.jsonCodec = jsonCodec.withCustomizations(new BinLogModuleCustomization(this));
+        this.jsonCodec = jsonCodec;
         this.configuredReaderMap = propReaderMap;
         this.typeReaderMap = typePropReaderMap;
     }
@@ -78,7 +78,7 @@ public class BinLogParser {
         return readerCache.get(prop);
     }
 
-    JsonCodec<?> codec() {
+    JsonCodec codec() {
         return jsonCodec;
     }
 
@@ -87,7 +87,11 @@ public class BinLogParser {
             return null;
         }
         try {
-            return jsonCodec.readerFor(type).read(json);
+            ImmutableType immutableType = ImmutableType.tryGet(type);
+            if (immutableType == null) {
+                return jsonCodec.readerFor(type).read(json);
+            }
+            return parseEntity(immutableType, jsonCodec.treeReader().read(json));
         } catch (Exception ex) {
             throw new IllegalArgumentException("Illegal json: " + json, ex);
         }
@@ -97,7 +101,15 @@ public class BinLogParser {
         if (data == null || data.isNull()) {
             return null;
         }
-        return parseEntity(type, data.toString());
+        ImmutableType immutableType = ImmutableType.tryGet(type);
+        if (immutableType != null) {
+            return parseEntity(immutableType, data);
+        }
+        try {
+            return data.convertTo(type, jsonCodec.converter());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Cannot read binlog value as " + type.getName(), ex);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -105,7 +117,7 @@ public class BinLogParser {
         if (type instanceof AssociationType) {
             throw new IllegalArgumentException("type cannot be AssociationType");
         }
-        return (T) parseEntity(type.getJavaClass(), data);
+        return data == null || data.isNull() ? null : (T) deserializeEntity(type, data);
     }
 
     Object deserializeEntity(ImmutableType type, Node node) {

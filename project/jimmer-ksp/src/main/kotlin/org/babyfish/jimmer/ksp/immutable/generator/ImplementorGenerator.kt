@@ -2,7 +2,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.impl.util.StringUtil
-import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
+import org.babyfish.jimmer.json.MissingImmutableJsonBindingException
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -25,32 +25,12 @@ class ImplementorGenerator(
                 .addSuperinterface(type.className)
                 .addSuperinterface(IMMUTABLE_SPI_CLASS_NAME)
                 .apply {
-                    addPropertyOrderAnnotation()
                     addGetFun(PropId::class)
                     addGetFun(String::class)
                     addTypeFun()
                     addDummyPropForNoImmutableModuleError()
                     addCompanionObject()
                 }
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addPropertyOrderAnnotation() {
-        addAnnotation(
-            AnnotationSpec
-                .builder(ctx.jacksonTypes.jsonPropertyOrder)
-                .addMember(
-                    CodeBlock
-                        .builder()
-                        .add("%S", "dummyPropForJacksonError__")
-                        .apply {
-                            for (prop in type.propsOrderById) {
-                                add(", %S", prop.name)
-                            }
-                        }
-                        .build()
-                )
                 .build()
         )
     }
@@ -107,7 +87,7 @@ class ImplementorGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addStatement("throw %T()", ImmutableModuleRequiredException::class)
+                        .addStatement("throw %T()", MissingImmutableJsonBindingException::class)
                         .build()
                 )
                 .build()

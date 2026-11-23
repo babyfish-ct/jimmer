@@ -2,11 +2,9 @@ package org.babyfish.jimmer.spring.cloud;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import org.babyfish.jimmer.client.ApiIgnore;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExporter;
@@ -38,7 +36,7 @@ public class MicroServiceExporterController {
 
     private final MicroServiceExporter exporter;
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
     public MicroServiceExporterController(JSqlClient sqlClient) {
         this.exporter = new MicroServiceExporter(sqlClient);
@@ -46,7 +44,7 @@ public class MicroServiceExporterController {
     }
 
     @GetMapping(value = BY_IDS, produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<ImmutableSpi> findByIds(
+    public byte[] findByIds(
             @RequestParam(IDS) String idArrStr,
             @RequestParam(FETCHER) String fetcherStr
     ) throws Exception {
@@ -55,11 +53,11 @@ public class MicroServiceExporterController {
         List<?> ids = jsonCodec
                 .readerForListOf(idType)
                 .read(idArrStr);
-        return exporter.findByIds(ids, fetcher);
+        return jsonCodec.writer().writeAsBytes(exporter.findByIds(ids, fetcher));
     }
 
     @GetMapping(value = BY_ASSOCIATED_IDS, produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
+    public byte[] findByAssociatedIds(
             @RequestParam(PROP) String prop,
             @RequestParam(TARGET_IDS) String targetIdArrStr,
             @RequestParam(FETCHER) String fetcherStr
@@ -71,10 +69,6 @@ public class MicroServiceExporterController {
                 .<List<?>>readerFor(tf -> tf.constructListType(targetIdType))
                 .read(targetIdArrStr);
 
-        return exporter.findByAssociatedIds(
-                immutableProp,
-                targetIds,
-                fetcher
-        );
+        return jsonCodec.writer().writeAsBytes(exporter.findByAssociatedIds(immutableProp, targetIds, fetcher));
     }
 }

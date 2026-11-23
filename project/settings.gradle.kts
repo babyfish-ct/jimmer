@@ -2,6 +2,10 @@ rootProject.name = "jimmer"
 include(
     "jimmer-bom",
     "jimmer-core",
+    "jimmer-json-jackson2",
+    "jimmer-json-jackson3",
+    "jimmer-json-gson",
+    "jimmer-json-fastjson2",
     "jimmer-mapstruct-apt",
     "jimmer-apt",
     "jimmer-sql",
@@ -17,15 +21,14 @@ include(
     "jimmer-sql-test:jimmer-sql-test-model-base",
     "jimmer-sql-test:jimmer-sql-test-model",
     "jimmer-sql-test:jimmer-sql-test-model-kotlin",
+    "jimmer-sql-test:jimmer-sql-test-no-jackson",
     "jimmer-sql-test:jimmer-sql-test-support",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
-    dependencyResolutionManagement {
-        repositories {
-            mavenCentral()
-        }
+    repositories {
+        mavenCentral()
     }
 }

@@ -3,12 +3,13 @@ package org.babyfish.jimmer;
 import org.babyfish.jimmer.model.Book;
 import org.babyfish.jimmer.model.BookDraft;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 public class DeepCloneTest {
 
-    @Test
-    public void test() {
+    @JacksonTest
+    public void test(JacksonBackend backend) {
         Book book = BookDraft.$.produce(b -> {
             b.setName("book");
             b.applyStore(s -> {
@@ -23,8 +24,8 @@ public class DeepCloneTest {
         });
         Book book2 = ImmutableObjects.deepClone(book);
         Assertions.assertEquals(
-                book.toString(),
-                book2.toString()
+                backend.write(book),
+                backend.write(book2)
         );
         Assertions.assertNotSame(book, book2);
         Assertions.assertNotSame(book.store(), book2.store());

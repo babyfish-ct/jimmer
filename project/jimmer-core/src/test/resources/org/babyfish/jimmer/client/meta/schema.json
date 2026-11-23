@@ -1,0 +1,32 @@
+{
+  "services": [
+    {
+      "typeName": "example.Catalog",
+      "groups": ["web", "admin"],
+      "doc": {"value": "目录", "parameters": {"a": "A"}, "return": "result", "properties": {"b": "B"}},
+      "operations": [
+        {
+          "name": "list",
+          "key": "list:long:java.lang.String",
+          "groups": ["web"],
+          "parameters": [{"name": "q", "type": {"typeName": "java.lang.String", "nullable": true}, "index": 1}],
+          "returnType": {
+            "typeName": "java.util.List",
+            "arguments": [{"typeName": "example.Record", "fetchBy": "SUMMARY", "fetcherOwner": "example.Catalog", "fetcherDoc": null}]
+          },
+          "exceptions": ["example.Errors$Missing"]
+        },
+        {"name": "erase", "key": "erase", "groups": ["admin"]}
+      ]
+    },
+    {"typeName": "example.Ping", "operations": [{"name": "ping", "key": "ping"}]}
+  ],
+  "definitions": [
+    {"typeName": "example.Errors$Missing", "error": {"family": "CATALOG", "code": "MISSING"}, "apiIgnore": true},
+    {"typeName": "example.Record", "kind": "IMMUTABLE", "props": [
+      {"name": "id", "type": {"typeName": "long"}, "doc": {"value": "编号"}},
+      {"name": "items", "type": {"typeName": "<example.Record::T>"}}
+    ], "superTypes": [{"typeName": "example.Root"}], "branches": [{"typeName": "example.Record$Detailed"}]},
+    {"typeName": "example.Status", "kind": "ENUM", "groups": ["admin"], "constants": [{"name": "ACTIVE", "doc": {"value": "active"}}]}
+  ]
+}

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.client.meta.impl.SchemaImpl;
 import org.babyfish.jimmer.client.meta.impl.Schemas;
 import org.babyfish.jimmer.client.meta.impl.TypeDefinitionImpl;
 import org.babyfish.jimmer.client.runtime.*;
+import org.babyfish.jimmer.json.JsonCodec;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,6 +19,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MetadataBuilder implements Metadata.Builder {
+
+    private JsonCodec jsonCodec;
 
     private Metadata.OperationParser operationParser;
 
@@ -48,6 +51,12 @@ public class MetadataBuilder implements Metadata.Builder {
         ignoredParameterTypeNames.add("javax.servlet.http.HttpServletResponse");
         ignoredParameterTypeNames.add("jakarta.servlet.ServletResponse");
         ignoredParameterTypeNames.add("jakarta.servlet.http.HttpServletResponse");
+    }
+
+    @Override
+    public Metadata.Builder setJsonCodec(JsonCodec jsonCodec) {
+        this.jsonCodec = jsonCodec;
+        return this;
     }
 
     @Override
@@ -132,7 +141,7 @@ public class MetadataBuilder implements Metadata.Builder {
         if (parameterParser == null) {
             throw new IllegalStateException("ParameterParser parse has not been set");
         }
-        Schema schema = loadSchema(groups);
+        Schema schema = loadSchema(groups, jsonCodec != null ? jsonCodec : JsonCodec.jsonCodec());
         TypeContext ctx = new TypeContext(schema.getTypeDefinitionMap(), virtualTypeMap, genericSupported);
 
         List<Service> services = new ArrayList<>();
@@ -162,8 +171,12 @@ public class MetadataBuilder implements Metadata.Builder {
         );
     }
 
-    @SuppressWarnings("unchecked")
     public static Schema loadSchema(Set<String> groups) {
+        return loadSchema(groups, JsonCodec.jsonCodec());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Schema loadSchema(Set<String> groups, JsonCodec jsonCodec) {
         Map<TypeName, ApiServiceImpl<Void>> serviceMap = new LinkedHashMap<>();
         Map<TypeName, TypeDefinitionImpl<Void>> definitionMap = new LinkedHashMap<>();
         try {
@@ -171,7 +184,7 @@ public class MetadataBuilder implements Metadata.Builder {
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
-                    Schema schema = Schemas.readFrom(reader, groups);
+                    Schema schema = Schemas.readFrom(reader, groups, jsonCodec);
                     for (ApiService service : schema.getApiServiceMap().values()) {
                         if (groups == null || groups.isEmpty()) {
                             // 没有分组查询的情况 全部放入

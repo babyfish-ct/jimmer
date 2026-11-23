@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    testRuntimeOnly(projects.jimmerJsonJackson2)
     implementation(libs.addzero.lsi.core)
     implementation(libs.addzero.lsi.ksp)
     implementation(libs.addzero.lsi.apt)

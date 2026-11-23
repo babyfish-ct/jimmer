@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.JsonWriter;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheOperator;
@@ -33,7 +34,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
 
     private Sql sql;
 
-    private JsonCodec<?> jsonCodec;
+    private JsonCodec jsonCodec;
 
     private final int batchSize;
 
@@ -45,11 +46,11 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         this(null, batchSize);
     }
 
-    public TransactionCacheOperator(JsonCodec<?> jsonCodec) {
+    public TransactionCacheOperator(JsonCodec jsonCodec) {
         this(jsonCodec, 32);
     }
 
-    public TransactionCacheOperator(JsonCodec<?> jsonCodec, int batchSize) {
+    public TransactionCacheOperator(JsonCodec jsonCodec, int batchSize) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("`batchSize` cannot be less than 1");
         }
@@ -149,10 +150,11 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         sqlClient().getConnectionManager().execute(con -> {
             try {
                 try (PreparedStatement stmt = con.prepareStatement(sql().insert)) {
+                    JsonWriter<Object> keyWriter = jsonCodec.writerFor(keyType(type, prop));
                     for (Object key : keys) {
                         stmt.setString(1, type != null ? type.toString() : null);
                         stmt.setString(2, prop != null ? prop.toString() : null);
-                        stmt.setString(3, jsonCodec.writer().writeAsString(key));
+                        stmt.setString(3, keyWriter.writeAsString(key));
                         stmt.setString(4, reason);
                         stmt.addBatch();
                     }
@@ -204,7 +206,6 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         return ids;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<MergedKey, Set<Object>> getAndLockOperationKeyMap(Collection<Long> ids, Connection con) {
         StringBuilder builder = new StringBuilder();
         builder.append(sql().selectPrefix).append('(');
@@ -226,10 +227,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
                     ImmutableType type = typeFromString(rs.getString(2));
                     ImmutableProp prop = propFromString(rs.getString(3));
                     String json = rs.getString(4);
-                    Object key = jsonCodec.readerFor(type != null ?
-                                    (Class<Object>) type.getIdProp().getElementClass() :
-                                    (Class<Object>) prop.getDeclaringType().getIdProp().getElementClass())
-                            .read(json);
+                    Object key = jsonCodec.readerFor(keyType(type, prop)).read(json);
                     String reason = rs.getString(5);
                     keyMap
                             .computeIfAbsent(new MergedKey(type, prop, reason), it -> new LinkedHashSet<>())
@@ -237,9 +235,13 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
                 }
             }
         } catch (Exception ex) {
-            LOGGER.warn("Failed to flush transaction cache operator", ex);
+            throw new ExecutionException("Failed to read delayed cache deletion", ex);
         }
         return keyMap;
+    }
+
+    private static Class<?> keyType(ImmutableType type, ImmutableProp prop) {
+        return (type != null ? type : prop.getDeclaringType()).getIdProp().getElementClass();
     }
 
     private void executeOperations(Map<MergedKey, Set<Object>> keyMap) {

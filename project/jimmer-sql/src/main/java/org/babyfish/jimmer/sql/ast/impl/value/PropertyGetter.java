@@ -47,6 +47,7 @@ public interface PropertyGetter extends ValueGetter {
                 Object value = entity != null ? entity.__get(idPropId) : null;
                 propertyGetters.addAll(
                         ScalarPropertyGetter.getters(
+                                sqlClient,
                                 null,
                                 idProp,
                                 AbstractValueGetter.createValueGetters(sqlClient, idProp, value)
@@ -88,6 +89,7 @@ public interface PropertyGetter extends ValueGetter {
             } else {
                 propertyGetters.addAll(
                         ScalarPropertyGetter.getters(
+                                sqlClient,
                                 null,
                                 prop,
                                 AbstractValueGetter.createValueGetters(sqlClient, prop, value)
@@ -107,6 +109,7 @@ public interface PropertyGetter extends ValueGetter {
             );
         }
         return ScalarPropertyGetter.getters(
+                sqlClient,
                 null,
                 prop,
                 AbstractValueGetter.createValueGetters(sqlClient, prop, null)
@@ -119,6 +122,7 @@ public interface PropertyGetter extends ValueGetter {
             String columnName
     ) {
         return ScalarPropertyGetter.getters(
+                sqlClient,
                 null,
                 prop,
                 Collections.singletonList(

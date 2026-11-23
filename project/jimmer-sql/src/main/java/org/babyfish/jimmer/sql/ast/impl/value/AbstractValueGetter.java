@@ -397,7 +397,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
     @Override
     public boolean hasDefaultValue() {
         ImmutableProp prop = getValueProp();
-        return prop != null && prop.getDefaultValueRef() != null;
+        return prop != null && prop.hasDefaultValue();
     }
 
     @Override
@@ -406,7 +406,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         if (vp == null) {
             return null;
         }
-        Ref<Object> ref = vp.getDefaultValueRef();
+        Ref<Object> ref = sqlClient.getDefaultValueRef(vp);
         if (ref == null) {
             return null;
         }

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -12,10 +13,11 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class CacheConfig {
 
-    private CacheFactory cacheFactory;
+    private Function<JsonCodec, CacheFactory> cacheFactoryProvider;
 
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
             new LinkedHashMap<>();
@@ -29,7 +31,16 @@ public class CacheConfig {
 
     @OldChain
     public CacheConfig setCacheFactory(CacheFactory cacheFactory) {
-        this.cacheFactory = cacheFactory;
+        this.cacheFactoryProvider = cacheFactory != null ? codec -> cacheFactory : null;
+        return this;
+    }
+
+    /**
+     * Create the cache factory for each SQL client, using that client's resolved JSON codec.
+     */
+    @OldChain
+    public CacheConfig setCacheFactoryProvider(Function<JsonCodec, CacheFactory> provider) {
+        this.cacheFactoryProvider = provider;
         return this;
     }
 
@@ -160,10 +171,11 @@ public class CacheConfig {
             String microServiceName,
             EntityManager entityManager,
             Triggers triggers,
-            FilterManager filterManager
+            FilterManager filterManager,
+            JsonCodec jsonCodec
     ) {
 
-        CacheFactory cacheFactory = this.cacheFactory;
+        CacheFactory cacheFactory = cacheFactoryProvider != null ? cacheFactoryProvider.apply(jsonCodec) : null;
         Map<ImmutableType, Cache<?, ?>> objectCacheMap = this.objectCacheMap;
         Map<ImmutableProp, Cache<?, ?>> propCacheMap = this.propCacheMap;
 

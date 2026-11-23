@@ -3,12 +3,13 @@ package org.babyfish.jimmer;
 import org.babyfish.jimmer.model.Complex;
 import org.babyfish.jimmer.model.ComplexDraft;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 public class ComplexTest {
 
-    @Test
-    public void test() {
+    @JacksonTest
+    public void test(JacksonBackend backend) {
         Complex a = ComplexDraft.$.produce(c -> {
             c.setReal(5);
             c.setImage(7);
@@ -19,15 +20,15 @@ public class ComplexTest {
         });
         Assertions.assertEquals(
                 "{\"real\":\"5.0\",\"image\":\"7.0\"}",
-                a.toString()
+                backend.write(a)
         );
         Assertions.assertEquals(
                 "{\"real\":\"4.0\",\"image\":\"6.0\"}",
-                b.toString()
+                backend.write(b)
         );
         Assertions.assertEquals(
                 b,
-                ImmutableObjects.fromString(Complex.class, "{\"real\":\"4.0\",\"image\":\"6.0\"}")
+                backend.read(Complex.class, "{\"real\":\"4.0\",\"image\":\"6.0\"}")
         );
     }
 }

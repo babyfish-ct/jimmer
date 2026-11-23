@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.runtime;
 
 import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.impl.MetadataBuilder;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
@@ -37,6 +38,8 @@ public interface Metadata {
     }
 
     interface Builder {
+
+        Builder setJsonCodec(JsonCodec jsonCodec);
 
         Builder setOperationParser(OperationParser operationParser);
 

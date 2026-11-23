@@ -6,9 +6,11 @@ import kotlin.reflect.full.KClasses;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.ConverterMetadata;
-import org.babyfish.jimmer.jackson.JsonConverter;
+import org.babyfish.jimmer.json.converter.Converter;
+import org.babyfish.jimmer.json.converter.ConverterMetadata;
+import org.babyfish.jimmer.json.converter.JsonConverter;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.JsonFormat;
 import org.babyfish.jimmer.lang.Generics;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
@@ -108,7 +110,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private List<ImmutableProp> propsDependOnSelf;
 
-    private Ref<Object> defaultValueRef;
+    private Ref<Object> defaultLiteralRef;
 
     private Boolean isExcludedFromAllScalarsRef;
 
@@ -928,14 +930,14 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     " of immutable object"
                     );
                 }
-                if (AnnotationUtils.getAnnotation(this, com.fasterxml.jackson.annotation.JsonFormat.class) != null) {
+                if (AnnotationUtils.getAnnotation(this, JsonFormat.class) != null) {
                     throw new ModelException(
                             "Illegal property \"" +
                                     this +
                                     "\", it cannot be decorated by both \"@" +
                                     JsonConverter.class +
                                     "\" and \"@" +
-                                    com.fasterxml.jackson.annotation.JsonFormat.class +
+                                    JsonFormat.class.getName() +
                                     "\""
                     );
                 }
@@ -1406,11 +1408,31 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     @Override
     public Ref<Object> getDefaultValueRef() {
-        Ref<Object> ref = this.defaultValueRef;
+        return getDefaultValueRef(null);
+    }
+
+    @Override
+    public Ref<Object> getDefaultValueRef(JsonCodec jsonCodec) {
+        Ref<Object> ref = getDefaultLiteralRef();
+        if (ref == null || !(ref.getValue() instanceof MetadataLiterals.JsonLiteral)) {
+            return ref;
+        }
+        MetadataLiterals.JsonLiteral literal = (MetadataLiterals.JsonLiteral) ref.getValue();
+        Ref<Object> parsed = jsonCodec == null ? literal.defaultValue() : Ref.of(literal.read(jsonCodec));
+        return parsed == NIL_REF ? null : parsed;
+    }
+
+    @Override
+    public boolean hasDefaultValue() {
+        return getDefaultLiteralRef() != null;
+    }
+
+    private Ref<Object> getDefaultLiteralRef() {
+        Ref<Object> ref = this.defaultLiteralRef;
         if (ref == null) {
             META_LOCK.lock();
             try {
-                ref = this.defaultValueRef;
+                ref = this.defaultLiteralRef;
                 if (ref == null) {
                     Version version = getAnnotation(Version.class);
                     Default dft = getAnnotation(Default.class);
@@ -1426,7 +1448,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                         if (dft == null) {
                             value = 0;
                         } else {
-                            value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
+                            value = MetadataLiterals.parse(getGenericType(), isNullable(), dft.value());
                         }
                         ref = Ref.of(value);
                     } else if (databaseDefault != null) {
@@ -1495,10 +1517,10 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                             "\""
                             );
                         }
-                        Object value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
+                        Object value = MetadataLiterals.parse(getGenericType(), isNullable(), dft.value());
                         ref = Ref.of(value);
                     }
-                    this.defaultValueRef = ref;
+                    this.defaultLiteralRef = ref;
                 }
             } finally {
                 META_LOCK.unlock();

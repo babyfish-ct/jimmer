@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.kt.model
 
-import com.fasterxml.jackson.annotation.JsonFormat
+import org.babyfish.jimmer.json.JsonFormat
 import org.babyfish.jimmer.Immutable
 import java.math.BigDecimal
 import java.time.LocalDateTime

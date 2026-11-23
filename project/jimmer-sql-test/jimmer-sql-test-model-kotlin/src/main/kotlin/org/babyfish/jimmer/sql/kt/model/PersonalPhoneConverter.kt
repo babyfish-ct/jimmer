@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model
 
-import org.babyfish.jimmer.jackson.Converter
+import org.babyfish.jimmer.json.converter.Converter
 
 class PersonalPhoneConverter : Converter<String, String> {
     override fun output(value: String): String =

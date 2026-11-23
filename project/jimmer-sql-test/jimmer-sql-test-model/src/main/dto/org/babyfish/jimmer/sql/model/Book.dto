@@ -311,9 +311,14 @@ fuzzy input BookInputWithFuzzyParent {
     id(store)
 }
 
+dynamic input IgnoredBookStoreInput {
+    @org.babyfish.jimmer.json.JsonIgnore
+    id(store)
+}
+
 BookViewForIssue843 {
     #allScalars
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @org.babyfish.jimmer.json.JsonIgnore
     edition
 }
 

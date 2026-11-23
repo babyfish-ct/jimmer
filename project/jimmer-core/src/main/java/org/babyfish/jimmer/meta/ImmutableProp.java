@@ -1,7 +1,8 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.json.converter.Converter;
+import org.babyfish.jimmer.json.converter.ConverterMetadata;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -169,6 +170,14 @@ public interface ImmutableProp {
     List<ImmutableProp> getPropsDependOnSelf();
 
     Ref<Object> getDefaultValueRef();
+
+    default Ref<Object> getDefaultValueRef(JsonCodec jsonCodec) {
+        return getDefaultValueRef();
+    }
+
+    default boolean hasDefaultValue() {
+        return getDefaultValueRef() != null;
+    }
 
     boolean hasDatabaseDefaultValue();
 

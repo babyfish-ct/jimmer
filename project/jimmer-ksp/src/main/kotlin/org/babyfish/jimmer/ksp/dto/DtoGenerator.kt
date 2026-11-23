@@ -143,7 +143,6 @@ class DtoGenerator private constructor(
                             builder.addAnnotation(generatedAnnotation(dtoType.dtoFile, mutable))
                         }
                         builder.addTypeAnnotations()
-                        builder.addJacksonPolymorphicTypeNameIfNecessary()
                         _typeBuilder = builder
                         try {
                             addDoc()
@@ -175,7 +174,6 @@ class DtoGenerator private constructor(
                 }
                 .addAnnotation(generatedAnnotation())
             builder.addTypeAnnotations()
-            builder.addJacksonPolymorphicTypeNameIfNecessary()
             _typeBuilder = builder
             try {
                 addDoc()
@@ -232,7 +230,6 @@ class DtoGenerator private constructor(
                 }
             )
         builder.addTypeAnnotations()
-        builder.addJacksonPolymorphicInputRootAnnotationsIfNecessary()
         _typeBuilder = builder
         try {
             addDoc()
@@ -293,108 +290,93 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun TypeSpec.Builder.addJacksonPolymorphicInputRootAnnotationsIfNecessary() {
-        val polymorphism = dtoType.polymorphism ?: return
-        if (!isPolymorphicInputRoot) {
-            return
+    private fun addJsonBinding() {
+        val dto = getDtoClassName()
+        val generated = dto.nestedClass("__JsonBinding")
+        typeBuilder.addAnnotation(AnnotationSpec.builder(org.babyfish.jimmer.json.DtoJsonBinding.Generated::class)
+            .addMember("%T::class", generated).build())
+        val polymorphism = dtoType.polymorphism
+        val discriminator = if (isPolymorphicInputRoot) {
+            selectedPolymorphicInputDiscriminatorProp(dtoType)?.name ?: rootDiscriminatorPropName
+        } else null
+        val defaultSubtype = if (discriminator != null) polymorphism?.defaultBranch?.className else null
+        val binding = TypeSpec.classBuilder(generated.simpleName)
+            .superclass(org.babyfish.jimmer.json.DtoJsonBinding::class)
+            .addSuperclassConstructorParameter("%T::class.java", dto)
+            .addSuperclassConstructorParameter(if (discriminator == null) CodeBlock.of("null") else CodeBlock.of("%S", discriminator))
+            .addSuperclassConstructorParameter(defaultSubtype?.let { CodeBlock.of("%T::class.java", dto.nestedClass(it)) } ?: CodeBlock.of("null"))
+            .addSuperclassConstructorParameter(
+                if (polymorphicBranch && DtoModifier.INPUT in dtoType.modifiers)
+                    CodeBlock.of("%T::class.java", polymorphicSuperInterfaceName!!)
+                else CodeBlock.of("null")
+            )
+        val init = CodeBlock.builder()
+        if (discriminator != null && polymorphism != null) {
+            for (branch in polymorphism.typeBranches) {
+                init.addStatement("subtype(%S, %T::class.java)",
+                    branch.targetType?.discriminatorValue ?: branch.className, dto.nestedClass(branch.className))
+            }
         }
-        if (!hasTypeAnnotation(dtoType, ctx.jacksonTypes.jsonTypeInfo)) {
-            addJacksonTypeInfo(polymorphism)
+        for (prop in dtoType.props) {
+            val name = prop.name
+            val getter = if (name.length > 2 && name.startsWith("is") && name[2] !in 'a'..'z') name
+                         else "get" + name.replaceFirstChar { it.uppercaseChar() }
+            val loaded = if (polymorphism == null && statePropName(prop, false) != null)
+                CodeBlock.of("{ obj -> (obj as %T).%N }", dto, StringUtil.identifier("is", name, "Loaded"))
+            else CodeBlock.of("null")
+            val included = !isJsonIgnored(prop)
+            init.addStatement("property(%S, %S, %L, %L, { obj -> (obj as %T).%N }, %L)",
+                name, getter, included, included, dto, name, loaded)
         }
-        if (!hasTypeAnnotation(dtoType, ctx.jacksonTypes.jsonSubTypes)) {
-            addJacksonSubTypes(polymorphism)
-        }
-    }
-
-    private fun TypeSpec.Builder.addJacksonTypeInfo(
-        polymorphism: DtoPolymorphism<ImmutableType, ImmutableProp>
-    ) {
-        val discriminatorProp = selectedPolymorphicInputDiscriminatorProp(dtoType)
-        val property = discriminatorProp?.name ?: rootDiscriminatorPropName ?: return
-        addAnnotation(
-            AnnotationSpec
-                .builder(ctx.jacksonTypes.jsonTypeInfo)
-                .addMember("use = %T.Id.NAME", ctx.jacksonTypes.jsonTypeInfo)
-                .addMember(
-                    "include = %T.As.%L",
-                    ctx.jacksonTypes.jsonTypeInfo,
-                    if (discriminatorProp !== null) "EXISTING_PROPERTY" else "PROPERTY"
-                )
-                .addMember("property = %S", property)
-                .apply {
-                    if (discriminatorProp !== null) {
-                        addMember("visible = true")
-                    }
-                    polymorphism.defaultBranch?.let {
-                        addMember("defaultImpl = %T::class", getDtoClassName(it.className))
+        binding.addInitializerBlock(init.build())
+        if (polymorphism == null) {
+            val create = FunSpec.builder("create").addModifiers(KModifier.OVERRIDE)
+                .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build())
+                .addParameter("values", MAP.parameterizedBy(STRING, ANY.copy(nullable = true)))
+                .returns(dto)
+            if (isBuilderRequired) {
+                create.addStatement("val target = %T()", dto.nestedClass("Builder"))
+                for (prop in dtoType.props) {
+                    if (!isJsonIgnored(prop)) {
+                        create.beginControlFlow("if (values.containsKey(%S))", prop.name)
+                            .addStatement("target.%N(values[%S] as %T)", prop.name, prop.name, propTypeName(prop))
+                            .endControlFlow()
                     }
                 }
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addJacksonSubTypes(
-        polymorphism: DtoPolymorphism<ImmutableType, ImmutableProp>
-    ) {
-        if (polymorphism.typeBranches.isEmpty()) {
-            return
-        }
-        val typeAnnotationName = ctx.jacksonTypes.jsonSubTypes.nestedClass("Type")
-        val block = CodeBlock.builder()
-        for ((index, branch) in polymorphism.typeBranches.withIndex()) {
-            if (index != 0) {
-                block.add(",\n")
+                create.addStatement("return target.build()")
+            } else {
+                val args = CodeBlock.builder().add("return %T(\n", dto).indent()
+                for (prop in dtoType.props) {
+                    val type = propTypeName(prop)
+                    val ignored = isJsonIgnored(prop)
+                    val defaultValue = when {
+                        prop is UserProp && prop.defaultValueText != null -> prop.defaultValueText
+                        isGeneratedNullable(prop) -> "null"
+                        type == BOOLEAN -> "false"
+                        else -> null
+                    }
+                    if (ignored && defaultValue != null) continue
+                    args.add("%N = ", prop.name)
+                    if (ignored) {
+                        args.add("error(%S)", "Missing required property " + prop.name)
+                    } else {
+                        if (defaultValue != null && defaultValue != "null") args.add("if (values.containsKey(%S)) ", prop.name)
+                        args.add("values[%S] as %T", prop.name, type)
+                        if (defaultValue != null && defaultValue != "null") args.add(" else %L", defaultValue)
+                    }
+                    args.add(",\n")
+                }
+                create.addCode(args.unindent().add(")\n").build())
             }
-            val typeAnnotation = AnnotationSpec
-                .builder(typeAnnotationName)
-                .addMember("value = %T::class", getDtoClassName(branch.className))
-                .build()
-            block.add("%L", typeAnnotation)
+            binding.addFunction(create.build())
         }
-        addAnnotation(
-            AnnotationSpec
-                .builder(ctx.jacksonTypes.jsonSubTypes)
-                .addMember("value = [%L]", block.build())
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addJacksonPolymorphicTypeNameIfNecessary() {
-        if (!polymorphicBranch ||
-            !dtoType.modifiers.contains(DtoModifier.INPUT) ||
-            !isTypedPolymorphicInputBranch ||
-            hasTypeAnnotation(root.dtoType, ctx.jacksonTypes.jsonSubTypes) ||
-            hasTypeAnnotation(dtoType, ctx.jacksonTypes.jsonTypeName)
-        ) {
-            return
-        }
-        dtoType.baseType.discriminatorValue?.let {
-            addAnnotation(
-                AnnotationSpec
-                    .builder(ctx.jacksonTypes.jsonTypeName)
-                    .addMember("%S", it)
-                    .build()
-            )
-        }
+        typeBuilder.addType(binding.build())
     }
 
     private val isPolymorphicInputRoot: Boolean
         get() = dtoType.modifiers.contains(DtoModifier.INPUT) &&
                 dtoType.polymorphism !== null &&
                 dtoType.baseType.isEntity
-
-    private fun hasTypeAnnotation(
-        dtoType: DtoType<ImmutableType, ImmutableProp>,
-        annotationType: ClassName
-    ): Boolean {
-        val annotationName = annotationType.reflectionName()
-        if (dtoType.annotations.any { it.qualifiedName == annotationName }) {
-            return true
-        }
-        return dtoType.baseType.classDeclaration.annotations.any {
-            it.annotationType.fastResolve().declaration.qualifiedName?.asString() == annotationName
-        }
-    }
 
     private fun selectedPolymorphicInputDiscriminatorProp(
         dtoType: DtoType<ImmutableType, ImmutableProp>
@@ -439,22 +421,7 @@ class DtoGenerator private constructor(
     }
 
     private fun addMembers() {
-        if (isSerializerRequired) {
-            typeBuilder.addAnnotation(
-                AnnotationSpec
-                    .builder(ctx.jacksonTypes.jsonSerialize)
-                    .addMember("using = %T::class", getDtoClassName("Serializer"))
-                    .build()
-            )
-        }
-        if (isBuilderRequired) {
-            typeBuilder.addAnnotation(
-                AnnotationSpec
-                    .builder(ctx.jacksonTypes.jsonDeserialize)
-                    .addMember("builder = %T::class", getDtoClassName("Builder"))
-                    .build()
-            )
-        }
+        addJsonBinding()
         val isSpecification = dtoType.modifiers.contains(DtoModifier.SPECIFICATION)
         if (polymorphicSuperInterfaceName != null) {
             typeBuilder.addSuperinterface(polymorphicSuperInterfaceName)
@@ -567,15 +534,13 @@ class DtoGenerator private constructor(
             typeBuilder.addHibernateValidatorEnhancement(false)
             typeBuilder.addHibernateValidatorEnhancement(true)
         }
-        if (isSerializerRequired) {
-            SerializerGenerator(this).generate()
-        }
         if (isBuilderRequired) {
             InputBuilderGenerator(this).generate()
         }
     }
 
     private fun addPolymorphicMembers() {
+        addJsonBinding()
         typeBuilder.addSuperinterface(
             (if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
                 INPUT_CLASS_NAME
@@ -1113,7 +1078,7 @@ class DtoGenerator private constructor(
                     .addAnnotation(ApiIgnore::class)
                     .addAnnotation(
                         AnnotationSpec
-                            .builder(ctx.jacksonTypes.jsonIgnore)
+                            .builder(org.babyfish.jimmer.json.JsonIgnore::class)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )
@@ -1146,20 +1111,6 @@ class DtoGenerator private constructor(
                                 .build()
                         )
                     }
-                    if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == ctx.jacksonTypes.jsonProperty.reflectionName() }) {
-                        addAnnotation(
-                            AnnotationSpec
-                                .builder(ctx.jacksonTypes.jsonProperty)
-                                .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
-                                .apply {
-                                    addMember("%S", prop.name)
-                                    if (!isGeneratedNullable(prop)) {
-                                        addMember("required = true")
-                                    }
-                                }
-                                .build()
-                        )
-                    }
                     if (prop is DtoProp<*, *>) {
                         val dtoProp = prop.asDtoProp()
                         if (dtoType.modifiers.contains(DtoModifier.INPUT) && dtoProp.inputModifier == DtoModifier.FIXED) {
@@ -1168,10 +1119,13 @@ class DtoGenerator private constructor(
                         for (anno in dtoProp.toTailProp().baseProp.annotations {
                             isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
-                            if (isBuilderRequired && anno.fullName == ctx.jacksonTypes.jsonDeserialize.reflectionName()) {
-                                continue
+                            val targets = allowedTargets(anno.fullName)
+                            val target = if (isJsonPropertyAnnotation(anno.fullName)) {
+                                AnnotationSpec.UseSiteTarget.GET
+                            } else {
+                                targets.firstOrNull()
                             }
-                            allowedTargets(anno.fullName).firstOrNull()?.let {
+                            target?.let {
                                 addAnnotation(
                                     standardSpec(
                                         annotationOf(anno, it)
@@ -1181,12 +1135,9 @@ class DtoGenerator private constructor(
                         }
                     }
                     for (anno in prop.annotations) {
-                        if (isBuilderRequired && anno.qualifiedName == ctx.jacksonTypes.jsonDeserialize.reflectionName()) {
-                            continue
-                        }
 
                         val targets = allowedTargets(anno.qualifiedName)
-                        val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
+                        val target = if (isJsonPropertyAnnotation(anno.qualifiedName)) {
                             targets.firstOrNull { it == AnnotationSpec.UseSiteTarget.GET } ?: targets.firstOrNull()
                         } else {
                             targets.firstOrNull()
@@ -1256,14 +1207,9 @@ class DtoGenerator private constructor(
                         }
                     }
                     for (anno in prop.annotations) {
-                        val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
-                            AnnotationSpec.UseSiteTarget.GET
-                        } else {
-                            allowedTargets(anno.qualifiedName).firstOrNull {
-                                it == AnnotationSpec.UseSiteTarget.GET ||
-                                    it == AnnotationSpec.UseSiteTarget.PROPERTY
-                            } ?: continue
-                        }
+                        val target = allowedTargets(anno.qualifiedName).firstOrNull {
+                            it == AnnotationSpec.UseSiteTarget.GET || it == AnnotationSpec.UseSiteTarget.PROPERTY
+                        } ?: continue
                         addAnnotation(
                             standardSpec(
                                 annotationOf(anno, ctx.resolver, target)
@@ -1273,6 +1219,14 @@ class DtoGenerator private constructor(
                 }
                 .build()
         )
+    }
+
+    internal fun isJsonIgnored(prop: AbstractProp): Boolean {
+        prop.jsonIgnore?.let { return it }
+        if (prop !is DtoProp<*, *>) return false
+        val ignore = prop.asDtoProp().toTailProp().baseProp.annotation(org.babyfish.jimmer.json.JsonIgnore::class)
+            ?: return false
+        return ignore.arguments.firstOrNull { it.name?.asString() == "value" }?.value != false
     }
 
     private fun addPrimaryConstructor() {
@@ -2715,11 +2669,6 @@ class DtoGenerator private constructor(
             }
         }
 
-    private val isSerializerRequired: Boolean by lazy {
-        dtoType.modifiers.contains(DtoModifier.INPUT) &&
-                dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
-    }
-
     private val isBuilderRequired: Boolean by lazy {
         dtoType.modifiers.contains(DtoModifier.INPUT) &&
                 dtoType.dtoProps.any { prop ->
@@ -2746,7 +2695,11 @@ class DtoGenerator private constructor(
         @JvmStatic
         private val KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto"
 
-        private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
+        private fun isJsonPropertyAnnotation(qualifiedName: String): Boolean =
+            qualifiedName == org.babyfish.jimmer.json.JsonIgnore::class.qualifiedName ||
+                qualifiedName == org.babyfish.jimmer.json.JsonFormat::class.qualifiedName
+
+        internal fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
             val qualifiedName =
                 annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()
                     ?: throw DtoException(
@@ -2763,6 +2716,7 @@ class DtoGenerator private constructor(
             return (
                     qualifiedName != KOTLIN_DTO_TYPE_NAME && (
                             !qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                                    isJsonPropertyAnnotation(qualifiedName) ||
                                     qualifiedName.startsWith("org.babyfish.jimmer.client.")
                             ) && dtoAnnotations.none {
                         it.qualifiedName == annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()

@@ -1,0 +1,5 @@
+export org.babyfish.jimmer.nojackson.Note
+
+dynamic input NoteInput {
+    label
+}

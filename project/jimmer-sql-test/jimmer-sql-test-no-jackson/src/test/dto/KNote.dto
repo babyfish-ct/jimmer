@@ -1,0 +1,5 @@
+export org.babyfish.jimmer.nojackson.KNote
+
+dynamic input KNoteInput {
+    label
+}

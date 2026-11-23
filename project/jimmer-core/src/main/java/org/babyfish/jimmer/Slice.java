@@ -2,6 +2,7 @@ package org.babyfish.jimmer;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.beans.ConstructorProperties;
 import java.util.List;
 
 /**
@@ -20,6 +21,7 @@ public class Slice<T> {
 
     private final boolean isTail;
 
+    @ConstructorProperties({"rows", "head", "tail"})
     public Slice(@NotNull List<T> rows, boolean isHead, boolean isTail) {
         this.rows = rows;
         this.isHead = isHead;

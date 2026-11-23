@@ -159,7 +159,7 @@ public class ErrorGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("get" + typeElement.getSimpleName().toString())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addAnnotation(context.getJacksonTypes().jsonIgnore)
+                .addAnnotation(org.babyfish.jimmer.json.JsonIgnore.class)
                 .returns(className);
         typeBuilder.addMethod(builder.build());
     }
@@ -227,7 +227,7 @@ public class ErrorGenerator {
                 MethodSpec
                         .methodBuilder("get" + typeElement.getSimpleName().toString())
                         .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(context.getJacksonTypes().jsonIgnore)
+                        .addAnnotation(org.babyfish.jimmer.json.JsonIgnore.class)
                         .addAnnotation(Override.class)
                         .returns(className)
                         .addStatement("return $T.$L", className, element.getSimpleName().toString())

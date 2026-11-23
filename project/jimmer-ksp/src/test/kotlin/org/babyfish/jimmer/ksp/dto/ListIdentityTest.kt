@@ -18,7 +18,7 @@ class ListIdentityTest : AbstractTest() {
             import org.babyfish.jimmer.Immutable
             import org.babyfish.jimmer.DraftObjects
             import org.babyfish.jimmer.ImmutableObjects
-            import org.babyfish.jimmer.jackson.codec.JsonCodec
+            import org.babyfish.jimmer.json.JsonCodec
             import org.babyfish.jimmer.kt.new
             import org.babyfish.jimmer.meta.PropId
             import org.babyfish.jimmer.runtime.DraftSpi

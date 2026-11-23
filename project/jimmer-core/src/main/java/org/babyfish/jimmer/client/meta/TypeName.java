@@ -3,17 +3,12 @@ package org.babyfish.jimmer.client.meta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = TypeName.SerializerV2.class)
-@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = TypeName.DeserializerV2.class)
-@tools.jackson.databind.annotation.JsonSerialize(using = TypeName.SerializerV3.class)
-@tools.jackson.databind.annotation.JsonDeserialize(using = TypeName.DeserializerV3.class)
 public class TypeName implements Comparable<TypeName> {
 
     public static final TypeName VOID = new TypeName(null, "void");
@@ -369,41 +364,5 @@ public class TypeName implements Comparable<TypeName> {
         List<String> simpleNames = Collections.unmodifiableList(Arrays.asList(DOLLAR_PATTERN.split(value)));
 
         return new TypeName(packageName, simpleNames, typeVariable);
-    }
-
-    static class SerializerV2 extends com.fasterxml.jackson.databind.JsonSerializer<TypeName> {
-        @Override
-        public void serialize(TypeName typeName,
-                              com.fasterxml.jackson.core.JsonGenerator gen,
-                              com.fasterxml.jackson.databind.SerializerProvider provider) throws IOException {
-            gen.writeString(typeName.toString(true));
-        }
-    }
-
-    static class DeserializerV2 extends com.fasterxml.jackson.databind.JsonDeserializer<TypeName> {
-        @Override
-        public TypeName deserialize(com.fasterxml.jackson.core.JsonParser jp,
-                                    com.fasterxml.jackson.databind.DeserializationContext ctx) throws IOException {
-            String value = jp.getValueAsString();
-            return TypeName.parse(value);
-        }
-    }
-
-    static class SerializerV3 extends tools.jackson.databind.ValueSerializer<TypeName> {
-        @Override
-        public void serialize(TypeName typeName,
-                              tools.jackson.core.JsonGenerator gen,
-                              tools.jackson.databind.SerializationContext ctx) {
-            gen.writeString(typeName.toString(true));
-        }
-    }
-
-    static class DeserializerV3 extends tools.jackson.databind.ValueDeserializer<TypeName> {
-        @Override
-        public TypeName deserialize(tools.jackson.core.JsonParser jp,
-                                    tools.jackson.databind.DeserializationContext ctx) {
-            String value = jp.getValueAsString();
-            return TypeName.parse(value);
-        }
     }
 }

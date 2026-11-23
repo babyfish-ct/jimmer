@@ -1,7 +1,8 @@
 package org.babyfish.jimmer.sql.di;
 
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -172,7 +173,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public JsonCodec<?> getJsonCodec() {
+    public Ref<Object> getDefaultValueRef(ImmutableProp prop) {
+        return sqlClient().getDefaultValueRef(prop);
+    }
+
+    @Override
+    public JsonCodec getJsonCodec() {
         return sqlClient().getJsonCodec();
     }
 

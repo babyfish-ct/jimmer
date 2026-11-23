@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -115,8 +114,7 @@ class SaveFetcherAnalysis {
                     databaseDefaultProps.add(prop);
                 }
             } else if (!prop.isId()) {
-                Ref<Object> defaultRef = prop.getDefaultValueRef();
-                if ((defaultRef != null || prop.isNullable()) && !containsProp(completableProps, prop)) {
+                if ((prop.hasDefaultValue() || prop.isNullable()) && !containsProp(completableProps, prop)) {
                     completableProps.add(prop);
                 }
             }

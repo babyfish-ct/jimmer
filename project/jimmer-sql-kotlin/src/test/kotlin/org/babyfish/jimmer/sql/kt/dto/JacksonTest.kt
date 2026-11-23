@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.JsonCodec.jsonCodec
 import org.babyfish.jimmer.sql.kt.model.hr.dto.DepartmentView2
 import org.babyfish.jimmer.sql.kt.model.hr.dto.EmployeeInput
 import kotlin.test.Test

@@ -418,7 +418,7 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .returns(prop.getDraftTypeName(false));
         if (!prop.isBeanStyle()) {
-            builder.addAnnotation(ctx.getJacksonTypes().jsonIgnore);
+            builder.addAnnotation(org.babyfish.jimmer.json.JsonIgnore.class);
         }
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);

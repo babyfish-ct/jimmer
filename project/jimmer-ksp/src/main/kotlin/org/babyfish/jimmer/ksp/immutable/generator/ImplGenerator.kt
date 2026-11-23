@@ -31,7 +31,7 @@ class ImplGenerator(
                             .mutable()
                             .addAnnotation(
                                 AnnotationSpec
-                                    .builder(ctx.jacksonTypes.jsonIgnore)
+                                    .builder(org.babyfish.jimmer.json.JsonIgnore::class)
                                     .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                                     .build()
                             )
@@ -79,7 +79,7 @@ class ImplGenerator(
                     .addModifiers(KModifier.INTERNAL)
                     .addAnnotation(
                         AnnotationSpec
-                            .builder(ctx.jacksonTypes.jsonIgnore)
+                            .builder(org.babyfish.jimmer.json.JsonIgnore::class)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )
@@ -108,7 +108,7 @@ class ImplGenerator(
                     .addModifiers(KModifier.INTERNAL)
                     .addAnnotation(
                         AnnotationSpec
-                            .builder(ctx.jacksonTypes.jsonIgnore)
+                            .builder(org.babyfish.jimmer.json.JsonIgnore::class)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )

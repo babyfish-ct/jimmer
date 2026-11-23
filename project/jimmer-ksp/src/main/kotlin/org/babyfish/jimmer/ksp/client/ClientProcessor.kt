@@ -14,12 +14,12 @@ import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.internal.GeneratedPolymorphicDtoBranch
+import org.babyfish.jimmer.json.JsonCodecs
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
-import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 
 class ClientProcessor(
@@ -52,8 +52,6 @@ class ClientProcessor(
         }
     }
 
-    private val jsonValueTypeNameStack = mutableSetOf<TypeName>()
-
     fun process() {
         for (file in ctx.resolver.getAllFiles()) {
             for (declaration in file.declarations) {
@@ -66,14 +64,18 @@ class ClientProcessor(
             }
         }
         val schema = builder.build()
+        val codec = JsonCodecs.create(
+            ctx.environment.options["jimmer.json.codec"] ?: "org.babyfish.jimmer.jackson.v2.JsonCodecV2",
+            javaClass.classLoader
+        )
 
         ctx.environment.codeGenerator.createNewFile(
-            Dependencies(false, *ctx.resolver.getAllFiles().toList().toTypedArray()),
+            Dependencies(true, *ctx.resolver.getAllFiles().toList().toTypedArray()),
             "META-INF.jimmer",
             "client",
             ""
-        ).use {
-            Schemas.writeTo(schema, OutputStreamWriter(it, StandardCharsets.UTF_8))
+        ).writer(StandardCharsets.UTF_8).use { writer ->
+            Schemas.writeTo(schema, writer, codec)
         }
     }
 
@@ -199,18 +201,11 @@ class ClientProcessor(
 
     private fun SchemaBuilder<KSDeclaration>.fillType(type: KSTypeReference) {
         val typeRef = current<TypeRefImpl<KSDeclaration>>()
-        try {
-            val resolvedType = type.fastResolve()
-            determineNullity(resolvedType)
-            determineFetchBy(type)
-            determineTypeNameAndArguments(resolvedType, type)
-            typeRef.removeOptional()
-        } catch (ex: JsonValueTypeChangeException) {
-            typeRef.replaceBy(
-                ex.typeRef,
-                typeRef.isNullable || ex.typeRef.isNullable
-            )
-        }
+        val resolvedType = type.fastResolve()
+        determineNullity(resolvedType)
+        determineFetchBy(type)
+        determineTypeNameAndArguments(resolvedType, type)
+        typeRef.removeOptional()
     }
 
     private fun SchemaBuilder<KSDeclaration>.determineNullity(type: KSType) {
@@ -397,8 +392,9 @@ class ClientProcessor(
                 return
             }
         }
-        jsonValueTypeRef(typeRef.typeName)?.let {
-            throw JsonValueTypeChangeException(it)
+        enumScalarType(type.realDeclaration)?.let {
+            determineTypeNameAndArguments(it.fastResolve(), it)
+            return
         }
         val simpleName = type.realDeclaration.simpleName.asString()
         val jsonFlag = listOf(
@@ -451,38 +447,34 @@ class ClientProcessor(
         }
     }
 
-    private fun SchemaBuilder<KSDeclaration>.jsonValueTypeRef(typeName: TypeName): TypeRefImpl<KSDeclaration>? {
-        val declaration = ctx.resolver.getClassDeclarationByName(typeName.toString()) ?: return null
-        val jsonValueFun = declaration
-            .getDeclaredFunctions()
-            .firstOrNull {
-                it.annotation(ctx.jacksonTypes.jsonValue.reflectionName()) !== null &&
-                    it.parameters.isEmpty() &&
-                    it.returnType?.realDeclaration?.qualifiedName?.asString().let { n ->
-                        n != "kotlin.Unit" && n != "kotlin.Nothing"
+    private fun enumScalarType(declaration: KSDeclaration): KSTypeReference? {
+        if (declaration !is KSClassDeclaration || declaration.classKind != ClassKind.ENUM_CLASS) return null
+        val neutral = declaration.declarations.mapNotNull { member ->
+            val type = when (member) {
+                is KSFunctionDeclaration -> if (member.annotation(org.babyfish.jimmer.json.JsonValue::class) != null) {
+                    if (member.parameters.isNotEmpty() || member.extensionReceiver != null || Modifier.JAVA_STATIC in member.modifiers) {
+                        throw MetaException(member, "@JsonValue requires a parameterless instance method")
                     }
-            } ?: return null
-        if (!jsonValueTypeNameStack.add(typeName)) {
-            throw MetaException(
-                ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
-                ancestorSource(),
-                "Cannot resolve \"@" +
-                    ctx.jacksonTypes.jsonValue.reflectionName() +
-                    "\" because of dead recursion: " +
-                    jsonValueTypeNameStack
-            )
-        }
-        try {
-            var result: TypeRefImpl<KSDeclaration>? = null
-            typeRef {
-                fillType(jsonValueFun.returnType!!)
-                result = it
+                    member.returnType
+                } else null
+                is KSPropertyDeclaration -> if (member.getter?.annotation(org.babyfish.jimmer.json.JsonValue::class) != null) {
+                    if (member.extensionReceiver != null || member.getter?.modifiers?.contains(Modifier.PRIVATE) == true) {
+                        throw MetaException(member, "@JsonValue requires a public instance getter")
+                    }
+                    member.type
+                } else null
+                else -> null
             }
-            return result
-        } finally {
-            jsonValueTypeNameStack.remove(typeName);
+            if (type != null && (!member.isPublic() ||
+                    type.realDeclaration.qualifiedName?.asString() !in ENUM_SCALARS)) {
+                throw MetaException(member, "@JsonValue requires a public enum accessor returning a string or integer")
+            }
+            type
+        }.toList()
+        if (neutral.size > 1) {
+            throw MetaException(declaration, "An enum can only declare one @JsonValue accessor")
         }
-        return null
+        return neutral.firstOrNull()
     }
 
     private fun SchemaBuilder<KSDeclaration>.fillDefinition(declaration: KSClassDeclaration, immutable: Boolean) {
@@ -507,7 +499,7 @@ class ClientProcessor(
             for (propDeclaration in declaration.getDeclaredProperties()) {
                 if (!propDeclaration.isPublic() ||
                     propDeclaration.annotation(ApiIgnore::class) != null ||
-                    propDeclaration.annotation(ctx.jacksonTypes.jsonIgnore.reflectionName()) != null) {
+                    propDeclaration.isJsonIgnored()) {
                     continue
                 }
                 if (isClientException &&
@@ -547,7 +539,7 @@ class ClientProcessor(
                 if (!funcDeclaration.isConstructor() &&
                     funcDeclaration.isPublic() &&
                     funcDeclaration.parameters.isEmpty() &&
-                    funcDeclaration.annotation(ctx.jacksonTypes.jsonIgnore.reflectionName()) == null &&
+                    !funcDeclaration.isJsonIgnored() &&
                     funcDeclaration.annotation(ApiIgnore::class) == null) {
                     val returnTypReference = funcDeclaration.returnType ?: continue
                     val returnTypeName = returnTypReference.realDeclaration.qualifiedName?.asString() ?: continue
@@ -671,10 +663,6 @@ class ClientProcessor(
         cause: Throwable? = null
     ) : MetaException(declaration, childDeclaration, reason, cause)
 
-    private class JsonValueTypeChangeException(
-        val typeRef: TypeRefImpl<KSDeclaration>
-    ): RuntimeException()
-
     companion object {
 
         fun KSDeclaration.toTypeName(): TypeName {
@@ -723,3 +711,14 @@ class ClientProcessor(
         )
     }
 }
+
+private fun KSAnnotated.isJsonIgnored(): Boolean {
+    val ignore = annotation(org.babyfish.jimmer.json.JsonIgnore::class) ?: return false
+    return ignore.arguments.firstOrNull { it.name?.asString() == "value" }?.value != false
+}
+
+
+private val ENUM_SCALARS = setOf(
+    "kotlin.String", "kotlin.Byte", "kotlin.Short", "kotlin.Int", "kotlin.Long",
+    "java.lang.String", "java.lang.Byte", "java.lang.Short", "java.lang.Integer", "java.lang.Long"
+)

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.OpenApiController;
 import org.babyfish.jimmer.spring.client.OpenApiUiController;
@@ -23,22 +24,22 @@ public class ServletControllerConfiguration {
     @ConditionalOnProperty("jimmer.client.ts.path")
     @ConditionalOnMissingBean(TypeScriptController.class)
     @Bean
-    public TypeScriptController typeScriptController(JimmerProperties properties) {
-        return new TypeScriptController(properties);
+    public TypeScriptController typeScriptController(JimmerProperties properties, JsonCodec jsonCodec) {
+        return new TypeScriptController(properties, jsonCodec);
     }
 
     @ConditionalOnProperty("jimmer.client.openapi.path")
     @ConditionalOnMissingBean(OpenApiController.class)
     @Bean
-    public OpenApiController openApiController(JimmerProperties properties) {
-        return new OpenApiController(properties);
+    public OpenApiController openApiController(JimmerProperties properties, JsonCodec jsonCodec) {
+        return new OpenApiController(properties, jsonCodec);
     }
 
     @ConditionalOnProperty("jimmer.client.openapi.ui-path")
     @ConditionalOnMissingBean(OpenApiUiController.class)
     @Bean
-    public OpenApiUiController openApiUiController(JimmerProperties properties) {
-        return new OpenApiUiController(properties);
+    public OpenApiUiController openApiUiController(JimmerProperties properties, JsonCodec jsonCodec) {
+        return new OpenApiUiController(properties, jsonCodec);
     }
 
     @ConditionalOnProperty("jimmer.client.openapi.ui-path")

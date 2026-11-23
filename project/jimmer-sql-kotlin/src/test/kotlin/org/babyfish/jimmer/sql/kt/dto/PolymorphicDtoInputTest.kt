@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.babyfish.jimmer.json.DtoJsonBinding
+import org.babyfish.jimmer.jackson.v2.ImmutableModuleV2
 import org.babyfish.jimmer.runtime.ImmutableSpi
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KClientType
 import org.babyfish.jimmer.sql.kt.model.inheritance.enumdiscriminator.KEnumClient
@@ -21,7 +23,7 @@ import org.babyfish.jimmer.sql.kt.model.inheritance.joinedtable.instantiable.KCl
 
 class PolymorphicDtoInputTest {
 
-    private val mapper = ObjectMapper().registerKotlinModule()
+    private val mapper = ObjectMapper().registerKotlinModule().registerModule(ImmutableModuleV2())
 
     @Test
     fun testReusablePolymorphicAssociationInput() {
@@ -94,15 +96,10 @@ class PolymorphicDtoInputTest {
 
     @Test
     fun testJacksonTypeTagWithoutSelectedDiscriminatorCreatesExplicitBranch() {
-        val jsonSubTypes = KClientPatchInput::class.java.getAnnotation(JsonSubTypes::class.java)
-        val jsonTypeName = KClientPatchInput.Organization::class.java.getAnnotation(JsonTypeName::class.java)
-
-        assertNotNull(jsonSubTypes)
-        assertEquals(1, jsonSubTypes.value.size)
-        assertEquals(KClientPatchInput.Organization::class.java, jsonSubTypes.value[0].value.java)
-        assertEquals("", jsonSubTypes.value[0].name)
-        assertNotNull(jsonTypeName)
-        assertEquals("ORG", jsonTypeName.value)
+        val binding = DtoJsonBinding.find(KClientPatchInput::class.java)
+        assertEquals("type", binding.discriminator)
+        assertEquals(KClientPatchInput.Organization::class.java, binding.getSubtype("ORG"))
+        assertEquals("ORG", binding.getDiscriminatorValue(KClientPatchInput.Organization::class.java))
 
         val input = mapper.readValue<KClientPatchInput>(
             """{"type":"ORG","id":21,"name":"Org json","taxCode":"T-21"}"""

@@ -10,14 +10,28 @@ import org.babyfish.jimmer.sql.model.dto.BookNullableFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookNestedFoldView;
 import org.babyfish.jimmer.sql.model.dto.BookViewForIssue843;
+import org.babyfish.jimmer.sql.model.dto.IgnoredBookStoreInput;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.JsonCodec.jsonCodec;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BookVIewTest extends Tests {
+
+    @Test
+    public void testIgnoredDynamicId() throws Exception {
+        IgnoredBookStoreInput input = new IgnoredBookStoreInput();
+        input.setStoreId(null);
+        assertTrue(input.isStoreIdLoaded());
+        assertContentEquals("{}", jsonCodec().writer().writeAsString(input));
+        input = jsonCodec().readerFor(IgnoredBookStoreInput.class)
+                .read("{\"storeId\":null}");
+        assertFalse(input.isStoreIdLoaded());
+    }
 
     @Test
     public void testForIssue843() throws Exception {

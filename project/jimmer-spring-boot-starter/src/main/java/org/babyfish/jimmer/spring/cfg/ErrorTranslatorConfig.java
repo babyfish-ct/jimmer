@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import org.babyfish.jimmer.json.JsonCodec;
+import org.springframework.beans.factory.ObjectProvider;
 import org.babyfish.jimmer.spring.client.CodeBasedExceptionAdvice;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -20,8 +22,8 @@ public class ErrorTranslatorConfig {
 
     @Bean
     public CodeBasedExceptionAdvice codeBasedExceptionAdvice(
-            JimmerProperties properties
+            JimmerProperties properties, ObjectProvider<JsonCodec> codecs
     ) {
-        return new CodeBasedExceptionAdvice(properties);
+        return new CodeBasedExceptionAdvice(properties, codecs.getIfAvailable(JsonCodec::jsonCodec));
     }
 }

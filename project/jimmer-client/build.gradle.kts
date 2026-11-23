@@ -6,7 +6,6 @@ plugins {
 dependencies {
     implementation(projects.jimmerSql)
     compileOnly(libs.spring.boot)
-    compileOnly(libs.jackson.annotations)
     annotationProcessor(libs.spring.boot.configurationProcessor)
 
     testAnnotationProcessor(projects.jimmerApt)
@@ -15,6 +14,8 @@ dependencies {
     testImplementation(projects.jimmerSqlKotlin)
     testImplementation(libs.spring.web)
     testImplementation(libs.bundles.jackson)
+    testImplementation(projects.jimmerJsonJackson2)
+    testImplementation(projects.jimmerJsonJackson3)
 }
 
 tasks.withType<JavaCompile>().configureEach {

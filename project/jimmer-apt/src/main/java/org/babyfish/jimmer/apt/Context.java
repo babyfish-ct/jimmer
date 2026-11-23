@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.apt;
 
-import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.Specification;
@@ -64,7 +63,6 @@ public class Context {
 
     private final SourceTypeFilter sourceTypeFilter;
 
-    private final boolean jackson3;
 
     private final String immutablesTypeName;
 
@@ -80,8 +78,6 @@ public class Context {
 
     private final Modifier dtoFieldModifier;
 
-    private final JacksonTypes jacksonTypes;
-
     private final DocMetadata docMetadata;
 
     Context(
@@ -90,7 +86,6 @@ public class Context {
             Filer filer,
             boolean keepIsPrefix,
             SourceTypeFilter sourceTypeFilter,
-            boolean jackson3,
             String immutablesTypeName,
             String tablesTypeName,
             String tableExesTypeName,
@@ -104,7 +99,6 @@ public class Context {
         this.filer = filer;
         this.keepIsPrefix = keepIsPrefix;
         this.sourceTypeFilter = sourceTypeFilter;
-        this.jackson3 = jackson3;
         objectType = elements
                 .getTypeElement(Object.class.getName())
                 .asType();
@@ -148,41 +142,6 @@ public class Context {
                         types.getWildcardType(null, null)
                 );
         enumElement = elements.getTypeElement(Enum.class.getName());
-        if (jackson3) {
-            jacksonTypes = new JacksonTypes(
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonIgnore"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeName"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonFormat"),
-                    ClassName.get("tools.jackson.databind", "ValueSerializer"),
-                    ClassName.get("tools.jackson.databind.annotation", "JsonSerialize"),
-                    ClassName.get("tools.jackson.databind.annotation", "JsonDeserialize"),
-                    ClassName.get("tools.jackson.databind.annotation", "JsonPOJOBuilder"),
-                    ClassName.get("tools.jackson.databind.annotation", "JsonNaming"),
-                    ClassName.get("tools.jackson.core", "JsonGenerator"),
-                    ClassName.get("tools.jackson.databind", "SerializationContext")
-            );
-        } else {
-            jacksonTypes = new JacksonTypes(
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonIgnore"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeName"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
-                    ClassName.get("com.fasterxml.jackson.annotation", "JsonFormat"),
-                    ClassName.get("com.fasterxml.jackson.databind", "JsonSerializer"),
-                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonSerialize"),
-                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonDeserialize"),
-                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonPOJOBuilder"),
-                    ClassName.get("com.fasterxml.jackson.databind.annotation", "JsonNaming"),
-                    ClassName.get("com.fasterxml.jackson.core", "JsonGenerator"),
-                    ClassName.get("com.fasterxml.jackson.databind", "SerializerProvider")
-            );
-        }
         this.docMetadata = new DocMetadata(this);
     }
 
@@ -370,10 +329,6 @@ public class Context {
         return fetchersTypeName;
     }
 
-    public boolean isJackson3() {
-        return jackson3;
-    }
-
     public boolean isHibernateValidatorEnhancement() {
         return hibernateValidatorEnhancement;
     }
@@ -386,9 +341,6 @@ public class Context {
         return dtoFieldModifier;
     }
 
-    public JacksonTypes getJacksonTypes() {
-        return this.jacksonTypes;
-    }
 
     public DocMetadata getDocMetadata() {
         return this.docMetadata;

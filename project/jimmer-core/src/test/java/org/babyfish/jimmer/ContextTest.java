@@ -7,14 +7,15 @@ import org.babyfish.jimmer.model.Book;
 import org.babyfish.jimmer.model.BookDraft;
 import org.babyfish.jimmer.runtime.Internal;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 import java.util.Arrays;
 
 public class ContextTest {
 
-    @Test
-    public void testRequired() {
+    @JacksonTest
+    public void testRequired(JacksonBackend backend) {
         Book book = BookDraft.$.produce(draft -> {
             draft.setName("SQL in Action");
             Author author1 = AuthorDraft.$.produce(a -> a.setName("Jim"));
@@ -25,12 +26,12 @@ public class ContextTest {
         });
         Assertions.assertEquals(
                 "{\"name\":\"SQL in Action\",\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
-                book.toString()
+                backend.write(book)
         );
     }
 
-    @Test
-    public void testRequiresNew() {
+    @JacksonTest
+    public void testRequiresNew(JacksonBackend backend) {
         Book book = BookDraft.$.produce(draft -> {
             draft.setName("SQL in Action");
             Author author1 = AuthorDraft.$.produce(true, a -> a.setName("Jim"));
@@ -41,7 +42,7 @@ public class ContextTest {
         });
         Assertions.assertEquals(
                 "{\"name\":\"SQL in Action\",\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
-                book.toString()
+                backend.write(book)
         );
     }
 }

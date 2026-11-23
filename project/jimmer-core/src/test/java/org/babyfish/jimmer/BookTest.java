@@ -6,15 +6,16 @@ import org.babyfish.jimmer.model.BookProps;
 import org.babyfish.jimmer.model.Immutables;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class BookTest {
 
-    @Test
-    public void testVisibilityOnlyChangesDoNotMutateBase() {
+    @JacksonTest
+    public void testVisibilityOnlyChangesDoNotMutateBase(JacksonBackend backend) {
         for (Object prop : new Object[] {"name", PropId.byName("name"), BookProps.NAME.unwrap().getId()}) {
             Book base = BookDraft.$.produce(draft -> {
                 draft.setName("base");
@@ -27,14 +28,14 @@ public class BookTest {
                     ((DraftSpi) draft).__show((PropId) prop, true);
                 }
             });
-            assertEquals("{}", base.toString());
-            assertEquals("{\"name\":\"base\"}", shown.toString());
+            assertEquals("{}", backend.write(base));
+            assertEquals("{\"name\":\"base\"}", backend.write(shown));
             assertSame(shown, BookDraft.$.produce(shown, draft -> DraftObjects.show(draft, BookProps.NAME)));
         }
     }
 
-    @Test
-    public void testBaseObjectShouldRemainUnchangedAfterCreatingDerivedObject() {
+    @JacksonTest
+    public void testBaseObjectShouldRemainUnchangedAfterCreatingDerivedObject(JacksonBackend backend) {
 
         Book original = BookDraft.$.produce(draft -> {
             draft.setName("original");
@@ -42,7 +43,7 @@ public class BookTest {
             DraftObjects.hide(draft, BookProps.NAME);
         });
 
-        String originalState = original.toString();
+        String originalState = backend.write(original);
 
         Book modified = Immutables.createBook(original, draft -> {
             draft.setName("modified");
@@ -52,14 +53,14 @@ public class BookTest {
 
 
         assertEquals("{\"price\":1}", originalState);
-        assertEquals("{\"name\":\"modified\",\"price\":2}", modified.toString());
+        assertEquals("{\"name\":\"modified\",\"price\":2}", backend.write(modified));
 
         assertEquals("original", original.name());
         assertEquals("modified", modified.name());
     }
 
-    @Test
-    public void testMultipleDerivedObjectsShouldNotInterfereWithEachOther() {
+    @JacksonTest
+    public void testMultipleDerivedObjectsShouldNotInterfereWithEachOther(JacksonBackend backend) {
 
         Book base = BookDraft.$.produce(draft -> {
             draft.setName("base");
@@ -67,7 +68,7 @@ public class BookTest {
             DraftObjects.hide(draft, BookProps.NAME);
         });
 
-        String baseState = base.toString();
+        String baseState = backend.write(base);
 
         Book derived1 = Immutables.createBook(base, draft -> {
             draft.setName("derived1");
@@ -80,18 +81,18 @@ public class BookTest {
 
         assertEquals("{\"price\":1}", baseState);
 
-        assertEquals("{\"name\":\"derived1\",\"price\":1}", derived1.toString());
+        assertEquals("{\"name\":\"derived1\",\"price\":1}", backend.write(derived1));
         assertEquals("derived1", derived1.name());
 
-        assertEquals("{\"price\":1}", derived2.toString());
+        assertEquals("{\"price\":1}", backend.write(derived2));
         assertEquals("derived2", derived2.name());
 
         assertEquals("base", base.name());
         assertEquals(1, base.price());
     }
 
-    @Test
-    public void test() throws Exception {
+    @JacksonTest
+    public void test(JacksonBackend backend) throws Exception {
 
         Book book = BookDraft.$.produce(b -> {
             b.setName("book");
@@ -105,7 +106,7 @@ public class BookTest {
                 a.setName("Kate");
             });
         });
-        Book book2 = ImmutableObjects.fromString(Book.class, book.toString());
+        Book book2 = backend.read(Book.class, backend.write(book));
 
         Book book3 = BookDraft.$.produce(book, b -> {
             b.setName(b.name() + "!");
@@ -117,17 +118,17 @@ public class BookTest {
 
         assertEquals(
                 "{\"name\":\"book\",\"store\":{\"name\":\"STORE\"},\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
-                book.toString()
+                backend.write(book)
         );
 
         assertEquals(
                 "{\"name\":\"book\",\"store\":{\"name\":\"STORE\"},\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
-                book2.toString()
+                backend.write(book2)
         );
 
         assertEquals(
                 "{\"name\":\"book!\",\"store\":{\"name\":\"STORE!\"},\"authors\":[{\"name\":\"Jim!\"},{\"name\":\"Kate!\"}]}",
-                book3.toString()
+                backend.write(book3)
         );
     }
 }

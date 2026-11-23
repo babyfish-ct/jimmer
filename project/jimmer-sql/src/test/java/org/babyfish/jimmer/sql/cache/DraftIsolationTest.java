@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.jackson.codec.ImmutableModuleCustomization;
-import org.babyfish.jimmer.jackson.codec.JacksonVersion;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.v2.JsonCodecProviderV2;
-import org.babyfish.jimmer.jackson.v3.JsonCodecProviderV3;
+import org.babyfish.jimmer.jackson.v2.JsonCodecV2;
+import org.babyfish.jimmer.jackson.v3.JsonCodecV3;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -22,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.sql.Connection;
@@ -42,10 +41,8 @@ public class DraftIsolationTest extends AbstractTest {
     }
 
     @ParameterizedTest
-    @EnumSource(JacksonVersion.class)
-    public void testDeserializedIdViewSurvivesDraftContext(JacksonVersion version) {
-        JsonCodec<?> codec = (version == JacksonVersion.V2 ? new JsonCodecProviderV2().create() : new JsonCodecProviderV3().create())
-                .withCustomizations(new ImmutableModuleCustomization());
+    @MethodSource("jacksonCodecs")
+    public void testDeserializedIdViewSurvivesDraftContext(JsonCodec codec) {
         ValueSerializer<Book> serializer = new ValueSerializer<>(ImmutableType.get(Book.class), codec);
         byte[] bytes = serializer.serialize(new BookDraft.Builder().id(graphQLInActionId1).name("GraphQL in Action")
                 .storeId(manningId).authorIds(Collections.singletonList(sammerId)).build());
@@ -54,6 +51,10 @@ public class DraftIsolationTest extends AbstractTest {
         assertEquals(manningId, reshaped.store().id());
         assertEquals(sammerId, reshaped.authors().get(0).id());
         assertGraph(cached);
+    }
+
+    private static List<JsonCodec> jacksonCodecs() {
+        return Arrays.asList(new JsonCodecV2(), new JsonCodecV3());
     }
 
     @ParameterizedTest

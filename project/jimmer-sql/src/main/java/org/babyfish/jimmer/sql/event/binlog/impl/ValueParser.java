@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
-import org.babyfish.jimmer.jackson.codec.Node;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.Node;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
@@ -15,8 +15,6 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.List;
-
-import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 
 class ValueParser {
     private static final Object ILLEGAL_VALUE = new Object();
@@ -101,15 +99,19 @@ class ValueParser {
         if (reader != null) {
             return reader.read(prop, node);
         }
-        Class<?> javaType = prop.getElementClass();
         ScalarProvider<Object, Object> provider =
-                useScalarProvider ?
-                        (ScalarProvider<Object, Object>)
-                                parser.sqlClient().getScalarProvider(javaType) :
-                        null;
-        Class<?> sqlType = provider != null ?
-                getSqlType(provider, parser.sqlClient().getDialect()) :
-                javaType;
+                useScalarProvider ? parser.sqlClient().getScalarProvider(prop) : null;
+        if (provider != null && provider.isJsonScalar()) {
+            // CDC connectors may deliver a JSON column as a document or as its database text.
+            Object raw = node.toJavaValue();
+            try {
+                String json = raw instanceof String ? (String) raw : parser.codec().writer().writeAsString(raw);
+                return provider.toScalar(json);
+            } catch (Exception ex) {
+                throw new ExecutionException("Cannot read binlog JSON column for \"" + prop + "\"", ex);
+            }
+        }
+        Class<?> sqlType = provider != null ? provider.getSqlType() : prop.getElementClass();
         if (Date.class.isAssignableFrom(sqlType) || Temporal.class.isAssignableFrom(sqlType)) {
             return ILLEGAL_VALUE;
         }
@@ -131,7 +133,7 @@ class ValueParser {
         return value;
     }
 
-    static Object valueOrError(JsonCodec<?> codec, Node node, Class<?> type) {
+    static Object valueOrError(JsonCodec codec, Node node, Class<?> type) {
         if (node.isNull()) {
             return null;
         }
@@ -150,7 +152,7 @@ class ValueParser {
         }
     }
 
-    private static Object valueOf(JsonCodec<?> codec, Node node, Class<?> type) {
+    private static Object valueOf(JsonCodec codec, Node node, Class<?> type) {
         if (node.isNull()) {
             return null;
         }

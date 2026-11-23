@@ -40,48 +40,6 @@ class Context(
     val isBuddyIgnoreResourceGeneration: Boolean =
         environment.options["jimmer.buddy.ignoreResourceGeneration"]?.trim() == "true"
 
-    val jackson3 = detectIsJackson3(resolver, environment)
-
-    val jacksonTypes: JacksonTypes =
-        if (jackson3) {
-            JacksonTypes(
-                jsonIgnore = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore"),
-                jsonValue = ClassName("com.fasterxml.jackson.annotation", "JsonValue"),
-                jsonTypeInfo = ClassName("com.fasterxml.jackson.annotation", "JsonTypeInfo"),
-                jsonSubTypes = ClassName("com.fasterxml.jackson.annotation", "JsonSubTypes"),
-                jsonTypeName = ClassName("com.fasterxml.jackson.annotation", "JsonTypeName"),
-                jsonFormat = ClassName("com.fasterxml.jackson.annotation", "JsonFormat"),
-                jsonProperty = ClassName("com.fasterxml.jackson.annotation", "JsonProperty"),
-                jsonPropertyOrder = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
-                jsonCreator = ClassName("com.fasterxml.jackson.annotation", "JsonCreator"),
-                jsonSerializer = ClassName("tools.jackson.databind", "ValueSerializer"),
-                jsonSerialize = ClassName("tools.jackson.databind.annotation", "JsonSerialize"),
-                jsonDeserialize = ClassName("tools.jackson.databind.annotation", "JsonDeserialize"),
-                jsonPojoBuilder = ClassName("tools.jackson.databind.annotation", "JsonPOJOBuilder"),
-                jsonNaming = ClassName("tools.jackson.databind.annotation", "JsonNaming"),
-                jsonGenerator = ClassName("tools.jackson.core", "JsonGenerator"),
-                serializeProvider = ClassName("tools.jackson.databind", "SerializationContext")
-            )
-        } else {
-            JacksonTypes(
-                jsonIgnore = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore"),
-                jsonValue = ClassName("com.fasterxml.jackson.annotation", "JsonValue"),
-                jsonTypeInfo = ClassName("com.fasterxml.jackson.annotation", "JsonTypeInfo"),
-                jsonSubTypes = ClassName("com.fasterxml.jackson.annotation", "JsonSubTypes"),
-                jsonTypeName = ClassName("com.fasterxml.jackson.annotation", "JsonTypeName"),
-                jsonFormat = ClassName("com.fasterxml.jackson.annotation", "JsonFormat"),
-                jsonProperty = ClassName("com.fasterxml.jackson.annotation", "JsonProperty"),
-                jsonPropertyOrder = ClassName("com.fasterxml.jackson.annotation", "JsonPropertyOrder"),
-                jsonCreator = ClassName("com.fasterxml.jackson.annotation", "JsonCreator"),
-                jsonSerializer = ClassName("com.fasterxml.jackson.databind", "JsonSerializer"),
-                jsonSerialize = ClassName("com.fasterxml.jackson.databind.annotation", "JsonSerialize"),
-                jsonDeserialize = ClassName("com.fasterxml.jackson.databind.annotation", "JsonDeserialize"),
-                jsonPojoBuilder = ClassName("com.fasterxml.jackson.databind.annotation", "JsonPOJOBuilder"),
-                jsonNaming = ClassName("com.fasterxml.jackson.databind.annotation", "JsonNaming"),
-                jsonGenerator = ClassName("com.fasterxml.jackson.core", "JsonGenerator"),
-                serializeProvider = ClassName("com.fasterxml.jackson.databind", "SerializerProvider")
-            )
-        }
 
     private val sourceTypeFilter = SourceTypeFilter(
         environment.options["jimmer.source.includes"],
@@ -173,13 +131,6 @@ class Context(
             Embeddable::class
         )
 
-        private fun detectIsJackson3(resolver: Resolver, environment: SymbolProcessorEnvironment): Boolean {
-            val jackson3Text = environment.options["jimmer.jackson3"]
-            return if (jackson3Text.isNullOrEmpty()) {
-                resolver.getClassDeclarationByName("tools.jackson.databind.ObjectMapper") != null
-            } else {
-                "true" == jackson3Text
-            }
-        }
+
     }
 }

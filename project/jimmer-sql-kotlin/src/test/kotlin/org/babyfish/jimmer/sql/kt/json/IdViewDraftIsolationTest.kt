@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.sql.kt.json
 
 import org.babyfish.jimmer.Draft
-import org.babyfish.jimmer.jackson.codec.ImmutableModuleCustomization
-import org.babyfish.jimmer.jackson.codec.JsonCodec
-import org.babyfish.jimmer.jackson.v2.JsonCodecProviderV2
-import org.babyfish.jimmer.jackson.v3.JsonCodecProviderV3
+import org.babyfish.jimmer.jackson.v2.JsonCodecV2
+import org.babyfish.jimmer.jackson.v3.JsonCodecV3
+import org.babyfish.jimmer.json.JsonCodec
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.Internal
 import org.babyfish.jimmer.sql.cache.ValueSerializer
@@ -18,15 +17,15 @@ class IdViewDraftIsolationTest {
 
     @Test
     fun testJackson2() {
-        verify(JsonCodecProviderV2().create().withCustomizations(ImmutableModuleCustomization()))
+        verify(JsonCodecV2())
     }
 
     @Test
     fun testJackson3() {
-        verify(JsonCodecProviderV3().create().withCustomizations(ImmutableModuleCustomization()))
+        verify(JsonCodecV3())
     }
 
-    private fun verify(codec: JsonCodec<*>) {
+    private fun verify(codec: JsonCodec) {
         val serializer = ValueSerializer<Book>(ImmutableType.get(Book::class.java), codec)
         val bytes = serializer.serialize(BookDraft.Builder().id(1L).storeId(2L).authorIds(listOf(3L, 4L)).build())
         val cached = Internal.requiresNewDraftContext { serializer.deserialize(bytes) }

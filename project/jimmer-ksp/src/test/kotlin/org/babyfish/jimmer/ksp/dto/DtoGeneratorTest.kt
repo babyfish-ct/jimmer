@@ -97,7 +97,7 @@ class DtoGeneratorTest : AbstractTest() {
                 export org.example.Book
                 
                 import com.fasterxml.jackson.annotation.JsonAutoDetect
-                import com.fasterxml.jackson.annotation.JsonIgnore
+                import org.babyfish.jimmer.json.JsonIgnore
                 
                 BookView {
                     @JsonIgnore

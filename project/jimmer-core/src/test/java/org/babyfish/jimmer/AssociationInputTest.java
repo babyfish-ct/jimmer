@@ -4,22 +4,23 @@ import org.babyfish.jimmer.model.AssociationInput;
 import org.babyfish.jimmer.model.AssociationInputDraft;
 import org.babyfish.jimmer.model.Immutables;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 import java.util.ListIterator;
 
 public class AssociationInputTest implements Immutables {
 
-    @Test
-    public void test() throws Exception {
+    @JacksonTest
+    public void test(JacksonBackend backend) throws Exception {
         AssociationInput input = Immutables.createAssociationInput(i -> {
             i.setParentId(3L);
             i.childIds(true).add(10L);
             i.childIds(true).add(11L);
         });
-        AssociationInput input2 = ImmutableObjects.fromString(
+        AssociationInput input2 = backend.read(
                 AssociationInput.class,
-                input.toString()
+                backend.write(input)
         );
         AssociationInput input3 = AssociationInputDraft.$.produce(input, i -> {
             i.setParentId(i.parentId() + 1);
@@ -31,15 +32,15 @@ public class AssociationInputTest implements Immutables {
 
         Assertions.assertEquals(
                 "{\"parentId\":3,\"childIds\":[10,11]}",
-                input.toString()
+                backend.write(input)
         );
         Assertions.assertEquals(
                 "{\"parentId\":3,\"childIds\":[10,11]}",
-                input2.toString()
+                backend.write(input2)
         );
         Assertions.assertEquals(
                 "{\"parentId\":4,\"childIds\":[11,12]}",
-                input3.toString()
+                backend.write(input3)
         );
     }
 }

@@ -2,12 +2,13 @@ package org.babyfish.jimmer;
 
 import org.babyfish.jimmer.model.BookDraft;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 public class DraftToStringTest {
 
-    @Test
-    public void test() {
+    @JacksonTest
+    public void test(JacksonBackend backend) {
         StringBuilder builder = new StringBuilder();
         BookDraft.$.produce(draft -> {
             draft.setName("SQL in Action");
@@ -21,6 +22,7 @@ public class DraftToStringTest {
                 author.setName("Cramer");
             });
             builder.append(draft);
+            Assertions.assertEquals(builder.toString(), backend.write(draft));
         });
         Assertions.assertEquals(
                 "{" +

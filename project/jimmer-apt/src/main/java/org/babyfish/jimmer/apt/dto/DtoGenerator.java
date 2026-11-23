@@ -159,30 +159,7 @@ public class DtoGenerator {
         } else {
             typeBuilder.addAnnotation(GeneratedAnnotation.generatedAnnotation());
         }
-        if (isSerializerRequired()) {
-            typeBuilder.addAnnotation(
-                    AnnotationSpec
-                            .builder(ctx.getJacksonTypes().jsonSerialize)
-                            .addMember(
-                                    "using",
-                                    "$T.class",
-                                    getDtoClassName("Serializer")
-                            )
-                            .build()
-            );
-        }
-        if (isBuildRequired()) {
-            typeBuilder.addAnnotation(
-                    AnnotationSpec
-                            .builder(ctx.getJacksonTypes().jsonDeserialize)
-                            .addMember(
-                                    "builder",
-                                    "$T.class",
-                                    getDtoClassName("Builder")
-                            )
-                            .build()
-            );
-        }
+        addJsonBinding();
         String doc = document.get();
         if (doc == null) {
             doc = baseDocComment();
@@ -205,7 +182,6 @@ public class DtoGenerator {
                 typeBuilder.addAnnotation(annotationOf(anno));
             }
         }
-        addJacksonPolymorphicTypeNameIfNecessary();
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();
@@ -293,7 +269,7 @@ public class DtoGenerator {
         }
         DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism = dtoType.getPolymorphism();
         assert polymorphism != null;
-        addJacksonPolymorphicInputRootAnnotationsIfNecessary(polymorphism);
+        addJsonBinding();
         for (AbstractProp prop : dtoType.getProps()) {
             addAccessorDeclaration(prop);
         }
@@ -357,117 +333,75 @@ public class DtoGenerator {
         );
     }
 
-    private void addJacksonPolymorphicInputRootAnnotationsIfNecessary(
-            DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism
-    ) {
-        if (!isPolymorphicInputRoot()) {
-            return;
-        }
-        if (!hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonTypeInfo)) {
-            addJacksonTypeInfo(polymorphism);
-        }
-        if (!hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonSubTypes)) {
-            addJacksonSubTypes(polymorphism);
-        }
-    }
-
-    private void addJacksonTypeInfo(DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism) {
-        DtoProp<ImmutableType, ImmutableProp> discriminatorProp =
-                selectedPolymorphicInputDiscriminatorProp(dtoType);
-        String property = discriminatorProp != null ?
-                discriminatorProp.getName() :
-                rootDiscriminatorPropName();
-        if (property == null) {
-            return;
-        }
-        AnnotationSpec.Builder builder = AnnotationSpec
-                .builder(ctx.getJacksonTypes().jsonTypeInfo)
-                .addMember("use", "$T.Id.NAME", ctx.getJacksonTypes().jsonTypeInfo)
-                .addMember(
-                        "include",
-                        "$T.As.$L",
-                        ctx.getJacksonTypes().jsonTypeInfo,
-                        discriminatorProp != null ? "EXISTING_PROPERTY" : "PROPERTY"
-                )
-                .addMember("property", "$S", property);
-        if (discriminatorProp != null) {
-            builder.addMember("visible", "true");
-        }
-        DtoPolymorphicBranch<ImmutableType, ImmutableProp> defaultBranch = polymorphism.getDefaultBranch();
-        if (defaultBranch != null) {
-            builder.addMember("defaultImpl", "$T.class", getDtoClassName(defaultBranch.getClassName()));
-        }
-        typeBuilder.addAnnotation(builder.build());
-    }
-
-    private void addJacksonSubTypes(DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism) {
-        if (polymorphism.getTypeBranches().isEmpty()) {
-            return;
-        }
-        ClassName typeAnnotationName = ctx.getJacksonTypes().jsonSubTypes.nestedClass("Type");
-        CodeBlock.Builder blockBuilder = CodeBlock.builder().add("{\n$>");
-        boolean addSeparator = false;
-        for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getTypeBranches()) {
-            if (addSeparator) {
-                blockBuilder.add(",\n");
-            } else {
-                addSeparator = true;
+    private void addJsonBinding() {
+        ClassName dto = getDtoClassName();
+        ClassName bindingType = ClassName.get(org.babyfish.jimmer.json.DtoJsonBinding.class);
+        ClassName generated = dto.nestedClass("__JsonBinding");
+        typeBuilder.addAnnotation(AnnotationSpec.builder(org.babyfish.jimmer.json.DtoJsonBinding.Generated.class)
+                .addMember("value", "$T.class", generated).build());
+        TypeSpec.Builder binding = TypeSpec.classBuilder(generated.simpleName())
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+                .superclass(bindingType);
+        MethodSpec.Builder constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC);
+        String discriminator = null;
+        CodeBlock defaultSubtype = CodeBlock.of("null");
+        CodeBlock rootType = CodeBlock.of("null");
+        DtoPolymorphism<ImmutableType, ImmutableProp> polymorphism = dtoType.getPolymorphism();
+        if (isPolymorphicInputRoot()) {
+            DtoProp<ImmutableType, ImmutableProp> selected = selectedPolymorphicInputDiscriminatorProp(dtoType);
+            discriminator = selected != null ? selected.getName() : rootDiscriminatorPropName();
+            if (polymorphism.getDefaultBranch() != null) {
+                defaultSubtype = CodeBlock.of("$T.class", dto.nestedClass(polymorphism.getDefaultBranch().getClassName()));
             }
-            AnnotationSpec.Builder typeBuilder = AnnotationSpec
-                    .builder(typeAnnotationName)
-                    .addMember("value", "$T.class", getDtoClassName(branch.getClassName()));
-            blockBuilder.add("$L", typeBuilder.build());
         }
-        blockBuilder.add("$<\n}");
-        typeBuilder.addAnnotation(
-                AnnotationSpec
-                        .builder(ctx.getJacksonTypes().jsonSubTypes)
-                        .addMember("value", "$L", blockBuilder.build())
-                        .build()
-        );
-    }
-
-    private void addJacksonPolymorphicTypeNameIfNecessary() {
-        if (!polymorphicBranch ||
-                !dtoType.getModifiers().contains(DtoModifier.INPUT) ||
-                !isTypedPolymorphicInputBranch() ||
-                hasTypeAnnotation(root.dtoType, ctx.getJacksonTypes().jsonSubTypes) ||
-                hasTypeAnnotation(dtoType, ctx.getJacksonTypes().jsonTypeName)) {
-            return;
+        if (polymorphicBranch && dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+            rootType = CodeBlock.of("$T.class", polymorphicSuperInterfaceName);
         }
-        String value = dtoType.getBaseType().getDiscriminatorValue();
-        if (value != null) {
-            typeBuilder.addAnnotation(
-                    AnnotationSpec
-                            .builder(ctx.getJacksonTypes().jsonTypeName)
-                            .addMember("value", "$S", value)
-                            .build()
-            );
+        constructor.addStatement("super($T.class, $S, $L, $L)", dto, discriminator, defaultSubtype, rootType);
+        if (discriminator != null) {
+            for (DtoPolymorphicBranch<ImmutableType, ImmutableProp> branch : polymorphism.getTypeBranches()) {
+                String tag = branch.getTargetType().getDiscriminatorValue();
+                constructor.addStatement("subtype($S, $T.class)", tag != null ? tag : branch.getClassName(),
+                        dto.nestedClass(branch.getClassName()));
+            }
         }
+        for (AbstractProp prop : dtoType.getProps()) {
+            boolean ignored = isJsonIgnored(prop);
+            String getter = getterName(prop);
+            CodeBlock loaded = polymorphism == null && stateFieldName(prop, false) != null ?
+                    CodeBlock.of("obj -> (($T) obj).$L()", dto, StringUtil.identifier("is", prop.getName(), "Loaded")) :
+                    CodeBlock.of("null");
+            constructor.addStatement("property($S, $S, $L, $L, obj -> (($T) obj).$L(), $L)",
+                    prop.getName(), getter, !ignored, !ignored, dto, getter, loaded);
+        }
+        binding.addMethod(constructor.build());
+        if (polymorphism == null) {
+            MethodSpec.Builder create = MethodSpec.methodBuilder("create")
+                    .addAnnotation(Override.class)
+                    .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(dto)
+                    .addParameter(ParameterizedTypeName.get(Map.class, String.class, Object.class), "values");
+            ClassName target = isBuildRequired() ? dto.nestedClass("Builder") : dto;
+            create.addStatement("$T target = new $T()", target, target);
+            for (AbstractProp prop : dtoType.getProps()) {
+                if (!isJsonIgnored(prop)) {
+                    create.beginControlFlow("if (values.containsKey($S))", prop.getName());
+                    create.addStatement("target.$L(($T) values.get($S))",
+                            isBuildRequired() ? prop.getName() : setterName(prop), getPropTypeName(prop).box(), prop.getName());
+                    create.endControlFlow();
+                }
+            }
+            create.addStatement(isBuildRequired() ? "return target.build()" : "return target");
+            binding.addMethod(create.build());
+        }
+        typeBuilder.addType(binding.build());
     }
 
     private boolean isPolymorphicInputRoot() {
         return dtoType.getModifiers().contains(DtoModifier.INPUT) &&
                 dtoType.getPolymorphism() != null &&
                 dtoType.getBaseType().isEntity();
-    }
-
-    private boolean hasTypeAnnotation(DtoType<ImmutableType, ImmutableProp> dtoType, ClassName annotationType) {
-        String annotationName = annotationType.reflectionName();
-        for (Anno anno : dtoType.getAnnotations()) {
-            if (anno.getQualifiedName().equals(annotationName)) {
-                return true;
-            }
-        }
-        for (AnnotationMirror annotationMirror : dtoType.getBaseType().getTypeElement().getAnnotationMirrors()) {
-            String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
-                    .getQualifiedName()
-                    .toString();
-            if (qualifiedName.equals(annotationName)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Nullable
@@ -629,9 +563,6 @@ public class DtoGenerator {
             ).generate();
         }
 
-        if (isSerializerRequired()) {
-            new SerializerGenerator(this).generate();
-        }
         if (isBuildRequired()) {
             new InputBuilderGenerator(this).generate();
         }
@@ -1312,7 +1243,6 @@ public class DtoGenerator {
         if (doc != null) {
             builder.addJavadoc(doc);
         }
-        boolean isBuilderRequired = isBuildRequired();
         if (prop instanceof DtoProp<?, ?>) {
             DtoProp<ImmutableType, ImmutableProp> dtoProp = asDtoProp(prop);
             if (dtoType.getModifiers().contains(DtoModifier.INPUT) &&
@@ -1320,24 +1250,12 @@ public class DtoGenerator {
                 builder.addAnnotation(org.babyfish.jimmer.apt.immutable.generator.Constants.FIXED_INPUT_FIELD_CLASS_NAME);
             }
             for (AnnotationMirror annotationMirror : dtoProp.toTailProp().getBaseProp().getAnnotations()) {
-                if (isBuilderRequired) {
-                    String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType()
-                            .asElement())
-                            .getQualifiedName()
-                            .toString();
-                    if (qualifiedName.equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
-                        continue;
-                    }
-                }
-                if (isCopyableAnnotation(annotationMirror, dtoType.getAnnotations(), false)) {
+                if (isCopyableAnnotation(annotationMirror, dtoProp.getAnnotations(), false)) {
                     builder.addAnnotation(AnnotationSpec.get(annotationMirror));
                 }
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            if (isBuilderRequired && anno.getQualifiedName().equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
-                continue;
-            }
             if (hasElementType(anno, ElementType.FIELD)) {
                 builder.addAnnotation(annotationOf(anno));
             }
@@ -1453,28 +1371,15 @@ public class DtoGenerator {
                 getterBuilder.addAnnotation(NonNull.class);
             }
         }
-        boolean isBuilderRequired = isBuildRequired();
         if (prop instanceof DtoProp<?, ?>) {
             DtoProp<ImmutableType, ImmutableProp> dtoProp = asDtoProp(prop);
             for (AnnotationMirror annotationMirror : dtoProp.toTailProp().getBaseProp().getAnnotations()) {
-                if (isBuilderRequired) {
-                    String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType()
-                            .asElement())
-                            .getQualifiedName()
-                            .toString();
-                    if (qualifiedName.equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
-                        continue;
-                    }
-                }
                 if (isCopyableAnnotation(annotationMirror, dtoProp.getAnnotations(), true)) {
                     getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
                 }
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            if (isBuilderRequired && anno.getQualifiedName().equals(ctx.getJacksonTypes().jsonDeserialize.reflectionName())) {
-                continue;
-            }
             if (hasElementType(anno, ElementType.METHOD)) {
                 getterBuilder.addAnnotation(annotationOf(anno));
             }
@@ -1546,7 +1451,7 @@ public class DtoGenerator {
                     .returns(TypeName.BOOLEAN)
                     .addModifiers(Modifier.PUBLIC)
                     .addAnnotation(ApiIgnore.class)
-                    .addAnnotation(ctx.getJacksonTypes().jsonIgnore)
+                    .addAnnotation(org.babyfish.jimmer.json.JsonIgnore.class)
                     .addStatement("return this.$L", stateFieldName);
             typeBuilder.addMethod(isLoadedBuilder.build());
             MethodSpec.Builder setLoadedBuilder = MethodSpec
@@ -1555,6 +1460,19 @@ public class DtoGenerator {
                     .addStatement("this.$L = loaded", stateFieldName);
             typeBuilder.addMethod(setLoadedBuilder.build());
         }
+    }
+
+    boolean isJsonIgnored(AbstractProp prop) {
+        Boolean override = prop.getJsonIgnore();
+        if (override != null) {
+            return override;
+        }
+        if (prop instanceof DtoProp<?, ?>) {
+            org.babyfish.jimmer.json.JsonIgnore ignore =
+                    asDtoProp(prop).toTailProp().getBaseProp().getAnnotation(org.babyfish.jimmer.json.JsonIgnore.class);
+            return ignore != null && ignore.value();
+        }
+        return false;
     }
 
     private String doc(AbstractProp prop, boolean contentOnly) {
@@ -2668,7 +2586,7 @@ public class DtoGenerator {
         return null;
     }
 
-    private boolean hasElementType(Anno anno, ElementType elementType) {
+    boolean hasElementType(Anno anno, ElementType elementType) {
         TypeElement annoElement = ctx.getElements().getTypeElement(anno.getQualifiedName());
         if (annoElement == null) {
             throw new DtoException(
@@ -2688,7 +2606,7 @@ public class DtoGenerator {
         return false;
     }
 
-    private static boolean isCopyableAnnotation(
+    static boolean isCopyableAnnotation(
             AnnotationMirror annotationMirror,
             Collection<Anno> dtoAnnotations,
             Boolean forMethod
@@ -2698,6 +2616,8 @@ public class DtoGenerator {
             return false;
         }
         if (qualifiedName.startsWith("org.babyfish.jimmer.") &&
+                !qualifiedName.equals(org.babyfish.jimmer.json.JsonIgnore.class.getName()) &&
+                !qualifiedName.equals(org.babyfish.jimmer.json.JsonFormat.class.getName()) &&
                 !qualifiedName.startsWith("org.babyfish.jimmer.client.")) {
             return false;
         }
@@ -2954,19 +2874,6 @@ public class DtoGenerator {
             return !"null".equals(funcName) && !"notNull".equals(funcName);
         }
         return true;
-    }
-
-    private boolean isSerializerRequired() {
-        if (!dtoType.getModifiers().contains(DtoModifier.INPUT)) {
-            return false;
-        }
-        for (DtoProp<?, ?> prop : dtoType.getDtoProps()) {
-            DtoModifier inputModifier = prop.getInputModifier();
-            if (inputModifier == DtoModifier.DYNAMIC) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean isBuildRequired() {

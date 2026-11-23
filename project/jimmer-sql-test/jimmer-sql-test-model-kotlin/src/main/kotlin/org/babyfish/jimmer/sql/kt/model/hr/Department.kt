@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.sql.kt.model.hr
 
-import com.fasterxml.jackson.annotation.JsonFormat
+import org.babyfish.jimmer.json.JsonFormat
 import org.babyfish.jimmer.Formula
-import org.babyfish.jimmer.jackson.JsonConverter
-import org.babyfish.jimmer.jackson.LongToStringConverter
+import org.babyfish.jimmer.json.converter.JsonConverter
+import org.babyfish.jimmer.json.converter.LongToStringConverter
 import org.babyfish.jimmer.sql.*
 import testpkg.annotations.ConsiderAs
 import testpkg.annotations.Module

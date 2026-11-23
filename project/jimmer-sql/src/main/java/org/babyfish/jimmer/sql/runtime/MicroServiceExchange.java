@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -9,6 +10,10 @@ import java.util.Collection;
 import java.util.List;
 
 public interface MicroServiceExchange {
+
+    default MicroServiceExchange withJsonCodec(JsonCodec codec) {
+        return this;
+    }
 
     List<ImmutableSpi> findByIds(
             String microServiceName,

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.lang.Ref;
 
 import java.lang.reflect.Type;
 import java.text.ParseException;
@@ -14,7 +15,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.JsonCodec.jsonCodec;
 
 public class MetadataLiterals {
 
@@ -27,14 +28,17 @@ public class MetadataLiterals {
 
     private final static DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private static final JsonCodec<?> JSON_CODEC = jsonCodec();
-
     private static final Map<Class<?>, Function<String, Object>> DEFAULT_VALUE_PARSER_MAP;
 
     private MetadataLiterals() {
     }
 
     public static Object valueOf(Type type, boolean nullable, String value) {
+        Object literal = parse(type, nullable, value);
+        return literal instanceof JsonLiteral ? ((JsonLiteral) literal).read(jsonCodec()) : literal;
+    }
+
+    public static Object parse(Type type, boolean nullable, String value) {
         if ("null".equals(value)) {
             if (!nullable) {
                 throw new IllegalArgumentException("The default value of non-null type cannot be null");
@@ -56,16 +60,30 @@ public class MetadataLiterals {
                 }
             }
         }
-        try {
-            return JSON_CODEC.readerFor(tf -> tf.constructType(type)).read(value);
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(
-                    "The value \"" +
-                            value +
-                            "\" cannot be parsed as JSON object" +
-                            "\"",
-                    ex
-            );
+        return new JsonLiteral(type, value);
+    }
+
+    public static class JsonLiteral {
+
+        private final Type type;
+
+        private final String value;
+
+        private JsonLiteral(Type type, String value) {
+            this.type = type;
+            this.value = value;
+        }
+
+        public Ref<Object> defaultValue() {
+            return Ref.of(read(jsonCodec()));
+        }
+
+        public Object read(JsonCodec codec) {
+            try {
+                return codec.readerFor(type).read(value);
+            } catch (Exception ex) {
+                throw new IllegalArgumentException("The value \"" + value + "\" cannot be parsed as JSON", ex);
+            }
         }
     }
 

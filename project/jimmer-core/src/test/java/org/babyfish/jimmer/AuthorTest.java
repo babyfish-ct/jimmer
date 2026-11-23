@@ -2,17 +2,19 @@ package org.babyfish.jimmer;
 
 import org.babyfish.jimmer.model.AuthorDraft;
 import org.junit.jupiter.api.Assertions;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.ValidationException;
 
 public class AuthorTest {
 
-    @Test
-    public void testValidEmail() {
+    @JacksonTest
+    public void testValidEmail(JacksonBackend backend) {
         Assertions.assertEquals(
                 "{\"email\":\"tom@gmail.com\"}",
-                AuthorDraft.$.produce(a -> a.setEmail("tom@gmail.com")).toString()
+                backend.write(AuthorDraft.$.produce(a -> a.setEmail("tom@gmail.com")))
         );
     }
 

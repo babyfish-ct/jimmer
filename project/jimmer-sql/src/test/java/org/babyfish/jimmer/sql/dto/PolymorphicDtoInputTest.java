@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.json.DtoJsonBinding;
+import org.babyfish.jimmer.jackson.v2.ImmutableModuleV2;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.ClientType;
 import org.babyfish.jimmer.sql.model.inheritance.enumdiscriminator.EnumClient;
@@ -23,7 +25,7 @@ import java.util.List;
 
 public class PolymorphicDtoInputTest {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper().registerModule(new ImmutableModuleV2());
 
     @Test
     public void testReusablePolymorphicAssociationInput() {
@@ -99,15 +101,10 @@ public class PolymorphicDtoInputTest {
 
     @Test
     public void testJacksonTypeTagWithoutSelectedDiscriminatorCreatesExplicitBranch() throws Exception {
-        JsonSubTypes jsonSubTypes = ClientPatchInput.class.getAnnotation(JsonSubTypes.class);
-        JsonTypeName jsonTypeName = ClientPatchInput.Organization.class.getAnnotation(JsonTypeName.class);
-
-        Assertions.assertNotNull(jsonSubTypes);
-        Assertions.assertEquals(1, jsonSubTypes.value().length);
-        Assertions.assertEquals(ClientPatchInput.Organization.class, jsonSubTypes.value()[0].value());
-        Assertions.assertEquals("", jsonSubTypes.value()[0].name());
-        Assertions.assertNotNull(jsonTypeName);
-        Assertions.assertEquals("ORG", jsonTypeName.value());
+        DtoJsonBinding binding = DtoJsonBinding.find(ClientPatchInput.class);
+        Assertions.assertEquals("type", binding.getDiscriminator());
+        Assertions.assertEquals(ClientPatchInput.Organization.class, binding.getSubtype("ORG"));
+        Assertions.assertEquals("ORG", binding.getDiscriminatorValue(ClientPatchInput.Organization.class));
 
         ClientPatchInput input = mapper.readValue(
                 "{\"type\":\"ORG\",\"id\":21,\"name\":\"Org json\",\"taxCode\":\"T-21\"}",

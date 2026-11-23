@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.association.meta;
 
-import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.json.converter.Converter;
+import org.babyfish.jimmer.json.converter.ConverterMetadata;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;

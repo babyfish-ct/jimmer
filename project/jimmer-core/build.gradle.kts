@@ -1,6 +1,5 @@
 plugins {
     `kotlin-publish-convention`
-    `jvm-test-suite`
     alias(libs.plugins.buildconfig)
 }
 
@@ -9,7 +8,18 @@ dependencies {
     api(libs.kotlin.reflect)
     implementation(libs.javax.validation.api)
     implementation(libs.kotlin.stdlib)
-    compileOnly(libs.bundles.jackson)
+
+    testImplementation(projects.jimmerJsonJackson2)
+    testImplementation(projects.jimmerJsonJackson3)
+    testImplementation(projects.jimmerJsonGson)
+    testImplementation(projects.jimmerJsonFastjson2)
+    testImplementation(libs.jackson2.datatype.jsr310)
+    testImplementation(libs.mapstruct)
+    testImplementation(libs.javax.validation.api)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(projects.jimmerApt)
+    testAnnotationProcessor(libs.lombok)
+    testAnnotationProcessor(libs.mapstruct.processor)
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -26,38 +36,5 @@ buildConfig {
     buildConfigField("int", "patch", versionParts[2])
     useKotlinOutput {
         internalVisibility = false
-    }
-}
-
-testing {
-    suites {
-        withType<JvmTestSuite> {
-            useJUnitJupiter()
-            dependencies {
-                implementation(libs.mapstruct)
-                implementation(libs.javax.validation.api)
-                compileOnly(libs.lombok)
-                annotationProcessor(projects.jimmerApt)
-                annotationProcessor(libs.lombok)
-                annotationProcessor(libs.mapstruct.processor)
-            }
-        }
-        val test by getting(JvmTestSuite::class) {
-            dependencies {
-                implementation(libs.jackson2.databind)
-                implementation(libs.jackson2.datatype.jsr310)
-            }
-        }
-        val testJackson3 by registering(JvmTestSuite::class) {
-            sources {
-                java { setSrcDirs(test.sources.java.srcDirs) }
-                resources { setSrcDirs(test.sources.resources.srcDirs) }
-            }
-            dependencies {
-                implementation(project())
-                implementation(libs.jackson3.databind)
-            }
-        }
-        tasks.check { dependsOn(testJackson3) }
     }
 }

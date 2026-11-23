@@ -1,19 +1,18 @@
 package org.babyfish.jimmer;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.model.TreeNode;
 import org.babyfish.jimmer.model.TreeNodeDraft;
-import org.babyfish.jimmer.jackson.codec.PropertyNamingCustomization;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
-import static org.babyfish.jimmer.jackson.codec.PropertyNamingCustomization.PropertyNaming.SNAKE_CASE;
+import static org.babyfish.jimmer.support.JacksonBackend.Naming.*;
 
 public class TreeNodeTest {
 
-    @Test
-    public void test() {
+    @JacksonTest
+    public void test(JacksonBackend backend) {
         TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
             root.setName("Root").addIntoChildNodes(food -> {
                 food
@@ -83,35 +82,35 @@ public class TreeNodeTest {
 
         Assertions.assertEquals(
                 treeNodeText.replace("--->", ""),
-                treeNode.toString()
+                backend.write(treeNode)
         );
         Assertions.assertEquals(
                 newTreeNodeText.replace("--->", ""),
-                newTreeNode.toString()
+                backend.write(newTreeNode)
         );
     }
 
-    @Test
-    public void testJsonProperty() throws Exception {
+    @JacksonTest
+    public void testJsonProperty(JacksonBackend backend) throws Exception {
         TreeNode treeNode = TreeNodeDraft.$.produce(child -> {
             child.setName("child");
             child.applyParent(parent -> {
                 parent.setName("parent");
             });
         });
-        String json = treeNode.toString();
+        String json = backend.write(treeNode);
         Assertions.assertEquals(
                 "{\"name\":\"child\",\"TheParentNode\":{\"name\":\"parent\"}}",
                 json
         );
         Assertions.assertEquals(
                 treeNode,
-                jsonCodec().readerFor(TreeNode.class).read(json)
+                backend.codec.readerFor(TreeNode.class).read(json)
         );
     }
 
-    @Test
-    public void testJsonAlias() throws Exception {
+    @JacksonTest
+    public void testJsonAlias(JacksonBackend backend) throws Exception {
         Assertions.assertEquals(
                 (
                         "{" +
@@ -136,7 +135,7 @@ public class TreeNodeTest {
                                 "--->]" +
                                 "}"
                 ).replace("--->", ""),
-                jsonCodec().readerFor(TreeNode.class).read(
+                backend.write(backend.codec.readerFor(TreeNode.class).read(
                         (
                                 "{" +
                                         "--->\"name\":\"Root\"," +
@@ -156,12 +155,12 @@ public class TreeNodeTest {
                                         "--->]" +
                                         "}"
                         ).replace("--->", "")
-                ).toString()
+                ))
         );
     }
 
-    @Test
-    public void testNamingStrategy() throws Exception {
+    @JacksonTest
+    public void testNamingStrategy(JacksonBackend backend) throws Exception {
         TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
             root.setName("Root").addIntoChildNodes(food -> {
                 food
@@ -180,7 +179,7 @@ public class TreeNodeTest {
                 ;
             });
         });
-        JsonCodec<?> codec = jsonCodec().withCustomizations(new PropertyNamingCustomization(SNAKE_CASE));
+        JsonCodec codec = backend.naming(SNAKE_CASE);
 
         String json =
                 "{" +
@@ -207,7 +206,7 @@ public class TreeNodeTest {
         );
         Assertions.assertEquals(
                 json,
-                codec.readerFor(TreeNode.class).read(json).toString()
+                backend.write(codec.readerFor(TreeNode.class).read(json))
                         .replace("childNodes", "child_nodes")
         );
     }

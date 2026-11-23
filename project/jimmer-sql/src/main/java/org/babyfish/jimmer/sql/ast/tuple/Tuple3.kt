@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.sql.ast.tuple
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
+import java.beans.ConstructorProperties
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor
 import java.util.function.BiFunction
 
-data class Tuple3<T1, T2, T3> @JsonCreator constructor(
-    @JsonProperty("_1") val _1: T1,
-    @JsonProperty("_2") val _2: T2,
-    @JsonProperty("_3") val _3: T3
+data class Tuple3<T1, T2, T3> @ConstructorProperties("_1", "_2", "_3") constructor(
+    val _1: T1,
+    val _2: T2,
+    val _3: T3
 ) : TupleImplementor {
 
     override fun size(): Int = 3

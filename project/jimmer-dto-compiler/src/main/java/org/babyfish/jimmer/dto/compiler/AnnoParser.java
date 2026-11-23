@@ -95,8 +95,10 @@ class AnnoParser {
                 );
         }
         if (typeName.startsWith("org.babyfish.jimmer.") &&
-                !typeName.startsWith("org.babyfish.jimmer.client.")
-                && !typeName.startsWith("org.babyfish.jimmer.jackson.") &&
+                !typeName.equals("org.babyfish.jimmer.json.JsonIgnore") &&
+                !typeName.equals("org.babyfish.jimmer.json.JsonFormat") &&
+                !typeName.startsWith("org.babyfish.jimmer.client.") &&
+                !typeName.equals("org.babyfish.jimmer.json.converter.JsonConverter") &&
                 !typeName.equals("org.babyfish.jimmer.kt.dto.KotlinDto")) {
             throw this.ctx.exception(
                     ctx.stop.getLine(),

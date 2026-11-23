@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.binlog;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.fastjson2.Fastjson2Codec;
+import org.babyfish.jimmer.json.gson.GsonCodec;
 import org.babyfish.jimmer.jackson.v2.JsonCodecV2;
 import org.babyfish.jimmer.jackson.v3.JsonCodecV3;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -32,13 +34,13 @@ public class SingleTableBinLogTest {
     private static final String PERSON_ROW = "{\"ID\":101,\"CLIENT_TYPE\":\"Person\",\"NAME\":\"Bob\"," +
             "\"FIRST_NAME\":\"Bob\",\"LAST_NAME\":\"Brown\",\"TAX_CODE\":null}";
 
-    static Stream<JsonCodec<?>> codecs() {
-        return Stream.of(new JsonCodecV2(), new JsonCodecV3());
+    static Stream<JsonCodec> codecs() {
+        return Stream.of(new JsonCodecV2(), new JsonCodecV3(), new GsonCodec(), new Fastjson2Codec());
     }
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testEntityEvents(JsonCodec<?> codec) throws Exception {
+    public void testEntityEvents(JsonCodec codec) throws Exception {
         JSqlClient sqlClient = JSqlClient.newBuilder().setDefaultBinLogJsonCodec(codec).build();
         List<EntityEvent<?>> events = new ArrayList<>();
         sqlClient.getTriggers().addEntityListener(events::add);
@@ -61,14 +63,14 @@ public class SingleTableBinLogTest {
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testExplicitSubtype(JsonCodec<?> codec) {
+    public void testExplicitSubtype(JsonCodec codec) {
         Person person = parser(codec).parseEntity(Person.class, PERSON_ROW);
         assertEquals("Brown", person.lastName());
     }
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testCustomDiscriminatorAndQuotedColumns(JsonCodec<?> codec) {
+    public void testCustomDiscriminatorAndQuotedColumns(JsonCodec codec) {
         Client client = parser(codec).parseEntity(Client.class,
                 "{\"id\":102,\"name\":\"Acme\",\"[tax_CODE]\":\"TAX\",\"FIRST_NAME\":null," +
                         "\"LAST_NAME\":null,\"`client_TYPE`\":\"ORG\"}");
@@ -79,7 +81,7 @@ public class SingleTableBinLogTest {
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testUnknownColumns(JsonCodec<?> codec) {
+    public void testUnknownColumns(JsonCodec codec) {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 parser(codec).parseEntity(Client.class, PERSON_ROW.replace("\"TAX_CODE\":null", "\"UNKNOWN\":null")));
         assertTrue(rootCause(ex).getMessage().contains("UNKNOWN"));
@@ -87,7 +89,7 @@ public class SingleTableBinLogTest {
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testInvalidDiscriminator(JsonCodec<?> codec) {
+    public void testInvalidDiscriminator(JsonCodec codec) {
         BinLogParser parser = parser(codec);
         for (String row : new String[] {
                 "{\"ID\":101}",
@@ -102,7 +104,7 @@ public class SingleTableBinLogTest {
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testMultilevelHierarchy(JsonCodec<?> codec) {
+    public void testMultilevelHierarchy(JsonCodec codec) {
         BinLogParser parser = parser(codec);
         String row = "{\"ID\":1,\"ASSET_TYPE\":\"CAR\",\"NAME\":\"Car\",\"MANUFACTURER\":\"Factory\"," +
                 "\"SEAT_COUNT\":4,\"PAYLOAD\":null,\"FORMAT\":null}";
@@ -116,7 +118,7 @@ public class SingleTableBinLogTest {
 
     @ParameterizedTest
     @MethodSource("codecs")
-    public void testEnumDiscriminatorAndConcreteRoot(JsonCodec<?> codec) {
+    public void testEnumDiscriminatorAndConcreteRoot(JsonCodec codec) {
         BinLogParser parser = parser(codec);
         EnumClient person = parser.parseEntity(EnumClient.class,
                 "{\"ID\":1,\"CLIENT_TYPE\":\"PERSON\",\"NAME\":\"Bob\",\"FIRST_NAME\":\"Bob\"}");
@@ -127,7 +129,7 @@ public class SingleTableBinLogTest {
         assertEquals(ImmutableType.get(EnumClient.class), ((ImmutableSpi) root).__type());
     }
 
-    private static BinLogParser parser(JsonCodec<?> codec) {
+    private static BinLogParser parser(JsonCodec codec) {
         JSqlClient sqlClient = JSqlClient.newBuilder().setDefaultBinLogJsonCodec(codec).build();
         return ((BinLogImpl) sqlClient.getBinLog()).parser();
     }
