@@ -3,7 +3,9 @@ package org.babyfish.jimmer.spring.client;
 import org.babyfish.jimmer.client.meta.ApiService;
 import org.babyfish.jimmer.client.meta.Schema;
 import org.babyfish.jimmer.client.runtime.impl.MetadataBuilder;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -29,11 +31,19 @@ public class OpenApiUiController {
 
     private final JimmerProperties properties;
 
+    private final JsonCodec jsonCodec;
+
     @Value("${server.servlet.context-path:#{null}}")
     private String contextPath;
 
     public OpenApiUiController(JimmerProperties properties) {
+        this(properties, JsonCodec.jsonCodec());
+    }
+
+    @Autowired
+    public OpenApiUiController(JimmerProperties properties, JsonCodec jsonCodec) {
         this.properties = properties;
+        this.jsonCodec = jsonCodec;
     }
 
     @GetMapping("${jimmer.client.openapi.ui-path}")
@@ -98,7 +108,7 @@ public class OpenApiUiController {
     }
 
     private boolean hasMetadata() {
-        Schema schema = MetadataBuilder.loadSchema(Collections.emptySet());
+        Schema schema = MetadataBuilder.loadSchema(Collections.emptySet(), jsonCodec);
         for (ApiService service : schema.getApiServiceMap().values()) {
             if (!service.getOperations().isEmpty()) {
                 return true;

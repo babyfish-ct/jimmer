@@ -2,7 +2,9 @@ package org.babyfish.jimmer.spring.client;
 
 import org.babyfish.jimmer.client.generator.openapi.OpenApiGenerator;
 import org.babyfish.jimmer.client.runtime.Metadata;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,8 +21,16 @@ public class OpenApiController {
 
     private final JimmerProperties properties;
 
+    private final JsonCodec jsonCodec;
+
     public OpenApiController(JimmerProperties properties) {
+        this(properties, JsonCodec.jsonCodec());
+    }
+
+    @Autowired
+    public OpenApiController(JimmerProperties properties, JsonCodec jsonCodec) {
         this.properties = properties;
+        this.jsonCodec = jsonCodec;
     }
 
     @GetMapping("${jimmer.client.openapi.path}")
@@ -30,7 +40,8 @@ public class OpenApiController {
         Metadata metadata = Metadatas.create(
                 false,
                 groups,
-                properties.getClient().getUriPrefix()
+                properties.getClient().getUriPrefix(),
+                jsonCodec
         );
         OpenApiGenerator generator = new OpenApiGenerator(metadata, properties.getClient().getOpenapi().getProperties()) {
             @Override

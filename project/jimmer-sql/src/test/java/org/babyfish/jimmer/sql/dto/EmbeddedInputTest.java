@@ -20,7 +20,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.JsonCodec.jsonCodec;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EmbeddedInputTest extends AbstractQueryTest {

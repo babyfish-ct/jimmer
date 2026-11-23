@@ -456,13 +456,13 @@ class Operator {
         }
     }
 
-    private static void completeInsertedFetcherFields(DraftSpi draft, List<ImmutableProp> props) {
+    private void completeInsertedFetcherFields(DraftSpi draft, List<ImmutableProp> props) {
         for (ImmutableProp prop : props) {
             PropId propId = prop.getId();
             if (draft.__isLoaded(propId)) {
                 continue;
             }
-            Ref<Object> defaultRef = prop.getDefaultValueRef();
+            Ref<Object> defaultRef = ctx.options.getSqlClient().getDefaultValueRef(prop);
             if (defaultRef != null) {
                 Object value = defaultRef.getValue();
                 draft.__set(propId, value instanceof Supplier<?> ? ((Supplier<?>) value).get() : value);

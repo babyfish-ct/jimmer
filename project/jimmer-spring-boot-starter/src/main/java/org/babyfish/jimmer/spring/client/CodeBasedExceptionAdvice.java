@@ -2,9 +2,11 @@ package org.babyfish.jimmer.spring.client;
 
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,7 +20,10 @@ public class CodeBasedExceptionAdvice {
 
     protected final JimmerProperties.ErrorTranslator errorTranslator;
 
-    public CodeBasedExceptionAdvice(JimmerProperties properties) {
+    private final JsonCodec jsonCodec;
+
+    public CodeBasedExceptionAdvice(JimmerProperties properties, JsonCodec jsonCodec) {
+        this.jsonCodec = jsonCodec;
         this.errorTranslator = properties.getErrorTranslator();
         if (errorTranslator.isDebugInfoSupported()) {
             notice();
@@ -26,19 +31,21 @@ public class CodeBasedExceptionAdvice {
     }
 
     @ExceptionHandler
-    public ResponseEntity<Map<String, Object>> handle(CodeBasedException ex) {
+    public ResponseEntity<byte[]> handle(CodeBasedException ex) throws Exception {
         LOGGER.error("Auto handled HTTP Error(" + CodeBasedException.class.getName() + ")", ex);
         return ResponseEntity
                 .status(errorTranslator.getHttpStatus())
-                .body(resultMap(ex));
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonCodec.writer().writeAsBytes(resultMap(ex)));
     }
 
     @ExceptionHandler
-    public ResponseEntity<Map<String, Object>> handle(CodeBasedRuntimeException ex) {
+    public ResponseEntity<byte[]> handle(CodeBasedRuntimeException ex) throws Exception {
         LOGGER.error("Auto handled HTTP Error(" + CodeBasedRuntimeException.class.getName() + ")", ex);
         return ResponseEntity
                 .status(errorTranslator.getHttpStatus())
-                .body(resultMap(ex));
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonCodec.writer().writeAsBytes(resultMap(ex)));
     }
 
     protected void notice() {

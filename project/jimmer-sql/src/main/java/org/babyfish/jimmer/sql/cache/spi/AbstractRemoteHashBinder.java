@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache.spi;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.JsonWriter;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
@@ -21,7 +22,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
             @Nullable ImmutableType type,
             @Nullable ImmutableProp prop,
             @Nullable CacheTracker tracker,
-            @NotNull JsonCodec<?> jsonCodec,
+            @NotNull JsonCodec jsonCodec,
             @Nullable RemoteKeyPrefixProvider keyPrefixProvider,
             Duration duration,
             int randomPercent
@@ -42,7 +43,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
     @Override
     public final Map<K, V> getAll(Collection<K> keys, SortedMap<String, Object> parameterMap) {
         Collection<String> redisKeys = serializedKeys(keys);
-        String hashKey = hashKey(parameterMap);
+        String hashKey = hashKey(parameterMap, jsonCodec.writer());
         List<byte[]> values = read(redisKeys, hashKey);
         return valueSerializer.deserialize(keys, values);
     }
@@ -50,7 +51,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
     @Override
     public final void setAll(Map<K, V> map, SortedMap<String, Object> parameterMap) {
         Map<String, byte[]> convertedMap = valueSerializer.serialize(map, this::serializedKey);
-        String hashKey = hashKey(parameterMap);
+        String hashKey = hashKey(parameterMap, jsonCodec.writer());
         write(convertedMap, hashKey);
     }
 
@@ -58,7 +59,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
 
     protected abstract void write(Map<String, byte[]> map, String hashKey);
 
-    private String hashKey(SortedMap<String, Object> parameterMap) {
+    static String hashKey(SortedMap<String, Object> parameterMap, JsonWriter<Object> parameterWriter) {
         try {
             StringBuilder builder = new StringBuilder();
             builder.append("{");
@@ -72,12 +73,34 @@ public abstract class AbstractRemoteHashBinder<K, V>
                 builder.append("\"");
                 builder.append(e.getKey());
                 builder.append("\":");
-                builder.append(jsonCodec.writer().writeAsString(e.getValue()));
+                appendParameter(builder, parameterWriter.writeAsString(e.getValue()));
             }
             builder.append("}");
             return builder.toString();
         } catch (Exception ex) {
             throw new SerializationException(ex);
+        }
+    }
+
+    // Existing hash fields use literal line and paragraph separators. Gson escapes both in JSON strings.
+    private static void appendParameter(StringBuilder builder, String json) {
+        if (!json.contains("\\u202")) {
+            builder.append(json);
+            return;
+        }
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '\\') {
+                if (json.startsWith("u2028", i + 1) || json.startsWith("u2029", i + 1)) {
+                    builder.append(json.charAt(i + 5) == '8' ? (char) 0x2028 : (char) 0x2029);
+                    i += 5;
+                    continue;
+                }
+                // Treat an escaped backslash as a pair, so the literal text "\\u2028" stays distinct.
+                builder.append(c);
+                c = json.charAt(++i);
+            }
+            builder.append(c);
         }
     }
 }

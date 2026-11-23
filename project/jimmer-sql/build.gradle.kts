@@ -11,8 +11,6 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.kotlin.stdlib)
     implementation(libs.jetbrains.annotations)
-    compileOnly(libs.jackson2.databind)
-    compileOnly(libs.jackson3.databind)
     compileOnly(libs.h2)
     compileOnly(libs.postgresql)
     compileOnly(libs.caffeine)
@@ -29,6 +27,7 @@ dependencies {
     testImplementation(projects.jimmerSqlTest.jimmerSqlTestSupport)
     testImplementation(projects.jimmerSqlTest.jimmerSqlTestModel)
     testImplementation(libs.bundles.jackson)
+    testImplementation(libs.redisson)
     testImplementation(libs.caffeine)
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.h2)
@@ -40,6 +39,10 @@ dependencies {
     testImplementation(libs.javax.validation.api)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.antlr)
+    testImplementation(projects.jimmerJsonJackson2)
+    testImplementation(projects.jimmerJsonJackson3)
+    testImplementation(projects.jimmerJsonGson)
+    testImplementation(projects.jimmerJsonFastjson2)
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 

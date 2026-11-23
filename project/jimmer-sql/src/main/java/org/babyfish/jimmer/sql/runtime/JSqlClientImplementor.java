@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -45,6 +46,10 @@ public interface JSqlClientImplementor extends JSqlClient {
     CacheOperator getCacheOperator();
 
     TriggerType getTriggerType();
+
+    default Ref<Object> getDefaultValueRef(ImmutableProp prop) {
+        return prop.getDefaultValueRef(getJsonCodec());
+    }
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 

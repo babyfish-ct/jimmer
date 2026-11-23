@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.client.runtime.VirtualType;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,8 +28,18 @@ public class Metadatas {
             @Nullable String groups,
             @Nullable String uriPrefix
     ) {
+        return create(isGenericSupported, groups, uriPrefix, JsonCodec.jsonCodec());
+    }
+
+    public static Metadata create(
+            boolean isGenericSupported,
+            @Nullable String groups,
+            @Nullable String uriPrefix,
+            JsonCodec jsonCodec
+    ) {
         return Metadata
                 .newBuilder()
+                .setJsonCodec(jsonCodec)
                 .setOperationParser(new OperationParserImpl())
                 .setParameterParser(new ParameterParserImpl())
                 .setVirtualTypeMap(

@@ -1074,7 +1074,7 @@ class InsertPreHandler extends AbstractPreHandler {
             if (draft.__isLoaded(propId)) {
                 continue;
             }
-            Ref<Object> ref = prop.getDefaultValueRef();
+            Ref<Object> ref = ctx.options.getSqlClient().getDefaultValueRef(prop);
             if (ref == null) {
                 continue;
             }

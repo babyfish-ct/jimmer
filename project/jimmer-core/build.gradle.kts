@@ -11,6 +11,8 @@ dependencies {
 
     testImplementation(projects.jimmerJsonJackson2)
     testImplementation(projects.jimmerJsonJackson3)
+    testImplementation(projects.jimmerJsonGson)
+    testImplementation(projects.jimmerJsonFastjson2)
     testImplementation(libs.jackson2.datatype.jsr310)
     testImplementation(libs.mapstruct)
     testImplementation(libs.javax.validation.api)

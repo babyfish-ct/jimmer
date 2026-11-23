@@ -12,6 +12,8 @@ dependencies {
         api(projects.jimmerCore)
         api(projects.jimmerJsonJackson2)
         api(projects.jimmerJsonJackson3)
+        api(projects.jimmerJsonGson)
+        api(projects.jimmerJsonFastjson2)
         api(projects.jimmerCoreKotlin)
         api(projects.jimmerDtoCompiler)
         api(projects.jimmerDdlCompiler)

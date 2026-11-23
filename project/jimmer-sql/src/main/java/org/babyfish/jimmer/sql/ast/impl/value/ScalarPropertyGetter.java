@@ -5,6 +5,7 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -13,8 +14,11 @@ import java.util.function.Supplier;
 
 class ScalarPropertyGetter extends AbstractPropertyGetter {
 
-    private ScalarPropertyGetter(@Nullable String alias, ImmutableProp prop, ValueGetter valueGetter) {
+    private final JSqlClientImplementor sqlClient;
+
+    private ScalarPropertyGetter(JSqlClientImplementor sqlClient, @Nullable String alias, ImmutableProp prop, ValueGetter valueGetter) {
         super(alias, prop, valueGetter);
+        this.sqlClient = sqlClient;
     }
 
     @Override
@@ -30,7 +34,7 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
         if (spi.__isLoaded(propId)) {
             return valueGetter.get(spi.__get(propId));
         }
-        Ref<Object> valueRef = prop.getDefaultValueRef();
+        Ref<Object> valueRef = sqlClient.getDefaultValueRef(prop);
         if (valueRef != null) {
             Object v = valueRef.getValue();
             Object evaluatedValue = v instanceof Supplier<?> ? ((Supplier<?>) v).get() : v;
@@ -44,10 +48,15 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
         return prop.getName();
     }
 
-    static List<PropertyGetter> getters(@Nullable String alias, ImmutableProp prop, List<ValueGetter> valueGetters) {
+    static List<PropertyGetter> getters(
+            JSqlClientImplementor sqlClient,
+            @Nullable String alias,
+            ImmutableProp prop,
+            List<ValueGetter> valueGetters
+    ) {
         List<PropertyGetter> propertyGetters = new ArrayList<>(valueGetters.size());
         for (ValueGetter valueGetter : valueGetters) {
-            propertyGetters.add(new ScalarPropertyGetter(alias, prop, valueGetter));
+            propertyGetters.add(new ScalarPropertyGetter(sqlClient, alias, prop, valueGetter));
         }
         return propertyGetters;
     }

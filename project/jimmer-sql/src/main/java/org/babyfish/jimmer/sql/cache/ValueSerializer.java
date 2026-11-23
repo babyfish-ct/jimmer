@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.jackson.codec.*;
+import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.json.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.InheritanceInfo;
@@ -11,17 +12,18 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.exception.SerializationException;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.JsonCodec.jsonCodec;
 
 public class ValueSerializer<T> {
     private static final byte[] NULL_BYTES = "<null>".getBytes(StandardCharsets.UTF_8);
 
     private final JsonReader<T> jsonReader;
-    private final JsonWriter jsonWriter;
+    private final JsonWriter<? super T> jsonWriter;
     private final String discriminatorPropName;
     private final Class<?> discriminatorType;
     private final InheritanceInfo inheritanceInfo;
@@ -37,20 +39,22 @@ public class ValueSerializer<T> {
         this(null, prop, jsonCodec());
     }
 
-    public ValueSerializer(@NotNull ImmutableType type, @NotNull JsonCodec<?> codec) {
+    public ValueSerializer(@NotNull ImmutableType type, @NotNull JsonCodec codec) {
         this(type, null, codec);
     }
 
-    public ValueSerializer(@NotNull ImmutableProp prop, @NotNull JsonCodec<?> codec) {
+    public ValueSerializer(@NotNull ImmutableProp prop, @NotNull JsonCodec codec) {
         this(null, prop, codec);
     }
 
-    private ValueSerializer(ImmutableType type, ImmutableProp prop, JsonCodec<?> codec) {
+    private ValueSerializer(ImmutableType type, ImmutableProp prop, JsonCodec codec) {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("Internal bug: nullity of type and prop must be different");
         }
-        this.jsonReader = codec.readerFor(tf -> createValueType(tf, type, prop));
-        this.jsonWriter = codec.writer();
+        Type valueType = valueType(type, prop);
+        this.jsonReader = codec.readerFor(valueType);
+        // Entity payloads include properties of the concrete subtype, even in a base type cache.
+        this.jsonWriter = type != null ? codec.writer() : codec.writerFor(valueType);
         this.inheritanceInfo = type != null ? type.getInheritanceInfo() : null;
         if (inheritanceInfo != null && type.hasDerivedTypes()) {
             ImmutableProp discriminatorProp = inheritanceInfo.getDiscriminatorProp();
@@ -68,18 +72,18 @@ public class ValueSerializer<T> {
         }
     }
 
-    private static <JT> JT createValueType(JsonTypeFactory<JT> typeFactory, ImmutableType type, ImmutableProp prop) {
+    private static Type valueType(ImmutableType type, ImmutableProp prop) {
         if (prop == null) {
-            return typeFactory.constructType(type.getJavaClass());
+            return type.getJavaClass();
         } else if (prop.isAssociation(TargetLevel.ENTITY)) {
             ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
             if (prop.isReferenceList(TargetLevel.OBJECT)) {
-                return typeFactory.constructListType(targetIdProp.getElementClass());
+                return JsonTypeFactory.INSTANCE.constructListType(Classes.boxTypeOf(targetIdProp.getElementClass()));
             } else {
-                return typeFactory.constructType(targetIdProp.getElementClass());
+                return targetIdProp.getElementClass();
             }
         } else {
-            return typeFactory.constructType(prop.getElementClass());
+            return prop.getGenericType();
         }
     }
 

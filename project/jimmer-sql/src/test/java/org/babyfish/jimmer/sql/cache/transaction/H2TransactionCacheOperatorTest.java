@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.cache.transaction;
 
+import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.model.Book;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.h2.Driver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -15,12 +18,32 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
+import static org.babyfish.jimmer.sql.common.Constants.learningGraphQLId1;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class H2TransactionCacheOperatorTest extends AbstractTransactionCacheOperatorTest {
 
     private Connection _con;
 
     protected String databaseUrl() {
         return "jdbc:h2:mem:trans-cache-operator";
+    }
+
+    @Test
+    public void failedKeyDecodingKeepsThePendingInvalidation() throws SQLException {
+        JSqlClientImplementor client = (JSqlClientImplementor) getSqlClient();
+        TransactionCacheOperator operator = (TransactionCacheOperator) client.getCacheOperator();
+        String schema = client.getMetadataStrategy().getSchemaStrategy().systemTableSchema();
+        String table = (schema == null || schema.isEmpty() ? "" : schema + ".") + TransactionCacheOperator.TABLE_NAME;
+        client.getCaches().getObjectCache(Book.class).delete(learningGraphQLId1);
+        try (Statement statement = connection().createStatement()) {
+            assertEquals(1, statement.executeUpdate("update " + table + " set CACHE_KEY = 'invalid-json'"));
+            assertThrows(ExecutionException.class, operator::flush);
+            try (ResultSet rows = statement.executeQuery("select count(*) from " + table)) {
+                assertTrue(rows.next());
+                assertEquals(1, rows.getInt(1));
+            }
+        }
     }
 
     protected Connection connection() throws SQLException {

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.spring.cloud;
 
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -16,11 +16,16 @@ public class SpringCloudExchange implements MicroServiceExchange {
 
     private final RestTemplate restTemplate;
 
-    private final JsonCodec<?> jsonCodec;
+    private final JsonCodec jsonCodec;
 
-    public SpringCloudExchange(RestTemplate restTemplate, JsonCodec<?> jsonCodec) {
+    public SpringCloudExchange(RestTemplate restTemplate, JsonCodec jsonCodec) {
         this.restTemplate = restTemplate;
         this.jsonCodec = jsonCodec;
+    }
+
+    @Override
+    public MicroServiceExchange withJsonCodec(JsonCodec codec) {
+        return codec == jsonCodec ? this : new SpringCloudExchange(restTemplate, codec);
     }
 
     @Override

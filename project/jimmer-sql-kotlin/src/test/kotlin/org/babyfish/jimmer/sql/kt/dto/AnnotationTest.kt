@@ -1,14 +1,15 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
-import org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec
+import org.babyfish.jimmer.json.JsonCodec.jsonCodec
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookViewForIssue843
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.IgnoredBookStoreInput
 import org.babyfish.jimmer.sql.kt.model.dto.UserView
 import org.babyfish.jimmer.sql.kt.model.filter.User
 import testpkg.annotations.Serializable
 import java.math.BigDecimal
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.expect
 
@@ -26,6 +27,16 @@ class AnnotationTest {
         assertNotNull(a2)
         expect(User::class) { a1.with }
         expect(String::class) { a2.with }
+    }
+
+    @Test
+    fun testIgnoredDynamicId() {
+        val input = IgnoredBookStoreInput(
+            storeId = null, isStoreIdLoaded = true
+        )
+        assertContent("{}", jsonCodec().writer().writeAsString(input))
+        val decoded = jsonCodec().readerFor(input.javaClass).read("""{"storeId":null}""")
+        assertFalse(decoded.isStoreIdLoaded)
     }
 
     @Test

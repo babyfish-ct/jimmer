@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.cfg
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec
+import org.babyfish.jimmer.json.JsonCodec
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
@@ -198,23 +198,28 @@ class KSqlClientDsl constructor(
         javaBuilder.addPropScalarProviderFactory(factory)
     }
 
-    fun setJsonCodec(jsonCodec: JsonCodec<*>) {
+    fun setJsonCodec(jsonCodec: JsonCodec) {
         javaBuilder.setJsonCodec(jsonCodec)
     }
 
-    fun setDefaultSerializedTypeJsonCodec(jsonCodec: JsonCodec<*>) {
+    fun setDefaultSerializedTypeJsonCodec(jsonCodec: JsonCodec) {
         javaBuilder.setDefaultSerializedTypeJsonCodec(jsonCodec)
     }
 
-    fun setSerializedTypeJsonCodec(type: KClass<*>, jsonCodec: JsonCodec<*>) {
+    fun setSerializedTypeJsonCodec(type: KClass<*>, jsonCodec: JsonCodec) {
         javaBuilder.setSerializedTypeJsonCodec(type.java, jsonCodec)
     }
 
-    fun setSerializedPropOJsonCodec(prop: KProperty1<*, *>, jsonCodec: JsonCodec<*>) {
+    @Deprecated("Use setSerializedPropJsonCodec", ReplaceWith("setSerializedPropJsonCodec(prop, jsonCodec)"))
+    fun setSerializedPropOJsonCodec(prop: KProperty1<*, *>, jsonCodec: JsonCodec) {
+        setSerializedPropJsonCodec(prop, jsonCodec)
+    }
+
+    fun setSerializedPropJsonCodec(prop: KProperty1<*, *>, jsonCodec: JsonCodec) {
         javaBuilder.setSerializedPropJsonCodec(prop.toImmutableProp(), jsonCodec)
     }
 
-    fun setSerializedPropJsonCodec(prop: ImmutableProp, jsonCodec: JsonCodec<*>) {
+    fun setSerializedPropJsonCodec(prop: ImmutableProp, jsonCodec: JsonCodec) {
         javaBuilder.setSerializedPropJsonCodec(prop, jsonCodec)
     }
 
@@ -239,6 +244,10 @@ class KSqlClientDsl constructor(
 
     fun setCacheFactory(cacheFactory: CacheFactory) {
         javaBuilder.setCacheFactory(cacheFactory)
+    }
+
+    fun setCacheFactoryProvider(provider: (JsonCodec) -> CacheFactory) {
+        javaBuilder.setCacheFactoryProvider(provider)
     }
 
     fun setCacheOperator(cacheOperator: CacheOperator) {
@@ -317,7 +326,7 @@ class KSqlClientDsl constructor(
         javaBuilder.addDraftInterceptors(interceptor)
     }
 
-    fun setDefaultBinLogJsonCodec(jsonCodec: JsonCodec<*>) {
+    fun setDefaultBinLogJsonCodec(jsonCodec: JsonCodec) {
         javaBuilder.setDefaultBinLogJsonCodec(jsonCodec)
     }
 
@@ -460,6 +469,10 @@ class KSqlClientDsl constructor(
     ) {
         fun setCacheFactory(cacheFactory: CacheFactory) {
             javaCfg.setCacheFactory(cacheFactory)
+        }
+
+        fun setCacheFactoryProvider(provider: (JsonCodec) -> CacheFactory) {
+            javaCfg.setCacheFactoryProvider(provider)
         }
 
         fun <T : Any> setObjectCache(entityType: KClass<T>, cache: Cache<*, T>?) {

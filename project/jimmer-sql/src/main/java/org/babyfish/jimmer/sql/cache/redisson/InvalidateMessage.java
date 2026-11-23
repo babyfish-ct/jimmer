@@ -1,20 +1,22 @@
 package org.babyfish.jimmer.sql.cache.redisson;
 
+import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.json.JsonCodec;
+import org.babyfish.jimmer.json.JsonTypeFactory;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.UUID;
 
-@tools.jackson.databind.annotation.JsonSerialize(using = InvalidateMessageSerializer3.class)
-@tools.jackson.databind.annotation.JsonDeserialize(using = InvalidateMessageDeserializer3.class)
-@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = InvalidateMessageSerializer.class)
-@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = InvalidateMessageDeserializer.class)
 class InvalidateMessage implements Serializable {
+
+    private static final long serialVersionUID = -2287205502201925856L;
 
     @NotNull
     UUID trackerId; // No final for serialization
@@ -35,7 +37,8 @@ class InvalidateMessage implements Serializable {
             @NotNull CacheTracker.InvalidateEvent event
     ) {
         this.trackerId = trackerId;
-        this.typeName = event.getType().toString();
+        this.type = event.getType();
+        this.typeName = type.toString();
         if (event.getProp() != null) {
             this.propName = event.getProp().getName();
         } else {
@@ -52,6 +55,37 @@ class InvalidateMessage implements Serializable {
         this.trackerId = trackerId;
         this.typeName = typeName;
         this.propName = propName;
+    }
+
+    @ConstructorProperties({"trackerId", "typeName", "propName", "ids"})
+    public InvalidateMessage(UUID trackerId, String typeName, String propName, Collection<?> ids) {
+        this(trackerId, typeName, propName);
+        Class<?> idClass = Classes.boxTypeOf(getType().getIdProp().getElementClass());
+        if (ids.stream().allMatch(idClass::isInstance)) {
+            this.ids = ids;
+        } else {
+            try {
+                this.ids = JsonCodec.jsonCodec().converter().convert(ids, JsonTypeFactory.INSTANCE.constructListType(idClass));
+            } catch (Exception ex) {
+                throw new IllegalArgumentException("Cannot read cache IDs for " + typeName, ex);
+            }
+        }
+    }
+
+    public UUID getTrackerId() {
+        return trackerId;
+    }
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public String getPropName() {
+        return propName;
+    }
+
+    public Collection<?> getIds() {
+        return ids;
     }
 
     ImmutableType getType() {

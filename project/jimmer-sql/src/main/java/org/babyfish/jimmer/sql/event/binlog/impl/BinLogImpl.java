@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.event.binlog.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.babyfish.jimmer.jackson.codec.Node;
+import org.babyfish.jimmer.json.Node;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
@@ -129,24 +128,5 @@ public class BinLogImpl implements BinLog {
             set.add(DatabaseIdentifiers.comparableIdentifier(tableName));
         }
         return set;
-    }
-
-    private static JsonNode nodeOf(JsonNode jsonNode, String columnName) {
-        JsonNode childNode = jsonNode.get(columnName);
-        if (childNode != null) {
-            return childNode;
-        }
-        String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
-
-        // Low version jackson does not support `properties`
-        Iterator<Map.Entry<String, JsonNode>> fieldEntryItr = jsonNode.fields();
-
-        while (fieldEntryItr.hasNext()) {
-            Map.Entry<String, JsonNode> e = fieldEntryItr.next();
-            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(comparableIdentifier)) {
-                return e.getValue();
-            }
-        }
-        return null;
     }
 }

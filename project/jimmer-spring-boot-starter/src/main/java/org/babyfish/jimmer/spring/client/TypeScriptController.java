@@ -2,7 +2,9 @@ package org.babyfish.jimmer.spring.client;
 
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
 import org.babyfish.jimmer.client.runtime.Metadata;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,8 +16,16 @@ public class TypeScriptController {
 
     private final JimmerProperties properties;
 
+    private final JsonCodec jsonCodec;
+
     public TypeScriptController(JimmerProperties properties) {
+        this(properties, JsonCodec.jsonCodec());
+    }
+
+    @Autowired
+    public TypeScriptController(JimmerProperties properties, JsonCodec jsonCodec) {
         this.properties = properties;
+        this.jsonCodec = jsonCodec;
     }
 
     @GetMapping("${jimmer.client.ts.path}")
@@ -26,7 +36,8 @@ public class TypeScriptController {
         Metadata metadata = Metadatas.create(
                 true,
                 groups,
-                properties.getClient().getUriPrefix()
+                properties.getClient().getUriPrefix(),
+                jsonCodec
         );
         TypeScriptContext ctx = new TypeScriptContext(
                 metadata,

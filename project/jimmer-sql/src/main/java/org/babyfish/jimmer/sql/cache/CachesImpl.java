@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -176,11 +177,23 @@ public class CachesImpl implements Caches {
             Triggers triggers,
             FilterManager filterManager
     ) {
+        return of(cacheConfig, microServiceName, entityManager, triggers, filterManager, JsonCodec.jsonCodec());
+    }
+
+    public static Caches of(
+            CacheConfig cacheConfig,
+            String microServiceName,
+            EntityManager entityManager,
+            Triggers triggers,
+            FilterManager filterManager,
+            JsonCodec jsonCodec
+    ) {
         return cacheConfig.build(
                 microServiceName,
                 entityManager,
                 triggers,
-                filterManager
+                filterManager,
+                jsonCodec
         );
     }
 
