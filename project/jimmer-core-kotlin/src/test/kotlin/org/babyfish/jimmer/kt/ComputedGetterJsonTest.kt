@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.kt
 
-import org.babyfish.jimmer.jackson.codec.ImmutableModuleCustomization
-import org.babyfish.jimmer.jackson.codec.JsonCodec
-import org.babyfish.jimmer.jackson.v2.JsonCodecProviderV2
-import org.babyfish.jimmer.jackson.v3.JsonCodecProviderV3
+import org.babyfish.jimmer.jackson.v2.JsonCodecV2
+import org.babyfish.jimmer.jackson.v3.JsonCodecV3
+import org.babyfish.jimmer.json.JsonCodec
 import org.babyfish.jimmer.kt.model.Author
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,15 +11,15 @@ class ComputedGetterJsonTest {
 
     @Test
     fun testJackson2() {
-        verify(JsonCodecProviderV2().create().withCustomizations(ImmutableModuleCustomization()))
+        verify(JsonCodecV2())
     }
 
     @Test
     fun testJackson3() {
-        verify(JsonCodecProviderV3().create().withCustomizations(ImmutableModuleCustomization()))
+        verify(JsonCodecV3())
     }
 
-    private fun verify(codec: JsonCodec<*>) {
+    private fun verify(codec: JsonCodec) {
         val partial = Author { firstName = "Jim" }
         assertEquals("""{"firstName":"Jim"}""", codec.writer().writeAsString(partial))
         assertEquals(partial, codec.readerFor(Author::class.java).read("""{"firstName":"Jim"}"""))

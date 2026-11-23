@@ -5,6 +5,8 @@ plugins {
 }
 
 dependencies {
+    implementation(projects.jimmerJsonJackson2)
+    implementation(projects.jimmerJsonJackson3) { isTransitive = false }
     api(projects.jimmerSql)
     api(projects.jimmerSqlKotlin)
     api(projects.jimmerClient)
@@ -37,6 +39,8 @@ dependencies {
     testRuntimeOnly(libs.bundles.jackson)
     testRuntimeOnly(projects.jimmerClientSwagger)
     testRuntimeOnly(projects.jimmerClientScalar)
+    testImplementation(projects.jimmerJsonJackson2)
+    testImplementation(projects.jimmerJsonJackson3)
 }
 
 buildConfig {

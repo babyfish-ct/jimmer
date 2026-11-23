@@ -2,6 +2,8 @@ rootProject.name = "jimmer"
 include(
     "jimmer-bom",
     "jimmer-core",
+    "jimmer-json-jackson2",
+    "jimmer-json-jackson3",
     "jimmer-mapstruct-apt",
     "jimmer-apt",
     "jimmer-sql",

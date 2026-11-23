@@ -85,4 +85,13 @@ public class Classes {
         }
         return boxTypeOf(a) == boxTypeOf(b);
     }
+
+    public static boolean classExists(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (Throwable ex) {
+            return false;
+        }
+    }
 }

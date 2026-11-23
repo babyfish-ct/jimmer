@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.exception;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.babyfish.jimmer.json.JsonIgnore;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.ClientException;

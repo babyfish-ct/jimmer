@@ -10,6 +10,8 @@ dependencies {
         api(projects.jimmerClientSwagger)
         api(projects.jimmerClientScalar)
         api(projects.jimmerCore)
+        api(projects.jimmerJsonJackson2)
+        api(projects.jimmerJsonJackson3)
         api(projects.jimmerCoreKotlin)
         api(projects.jimmerDtoCompiler)
         api(projects.jimmerDdlCompiler)

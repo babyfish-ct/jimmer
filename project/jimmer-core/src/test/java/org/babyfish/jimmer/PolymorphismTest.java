@@ -5,14 +5,15 @@ import org.babyfish.jimmer.model.ManualComment;
 import org.babyfish.jimmer.model.RobotComment;
 import org.babyfish.jimmer.model.Topic;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.babyfish.jimmer.support.JacksonBackend;
+import org.babyfish.jimmer.support.JacksonTest;
 
 import java.util.Arrays;
 
 public class PolymorphismTest {
 
-    @Test
-    public void test() {
+    @JacksonTest
+    public void test(JacksonBackend backend) {
         Topic topic = Immutables.createTopic(draft -> {
             draft.setName("I love GraphQL");
             draft.setPinnedComment(
@@ -34,7 +35,7 @@ public class PolymorphismTest {
                     )
             );
         });
-        String json = topic.toString();
+        String json = backend.write(topic);
         Assertions.assertEquals(
                 "{\"name\":\"I love GraphQL\"," +
                         "\"pinnedComment\":{\"type\":\"M\",\"text\":null,\"userId\":\"admin-001\"}," +

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.babyfish.jimmer.json.DtoJsonBinding;
+import org.babyfish.jimmer.json.JsonIgnore;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -11,7 +12,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+@DtoJsonBinding.Generated(MutationPath.JsonBinding.class)
 public final class MutationPath {
+
+    public static final class JsonBinding extends DtoJsonBinding {
+        public JsonBinding() {
+            super(MutationPath.class, null, null, null);
+            property("typeName", "getTypeName", false, true, path -> ((MutationPath) path).getTypeName(), null);
+            property("parent", "getParent", false, true, path -> ((MutationPath) path).getParent(), null);
+        }
+    }
 
     private final ImmutableType type;
 

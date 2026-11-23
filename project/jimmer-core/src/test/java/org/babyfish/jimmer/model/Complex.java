@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import org.babyfish.jimmer.json.JsonFormat;
 import org.babyfish.jimmer.Immutable;
 
 // Classic properties with prefix "get"

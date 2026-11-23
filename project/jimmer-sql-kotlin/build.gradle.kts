@@ -21,6 +21,8 @@ dependencies {
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.hibernate.validation)
     testImplementation(libs.caffeine)
+    testImplementation(projects.jimmerJsonJackson2)
+    testImplementation(projects.jimmerJsonJackson3)
 }
 
 tasks.test {

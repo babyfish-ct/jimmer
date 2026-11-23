@@ -5,6 +5,8 @@ plugins {
 }
 
 dependencies {
+    testImplementation(projects.jimmerJsonJackson2)
+    testImplementation(projects.jimmerJsonJackson3)
     api(projects.jimmerCore)
     implementation(libs.kotlin.stdlib)
 

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer;
 
-import org.babyfish.jimmer.jackson.codec.JsonCodec;
+import org.babyfish.jimmer.json.JsonCodec;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static org.babyfish.jimmer.jackson.codec.JsonCodec.jsonCodec;
+import static org.babyfish.jimmer.json.JsonCodec.jsonCodec;
 
 public class ImmutableObjects {
     private ImmutableObjects() {
@@ -373,18 +373,15 @@ public class ImmutableObjects {
     }
 
     /**
-     * Convert an object to a JSON string.
+     * Convert an object to a JSON string with the default Jackson codec.
      * If the object is jimmer immutable object, unspecified properties can be automatically ignored.
      *
      * @param immutable Any object
      * @return JSON string
+     * @see #toString(Object, JsonCodec)
      */
     public static String toString(Object immutable) {
-        try {
-            return jsonCodec().writer().writeAsString(immutable);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Can't serialize object", e);
-        }
+        return toString(immutable, jsonCodec());
     }
 
     /**
@@ -395,7 +392,7 @@ public class ImmutableObjects {
      * @param jsonCodec JSON codec
      * @return JSON string
      */
-    public static String toString(Object immutable, @NotNull JsonCodec<?> jsonCodec) {
+    public static String toString(Object immutable, @NotNull JsonCodec jsonCodec) {
         try {
             return jsonCodec.writer().writeAsString(immutable);
         } catch (Exception e) {
@@ -404,20 +401,17 @@ public class ImmutableObjects {
     }
 
     /**
-     * Convert a JSON string to an object.
+     * Convert a JSON string to an object with the default Jackson codec.
      *
      * @param type Object type, can be interface type.
      * @return Deserialized object
+     * @see #fromString(Class, String, JsonCodec)
      */
     public static <I> I fromString(Class<I> type, String json) {
-        try {
-            return jsonCodec().readerFor(type).read(json);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Can't deserialize object ", e);
-        }
+        return fromString(type, json, jsonCodec());
     }
 
-    public static <I> I fromString(Class<I> type, String json, @NotNull JsonCodec<?> jsonCodec) {
+    public static <I> I fromString(Class<I> type, String json, @NotNull JsonCodec jsonCodec) {
         try {
             return jsonCodec.readerFor(type).read(json);
         } catch (Exception e) {

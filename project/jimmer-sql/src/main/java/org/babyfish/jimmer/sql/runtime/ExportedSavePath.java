@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 
+import java.beans.ConstructorProperties;
 import java.util.List;
+import java.util.Objects;
 
 public class ExportedSavePath {
 
@@ -12,6 +12,7 @@ public class ExportedSavePath {
 
     private final List<Node> nodes;
 
+    @ConstructorProperties({"rootTypeName", "nodes"})
     public ExportedSavePath(String rootTypeName, List<Node> nodes) {
         this.rootTypeName = rootTypeName;
         this.nodes = nodes;
@@ -40,12 +41,12 @@ public class ExportedSavePath {
 
         private final String targetTypeName;
 
-        @JsonCreator
+        @ConstructorProperties({"prop", "targetTypeName"})
         public Node(
-                @JsonProperty(value = "prop", required = true) @NotNull String prop,
-                @JsonProperty(value = "targetTypeName", required = true) @NotNull String targetTypeName) {
-            this.prop = prop;
-            this.targetTypeName = targetTypeName;
+                @NotNull String prop,
+                @NotNull String targetTypeName) {
+            this.prop = Objects.requireNonNull(prop, "prop");
+            this.targetTypeName = Objects.requireNonNull(targetTypeName, "targetTypeName");
         }
 
         @NotNull
